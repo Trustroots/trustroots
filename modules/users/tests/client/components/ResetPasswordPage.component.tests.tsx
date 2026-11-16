@@ -131,6 +131,19 @@ describe('ResetPasswordPage', () => {
     expect(analytics.track).toHaveBeenCalledWith('password_reset_completed');
   });
 
+  it('does not establish a session when MFA is required', async () => {
+    resetPassword.mockResolvedValue({ mfaRequired: true });
+
+    renderPage();
+    await fillPasswords('new-password', 'new-password');
+    await submitForm();
+
+    await waitFor(() =>
+      expect(window.location.pathname).toBe('/password/reset/success'),
+    );
+    expect(screen.getByLabelText('Signed in as')).toBeEmptyDOMElement();
+  });
+
   it('shows an error when the reset request fails', async () => {
     resetPassword.mockRejectedValue({
       response: { status: 400, data: { message: 'Reset token expired.' } },

@@ -24,8 +24,10 @@ interface MockResponse {
 interface PasswordRequest {
   body?: PasswordBody;
   params?: { token: string };
-  user?: { id: string };
+  query?: { utm_source?: string; utm_medium?: string; utm_campaign?: string };
+  user?: { id: string; $locals?: { mfaVerified?: boolean } };
   login?: (user: TestUser, callback: Callback) => void;
+  logout?: (callback: Callback) => void;
 }
 interface PasswordUpdate {
   $set?: { password?: string; passwordUpdated?: Date };
@@ -39,6 +41,7 @@ interface TestUser {
   password: string;
   salt?: string;
   authVersion?: number;
+  $locals?: { mfaVerified?: boolean };
   lastPasswordUpdate?: {
     query: Record<string, unknown>;
     update: PasswordUpdate;
@@ -86,21 +89,24 @@ function deferredResponse(): MockResponse {
   const promise = new Promise<MockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const respond = (body: ResponseBody) => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
   const res: MockResponse = {
     statusCode: 200,
     body: null,
     status(code) {
-      res.statusCode = code;
-      return res;
+      this.statusCode = code;
+      return this;
     },
-    send: respond,
-    json: respond,
-    redirect: url => respond({ message: url }),
+    send(body) {
+      this.body = body;
+      resolveResponse(this);
+      return this;
+    },
+    json(body) {
+      return this.send(body);
+    },
+    redirect(url) {
+      return this.send({ message: url });
+    },
     waitForResponse: () => promise,
   };
   return res;
@@ -193,11 +199,24 @@ async function run(
   return res.waitForResponse();
 }
 
+function responseBody(response: MockResponse): ResponseBody {
+  if (!response.body) throw new Error('expected a response body');
+  return response.body;
+}
+
+function assertMfaVerification(user: TestUser, expected: boolean): void {
+  const mfaVerified = user.$locals?.mfaVerified;
+  if (typeof mfaVerified !== 'boolean')
+    throw new Error('expected MFA verification state');
+  mfaVerified.should.equal(expected);
+}
+
 function fakeUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
     displayName: 'Direct User',
     email: 'direct@example.test',
     password: 'oldpassword1',
+    $locals: {},
     save: () => Promise.resolve(),
     authenticate: password => Promise.resolve(password === 'oldpassword1'),
     ...overrides,
@@ -317,6 +336,77 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('reset', () => {
+    it('does not log an MFA account in after password recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({
+        user,
+        confirmEmailError: new Error('email temporarily unavailable'),
+      });
+      const res = deferredResponse();
+      let loggedOut = false;
+      const req: PasswordRequest = {
+        params: { token: 'reset-token' },
+        body: {
+          newPassword: 'newpassword123',
+          verifyPassword: 'newpassword123',
+        },
+        login: () => {
+          throw new Error('MFA account must not be logged in');
+        },
+        logout: callback => {
+          loggedOut = true;
+          callback(null);
+        },
+      };
+
+      controller.reset(req, res);
+
+      await res.waitForResponse();
+      loggedOut.should.be.true();
+      responseBody(res).should.deepEqual({ mfaRequired: true });
+    });
+
+    it('completes the MFA recovery response when confirmation email succeeds', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(null),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      responseBody(res).should.deepEqual({ mfaRequired: true });
+    });
+
+    it('returns a controlled error when logout fails for an MFA recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(new Error('logout failed')),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      responseBody(res).message!.should.equal('Password reset failed.');
+    });
+
     it('rejects a matching but invalid password without updating', async () => {
       const user = fakeUser();
       const res = await run(loadController({ user }), 'reset', {
@@ -419,6 +509,59 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('changePassword', () => {
+    it('preserves an MFA-verified session when changing an MFA account password', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id', $locals: { mfaVerified: true } },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            assertMfaVerification(authenticatedUser, true);
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
+    it('does not grant MFA verification when the current session lacks it', async () => {
+      const user = fakeUser({
+        mfaEnabled: true,
+        $locals: { mfaVerified: true },
+      });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            assertMfaVerification(authenticatedUser, false);
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
     it('forbids an anonymous request', async () => {
       const res = await run(loadController(), 'changePassword', { body: {} });
       res.statusCode.should.equal(403);

@@ -168,7 +168,7 @@ describe('Admin Message CRUD tests', () => {
         });
     });
     it('admin users should be allowed to read messages', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       await new Message({
         content: 'unrelated conversation',
         created: new Date('2026-06-01T09:00:00.000Z'),
@@ -193,7 +193,7 @@ describe('Admin Message CRUD tests', () => {
   });
   describe('Warn scammer recipients', () => {
     it('lists distinct existing recipients contacted by a username', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       await new Message({
         content: 'another message',
         userFrom: userRegular1Id,
@@ -215,7 +215,7 @@ describe('Admin Message CRUD tests', () => {
       body.recipients[0].username.should.equal(userRegular2.username);
     });
     it('sends a sanitised warning and updates the recipient thread', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const { body } = await agent
         .post('/api/admin/messages/scammer-warning')
         .send({
@@ -240,7 +240,7 @@ describe('Admin Message CRUD tests', () => {
       should(thread.read).equal(false);
     });
     it('repairs a partial delivery without duplicating messages or resetting read state', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const payload = {
         username: userRegular1.username,
         content: 'Please ignore the earlier message.',
@@ -311,7 +311,7 @@ describe('Admin Message CRUD tests', () => {
       (await Message.countDocuments(filter)).should.equal(2);
     });
     it('requires a valid request ID before saving warning messages', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       for (const requestId of [undefined, 'invalid']) {
         await agent
           .post('/api/admin/messages/scammer-warning')
@@ -329,7 +329,7 @@ describe('Admin Message CRUD tests', () => {
       ).should.equal(0);
     });
     it('keeps one inbox thread when warning retries overlap', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const payload = {
         username: userRegular1.username,
         content: 'Please ignore the earlier message.',
@@ -381,7 +381,7 @@ describe('Admin Message CRUD tests', () => {
       (await Thread.countDocuments({})).should.equal(1);
     });
     it('repairs a thread after another warning request wins the insert race', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const originalBulkWrite = Thread.bulkWrite;
       const bulkWrite = sinon.stub(Thread, 'bulkWrite');
       bulkWrite.onFirstCall().rejects(
@@ -412,7 +412,7 @@ describe('Admin Message CRUD tests', () => {
       }
     });
     it('updates an existing reverse-direction thread and preserves a newer reply on retry', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const oldThread = await Thread.create({
         userFrom: userRegular2Id,
         userTo: userAdmin._id,
@@ -475,7 +475,7 @@ describe('Admin Message CRUD tests', () => {
       ).should.equal(1);
     });
     it('reports zero deliveries when the member contacted nobody', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const { body } = await agent
         .post('/api/admin/messages/scammer-warning')
         .send({
@@ -487,7 +487,7 @@ describe('Admin Message CRUD tests', () => {
       body.sent.should.equal(0);
     });
     it('validates the username and warning content', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       let response = await agent
         .post('/api/admin/messages/scammer-recipients')
         .send({})

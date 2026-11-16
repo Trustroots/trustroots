@@ -115,7 +115,7 @@ describe('Admin username changes route', () => {
   });
 
   it('returns recent history in stable pages of 50 and includes unknown legacy names', async () => {
-    await utils.signIn(users[0], adminAgent);
+    await utils.signInPrivileged(users[0], adminAgent);
     const firstResponse = await adminAgent
       .get('/api/admin/username-changes?page=1')
       .expect(200);
@@ -158,7 +158,7 @@ describe('Admin username changes route', () => {
   });
 
   it('supports all recorded history and rejects invalid filters', async () => {
-    await utils.signIn(users[0], adminAgent);
+    await utils.signInPrivileged(users[0], adminAgent);
     const response = await adminAgent
       .get('/api/admin/username-changes?range=all&page=2')
       .expect(200);

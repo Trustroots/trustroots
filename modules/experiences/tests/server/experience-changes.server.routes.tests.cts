@@ -128,7 +128,7 @@ describe('Experience change requests', () => {
       recommend: 'yes',
       feedbackPublic: 'An anonymous original Experience.',
     });
-    await utils.signIn(users[0], adminAgent);
+    await utils.signInPrivileged(users[0], adminAgent);
     await utils.signIn(users[1], authorAgent);
     await utils.signIn(users[2], recipientAgent);
     await utils.signIn(users[3], unrelatedAgent);
@@ -328,7 +328,7 @@ describe('Experience change requests', () => {
       { _id: author._id },
       { $set: { roles: ['user', 'admin'] } },
     );
-    await utils.signIn(users[1], authorAgent);
+    await utils.signInPrivileged(users[1], authorAgent);
     await authorAgent.post(path).send({ decision: 'approve' }).expect(200);
   });
 

@@ -175,7 +175,7 @@ describe('Admin User CRUD tests', () => {
           .expect(403);
       });
       it('admin users should be allowed to search and get correct results', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users')
           .send({
@@ -203,7 +203,7 @@ describe('Admin User CRUD tests', () => {
         });
       });
       it('should find by username', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users')
           .send({
@@ -214,7 +214,7 @@ describe('Admin User CRUD tests', () => {
         should(body.users[0].username).equal('userregular');
       });
       it('should sort matching users on the server', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users')
           .send({
@@ -234,7 +234,7 @@ describe('Admin User CRUD tests', () => {
         });
       });
       it('should trim surrounding whitespace from a search query', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users')
           .send({
@@ -245,7 +245,7 @@ describe('Admin User CRUD tests', () => {
         should(body.users[0].username).equal('userregular');
       });
       it('should ignore whitespace between search words', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         await new User({
           displayName: 'Spaceless Member',
           email: 'spaceless-member@example.test',
@@ -268,7 +268,7 @@ describe('Admin User CRUD tests', () => {
         should(body.users[0].username).equal('spacelessmember');
       });
       it('should find by email', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users')
           .send({
@@ -300,7 +300,7 @@ describe('Admin User CRUD tests', () => {
         .expect(403);
     });
     it('normalises and audits signup review rule updates with optimistic concurrency', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const initial = await agent
         .get('/api/admin/signup-review-rules')
         .expect(200);
@@ -333,7 +333,7 @@ describe('Admin User CRUD tests', () => {
       ).should.equal(1);
     });
     it('requires explicit confirmation to clear every signup review rule', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const initial = await agent
         .get('/api/admin/signup-review-rules')
         .expect(200);
@@ -362,7 +362,7 @@ describe('Admin User CRUD tests', () => {
       audit?.body?.rules!.should.deepEqual([]);
     });
     it('rejects invalid rules, fails closed on an update race, and does not update when audit logging fails', async () => {
-      await utils.signIn(credentialsAdmin, agent);
+      await utils.signInPrivileged(credentialsAdmin, agent);
       const initial = await agent
         .get('/api/admin/signup-review-rules')
         .expect(200);
@@ -416,7 +416,7 @@ describe('Admin User CRUD tests', () => {
     });
     describe('Delete suspended users', () => {
       it('requires an exact username and a non-empty reason', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         const invalid = [
@@ -456,7 +456,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('deletes a suspended member after saving the reason and trimmed keywords to the audit log', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         await agent
@@ -480,7 +480,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('protects the acting administrator, other administrators, active users, and missing members', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const payload = { username: 'useradmin', reason: 'reviewed' };
         await agent
           .post('/api/admin/user/delete')
@@ -512,7 +512,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('does not delete the member if audit logging fails', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         sinon
@@ -534,7 +534,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('fails closed if the member changes between the lookup and atomic deletion', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         sinon.stub(User, 'findOneAndDelete').resolves(null);
@@ -557,7 +557,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('reports lookup failures without writing an audit record', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         sinon.stub(User, 'findById').rejects(new Error('lookup unavailable'));
         try {
           await agent
@@ -577,7 +577,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       it('reports cleanup rejection after the account has been atomically removed', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         const files: typeof import('../../../core/server/services/file-removal.server.service.mjs') = require('../../../core/server/services/file-removal.server.service.mjs');
@@ -653,7 +653,7 @@ describe('Admin User CRUD tests', () => {
           .expect(403);
       });
       it('admin users should be allowed to list users by role and get correct results', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users/by-role')
           .send({
@@ -673,7 +673,7 @@ describe('Admin User CRUD tests', () => {
         should(user.resetPasswordToken).equal('(Hidden from admins.)');
       });
       it('listing users by invalid role should not be possible', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         await agent
           .post('/api/admin/users/by-role')
           .send({
@@ -710,7 +710,7 @@ describe('Admin User CRUD tests', () => {
           username: 'userother',
         });
         await otherUser.save();
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users/by-last-ip-hash')
           .send({
@@ -725,7 +725,7 @@ describe('Admin User CRUD tests', () => {
         );
       });
       it('rejects malformed IP addresses', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/users/by-last-ip-hash')
           .send({
@@ -758,7 +758,7 @@ describe('Admin User CRUD tests', () => {
           { _id: userRegular._id },
           { $set: { lastIpAddress: '203.0.113.30' } },
         );
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
           .send({
@@ -779,7 +779,7 @@ describe('Admin User CRUD tests', () => {
         body.potentialMatches.should.deepEqual([]);
       });
       it('returns 404 for an unknown username', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         await agent
           .post('/api/admin/user')
           .send({
@@ -799,7 +799,7 @@ describe('Admin User CRUD tests', () => {
           username: 'userregularextra',
         });
         await similarUser.save();
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
           .send({
@@ -860,7 +860,7 @@ describe('Admin User CRUD tests', () => {
           }),
         ];
         await Promise.all(possibleMatches.map(user => user.save()));
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
           .send({
@@ -894,7 +894,7 @@ describe('Admin User CRUD tests', () => {
         storyLead.acquisitionStory.should.match(/fictional travel club/i);
       });
       it('missing id should return no users', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
           .send({
@@ -904,7 +904,7 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Cannot interpret id.');
       });
       it('invalid id should return no users', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
           .send({
@@ -937,7 +937,7 @@ describe('Admin User CRUD tests', () => {
       // Allowed roles
       ['shadowban', 'suspended'].map(role => {
         it(`admin users should be allowed change user role to ${role}`, async () => {
-          await utils.signIn(credentialsAdmin, agent);
+          await utils.signInPrivileged(credentialsAdmin, agent);
           await agent
             .post('/api/admin/user/change-role')
             .send({
@@ -948,7 +948,7 @@ describe('Admin User CRUD tests', () => {
         });
       });
       it('cannot change user role to legacy moderator', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -961,7 +961,7 @@ describe('Admin User CRUD tests', () => {
       it('admin users can remove a shadowban and see the moderation note', async () => {
         userRegular.roles = ['user', 'shadowban'];
         await userRegular.save();
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -982,7 +982,7 @@ describe('Admin User CRUD tests', () => {
         );
       });
       it('missing id should not change user role', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -993,7 +993,7 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Cannot interpret id.');
       });
       it('invalid role should not be change user roles', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -1004,7 +1004,7 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Invalid role.');
       });
       it('cannot change user role to admin', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -1015,7 +1015,7 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Invalid role.');
       });
       it('invalid id should not change user roles', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user/change-role')
           .send({
@@ -1026,7 +1026,7 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Cannot interpret id.');
       });
       it(`changing role should show up as an admin note`, async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         await agent
           .post('/api/admin/user/change-role')
           .send({

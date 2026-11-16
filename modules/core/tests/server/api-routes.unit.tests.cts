@@ -433,6 +433,7 @@ describe('API route registrations', () => {
         'signup',
         'signupValidation',
         'validateEmailToken',
+        'verifyMfa',
       ],
       'userAuthentication',
     );
@@ -444,6 +445,7 @@ describe('API route registrations', () => {
       [
         'resendConfirmation',
         'forgotPassword',
+        'mfaVerify',
         'resetPassword',
         'signin',
         'signup',
@@ -501,6 +503,10 @@ describe('API route registrations', () => {
       targetedRequestLimit.signin,
       authentication.signin,
     ]);
+    assertHandlers(routeByPath(routes, '/api/auth/mfa/verify').post, [
+      targetedRequestLimit.mfaVerify,
+      authentication.verifyMfa,
+    ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
     let getSignoutStatus: number | undefined;
     signoutRoute.get[0](
@@ -527,13 +533,28 @@ describe('API route registrations', () => {
     const {
       test: testPush,
     }: typeof import('../../../users/server/controllers/users.unified-push.server.controller.mjs').default = require('../../../users/server/controllers/users.unified-push.server.controller.mjs');
+    const limit = controller(['mfaManage'], 'requestLimit');
     const { params, routes } = register(
       './../../../users/server/routes/users.server.routes.mts',
-      { '../policies/users.server.policy': policy },
+      {
+        '../policies/users.server.policy': policy,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          limit,
+      },
     );
 
-    assert.strictEqual(routes.length, 17);
-    routes.forEach(route => assertPolicy(route, policy));
+    assert.strictEqual(routes.length, 22);
+    for (const route of routes) {
+      if (route.path.startsWith('/api/users/mfa/')) {
+        assertHandlers(
+          route.all,
+          [policy.isAllowed, limit.mfaManage],
+          route.path,
+        );
+      } else {
+        assertPolicy(route, policy);
+      }
+    }
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],

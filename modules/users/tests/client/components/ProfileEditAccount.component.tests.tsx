@@ -23,6 +23,17 @@ jest.mock('@/config/client/i18n', () => ({
     dir: () => 'ltr',
   },
 }));
+jest.mock('@/modules/users/client/components/MfaSettings.component', () => ({
+  __esModule: true,
+  default: () => <section>Authenticator settings</section>,
+}));
+jest.mock(
+  '@/modules/users/client/components/PasskeySettings.component',
+  () => ({
+    __esModule: true,
+    default: () => <section>Staff passkey settings</section>,
+  }),
+);
 const updateUser = jest.mocked(usersApi.update);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
@@ -155,6 +166,20 @@ describe('ProfileEditAccount', () => {
       ).toBeEnabled();
     },
   );
+
+  it('shows authenticator and passkey settings only to administrators', () => {
+    const ordinary = renderPage({ roles: ['user', 'welcome-team'] });
+    expect(
+      screen.queryByText('Authenticator settings'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Staff passkey settings'),
+    ).not.toBeInTheDocument();
+    ordinary.unmount();
+    renderPage({ roles: ['user', 'admin'] });
+    expect(screen.getByText('Authenticator settings')).toBeInTheDocument();
+    expect(screen.getByText('Staff passkey settings')).toBeInTheDocument();
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();

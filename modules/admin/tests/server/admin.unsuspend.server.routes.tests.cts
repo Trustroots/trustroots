@@ -43,7 +43,7 @@ describe('Administrator unsuspension', () => {
     raw[1].roles = ['user', 'suspended'];
     saved = await utils.saveUsersWithCachedPasswords(raw);
     agent = request.agent(app);
-    await utils.signIn(raw[0], agent);
+    await utils.signInPrivileged(raw[0], agent);
   });
   afterEach(async () => {
     sinon.restore();

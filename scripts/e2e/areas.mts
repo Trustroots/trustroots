@@ -21,6 +21,7 @@ const AREA_BY_SPEC: Record<string, string> = {
   'account-input-validation.spec.js': 'Authentication',
   'signup-and-support-limits.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
+  'staff-passkeys.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'desktop-navigation.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',

@@ -78,6 +78,10 @@ describe('Users policy unit tests', () => {
   afterEach(() => sinon.restore());
 
   const grants: [string, string[]][] = [
+    ['/api/users/passkeys', ['get']],
+    ['/api/users/passkeys/register/options', ['post']],
+    ['/api/users/passkeys/register/verify', ['post']],
+    ['/api/users/passkeys/:id', ['delete']],
     ['/api/users', ['get', 'put', 'delete']],
     ['/api/users/export', ['get']],
     ['/api/users/removal/pending', ['get', 'delete']],
@@ -88,6 +92,11 @@ describe('Users policy unit tests', () => {
     ['/api/users-avatar', ['post']],
     ['/api/users/mini/:userId', ['get']],
     ['/api/users/password', ['post']],
+    ['/api/users/mfa', ['get']],
+    ['/api/users/mfa/enrol', ['post']],
+    ['/api/users/mfa/enrol/verify', ['post']],
+    ['/api/users/mfa/recovery-codes', ['post']],
+    ['/api/users/mfa/disable', ['post']],
     ['/api/users/accounts/:provider', ['delete']],
     ['/api/users/memberships', ['get']],
     ['/api/users/memberships/:tribeId', ['post', 'delete']],
@@ -141,12 +150,23 @@ describe('Users policy unit tests', () => {
   });
 
   describe('grants for signed-in users', () => {
-    const decide = (roles: string[], path: string, method: string) => {
+    const decide = (
+      roles: string[],
+      path: string,
+      method: string,
+      mfaVerified = false,
+    ) => {
       const res = mockResponse();
       let status = 0;
       policyModule.isAllowed(
         {
-          user: { _id: noProfileUserId, public: true, roles },
+          user: {
+            _id: noProfileUserId,
+            public: true,
+            roles,
+            mfaEnabled: mfaVerified,
+            $locals: { mfaVerified },
+          },
           route: { path },
           method,
         },
@@ -166,7 +186,8 @@ describe('Users policy unit tests', () => {
             path === '/api/users/:username' && method === 'GET' ? 200 : 403;
           const avatarGrant =
             path === '/api/users/:avatarUserId/avatar' && method === 'GET';
-          decide(['admin'], path, method).should.equal(
+          decide(['admin'], path, method).should.equal(expected);
+          decide(['admin'], path, method, true).should.equal(
             avatarGrant ? 200 : adminExpected,
           );
           decide(['support-team'], path, method).should.equal(adminExpected);
@@ -216,6 +237,8 @@ describe('Users policy unit tests', () => {
             _id: noProfileUserId,
             public: false,
             roles: roles && [...roles],
+            mfaEnabled: roles?.[0] === 'admin',
+            $locals: { mfaVerified: roles?.[0] === 'admin' },
           },
           profile,
           route: { path },
@@ -352,7 +375,13 @@ describe('Users policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { _id: noProfileUserId, public: false, roles: ['admin'] },
+        user: {
+          _id: noProfileUserId,
+          public: false,
+          roles: ['admin'],
+          mfaEnabled: true,
+          $locals: { mfaVerified: true },
+        },
         profile: { _id: { equals: () => false }, public: false },
         route: { path: '/api/users/:username' },
         method: 'GET',

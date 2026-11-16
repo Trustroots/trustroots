@@ -39,7 +39,7 @@ describe('Admin circle routes', () => {
   afterEach(utils.clearDatabase);
 
   it('creates and edits JSON metadata with blank optional fields', async () => {
-    await utils.signIn(credentials, agent);
+    await utils.signInPrivileged(credentials, agent);
     const { body: created }: { body: CircleResponse } = await agent
       .post('/api/admin/circles')
       .send({
@@ -140,7 +140,7 @@ describe('Admin circle routes', () => {
   });
 
   it('updates organiser assignments on an existing circle', async () => {
-    await utils.signIn(credentials, agent);
+    await utils.signInPrivileged(credentials, agent);
     const circle = await Tribe.create({ label: 'Example walkers' });
     const [member] = await utils.saveUsersWithCachedPasswords(
       utils.generateUsersWithSharedPassword(1),

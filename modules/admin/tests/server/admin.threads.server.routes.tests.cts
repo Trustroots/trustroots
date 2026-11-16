@@ -83,7 +83,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read threads by user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -129,7 +129,7 @@ describe('Admin Thread CRUD tests', () => {
           userTo: userRegular1Id,
           reference: 'no',
         });
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({ username: _usersRaw[1].username })
@@ -149,7 +149,7 @@ describe('Admin Thread CRUD tests', () => {
           .votes.length.should.equal(0);
       });
       it('admin users should get an error for an invalid user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -159,7 +159,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should get an error when no user is provided', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({})
@@ -167,7 +167,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should be allowed to read threads by username', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
