@@ -107,7 +107,9 @@ async function saveCeremony(req, user, type, options, extra = {}) {
 
 async function consumeCeremony(req, user, type) {
   const ceremony = await mongoose.model('PasskeyCeremony').findOneAndDelete({
-    _id: typeof req.body.ceremonyId === 'string' ? req.body.ceremonyId : '',
+    _id: String(
+      typeof req.body.ceremonyId === 'string' ? req.body.ceremonyId : '',
+    ),
     user: user._id,
     session: sessionBinding(req),
     authVersion: user.authVersion || 0,
@@ -236,8 +238,9 @@ export async function authenticate(req) {
   const key = await mongoose
     .model('MemberPasskey')
     .findOne({
-      _id:
+      _id: String(
         typeof req.body.response?.id === 'string' ? req.body.response.id : '',
+      ),
       user: user._id,
     })
     .select('+publicKey');
@@ -286,7 +289,7 @@ export async function authenticate(req) {
 export async function remove(req) {
   const user = await confirmedStaff(req);
   const key = await mongoose.model('MemberPasskey').findOneAndDelete({
-    _id: req.params.id,
+    _id: String(req.params.id),
     user: user._id,
   });
   if (!key) fail('Passkey not found.', 404);
