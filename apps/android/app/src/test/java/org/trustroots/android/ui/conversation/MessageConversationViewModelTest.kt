@@ -1015,12 +1015,6 @@ class MessageConversationViewModelTest {
             return hostingContextHandler(memberID)
         }
 
-        override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
-            sentContent = content
-            sendCalls++
-            return sendHandler(memberID, content)
-        }
-
         override suspend fun send(
             memberID: String,
             content: String,
@@ -1029,11 +1023,10 @@ class MessageConversationViewModelTest {
         ): Result<DirectMessage> {
             sentHostingDetails = hostingDetails
             sentHostingDescriptionAcknowledged = hostingDescriptionAcknowledged
-            return if (hostingDetails == null) send(memberID, content) else {
-                sentContent = content
-                sendCalls++
-                hostingSendHandler(memberID, content)
-            }
+            sentContent = content
+            sendCalls++
+            return if (hostingDetails == null) sendHandler(memberID, content)
+            else hostingSendHandler(memberID, content)
         }
 
         override fun loadDraft(selfUsername: String, otherKey: String): String {

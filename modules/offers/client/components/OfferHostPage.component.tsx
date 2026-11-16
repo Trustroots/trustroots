@@ -350,14 +350,15 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       type="checkbox"
                     />
                     <span>
-                      Require guests to acknowledge my hosting description before
-                      sending their first hosting message in a conversation.
+                      Require guests to acknowledge my hosting description
+                      before sending their first hosting message in a
+                      conversation.
                     </span>
                   </label>
                   <p className="help-block" id="hostingAcknowledgementHelp">
                     Ordinary messages do not require acknowledgement. An
-                    acknowledgement does not prove someone has read or understood
-                    your requirements.
+                    acknowledgement does not prove someone has read or
+                    understood your requirements.
                   </p>
                 </div>
                 <fieldset className="offer-circle-settings">

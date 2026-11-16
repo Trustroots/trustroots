@@ -253,7 +253,12 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
             return history.await()
         }
 
-        override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
+        override suspend fun send(
+            memberID: String,
+            content: String,
+            hostingDetails: HostingDetails?,
+            hostingDescriptionAcknowledged: Boolean,
+        ): Result<DirectMessage> {
             sendCalls.incrementAndGet()
             sendStarted.complete(Unit)
             return sendResult.await()

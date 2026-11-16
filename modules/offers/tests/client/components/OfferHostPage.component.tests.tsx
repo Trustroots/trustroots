@@ -75,13 +75,18 @@ describe('OfferHostPage', () => {
     const { unmount } = render(<OfferHostPage user={user} />, {
       wrapper: analytics.wrapper,
     });
-    fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
-    const checkbox = screen.getByRole('checkbox', {
+    const descriptionRegion = await screen.findByRole('region', {
+      name: 'Description',
+    });
+    const checkbox = within(descriptionRegion).getByRole('checkbox', {
       name: /Require guests to acknowledge/,
     });
     expect(checkbox).not.toBeChecked();
     fireEvent.click(checkbox);
-    fireEvent.submit(document.querySelector('form')!);
+    expect(hasUnsavedChanges()).toBe(true);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
+    );
     await waitFor(() =>
       expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
         'offer-1',
@@ -90,6 +95,7 @@ describe('OfferHostPage', () => {
         }),
       ),
     );
+    await waitFor(() => expect(hasUnsavedChanges()).toBe(false));
     unmount();
     offersApiMock.getOffers.mockResolvedValue([
       { ...hostOffer, requireHostingDescriptionAcknowledgement: true },
