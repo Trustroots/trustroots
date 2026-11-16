@@ -149,8 +149,9 @@ e2e spec that covers the change (extend one or add one), call
 `captureSection(locator, name)` from `tests/e2e/support/fixtures.mts` on the
 changed component or area, not the whole page, once for each state worth
 seeing, such as desktop and mobile. Check the images locally, then add the
-`screenshots` label; the E2E screenshots workflow runs the changed specs and
-posts their images in a PR comment that each push updates. It only runs for
+`screenshots` label; the E2E screenshots workflow runs the changed specs
+against the PR and its base branch and posts each shot as a before/after table
+in a PR comment that each push updates. It only runs for
 branches in this repository, not forks.
 
 ```sh

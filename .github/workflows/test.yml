@@ -201,7 +201,7 @@ jobs:
       - name: Test UI component stories
         run: pnpm --filter @trustroots/ui run test:stories
       - name: Test e2e screenshot capture
-        run: node --test scripts/e2e/screenshot-capture.test.mts
+        run: node --test scripts/e2e/screenshot-capture.test.mts scripts/e2e/screenshot-comment.test.mts
       - name: Smoke-test Vite production script loading
         run: pnpm run test:vite:production
       - name: Smoke-test Vite development proxy and module loading

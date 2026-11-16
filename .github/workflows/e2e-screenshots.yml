@@ -128,27 +128,35 @@ jobs:
         env:
           CHANGED_SPECS: ${{ steps.changed.outputs.specs }}
         run: |
-          rm -rf ../../tmp/screenshots
-          mkdir -p ../../tmp/screenshots
+          rm -rf ../../tmp/screenshots ../../tmp/screenshots-before
+          mkdir -p ../../tmp/screenshots ../../tmp/screenshots-before
 
           mapfile -t specs <<< "$CHANGED_SPECS"
+          run_specs() {
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+              -e CI=true \
+              -e NODE_ENV=test \
+              -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+              -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+              -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+              -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+              -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+              -e TRUSTROOTS_E2E_SCREENSHOTS=true \
+              -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
+              -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+              -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
+              "$@" dev pnpm run test:e2e "${specs[@]}"
+          }
           set +e
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
-            -e CI=true \
-            -e NODE_ENV=test \
-            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
-            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-            -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
-            -e TRUSTROOTS_E2E_SCREENSHOTS=true \
-            -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
-            -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
-            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
-            dev pnpm run test:e2e "${specs[@]}"
+          run_specs
           test_status="$?"
-          set -e
           echo "test_status=$test_status" >> "$GITHUB_OUTPUT"
+
+          # Before shots: the base app with this PR's e2e specs. Failures only leave gaps.
+          git -C ../.. restore --source="origin/${GITHUB_BASE_REF}" --worktree -- . ':!tests/e2e'
+          run_specs -e TRUSTROOTS_E2E_SCREENSHOTS_DIR=/home/app/trustroots/tmp/screenshots-before
+          git -C ../.. restore --source=HEAD --worktree -- .
+          set -e
 
       - name: Collect screenshots
         if: steps.changed.outputs.has_specs == 'true'
@@ -164,9 +172,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_DIR: pr-${{ github.event.pull_request.number }}/${{ github.run_id }}
         run: |
-          workdir="$(mktemp -d)"
-          cp tmp/screenshots/*.png "$workdir/"
-
           pushdir="$(mktemp -d)"
           cd "$pushdir"
           git init -q
@@ -181,8 +186,9 @@ jobs:
             git rm -rf . >/dev/null 2>&1 || true
           fi
 
-          mkdir -p "$RUN_DIR"
-          cp "$workdir"/*.png "$RUN_DIR/"
+          mkdir -p "$RUN_DIR/before" "$RUN_DIR/after"
+          cp "$GITHUB_WORKSPACE"/tmp/screenshots/*.png "$RUN_DIR/after/"
+          find "$GITHUB_WORKSPACE/tmp/screenshots-before" -name '*.png' -exec cp -t "$RUN_DIR/before/" {} +
           git add "$RUN_DIR"
           git commit -m "PR #${{ github.event.pull_request.number }} e2e screenshots (${{ github.run_id }})"
           # Other PRs publish to this branch too. Replay only this upload when
@@ -203,56 +209,23 @@ jobs:
         if: steps.changed.outputs.has_specs == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
           TEST_STATUS: ${{ steps.run.outputs.test_status }}
         with:
           script: |
-            const fs = require('fs');
-            const path = require('path');
-
+            const { buildScreenshotComment } = await import(
+              `${process.env.GITHUB_WORKSPACE}/scripts/e2e/screenshot-comment.mts`
+            );
             const marker = '<!-- e2e-screenshots -->';
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
             const runId = context.runId;
-            const screenshotCount = Number(process.env.SCREENSHOT_COUNT || '0');
-            const testStatus = Number(process.env.TEST_STATUS || '0');
-            const baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`;
-
-            const lines = [
-              marker,
-              '## E2E screenshots',
-              '',
-              `Run: \`${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}\``,
-            ];
-
-            if (testStatus !== 0) {
-              lines.push('', '_Some changed e2e specs failed; screenshots below may include failure states._');
-            }
-
-            if (screenshotCount === 0) {
-              lines.push('', '_No screenshots were captured._');
-            } else {
-              lines.push(
-                '',
-                '_The site header stays fixed to the top of the viewport. A full-page screenshot is stitched from scrolled slices, so that header can appear part-way down the image, over the page content._',
-              );
-              const screenshotDir = path.join(process.cwd(), 'tmp/screenshots');
-              const files = fs
-                .readdirSync(screenshotDir)
-                .filter(file => file.endsWith('.png'))
-                .sort();
-
-              for (const file of files) {
-                const title = file.replace(/\.png$/, '').replace(/_/g, ' ');
-                const urlPath = path.join(screenshotDir, file.replace(/\.png$/, '.url'));
-                const url = fs.existsSync(urlPath) ? fs.readFileSync(urlPath, 'utf8') : null;
-                lines.push('', `### ${title}`);
-                if (url) lines.push('', `URL: \`${url.replace(/`/g, '%60')}\``);
-                lines.push('', `![${title}](${baseUrl}/${encodeURIComponent(file)})`);
-              }
-            }
-
-            const body = `${lines.join('\n')}\n`;
+            const body = buildScreenshotComment({
+              beforeDir: 'tmp/screenshots-before',
+              afterDir: 'tmp/screenshots',
+              baseUrl: `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`,
+              runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`,
+              testStatus: Number(process.env.TEST_STATUS || '0'),
+            });
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
