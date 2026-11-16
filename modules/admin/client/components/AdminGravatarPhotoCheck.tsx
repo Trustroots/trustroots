@@ -7,7 +7,11 @@ import {
 } from '../api/gravatar.api';
 import { formatAdminDateTime } from '../utils/admin-date';
 
-export default function AdminGravatarPhotoCheck() {
+export default function AdminGravatarPhotoCheck({
+  onCleanupFinished,
+}: {
+  onCleanupFinished: () => void;
+}) {
   const [check, setCheck] = useState<GravatarPhotoCheck | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -31,6 +35,8 @@ export default function AdminGravatarPhotoCheck() {
       setCheck(result);
       if (result?.state === 'running') {
         timer = setTimeout(refresh, 2000);
+      } else if (result?.retired) {
+        onCleanupFinished();
       }
       setLoadError(false);
       setLoading(false);
@@ -41,13 +47,19 @@ export default function AdminGravatarPhotoCheck() {
       active = false;
       clearTimeout(timer);
     };
-  }, [starting]);
+  }, [starting, onCleanupFinished]);
 
-  async function start() {
+  const busy = loading || starting || check?.state === 'running';
+
+  async function start(cleanup = false) {
     setStarting(true);
     setStartError(false);
     try {
-      setCheck(await startGravatarPhotoCheck());
+      setCheck(
+        cleanup
+          ? await startGravatarPhotoCheck(true)
+          : await startGravatarPhotoCheck(),
+      );
     } catch {
       setStartError(true);
     } finally {
@@ -60,14 +72,14 @@ export default function AdminGravatarPhotoCheck() {
       <h3 id="gravatar-photo-check">Gravatar photo availability</h3>
       <p>
         The check queries Gravatar for all accounts with Gravatar selected and
-        may take a while.
+        may take a while. Cleanup switches accounts to no photo when Gravatar
+        confirms the image is missing.
       </p>
-      <Button
-        type="button"
-        onClick={() => void start()}
-        disabled={loading || starting || check?.state === 'running'}
-      >
+      <Button type="button" onClick={() => void start()} disabled={busy}>
         Check Gravatar photos
+      </Button>{' '}
+      <Button type="button" onClick={() => void start(true)} disabled={busy}>
+        Switch missing Gravatars to no photo
       </Button>
       {loadError && (
         <p role="alert">Could not load photo check results. Retrying…</p>
@@ -98,6 +110,9 @@ export default function AdminGravatarPhotoCheck() {
               </tr>
             </tbody>
           </table>
+          {check.retired !== undefined && (
+            <p>{check.retired} accounts switched to no photo.</p>
+          )}
           {check.finishedAt && (
             <p>
               Finished at{' '}

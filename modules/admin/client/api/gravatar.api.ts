@@ -34,9 +34,12 @@ export async function getGravatarPhotoCheck(): Promise<GravatarPhotoCheck | null
   return data;
 }
 
-export async function startGravatarPhotoCheck(): Promise<GravatarPhotoCheck> {
+export async function startGravatarPhotoCheck(
+  cleanup = false,
+): Promise<GravatarPhotoCheck> {
+  const url = '/api/admin/gravatar/photo-check';
   const { data } = await axios.post<GravatarPhotoCheck>(
-    '/api/admin/gravatar/photo-check',
+    cleanup ? `${url}?cleanup=1` : url,
   );
   return data;
 }

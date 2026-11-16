@@ -1281,7 +1281,7 @@ The action SHALL only appear for unconfirmed rows, disable repeat clicks while s
 
 ### Requirement: Gravatar usage inspection
 
-Administrators SHALL be able to open `/admin/gravatar` to see the total number of accounts whose current avatar source is Gravatar, the measurement time in UTC and a paginated list linking to their admin member pages. The list SHALL show the recorded last-seen timestamp in UTC when available and indicate when it is unknown. The page SHALL show profile pictures using the authenticated avatar endpoint and SHALL NOT change accounts. The report API SHALL restrict access to administrators and return only member IDs, usernames, display names and recorded last-seen timestamps alongside pagination and measurement metadata.
+Administrators SHALL be able to open `/admin/gravatar` to see the total number of accounts whose current avatar source is Gravatar, the measurement time in UTC and a paginated list linking to their admin member pages. The list SHALL show the recorded last-seen timestamp in UTC when available and indicate when it is unknown. The page SHALL show profile pictures using the authenticated avatar endpoint. Viewing the report SHALL NOT change accounts. The report API SHALL restrict access to administrators and return only member IDs, usernames, display names and recorded last-seen timestamps alongside pagination and measurement metadata.
 
 #### Scenario: Administrator inspects current usage
 
@@ -1468,3 +1468,13 @@ The circle editor SHALL let site administrators assign or remove consenting Trus
 
 - **WHEN** an organiser changes username
 - **THEN** the assignment continues to refer to the same member
+
+### Requirement: Administrator cleanup of missing Gravatar images
+
+The Gravatar usage report SHALL offer an explicit administrator-only cleanup action that paces image checks and reports how many accounts changed to no photo. Opening the report or selecting the read-only check SHALL NOT trigger cleanup.
+
+#### Scenario: Administrator runs cleanup
+
+- **WHEN** the administrator explicitly starts cleanup
+- **THEN** only accounts with a confirmed Gravatar 404 and matching avatar settings are switched to no photo
+- **AND** the report shows an aggregate count of updated accounts

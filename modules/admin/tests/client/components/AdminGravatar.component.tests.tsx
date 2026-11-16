@@ -223,6 +223,39 @@ it('retries loading the photo check and shows when a running check stops early',
   }
 });
 
+it('starts cleanup explicitly and refreshes the usage total after changes', async () => {
+  getUsage.mockResolvedValueOnce(usage).mockResolvedValueOnce({
+    ...usage,
+    accounts: 49,
+  });
+  const startedAt = '2026-11-06T12:00:00.000Z';
+  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
+  jest.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
+    state: 'running',
+    startedAt,
+    counts: { available: 0, unavailable: 0, inconclusive: 0 },
+    retired: 0,
+  });
+  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
+    state: 'complete',
+    startedAt,
+    finishedAt: '2026-11-06T12:05:00.000Z',
+    counts: { available: 3, unavailable: 3, inconclusive: 1 },
+    retired: 2,
+  });
+  render(<AdminGravatar />);
+  const button = screen.getByRole('button', {
+    name: 'Switch missing Gravatars to no photo',
+  });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  expect(
+    await screen.findByText('2 accounts switched to no photo.'),
+  ).toBeVisible();
+  expect(api.startGravatarPhotoCheck).toHaveBeenCalledWith(true);
+  expect(await screen.findByText('49')).toBeVisible();
+});
+
 it('shows a start error and lets the administrator try again', async () => {
   getUsage.mockResolvedValue(usage);
   jest

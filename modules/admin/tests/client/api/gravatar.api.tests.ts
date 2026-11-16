@@ -39,4 +39,6 @@ it('reads and starts the Gravatar photo check', async () => {
   expect(axios.get).toHaveBeenLastCalledWith(url);
   await expect(startGravatarPhotoCheck()).resolves.toEqual(data);
   expect(axios.post).toHaveBeenLastCalledWith(url);
+  await expect(startGravatarPhotoCheck(true)).resolves.toEqual(data);
+  expect(axios.post).toHaveBeenLastCalledWith(`${url}?cleanup=1`);
 });
