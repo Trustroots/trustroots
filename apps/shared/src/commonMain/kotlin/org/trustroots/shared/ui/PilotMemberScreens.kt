@@ -24,7 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun Profile(
@@ -232,16 +234,19 @@ internal fun Conversation(
                 focus.clearFocus()
                 scope.launch {
                     val sent = awaitData<PilotMessage> { gateway.send(memberId, content, it) }
-                    sent.fold(
-                        onSuccess = { message ->
-                            result = Result.success(listOf(message) + loaded.getOrThrow().filterNot { it.id == message.id })
-                            draft = ""
-                            gateway.saveDraft(partner, "")
-                        },
-                        onFailure = { sendError = it.message ?: "Could not send your reply." },
-                    )
-                    endAction()
-                    if (sent.isSuccess) list.scrollToItem(0)
+                    // Scrolling can synchronously remeasure the conversation on Android.
+                    withContext(Dispatchers.Main.immediate) {
+                        sent.fold(
+                            onSuccess = { message ->
+                                result = Result.success(listOf(message) + loaded.getOrThrow().filterNot { it.id == message.id })
+                                draft = ""
+                                gateway.saveDraft(partner, "")
+                            },
+                            onFailure = { sendError = it.message ?: "Could not send your reply." },
+                        )
+                        endAction()
+                        if (sent.isSuccess) list.scrollToItem(0)
+                    }
                 }
             }
         }

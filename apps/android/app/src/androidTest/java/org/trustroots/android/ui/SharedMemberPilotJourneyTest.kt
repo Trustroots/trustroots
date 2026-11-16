@@ -2,9 +2,7 @@ package org.trustroots.android.ui
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasClickAction
@@ -14,7 +12,6 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -132,12 +129,7 @@ class SharedMemberPilotJourneyTest {
         compose.onNodeWithTag("pilot-draft").assertTextEquals("A saved fictional reply.")
         assertEquals("A saved fictional reply.", savedDrafts.getString(draftKey, null))
 
-        // The first send clears keyboard focus. The retry uses the button's
-        // semantics so emulator keyboard transitions cannot intercept the tap.
-        compose.onNode(hasText("Send reply") and hasClickAction())
-            .assertIsDisplayed()
-            .assertIsEnabled()
-            .performSemanticsAction(SemanticsActions.OnClick) { click -> click() }
+        compose.onNodeWithText("Send reply").performClick()
         compose.waitUntil("the retry reaches the message endpoint", 10_000) { sends.get() >= 2 }
         compose.waitUntil(10_000) {
             runCatching { compose.onNodeWithTag("pilot-draft").assertTextEquals("") }.isSuccess &&
