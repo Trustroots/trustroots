@@ -1,5 +1,6 @@
 import groovy.json.JsonSlurper
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
@@ -23,6 +24,9 @@ val coverageReportTool by configurations.creating {
 }
 
 tasks.withType<Test>().configureEach {
+    // Resolve Robolectric's runtime SDK jars from the same Maven Central host as Gradle.
+    systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+    testLogging.exceptionFormat = TestExceptionFormat.FULL
     extensions.configure<JacocoTaskExtension> {
         // Robolectric sandbox classes have no CodeSource; keep JaCoCo's exclusion limited to JDK internals.
         isIncludeNoLocationClasses = true
