@@ -34,13 +34,7 @@ describe('Admin featured Nostr notes', () => {
     await users.saveUsersWithCachedPasswords([administrator]);
 
     admin = request.agent(app);
-    await admin
-      .post('/api/auth/signin')
-      .send({
-        username: administrator.username,
-        password: administrator.password,
-      })
-      .expect(200);
+    await users.signInPrivileged(administrator, admin);
   });
 
   afterEach(async () => {

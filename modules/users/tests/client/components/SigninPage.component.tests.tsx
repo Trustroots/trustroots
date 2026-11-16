@@ -5,6 +5,7 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SigninPage from '@/modules/users/client/components/SigninPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import { signinWithPasskey } from '@/modules/users/client/api/passkeys.api';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 
@@ -16,6 +17,7 @@ vi.mock('@tanstack/react-router', async () =>
   ).mockRouterModule(),
 );
 vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/users/client/api/passkeys.api');
 vi.mock('@/modules/users/client/utils/auth', async () => ({
   ...(await vi.importActual('@/modules/users/client/utils/auth')),
   redirectAfterSignin: vi.fn(),
@@ -32,6 +34,7 @@ vi.mock('@/modules/core/client/services/client-runtime', () => ({
 }));
 
 const signin = vi.mocked(authApi.signin);
+const verifyMfa = vi.mocked(authApi.verifyMfa);
 const getSession = vi.mocked(authApi.getSession);
 const analytics = fakeAnalytics();
 
@@ -53,6 +56,28 @@ function renderPage() {
 }
 
 describe('SigninPage', () => {
+  it('completes a staff second factor using a registered passkey', async () => {
+    signin.mockResolvedValue({ mfaRequired: true, passkeyAvailable: true });
+    vi.mocked(signinWithPasskey).mockResolvedValue({
+      _id: 'user-1',
+      username: 'fictional-member',
+    });
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'fictional-member' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'FictionalPassword123!' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Use a registered passkey' }),
+    );
+    await waitFor(() => expect(redirectAfterSignin).toHaveBeenCalled());
+    expect(signinWithPasskey).toHaveBeenCalledTimes(1);
+    expect(verifyMfa).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     getSession.mockReset();
@@ -117,6 +142,38 @@ describe('SigninPage', () => {
       );
     });
     expect(analytics.track).toHaveBeenCalledWith('signin_succeeded');
+  });
+
+  it('requires and verifies a second factor before checking the session', async () => {
+    signin.mockResolvedValue({ mfaRequired: true });
+    verifyMfa.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'ada' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(
+      await screen.findByLabelText('Authenticator or recovery code'),
+    ).toBeInTheDocument();
+    expect(getSession).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Authenticator or recovery code'), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+
+    await waitFor(() => {
+      expect(verifyMfa).toHaveBeenCalledWith('123456');
+      expect(redirectAfterSignin).toHaveBeenCalledWith(
+        expect.any(Function),
+        false,
+        undefined,
+      );
+    });
   });
 
   it('preserves the protected destination after successful sign-in', async () => {

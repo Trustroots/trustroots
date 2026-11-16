@@ -1,6 +1,8 @@
 export interface PolicyUser {
   roles?: string[];
   public?: boolean;
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
   _id: {
     valueOf(): unknown;
     equals?(id: unknown): boolean;

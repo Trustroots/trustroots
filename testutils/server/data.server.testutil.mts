@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 
@@ -54,6 +55,10 @@ interface UserFixtureExtraFields {
   displayName?: string;
   nostrNpub?: string;
   member?: Array<{ tribe: mongoose.Types.ObjectId; since?: Date }>;
+  mfaEnabled?: boolean;
+  mfaSecretEncrypted?: string;
+  mfaLastTotpCounter?: number;
+  mfaRecoveryCodeHashes?: string[];
 }
 
 type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
@@ -332,6 +337,53 @@ export async function signIn(
   ) {
     await elevateAdminAccess(agent, password);
   }
+}
+
+/** Sign in a privileged test user through a current TOTP challenge. */
+export async function signInPrivileged(
+  user: { username: string; password: string },
+  agent: SupertestAgent,
+): Promise<void> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const storedUser = await User.findOne({ username: user.username }).exec();
+  if (!storedUser || !storedUser.roles.some(role => role === 'admin')) {
+    return signIn(user, agent);
+  }
+
+  const { default: mfaService } =
+    await import('../../modules/users/server/services/mfa.server.service.mjs');
+  const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  await User.updateOne(
+    { _id: storedUser._id },
+    {
+      $set: {
+        mfaEnabled: true,
+        mfaSecretEncrypted: mfaService.encryptSecret(secret),
+        mfaLastTotpCounter: -1,
+        mfaRecoveryCodeHashes: [],
+      },
+    },
+  ).exec();
+
+  await agent.post('/api/auth/signin').send(user).expect(202);
+
+  const counter = Math.floor(Date.now() / 30000);
+  const key = Buffer.from('12345678901234567890');
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto.createHmac('sha1', key).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
+  const code = String(binary % 1000000).padStart(6, '0');
+
+  await agent
+    .post('/api/auth/mfa/verify')
+    .set('X-Trustroots-Request', '1')
+    .send({ code })
+    .expect(200);
+
+  await elevateAdminAccess(agent, user.password);
 }
 
 /**

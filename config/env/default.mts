@@ -13,6 +13,12 @@ import type { DefaultConfig } from '../types.mts';
 
 const service = {
   geoip: { databasePath: process.env.TRUSTROOTS_GEOIP_DATABASE_PATH || '' },
+  passkeys: {
+    rpId: process.env.TRUSTROOTS_PASSKEY_RP_ID || '',
+    origins: (process.env.TRUSTROOTS_PASSKEY_ORIGINS || '')
+      .split(',')
+      .filter(Boolean),
+  },
   featureFlags: {
     reference: true,
     nostranslationAlerts:
@@ -54,6 +60,8 @@ const service = {
   sessionSecret: 'MEAN',
   // Empty disables persisted IP identifiers. Use a dedicated random deployment key.
   ipHashSecret: process.env.TRUSTROOTS_IP_HASH_SECRET || '',
+  // Dedicated 32-byte AES-256-GCM key, encoded as base64.
+  mfaEncryptionKey: process.env.MFA_ENCRYPTION_KEY || '',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
   // Additional trusted browser origins for reverse-proxy or multi-origin
@@ -201,6 +209,8 @@ const service = {
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10, identityLimit: 10 },
     contactRequest: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 12 },
     signin: { windowMs: 15 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
+    mfaVerify: { windowMs: 15 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
+    mfaManage: { windowMs: 15 * 60 * 1000, ipLimit: 30, identityLimit: 10 },
     forgotPassword: { windowMs: 60 * 60 * 1000, ipLimit: 30, identityLimit: 5 },
     resetPassword: { windowMs: 60 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
     passwordChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 3 },

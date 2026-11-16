@@ -74,7 +74,7 @@ describe('Admin acquisition stories CRUD tests', () => {
             { username: credentialsRegular.username },
             { $set: { roles: ['user', 'welcome-team'] } },
           );
-        await utils.signIn(credentialsRegular, agent);
+        await utils.signInPrivileged(credentialsRegular, agent);
         const { body }: { body: AcquisitionStoryRow[] } = await agent
           .post('/api/admin/acquisition-stories')
           .set('X-Trustroots-Request', '1')
@@ -212,7 +212,7 @@ describe('Admin acquisition stories CRUD tests', () => {
         should(updated?.emailTemporary).equal('signup-member@example.org');
       });
       it('admin users should be allowed to read acquisition stories', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body }: { body: AcquisitionStoryRow[] } = await agent
           .post('/api/admin/acquisition-stories')
           .set('X-Trustroots-Request', '1')
