@@ -173,7 +173,7 @@ class FormTransportFailureJourneysTest {
         assertEquals("A fictional updated tagline.", saved.get()?.tagline)
     }
 
-    @Test fun accountLoadTransportFailureEndsLoadingAndReopeningAfterRecoveryLoadsDetails() {
+    @Test fun accountLoadTransportFailureEndsLoadingAndRetryAfterRecoveryLoadsDetails() {
         val offline = AtomicBoolean(true)
         val firstRequestReached = CountDownLatch(1)
         val releaseFirstResponse = CountDownLatch(1).also { pendingResponseRelease = it }
@@ -224,8 +224,7 @@ class FormTransportFailureJourneysTest {
 
         offline.set(false)
         val failedRequests = apiFixture.requests.size
-        compose.onNodeWithText("Return to form launcher").performClick()
-        compose.onNodeWithText("Open account settings").performClick()
+        compose.onNodeWithText("Retry").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             apiFixture.requests.size > failedRequests &&
                 compose.onAllNodesWithText("member@example.test").fetchSemanticsNodes().isNotEmpty() &&
