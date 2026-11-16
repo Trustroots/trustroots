@@ -5,6 +5,7 @@ import {
   richTextAttributes,
   richTextLinkSchemes,
 } from '../../shared/rich-text-policy.mts';
+import { trustrootsLink } from '../../shared/trustroots-links.mts';
 
 // Retain relative links as well as the server formatter's explicit schemes.
 const allowedUri = new RegExp(
@@ -38,23 +39,11 @@ export function disableUserContentLinks(
   template.innerHTML = content;
 
   for (const link of Array.from(template.content.querySelectorAll('a'))) {
-    if (allowTrustrootsLinks) {
-      try {
-        const href = link.getAttribute('href');
-        if (href) {
-          const url = new URL(href, window.location.href);
-          if (
-            ['http:', 'https:'].includes(url.protocol) &&
-            (url.origin === window.location.origin ||
-              url.hostname === 'trustroots.org' ||
-              url.hostname.endsWith('.trustroots.org'))
-          ) {
-            continue;
-          }
-        }
-      } catch {
-        // Invalid destinations remain plain text.
-      }
+    if (
+      allowTrustrootsLinks &&
+      trustrootsLink(link.getAttribute('href') ?? '', window.location.href)
+    ) {
+      continue;
     }
     link.replaceWith(...Array.from(link.childNodes));
   }

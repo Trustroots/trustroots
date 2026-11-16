@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
@@ -57,6 +58,10 @@ val copyLanguageCatalogue = tasks.register<Sync>("copyLanguageCatalogue") {
     into(languageCatalogueAssets)
 }
 
+val trustrootsLinkPolicy = providers.fileContents(
+    rootProject.layout.projectDirectory.file("../../modules/core/shared/trustroots-link-policy.json"),
+).asText.map { JsonSlurper().parseText(it) as Map<*, *> }
+
 android {
     namespace = "org.trustroots.android"
     compileSdk = 37
@@ -71,6 +76,11 @@ android {
         versionName = providers.environmentVariable("ANDROID_VERSION_NAME")
             .orElse("0.1.0").get()
         buildConfigField("String", "API_BASE_URL", "\"${configuredApiURL.get()}\"")
+        val linkPolicy = trustrootsLinkPolicy.get()
+        val linkDomain = linkPolicy["domain"] as String
+        val linkSchemes = (linkPolicy["schemes"] as List<*>).joinToString { "\"$it\"" }
+        buildConfigField("String", "TRUSTROOTS_LINK_DOMAIN", "\"$linkDomain\"")
+        buildConfigField("String[]", "TRUSTROOTS_LINK_SCHEMES", "new String[] { $linkSchemes }")
         buildConfigField("String", "MAPBOX_PUBLIC_TOKEN", "\"${configuredMapboxToken.get()}\"")
         buildConfigField("long", "BUILD_EPOCH_SECONDS", "${buildEpochSeconds.get()}L")
         buildConfigField("boolean", "PREVIEW_UPDATE_ALERTS", "false")

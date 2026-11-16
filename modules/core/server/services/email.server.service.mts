@@ -6,6 +6,8 @@ import juice from 'juice';
 import moment from 'moment';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
+import sanitizeHtml from 'sanitize-html';
+import { trustrootsLink } from '../../shared/trustroots-links.mts';
 import analyticsHandler from './../controllers/analytics.server.controller.mts';
 import textService from './text.server.service.mts';
 import renderModule from './../../../../config/lib/render.mjs';
@@ -121,19 +123,47 @@ function getSupportVolunteerName() {
 function defangUrl(value: string) {
   return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
 }
-function removeLinksFromMessagePreview(content: unknown) {
-  const withoutAnchors = _.toString(content).replace(
-    /<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>[\s\S]*?<\/a>/gi,
-    (_anchor, _quote, href) => _.escape(defangUrl(he.decode(href))),
-  );
-  return autolinker.link(withoutAnchors, {
+function messagePreview(content: string) {
+  const sanitised = sanitizeHtml(content, {
+    ...textService.sanitizeOptions,
+    // Retain labels when the sanitiser removes an invalid href.
+    exclusiveFilter: undefined,
+  });
+  const linked = autolinker.link(sanitised, {
     urls: true,
     email: false,
     phone: false,
     mention: false,
     hashtag: false,
-    replaceFn: match => _.escape(defangUrl(match.getMatchedText())),
+    replaceFn(match) {
+      const destination = trustrootsLink(he.decode(match.getAnchorHref()), url);
+      return destination
+        ? `<a href="${_.escape(destination.href)}">${_.escape(he.decode(match.getMatchedText()))}</a>`
+        : _.escape(defangUrl(he.decode(match.getMatchedText())));
+    },
   });
+  function format(asHtml: boolean) {
+    // The sanitiser and autolinker above produce anchors with at most one attribute.
+    return linked.replace(
+      /<a(?: href="([^"]*)")?>([\s\S]*?)<\/a>/g,
+      (_anchor, href: string | undefined, label: string) => {
+        if (href === undefined) {
+          return autolinker.link(label, {
+            email: false,
+            phone: false,
+            replaceFn: match =>
+              _.escape(defangUrl(he.decode(match.getMatchedText()))),
+          });
+        }
+        const decoded = he.decode(href);
+        const destination = trustrootsLink(decoded, url);
+        if (!destination) return _.escape(defangUrl(decoded));
+        const escaped = _.escape(destination.href);
+        return asHtml ? `<a href="${escaped}">${label}</a>` : escaped;
+      },
+    );
+  }
+  return { content: format(true), textContent: format(false) };
 }
 function sendMessagesUnread(
   userFrom: MailUser,
@@ -176,11 +206,9 @@ function sendMessagesUnread(
     email: userTo.email,
     mailTitle: mailSubject,
     messageCount: notification.messages.length,
-    messages: notification.messages.map(function (message) {
-      return Object.assign({}, message, {
-        content: removeLinksFromMessagePreview(message.content),
-      });
-    }),
+    messages: notification.messages.map(message =>
+      messagePreview(message.content),
+    ),
     userFromName: userFrom.displayName,
     userToName: userTo.displayName,
     urlReplyPlainText: urlReply,

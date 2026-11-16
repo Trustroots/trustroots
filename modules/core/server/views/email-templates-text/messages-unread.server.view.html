@@ -11,7 +11,7 @@ To reply, go to: {{urlReplyPlainText}}
 --------------------------------------------------------------------------------
 {% for message in messages %}
 
-{{ message.content | striptags(true) }}
+{{ message.textContent | striptags(true) }}
 
 --------------------------------------------------------------------------------
 {% endfor %}

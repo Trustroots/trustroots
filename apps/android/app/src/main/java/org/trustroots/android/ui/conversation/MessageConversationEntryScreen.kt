@@ -5,7 +5,6 @@ package org.trustroots.android.ui.conversation
 import androidx.compose.ui.res.painterResource
 import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
 
-import android.text.Html
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -173,7 +172,11 @@ internal fun MessageConversationEntryScreen(
                                     .testTag(if (message.sender.username == state.currentUsername) "outgoingMessage" else "incomingMessage"),
                             ) {
                                 Column(Modifier.padding(12.dp)) {
-                                    Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                                    Text(
+                                        remember(message.content, api.backendURL) {
+                                            messageContent(message.content, api.backendURL)
+                                        },
+                                    )
                                     message.createdAt?.let { created ->
                                         Text(messageTime(LocalContext.current.resources, created), style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant)
