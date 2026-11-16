@@ -107,7 +107,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         }
 
         waitUntil("enable reports that no distributor is installed") {
-            result.get() == "Install a UnifiedPush distributor such as ntfy, then try again."
+            result.get() == targetContext.getString(R.string.message_alerts_install_distributor)
         }
         assertEquals(1, countRequests("GET"))
         assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))

@@ -323,6 +323,18 @@ describe('UnifiedPush registration and unread-message delivery', function () {
         .expect(400, { message: 'Endpoint is required.' });
     }
   });
+  it('registers an embedded distributor endpoint for the current member', async function () {
+    const endpoint =
+      'https://fcm.googleapis.com/fcm/send/anonymous-test-device';
+    await agent
+      .post('/api/users/unified-push')
+      .send({ ...registration, endpoint })
+      .expect(204);
+    const saved = await Registration.findOne({ endpoint }).orFail();
+    saved.user.toString().should.equal(user._id.toString());
+    saved.publicKey.should.equal(registration.publicKey);
+    saved.auth.should.equal(registration.auth);
+  });
   it('does not remove another member’s endpoint', async function () {
     await push.register(other._id, registration);
     await agent

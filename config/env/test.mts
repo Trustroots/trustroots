@@ -30,7 +30,7 @@ const service = {
       'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
     privateKey: 'dhrEzewvJiOg7Q0oC5goPiL6TUiAItTMMqhu8-u1qcw',
     subject: 'mailto:push-test@example.org',
-    allowedHosts: ['ntfy.sh'],
+    allowedHosts: ['ntfy.sh', 'fcm.googleapis.com'],
   },
   targetedRequestLimits: {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },

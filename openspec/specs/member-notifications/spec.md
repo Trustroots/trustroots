@@ -2,17 +2,16 @@
 
 Defines member notification behaviour for email, retired legacy push, and
 opt-in native Android message alerts.
-
 ## Requirements
-
 ### Requirement: Push notifications are retired
 
-The system SHALL reject legacy browser, Expo, and Firebase push registrations
-and SHALL NOT deliver through those retired transports. Historical
-registration records MAY remain on member profiles and SHALL remain removable.
-The system MAY accept authenticated Android UnifiedPush registrations for
-native unread-message alerts when Web Push is configured. Email notifications
-SHALL remain available regardless of Android push status.
+The system SHALL reject registrations through the retired browser, Expo, and
+Firebase push interfaces and SHALL NOT deliver through their retired senders.
+Historical registration records MAY remain on member profiles and SHALL remain
+removable. When Web Push is configured, the system MAY accept authenticated
+Android UnifiedPush registrations from external distributors and the bundled
+distributor. Email notifications SHALL remain available regardless of Android
+push status.
 
 #### Scenario: New push registration is rejected
 
@@ -41,6 +40,11 @@ SHALL remain available regardless of Android push status.
 
 - **WHEN** a signed-in member opts out or signs out of Android message alerts
 - **THEN** the endpoint is removed from their registrations
+
+#### Scenario: Bundled distributor registers an endpoint
+
+- **WHEN** a signed-in member registers the bundled distributor's valid Web Push endpoint
+- **THEN** the server accepts it when its host is allowlisted and Web Push is configured
 
 ### Requirement: Native Android unread-message alerts
 

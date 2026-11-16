@@ -3,7 +3,10 @@
 package org.trustroots.android.ui.inbox
 
 import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+import org.trustroots.android.ui.common.requireActivity
 
+import android.Manifest
+import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,11 +20,14 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -38,6 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,12 +57,17 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
+import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.canPostNotifications
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.ui.common.messageTime
@@ -70,6 +84,8 @@ internal fun MessageInboxScreen(
     initialVisitID: Long = 0L,
     inboxCache: InboxCache? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    enableMessageAlerts: (Activity, MemberSession, (MessageAlertStatusMetadata) -> Unit) -> Unit = MessageAlerts::enableWithStatus,
+    isMessageAlertsEnabled: (Context, String) -> Boolean = MessageAlerts::isEnabled,
 ) {
     var conversationReturnGeneration by remember(initialVisitID) { mutableIntStateOf(0) }
     val listState = rememberLazyListState()
@@ -137,6 +153,8 @@ internal fun MessageInboxScreen(
                     listState = listState,
                     onOpenConversation = pushConversation,
                     onOpenProfile = pushProfile,
+                    enableMessageAlerts = enableMessageAlerts,
+                    isMessageAlertsEnabled = isMessageAlertsEnabled,
                 )
             }
             entry<MessageConversationVisit> { route ->
@@ -174,7 +192,6 @@ private fun rememberInboxViewModel(
         owner.inboxViewModel(api, session, inboxCache ?: InboxCache())
     }
 }
-
 @Composable
 private fun InboxContent(
     state: InboxUiState,
@@ -187,7 +204,48 @@ private fun InboxContent(
     scrollBehavior: TopAppBarScrollBehavior,
     onOpenConversation: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    enableMessageAlerts: (Activity, MemberSession, (MessageAlertStatusMetadata) -> Unit) -> Unit,
+    isMessageAlertsEnabled: (Context, String) -> Boolean,
 ) {
+    val context = LocalContext.current
+    val dismissalPreferences = remember(context.applicationContext) {
+        context.applicationContext.getSharedPreferences("inbox-message-alert-prompt", Context.MODE_PRIVATE)
+    }
+    var enrolmentStatus by remember(session.member.username) { mutableStateOf<MessageAlertStatusMetadata?>(null) }
+    var isEnrolling by remember(session.member.username) { mutableStateOf(false) }
+    var dismissed by remember(session.member.username, dismissalPreferences) {
+        mutableStateOf(dismissalPreferences.getBoolean(session.member.username, false))
+    }
+    val waitingForRegistration = enrolmentStatus?.resourceId == R.string.message_alerts_waiting_registration
+    val needsAttention = enrolmentStatus?.let { it.resourceId != R.string.message_alerts_ready } ?: false
+    val showAlertPrompt = !dismissed && (!isMessageAlertsEnabled(context, session.member.username) || needsAttention)
+    val beginEnrollment: () -> Unit = {
+        val activity = context.requireActivity(Activity::class.java, "Message inbox must be hosted by an Activity.")
+        enableMessageAlerts(activity, session) { result ->
+            enrolmentStatus = result
+            isEnrolling = false
+        }
+    }
+    LaunchedEffect(session.member.username, waitingForRegistration) {
+        if (waitingForRegistration) {
+            enrolmentStatus = MessageAlerts.statusMetadata.filterNotNull().first()
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) beginEnrollment()
+        else {
+            enrolmentStatus = MessageAlertStatusMetadata(R.string.screen_allow_message_notifications)
+            isEnrolling = false
+        }
+    }
+    val requestAlerts: () -> Unit = {
+        isEnrolling = true
+        if (context.canPostNotifications()) {
+            beginEnrollment()
+        } else {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val threads = state.threads
     val filter = state.filter
     val memberLabels = threads.associate { thread -> thread.id to thread.otherMember.localizedLabel() }
@@ -221,6 +279,35 @@ private fun InboxContent(
                         clearLabel = stringResource(R.string.clear_conversation_filter),
                         modifier = Modifier.testTag("messageInboxFilter"),
                     )
+                    if (showAlertPrompt) {
+                        Card(Modifier.fillMaxWidth().padding(top = 12.dp).testTag("inboxMessageAlertsPrompt")) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(stringResource(R.string.inbox_message_alerts_title), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.inbox_message_alerts_description), Modifier.padding(top = 4.dp))
+                                enrolmentStatus?.let { status ->
+                                    Text(
+                                        stringResource(status.resourceId, *status.formatArgs.toTypedArray()),
+                                        color = if (waitingForRegistration) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        } else MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(top = 8.dp).testTag("inboxMessageAlertsStatus"),
+                                    )
+                                }
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    val enabling = isEnrolling || waitingForRegistration
+                                    Button(onClick = requestAlerts, enabled = !enabling) {
+                                        Text(stringResource(if (enabling) R.string.inbox_message_alerts_enabling else R.string.inbox_message_alerts_enable))
+                                    }
+                                    TextButton(onClick = {
+                                        dismissed = true
+                                        dismissalPreferences.edit().putBoolean(session.member.username, true).apply()
+                                    }) {
+                                        Text(stringResource(R.string.inbox_message_alerts_dismiss))
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (state.isLoading && !state.hasLoaded) CircularProgressIndicator(Modifier.testTag("inboxLoading"))
                     state.failure?.let { failure ->
                         Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)

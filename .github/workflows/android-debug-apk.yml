@@ -229,12 +229,25 @@ jobs:
       - name: Propagate device coverage failures
         if: steps.device-coverage.outcome == 'failure' && steps.device-coverage.outputs.retry_fresh_emulator != 'true'
         run: exit 1
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: always()
+      - name: Require the shard's coverage before upload
+        env:
+          COVERAGE_TARGET: ${{ matrix.target }}
+        run: test -s "apps/android/app/build/outputs/code_coverage/debugAndroidTest/connected/$COVERAGE_TARGET/coverage.ec"
+      - name: Upload successful device coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android-device-${{ matrix.target }}
           retention-days: 7
           if-no-files-found: error
+          path: |
+            apps/android/app/build/outputs/code_coverage/
+            apps/android/app/build/diagnostics/
+      - name: Upload failed device diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: android-failed-device-${{ matrix.target }}
+          retention-days: 7
           path: |
             apps/android/app/build/outputs/code_coverage/
             apps/android/app/build/diagnostics/

@@ -28,6 +28,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.unifiedpush.android.connector.data.PublicKeySet
@@ -164,7 +165,7 @@ class MessageAlertsAdapterJourneyTest {
                 )
             }
             assertTrue("Missing-distributor result did not complete", noDistributorLatch.await(10, TimeUnit.SECONDS))
-            assertEquals("Install a UnifiedPush distributor such as ntfy, then try again.", noDistributorResult.get())
+            assertEquals(context.getString(R.string.message_alerts_install_distributor), noDistributorResult.get())
 
             val declinedResult = AtomicReference<String>()
             val declinedLatch = CountDownLatch(1)
