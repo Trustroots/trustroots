@@ -11,6 +11,7 @@ import type { ContactConfirmation } from '../types';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import type { UserProfile } from '@/modules/users/client/types';
 import { Alert } from '@trustroots/ui/Alert';
+import ContactGuidance from './ContactGuidance';
 
 const AvatarWithLegacyClass = Avatar as unknown as React.ComponentType<{
   className?: string;
@@ -186,6 +187,7 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
 
             {canConfirm && (
               <div className="text-center">
+                <ContactGuidance />
                 <Button
                   type="submit"
                   intent="primary"
