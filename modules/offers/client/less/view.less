@@ -117,19 +117,6 @@
   .btn {
     padding: 8px 12px;
   }
-
-  .btn-meeting-not-set {
-    color: @gray-dark;
-    background-color: @gray-lighter;
-    border-color: darken(@gray-lighter, 10%);
-
-    &:hover,
-    &:focus-within,
-    &.active {
-      background-color: darken(@gray-lighter, 10%);
-      border-color: darken(@gray-lighter, 20%);
-    }
-  }
 }
 
 .offer-availability-radio {
@@ -166,9 +153,4 @@
     margin-right: 6px;
     font-weight: 700;
   }
-}
-
-.offer-meta .btn-group > .btn-meeting-not-set.active,
-.offer-meeting-status .btn-meeting-not-set.active {
-  box-shadow: inset 0 0 0 2px @brand-primary;
 }

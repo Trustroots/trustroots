@@ -59,56 +59,91 @@ describe('OfferHostPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: jest.fn(),
+    });
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
   });
 
-  it.each(['availability', 'description', 'location'])(
-    'opens the %s tab from a direct link',
-    async tab => {
-      window.history.replaceState({}, '', `/offer/host#${tab}`);
-      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+  it('keeps the three editor sections visible on one page', async () => {
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-      expect(
-        await screen.findByRole('tab', { name: new RegExp(tab, 'i') }),
-      ).toHaveAttribute('aria-selected', 'true');
+    for (const name of ['Availability', 'Description', 'Location']) {
+      const heading = await screen.findByRole('heading', { name, level: 2 });
+      expect(heading.closest('section')).toHaveAttribute(
+        'id',
+        name.toLowerCase(),
+      );
+    }
+    expect(
+      screen.getByRole('heading', { name: 'Hosting offer' }),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save and Exit' })).toBeVisible();
+  });
+
+  it.each(['availability', 'description', 'location'])(
+    'scrolls to the %s section from a direct link after loading',
+    async id => {
+      const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        'scrollIntoView',
+      );
+      const scrollIntoView = jest.fn();
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+        configurable: true,
+        value: scrollIntoView,
+      });
+      try {
+        window.history.replaceState({}, '', `/offer/host#${id}`);
+        render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+        const heading = await screen.findByRole('heading', {
+          name: id.charAt(0).toUpperCase() + id.slice(1),
+          level: 2,
+        });
+        await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+        expect(scrollIntoView.mock.contexts).toContain(
+          heading.closest('section'),
+        );
+      } finally {
+        if (originalScrollIntoView) {
+          Object.defineProperty(
+            HTMLElement.prototype,
+            'scrollIntoView',
+            originalScrollIntoView,
+          );
+        } else {
+          delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
+        }
+      }
     },
   );
 
-  it('falls back to Availability for an unknown fragment', async () => {
+  it('does not scroll to an unrecognised section fragment', async () => {
     window.history.replaceState({}, '', '/offer/host#unknown');
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
-    expect(
-      await screen.findByRole('tab', { name: 'Availability' }),
-    ).toHaveAttribute('aria-selected', 'true');
+
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it('updates the fragment and follows history without losing edits', async () => {
+  it('keeps description edits while following the location anchor', async () => {
+    offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
-    fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
-    expect(window.location.hash).toBe('#description');
-    fireEvent.change(
-      screen.getByLabelText(/Tell about your home and hosting possibilities/),
-      { target: { value: 'An unsaved hosting description.' } },
+    const description = await screen.findByLabelText(
+      /Tell about your home and hosting possibilities/,
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
-    expect(window.location.hash).toBe('#location');
-
-    window.history.replaceState({}, '', '/offer/host#description');
-    fireEvent.popState(window);
-    expect(screen.getByRole('tab', { name: 'Description' })).toHaveAttribute(
-      'aria-selected',
-      'true',
+    fireEvent.change(description, {
+      target: { value: 'An unsaved hosting description.' },
+    });
+    fireEvent.click(screen.getByRole('link', { name: /Choose a location/ }));
+    await waitFor(() =>
+      expect(window.location.href).toContain('/offer/host#location'),
     );
     expect(
       screen.getByDisplayValue('An unsaved hosting description.'),
     ).toBeVisible();
-
-    window.history.replaceState({}, '', '/offer/host#location');
-    fireEvent.popState(window);
-    expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
   });
 
   it('opens Location for a new offer without a description', async () => {
@@ -165,7 +200,6 @@ describe('OfferHostPage', () => {
         name: /People that are not in any of my circles should not find me/,
       }),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
     fireEvent.submit(document.querySelector('form')!);
     await waitFor(() =>
@@ -197,7 +231,7 @@ describe('OfferHostPage', () => {
   it('loads the host offer editor with availability controls', async () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     expect(
       within(
         screen.getByRole('radiogroup', { name: 'Can you host?' }),
@@ -206,37 +240,13 @@ describe('OfferHostPage', () => {
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
   });
 
-  it('moves between tabs with the arrow keys', async () => {
-    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
-
-    const availability = await screen.findByRole('tab', {
-      name: 'Availability',
-    });
-    availability.focus();
-    fireEvent.keyDown(availability, { key: 'ArrowRight' });
-
-    const description = screen.getByRole('tab', { name: 'Description' });
-    await waitFor(() => expect(description).toHaveFocus());
-    expect(description).toHaveAttribute('aria-selected', 'true');
-    expect(window.location.hash).toBe('#description');
-
-    // Left from the first tab wraps round to the last.
-    fireEvent.keyDown(description, { key: 'ArrowLeft' });
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Availability' }), {
-      key: 'ArrowLeft',
-    });
-    await waitFor(() => expect(window.location.hash).toBe('#location'));
-    expect(screen.getByRole('tab', { name: 'Location' })).toHaveFocus();
-  });
-
   it('creates a new host offer when saving', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
     const descriptionTextareas =
       screen.getAllByPlaceholderText('Write here...');
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
@@ -245,7 +255,6 @@ describe('OfferHostPage', () => {
     expect(
       screen.getByRole('button', { name: 'Save and Exit' }),
     ).toBeDisabled();
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     fireEvent.click(
       document.querySelector('[data-testid="location-editor"] button')!,
     );
@@ -272,9 +281,8 @@ describe('OfferHostPage', () => {
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
     const descriptionTextareas =
       screen.getAllByPlaceholderText('Write here...');
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
@@ -297,10 +305,12 @@ describe('OfferHostPage', () => {
   });
 
   it('shows an error state when loading fails', async () => {
+    window.history.replaceState({}, '', '/offer/host#location');
     offersApiMock.getOffers.mockRejectedValue(new Error('network'));
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText(/Snap!/)).toBeVisible();
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('applies host status from route params when creating an offer', async () => {
@@ -308,7 +318,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     expect(
       document.querySelector(
         '.offer-hosting-button[data-intent="warning"].active',
@@ -320,14 +330,12 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     const descriptionTextareas =
       screen.getAllByPlaceholderText('Write here...');
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome travellers here.' },
     });
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
 
     expect(
       await screen.findByText('Set your hosting location on the map.'),
@@ -349,8 +357,7 @@ describe('OfferHostPage', () => {
       offersApiMock.updateOffer.mockRejectedValue(rejection);
       render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-      expect(await screen.findByText('Can you host?')).toBeVisible();
-      fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
+      await screen.findByRole('radiogroup', { name: 'Can you host?' });
       const descriptionTextareas =
         screen.getAllByPlaceholderText('Write here...');
       fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
@@ -379,14 +386,12 @@ describe('OfferHostPage', () => {
     ]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     fireEvent.click(
       within(
         screen.getByRole('radiogroup', { name: 'Can you host?' }),
       ).getByRole('radio', { name: 'No' }),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
-
     expect(
       screen.getByText('Tell others why you cannot host...'),
     ).toBeInTheDocument();
@@ -396,7 +401,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     fireEvent.click(
       within(
         screen.getByRole('radiogroup', { name: 'Can you host?' }),
@@ -405,28 +410,26 @@ describe('OfferHostPage', () => {
 
     expect(
       screen
-        .getByRole('link', { name: 'Choose a location' })
+        .getByRole('link', { name: /Choose a location/ })
         .closest('[role="status"]'),
-    ).toHaveTextContent('Choose a location in the Location tab before saving');
+    ).toHaveTextContent(/Choose a location.*before saving/);
     expect(
-      screen.getByRole('link', { name: 'Choose a location' }),
-    ).toHaveAttribute('href', '#location');
-    expect(screen.getByRole('tab', { name: 'Location' })).toBeEnabled();
+      screen.getByRole('link', { name: /Choose a location/ }),
+    ).toHaveAttribute('href', '/offer/host#location');
+    expect(document.getElementById('location')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Save and Exit' }),
     ).toBeDisabled();
-    fireEvent.click(screen.getByRole('link', { name: 'Choose a location' }));
-    expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
+    fireEvent.click(screen.getByRole('link', { name: /Choose a location/ }));
+    await waitFor(() =>
+      expect(window.location.href).toContain('/offer/host#location'),
     );
-    expect(window.location.hash).toBe('#location');
   });
 
   it('adjusts guest count and circle visibility settings', async () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     fireEvent.click(
       document.querySelector('.offer-maxguests .icon-plus')!.closest('button')!,
     );
@@ -481,7 +484,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     expect(
       document.querySelector(
         '.offer-hosting-button[data-intent="danger"].active',
@@ -492,8 +495,7 @@ describe('OfferHostPage', () => {
   it('does not submit when the description is too short', async () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     const descriptionTextareas =
       screen.getAllByPlaceholderText('Write here...');
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
@@ -507,7 +509,7 @@ describe('OfferHostPage', () => {
   it('changes host status, guest count, and no-offer description', async () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     fireEvent.click(
       within(
         screen.getByRole('radiogroup', { name: 'Can you host?' }),
@@ -522,7 +524,6 @@ describe('OfferHostPage', () => {
         screen.getByRole('radiogroup', { name: 'Can you host?' }),
       ).getByRole('radio', { name: 'No' }),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
     fireEvent.change(screen.getAllByPlaceholderText('Write here...')[0], {
       target: { value: 'Not hosting this month.' },
     });
@@ -532,12 +533,10 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
     fireEvent.change(screen.getByPlaceholderText('Write here...'), {
       target: { value: 'A welcoming place to stay.' },
     });
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     fireEvent.click(document.querySelector('.offer-map-guide button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
   });

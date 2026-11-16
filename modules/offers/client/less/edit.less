@@ -13,10 +13,6 @@
     accent-color: @brand-primary;
   }
 
-  .offer-section-heading {
-    margin: 30px 0 20px;
-  }
-
   .offer-circle-visibility label {
     display: flex;
     align-items: flex-start;
@@ -43,6 +39,53 @@
     }
   }
 
+  .offer-host-sections {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+
+    > section {
+      min-width: 0;
+      scroll-margin-top: (@navbar-height + 16px);
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    .panel:last-child {
+      margin-bottom: 0;
+    }
+
+    .offer-maxguests {
+      margin-top: 20px;
+    }
+
+    @media (min-width: @screen-sm-min) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        'availability location'
+        'description location';
+
+      #availability {
+        grid-area: availability;
+      }
+
+      #description {
+        grid-area: description;
+      }
+
+      #location {
+        grid-area: location;
+      }
+    }
+  }
+
+  .offer-host-map {
+    position: relative;
+  }
+
   @media (max-width: @screen-xs) {
     .offer-host-header {
       h1 {
@@ -52,17 +95,6 @@
       button {
         font-size: @font-size-base;
         white-space: nowrap;
-      }
-    }
-
-    .offer-tabs[data-slot='tabs-list'] {
-      position: static;
-      display: flex;
-      margin: 0 0 20px;
-
-      [data-slot='tab'] {
-        flex: 1;
-        text-align: center;
       }
     }
 

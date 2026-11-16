@@ -3,12 +3,10 @@
 ## Purpose
 
 Allow members to maintain their approximate location and independently offer ongoing meetings or accommodation, with shared privacy controls and accurate discovery.
-
 ## Requirements
-
 ### Requirement: Independent availability and shared location
 
-Members SHALL select Yes, Maybe, No or Not set for meeting availability independently of hosting. The default SHALL be Not set. Both the owner profile and offer editor SHALL use the same labelled radio control. Existing saved locations SHALL support immediate profile updates with visible errors on failure. Members without a saved location SHALL be directed to the location editor. Meetings SHALL share the existing fuzzy location and privacy controls. Dated meetups SHALL retain independent locations and expiry dates.
+Members SHALL be able to select Yes, Maybe, or No for meeting availability independently of hosting. A missing or stored unanswered preference SHALL leave all choices unselected. Both the owner profile and offer editor SHALL use the same labelled radio control. Existing saved locations SHALL support immediate profile updates with visible errors on failure. Members without a saved location SHALL be directed to the location section of the editor. Meetings SHALL share the existing fuzzy location and privacy controls. Dated meetups SHALL retain independent locations and expiry dates.
 
 #### Scenario: Profile states
 
@@ -17,8 +15,8 @@ Members SHALL select Yes, Maybe, No or Not set for meeting availability independ
 
 #### Scenario: Unanswered preference
 
-- **WHEN** availability is missing or Not set
-- **THEN** visitors see no meeting status and the owner sees a prompt to choose
+- **WHEN** availability is missing or the stored value is unanswered
+- **THEN** visitors see no meeting status and the owner has three choices with none selected
 
 #### Scenario: Direct profile update
 
@@ -37,7 +35,7 @@ Members SHALL select Yes, Maybe, No or Not set for meeting availability independ
 
 ### Requirement: Discovery respects independent availability
 
-Meeting discovery SHALL include members choosing Yes or Maybe at their fuzzy location using meeting markers and existing visibility restrictions. No and Not set SHALL exclude ongoing meeting availability. Host-only discovery SHALL exclude members who cannot host. The editor SHALL explain map visibility.
+Meeting discovery SHALL include members choosing Yes or Maybe at their fuzzy location using meeting markers and existing visibility restrictions. No and unanswered preferences SHALL exclude ongoing meeting availability. Host-only discovery SHALL exclude members who cannot host. The editor SHALL explain map visibility.
 
 #### Scenario: Tentative availability
 
@@ -46,7 +44,7 @@ Meeting discovery SHALL include members choosing Yes or Maybe at their fuzzy loc
 
 #### Scenario: Opt out or reset
 
-- **WHEN** a member selects No or Not set
+- **WHEN** a member selects No or their stored meeting preference is cleared
 - **THEN** meeting discovery stops without changing hosting availability
 
 #### Scenario: Existing restrictions
@@ -61,10 +59,24 @@ Meeting discovery SHALL include members choosing Yes or Maybe at their fuzzy loc
 
 #### Scenario: Meeting disabled
 
-- **WHEN** a member selects No or Not set
-- **THEN** ongoing meeting discovery stops while independent hosting availability is preserved
+- **WHEN** a member has an unanswered preference
+- **THEN** they are excluded from ongoing meeting discovery while independent hosting availability is preserved
 
 #### Scenario: Existing dated meetup
 
 - **WHEN** a dated meetup is created or edited
 - **THEN** its existing expiry and independently selected location continue to apply
+
+### Requirement: Single-page hosting offer editor
+
+The hosting offer editor SHALL present availability, description, and location together in one form. It SHALL support existing availability, description, and location fragment links and keep in-progress form values while members move between sections.
+
+#### Scenario: Edit all settings on one page
+
+- **WHEN** a member opens the hosting offer editor
+- **THEN** they can change availability, description, and location on the same page and submit them together
+
+#### Scenario: Open a section directly
+
+- **WHEN** a member opens the editor with an availability, description, or location fragment
+- **THEN** the editor scrolls to the corresponding section after loading the offer

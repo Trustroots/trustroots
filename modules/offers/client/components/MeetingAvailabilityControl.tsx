@@ -2,9 +2,11 @@ import React, { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MeetingStatus } from '../../shared/offer';
 
+type MeetingChoice = Exclude<MeetingStatus, 'not-set'>;
+
 interface Props {
   value: MeetingStatus;
-  onChange: (status: MeetingStatus) => void;
+  onChange: (status: MeetingChoice) => void;
   disabled?: boolean;
 }
 
@@ -15,11 +17,10 @@ export default function MeetingAvailabilityControl({
 }: Props) {
   const id = useId();
   const { t } = useTranslation('offers');
-  const options: [MeetingStatus, string][] = [
+  const options: [MeetingChoice, string][] = [
     ['yes', t('Yes')],
     ['maybe', t('Maybe')],
     ['no', t('No')],
-    ['not-set', t('Not set')],
   ];
   return (
     <fieldset className="meeting-availability-control" disabled={disabled}>
@@ -28,7 +29,7 @@ export default function MeetingAvailabilityControl({
         {options.map(([status, label]) => (
           <label
             key={status}
-            className={`btn btn-lg ${status === 'not-set' ? 'btn-meeting-not-set' : `btn-offer-hosting btn-offer-hosting-${status}`}${value === status ? ' active' : ''}`}
+            className={`btn btn-lg btn-offer-hosting btn-offer-hosting-${status}${value === status ? ' active' : ''}`}
           >
             <input
               checked={value === status}

@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Offers from '@/modules/offers/client/components/Offers.component';
@@ -36,14 +37,19 @@ beforeEach(() => {
   updateOfferMock.mockResolvedValue({ message: 'Offer saved.' });
 });
 
-it('defaults to Not set and saves all four states without changing hosting', async () => {
+it('leaves Not set unselected and saves the three explicit states without changing hosting', async () => {
   render(<Offers authUser={owner} profile={owner} />);
-  expect(await screen.findByRole('radio', { name: 'Not set' })).toBeChecked();
+  const group = await screen.findByRole('radiogroup');
+  for (const label of ['Yes', 'Maybe', 'No']) {
+    expect(within(group).getByRole('radio', { name: label })).not.toBeChecked();
+  }
+  expect(
+    screen.queryByRole('radio', { name: 'Not set' }),
+  ).not.toBeInTheDocument();
   for (const [label, meetingStatus] of [
     ['Yes', 'yes'],
     ['Maybe', 'maybe'],
     ['No', 'no'],
-    ['Not set', 'not-set'],
   ] as const) {
     fireEvent.click(screen.getByRole('radio', { name: label }));
     await waitFor(() =>
@@ -57,6 +63,19 @@ it('defaults to Not set and saves all four states without changing hosting', asy
   }
 });
 
+it('leaves all choices unchecked for a stored not-set status', async () => {
+  getOffersMock.mockResolvedValue([{ ...offer, meetingStatus: 'not-set' }]);
+  render(<Offers authUser={owner} profile={owner} />);
+
+  const group = await screen.findByRole('radiogroup');
+  for (const label of ['Yes', 'Maybe', 'No']) {
+    expect(within(group).getByRole('radio', { name: label })).not.toBeChecked();
+  }
+  expect(
+    screen.queryByRole('radio', { name: 'Not set' }),
+  ).not.toBeInTheDocument();
+});
+
 it('keeps the old value on failure and permits retry', async () => {
   updateOfferMock.mockRejectedValueOnce(new Error('offline'));
   render(<Offers authUser={owner} profile={owner} />);
@@ -64,7 +83,9 @@ it('keeps the old value on failure and permits retry', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Could not save meeting availability',
   );
-  expect(screen.getByRole('radio', { name: 'Not set' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Yes' })).not.toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Maybe' })).not.toBeChecked();
+  expect(screen.getByRole('radio', { name: 'No' })).not.toBeChecked();
   fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
   await waitFor(() =>
     expect(screen.getByRole('radio', { name: 'Yes' })).toBeChecked(),
@@ -130,7 +151,7 @@ it('directs owners without an offer to set a location', async () => {
 it('does not save an offer without a location', async () => {
   const ref = React.createRef<Offers>();
   render(<Offers ref={ref} authUser={owner} profile={owner} />);
-  await screen.findByRole('radio', { name: 'Not set' });
+  await screen.findByRole('radio', { name: 'No' });
   act(() => ref.current!.setState({ offer: { _id: 'offer-1', status: 'no' } }));
   await act(async () => {
     await ref.current!.saveMeetingStatus('yes');

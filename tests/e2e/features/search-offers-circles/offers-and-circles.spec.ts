@@ -167,11 +167,12 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await mightHost.press('ArrowRight');
       await expect(cannotHost).toBeChecked();
 
+      const meetingAvailability = page.getByRole('radiogroup', {
+        name: 'Would you like to meet people?',
+      });
       await expect(
-        page
-          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
-          .getByRole('radio', { name: /Not set/ }),
-      ).toBeChecked();
+        meetingAvailability.getByRole('radio', { checked: true }),
+      ).toHaveCount(0);
       await page
         .getByRole('radiogroup', { name: 'Would you like to meet people?' })
         .getByText('Yes', { exact: true })
@@ -179,7 +180,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(
         page.getByText(/for meetings, but not as a host/),
       ).toBeVisible();
-      await page.getByRole('tab', { name: 'Location' }).click();
       await page.evaluate(() => {
         Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
           publicKey: 'test-geocoding-token',
@@ -260,7 +260,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       for (const [label, status] of [
         ['Maybe', 'maybe'],
         ['No', 'no'],
-        ['Not set', 'not-set'],
+        ['Yes', 'yes'],
       ] as const) {
         const savedFromProfile = page.waitForResponse(
           response =>
@@ -276,14 +276,16 @@ test.describe.serial('search offers and circles feature coverage', () => {
         await expect(
           page.getByRole('radio', { name: new RegExp(`^(?:✓ )?${label}$`) }),
         ).toBeChecked();
-        if (status === 'maybe') expect(await discover(['meet'])).toBeDefined();
+        if (status !== 'no') expect(await discover(['meet'])).toBeDefined();
         else expect(await discover(['meet'])).toBeUndefined();
         await expect(
           page.getByText('Cannot host currently', { exact: true }),
         ).toBeVisible();
       }
       await page.goto('/offer/host');
-      await expect(page.getByRole('radio', { name: /Not set/ })).toBeChecked();
+      await expect(
+        meetingAvailability.getByRole('radio', { name: 'Yes', exact: true }),
+      ).toBeChecked();
     } finally {
       const restored = await page.request.put(`/api/offers/${original._id}`, {
         data: {
@@ -295,27 +297,36 @@ test.describe.serial('search offers and circles feature coverage', () => {
     }
   });
 
-  test('hosting section links preserve edits through browser history', async ({
+  test('hosting sections share one page and location links preserve edits', async ({
     page,
   }) => {
-    await page.goto('/offer/host#location');
+    await page.route('**/api/offers-by/**', route =>
+      route.fulfill({ json: [] }),
+    );
+    await page.goto('/offer/host#availability');
+    await expect(page.locator('#availability h2')).toHaveText('Availability');
+    await expect(page.locator('#description h2')).toHaveText('Description');
+    await expect(page.locator('#location h2')).toHaveText('Location');
+    await expect(page.getByRole('tab')).toHaveCount(0);
+    await expect(page.locator('#availability h2')).toBeInViewport();
     await expect(
-      page.getByRole('tabpanel', { name: 'Location' }),
+      page.getByRole('link', { name: 'Choose a location', exact: true }),
     ).toBeVisible();
-    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
     );
     await description.fill('An unsaved spare room description.');
-    await expect(page).toHaveURL(/\/offer\/host#description$/);
-    await page.getByRole('tab', { name: 'Location' }).click();
+    await page
+      .getByRole('link', { name: 'Choose a location', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/offer\/host#location$/);
+    await expect(page.locator('#location h2')).toBeInViewport();
     await page.goBack();
-    await expect(
-      page.getByRole('tabpanel', { name: 'Description' }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/offer\/host#availability$/);
     await expect(description).toHaveValue('An unsaved spare room description.');
+    await page.goto('/offer/host#location');
+    await expect(page.locator('#location h2')).toBeInViewport();
   });
 
   test('mobile hosting map keeps search and save controls accessible', async ({
@@ -353,7 +364,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/offer/host');
-    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
@@ -571,10 +581,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await mockDeviceLocation(page, 0, 0);
     await page.goto('/offer/host#location');
-    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(page.locator('#location h2')).toBeInViewport();
+    await expect(page.getByRole('tab')).toHaveCount(0);
 
     const map = page.getByTestId('leaflet-map');
     const locate = page.getByRole('button', {
@@ -632,7 +640,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockDeviceLocation(page, 0, 0);
     await page.goto('/offer/host#location');
-    await page.getByRole('tab', { name: 'Location' }).click();
+    await expect(page.locator('#location h2')).toBeInViewport();
     const locate = page.getByRole('button', {
       name: 'Use my location',
       exact: true,
@@ -655,6 +663,24 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const memberId = await fetchUserIdByUsername(page.request, berlin.username);
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await page.goto('/offer/host#location');
+    await expect(page.getByRole('tab')).toHaveCount(0);
+    await expect(page.locator('#availability h2')).toHaveText('Availability');
+    await expect(page.locator('#description h2')).toHaveText('Description');
+    await expect(page.locator('#location h2')).toBeInViewport();
+    await page
+      .getByRole('radiogroup', { name: 'Can you host?' })
+      .getByText('Maybe', { exact: true })
+      .click();
+    await page
+      .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+      .getByText('Yes', { exact: true })
+      .click();
+    const description = page.getByLabel(
+      'Tell about your home and hosting possibilities',
+      { exact: false },
+    );
+    const nextDescription = 'A fictional room saved with availability.';
+    await description.fill(nextDescription);
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
         publicKey: 'test-geocoding-token',
@@ -695,9 +721,19 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.getByRole('button', { name: 'Save and Exit' }).click();
     const response = await saved;
     await page.request.put(response.url(), {
-      data: { location: originalOffer.location },
+      data: {
+        status: originalOffer.status,
+        meetingStatus: originalOffer.meetingStatus ?? 'not-set',
+        description: originalOffer.description,
+        location: originalOffer.location,
+      },
     });
     expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON()).toMatchObject({
+      status: 'maybe',
+      meetingStatus: 'yes',
+      description: nextDescription,
+    });
     const [latitude, longitude] = response.request().postDataJSON().location;
     expect(latitude).toBeCloseTo(35, 1);
     expect(longitude).toBeCloseTo(-7, 1);
