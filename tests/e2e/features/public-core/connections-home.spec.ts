@@ -68,6 +68,9 @@ test('signed-in homepage lays out recent connections and opens hosting offers', 
       return Array.from(rows.values());
     });
   await expect.poll(cardsPerRow).toEqual([3, 3, 3]);
+  await cards.first().focus();
+  await page.keyboard.press('Tab');
+  await expect(cards.nth(1)).toBeFocused();
 
   const hostingMap = page.locator('.home-hosting-map');
   await expect(hostingMap).toBeVisible();

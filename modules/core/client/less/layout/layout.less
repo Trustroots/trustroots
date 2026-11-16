@@ -45,6 +45,32 @@ body {
   }
 }
 
+// Shared spacing for member sections on circle and home pages.
+.web-section-heading {
+  margin: 0 0 8px;
+}
+
+.web-section-description {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.web-section-list {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--member-section-card-width, 13rem)), 1fr)
+  );
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    min-width: 0;
+  }
+}
+
 // Horizontal divider with "rainbow" color reel
 hr {
   position: relative;

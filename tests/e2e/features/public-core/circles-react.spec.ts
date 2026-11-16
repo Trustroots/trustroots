@@ -241,6 +241,9 @@ test('circle membership retains account roles and legacy member links', async ({
     expect(companionBox.y).toBeGreaterThanOrEqual(
       contactBox.y + contactBox.height,
     );
+    await contact.focus();
+    await page.keyboard.press('Tab');
+    await expect(companion).toBeFocused();
     if (process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true') {
       fs.mkdirSync('tmp/screenshots', { recursive: true });
       await page.locator('.circle-member-discovery').screenshot({

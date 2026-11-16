@@ -68,8 +68,10 @@ export default function HomeConnections() {
     <section className="home-connections container">
       {recent.length > 0 && (
         <div className="home-recent-members">
-          <h2>{t('People you know who were active recently')}</h2>
-          <ul className="home-recent-member-list list-unstyled">
+          <h2 className="web-section-heading">
+            {t('People you know who were active recently')}
+          </h2>
+          <ul className="home-recent-member-list web-section-list list-unstyled">
             {recent.map(member => (
               <li className="home-recent-member" key={member._id}>
                 <MemberSearchCard

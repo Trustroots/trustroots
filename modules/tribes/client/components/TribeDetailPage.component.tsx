@@ -189,8 +189,10 @@ export default function TribeDetailPage({
                     aria-label={t('Circle organisers')}
                     className="tribe-organisers"
                   >
-                    <h3>{t('Circle organisers')}</h3>
-                    <ul>
+                    <h3 className="web-section-heading">
+                      {t('Circle organisers')}
+                    </h3>
+                    <ul className="web-section-list">
                       {tribe.organisers.map(organiser => (
                         <li key={organiser.username}>
                           <MemberSearchCard user={organiser} compact />
