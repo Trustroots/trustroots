@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
@@ -9,6 +10,8 @@ import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
 import type { OfferStatus, OfferType } from '@/modules/offers/shared/offer';
+import { hostStatusIntent } from '@/modules/offers/client/components/hostStatusIntent';
+import { hostStatusLabel } from '@/modules/offers/client/components/hostStatusLabel';
 
 interface SearchOfferUser {
   _id?: string;
@@ -115,6 +118,7 @@ export default function SearchSidebarResults({
   isLoadingOffers,
   onCloseSidebar,
 }: SearchSidebarResultsProps) {
+  const { t } = useTranslation('offers');
   /* istanbul ignore next -- the language query always returns its cache object. */
   const languageQuery = useLanguagesQuery() as {
     data?: Record<string, string>;
@@ -176,22 +180,30 @@ export default function SearchSidebarResults({
               item._id!,
               `Open ${item.type === 'host' && item.status !== 'no' ? 'hosting' : 'meet'} offer from ${
                 item.user.displayName || item.user.username
+              }${
+                item.type === 'host' && item.status
+                  ? ` · ${hostStatusLabel(item.status, key => String(t(key)))}`
+                  : ''
               }`,
               () => onOfferSelect(item),
               <>
                 <span>
                   <MemberIdentity size={32} user={item.user} />
-                  {item.type === 'host'
-                    ? item.status === 'no'
-                      ? 'Cannot host currently'
-                      : 'Hosting'
-                    : 'Meet'}
+                  {item.type === 'host' && item.status !== 'no' && 'Hosting'}
+                  {item.type === 'meet' && 'Meet'}
+                  {item.type === 'host' && item.status && (
+                    <>
+                      {item.status !== 'no' && ' · '}
+                      <Badge
+                        variant="solid"
+                        intent={hostStatusIntent[item.status]}
+                      >
+                        {hostStatusLabel(item.status, key => String(t(key)))}
+                      </Badge>
+                    </>
+                  )}
                   {item.meetingStatus === 'yes' && ' · Happy to meet'}
                   {item.meetingStatus === 'maybe' && ' · Maybe up for meeting'}
-                  {item.type === 'host' &&
-                    item.status &&
-                    item.status !== 'no' &&
-                    ` · ${item.status}`}
                 </span>
               </>,
               true,
@@ -292,17 +304,25 @@ export default function SearchSidebarResults({
             <div className="search-result-hosting">
               {offer.type === 'host' && (
                 <div
-                  aria-label={`Hosting offer: ${offer.status}`}
+                  aria-label={
+                    offer.status
+                      ? `Hosting offer: ${hostStatusLabel(offer.status, key => String(t(key)))}`
+                      : undefined
+                  }
                   className="search-result-label"
                 >
-                  Hosting:{' '}
-                  <Badge
-                    aria-hidden="true"
-                    variant="solid"
-                    intent={offer.status === 'yes' ? 'success' : 'warning'}
-                  >
-                    {offer.status}
-                  </Badge>
+                  Hosting
+                  {offer.status && (
+                    <>
+                      :{' '}
+                      <Badge
+                        variant="solid"
+                        intent={hostStatusIntent[offer.status]}
+                      >
+                        {hostStatusLabel(offer.status, key => String(t(key)))}
+                      </Badge>
+                    </>
+                  )}
                 </div>
               )}
               {offer.type === 'meet' && (

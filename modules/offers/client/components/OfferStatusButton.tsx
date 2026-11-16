@@ -7,6 +7,7 @@ import { Button } from '@trustroots/ui/Button';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import { hostStatusIntent } from './hostStatusIntent';
+import { hostStatusLabel } from './hostStatusLabel';
 
 interface OfferStatusButtonProps {
   isOwnOffer: boolean;
@@ -41,9 +42,7 @@ export default function OfferStatusButton({
           )
         }
       >
-        {(!status || status === 'no') && String(t('Cannot host currently'))}
-        {status === 'yes' && String(t('Can host'))}
-        {status === 'maybe' && String(t('Might be able to host'))}
+        {hostStatusLabel(status ?? 'no', key => String(t(key)))}
       </Button>
     </Tooltip>
   );

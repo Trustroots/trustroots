@@ -11,6 +11,7 @@ import type {
   DiscoveryMember,
   TribeSummary,
 } from '@/modules/tribes/client/api/tribes.api';
+import { memberActivityLabel } from '@/modules/tribes/client/utils/memberActivityLabel';
 
 type Props = {
   circle: TribeSummary;
@@ -78,13 +79,7 @@ function MemberSection({
                 <div className="circle-discovery-card-meta">
                   {member.activity && (
                     <span data-testid="circle-member-activity">
-                      {member.activity === 'today'
-                        ? t('Active today')
-                        : member.activity === 'week'
-                          ? t('Active this week')
-                          : member.activity === 'month'
-                            ? t('Active this month')
-                            : t('Active more than a month ago')}
+                      {memberActivityLabel(member.activity, t)}
                     </span>
                   )}
                   {member.hosting && (
