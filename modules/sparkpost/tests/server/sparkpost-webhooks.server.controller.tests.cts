@@ -246,6 +246,54 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       config.sparkpostWebhook.enabled = originalEnabled;
     });
 
+    context('basicAuthenticate header parsing', function () {
+      // sparkpost:pa:ss and sparkpost:pa:sss
+      const token = 'c3Bhcmtwb3N0OnBhOnNz';
+      const paddedToken = 'c3Bhcmtwb3N0OnBhOnNzcw==';
+
+      function authenticates(authorization: string, password = 'pa:ss') {
+        sinon.stub(config.sparkpostWebhook, 'enabled').value(true);
+        sinon.stub(config.sparkpostWebhook, 'username').value('sparkpost');
+        sinon.stub(config.sparkpostWebhook, 'password').value(password);
+        let nextCalled = false;
+        basicAuthenticate({ authorization }, createResponse(), () => {
+          nextCalled = true;
+        });
+        return nextCalled;
+      }
+
+      it('accepts a password containing a colon', function () {
+        authenticates(`Basic ${token}`).should.be.true();
+      });
+
+      it('accepts a padded token', function () {
+        authenticates(`Basic ${paddedToken}`, 'pa:sss').should.be.true();
+      });
+
+      it('accepts a case-insensitive scheme and surrounding spaces', function () {
+        authenticates(`  bAsIc   ${token}  `).should.be.true();
+      });
+
+      (
+        [
+          ['a missing Basic scheme', token],
+          ['another scheme', `Bearer ${token}`],
+          ['invalid base64 characters', `Basic ${token}!`],
+          ['a one-character remainder', `Basic ${token}A`],
+          [
+            'padding on an unaligned token',
+            `Basic ${paddedToken.slice(0, -1)}`,
+            'pa:sss',
+          ],
+          ['credentials without a colon', 'Basic c3BhcmtwYXNz'],
+        ] as [string, string, string?][]
+      ).forEach(([description, authorization, password]) => {
+        it(`rejects a header with ${description}`, function () {
+          authenticates(authorization, password).should.be.false();
+        });
+      });
+    });
+
     it('should reach the influxdb with data in correct format', function (done) {
       sparkpostWebhooks.processAndSendMetrics(
         testEvent,
