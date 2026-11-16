@@ -10,6 +10,8 @@ interface AvatarFailureOptions {
   metadata?: { format: string; width: number; height: number; pages?: number };
   metadataError?: Error;
   outputSize?: number;
+  outputWidth?: number;
+  outputHeight?: number;
   writeError?: Error;
   thumbnailBytes?: string;
   fallback?: boolean;
@@ -105,8 +107,10 @@ function createBackend(options: AvatarFailureOptions = {}): SharpFactory {
           outputPath,
           options.thumbnailBytes || 'mock thumbnail bytes',
         );
-        const outputSize = options.outputSize || size;
-        return { width: outputSize, height: outputSize };
+        return {
+          width: options.outputWidth ?? options.outputSize ?? size,
+          height: options.outputHeight ?? options.outputSize ?? size,
+        };
       },
     };
   };
@@ -258,7 +262,8 @@ describe('Avatar processing failure handling', () => {
   });
 
   it('rejects wrong thumbnail dimensions and invalid output file sizes', async () => {
-    await expectProcessingFailure({ outputSize: 1 }, /unexpected dimensions/);
+    await expectProcessingFailure({ outputWidth: 1 }, /unexpected dimensions/);
+    await expectProcessingFailure({ outputHeight: 1 }, /unexpected dimensions/);
     await expectProcessingFailure({ thumbnailBytes: 'x' }, /invalid file size/);
     await expectProcessingFailure({}, /invalid file size/, {
       stat: async thumbnailPath => {
