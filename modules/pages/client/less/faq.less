@@ -13,16 +13,16 @@
 }
 
 #faq-sidebar.sidebar {
-  margin-top: (20px + @navbar-height);
+  margin-top: calc(var(--tr-header-height, @navbar-height) + 20px);
 }
 
 .faq-filter {
-  margin-top: (20px + @navbar-height);
+  margin-top: calc(var(--tr-header-height, @navbar-height) + 20px);
 }
 
 .faq-question {
   margin-top: 0;
-  padding-top: (20px + @navbar-height);
+  padding-top: calc(var(--tr-header-height, @navbar-height) + 20px);
   h3 {
     margin-top: 0;
     padding-top: 0;

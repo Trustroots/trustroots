@@ -7,6 +7,28 @@
 #tr-header {
   .font-brand-regular();
 
+  .header-android-preview {
+    width: 100%;
+    padding: 0 12px;
+    text-align: center;
+    font-size: 13px;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding-inline: 4px;
+      color: @navbar-default-link-color;
+      text-decoration: underline;
+
+      &:hover,
+      &:focus-visible {
+        color: @navbar-default-link-hover-color;
+        background: @navbar-default-link-hover-bg;
+      }
+    }
+  }
+
   .header-nav {
     a {
       text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
