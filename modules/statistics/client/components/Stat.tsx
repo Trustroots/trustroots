@@ -11,7 +11,7 @@ export default function Stat({ children, title, className }: StatProps) {
   return (
     <div
       className={classnames(
-        'panel panel-default tw:mb-0 tw:flex tw:min-w-0 tw:flex-col',
+        'panel panel-default tw:flex tw:min-w-0 tw:flex-col tw:[&.panel]:mb-0',
         className,
       )}
     >

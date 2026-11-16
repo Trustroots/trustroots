@@ -64,7 +64,7 @@ export default function Experience({
             </span>
           </div>
           <a
-            className="tw:ms-auto tw:self-start tw:text-[#333] tw:[@media(max-width:480px)]:ms-0 tw:[@media(max-width:480px)]:mb-2.5 tw:[@media(max-width:480px)]:w-full"
+            className="tw:ms-auto tw:[align-self:start] tw:text-[#333] tw:[@media(max-width:480px)]:ms-0 tw:[@media(max-width:480px)]:mb-2.5 tw:[@media(max-width:480px)]:w-full"
             href={`/profile/${userTo.username}/experiences#${_id}`}
           >
             <TimeAgo date={createdDate} />
@@ -108,7 +108,7 @@ export default function Experience({
           <div className="tw:max-w-[600px]">{feedbackPublic}</div>
         )}
         {response && (
-          <div className="tw:ms-5 tw:mt-5 tw:border-t tw:border-solid tw:border-[#ccc] tw:pt-5 tw:[@media(max-width:480px)]:ms-2.5">
+          <div className="tw:ms-5 tw:mt-5 tw:[border-top:1px_solid_#ccc] tw:pt-5 tw:[@media(max-width:480px)]:ms-2.5">
             <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:leading-[1.3em] tw:[&_.avatar]:me-2.5">
               <Avatar user={userTo} size={24} />
               <UserLink user={userTo} className="tw:me-[5px] tw:font-bold" />

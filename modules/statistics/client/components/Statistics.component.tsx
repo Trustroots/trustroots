@@ -229,7 +229,7 @@ export default function Statistics({
                     <p className={countClass}>
                       {numberFormat(statistics?.total)}
                     </p>
-                    <div className="tw:mt-2 tw:grid tw:w-full tw:grid-cols-2 tw:gap-4 tw:border-t tw:border-solid tw:border-[#eee] tw:pt-4 tw:[&>p]:m-0 tw:[&>p+p]:border-s tw:[&>p+p]:border-solid tw:[&>p+p]:border-[#eee] tw:[&>p+p]:ps-4">
+                    <div className="tw:mt-2 tw:grid tw:w-full tw:grid-cols-2 tw:gap-4 tw:[border-top:1px_solid_#eee] tw:pt-4 tw:[&>p]:m-0 tw:[&>p+p]:[border-inline-start:1px_solid_#eee] tw:[&>p+p]:ps-4">
                       <p className="text-muted">
                         {t(
                           '{{count}} new signups in the past 7 days (168 hours)',
@@ -255,7 +255,7 @@ export default function Statistics({
               </Stat>
 
               <Stat title={t('Recent activity')}>
-                <table className="tw:m-0 tw:w-full tw:text-start tw:text-base tw:[&_th,&_td]:px-[5px] tw:[&_th,&_td]:py-2 tw:[&_th,&_td]:text-end tw:[&_th:first-child,&_td:first-child]:text-start tw:[&_thead_th]:border-b-2 tw:[&_thead_th]:border-solid tw:[&_thead_th]:border-[#eee] tw:[&_thead_th]:align-bottom tw:[&_thead_th]:text-[13px] tw:[&_tbody_th,&_tbody_td]:border-b tw:[&_tbody_th,&_tbody_td]:border-solid tw:[&_tbody_th,&_tbody_td]:border-[#eee] tw:[&_tbody_tr:last-child_th,&_tbody_tr:last-child_td]:border-b-0">
+                <table className="tw:m-0 tw:w-full tw:text-start tw:text-[16px] tw:[&_th,&_td]:px-[5px] tw:[&_th,&_td]:py-2 tw:[&_th,&_td]:text-end tw:[&_th:first-child,&_td:first-child]:text-start tw:[&_thead_th]:[border-bottom:2px_solid_#eee] tw:[&_thead_th]:align-bottom tw:[&_thead_th]:text-[13px] tw:[&_tbody_th,&_tbody_td]:[border-bottom:1px_solid_#eee] tw:[&_tbody_tr:last-child_th,&_tbody_tr:last-child_td]:border-b-0">
                   <caption className="sr-only">{t('Recent activity')}</caption>
                   <thead>
                     <tr>
@@ -349,7 +349,7 @@ export default function Statistics({
                               count: numberFormat(count),
                             })}
                           >
-                            <li className="tw:grid tw:grid-cols-[minmax(0,1fr)_auto] tw:items-center tw:gap-4 tw:border-b tw:border-solid tw:border-[#eee] tw:px-[2px] tw:py-[7px] tw:last:border-b-0">
+                            <li className="tw:grid tw:grid-cols-[minmax(0,1fr)_auto] tw:items-center tw:gap-4 tw:[border-bottom:1px_solid_#eee] tw:px-[2px] tw:py-[7px] tw:last:border-b-0">
                               <span className="tw:flex tw:min-w-0 tw:items-center tw:gap-[7px]">
                                 <span>{getNetworkName(network)}</span>
                                 {legacyNetworks.has(network) && (
