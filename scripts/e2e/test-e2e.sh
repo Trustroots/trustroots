@@ -15,9 +15,10 @@ export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
 export TRUSTROOTS_E2E_HOST="${TRUSTROOTS_E2E_HOST:-127.0.0.1}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
 
-# A selected group intentionally exercises only part of the feature manifest.
-# CI enforces complete coverage after combining all three group reports.
-if [ -n "${TRUSTROOTS_E2E_GROUP:-}" ]; then
+# A selected group or screenshot run intentionally exercises only part of the
+# feature manifest. CI enforces complete coverage after combining all three
+# group reports.
+if [ -n "${TRUSTROOTS_E2E_GROUP:-}" ] || [ "${TRUSTROOTS_E2E_SCREENSHOTS:-}" = "true" ]; then
   export TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true
 fi
 

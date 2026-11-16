@@ -1,7 +1,7 @@
 /* global getComputedStyle, window */
-import fs from 'node:fs';
 import {
   annotateFeature,
+  captureSection,
   expect,
   expectPresent,
   test,
@@ -244,16 +244,10 @@ test('circle membership retains account roles and legacy member links', async ({
     await contact.focus();
     await page.keyboard.press('Tab');
     await expect(companion).toBeFocused();
-    if (process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true') {
-      fs.mkdirSync('tmp/screenshots', { recursive: true });
-      await page.locator('.circle-member-discovery').screenshot({
-        path: 'tmp/screenshots/circle-discovery-contacts-desktop.png',
-      });
-      fs.writeFileSync(
-        'tmp/screenshots/circle-discovery-contacts-desktop.url',
-        page.url(),
-      );
-    }
+    await captureSection(
+      page.locator('.circle-member-discovery'),
+      'circle-discovery-contacts-desktop',
+    );
     await expect(
       page.getByRole('link', { name: /Sample Recommender/ }),
     ).toBeVisible();
@@ -972,11 +966,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
     expect(desktopMembers.x).toBeGreaterThan(
       desktopResources.x + desktopResources.width,
     );
-    await page.screenshot({
-      path: 'tmp/screenshots/circle-hackers-desktop.png',
-      fullPage: true,
-    });
-    fs.writeFileSync('tmp/screenshots/circle-hackers-desktop.url', page.url());
+    await captureSection(community, 'circle-hackers-desktop');
     await page.setViewportSize({ width: 390, height: 844 });
     const mobileChat = await chat.boundingBox();
     const mobileResources = await resources.boundingBox();
@@ -993,11 +983,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
     expect(
       await page.evaluate(() => window.document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(390);
-    await page.screenshot({
-      path: 'tmp/screenshots/circle-hackers-mobile.png',
-      fullPage: true,
-    });
-    fs.writeFileSync('tmp/screenshots/circle-hackers-mobile.url', page.url());
+    await captureSection(community, 'circle-hackers-mobile');
   } finally {
     if (!wasMember)
       await page.request.delete(`/api/users/memberships/${circle._id}`, {

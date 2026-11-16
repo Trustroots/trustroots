@@ -144,6 +144,20 @@ there is an explicit reason not to.
 When adding new functionality, add at least one end-to-end test for it unless
 there is a clear reason that e2e coverage is not appropriate.
 
+When a pull request changes the UI, show the changed sections in it. In the
+e2e spec that covers the change (extend one or add one), call
+`captureSection(locator, name)` from `tests/e2e/support/fixtures.mts` on the
+changed component or area, not the whole page, once for each state worth
+seeing, such as desktop and mobile. Check the images locally, then add the
+`screenshots` label; the E2E screenshots workflow runs the changed specs and
+posts their images in a PR comment that each push updates. It only runs for
+branches in this repository, not forks.
+
+```sh
+TRUSTROOTS_E2E_SCREENSHOTS=true pnpm test:e2e tests/e2e/features/<area>/<name>.spec.ts  # images in tmp/screenshots/
+gh pr edit <number> --add-label screenshots
+```
+
 Client unit tests may stay as `*.tests.js`; most of the suite still uses that
 form. Prefer `*.tests.tsx` for new or heavily edited client tests when TypeScript
 helps (typed fixtures, component props, stricter mocks), and `*.tests.ts` for

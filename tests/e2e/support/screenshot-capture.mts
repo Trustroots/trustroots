@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Browser, BrowserContext, Page, TestInfo } from '@playwright/test';
+import type {
+  Browser,
+  BrowserContext,
+  Locator,
+  Page,
+  TestInfo,
+} from '@playwright/test';
 
 const captureScreenshots = process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true';
 const screenshotsDir =
@@ -8,6 +14,8 @@ const screenshotsDir =
   path.join(import.meta.dirname, '../../../tmp/screenshots');
 const SCREENSHOT_MODE_ANNOTATION = 'screenshot-mode';
 const SCREENSHOT_SELECTOR_ANNOTATION = 'screenshot-selector';
+const sectionPages = new WeakSet<Page>();
+const FIXED_BARS = '#tr-header, [class*="navbar-fixed-"]';
 
 export function sanitizeFileName(value: unknown): string {
   return String(value)
@@ -32,6 +40,29 @@ export function useElementScreenshot(
   });
 }
 
+export async function captureSection(
+  locator: Locator,
+  name: string,
+): Promise<void> {
+  if (!captureScreenshots) return;
+  const page = locator.page();
+  sectionPages.add(page);
+  const browserName = page.context().browser()?.browserType().name();
+  const fileName = sanitizeFileName([browserName, name].join('-'));
+  const inFixedBar = await locator.evaluate(
+    (element, bars) => Boolean(element.closest(bars)),
+    FIXED_BARS,
+  );
+  fs.mkdirSync(screenshotsDir, { recursive: true });
+  await locator.screenshot({
+    path: path.join(screenshotsDir, `${fileName}.png`),
+    style: inFixedBar
+      ? undefined
+      : `${FIXED_BARS} { visibility: hidden !important; }`,
+  });
+  fs.writeFileSync(path.join(screenshotsDir, `${fileName}.url`), page.url());
+}
+
 function getScreenshotSelector(testInfo: TestInfo): string | undefined {
   const annotation = testInfo.annotations.find(
     item => item.type === SCREENSHOT_SELECTOR_ANNOTATION,
@@ -53,7 +84,12 @@ async function captureEndOfTestScreenshot(
   testInfo: TestInfo,
   suffix = '',
 ): Promise<void> {
-  if (!captureScreenshots || page.isClosed()) {
+  const failed = testInfo.status !== testInfo.expectedStatus;
+  if (
+    !captureScreenshots ||
+    page.isClosed() ||
+    (sectionPages.has(page) && !failed)
+  ) {
     return;
   }
 
@@ -66,7 +102,6 @@ async function captureEndOfTestScreenshot(
       return;
     }
     fs.mkdirSync(screenshotsDir, { recursive: true });
-    const failed = testInfo.status !== testInfo.expectedStatus;
     const fileName = [
       sanitizeFileName(testInfo.project.name),
       sanitizeFileName(testInfo.title),
