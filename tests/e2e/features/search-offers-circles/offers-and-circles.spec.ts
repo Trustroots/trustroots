@@ -148,6 +148,25 @@ test.describe.serial('search offers and circles feature coverage', () => {
       });
       expect(prepare.ok()).toBeTruthy();
       await page.goto('/offer/host');
+      const hosting = page.getByRole('radiogroup', { name: 'Can you host?' });
+      const cannotHost = hosting.getByRole('radio', { name: 'No' });
+      const mightHost = hosting.getByRole('radio', { name: 'Maybe' });
+      await expect(cannotHost).toBeChecked();
+      await cannotHost.press('ArrowLeft');
+      await expect(mightHost).toBeChecked();
+      await expect(mightHost).toBeFocused();
+      await expect(mightHost).toHaveCSS('clip', 'rect(0px, 0px, 0px, 0px)');
+      await expect
+        .poll(() =>
+          mightHost.evaluate(
+            input =>
+              getComputedStyle(input.closest('label')!, '::before').content,
+          ),
+        )
+        .toContain('✓');
+      await mightHost.press('ArrowRight');
+      await expect(cannotHost).toBeChecked();
+
       await expect(
         page
           .getByRole('radiogroup', { name: 'Would you like to meet people?' })
@@ -191,6 +210,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       );
       await page.getByRole('button', { name: 'Save and Exit' }).click();
       expect((await saved).ok()).toBeTruthy();
+      await expect(page).toHaveURL(
+        new RegExp(`/profile/${berlin.username}(?:/overview)?$`),
+      );
       await page.goto(`/profile/${berlin.username}/accommodation`);
       await expect(page.getByRole('radio', { name: /Yes/ })).toBeChecked();
       await expect(

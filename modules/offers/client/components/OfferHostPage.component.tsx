@@ -255,7 +255,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                               onChange={() =>
                                 setOffer(current => ({ ...current, status }))
                               }
-                              className="sr-only"
+                              className="offer-availability-radio"
                               type="radio"
                               value={status}
                             />

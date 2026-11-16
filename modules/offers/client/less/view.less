@@ -130,12 +130,6 @@
       border-color: darken(@gray-lighter, 20%);
     }
   }
-
-  .btn:focus-within {
-    outline: 2px solid @gray-dark;
-    outline-offset: 2px;
-    z-index: 1;
-  }
 }
 
 .offer-availability-radio {
@@ -150,13 +144,14 @@
   border: 0;
 }
 
-.offer-meta .btn:focus-within,
+.offer-meta .offer-hosting-button:focus-within,
 .meeting-availability-control .btn:focus-within {
   outline: 2px solid @brand-primary;
   outline-offset: 2px;
   z-index: 1;
 }
 
+.offer-meta .offer-hosting-button.active,
 .offer-meta .btn-group > .btn.active,
 .offer-meeting-status .meeting-availability-control .btn.active {
   box-shadow:
@@ -166,7 +161,7 @@
   z-index: 1;
 
   &::before {
-    content: '✓';
+    content: '✓' / '';
     display: inline-block;
     margin-right: 6px;
     font-weight: 700;
