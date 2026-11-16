@@ -315,6 +315,32 @@ describe('Avatar processing service', () => {
       }
     });
 
+    it('matches the GraphicsMagick thumbnails of a photo', async () => {
+      const sharp: typeof import('sharp') = require('sharp');
+      const result = await loadService().processAvatar({
+        sourcePath: path.join(__dirname, 'img', 'avatar-photo.jpg'),
+        userId: '0123456789abcdef01234567',
+      });
+      for (const size of [128, 64, 32]) {
+        const [actual, expected] = await Promise.all(
+          [
+            path.join(result.versionDirectory, `${size}.jpg`),
+            path.join(__dirname, 'img', `avatar-photo-gm-${size}.jpg`),
+          ].map(file =>
+            sharp(file).raw().toBuffer({ resolveWithObject: true }),
+          ),
+        );
+        actual.info.should.eql(expected.info);
+        const squaredError = actual.data.reduce(
+          (sum, value, i) => sum + (value - expected.data[i]) ** 2,
+          0,
+        );
+        const psnr =
+          10 * Math.log10(255 ** 2 / (squaredError / actual.data.length));
+        psnr.should.be.above(30, `${size}px PSNR`);
+      }
+    });
+
     it('flattens transparent input onto white', async () => {
       const sharp: typeof import('sharp') = require('sharp');
       const inputPath = path.join(temporaryRoot, 'transparent.png');
