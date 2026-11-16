@@ -1,6 +1,6 @@
-This is the canonical AI coding guideline file for this repository. Keep other
-assistant-specific files, such as `.cursorrules` and `CLAUDE.md`, as short
-pointers back to this file so the project guidance does not drift.
+This is the canonical AI coding guideline file for this repository. `CLAUDE.md`
+is a symlink to it; keep other assistant-specific files, such as `.cursorrules`,
+as short pointers back to this file so the project guidance does not drift.
 
 ## Commands
 
@@ -45,6 +45,51 @@ shared UI components and their existing props where appropriate. Component-scope
 stylesheets, including CSS Modules and colocated CSS or Less, are prohibited.
 Existing global and vendor stylesheets can still be used. Use React style props
 for values that depend on runtime data.
+
+When a change touches CSS or Less, move those styles out of Less instead of
+adding to or extending it: into a component in `packages/ui/src/components`
+(add one, or a variant to an existing one, when the look repeats) or into
+`tw:` Tailwind classNames on the element. Join conditional classes with `cn`
+from `@trustroots/ui/cn` (`packages/ui/src/lib/cn.ts`). Theme tokens live in
+`packages/ui/src/globals.css`, and the web client's Tailwind entry is
+`config/client/styles/tailwind.css`.
+
+When editing a React class component, convert it to a function component:
+hooks instead of state and lifecycle methods, with the same props and
+behaviour.
+
+Use ts-pattern's `match()` to branch on a union, enum or status instead of
+`switch`, nested ternaries or `if`/`else` chains. End with `.exhaustive()`
+when the cases are closed, so adding a case fails the typecheck. For example,
+`getRecommend` in `modules/experiences/client/components/create-experience/Feedback.tsx`:
+
+```tsx
+// Before
+switch (recommendCode) {
+  case 'yes':
+    return t('Did you enjoy their cooking? singing?');
+  case 'no':
+    return report
+      ? t('Did you not like their cooking? singing?')
+      : t('Did you not enjoy their cooking? singing?');
+  case 'unknown':
+    return t('Did you maybe enjoy their cooking? singing?');
+  default:
+    return undefined;
+}
+
+// After
+return match(recommendCode)
+  .with('yes', () => t('Did you enjoy their cooking? singing?'))
+  .with('no', () =>
+    report
+      ? t('Did you not like their cooking? singing?')
+      : t('Did you not enjoy their cooking? singing?'),
+  )
+  .with('unknown', () => t('Did you maybe enjoy their cooking? singing?'))
+  .with(P.nullish, () => undefined)
+  .exhaustive();
+```
 
 Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
