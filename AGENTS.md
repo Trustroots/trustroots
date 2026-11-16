@@ -88,7 +88,7 @@ return match(recommendCode)
   )
   .with('unknown', () => t('Did you maybe enjoy their cooking? singing?'))
   .with(P.nullish, () => undefined)
-  .exhaustive();
+  .exhaustive(() => undefined);
 ```
 
 Use tables for overviews when they make information easier to compare, with

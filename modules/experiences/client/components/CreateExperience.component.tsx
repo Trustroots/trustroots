@@ -3,6 +3,7 @@ import { Button } from '@trustroots/ui/Button';
 import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
+import { match } from 'ts-pattern';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -161,19 +162,12 @@ function ExperienceForm({
 
   const handleChangeInteraction = (
     interactionType: keyof ExperienceInteractions,
-  ) => {
-    switch (interactionType) {
-      case 'met':
-        setMet(met => !met);
-        break;
-      case 'host':
-        setHostedThem(host => !host);
-        break;
-      case 'guest':
-        setHostedMe(guest => !guest);
-        break;
-    }
-  };
+  ) =>
+    match(interactionType)
+      .with('met', () => setMet(met => !met))
+      .with('host', () => setHostedThem(host => !host))
+      .with('guest', () => setHostedMe(guest => !guest))
+      .exhaustive();
 
   const submitReport = async () => {
     setIsReporting(true);
