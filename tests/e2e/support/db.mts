@@ -17,6 +17,7 @@ export interface UserDocument {
   displayName?: string;
   emailTemporary?: string;
   roles?: string[];
+  mfaEnabled?: boolean;
   public?: boolean;
   description?: string;
   tagline?: string;
@@ -108,6 +109,7 @@ export type UserTestUpdate = {
   $unset?: Record<string, '' | 1 | true>;
   $addToSet?: { roles?: string | { $each: string[] } };
   $pull?: { roles?: string };
+  $push?: { mfaRecoveryCodeHashes?: string };
 };
 
 type ActionTokenField =

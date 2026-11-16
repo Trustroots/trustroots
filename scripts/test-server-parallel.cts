@@ -216,7 +216,7 @@ async function main(): Promise<void> {
     ? files
     : process.env.SERVER_TEST_FILES
       ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-      : globSync('modules/*/tests/server/**/*.{js,cts,mts}', {
+      : globSync('modules/*/tests/server/**/*.{js,cts,mts,mjs}', {
           cwd: root,
         }).sort();
   const durations = process.env.SERVER_TEST_TIMINGS_DIR

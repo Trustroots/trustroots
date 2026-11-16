@@ -42,7 +42,7 @@ nodemon({
     'bin/**',
     'modules/*/client/**',
     'modules/*/tests/client/**/*.js',
-    'modules/*/tests/server/**/*.{js,cts,mts}',
+    'modules/*/tests/server/**/*.{js,cts,mts,mjs}',
     'node_modules/**',
     'public/**',
     'scripts/**',
