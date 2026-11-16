@@ -60,7 +60,6 @@ import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.PinnedTopAppBar
-import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
 import org.trustroots.android.ui.common.canPostNotifications
@@ -176,7 +175,6 @@ internal fun AccountSettingsScreen(
         stringResource(status.resourceId, *status.formatArgs.toTypedArray())
     }
     val updateReleaseUrl = (state.updateStatus as? AccountUpdateStatus.NewVersion)?.pageUrl
-    val accountLoadFailure = state.failure?.takeIf { it.fallback == UiFailureFallback.ACCOUNT_LOAD }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -217,15 +215,6 @@ internal fun AccountSettingsScreen(
             }
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
-            } else if (accountLoadFailure != null) {
-                Text(
-                    resolveFailureMessage(accountLoadFailure),
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 20.dp),
-                )
-                TextButton(onClick = { viewModel.onEvent(AccountEvent.RetryLoad) }) {
-                    Text(stringResource(R.string.retry))
-                }
             } else {
                 Text(emailLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp))
                 TextField(
@@ -253,8 +242,6 @@ internal fun AccountSettingsScreen(
                     enabled = !state.isSavingAccount && state.email.isNotBlank(),
                     modifier = Modifier.padding(top = 8.dp),
                 ) { Text(if (state.isSavingAccount) savingLabel else saveEmailSettings) }
-            }
-            if (!state.isLoading) {
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
                 Text(changePasswordLabel, style = MaterialTheme.typography.titleMedium)
                 TextField(
@@ -312,7 +299,7 @@ internal fun AccountSettingsScreen(
                     }
                     Text(text, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
                 }
-                state.failure?.takeUnless { it.fallback == UiFailureFallback.ACCOUNT_LOAD }?.let {
+                state.failure?.let {
                     Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
                 }
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))

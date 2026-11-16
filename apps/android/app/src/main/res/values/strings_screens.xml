@@ -122,7 +122,7 @@
     <string name="screen_host_offer_save_error">Could not save hosting offer.</string>
     <string name="screen_host_offer_saved">Hosting offer saved.</string>
     <string name="screen_experience_share_error">Could not share experience.</string>
-    <string name="screen_account_load_error">Could not load your account settings from Trustroots. Check your internet connection and try again. If the problem persists, sign out and sign back in.</string>
+    <string name="screen_account_load_error">Could not load account.</string>
     <string name="screen_account_save_error">Could not save account.</string>
     <string name="screen_password_change_error">Could not change password.</string>
     <string name="screen_host_description_prompt">Tell travellers whether you can host.</string>
