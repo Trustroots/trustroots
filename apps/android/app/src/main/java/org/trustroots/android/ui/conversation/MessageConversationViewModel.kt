@@ -34,13 +34,12 @@ internal interface MessageConversationRepository {
     suspend fun messages(memberID: String): Result<List<DirectMessage>>
     suspend fun hostingContext(memberID: String): Result<HostingContext> =
         Result.failure(UnsupportedOperationException("Hosting context is unavailable."))
-    suspend fun send(memberID: String, content: String): Result<DirectMessage>
     suspend fun send(
         memberID: String,
         content: String,
         hostingDetails: HostingDetails?,
         hostingDescriptionAcknowledged: Boolean,
-    ): Result<DirectMessage> = send(memberID, content)
+    ): Result<DirectMessage>
     fun loadDraft(selfUsername: String, otherKey: String): String
     fun saveDraft(selfUsername: String, otherKey: String, value: String)
     fun clearDraft(selfUsername: String, otherKey: String)
@@ -71,7 +70,6 @@ internal class MobileApiMessageConversationRepository(
     override suspend fun member(memberID: String) = api.messageMember(session, memberID)
     override suspend fun messages(memberID: String) = api.conversation(session, memberID)
     override suspend fun hostingContext(memberID: String) = api.hostingContext(session, memberID)
-    override suspend fun send(memberID: String, content: String) = api.sendMessage(session, memberID, content)
     override suspend fun send(
         memberID: String,
         content: String,

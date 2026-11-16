@@ -24,12 +24,11 @@ let offerMeet: HydratedDocument<OfferServerRecord>;
 describe('Offer Model Unit Tests:', function () {
   it('defaults hosting acknowledgement off and persists the explicit preference', async () => {
     const offer = new Offer({ type: 'host', location: [12, 34] });
-    offer.get('requireHostingDescriptionAcknowledgement').should.equal(false);
-    offer.set('requireHostingDescriptionAcknowledgement', true);
+    should(offer.requireHostingDescriptionAcknowledgement).equal(false);
+    offer.requireHostingDescriptionAcknowledgement = true;
     await offer.save();
     const saved = await Offer.findById(offer._id);
-    should.exist(saved);
-    saved!.get('requireHostingDescriptionAcknowledgement').should.equal(true);
+    should(saved?.requireHostingDescriptionAcknowledgement).equal(true);
   });
   beforeEach(function (done) {
     user = new User({

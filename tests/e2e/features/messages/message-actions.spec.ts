@@ -53,9 +53,9 @@ for (const width of [390, 1280]) {
       });
       expect(created.ok()).toBeTruthy();
       await hostPage.goto('/offer/host#description');
-      const preference = hostPage.getByRole('checkbox', {
-        name: /Require guests to acknowledge/,
-      });
+      const preference = hostPage
+        .getByRole('region', { name: 'Description' })
+        .getByRole('checkbox', { name: /Require guests to acknowledge/ });
       await expect(preference).not.toBeChecked();
       await signInViaApi(page, request, berlin);
       await page.setViewportSize({ width, height: 844 });
@@ -66,7 +66,10 @@ for (const width of [390, 1280]) {
 
       // The host opts in while the guest is already writing a message.
       await preference.check();
-      await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
+      await hostPage
+        .getByRole('button', { name: 'Save and Exit' })
+        .last()
+        .click();
       await expect(hostPage).toHaveURL(new RegExp(`/profile/${host.username}`));
       await hostPage.goto('/offer/host#description');
       await expect(preference).toBeChecked();

@@ -100,8 +100,12 @@ class MessageConversationBranchContractsTest {
             return messageHandler()
         }
 
-        override suspend fun send(memberID: String, content: String): Result<DirectMessage> =
-            Result.success(sent)
+        override suspend fun send(
+            memberID: String,
+            content: String,
+            hostingDetails: HostingDetails?,
+            hostingDescriptionAcknowledged: Boolean,
+        ): Result<DirectMessage> = Result.success(sent)
 
         override fun loadDraft(selfUsername: String, otherKey: String) = ""
         override fun saveDraft(selfUsername: String, otherKey: String, value: String) = Unit
