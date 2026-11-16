@@ -1,5 +1,5 @@
 // External dependencies
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 import { useLocation } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../../core/client/react-app/auth';
@@ -111,7 +111,7 @@ export default function AdminHeader() {
   const renderTab = ({ path, label }: { path: string; label: string }) => {
     const active = isActivePage(path);
     return (
-      <li key={path} className={clsx({ active })}>
+      <li key={path} className={cn({ active })}>
         <a
           href={path ? `/admin/${path}` : '/admin'}
           aria-current={active ? 'page' : undefined}

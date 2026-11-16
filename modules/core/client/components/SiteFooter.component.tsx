@@ -1,5 +1,5 @@
 import React from 'react';
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 
 import {
   useAnalytics,
@@ -107,7 +107,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
     <footer
       id="tr-footer"
       role="contentinfo"
-      className={clsx('container hidden-print', {
+      className={cn('container hidden-print', {
         'tw:[@media(max-width:767px)]:hidden': !showOnMobile,
         'site-footer-circle': variant === 'circle',
       })}

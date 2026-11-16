@@ -1,4 +1,4 @@
-import { cn } from '../../../../../packages/ui/src/lib/utils';
+import { cn } from '@trustroots/classnames';
 
 test('cn joins conditional class names', () => {
   expect(
