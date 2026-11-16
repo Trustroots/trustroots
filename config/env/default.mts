@@ -34,8 +34,6 @@ const service = {
   // General upload limit in bytes.
   maxAvatarUploadSize: 20 * 1024 * 1024,
   // Keep Nginx request limits above this to allow multipart overhead.
-  imageProcessor: 'graphicsmagick',
-  // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
   // NOTE: `uploadDir` probably cannot be changed as the `uploads-profile`
   // part is hardcoded in several places in the codebase.

@@ -37,7 +37,7 @@ const modules = [
 
 describe('ESM interoperability: identity-platform', () => {
   it(
-    'honours HTTPS and ImageMagick configuration at process startup',
+    'honours HTTPS configuration at process startup',
     { timeout: 10000 },
     function () {
       execFileSync(
@@ -50,17 +50,7 @@ describe('ESM interoperability: identity-platform', () => {
       const config = require('./config/config.mts');
       config.https = true;
       config.domain = 'secure.example.test';
-      config.imageProcessor = 'imagemagic';
       await require('./config/lib/mongoose.mjs').loadModels();
-      const gm = require('gm');
-      const originalSubClass = gm.subClass;
-      let processorOptions;
-      gm.subClass = options => {
-        processorOptions = options;
-        return originalSubClass(options);
-      };
-      require('./modules/users/server/controllers/users.avatar.server.controller.mjs');
-      assert.deepEqual(processorOptions, { imageMagick: true });
       const email = require('./modules/core/server/services/email.server.service.mjs');
       let confirmationUrl;
       email.renderEmailAndSend = (template, params) => {

@@ -77,7 +77,7 @@ docker run --rm --entrypoint node "$image" -e '
       `${dependency} should be omitted from the production image`,
     );
   }
-  for (const dependency of ["express", "file-type", "gm", "semver"]) {
+  for (const dependency of ["express", "file-type", "semver"]) {
     require.resolve(dependency);
   }
   const sharp = require("sharp");

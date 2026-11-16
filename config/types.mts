@@ -19,7 +19,6 @@ export interface Config {
   siteAnnouncement: { enabled: boolean; message: string };
   maxUploadSize: number;
   maxAvatarUploadSize: number;
-  imageProcessor: 'graphicsmagick' | 'imagemagick' | 'imagemagic';
   uploadTmpDir: string;
   uploadDir: string;
   circleImagesDir: string;

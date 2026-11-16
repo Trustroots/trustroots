@@ -8,7 +8,6 @@ FROM node:24.22.3-bookworm-slim
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
   git \
-  graphicsmagick \
   libasound2 \
   libatk-bridge2.0-0 \
   libatk1.0-0 \

@@ -8,7 +8,6 @@ FROM node:24.22.3-bookworm-slim AS server
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
   git \
-  graphicsmagick \
   openssl \
   unzip \
   wget \

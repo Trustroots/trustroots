@@ -13,7 +13,6 @@ RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(
 RUN rm -f /etc/apt/sources.list.d/passenger.list \
   && apt-get -qq update && apt-get -q install -y \
   build-essential \
-  graphicsmagick \
   openssl \
   unzip \
   wget \
@@ -81,13 +80,6 @@ ENV TRUSTROOTS_BUILD_COMMIT=${TRUSTROOTS_BUILD_COMMIT} \
 
 # Enable nginx in the passenger container
 RUN rm -f /etc/service/nginx/down
-
-# Install the production dependencies into the production container
-RUN rm -f /etc/apt/sources.list.d/passenger.list \
-  && apt-get -qq update && apt-get -q install -y \
-  graphicsmagick \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /home/app/trustroots
 

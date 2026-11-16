@@ -11,7 +11,6 @@ type StartupConfiguration = {
   mailer: { service?: string };
   db: { uri: string; autoIndex?: unknown };
   https?: unknown;
-  imageProcessor: string;
   influxdb?: { enabled?: boolean };
 };
 type InitCallback = (
@@ -72,7 +71,6 @@ function start(this: { init: typeof init }, callback?: InitCallback) {
         } else {
           console.log('Port:\t\t\t' + config.port);
         }
-        console.log('Image processor:\t' + config.imageProcessor);
         console.log(
           'Phusion Passenger:\t' +
             (typeof PhusionPassenger !== 'undefined' ? 'on' : 'off'),
