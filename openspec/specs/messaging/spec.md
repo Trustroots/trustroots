@@ -191,9 +191,14 @@ The system SHALL display external links in message bodies and draft previews as 
 
 #### Scenario: Member views an internal link in a message
 
-- **WHEN** a member opens a conversation containing an HTTP or HTTPS link to the current Trustroots origin, `trustroots.org`, or any subdomain of `trustroots.org`
+- **WHEN** a member opens a conversation on the web or Android containing an HTTP or HTTPS link to the current Trustroots origin, `trustroots.org`, or any subdomain of `trustroots.org`
 - **THEN** that link remains clickable
-- **AND** draft previews apply the same link rules
+- **AND** web draft previews apply the same link rules
+
+#### Scenario: Member receives an unread-message email
+
+- **WHEN** an unread message contains a Trustroots link and an external URL
+- **THEN** the email provides the Trustroots destination and displays the external URL as non-clickable text
 
 ### Requirement: Hosting replies require an incoming conversation
 

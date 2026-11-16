@@ -400,7 +400,7 @@ describe('Service: email (sent content)', function () {
     assert.equal(email.from, defaultFrom);
   });
 
-  it('defangs every form of link in unread message previews', async function () {
+  it('defangs external links in unread message previews', async function () {
     const email = await send('sendMessagesUnread', other, member, {
       notificationCount: 0,
       messages: [
@@ -413,6 +413,14 @@ describe('Service: email (sent content)', function () {
         },
         { content: 'Five <a href="https://five.example/e">my page</a>.' },
         { content: 'Write to member@example.org or call 555.666.7777.' },
+        {
+          content: '<a href=https://trustroots.org.example.com/>Lookalike</a>',
+        },
+        { content: '<a href="javascript:void(0)">https://example.com</a>' },
+        {
+          content:
+            '<a href="ftp://team.trustroots.org/apps">FTP destination</a>',
+        },
       ],
     });
     for (const body of [email.html!, email.text]) {
@@ -423,10 +431,47 @@ describe('Service: email (sent content)', function () {
         'Four https[:]//four[.]example/d.',
         'Five https[:]//five[.]example/e.',
         'Write to member@example.org or call 555.666.7777.',
+        'ftp[:]//team[.]trustroots[.]org/apps',
+        'https[:]//trustroots[.]org[.]example[.]com/',
+        'https[:]//example[.]com',
       ]) {
         assert.ok(body.includes(expected), expected);
       }
       assert.ok(!body.includes('label'));
+    }
+  });
+
+  it('preserves Trustroots destinations in both versions of an unread message email', async function () {
+    const email = await send('sendMessagesUnread', other, member, {
+      notificationCount: 0,
+      messages: [
+        {
+          content:
+            '<p><a title="Instructions" href="https://nested.team.trustroots.org/apps?a=1&amp;b=2"><b>App guide</b></a></p>',
+        },
+        {
+          content:
+            'Visit https://trustroots.org/faq or team.trustroots.org/apps.',
+        },
+        { content: '<a href="/safety">Safety tips</a>' },
+        { content: '<a href="http://[">Malformed link</a>' },
+        { content: '<a href=" ">Missing destination</a>' },
+      ],
+    });
+    assert.ok(
+      /<a href="https:\/\/nested\.team\.trustroots\.org\/apps\?a=1&amp;b=2"[^>]*><b>App guide<\/b><\/a>/.test(
+        email.html!,
+      ),
+    );
+    assert.ok(email.html!.includes('>Safety tips</a>'));
+    for (const destination of [
+      'https://nested.team.trustroots.org/apps?a=1&b=2',
+      'https://trustroots.org/faq',
+      'http://team.trustroots.org/apps',
+      site + '/safety',
+    ]) {
+      assert.ok(links(email).includes(destination), destination);
+      assert.ok(email.text.includes(`<${destination}>`), destination);
     }
   });
 

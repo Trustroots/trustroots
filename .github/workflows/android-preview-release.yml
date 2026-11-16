@@ -7,6 +7,7 @@ on:
       - 'apps/android/**'
       - 'apps/shared/**'
       - 'config/languages/languages.json'
+      - 'modules/core/shared/trustroots-link-policy.json'
       - 'fastlane/metadata/android/**'
       - '.github/workflows/android-preview-release.yml'
   workflow_dispatch:
