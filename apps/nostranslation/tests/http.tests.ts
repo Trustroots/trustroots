@@ -1,4 +1,6 @@
 /** @jest-environment node */
+import { once } from 'node:events';
+import type { Server } from 'node:http';
 import request from 'supertest';
 import { finalizeEvent, generateSecretKey } from 'nostr-tools';
 import { createApp } from '../server/app.mts';
@@ -32,10 +34,14 @@ function sign(body: string) {
 
 describe('review API', () => {
   let store: Store;
+  let server: Server | undefined;
   beforeEach(() => {
     store = new Store(':memory:');
   });
   afterEach(() => {
+    server?.closeAllConnections();
+    server?.close();
+    server = undefined;
     store.close();
   });
   function setup() {
@@ -86,22 +92,22 @@ describe('review API', () => {
 
   it('coalesces in-flight reads, refreshes expired cache and retries failed reads', async () => {
     const { app, repository } = setup();
-    let finish: (
-      value: ReturnType<typeof snapshot>['languages'],
-    ) => void = () => {};
-    repository.languages.mockImplementationOnce(
-      () =>
-        new Promise(resolve => {
-          finish = resolve;
-        }),
-    );
-    const first = request(app)
+    const started = new Promise<
+      (value: ReturnType<typeof snapshot>['languages']) => void
+    >(called => {
+      repository.languages.mockImplementationOnce(() => new Promise(called));
+    });
+    server = app.listen(0);
+    await once(server, 'listening');
+    const first = request(server)
       .get('/api/languages')
       .then(result => result);
-    const second = request(app)
+    const finish = await started;
+    const arrived = once(server, 'request');
+    const second = request(server)
       .get('/api/languages')
       .then(result => result);
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await arrived;
     finish(snapshot().languages);
     expect((await first).status).toBe(200);
     expect((await second).status).toBe(200);
