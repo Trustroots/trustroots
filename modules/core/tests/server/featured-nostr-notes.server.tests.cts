@@ -6,6 +6,7 @@ import type {
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
 const {
   finalizeEvent,
   generateSecretKey,
@@ -65,7 +66,11 @@ describe('Admin featured Nostr notes', () => {
       publishedAt: new Date(event.created_at * 1000).toISOString(),
     };
     await admin.post(featurePath).send({ event }).expect(200, expectedNote);
+    const featuredAt = new Date('2026-01-01T00:00:00Z');
+    await FeaturedNote.updateOne({ _id: event.id }, { $set: { featuredAt } });
     await admin.post(featurePath).send({ event }).expect(200, expectedNote);
+    const stillFeatured = await FeaturedNote.findById(event.id).lean().orFail();
+    assert.deepEqual(stillFeatured.featuredAt, featuredAt);
     await request(app)
       .get(publicPath)
       .expect('Cache-Control', 'no-store')
@@ -74,12 +79,48 @@ describe('Admin featured Nostr notes', () => {
       .delete(`${featurePath}/${event.id}`)
       .set('X-Trustroots-Request', '1')
       .expect(204);
-    await request(app).get(publicPath).expect(200, []);
+    const findAuthors = sinon.spy(mongoose.model('User'), 'find');
+    try {
+      await request(app).get(publicPath).expect(200, []);
+      sinon.assert.notCalled(findAuthors);
+    } finally {
+      findAuthors.restore();
+    }
     const removed = await FeaturedNote.findById(event.id).lean().orFail();
     assert.equal(removed.content, '');
-    await admin.post(featurePath).send({ event }).expect(200);
+    await admin.post(featurePath).send({ event }).expect(200, expectedNote);
     const restored = await request(app).get(publicPath).expect(200);
     assert.equal(restored.body[0].content, event.content);
+  });
+
+  it('shows an author username only while their profile is public', async () => {
+    const npub = nip19.npubEncode(event.pubkey);
+    const member = {
+      ...users.generateUsersWithSharedPassword(1)[0],
+      nostrNpub: npub,
+      public: true,
+    };
+    await users.saveUsersWithCachedPasswords([member]);
+
+    try {
+      const featureResponse = await admin
+        .post(featurePath)
+        .send({ event })
+        .expect(200);
+      assert.equal(featureResponse.body.authorUsername, member.username);
+
+      const publicResponse = await request(app).get(publicPath).expect(200);
+      assert.equal(publicResponse.body[0].authorUsername, member.username);
+
+      await mongoose
+        .model('User')
+        .updateOne({ username: member.username }, { $set: { public: false } });
+      const privateResponse = await request(app).get(publicPath).expect(200);
+      assert.equal(privateResponse.body[0].id, event.id);
+      assert.ok(!Object.hasOwn(privateResponse.body[0], 'authorUsername'));
+    } finally {
+      await mongoose.model('User').deleteOne({ username: member.username });
+    }
   });
 
   it('accepts the timestamp and UTF-8 content boundaries', async () => {
@@ -108,6 +149,7 @@ describe('Admin featured Nostr notes', () => {
     const publishedAt = new Date('2026-01-01T00:00:00Z');
     const older = '11'.repeat(32);
     const newer = '22'.repeat(32);
+    const firstAtNewestTime = '00'.repeat(32);
     await FeaturedNote.create([
       {
         _id: older,
@@ -124,6 +166,13 @@ describe('Admin featured Nostr notes', () => {
         featuredAt: new Date('2026-01-02T00:00:00Z'),
       },
       {
+        _id: firstAtNewestTime,
+        npub: 'npub-first',
+        content: 'First',
+        publishedAt,
+        featuredAt: new Date('2026-01-02T00:00:00Z'),
+      },
+      {
         _id: '33'.repeat(32),
         npub: 'npub-hidden',
         content: '',
@@ -131,23 +180,36 @@ describe('Admin featured Nostr notes', () => {
         featuredAt: null,
       },
     ]);
-    await request(app)
-      .get(publicPath)
-      .expect('Cache-Control', 'no-store')
-      .expect(200, [
-        {
-          id: newer,
-          npub: 'npub-new',
-          content: 'New',
-          publishedAt: publishedAt.toISOString(),
-        },
-        {
-          id: older,
-          npub: 'npub-old',
-          content: 'Old',
-          publishedAt: publishedAt.toISOString(),
-        },
-      ]);
+    await FeaturedNote.init();
+    // Prevent the index from returning the expected order without a sort.
+    await FeaturedNote.collection.dropIndex('featuredAt_-1__id_1');
+    try {
+      await request(app)
+        .get(publicPath)
+        .expect('Cache-Control', 'no-store')
+        .expect(200, [
+          {
+            id: firstAtNewestTime,
+            npub: 'npub-first',
+            content: 'First',
+            publishedAt: publishedAt.toISOString(),
+          },
+          {
+            id: newer,
+            npub: 'npub-new',
+            content: 'New',
+            publishedAt: publishedAt.toISOString(),
+          },
+          {
+            id: older,
+            npub: 'npub-old',
+            content: 'Old',
+            publishedAt: publishedAt.toISOString(),
+          },
+        ]);
+    } finally {
+      await FeaturedNote.createIndexes();
+    }
   });
 
   it('rejects malformed, non-text, and tampered events', async () => {
@@ -166,6 +228,7 @@ describe('Admin featured Nostr notes', () => {
       undefined,
       sign({ kind: 0 }),
       { ...event, id: null },
+      { ...event, id: { toString: null } },
       { ...event, id: 'invalid' },
       { ...event, id: `${'ab'.repeat(32)}x` },
       { ...event, id: `x${'ab'.repeat(32)}` },
@@ -198,7 +261,7 @@ describe('Admin featured Nostr notes', () => {
     await request(app).get(publicPath).expect(200, []);
   });
 
-  it('removes only the requested note', async () => {
+  it('removes and restores only the requested note', async () => {
     const other = finalizeEvent(
       {
         kind: 1,
@@ -208,8 +271,13 @@ describe('Admin featured Nostr notes', () => {
       },
       author,
     );
-    await admin.post(featurePath).send({ event: other }).expect(200);
-    await admin.post(featurePath).send({ event }).expect(200);
+    for (const note of [other, event]) {
+      const response = await admin
+        .post(featurePath)
+        .send({ event: note })
+        .expect(200);
+      assert.equal(response.body.id, note.id);
+    }
     await admin
       .delete(`${featurePath}/${event.id}`)
       .set('X-Trustroots-Request', '1')
@@ -219,6 +287,10 @@ describe('Admin featured Nostr notes', () => {
       response.body.map((note: { id: string }) => note.id),
       [other.id],
     );
+    const restored = await admin.post(featurePath).send({ event }).expect(200);
+    assert.equal(restored.body.id, event.id);
+    const untouched = await FeaturedNote.findById(other.id).lean().orFail();
+    assert.equal(untouched.content, other.content);
   });
 
   it('records an author-signed deletion even after local removal and blocks re-featuring', async () => {
@@ -269,6 +341,10 @@ describe('Admin featured Nostr notes', () => {
       { ...template, tags: [['e', 'ab'.repeat(32)]] },
       author,
     );
+    const wrongTag = finalizeEvent(
+      { ...template, tags: [['p', event.id]] },
+      author,
+    );
     const wrongKind = finalizeEvent({ ...template, kind: 1 }, author);
     const invalidId = 'invalid';
     const invalidTarget = finalizeEvent(
@@ -282,7 +358,7 @@ describe('Admin featured Nostr notes', () => {
       .expect(400, {
         message: 'A signed deletion request for this note is required.',
       });
-    for (const invalid of [undefined, wrongKind]) {
+    for (const invalid of [undefined, wrongKind, unrelated, wrongTag]) {
       await admin.post(deletionPath).send({ event: invalid }).expect(400, {
         message: 'A signed deletion request for this note is required.',
       });
@@ -293,9 +369,6 @@ describe('Admin featured Nostr notes', () => {
       .expect(400, {
         message: 'A signed deletion request for this note is required.',
       });
-    await admin.post(deletionPath).send({ event: unrelated }).expect(400, {
-      message: 'A signed deletion request for this note is required.',
-    });
     await admin.post(deletionPath).send({ event: foreign }).expect(404, {
       message: 'No note matches the deletion request and its author.',
     });

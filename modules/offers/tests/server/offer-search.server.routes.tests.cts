@@ -1,8 +1,6 @@
+import type { HydratedDocument } from 'mongoose';
 import type {
   Credentials,
-  OfferDocument,
-  OfferModel,
-  OfferRecord,
   TestAgent,
   TestExpressApp,
   TestExpressModule,
@@ -13,6 +11,7 @@ import type {
   UserModelDocument,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
+import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
 const _: typeof import('lodash') = require('lodash');
 const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
@@ -21,7 +20,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model<UserRecord, UserModel>('User');
-const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 /**
  * Globals
@@ -35,12 +34,12 @@ let user2: UserModelDocument;
 let user3: UserModelDocument;
 let user2Id: UserModelDocument['_id'];
 let user3Id: UserModelDocument['_id'];
-let offer1: OfferRecord;
-let offer2: OfferDocument;
-let offer2Id: OfferDocument['_id'];
-let offer3: OfferDocument;
-let offer3Id: OfferDocument['_id'];
-let offerMeet: OfferDocument;
+let offer1: OfferServerRecord;
+let offer2: HydratedDocument<OfferServerRecord>;
+let offer2Id: HydratedDocument<OfferServerRecord>['_id'];
+let offer3: HydratedDocument<OfferServerRecord>;
+let offer3Id: HydratedDocument<OfferServerRecord>['_id'];
+let offerMeet: HydratedDocument<OfferServerRecord>;
 let tribe1: TribeDocument;
 let tribe2: TribeDocument;
 let tribe1Id: TribeDocument['_id'];
@@ -52,7 +51,9 @@ const testLocations = {
       '&northEastLng=18.73318142361111' +
       '&southWestLat=44.66407507240992' +
       '&southWestLng=3.689914279513889',
-    location: [52.48556355813466, 13.489011526107788],
+    location: [
+      52.48556355813466, 13.489011526107788,
+    ] as OfferServerRecord['location'],
   },
   China: {
     queryBoundingBox:
