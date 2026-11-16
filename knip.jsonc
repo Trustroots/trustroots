@@ -80,8 +80,6 @@
         "eslint-plugin-testing-library",
         // The browserslist field in package.json extends this.
         "@wordpress/browserslist-config",
-        // Babel's preset-env injects core-js imports (useBuiltIns: usage).
-        "core-js",
         // vite.config.mts injects process/browser into the client bundle.
         "process",
         // scripts/check-affected.mts runs `pnpm exec turbo`.
