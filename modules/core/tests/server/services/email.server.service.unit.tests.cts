@@ -417,6 +417,7 @@ describe('Service: email (sent content)', function () {
           content: '<a href=https://trustroots.org.example.com/>Lookalike</a>',
         },
         { content: '<a href="javascript:void(0)">https://example.com</a>' },
+        { content: '<a>Write to guide@example.org or call 650.555.0100.</a>' },
         {
           content:
             '<a href="ftp://team.trustroots.org/apps">FTP destination</a>',
@@ -434,6 +435,7 @@ describe('Service: email (sent content)', function () {
         'ftp[:]//team[.]trustroots[.]org/apps',
         'https[:]//trustroots[.]org[.]example[.]com/',
         'https[:]//example[.]com',
+        'Write to guide@example.org or call 650.555.0100.',
       ]) {
         assert.ok(body.includes(expected), expected);
       }

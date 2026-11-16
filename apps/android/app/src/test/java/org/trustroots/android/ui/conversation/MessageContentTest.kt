@@ -44,6 +44,7 @@ class MessageContentTest {
             "http://preview.example/",
             "https://preview.example:8443/",
             "ftp://team.trustroots.org/",
+            "https:opaque",
             "http://[",
             " ",
         )) {
@@ -52,5 +53,30 @@ class MessageContentTest {
             assertTrue(destination, message.getLinkAnnotations(0, message.length).isEmpty())
         }
         assertEquals("", messageContent("<p> </p>", backend).text)
+    }
+
+    @Test fun whitespaceIsTrimmedWithoutMovingLinkLabels() {
+        val message = messageContent("&nbsp;<a href=\"/safety\">Safety</a>&nbsp;", backend)
+
+        assertEquals("Safety", message.text)
+        val link = message.getLinkAnnotations(0, message.length).single()
+        assertEquals("Safety", message.text.substring(link.start, link.end))
+    }
+
+    @Test fun relativeDestinationsNeedAnAbsoluteBackend() {
+        val message = messageContent("<a href=\"/safety\">Safety</a>", "preview")
+
+        assertEquals("Safety", message.text)
+        assertTrue(message.getLinkAnnotations(0, message.length).isEmpty())
+    }
+
+    @Test fun explicitDefaultHttpPortMatchesTheBackend() {
+        val message = messageContent(
+            "<a href=\"http://preview.example:80/safety\">Safety</a>",
+            "http://preview.example",
+        )
+
+        val link = message.getLinkAnnotations(0, message.length).single()
+        assertEquals("http://preview.example:80/safety", (link.item as LinkAnnotation.Url).url)
     }
 }
