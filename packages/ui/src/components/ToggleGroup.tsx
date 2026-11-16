@@ -1,6 +1,6 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
 
-import { cn } from '#lib/utils';
+import { cn } from '#lib/cn';
 
 /*
  * A single choice drawn as joined buttons, like Bootstrap's radio toggle

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
-import classNames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -32,17 +32,14 @@ function ProfileEditNav({
 
   return (
     <ul
-      className={classNames('nav', {
+      className={cn('nav', {
         'nav-pills nav-stacked profile-edit-navbar': variant === 'sidebar',
         'navbar-nav': variant === 'bottom',
       })}
       aria-label={t('Profile actions')}
     >
       {EDIT_TABS.map(tab => (
-        <li
-          key={tab.key}
-          className={classNames({ active: activeTab === tab.key })}
-        >
+        <li key={tab.key} className={cn({ active: activeTab === tab.key })}>
           <a
             href={getProfileEditTabPath(tab.key)}
             aria-label={t(tab.label)}

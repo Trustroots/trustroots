@@ -6,7 +6,7 @@ import { useLocation } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
-import classNames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import { Badge } from '@trustroots/ui/Badge';
 
 import {
@@ -80,7 +80,7 @@ export default function BottomNavigationSmall({
           {tabs.map(({ key, label, link, count }) => (
             <li
               key={key}
-              className={classNames({ active: active === key })}
+              className={cn({ active: active === key })}
               role="presentation"
             >
               <a href={link} role="tab" onClick={() => setActive(key)}>

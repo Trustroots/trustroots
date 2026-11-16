@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
-import classNames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import shuffle from 'lodash/shuffle';
 
 import { useAnalytics } from '@trustroots/analytics/client';
@@ -56,7 +56,7 @@ function SignupTribePanel({
       style={getCircleBackgroundStyle(tribe, '906x240')}
     >
       <div
-        className={classNames('tribe-content', {
+        className={cn('tribe-content', {
           'is-image': tribe.image,
         })}
       >
@@ -368,7 +368,7 @@ export default function SignupPage() {
             )}
             <div className="signup-steps">
               <div
-                className={classNames({
+                className={cn({
                   'font-brand-light': step !== 1,
                   'font-brand-semibold signup-step-active': step === 1,
                 })}
@@ -378,7 +378,7 @@ export default function SignupPage() {
               </div>
               <div className="signup-step-line" />
               <div
-                className={classNames({
+                className={cn({
                   'font-brand-light': step !== 2,
                   'font-brand-semibold signup-step-active': step === 2,
                 })}
@@ -388,7 +388,7 @@ export default function SignupPage() {
               </div>
               <div className="signup-step-line" />
               <div
-                className={classNames({
+                className={cn({
                   'font-brand-light': step !== 3,
                   'font-brand-semibold signup-step-active': step === 3,
                 })}
@@ -481,7 +481,7 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div
-                  className={classNames('form-group', {
+                  className={cn('form-group', {
                     'has-error': usernameErrorMessage,
                   })}
                 >

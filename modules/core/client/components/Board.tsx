@@ -5,7 +5,7 @@ import React, {
   type ReactNode,
   type HTMLAttributes,
 } from 'react';
-import classNames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import isArray from 'lodash/isArray';
 
 import { selectPhoto } from '../services/photos.service';
@@ -82,7 +82,7 @@ export default function Board({
   return (
     <section
       style={{ ...style }}
-      className={classNames(addedClasses, className)}
+      className={cn(addedClasses, className)}
       {...rest}
     >
       {children}

@@ -1,5 +1,5 @@
 import React from 'react';
-import classnames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@trustroots/ui/Badge';
 
@@ -41,7 +41,7 @@ export default function Tribe({
           </span>
         )}
         <div
-          className={classnames('tribe-content', {
+          className={cn('tribe-content', {
             'is-image': tribe.image,
           })}
         >

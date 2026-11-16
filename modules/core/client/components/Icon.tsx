@@ -1,4 +1,4 @@
-import classnames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 import React from 'react';
 
 type IconSize = 'lg' | '2x' | '3x' | '4x' | '5x';
@@ -18,7 +18,7 @@ export default function Icon({
   return (
     <i
       aria-hidden="true"
-      className={classnames('icon', `icon-${icon}`, className, {
+      className={cn('icon', `icon-${icon}`, className, {
         'icon-fw': fixedWidth,
         'icon-lg': size === 'lg',
         'icon-2x': size === '2x',

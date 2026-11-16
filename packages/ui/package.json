@@ -21,7 +21,8 @@
     "./Textarea": "./src/components/Textarea.tsx",
     "./Modal": "./src/components/Modal.tsx",
     "./NavigationDropdown": "./src/components/NavigationDropdown.tsx",
-    "./intent": "./src/lib/intent.ts"
+    "./intent": "./src/lib/intent.ts",
+    "./cn": "./src/lib/cn.ts"
   },
   "imports": {
     "#components/*": "./src/components/*.tsx",
@@ -33,8 +34,7 @@
   "dependencies": {
     "@base-ui/react": "1.9.0",
     "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
-    "tailwind-merge": "3.7.0"
+    "cn": "0.5.2"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.6",

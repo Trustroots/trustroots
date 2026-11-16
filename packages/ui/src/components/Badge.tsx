@@ -2,7 +2,7 @@ import React, { type ComponentProps } from 'react';
 import { cva } from 'class-variance-authority';
 
 import { intentClassNames, type Intent } from '#lib/intent';
-import { cn } from '#lib/utils';
+import { cn } from '#lib/cn';
 
 /*
  * Small inline status text: counts, tags and states. Adapted from shadcn's

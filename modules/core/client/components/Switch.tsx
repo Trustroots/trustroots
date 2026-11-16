@@ -1,5 +1,5 @@
 import React, { type ChangeEvent, type ReactNode } from 'react';
-import classnames from 'classnames';
+import { cn } from '@trustroots/ui/cn';
 
 type SwitchProps = {
   checked: boolean;
@@ -17,7 +17,7 @@ export default function Switch({
   // The legacy `tr-switch-right` CSS class is still supported.
   return (
     <label
-      className={classnames('tr-switch', {
+      className={cn('tr-switch', {
         'tr-switch-sm': isSmall,
       })}
     >

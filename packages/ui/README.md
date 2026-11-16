@@ -36,12 +36,11 @@ a real consumer, and add them to the component's stories.
 
 ## Class names
 
-Components build their class names with `cn()` from `src/lib/utils.ts`
-(imported as `#lib/utils`): `clsx` joins conditional classes, and
-`tailwind-merge`, configured for the `tw:` prefix and this package's theme
-tokens, lets a later utility replace a conflicting earlier one. When
-`globals.css` gains a token that utilities use (a spacing, radius or line
-height name), add it to the `extendTailwindMerge` call too.
+Components import `cn()` from `#lib/cn` inside this package and from
+`@trustroots/ui/cn` elsewhere. The wrapper uses shadcn's `createCn` to join
+conditional classes and resolve conflicting utilities with the `tw:` prefix
+and this package's theme tokens. When `globals.css` gains a spacing, radius or
+line height token used by a utility, add it to the `createCn` configuration.
 
 ## Badge
 
