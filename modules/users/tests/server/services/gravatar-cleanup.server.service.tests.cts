@@ -103,7 +103,9 @@ describe('Background Gravatar cleanup', () => {
       false,
     );
     assert.equal(await clearMissingGravatar(snapshot), true);
-    const saved = await User.findById(user._id).lean();
+    const saved = await User.findById(user._id).lean<{
+      avatarSource?: string;
+    }>();
     assert.equal(saved?.avatarSource, 'none');
     await User.deleteOne({ _id: user._id });
   });
