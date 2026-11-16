@@ -112,16 +112,10 @@ internal data class MessageConversationUiState(
 ) {
     val showQuickReply: Boolean
         get() {
-            if (!messagesLoaded || loadFailed || failure != null || messages.isEmpty()) return false
-            val chronologicalMessages = messages.asReversed()
-            val latestOwnMessageIndex = chronologicalMessages.indexOfLast {
-                it.sender.username == currentUsername
-            }
-            return chronologicalMessages.indices.any { index ->
-                index > latestOwnMessageIndex &&
-                    chronologicalMessages[index].sender.username != currentUsername &&
-                    chronologicalMessages[index].hostingDetails != null
-            }
+            if (!messagesLoaded || loadFailed || failure != null) return false
+            return messages
+                .takeWhile { it.sender.username != currentUsername }
+                .any { it.hostingDetails != null }
         }
     val hostingDetailsError: String?
         get() = hostingDetailsValidationMessage(hostingGuests, hostingArrival, hostingDeparture)

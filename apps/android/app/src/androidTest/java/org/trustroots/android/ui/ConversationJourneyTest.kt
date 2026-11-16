@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -54,6 +55,7 @@ class ConversationJourneyTest {
             compose.activity,
         )
         compose.activityRule.scenario.onActivity { activity ->
+            activity.enableEdgeToEdge()
             activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
     }

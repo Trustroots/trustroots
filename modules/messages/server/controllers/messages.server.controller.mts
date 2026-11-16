@@ -552,7 +552,7 @@ service.hostingContext = async function (req, res) {
   }
   try {
     const receiver = await User.findOne({
-      _id: userTo,
+      _id: new mongoose.Types.ObjectId(userTo),
       ...(user.roles.includes('admin')
         ? {}
         : {
