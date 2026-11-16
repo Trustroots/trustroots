@@ -2,6 +2,7 @@
 
 package org.trustroots.android.ui.conversation
 
+import android.text.Html
 import androidx.compose.ui.res.painterResource
 import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
 
