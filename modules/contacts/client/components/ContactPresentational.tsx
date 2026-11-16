@@ -28,7 +28,9 @@ export default function ContactPresentational({
 
   const { username, displayName, locationFrom, locationLiving } = contact.user;
   return (
-    <div className={className}>
+    <div
+      className={['member-card-surface', className].filter(Boolean).join(' ')}
+    >
       <a
         className="contact-identity"
         href={`/profile/${encodeURIComponent(username)}`}

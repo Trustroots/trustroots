@@ -68,10 +68,9 @@ export default function MemberSearchCard({
   return (
     <a
       className={[
-        'member-search-card tw:group tw:flex tw:min-w-0 tw:flex-col tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-[#e5e8e6] tw:bg-white tw:p-4 tw:text-inherit tw:no-underline tw:wrap-anywhere',
-        'tw:data-[compact]:gap-1 tw:data-[compact]:p-2.5',
+        'member-search-card member-card-surface tw:group tw:flex tw:flex-col tw:gap-[var(--member-card-gap)] tw:text-inherit tw:no-underline',
         'tw:transition-[border-color,box-shadow,transform] tw:duration-150 tw:ease-[ease]',
-        'tw:[&:hover,&:focus-visible]:border-[#94b8a4] tw:[&:hover,&:focus-visible]:text-inherit tw:[&:hover,&:focus-visible]:no-underline tw:[&:hover,&:focus-visible]:shadow-[0_5px_18px_rgb(26_68_47_/_10%)] tw:[&:hover,&:focus-visible]:[transform:translateY(-1px)]',
+        'tw:[&:hover,&:focus-visible]:text-inherit tw:[&:hover,&:focus-visible]:no-underline tw:[&:hover,&:focus-visible]:shadow-[0_5px_18px_rgb(26_68_47_/_10%)] tw:[&:hover,&:focus-visible]:[transform:translateY(-1px)]',
         'tw:focus-visible:outline-3 tw:focus-visible:outline-solid tw:focus-visible:outline-offset-2 tw:focus-visible:outline-[rgb(72_130_97_/_35%)]',
       ].join(' ')}
       data-compact={compact || undefined}

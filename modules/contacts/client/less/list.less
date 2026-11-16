@@ -6,13 +6,10 @@
 .contacts-contact {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--member-card-gap, 8px);
   min-height: 112px;
   margin: 0 0 14px;
-  padding: 16px;
   text-align: left;
-  border: 1px solid #e5e8e6;
-  border-radius: 12px;
   box-shadow: none;
 
   .contact-identity {
@@ -51,13 +48,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-  }
-}
-
-@media (max-width: 480px) {
-  .contacts-contact {
-    gap: 12px;
-    padding: 12px;
   }
 }
 

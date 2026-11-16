@@ -1,0 +1,23 @@
+/**
+ * Shared surface treatment for member cards used in search, contacts and maps.
+ */
+.member-card-surface {
+  --member-card-padding: 16px;
+  --member-card-gap: 8px;
+
+  min-width: 0;
+  border: 1px solid #e5e8e6;
+  border-radius: 12px;
+  background: #fff;
+  overflow-wrap: anywhere;
+  padding: var(--member-card-padding);
+
+  &[data-compact] {
+    --member-card-padding: 10px;
+    --member-card-gap: 4px;
+  }
+}
+
+.member-search-card:is(:hover, :focus-visible) {
+  border-color: #94b8a4;
+}

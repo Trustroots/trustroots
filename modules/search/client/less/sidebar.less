@@ -99,14 +99,6 @@ body.is-site-announcement-visible {
   user-select: none;
   position: relative;
   cursor: pointer;
-  .panel-body {
-    display: block;
-    border-left: 3px solid #fff;
-    border-radius: @panel-border-radius;
-    transition: all 0.1s linear;
-    text-decoration: none;
-    color: @text-color;
-  }
   h4 {
     padding: 0;
     margin: 0;
@@ -116,6 +108,35 @@ body.is-site-announcement-visible {
     height: 36px;
     float: left;
     margin: 0 10px 0 0;
+  }
+}
+
+.search-result.member-card-surface {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &.active,
+  &:hover {
+    border-color: @brand-primary;
+    box-shadow: 0 3px 12px rgb(26 68 47 / 10%);
+  }
+  /* Notice . and : */
+  &.active,
+  &:active {
+    background: #fafafa;
+    border-color: @brand-secondary;
+  }
+}
+
+.message-recipient {
+  .panel-body {
+    display: block;
+    border-left: 3px solid #fff;
+    border-radius: @panel-border-radius;
+    transition: all 0.1s linear;
+    text-decoration: none;
+    color: @text-color;
   }
   &.active,
   &:hover {
@@ -130,6 +151,18 @@ body.is-site-announcement-visible {
     .panel-body {
       border-color: @brand-secondary;
     }
+  }
+}
+
+.search-result-card {
+  display: block;
+  color: @text-color;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: @text-color;
+    text-decoration: none;
   }
 }
 
@@ -150,7 +183,6 @@ body.is-site-announcement-visible {
   display: flex;
   gap: 10px;
   margin: 0;
-  padding: 10px;
   text-align: left;
   transition:
     border-color 0.1s linear,
@@ -177,6 +209,14 @@ body.is-site-announcement-visible {
   > span {
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  &.member-card-surface {
+    gap: var(--member-card-gap, 8px);
+  }
+
+  &:not(.member-card-surface) {
+    padding: 10px;
   }
 }
 

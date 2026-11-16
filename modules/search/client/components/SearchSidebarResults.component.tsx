@@ -128,11 +128,14 @@ export default function SearchSidebarResults({
     ariaLabel: string,
     onSelect: () => void,
     children: React.ReactNode,
+    memberSurface = false,
   ) => (
     <li key={resultId}>
       <button
         aria-label={ariaLabel}
-        className="panel panel-default search-result-list-item"
+        className={`search-result-list-item ${
+          memberSurface ? 'member-card-surface' : 'panel panel-default'
+        }`}
         data-result-id={resultId}
         onClick={() => {
           selectedResultId.current = resultId;
@@ -191,6 +194,7 @@ export default function SearchSidebarResults({
                     ` · ${item.status}`}
                 </span>
               </>,
+              true,
             ),
           )}
         </ul>
@@ -257,10 +261,10 @@ export default function SearchSidebarResults({
         <div
           aria-live="polite"
           aria-relevant="additions removals"
-          className="search-result panel panel-default"
+          className="search-result member-card-surface"
         >
           <a
-            className="panel-body"
+            className="search-result-card"
             href={`/profile/${offer.user.username}`}
             onClick={() =>
               rememberOutreachSource(offer.user.username, 'search')
