@@ -14,3 +14,6 @@ internal fun <T : Activity> Context.findActivity(type: Class<T>): T? {
     // Activity inherits ContextWrapper, so a remaining unwrapped context cannot be one.
     return null
 }
+
+internal fun <T : Activity> Context.requireActivity(type: Class<T>, errorMessage: String): T =
+    requireNotNull(findActivity(type)) { errorMessage }

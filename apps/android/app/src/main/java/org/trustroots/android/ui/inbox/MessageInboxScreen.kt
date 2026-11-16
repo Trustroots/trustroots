@@ -3,7 +3,7 @@
 package org.trustroots.android.ui.inbox
 
 import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
-import org.trustroots.android.ui.common.findActivity
+import org.trustroots.android.ui.common.requireActivity
 
 import android.Manifest
 import android.app.Activity
@@ -220,9 +220,7 @@ private fun InboxContent(
     val needsAttention = enrolmentStatus?.let { it.resourceId != R.string.message_alerts_ready } ?: false
     val showAlertPrompt = !dismissed && (!isMessageAlertsEnabled(context, session.member.username) || needsAttention)
     val beginEnrollment: () -> Unit = {
-        val activity = requireNotNull(context.findActivity(Activity::class.java)) {
-            "Message inbox must be hosted by an Activity."
-        }
+        val activity = context.requireActivity(Activity::class.java, "Message inbox must be hosted by an Activity.")
         enableMessageAlerts(activity, session) { result ->
             enrolmentStatus = result
             isEnrolling = false

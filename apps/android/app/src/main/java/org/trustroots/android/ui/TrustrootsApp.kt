@@ -2,7 +2,7 @@
 
 package org.trustroots.android.ui
 
-import org.trustroots.android.ui.common.findActivity
+import org.trustroots.android.ui.common.requireActivity
 
 import android.content.Context
 import androidx.activity.ComponentActivity
@@ -94,7 +94,7 @@ internal fun TrustrootsApp(
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
-        requireNotNull(context.findActivity(ComponentActivity::class.java)) { "TrustrootsApp must run in a ComponentActivity." }
+        context.requireActivity(ComponentActivity::class.java, "TrustrootsApp must run in a ComponentActivity.")
     }
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
