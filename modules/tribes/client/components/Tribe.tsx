@@ -1,7 +1,6 @@
 import React from 'react';
 import classnames from 'classnames';
 import { useTranslation } from 'react-i18next';
-import styled, { css } from 'styled-components';
 import { Badge } from '@trustroots/ui/Badge';
 
 import JoinButton from './JoinButton';
@@ -9,31 +8,6 @@ import JoinButton from './JoinButton';
 import { getCircleBackgroundStyle } from '../utils';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
-
-const Container = styled.div.attrs({
-  className: 'panel tribe tribe-image',
-})<{ tribe: TribeSummary }>`
-  // the following styles should have high specificity
-  // https://www.styled-components.com/docs/faqs#how-can-i-override-styles-with-higher-specificity
-  &&& {
-    position: relative;
-    ${({ tribe }) => {
-      const style = getCircleBackgroundStyle(tribe, '742x496');
-      return css`
-        ${
-          style.backgroundImage
-            ? `background-image: ${style.backgroundImage};`
-            : ''
-        }
-        ${
-          style.backgroundColor
-            ? `background-color: ${style.backgroundColor};`
-            : ''
-        }
-      `;
-    }}
-  }
-`;
 
 export default function Tribe({
   tribe,
@@ -54,7 +28,10 @@ export default function Tribe({
       : (t('{{count, number}} members', { count: tribe.count }) as string);
 
   return (
-    <Container tribe={tribe}>
+    <div
+      className="panel tribe tribe-image tw:relative"
+      style={getCircleBackgroundStyle(tribe, '742x496')}
+    >
       <a href={`/circles/${tribe.slug}`} className="tribe-link">
         {tribe.new && (
           <span className="tribe-new" aria-hidden={true}>
@@ -83,6 +60,6 @@ export default function Tribe({
           />
         )}
       </div>
-    </Container>
+    </div>
   );
 }

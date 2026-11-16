@@ -1,39 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
 import { getCharts } from '../api/statistics.api';
 import type { PublicCharts } from '../../shared/public-charts.mts';
 import Stat from './Stat';
-
-const ChartTable = styled.table`
-  width: 100%;
-  text-align: left;
-  font-variant-numeric: tabular-nums;
-
-  th,
-  td {
-    padding: 4px;
-  }
-
-  tbody th {
-    font-weight: normal;
-  }
-
-  td {
-    width: 30%;
-  }
-
-  td > span {
-    display: block;
-    height: 5px;
-    border-radius: 2px;
-    background: #147963;
-  }
-
-  td:nth-child(3) > span {
-    background: #3d6492;
-  }
-`;
 
 function BarTable({
   caption,
@@ -50,7 +19,7 @@ function BarTable({
   const formatter = new Intl.NumberFormat();
 
   return (
-    <ChartTable>
+    <table className="tw:w-full tw:text-start tw:tabular-nums tw:[&_th,&_td]:p-1 tw:[&_tbody_th]:font-normal tw:[&_td]:w-[30%] tw:[&_td:nth-child(3)>span]:bg-[#3d6492]">
       <caption className="sr-only">{caption}</caption>
       <thead>
         <tr>
@@ -71,6 +40,7 @@ function BarTable({
                 {formatter.format(count)}
                 <span
                   aria-hidden="true"
+                  className="tw:block tw:h-[5px] tw:rounded-[2px] tw:bg-[#147963]"
                   style={{ width: `${(count / maximum) * 100}%` }}
                 />
               </td>
@@ -78,7 +48,7 @@ function BarTable({
           </tr>
         ))}
       </tbody>
-    </ChartTable>
+    </table>
   );
 }
 

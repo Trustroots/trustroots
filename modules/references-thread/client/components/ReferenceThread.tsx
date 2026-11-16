@@ -4,7 +4,6 @@ import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 
 // Internal dependencies
 import {
@@ -14,13 +13,6 @@ import {
 } from '../api/reference-thread.api';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import { readApiError } from '@/modules/users/client/utils/api-error';
-
-const ChangeButton = styled(Button)`
-  display: inline;
-  margin: 0;
-  padding: 0;
-  color: #999;
-`;
 
 interface ReferenceThreadProps {
   userToId: string;
@@ -122,9 +114,13 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
             <p className="text-muted">
               <TimeAgo date={new Date(referenceThread?.created || '')} />
               {' · '}
-              <ChangeButton variant="link" onClick={() => setIsAsking(true)}>
+              <Button
+                className="tw:m-0 tw:inline tw:p-0 tw:text-[#999]"
+                variant="link"
+                onClick={() => setIsAsking(true)}
+              >
                 {t('Change') as string}
-              </ChangeButton>
+              </Button>
             </p>
           </>
         )}

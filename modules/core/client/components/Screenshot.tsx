@@ -1,46 +1,7 @@
 import React from 'react';
-import styled from 'styled-components';
 
-const Browser = styled.div`
-  border-radius: 10px;
-  border: 1px solid #999;
-  margin: 10px auto;
-  max-width: 620px;
-  padding: 10px;
-  width: 100%;
-  @media (max-width: 991px) {
-    border-radius: 6px;
-    padding: 5px;
-  }
-`;
-
-const BrowserCircle = styled.div`
-  border-radius: 50%;
-  border: 1px solid #999;
-  float: left;
-  height: 10px;
-  margin: 0 5px 10px 0;
-  width: 10px;
-  @media (max-width: 991px) {
-    height: 5px;
-    width: 5px;
-    margin: 0 3px 5px 0;
-  }
-`;
-
-const BrowserScreenshot = styled.picture`
-  background-repeat: no-repeat;
-  border-radius: 5px;
-  clear: both;
-  display: block;
-  margin: 0 auto;
-  max-width: 600px;
-  overflow: hidden;
-  width: 100%;
-  @media (max-width: 991px) {
-    border-radius: 3px;
-  }
-`;
+const circleClass =
+  'tw:float-start tw:me-[5px] tw:mb-2.5 tw:size-2.5 tw:rounded-full tw:border tw:border-solid tw:border-[#999] tw:[@media(max-width:991px)]:me-[3px] tw:[@media(max-width:991px)]:mb-[5px] tw:[@media(max-width:991px)]:size-[5px]';
 
 type ScreenshotProps = {
   png: string;
@@ -56,15 +17,15 @@ export default function Screenshot({
   webp2x,
 }: ScreenshotProps) {
   return (
-    <Browser>
-      <BrowserCircle />
-      <BrowserCircle />
-      <BrowserCircle />
-      <BrowserScreenshot>
+    <div className="tw:mx-auto tw:my-2.5 tw:w-full tw:max-w-[620px] tw:rounded-[10px] tw:border tw:border-solid tw:border-[#999] tw:p-2.5 tw:[@media(max-width:991px)]:rounded-[6px] tw:[@media(max-width:991px)]:p-[5px]">
+      <div className={circleClass} />
+      <div className={circleClass} />
+      <div className={circleClass} />
+      <picture className="tw:clear-both tw:mx-auto tw:block tw:w-full tw:max-w-[600px] tw:overflow-hidden tw:rounded-[5px] tw:bg-no-repeat tw:[@media(max-width:991px)]:rounded-[3px]">
         <source srcSet={`${webp}, ${webp2x} 2x,`} type="image/webp" />
         <source srcSet={`${png}, ${png2x} 2x`} type="image/png" />
         <img alt="" src={png} />
-      </BrowserScreenshot>
-    </Browser>
+      </picture>
+    </div>
   );
 }

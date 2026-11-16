@@ -1,87 +1,23 @@
-import styled from 'styled-components';
+import React, { type HTMLAttributes } from 'react';
 
-export default styled.div.attrs({ className: 'message' })`
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 16px;
-
-  .message-main {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: min(72%, 640px);
-  }
-
-  .message-author {
-    flex: 0 0 32px;
-    order: -1;
-    margin: 0 0 2px;
-
-    .avatar {
-      margin: 0;
-    }
-  }
-
-  .panel {
-    margin-bottom: 0;
-    border-radius: 16px;
-    box-shadow: none;
-
-    &::before,
-    &::after {
-      display: none;
-    }
-  }
-
-  .panel-body {
-    padding: 12px 16px;
-    overflow-wrap: anywhere;
-  }
-
-  .message-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px;
-    margin: 0 4px 4px;
-    text-align: left;
-  }
-
-  &.message-sender-me {
-    justify-content: flex-end;
-
-    .message-meta {
-      justify-content: flex-end;
-    }
-
-    .panel {
-      background: #e1f5ed;
-      border-bottom-right-radius: 4px;
-    }
-
-    &:not([data-hosting]) .panel {
-      border-color: #c5e7da;
-    }
-
-    .message-author {
-      display: none;
-    }
-  }
-
-  &.message-sender-other .panel {
-    border-bottom-left-radius: 4px;
-  }
-
-  @media (max-width: 767px) {
-    gap: 6px;
-    margin-bottom: 12px;
-
-    .message-main {
-      max-width: 85%;
-    }
-
-    .panel-body {
-      padding: 10px 12px;
-    }
-  }
-`;
+export default function MessageBubble({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { className: string }) {
+  return (
+    <div
+      {...props}
+      className={[
+        'message message-bubble tw:mb-4 tw:flex tw:items-end tw:gap-2 tw:[@media(max-width:767px)]:mb-3 tw:[@media(max-width:767px)]:gap-1.5',
+        'tw:[&_.message-main]:min-w-0 tw:[&_.message-main]:max-w-[min(72%,640px)] tw:[&_.message-main]:flex-[0_1_auto] tw:[@media(max-width:767px)]:[&_.message-main]:max-w-[85%]',
+        'tw:[&_.message-author]:order-first tw:[&_.message-author]:m-0 tw:[&_.message-author]:mb-0.5 tw:[&_.message-author]:flex-[0_0_32px] tw:[&.message_.message-author_.avatar]:m-0',
+        'tw:[&_.panel]:mb-0 tw:[&_.panel]:rounded-2xl tw:[&_.panel]:shadow-none tw:[&_.panel]:before:hidden tw:[&_.panel]:after:hidden',
+        'tw:[&_.panel-body]:wrap-anywhere tw:[&_.panel-body]:px-4 tw:[&_.panel-body]:py-3 tw:[@media(max-width:767px)]:[&_.panel-body]:px-3 tw:[@media(max-width:767px)]:[&_.panel-body]:py-2.5',
+        'tw:[&.message_.message-meta]:mx-1 tw:[&.message_.message-meta]:mt-0 tw:[&.message_.message-meta]:mb-1 tw:[&.message_.message-meta]:flex tw:[&.message_.message-meta]:flex-wrap tw:[&.message_.message-meta]:items-baseline tw:[&.message_.message-meta]:gap-1.5 tw:[&.message_.message-meta]:text-start',
+        'tw:[&.message-sender-me]:justify-end tw:[&.message.message-sender-me_.message-meta]:justify-end tw:[&.message-sender-me_.message-author]:hidden',
+        'tw:[&.message-sender-me_.panel]:rounded-ee-[4px] tw:[&.message-sender-me_.panel]:bg-[#e1f5ed] tw:[&.message-sender-me:not([data-hosting])_.panel]:border-[#c5e7da] tw:[&.message-sender-other_.panel]:rounded-es-[4px]',
+        className,
+      ].join(' ')}
+    />
+  );
+}

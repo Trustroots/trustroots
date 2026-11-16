@@ -1,24 +1,5 @@
 import React, { type ReactNode } from 'react';
-import styled from 'styled-components';
 import sparklesSvg from '../img/sparkles.svg';
-
-const Container = styled.div`
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  margin: 0 auto;
-  max-width: 500px;
-  padding: 30px;
-  text-align: center;
-`;
-
-const Sparkles = styled.img`
-  margin-bottom: -50px;
-`;
-
-const Spacer = styled.div`
-  margin: 15px 0;
-`;
 
 type SuccessMessageProps = {
   children?: ReactNode;
@@ -32,11 +13,11 @@ export default function SuccessMessage({
   title,
 }: SuccessMessageProps) {
   return (
-    <Container>
-      <Sparkles src={sparklesSvg} alt="" aria-hidden />
+    <div className="tw:mx-auto tw:flex tw:max-w-[500px] tw:flex-col tw:items-center tw:p-[30px] tw:text-center">
+      <img className="tw:mb-[-50px]" src={sparklesSvg} alt="" aria-hidden />
       <h2 className="font-brand-light">{title}</h2>
-      {children && <Spacer>{children}</Spacer>}
-      {cta && <Spacer>{cta}</Spacer>}
-    </Container>
+      {children && <div className="tw:my-[15px]">{children}</div>}
+      {cta && <div className="tw:my-[15px]">{cta}</div>}
+    </div>
   );
 }

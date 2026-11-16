@@ -6,7 +6,7 @@ and included in both production LTR and RTL stylesheets. The values still come
 from `modules/core/client/less/global-variables.less` and its legacy imports;
 change values there rather than duplicating colour or dimension literals.
 
-CSS, styled-components and React style props can reference the same values:
+Global stylesheets and React style props can reference the same values:
 
 ```css
 .example {
@@ -35,11 +35,11 @@ shared CSS tokens. Components pick a colour through a shared intent (`primary`,
 Tailwind Preflight is not loaded while Bootstrap remains in use. Tailwind
 utilities are unlayered and load after Bootstrap and the global
 Less, so a utility class overrides element rules such as Bootstrap's
-`button { border-radius: 0 }` and wins ties with Bootstrap classes. Module
-stylesheets load later and win ties with utilities, and selectors with higher
-specificity (for example `.btn-primary:hover`) still win; avoid combining
-competing Bootstrap and Tailwind styles on an element. Use complete, static
-utility names in source so Tailwind can discover them.
+`button { border-radius: 0 }` and wins ties with Bootstrap classes. Selectors
+with higher specificity (for example `.btn-primary:hover`) still win. Use
+complete, static utility names in web components so Tailwind can discover them.
+Component-scoped stylesheets and CSS Modules are prohibited for new and migrated
+styles. React style props can supply values derived from runtime data.
 
 The initial vocabulary covers brand and text colours, surfaces, typography,
 component padding, radii and notification badge colours. Padding names describe

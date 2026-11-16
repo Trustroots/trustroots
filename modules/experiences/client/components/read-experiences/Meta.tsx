@@ -1,22 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import styled from 'styled-components';
 import { Badge } from '@trustroots/ui/Badge';
 
 import type {
   ExperienceInteractions,
   ExperienceRecommendation,
 } from '../../../shared/experience';
-
-const Labels = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 10px 0;
-  > * {
-    margin: 0 5px 5px 0;
-  }
-`;
 
 export default function Meta({
   interactions,
@@ -30,7 +19,7 @@ export default function Meta({
   };
 
   return (
-    <Labels>
+    <div className="tw:flex tw:flex-wrap tw:items-center tw:py-2.5 tw:*:me-[5px] tw:*:mb-[5px]">
       {[
         recommend === 'yes' && t('Recommend'),
         recommend === 'no' && t('Not recommend'),
@@ -44,6 +33,6 @@ export default function Meta({
             {label}
           </Badge>
         ))}
-    </Labels>
+    </div>
   );
 }

@@ -1,39 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
 
 import MemberAvatar from './MemberAvatar';
 
 type IdentityMember = React.ComponentProps<typeof MemberAvatar>['user'];
 
-const Identity = styled.span`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-
-  .avatar {
-    border-radius: 50%;
-    object-fit: cover;
-  }
-`;
-
-const Names = styled.span`
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.3;
-`;
-
-const DisplayName = styled.span`
-  font-weight: 600;
-`;
-
 export default function MemberIdentity({
   user,
   size,
-  className,
+  className = '',
   format = value => value,
 }: {
   user: IdentityMember;
@@ -48,14 +23,16 @@ export default function MemberIdentity({
   const name = displayName || handle || t('Unknown member');
 
   return (
-    <Identity className={className}>
+    <span
+      className={`member-identity tw:flex tw:min-w-0 tw:items-center tw:gap-2.5 tw:wrap-anywhere tw:[&_.avatar]:rounded-full tw:[&_.avatar]:object-cover ${className}`.trimEnd()}
+    >
       <MemberAvatar size={size} user={user} />
-      <Names>
-        <DisplayName>{format(name)}</DisplayName>
+      <span className="tw:flex tw:min-w-0 tw:flex-col tw:leading-[1.3]">
+        <span className="tw:font-semibold">{format(name)}</span>
         {displayName && handle && (
           <span className="text-muted">{format(handle)}</span>
         )}
-      </Names>
-    </Identity>
+      </span>
+    </span>
   );
 }

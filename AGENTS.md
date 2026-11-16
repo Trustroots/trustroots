@@ -40,6 +40,12 @@ too. App code picks a component's look through these props, not through
 hand-written class names. Each value appears in the component's Storybook
 stories; see `packages/ui/README.md`.
 
+Use prefixed Tailwind utilities for new or migrated web component styles. Use
+shared UI components and their existing props where appropriate. Component-scoped
+stylesheets, including CSS Modules and colocated CSS or Less, are prohibited.
+Existing global and vendor stylesheets can still be used. Use React style props
+for values that depend on runtime data.
+
 Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
 depend on colour alone.

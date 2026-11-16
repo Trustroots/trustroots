@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 
 // Internal dependencies
 import { get, type StatisticsResponse } from '../api/statistics.api';
@@ -26,164 +25,12 @@ const Board = BoardImplementation as React.ComponentType<{
   style?: React.CSSProperties | null;
 }>;
 
-const Grid = styled.div`
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1fr);
-
-  & + & {
-    margin-top: 20px;
-  }
-
-  .panel {
-    margin-bottom: 0;
-    min-width: 0;
-  }
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-`;
-
-const MetricStack = styled.div`
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1fr);
-`;
-
-const ChartsGrid = styled(Grid)`
-  > :last-child {
-    grid-column: 1 / -1;
-  }
-`;
-
-const SignupSummary = styled.div`
-  border-top: 1px solid #eee;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 8px;
-  padding-top: 16px;
-  width: 100%;
-
-  p {
-    margin: 0;
-  }
-
-  p + p {
-    border-left: 1px solid #eee;
-    padding-left: 16px;
-  }
-`;
-
-const CountPlaceholder = styled.div`
-  content: '  ';
-  display: inline-block;
-  min-width: 20px;
-  height: 20px;
-  background: #eee;
-`;
-
-const ActivityTable = styled.table`
-  font-size: 16px;
-  margin: 0;
-  text-align: left;
-  width: 100%;
-
-  th,
-  td {
-    padding: 8px 5px;
-    text-align: right;
-  }
-
-  th:first-child,
-  td:first-child {
-    text-align: left;
-  }
-
-  thead th {
-    border-bottom: 2px solid #eee;
-    font-size: 13px;
-    vertical-align: bottom;
-  }
-
-  tbody th,
-  tbody td {
-    border-bottom: 1px solid #eee;
-  }
-
-  tbody tr:last-child th,
-  tbody tr:last-child td {
-    border-bottom: 0;
-  }
-`;
-
-const Count = styled.p`
-  font-size: 50px;
-  line-height: 55px;
-  color: #12b591;
-  font-weight: 300;
-`;
-
-const PeriodGroup = styled.div`
-  & + & {
-    margin-top: 20px;
-  }
-`;
-
-const NetworkList = styled.ul`
-  font-size: 18px;
-  margin: 0;
-  max-width: 300px;
-  width: 100%;
-`;
-
-const NetworkRow = styled.li`
-  align-items: center;
-  border-bottom: 1px solid #eee;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 7px 2px;
-
-  &:last-child {
-    border-bottom: 0;
-  }
-`;
-
-const NetworkLabel = styled.span`
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  min-width: 0;
-`;
-
-const LegacyLabel = styled.span`
-  background: #eee;
-  border-radius: 10px;
-  color: #666;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 16px;
-  padding: 0 6px;
-  text-transform: uppercase;
-`;
-
-const NetworkPercentage = styled.span`
-  color: #555;
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-`;
-
-const LegacyNote = styled.p`
-  font-size: 12px;
-  line-height: 1.4;
-  margin: 14px auto 0;
-  max-width: 300px;
-`;
-
 const legacyNetworks = new Set(['couchsurfing', 'facebook', 'github']);
+
+const statisticsGridClass = 'tw:grid tw:grid-cols-1 tw:gap-5 tw:sm:grid-cols-2';
+const countClass =
+  'tw:text-[50px] tw:leading-[55px] tw:font-light tw:text-[#12b591]';
+const placeholderClass = 'tw:inline-block tw:h-5 tw:min-w-5 tw:bg-[#eee]';
 
 export default function Statistics({
   isAuthenticated,
@@ -267,18 +114,18 @@ export default function Statistics({
       <section className="container container-spacer">
         <div className="row">
           <div className="col-xs-12">
-            <Grid>
-              <Stat title={t('Real-life connections')} className="is-graph">
+            <div className={statisticsGridClass}>
+              <Stat title={t('Real-life connections')}>
                 {!statistics ? (
-                  <CountPlaceholder />
+                  <div className={placeholderClass} />
                 ) : (
                   <>
-                    <PeriodGroup>
-                      <Count>
+                    <div>
+                      <p className={countClass}>
                         {numberFormat(
                           experienceStatistics.realLifeConnections?.total ?? 0,
                         )}
-                      </Count>
+                      </p>
                       <p className="text-muted">
                         {t(
                           'This is a lower bound: most people do not share an experience, and Trustroots did not have this experience feature until 2021.',
@@ -315,8 +162,8 @@ export default function Statistics({
                           percentage: recommendationPercentage,
                         })}
                       </p>
-                    </PeriodGroup>
-                    <PeriodGroup>
+                    </div>
+                    <div className="tw:mt-5">
                       <p className="text-muted">
                         {t('{{count}} in the last 90 days', {
                           count: numberFormat(
@@ -330,20 +177,20 @@ export default function Statistics({
                           percentage: recentRecommendationPercentage,
                         })}
                       </p>
-                    </PeriodGroup>
+                    </div>
                   </>
                 )}
               </Stat>
 
-              <Stat title={t('Message interactions')} className="is-graph">
+              <Stat title={t('Message interactions')}>
                 {!statistics ? (
-                  <CountPlaceholder />
+                  <div className={placeholderClass} />
                 ) : (
                   <>
-                    <PeriodGroup>
-                      <Count>
+                    <div>
+                      <p className={countClass}>
                         {numberFormat(messageInteractionStatistics.total)}
-                      </Count>
+                      </p>
                       <p className="text-muted">
                         {t(
                           'Interactions where both members exchanged messages',
@@ -354,8 +201,8 @@ export default function Statistics({
                           percentage: positiveFeedbackPercentage,
                         })}
                       </p>
-                    </PeriodGroup>
-                    <PeriodGroup>
+                    </div>
+                    <div className="tw:mt-5">
                       <p className="text-muted">
                         {t('{{count}} in the last 90 days', {
                           count: numberFormat(
@@ -369,18 +216,20 @@ export default function Statistics({
                           { percentage: recentPositiveFeedbackPercentage },
                         )}
                       </p>
-                    </PeriodGroup>
+                    </div>
                   </>
                 )}
               </Stat>
 
               <Stat title={t('Members')}>
                 {!statistics ? (
-                  <CountPlaceholder />
+                  <div className={placeholderClass} />
                 ) : (
                   <>
-                    <Count>{numberFormat(statistics?.total)}</Count>
-                    <SignupSummary>
+                    <p className={countClass}>
+                      {numberFormat(statistics?.total)}
+                    </p>
+                    <div className="tw:mt-2 tw:grid tw:w-full tw:grid-cols-2 tw:gap-4 tw:[border-top:1px_solid_#eee] tw:pt-4 tw:[&>p]:m-0 tw:[&>p+p]:[border-inline-start:1px_solid_#eee] tw:[&>p+p]:ps-4">
                       <p className="text-muted">
                         {t(
                           '{{count}} new signups in the past 7 days (168 hours)',
@@ -400,13 +249,13 @@ export default function Statistics({
                           ),
                         })}
                       </p>
-                    </SignupSummary>
+                    </div>
                   </>
                 )}
               </Stat>
 
-              <Stat title={t('Recent activity')} className="is-graph">
-                <ActivityTable>
+              <Stat title={t('Recent activity')}>
+                <table className="tw:m-0 tw:w-full tw:text-start tw:text-[16px] tw:[&_th,&_td]:px-[5px] tw:[&_th,&_td]:py-2 tw:[&_th,&_td]:text-end tw:[&_th:first-child,&_td:first-child]:text-start tw:[&_thead_th]:[border-bottom:2px_solid_#eee] tw:[&_thead_th]:align-bottom tw:[&_thead_th]:text-[13px] tw:[&_tbody_th,&_tbody_td]:[border-bottom:1px_solid_#eee] tw:[&_tbody_tr:last-child_th,&_tbody_tr:last-child_td]:border-b-0">
                   <caption className="sr-only">{t('Recent activity')}</caption>
                   <thead>
                     <tr>
@@ -424,7 +273,8 @@ export default function Statistics({
                             statistics.recentActivity?.threads?.past7Days ?? 0,
                           )
                         ) : (
-                          <CountPlaceholder
+                          <div
+                            className={placeholderClass}
                             role="status"
                             aria-label={t('Loading statistics')}
                           />
@@ -437,7 +287,8 @@ export default function Statistics({
                               0,
                           )
                         ) : (
-                          <CountPlaceholder
+                          <div
+                            className={placeholderClass}
                             role="status"
                             aria-label={t('Loading statistics')}
                           />
@@ -452,7 +303,8 @@ export default function Statistics({
                             statistics.recentActivity?.messages?.past7Days ?? 0,
                           )
                         ) : (
-                          <CountPlaceholder
+                          <div
+                            className={placeholderClass}
                             role="status"
                             aria-label={t('Loading statistics')}
                           />
@@ -465,7 +317,8 @@ export default function Statistics({
                               0,
                           )
                         ) : (
-                          <CountPlaceholder
+                          <div
+                            className={placeholderClass}
                             role="status"
                             aria-label={t('Loading statistics')}
                           />
@@ -473,18 +326,18 @@ export default function Statistics({
                       </td>
                     </tr>
                   </tbody>
-                </ActivityTable>
+                </table>
                 <p className="text-muted">{t('Updated hourly')}</p>
               </Stat>
-            </Grid>
+            </div>
 
-            <Grid>
+            <div className={`${statisticsGridClass} tw:mt-5`}>
               <Stat title={t('Connected to networks')}>
-                <NetworkList className="list-unstyled">
+                <ul className="list-unstyled tw:m-0 tw:w-full tw:max-w-[300px] tw:text-[18px]">
                   {!statistics
                     ? Array.from({ length: 7 }, (_, index) => (
                         <li key={index}>
-                          <CountPlaceholder />
+                          <div className={placeholderClass} />
                         </li>
                       ))
                     : statistics?.connections?.map(
@@ -496,36 +349,38 @@ export default function Statistics({
                               count: numberFormat(count),
                             })}
                           >
-                            <NetworkRow>
-                              <NetworkLabel>
+                            <li className="tw:grid tw:grid-cols-[minmax(0,1fr)_auto] tw:items-center tw:gap-4 tw:[border-bottom:1px_solid_#eee] tw:px-[2px] tw:py-[7px] tw:last:border-b-0">
+                              <span className="tw:flex tw:min-w-0 tw:items-center tw:gap-[7px]">
                                 <span>{getNetworkName(network)}</span>
                                 {legacyNetworks.has(network) && (
-                                  <LegacyLabel>{t('Legacy')}</LegacyLabel>
+                                  <span className="tw:rounded-[10px] tw:bg-[#eee] tw:px-[6px] tw:text-[9px] tw:leading-4 tw:font-semibold tw:tracking-[0.04em] tw:text-[#666] tw:uppercase">
+                                    {t('Legacy')}
+                                  </span>
                                 )}
-                              </NetworkLabel>
-                              <NetworkPercentage>
+                              </span>
+                              <span className="tw:font-medium tw:text-[#555] tw:tabular-nums">
                                 {Number(percentage).toFixed(1)}%
-                              </NetworkPercentage>
-                            </NetworkRow>
+                              </span>
+                            </li>
                           </Tooltip>
                         ),
                       )}
-                </NetworkList>
+                </ul>
                 {statistics && (
-                  <LegacyNote className="text-muted">
+                  <p className="text-muted tw:mx-auto tw:mt-[14px] tw:mb-0 tw:max-w-[300px] tw:text-[12px] tw:leading-[1.4]">
                     {t(
                       'Couchsurfing, Facebook and GitHub percentages represent legacy connections from previously linked accounts.',
                     )}
-                  </LegacyNote>
+                  </p>
                 )}
               </Stat>
-              <MetricStack>
+              <div className="tw:grid tw:grid-cols-1 tw:gap-5">
                 <Stat title={t('Hosts')}>
                   {!statistics ? (
                     <>
-                      <CountPlaceholder />
-                      <CountPlaceholder />
-                      <CountPlaceholder />
+                      <div className={placeholderClass} />
+                      <div className={placeholderClass} />
+                      <div className={placeholderClass} />
                     </>
                   ) : (
                     <>
@@ -534,9 +389,9 @@ export default function Statistics({
                           count: numberFormat(statistics?.hosting?.total ?? 0),
                         })}
                       >
-                        <Count>{`${
+                        <p className={countClass}>{`${
                           statistics?.hosting?.percentage ?? 0
-                        }%`}</Count>
+                        }%`}</p>
                       </Tooltip>
                       <Tooltip
                         tooltip={t('{{count}} members', {
@@ -569,12 +424,14 @@ export default function Statistics({
                 <Stat title={t('Newsletter')}>
                   {!statistics ? (
                     <>
-                      <CountPlaceholder />
-                      <CountPlaceholder />
+                      <div className={placeholderClass} />
+                      <div className={placeholderClass} />
                     </>
                   ) : (
                     <>
-                      <Count>{statistics?.newsletter?.percentage ?? 0}%</Count>
+                      <p className={countClass}>
+                        {statistics?.newsletter?.percentage ?? 0}%
+                      </p>
                       <p className="text-muted">
                         {t('{{count}} subscribers', {
                           count: statistics?.newsletter?.count ?? 0,
@@ -593,12 +450,14 @@ export default function Statistics({
                     </>
                   )}
                 </Stat>
-              </MetricStack>
-            </Grid>
+              </div>
+            </div>
 
-            <ChartsGrid>
+            <div
+              className={`${statisticsGridClass} tw:mt-5 tw:[&>*:last-child]:col-span-full`}
+            >
               <StatisticsCharts />
-            </ChartsGrid>
+            </div>
 
             <hr />
 
