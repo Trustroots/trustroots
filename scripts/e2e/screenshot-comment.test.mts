@@ -17,14 +17,38 @@ const options = {
   runUrl: 'https://github.example/runs/42',
 };
 
-test('puts before and after side by side, with a dash for new shots', () => {
+const img = (side: string, title: string, file: string) =>
+  `<img width="300" alt="${title} ${side}" src="https://raw.example/pr-1/42/${side}/${file}">`;
+
+test('shows before, after and diff, with dashes for new shots', () => {
   const body = buildScreenshotComment({
     ...options,
-    beforeDir: shots({ 'chromium-Card.png': 'old' }),
+    beforeDir: shots({
+      'chromium-Card.png': 'old',
+      'chromium-Same.png': 'old',
+      'chromium-Taller.png': 'old',
+    }),
     afterDir: shots({
       'chromium-Card.png': 'new',
       'chromium-Card.url': 'http://localhost/`card`',
       'chromium-New_section.png': 'new',
+      'chromium-Same.png': 'old',
+      'chromium-Taller.png': 'new',
+    }),
+    diffDir: shots({
+      'diffs.json': JSON.stringify({
+        'chromium-Card.png': {
+          changed: 0.0321,
+          before: [120, 80],
+          after: [120, 80],
+        },
+        'chromium-Same.png': { changed: 0, before: [10, 10], after: [10, 10] },
+        'chromium-Taller.png': {
+          changed: 0.5,
+          before: [120, 80],
+          after: [120, 160],
+        },
+      }),
     }),
     testStatus: 0,
   });
@@ -38,15 +62,25 @@ test('puts before and after side by side, with a dash for new shots', () => {
         '',
         'URL: `http://localhost/%60card%60`',
         '',
-        '| Before | After |',
-        '| --- | --- |',
-        '| <img width="400" alt="chromium-Card before" src="https://raw.example/pr-1/42/before/chromium-Card.png"> | <img width="400" alt="chromium-Card after" src="https://raw.example/pr-1/42/after/chromium-Card.png"> |',
+        '| Before | After | Diff |',
+        '| --- | --- | --- |',
+        `| ${img('before', 'chromium-Card', 'chromium-Card.png')} | ${img('after', 'chromium-Card', 'chromium-Card.png')} | ${img('diff', 'chromium-Card', 'chromium-Card.png')}<br>3.21% of pixels changed |`,
       ].join('\n'),
     ),
   );
   assert.ok(
     body.includes(
-      '| — | <img width="400" alt="chromium-New section after" src="https://raw.example/pr-1/42/after/chromium-New_section.png"> |',
+      `| — | ${img('after', 'chromium-New section', 'chromium-New_section.png')} | — |`,
+    ),
+  );
+  assert.ok(
+    body.includes(
+      `| ${img('diff', 'chromium-Same', 'chromium-Same.png')}<br>no change |`,
+    ),
+  );
+  assert.ok(
+    body.includes(
+      `| ${img('diff', 'chromium-Taller', 'chromium-Taller.png')}<br>50.00% of pixels changed, size 120×80 → 120×160 |`,
     ),
   );
 });
@@ -56,6 +90,7 @@ test('notes failures and a missing base run', () => {
     ...options,
     beforeDir: path.join(os.tmpdir(), 'e2e-comment-missing'),
     afterDir: shots({}),
+    diffDir: path.join(os.tmpdir(), 'e2e-comment-missing'),
     testStatus: 1,
   });
   assert.match(body, /Some changed e2e specs failed/);

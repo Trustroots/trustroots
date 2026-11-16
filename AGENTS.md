@@ -150,7 +150,7 @@ e2e spec that covers the change (extend one or add one), call
 changed component or area, not the whole page, once for each state worth
 seeing, such as desktop and mobile. Check the images locally, then add the
 `screenshots` label; the E2E screenshots workflow runs the changed specs
-against the PR and its base branch and posts each shot as a before/after table
+against the PR and its base branch and posts each shot as a before/after/diff table
 in a PR comment that each push updates. It only runs for
 branches in this repository, not forks.
 

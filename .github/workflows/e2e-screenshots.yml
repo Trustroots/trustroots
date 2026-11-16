@@ -128,8 +128,8 @@ jobs:
         env:
           CHANGED_SPECS: ${{ steps.changed.outputs.specs }}
         run: |
-          rm -rf ../../tmp/screenshots ../../tmp/screenshots-before
-          mkdir -p ../../tmp/screenshots ../../tmp/screenshots-before
+          rm -rf ../../tmp/screenshots ../../tmp/screenshots-before ../../tmp/screenshots-diff
+          mkdir -p ../../tmp/screenshots ../../tmp/screenshots-before ../../tmp/screenshots-diff
 
           mapfile -t specs <<< "$CHANGED_SPECS"
           run_specs() {
@@ -156,6 +156,8 @@ jobs:
           git -C ../.. restore --source="origin/${GITHUB_BASE_REF}" --worktree -- . ':!tests/e2e'
           run_specs -e TRUSTROOTS_E2E_SCREENSHOTS_DIR=/home/app/trustroots/tmp/screenshots-before
           git -C ../.. restore --source=HEAD --worktree -- .
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            dev node scripts/e2e/screenshot-diff.mts tmp/screenshots-before tmp/screenshots tmp/screenshots-diff
           set -e
 
       - name: Collect screenshots
@@ -186,9 +188,10 @@ jobs:
             git rm -rf . >/dev/null 2>&1 || true
           fi
 
-          mkdir -p "$RUN_DIR/before" "$RUN_DIR/after"
+          mkdir -p "$RUN_DIR/before" "$RUN_DIR/after" "$RUN_DIR/diff"
           cp "$GITHUB_WORKSPACE"/tmp/screenshots/*.png "$RUN_DIR/after/"
           find "$GITHUB_WORKSPACE/tmp/screenshots-before" -name '*.png' -exec cp -t "$RUN_DIR/before/" {} +
+          find "$GITHUB_WORKSPACE/tmp/screenshots-diff" -name '*.png' -exec cp -t "$RUN_DIR/diff/" {} +
           git add "$RUN_DIR"
           git commit -m "PR #${{ github.event.pull_request.number }} e2e screenshots (${{ github.run_id }})"
           # Other PRs publish to this branch too. Replay only this upload when
@@ -222,6 +225,7 @@ jobs:
             const body = buildScreenshotComment({
               beforeDir: 'tmp/screenshots-before',
               afterDir: 'tmp/screenshots',
+              diffDir: 'tmp/screenshots-diff',
               baseUrl: `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`,
               runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`,
               testStatus: Number(process.env.TEST_STATUS || '0'),
