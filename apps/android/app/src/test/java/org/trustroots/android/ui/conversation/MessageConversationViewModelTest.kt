@@ -32,10 +32,91 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.UiFailure
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class MessageConversationViewModelTest {
+    @Test
+    fun repositoryDefaultHostingContextFailsClosed() = withScope { _ ->
+        val repository = object : MessageConversationRepository by FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ) {
+            override suspend fun hostingContext(memberID: String) =
+                super<MessageConversationRepository>.hostingContext(memberID)
+        }
+
+        val result = kotlinx.coroutines.runBlocking { repository.hostingContext("member-owl") }
+        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
+    }
+
+    @Test
+    fun quickReplyVisibilityShortCircuitsForUnloadedFailedOrOutgoingThreads() {
+        assertFalse(
+            MessageConversationUiState(messages = listOf(incoming), currentUsername = "steady-heron")
+                .showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(incoming),
+                messagesLoaded = true,
+                loadFailed = true,
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(incoming),
+                messagesLoaded = true,
+                failure = UiFailure(fallback = UiFailureFallback.LOAD_CONVERSATION),
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(sent, incoming),
+                messagesLoaded = true,
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+    }
+
+    @Test
+    fun hostingComposerReadinessRejectsEachIncompleteRequirement() {
+        assertFalse(MessageConversationUiState(hostingContextLoaded = false).hostingComposerReady)
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingContextLoading = true)
+                .hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingContextError = true)
+                .hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                hostingContextLoaded = true,
+                hostingAckRequired = true,
+                hostingDescriptionAcknowledged = false,
+            ).hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingGuests = "0")
+                .hostingComposerReady,
+        )
+        assertTrue(
+            MessageConversationUiState(
+                hostingContextLoaded = true,
+                hostingAckRequired = true,
+                hostingDescriptionAcknowledged = true,
+                hostingGuests = "2",
+                hostingArrival = "2027-05-01",
+                hostingDeparture = "2027-05-04",
+            ).hostingComposerReady,
+        )
+    }
+
     @Test
     fun factoryRejectsAnUnrelatedViewModelType() {
         val repository = FakeConversationRepository(
@@ -496,6 +577,101 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun hostingContextLoadWaitsForMemberAndReusesAlreadyLoadedContext() = withScope { scope ->
+        val memberLookup = CompletableDeferred<Result<ConversationRecipient>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            memberHandler = { memberLookup.await() }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(0, repository.hostingContextLookups)
+
+        memberLookup.complete(Result.success(member))
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(1, repository.hostingContextLookups)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(false))
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(1, repository.hostingContextLookups)
+    }
+
+    @Test
+    fun hostingContextRetryIsIgnoredWhileAnotherLoadIsPending() = withScope { scope ->
+        val contextResult = CompletableDeferred<Result<HostingContext>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = { contextResult.await() }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertTrue(model.state.value.hostingContextLoading)
+        model.onEvent(MessageConversationEvent.RetryHostingContext)
+        assertEquals(1, repository.hostingContextLookups)
+
+        contextResult.complete(Result.success(HostingContext("A fictional description.", false)))
+        assertTrue(model.state.value.hostingContextLoaded)
+        assertFalse(model.state.value.hostingContextLoading)
+    }
+
+    @Test
+    fun hostingContextAuthenticationFailureInvalidatesTheSession() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.failure(MobileApiException(401, "A fictional session expired."))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+
+        assertTrue(model.state.value.pendingSessionInvalidation != null)
+        assertFalse(model.state.value.hostingContextError)
+        assertFalse(model.state.value.hostingContextLoading)
+    }
+
+    @Test
+    fun invalidHostingDetailsPreventSendingAndBlankDatesRemainOptional() = withScope { scope ->
+        val invalidRepository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val invalidModel = MessageConversationViewModel("member-owl", invalidRepository, session(), scope)
+        invalidModel.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        invalidModel.onEvent(MessageConversationEvent.HostingGuestsChanged("0"))
+        invalidModel.onEvent(MessageConversationEvent.Send("A fictional visit request."))
+        assertEquals(0, invalidRepository.sendCalls)
+
+        val optionalDateRepository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val optionalDateModel = MessageConversationViewModel(
+            "member-owl",
+            optionalDateRepository,
+            session(),
+            scope,
+        )
+        optionalDateModel.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        optionalDateModel.onEvent(MessageConversationEvent.Send("A fictional open-ended visit."))
+        assertEquals(1, optionalDateRepository.sendCalls)
+        assertEquals(HostingDetails(1, null, null), optionalDateRepository.sentHostingDetails)
+    }
+
+    @Test
     fun duplicateSendAndRetryAreIgnoredWhileSendIsPendingAndThrownErrorKeepsDraft() = withScope { scope ->
         val pending = CompletableDeferred<Unit>()
         val repository = FakeConversationRepository(
@@ -675,6 +851,7 @@ class MessageConversationViewModelTest {
     fun lateSendFromPreviousCredentialsCannotClearTheRetainedDraftOrReplaceMessages() = withScope { scope ->
         val lateSend = CompletableDeferred<Result<DirectMessage>>()
         var sendCalls = 0
+        var hostingContextLookups = 0
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
         )
@@ -804,6 +981,7 @@ class MessageConversationViewModelTest {
         var clearedDraftKey: Pair<String, String>? = null
         var sentContent: String? = null
         var sendCalls = 0
+        var hostingContextLookups = 0
         var sentHostingDetails: HostingDetails? = null
         var sentHostingDescriptionAcknowledged = false
         var memberHandler: suspend (String) -> Result<ConversationRecipient> = { memberResult }
@@ -832,8 +1010,10 @@ class MessageConversationViewModelTest {
             return messagesHandler(memberID)
         }
 
-        override suspend fun hostingContext(memberID: String): Result<HostingContext> =
-            hostingContextHandler(memberID)
+        override suspend fun hostingContext(memberID: String): Result<HostingContext> {
+            hostingContextLookups++
+            return hostingContextHandler(memberID)
+        }
 
         override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
             sentContent = content

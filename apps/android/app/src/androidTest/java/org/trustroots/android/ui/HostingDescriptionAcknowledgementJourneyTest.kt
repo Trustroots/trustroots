@@ -25,6 +25,8 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Before
 import org.junit.Rule
@@ -70,13 +72,17 @@ class HostingDescriptionAcknowledgementJourneyTest {
     @Test fun ordinaryMessageDoesNotLoadContextOrRequireAcknowledgement() {
         val local = startFixture { request ->
             when {
-                request.method == "GET" && request.path == "/api/mobile/v0/messages/member-host?limit=100" -> LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/mobile/v0/messages/member-host?limit=100" -> LocalTransportFixture.Response(
+                    """[{"_id":"earlier","content":"A previous visit.","userFrom":{"_id":"member-host","username":"kind-otter"},"hostingDetails":{"guests":1,"arrival":"2027-05-01"}}]""",
+                )
                 request.method == "POST" && request.path == "/api/mobile/v0/messages" -> messageResponse("Hello there.")
                 request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
                 else -> error("Unexpected API request: ${request.method} ${request.path}")
             }
         }
         openConversation(local)
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("1 guest").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("2027-05-01", substring = true).assertDoesNotExist()
         compose.onNodeWithTag("messageComposer").performTextInput("Hello there.")
         compose.onNodeWithContentDescription("Send").performClick()
         compose.waitUntil(10_000) { local.requests.any { it.method == "POST" } }
@@ -88,12 +94,16 @@ class HostingDescriptionAcknowledgementJourneyTest {
     }
 
     @Test fun hostingMessageLoadsContextRequiresAcknowledgementAndRendersDetails() {
+        val releaseHostingContext = CountDownLatch(1)
         val local = startFixture { request ->
             when {
                 request.method == "GET" && request.path == "/api/mobile/v0/messages/member-host?limit=100" -> LocalTransportFixture.Response("[]")
-                request.method == "GET" && request.path == "/api/mobile/v0/messages-hosting?userTo=member-host" -> LocalTransportFixture.Response(
-                    """{"description":"<p>Room in a shared home.</p>","acknowledgementRequired":true}""",
-                )
+                request.method == "GET" && request.path == "/api/mobile/v0/messages-hosting?userTo=member-host" -> {
+                    check(releaseHostingContext.await(15, TimeUnit.SECONDS))
+                    LocalTransportFixture.Response(
+                        """{"description":"<p>Room in a shared home.</p>","acknowledgementRequired":true}""",
+                    )
+                }
                 request.method == "POST" && request.path == "/api/mobile/v0/messages" -> LocalTransportFixture.Response(
                     """{"_id":"message-one","content":"Visiting soon.","userFrom":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"hostingDetails":{"guests":2,"arrival":"2027-05-01","departure":"2027-05-04"}}""",
                 )
@@ -103,7 +113,13 @@ class HostingDescriptionAcknowledgementJourneyTest {
         }
         openConversation(local)
         compose.onNodeWithTag("hostingModeToggle").performClick()
-        compose.waitUntil(10_000) { local.requests.any { it.path == "/api/mobile/v0/messages-hosting?userTo=member-host" } }
+        try {
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText("Loading hosting details…").fetchSemanticsNodes().isNotEmpty()
+            }
+        } finally {
+            releaseHostingContext.countDown()
+        }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("hostingGuests").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Room in a shared home.").assertIsDisplayed()
         compose.onNodeWithText("I have read this host’s hosting description and requirements.").assertIsDisplayed()
@@ -186,7 +202,7 @@ class HostingDescriptionAcknowledgementJourneyTest {
                 request.method == "GET" && request.path == "/api/mobile/v0/messages/member-host?limit=100" -> LocalTransportFixture.Response("[]")
                 request.method == "GET" && request.path == "/api/mobile/v0/messages-hosting?userTo=member-host" -> {
                     if (contextCalls.incrementAndGet() == 1) LocalTransportFixture.Response("{}", status = 503)
-                    else LocalTransportFixture.Response("""{"description":"Hosting details.","acknowledgementRequired":false}""")
+                    else LocalTransportFixture.Response("""{"description":"  ","acknowledgementRequired":false}""")
                 }
                 request.method == "POST" && request.path == "/api/mobile/v0/messages" -> messageResponse("Ordinary note.")
                 request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
@@ -198,6 +214,8 @@ class HostingDescriptionAcknowledgementJourneyTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Retry").performClick()
         compose.waitUntil(10_000) { contextCalls.get() == 2 }
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("hostingGuests").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("hostingDescriptionAcknowledgement").assertDoesNotExist()
         compose.onNodeWithTag("hostingModeToggle").performClick()
         compose.onNodeWithTag("messageComposer").performTextInput("Ordinary note.")
         compose.onNodeWithContentDescription("Send").performClick()
