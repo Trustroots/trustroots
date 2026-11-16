@@ -131,7 +131,7 @@ internal fun MemberSearchScreen(
                 Text(stringResource(R.string.screen_member_search_loading_description))
             }
         }
-        failure?.let {
+        if (failure != null) {
             Column(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
                     .semantics { liveRegion = LiveRegionMode.Assertive }
@@ -142,7 +142,7 @@ internal fun MemberSearchScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.semantics { heading() },
                 )
-                Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error)
+                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)
                 TextButton(
                     onClick = { model.onEvent(MemberSearchEvent.Submit) },
                     modifier = Modifier.testTag("memberSearchRetry"),
@@ -150,8 +150,7 @@ internal fun MemberSearchScreen(
                     Text(stringResource(R.string.retry))
                 }
             }
-        }
-        if (state.hasSearched && state.results.isEmpty() && failure == null) {
+        } else if (state.hasSearched && state.results.isEmpty()) {
             Column(
                 Modifier.fillMaxWidth().padding(20.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }
