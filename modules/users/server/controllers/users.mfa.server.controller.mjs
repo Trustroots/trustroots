@@ -141,7 +141,7 @@ async function regenerateRecoveryCodes(req, res) {
       {
         _id: user._id,
         mfaEnabled: true,
-        mfaSecretEncrypted: verification.secret,
+        mfaSecretEncrypted: String(verification.secret),
       },
       { $set: { mfaRecoveryCodeHashes: hashes } },
       { new: true },
