@@ -61,6 +61,16 @@ interface ResolvedUserProfile extends UserProfile {
 
 type ContactState = ContactRecord & { $resolved: boolean };
 
+function resolvedContactList(
+  contacts: ContactListData | undefined,
+): ContactListData {
+  const entries = contacts ?? [];
+  return Object.assign([...entries], {
+    $resolved: true,
+    length: entries.length,
+  });
+}
+
 const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
   username: string;
 }>;
@@ -266,6 +276,7 @@ export default function ProfilePage({
   const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
   const { track } = useAnalytics();
   const viewedProfileId = useRef<string | null>(null);
+  const contactsRequestVersion = useRef(0);
   const browserPath = useLocation({ select: location => location.pathname });
   const currentPath = routedPath || browserPath;
   const routeParams = useParams({ strict: false });
@@ -278,6 +289,7 @@ export default function ProfilePage({
   const [contacts, setContacts] = useState<ContactListData>(
     Object.assign([], { $resolved: false }),
   );
+  const [contactsLoadFailed, setContactsLoadFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [experienceOnly, setExperienceOnly] = useState(false);
   const [ownExperience, setOwnExperience] = useState<
@@ -317,6 +329,23 @@ export default function ProfilePage({
     });
   }, []);
 
+  async function retryContacts() {
+    if (!profile?._id) return;
+    const requestVersion = ++contactsRequestVersion.current;
+    const profileID = profile._id;
+    setContactsLoadFailed(false);
+    setContacts(Object.assign([], { $resolved: false }));
+    try {
+      const loadedContacts = await contactsApi.list(profileID);
+      if (requestVersion !== contactsRequestVersion.current) return;
+      setContacts(resolvedContactList(loadedContacts));
+    } catch {
+      if (requestVersion !== contactsRequestVersion.current) return;
+      setContactsLoadFailed(true);
+      setContacts(resolvedContactList(undefined));
+    }
+  }
+
   useEffect(() => {
     if (embedded) {
       return;
@@ -331,6 +360,7 @@ export default function ProfilePage({
 
   useEffect(() => {
     let isMounted = true;
+    contactsRequestVersion.current++;
 
     async function loadProfile() {
       setIsLoading(true);
@@ -338,6 +368,7 @@ export default function ProfilePage({
       setOwnExperience(undefined);
       setContact({ $resolved: false });
       setContacts(Object.assign([], { $resolved: false }));
+      setContactsLoadFailed(false);
 
       try {
         let loadedProfile;
@@ -378,11 +409,14 @@ export default function ProfilePage({
           viewedProfileId.current = loadedProfile._id;
           track('profile_viewed', { own: viewingOwnProfile ? 'yes' : 'no' });
         }
-        const [loadedContact, loadedContacts] = await Promise.all([
+        const [loadedContact, loadedContactsResult] = await Promise.all([
           viewingOwnProfile || !authUser?._id
             ? Promise.resolve(null)
             : contactsApi.getByUserId(loadedProfile._id).catch(() => null),
-          contactsApi.list(loadedProfile._id).catch(() => []),
+          contactsApi.list(loadedProfile._id).then(
+            contacts => ({ contacts: contacts ?? [], failed: false }),
+            () => ({ contacts: [], failed: true }),
+          ),
         ]);
 
         if (!isMounted) {
@@ -390,12 +424,8 @@ export default function ProfilePage({
         }
 
         setContact(normalizeContact(loadedContact));
-        setContacts(
-          Object.assign([...(loadedContacts || [])], {
-            $resolved: true,
-            length: loadedContacts?.length || 0,
-          }),
-        );
+        setContactsLoadFailed(loadedContactsResult.failed);
+        setContacts(resolvedContactList(loadedContactsResult.contacts));
       } catch {
         if (isMounted) {
           setProfile({
@@ -416,6 +446,7 @@ export default function ProfilePage({
 
     return () => {
       isMounted = false;
+      contactsRequestVersion.current++;
     };
   }, [authUser?._id, username, canLoadReply, isCreatingExperience]);
 
@@ -457,6 +488,8 @@ export default function ProfilePage({
             appUser={authUser}
             contacts={contacts}
             onContactRemoved={removeContact}
+            loadFailed={contactsLoadFailed}
+            onRetry={retryContacts}
           />
         );
       case 'tribes':

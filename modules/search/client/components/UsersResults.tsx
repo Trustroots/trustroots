@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
-import NoContent from '@/modules/core/client/components/NoContent';
+import ContentState from '@/modules/core/client/components/ContentState';
 import type { UserProfile } from '@/modules/users/client/types';
 
 export default function UsersResults({
@@ -18,8 +18,11 @@ export default function UsersResults({
 
   if (!users || users.length === 0) {
     return (
-      <>
-        <NoContent icon="users" message={String(t('No members found.'))} />
+      <ContentState
+        kind="empty"
+        heading={String(t('No members found.'))}
+        description={String(t('Try a different name or username.'))}
+      >
         {query.trim() && (
           <p className="text-center">
             <Button render={<a href={mapHref} />}>
@@ -28,7 +31,7 @@ export default function UsersResults({
             </Button>
           </p>
         )}
-      </>
+      </ContentState>
     );
   }
 

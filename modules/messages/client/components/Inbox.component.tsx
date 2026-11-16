@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@trustroots/ui/Button';
+import ContentState from '@/modules/core/client/components/ContentState';
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
@@ -23,9 +24,12 @@ export default function Inbox({ user }: InboxProps) {
   const unreadOnly = useSearch({ strict: false }).filter === 'unread';
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
-  const [isFetching, setIsFetching] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
   const [isLoadingForSearch, setIsLoadingForSearch] = useState(false);
   const [searchLoadFailed, setSearchLoadFailed] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [failedNextPage, setFailedNextPage] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [threads, setThreads] = useState<MessageThreadSummary[]>([]);
 
@@ -49,6 +53,8 @@ export default function Inbox({ user }: InboxProps) {
 
   async function fetchThreads(next = false) {
     setIsFetching(true);
+    setIsFetchingNextPage(next);
+    setLoadFailed(false);
     try {
       const params = next ? (nextParams as PageParams) : {};
       const data = await api.fetchThreads(
@@ -58,8 +64,12 @@ export default function Inbox({ user }: InboxProps) {
         next ? threads.concat(data.threads) : data.threads,
       );
       setNextParams(data.nextParams || null);
+    } catch {
+      setLoadFailed(true);
+      setFailedNextPage(next);
     } finally {
       setIsFetching(false);
+      setIsFetchingNextPage(false);
     }
   }
 
@@ -140,32 +150,90 @@ export default function Inbox({ user }: InboxProps) {
             }}
           />
           {isLoadingForSearch && (
-            <p className="inbox-search-status" role="status">
-              {t('Searching older conversations…')}
-            </p>
+            <ContentState
+              className="inbox-search-status"
+              kind="loading"
+              heading={t('Searching older conversations…')}
+              description={t(
+                'Please wait while we search older conversations.',
+              )}
+            />
           )}
           {searchLoadFailed && (
-            <p className="inbox-search-status" role="alert">
-              {t('Older conversations could not be loaded.')}
-            </p>
+            <ContentState
+              className="inbox-search-status"
+              kind="error"
+              heading={t('Older conversations unavailable')}
+              description={t('Older conversations could not be loaded.')}
+              action={
+                <Button
+                  type="button"
+                  onClick={() => setSearchLoadFailed(false)}
+                >
+                  {t('Try again')}
+                </Button>
+              }
+            />
           )}
         </div>
       </div>
+      {isFetching && !loadFailed && (
+        <div className="container">
+          <ContentState
+            kind="loading"
+            heading={
+              isFetchingNextPage
+                ? t('Loading older conversations…')
+                : t('Loading conversations…')
+            }
+            description={t('Please wait while your conversations are loaded.')}
+          />
+        </div>
+      )}
+      {loadFailed && (
+        <div className="container">
+          <ContentState
+            kind="error"
+            heading={
+              failedNextPage
+                ? t('More conversations unavailable')
+                : t('Messages unavailable')
+            }
+            description={
+              failedNextPage
+                ? t('Could not load more conversations.')
+                : t('Could not load your conversations.')
+            }
+            action={
+              <Button
+                type="button"
+                onClick={() => fetchThreads(failedNextPage)}
+              >
+                {t('Try again')}
+              </Button>
+            }
+          />
+        </div>
+      )}
       {!isFetching &&
+        !loadFailed &&
         !isLoadingForSearch &&
         !searchLoadFailed &&
         (!query || !hasMore) &&
         visibleThreads.length === 0 && (
-          <div className="content-empty">
-            <i className="icon-3x icon-messages-alt" />
-            <h4 role="alert">
-              {query
+          <ContentState
+            kind="empty"
+            heading={
+              query
                 ? t('No matching conversations.')
                 : unreadOnly
                   ? t('No unread conversations.')
-                  : t('No conversations yet.')}
-            </h4>
-          </div>
+                  : t('No conversations yet.')
+            }
+            description={t(
+              'Conversations with other members will appear here.',
+            )}
+          />
         )}
       {visibleThreads.length > 0 && (
         <ul className="list-group threadlist">
@@ -174,13 +242,21 @@ export default function Inbox({ user }: InboxProps) {
           ))}
         </ul>
       )}
-      {!isFetching && !query && hasMore && (
-        <div className="text-center">
-          <Button intent="primary" size="lg" onClick={() => fetchThreads(true)}>
-            {t('More messages')}
-          </Button>
-        </div>
-      )}
+      {!isFetching &&
+        !isLoadingForSearch &&
+        !loadFailed &&
+        !query &&
+        hasMore && (
+          <div className="text-center">
+            <Button
+              intent="primary"
+              size="lg"
+              onClick={() => fetchThreads(true)}
+            >
+              {t('More messages')}
+            </Button>
+          </div>
+        )}
     </section>
   );
 }

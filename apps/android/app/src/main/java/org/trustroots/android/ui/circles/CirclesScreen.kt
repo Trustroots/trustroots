@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -44,6 +45,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -270,10 +275,53 @@ private fun CircleOverviewScreen(
                         label = stringResource(R.string.filter_circles),
                         clearLabel = stringResource(R.string.clear_circle_filter),
                     )
-                    if (loading) CircularProgressIndicator()
-                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                        Text(stringResource(R.string.screen_circles_loading))
+                    }
+                    error?.let {
+                        Text(
+                            stringResource(R.string.screen_circles_unavailable),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics {
+                                heading()
+                                liveRegion = LiveRegionMode.Assertive
+                            },
+                        )
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
                     if (canRetryLoad) {
                         Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+                    }
+                }
+            }
+            if (!loading && error == null && circles.isEmpty()) {
+                item(key = "circle-overview-empty") {
+                    Column(
+                        Modifier.fillMaxWidth().padding(20.dp)
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                    ) {
+                        Text(
+                            stringResource(
+                                if (filter.isBlank()) R.string.screen_circles_empty_title
+                                else R.string.screen_circles_no_matches_title,
+                            ),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            stringResource(
+                                if (filter.isBlank()) R.string.screen_circles_empty_description
+                                else R.string.screen_circles_no_matches_description,
+                            ),
+                        )
+                        if (filter.isNotBlank()) {
+                            TextButton(onClick = { onFilterChange("") }) {
+                                Text(stringResource(R.string.screen_clear_circle_filter))
+                            }
+                        }
                     }
                 }
             }

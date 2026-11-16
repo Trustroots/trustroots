@@ -71,7 +71,11 @@ describe('<SearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('Wait a moment');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+    expect(
+      screen.getByRole('heading', { name: 'Searching members…' }),
+    ).toBeInTheDocument();
     await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
 
     expect(await screen.findByText('1 members found')).toBeInTheDocument();
@@ -150,8 +154,19 @@ describe('<SearchUsers />', () => {
     ).toBeDisabled();
   });
 
-  it('hides loading state and explains a failed search', async () => {
-    mockSearchUsers.mockRejectedValueOnce(new Error('Search failed'));
+  it('announces a failed search and retries accessibly', async () => {
+    mockSearchUsers
+      .mockRejectedValueOnce(new Error('Search failed'))
+      .mockResolvedValueOnce({
+        data: [
+          {
+            _id: 'user-1',
+            avatarSource: 'none',
+            displayName: 'Alice Example',
+            username: 'alice',
+          },
+        ],
+      });
 
     render(<SearchUsers />);
 
@@ -161,12 +176,12 @@ describe('<SearchUsers />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
     await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
-    await waitFor(() =>
-      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
-    );
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Could not search members.',
-    );
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('Member search unavailable');
+    expect(error).toHaveTextContent('Could not search members.');
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('1 members found')).toBeInTheDocument();
+    expect(mockSearchUsers).toHaveBeenCalledTimes(2);
     expect(screen.queryByText('No members found.')).not.toBeInTheDocument();
   });
 });

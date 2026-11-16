@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -47,6 +48,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -135,8 +140,21 @@ internal fun MessageConversationEntryScreen(
                 .padding(bottom = if (keyboardOpen) 8.dp else contentPadding.calculateBottomPadding() + 20.dp),
         ) {
             state.failure?.let { failure ->
-                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("conversationFailure"))
+                if (state.loadFailed) {
+                    Text(
+                        stringResource(R.string.screen_conversation_unavailable),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics {
+                            heading()
+                            liveRegion = LiveRegionMode.Assertive
+                        },
+                    )
+                }
+                Text(
+                    resolveFailureMessage(failure),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("conversationFailure"),
+                )
                 if (state.loadFailed) {
                     OutlinedButton(
                         onClick = { model.onEvent(MessageConversationEvent.Retry) },
@@ -147,8 +165,34 @@ internal fun MessageConversationEntryScreen(
                     }
                 }
             }
-            if (state.isLoading && member == null) CircularProgressIndicator()
+            if (state.isLoading && member == null) {
+                Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+                    CircularProgressIndicator()
+                    Text(
+                        stringResource(R.string.screen_conversation_loading),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Text(stringResource(R.string.screen_conversation_loading_description))
+                }
+            }
             LazyColumn(Modifier.weight(1f).testTag("conversationMessages"), state = messageListState, reverseLayout = true) {
+                if (state.messagesLoaded && state.messages.isEmpty() && !state.loadFailed) {
+                    item(key = "conversation-empty") {
+                        Column(
+                            Modifier.fillMaxWidth().padding(24.dp)
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                stringResource(R.string.screen_conversation_empty_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                            Text(stringResource(R.string.screen_conversation_empty_description))
+                        }
+                    }
+                }
                 if (member != null) {
                     items(state.messages, key = { it.id }) { message ->
                         Row(

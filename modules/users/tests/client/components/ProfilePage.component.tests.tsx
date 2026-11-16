@@ -126,12 +126,25 @@ jest.mock(
 jest.mock('@/modules/contacts/client/components/ContactList.component', () => ({
   __esModule: true,
   default: ({
+    loadFailed,
     onContactRemoved,
+    onRetry,
   }: {
+    loadFailed: boolean;
     onContactRemoved: (contact: ContactRecord) => void;
+    onRetry: () => void;
   }) => (
     <div>
-      Contact list
+      {loadFailed ? (
+        <>
+          Contact list unavailable
+          <button type="button" onClick={onRetry}>
+            Retry contact list
+          </button>
+        </>
+      ) : (
+        'Contact list'
+      )}
       <button
         type="button"
         onClick={() => onContactRemoved({ _id: 'contact-1' })}
@@ -852,6 +865,20 @@ describe('ProfilePage', () => {
       await screen.findByRole('button', { name: 'Remove from list' }),
     );
     expect(screen.getByText('Contact list')).toBeVisible();
+  });
+
+  it('retries a failed contact list request without hiding the profile', async () => {
+    listContacts
+      .mockRejectedValueOnce(new Error('Contact list unavailable'))
+      .mockResolvedValueOnce([]);
+    renderPage(authUser, '/profile/bob/contacts');
+
+    expect(await screen.findByText('Contact list unavailable')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry contact list' }));
+
+    await waitFor(() => expect(listContacts).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Contact list')).toBeVisible();
+    expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
   });
 
   it('ignores a profile response after unmounting', async () => {

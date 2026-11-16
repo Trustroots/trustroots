@@ -61,6 +61,15 @@ test('member search supports deep links, empty results and profile navigation', 
   ]);
   const member = SEEDED_MEMBERS[0];
   await signInViaApi(page, undefined, member);
+  await page.route(
+    /\/api\/users\?search=/,
+    route =>
+      route.fulfill({
+        status: 503,
+        json: { message: 'Temporarily unavailable' },
+      }),
+    { times: 1 },
+  );
   await page.goto(
     `/search/members?search=${encodeURIComponent(member.username)}`,
   );
@@ -70,6 +79,14 @@ test('member search supports deep links, empty results and profile navigation', 
     exact: true,
   });
   await expect(search).toHaveValue(member.username);
+  const error = page.getByRole('alert').filter({
+    has: page.getByRole('heading', { name: 'Member search unavailable' }),
+  });
+  const retry = error.getByRole('button', { name: 'Try again' });
+  await expect(retry).toBeVisible();
+  await retry.focus();
+  await retry.press('Enter');
+  await expect(error).toHaveCount(0);
   await page
     .locator(`#tr-main .member-search-card[href="/profile/${member.username}"]`)
     .click();

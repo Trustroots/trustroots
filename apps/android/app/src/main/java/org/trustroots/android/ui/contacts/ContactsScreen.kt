@@ -26,6 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
@@ -79,7 +83,13 @@ internal fun ContactsScreen(
                     .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
                     .padding(20.dp),
             ) {
-                CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
+                Column(Modifier.padding(top = 20.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+                    CircularProgressIndicator()
+                    Text(
+                        stringResource(R.string.screen_contacts_loading),
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                }
             }
             state.isSessionInvalidated -> Unit
             failure != null -> Box(
@@ -88,6 +98,14 @@ internal fun ContactsScreen(
                     .padding(20.dp),
             ) {
                 Column(Modifier.padding(top = 16.dp)) {
+                    Text(
+                        stringResource(R.string.screen_contacts_unavailable),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics {
+                            heading()
+                            liveRegion = LiveRegionMode.Assertive
+                        },
+                    )
                     Text(
                         resolveFailureMessage(
                             UiFailure(
@@ -112,9 +130,17 @@ internal fun ContactsScreen(
                     .padding(20.dp),
             ) {
                 Text(
+                    stringResource(R.string.screen_contacts_empty_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics {
+                        heading()
+                        liveRegion = LiveRegionMode.Polite
+                    },
+                )
+                Text(
                     contactsEmpty,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
             else -> LazyColumn(

@@ -108,7 +108,7 @@ class SearchSessionExpiryJourneysTest {
         }
 
         compose.onNodeWithText("Find a member").assertIsDisplayed()
-        compose.onNodeWithText("No members found. Try another name or username.").assertDoesNotExist()
+        compose.onNodeWithTag("memberSearchEmpty").assertDoesNotExist()
         compose.onNodeWithText("Please sign in again.").assertDoesNotExist()
         assertEquals(1, invalidations.get())
         val searches = local.requests.filter { it.path.startsWith("/api/users?search=") }

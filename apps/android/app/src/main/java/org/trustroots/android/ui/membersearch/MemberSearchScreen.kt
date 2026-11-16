@@ -30,6 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -113,10 +117,53 @@ internal fun MemberSearchScreen(
         if (state.query.trim().isNotEmpty() && state.query.trim().length < 3) {
             Text(stringResource(R.string.screen_enter_at_least_three_characters))
         }
-        if (state.isLoading) CircularProgressIndicator()
-        failure?.let { Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error) }
-        if (state.hasSearched && state.results.isEmpty()) {
-            Text(stringResource(R.string.screen_no_members_found))
+        if (state.isLoading) {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+            ) {
+                CircularProgressIndicator()
+                Text(
+                    stringResource(R.string.screen_member_search_loading),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(stringResource(R.string.screen_member_search_loading_description))
+            }
+        }
+        failure?.let {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
+                    .semantics { liveRegion = LiveRegionMode.Assertive }
+                    .testTag("memberSearchFailure"),
+            ) {
+                Text(
+                    stringResource(R.string.screen_member_search_unavailable),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error)
+                TextButton(
+                    onClick = { model.onEvent(MemberSearchEvent.Submit) },
+                    modifier = Modifier.testTag("memberSearchRetry"),
+                ) {
+                    Text(stringResource(R.string.retry))
+                }
+            }
+        }
+        if (state.hasSearched && state.results.isEmpty() && failure == null) {
+            Column(
+                Modifier.fillMaxWidth().padding(20.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite }
+                    .testTag("memberSearchEmpty"),
+            ) {
+                Text(
+                    stringResource(R.string.screen_no_members_found_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(stringResource(R.string.screen_no_members_found_description))
+            }
         }
         if (!state.hasSearched && !state.isLoading && failure == null) {
             Column(
