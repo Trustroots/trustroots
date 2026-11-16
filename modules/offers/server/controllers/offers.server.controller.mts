@@ -49,6 +49,7 @@ function getUserProfile() {
 const Offer = mongoose.model<OfferEndpointRecord>('Offer');
 const User = mongoose.model<PopulatedOfferUser>('User');
 const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
+const MEETING_STATUSES = ['yes', 'maybe', 'no', 'not-set'] as const;
 
 interface OfferFilters {
   hasArrayFilter(filterType: string): boolean;
@@ -242,6 +243,10 @@ function isValidOfferType(type: unknown): type is OfferType {
   return enumValues?.includes(type as OfferType) ?? false;
 }
 
+function isValidMeetingStatus(value: unknown): boolean {
+  return MEETING_STATUSES.some(status => status === value);
+}
+
 /**
  * Create offer
  */
@@ -254,6 +259,12 @@ function create(
   }
 
   const body = req.body!;
+  if (
+    body.meetingStatus !== undefined &&
+    !isValidMeetingStatus(body.meetingStatus)
+  ) {
+    return res.status(400).send({ message: 'Invalid meeting availability.' });
+  }
   // Validate type
   if (!body.type || !isValidOfferType(body.type)) {
     return res.status(400).send({
@@ -311,6 +322,12 @@ function update(
   const body = req.body!;
   if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
+  }
+  if (
+    body.meetingStatus !== undefined &&
+    !isValidMeetingStatus(body.meetingStatus)
+  ) {
+    return res.status(400).send({ message: 'Invalid meeting availability.' });
   }
   if (!body.location) {
     return res.status(400).send({ message: 'Missing offer location.' });
@@ -441,6 +458,27 @@ function list(req: OfferRequest, res: OfferResponse) {
     },
   ];
 
+  // Reuse the meeting marker/filter for ongoing availability. Keep one marker
+  // per saved location: prefer hosting in combined search, meetings otherwise.
+  // Stored type/status are untouched, so offer reads still show both states.
+  const requestedTypes = Reflect.get(filters, 'types');
+  const meetingsOnly =
+    Array.isArray(requestedTypes) &&
+    requestedTypes.includes('meet') &&
+    !requestedTypes.includes('host');
+  const asMeeting = {
+    $and: [
+      { $eq: ['$type', 'host'] },
+      { $in: ['$meetingStatus', ['yes', 'maybe']] },
+      meetingsOnly ? true : { $eq: ['$status', 'no'] },
+    ],
+  };
+  query.push({
+    $addFields: {
+      type: { $cond: [asMeeting, 'meet', '$type'] },
+      status: { $cond: [asMeeting, 'yes', '$status'] },
+    },
+  });
   // Status filter
   // Note that `type:meet` are currently all `status:yes`
   query.push({

@@ -1,8 +1,6 @@
+import type { HydratedDocument } from 'mongoose';
 import type {
   Credentials,
-  OfferDocument,
-  OfferModel,
-  OfferRecord,
   TestAgent,
   TestExpressApp,
   TestExpressModule,
@@ -13,6 +11,7 @@ import type {
   UserModelDocument,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
+import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
 const _: typeof import('lodash') = require('lodash');
 const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
@@ -21,7 +20,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model<UserRecord, UserModel>('User');
-const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 /**
  * Globals
@@ -35,12 +34,12 @@ let user2: UserModelDocument;
 let user3: UserModelDocument;
 let user2Id: UserModelDocument['_id'];
 let user3Id: UserModelDocument['_id'];
-let offer1: OfferRecord;
-let offer2: OfferDocument;
-let offer2Id: OfferDocument['_id'];
-let offer3: OfferDocument;
-let offer3Id: OfferDocument['_id'];
-let offerMeet: OfferDocument;
+let offer1: OfferServerRecord;
+let offer2: HydratedDocument<OfferServerRecord>;
+let offer2Id: HydratedDocument<OfferServerRecord>['_id'];
+let offer3: HydratedDocument<OfferServerRecord>;
+let offer3Id: HydratedDocument<OfferServerRecord>['_id'];
+let offerMeet: HydratedDocument<OfferServerRecord>;
 let tribe1: TribeDocument;
 let tribe2: TribeDocument;
 let tribe1Id: TribeDocument['_id'];
@@ -52,7 +51,9 @@ const testLocations = {
       '&northEastLng=18.73318142361111' +
       '&southWestLat=44.66407507240992' +
       '&southWestLng=3.689914279513889',
-    location: [52.48556355813466, 13.489011526107788],
+    location: [
+      52.48556355813466, 13.489011526107788,
+    ] as OfferServerRecord['location'],
   },
   China: {
     queryBoundingBox:
@@ -239,6 +240,178 @@ describe('Offer search tests', function () {
     offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
+  it('saves non-host meeting availability, shares fuzzy location and filters each state independently', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    offerMeet.status = 'no';
+    offerMeet.meetingStatus = 'yes';
+    await offerMeet.save();
+    const payload = {
+      type: 'host',
+      status: 'no',
+      meetingStatus: 'yes',
+      location: [51, 12],
+    };
+    await requestResult(agent.post('/api/offers').send(payload).expect(200));
+    const own = await requestResult(
+      agent.get(`/api/offers-by/${user1._id}?types=host`).expect(200),
+    );
+    const saved = own.body[0];
+    saved.meetingStatus.should.equal('yes');
+    saved.status.should.equal('no');
+    saved.location.should.eql([51, 12]);
+    const search = async (types: string[]) => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify({ types }) })
+          .expect(200),
+      );
+      return (response.body.features as OfferFeature[]).find(
+        feature => feature.properties.id === saved._id,
+      );
+    };
+    const meeting = await search(['meet']);
+    assertPresent(meeting);
+    meeting.properties.type.should.equal('meet');
+    meeting.properties.status.should.equal('yes');
+    meeting.geometry.coordinates.should.not.eql([12, 51]);
+    should.not.exist(
+      (
+        await requestResult(
+          agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+            .query({ filters: JSON.stringify({ types: ['meet'] }) })
+            .expect(200),
+        )
+      ).body.features.find(
+        (feature: OfferFeature) =>
+          feature.properties.id === offerMeet._id.toString(),
+      ),
+    );
+    should.not.exist(await search(['host']));
+    should.exist(await search(['host', 'meet']));
+    const stranger = request.agent(app);
+    await requestResult(
+      stranger.post('/api/auth/signin').send(credentials2).expect(200),
+    );
+    const read = await requestResult(
+      stranger.get(`/api/offers/${saved._id}`).expect(200),
+    );
+    read.body.location.should.eql([...meeting.geometry.coordinates].reverse());
+    read.body.status.should.equal('no');
+    read.body.meetingStatus.should.equal('yes');
+    for (const status of ['yes', 'maybe']) {
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, status })
+          .expect(200),
+      );
+      (await search(['host']))!.properties.status.should.equal(status);
+      (await search(['meet']))!.properties.type.should.equal('meet');
+      (await search(['host', 'meet']))!.properties.type.should.equal('host');
+    }
+    await requestResult(
+      agent
+        .put(`/api/offers/${saved._id}`)
+        .send({ ...payload, status: 'yes', meetingStatus: 'no' })
+        .expect(200),
+    );
+    should.not.exist(await search(['meet']));
+    should.exist(await search(['host']));
+    await requestResult(
+      agent
+        .put(`/api/offers/${saved._id}`)
+        .send({ ...payload, meetingStatus: 'no' })
+        .expect(200),
+    );
+    should.not.exist(await search(['host', 'meet']));
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set']) {
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, meetingStatus })
+          .expect(200),
+      );
+      const result = await search(['meet']);
+      if (meetingStatus === 'yes' || meetingStatus === 'maybe')
+        should.exist(result);
+      else should.not.exist(result);
+      const updated = await requestResult(
+        agent.get(`/api/offers/${saved._id}`).expect(200),
+      );
+      updated.body.meetingStatus.should.equal(meetingStatus);
+      updated.body.status.should.equal('no');
+    }
+    for (const meetingStatus of [
+      'true',
+      true,
+      false,
+      1,
+      null,
+      '',
+      'unknown',
+      ['yes'],
+    ]) {
+      const createResponse = await requestResult(
+        agent
+          .post('/api/offers')
+          .send({ ...payload, meetingStatus })
+          .expect(400),
+      );
+      createResponse.body.message.should.equal('Invalid meeting availability.');
+      const updateResponse = await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, meetingStatus })
+          .expect(400),
+      );
+      updateResponse.body.message.should.equal('Invalid meeting availability.');
+    }
+  });
+
+  it('applies existing visibility restrictions to ongoing meetings', async function () {
+    offer2.status = 'no';
+    offer2.meetingStatus = 'yes';
+    await offer2.save();
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    const visible = async () => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify({ types: ['meet'] }) })
+          .expect(200),
+      );
+      return response.body.features.some(
+        (feature: OfferFeature) =>
+          feature.properties.id === offer2._id.toString(),
+      );
+    };
+    (await visible()).should.equal(true);
+    offer2.showOnlyInMyCircles = true;
+    await offer2.save();
+    (await visible()).should.equal(false);
+    user1.member = [{ tribe: tribe2Id, since: new Date() }];
+    await user1.save();
+    (await visible()).should.equal(true);
+    for (const roles of [
+      ['user', 'suspended'],
+      ['user', 'shadowban'],
+    ]) {
+      user2.roles = roles;
+      await user2.save();
+      (await visible()).should.equal(false);
+    }
+    user2.roles = ['user'];
+    user2.public = false;
+    await user2.save();
+    (await visible()).should.equal(false);
+  });
+
   it('should be able to get empty list from an area where there are no offers', function (done) {
     agent
       .post('/api/auth/signin')

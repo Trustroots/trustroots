@@ -1,21 +1,22 @@
-import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
-import React, { useEffect, useState } from 'react';
+import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
+import isEqual from 'lodash/isEqual';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
-import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
+import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import OfferLocationEditor from './OfferLocationEditor.component';
 import { hostStatusIntent } from './hostStatusIntent';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];
-const HOST_TABS = ['availability', 'description', 'location'] as const;
+const HOST_SECTIONS = new Set(['availability', 'description', 'location']);
 
 interface HostOffer {
   _id?: string;
@@ -25,6 +26,7 @@ interface HostOffer {
   noOfferDescription: string;
   location: [number, number] | null;
   maxGuests: number;
+  meetingStatus: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles: boolean;
 }
 
@@ -40,6 +42,7 @@ function defaultHostOffer(): HostOffer {
     noOfferDescription: '',
     location: null,
     maxGuests: 1,
+    meetingStatus: 'not-set',
     showOnlyInMyCircles: false,
   };
 }
@@ -47,14 +50,26 @@ function defaultHostOffer(): HostOffer {
 export default function OfferHostPage({ user }: HostPageProps) {
   const { track } = useAnalytics();
   const routeParams = useSearch({ strict: false });
+  const { hash, pathname, searchStr } = useLocation();
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
-  const hash = useLocation({ select: location => location.hash });
-  const activeTab = HOST_TABS.find(tab => tab === hash) || 'availability';
-  const navigate = useNavigate();
+  const savedOffer = useRef(offer);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [firstTimeAround, setFirstTimeAround] = useState(false);
   const [loadError, setLoadError] = useState(false);
+
+  function hasUnsavedChanges() {
+    return !isEqual(offer, savedOffer.current);
+  }
+
+  useBlocker({
+    shouldBlockFn: ({ current, next }) =>
+      hasUnsavedChanges() &&
+      (current.pathname !== next.pathname ||
+        !isEqual(current.search, next.search)) &&
+      !window.confirm('Leave without saving your hosting offer changes?'),
+    enableBeforeUnload: hasUnsavedChanges,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +93,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         }
 
         if (isMounted) {
+          savedOffer.current = nextOffer;
           setOffer(nextOffer);
           setFirstTimeAround(!offers?.length);
         }
@@ -98,6 +114,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
       isMounted = false;
     };
   }, [routeParams.status, user._id]);
+
+  useEffect(() => {
+    if (!isLoading && !loadError && HOST_SECTIONS.has(hash)) {
+      document.getElementById(hash)!.scrollIntoView({ block: 'start' });
+    }
+  }, [hash, isLoading, loadError]);
 
   if (isLoading) {
     return (
@@ -129,15 +151,17 @@ export default function OfferHostPage({ user }: HostPageProps) {
     offer.status !== 'no' && plainTextLength(offer.description) < 5;
   const hasLocation =
     Array.isArray(offer.location) && offer.location.length === 2;
-
-  function selectTab(tab: string) {
-    void navigate({ hash: tab, search: true, to: '.' });
-  }
+  const saveDisabled = isSaving || isDescriptionTooShort || !hasLocation;
+  const saveTitle = isDescriptionTooShort
+    ? 'Write longer description first'
+    : !hasLocation
+      ? 'Choose a location first'
+      : undefined;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSaving || isDescriptionTooShort || !hasLocation) {
+    if (saveDisabled) {
       return;
     }
 
@@ -150,6 +174,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         description: offer.description,
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
+        meetingStatus: offer.meetingStatus,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
         location: offer.location!,
       };
@@ -166,6 +191,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         status: offer.status,
       });
 
+      savedOffer.current = offer;
       window.location.assign(`/profile/${user.username}`);
     } catch (error: unknown) {
       track('offer_save_failed', {
@@ -185,198 +211,84 @@ export default function OfferHostPage({ user }: HostPageProps) {
             variant="outline"
             intent="primary"
             size="lg"
-            disabled={isSaving || isDescriptionTooShort || !hasLocation}
-            title={
-              isDescriptionTooShort
-                ? 'Write longer description first'
-                : !hasLocation
-                  ? 'Choose a location first'
-                  : undefined
-            }
+            disabled={saveDisabled}
+            title={saveTitle}
             type="submit"
           >
             Save and Exit
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={selectTab}>
-          <TabsList variant="tabs" className="offer-tabs">
-            <Tab value="availability">Availability</Tab>
-            <Tab value="description">Description</Tab>
-            <Tab value="location">Location</Tab>
-          </TabsList>
-          <TabsPanel value="availability">
+        <div className="offer-host-sections">
+          <section id="availability" aria-label="Availability">
             {!hasLocation && (
               <Alert intent="info" role="status">
-                <a
-                  href="#location"
-                  onClick={event => {
-                    event.preventDefault();
-                    selectTab('location');
-                  }}
-                >
+                <a href={`${pathname}${searchStr}#location`}>
                   Choose a location
                 </a>{' '}
-                in the Location tab before saving, even if you cannot host.
+                before saving, even if you cannot host.
               </Alert>
             )}
-            <div className="row">
-              <div className="col-xs-12 col-sm-6">
-                <div className="panel panel-default offer-meta">
-                  <div className="panel-body">
-                    <fieldset>
-                      <legend>
-                        <h4 id="offerStatus">Can you host?</h4>
-                      </legend>
-                      <ButtonGroup
-                        aria-labelledby="offerStatus"
-                        role="radiogroup"
+            <div className="panel panel-default offer-meta">
+              <div className="panel-body">
+                <fieldset>
+                  <legend>
+                    <h4 id="offerStatus">Can you host?</h4>
+                  </legend>
+                  <ButtonGroup aria-labelledby="offerStatus" role="radiogroup">
+                    {HOST_STATUSES.map(status => (
+                      <Button
+                        intent={hostStatusIntent[status]}
+                        size="lg"
+                        // The label gets the radio and its text below as
+                        // children through the render prop.
+                        // eslint-disable-next-line jsx-a11y/label-has-associated-control
+                        render={<label />}
+                        className={`offer-hosting-button${
+                          offer.status === status ? ' active' : ''
+                        }`}
+                        key={status}
                       >
-                        {HOST_STATUSES.map(status => (
-                          <Button
-                            intent={hostStatusIntent[status]}
-                            size="lg"
-                            // The label gets the radio and its text below as
-                            // children through the render prop.
-                            // eslint-disable-next-line jsx-a11y/label-has-associated-control
-                            render={<label />}
-                            className={`offer-hosting-button${
-                              offer.status === status ? ' active' : ''
-                            }`}
-                            key={status}
-                          >
-                            <input
-                              checked={offer.status === status}
-                              name="offerStatus"
-                              onChange={() =>
-                                setOffer(current => ({ ...current, status }))
-                              }
-                              className="sr-only"
-                              type="radio"
-                              value={status}
-                            />
-                            <span>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </span>
-                          </Button>
-                        ))}
-                      </ButtonGroup>
-                    </fieldset>
+                        <input
+                          checked={offer.status === status}
+                          name="offerStatus"
+                          onChange={() =>
+                            setOffer(current => ({ ...current, status }))
+                          }
+                          className="offer-availability-radio"
+                          type="radio"
+                          value={status}
+                        />
+                        <span>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </Button>
+                    ))}
+                  </ButtonGroup>
+                </fieldset>
 
-                    {offer.status !== 'no' && (
-                      <>
-                        <br />
-                        <br />
-                        <fieldset className="offer-maxguests">
-                          <legend>
-                            <h4 id="maxGuests">
-                              How many guests can you accommodate?
-                            </h4>
-                          </legend>
-                          <div className="input-group input-group-stepper">
-                            <span className="input-group-btn">
-                              <Button
-                                aria-hidden="true"
-                                variant="outline"
-                                intent="primary"
-                                size="lg"
-                                round
-                                disabled={offer.maxGuests <= 1}
-                                onClick={() =>
-                                  setOffer(current => ({
-                                    ...current,
-                                    maxGuests: current.maxGuests - 1,
-                                  }))
-                                }
-                                type="button"
-                              >
-                                <i className="icon-minus"></i>
-                              </Button>
-                            </span>
-                            <input
-                              aria-labelledby="maxGuests"
-                              aria-required="true"
-                              className="form-control input-lg input-plain text-center font-brand-regular"
-                              max="99"
-                              min="1"
-                              onChange={({ target: { value } }) =>
-                                setOffer(current => ({
-                                  ...current,
-                                  maxGuests: Number(value) || 1,
-                                }))
-                              }
-                              size={2}
-                              step="1"
-                              type="number"
-                              value={offer.maxGuests}
-                            />
-                            <span className="input-group-btn">
-                              <Button
-                                aria-hidden="true"
-                                variant="outline"
-                                intent="primary"
-                                size="lg"
-                                round
-                                disabled={offer.maxGuests >= 99}
-                                onClick={() =>
-                                  setOffer(current => ({
-                                    ...current,
-                                    maxGuests: current.maxGuests + 1,
-                                  }))
-                                }
-                                type="button"
-                              >
-                                <i className="icon-plus"></i>
-                              </Button>
-                            </span>
-                          </div>
-                        </fieldset>
-
-                        <br />
-                        <br />
-
-                        <fieldset>
-                          <legend>
-                            <h4>Available only in my circles?</h4>
-                          </legend>
-                          <div className="checkbox">
-                            <label>
-                              <input
-                                checked={offer.showOnlyInMyCircles}
-                                onChange={({ target: { checked } }) =>
-                                  setOffer(current => ({
-                                    ...current,
-                                    showOnlyInMyCircles: checked,
-                                  }))
-                                }
-                                type="checkbox"
-                              />
-                              People that are not in any of my circles should
-                              not find me.
-                            </label>
-                          </div>
-                        </fieldset>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="col-xs-12 col-sm-6 text-center hidden-xs">
-                <div
-                  aria-hidden="true"
-                  className="icon-sofa icon-3x text-muted"
-                ></div>
-                <h3>Host Trustroots members</h3>
-                <p className="lead">
-                  <em>
-                    Offering hospitality and welcoming “strangers” to our homes
-                    strengthens our faith in each other.
-                  </em>
+                <MeetingAvailabilityControl
+                  value={offer.meetingStatus}
+                  onChange={meetingStatus =>
+                    setOffer(current => ({ ...current, meetingStatus }))
+                  }
+                  disabled={isSaving}
+                />
+                <p role="status">
+                  {offer.status === 'no'
+                    ? ['yes', 'maybe'].includes(offer.meetingStatus)
+                      ? 'You will appear on the map for meetings, but not as a host.'
+                      : 'You will not appear on the map for hosting or ongoing meetings.'
+                    : ['yes', 'maybe'].includes(offer.meetingStatus)
+                      ? 'You will appear on the map for hosting and meetings.'
+                      : 'You will appear on the map for hosting.'}{' '}
+                  Meetings use this same approximate location and circle
+                  visibility setting.
                 </p>
               </div>
             </div>
-          </TabsPanel>
-          <TabsPanel value="description">
+          </section>
+          <section id="description" aria-label="Description">
             {offer.status === 'no' && (
               <div className="panel panel-default">
                 <div className="panel-heading">
@@ -420,11 +332,101 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   rows={8}
                   value={offer.description || ''}
                 />
+                <fieldset className="offer-circle-settings">
+                  <legend>
+                    <h4>Available only in my circles?</h4>
+                  </legend>
+                  <div className="checkbox offer-circle-visibility">
+                    <label>
+                      <input
+                        checked={offer.showOnlyInMyCircles}
+                        onChange={({ target: { checked } }) =>
+                          setOffer(current => ({
+                            ...current,
+                            showOnlyInMyCircles: checked,
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        People that are not in any of my circles should not find
+                        me.
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                {offer.status !== 'no' && (
+                  <fieldset className="offer-maxguests">
+                    <legend>
+                      <h4 id="maxGuests">
+                        How many guests can you accommodate?
+                      </h4>
+                    </legend>
+                    <div className="input-group input-group-stepper">
+                      <span className="input-group-btn">
+                        <Button
+                          aria-hidden="true"
+                          variant="outline"
+                          intent="primary"
+                          size="lg"
+                          round
+                          disabled={offer.maxGuests <= 1}
+                          onClick={() =>
+                            setOffer(current => ({
+                              ...current,
+                              maxGuests: current.maxGuests - 1,
+                            }))
+                          }
+                          type="button"
+                        >
+                          <i className="icon-minus"></i>
+                        </Button>
+                      </span>
+                      <input
+                        aria-labelledby="maxGuests"
+                        aria-required="true"
+                        className="form-control input-lg input-plain text-center font-brand-regular"
+                        max="99"
+                        min="1"
+                        onChange={({ target: { value } }) =>
+                          setOffer(current => ({
+                            ...current,
+                            maxGuests: Number(value) || 1,
+                          }))
+                        }
+                        size={2}
+                        step="1"
+                        type="number"
+                        value={offer.maxGuests}
+                      />
+                      <span className="input-group-btn">
+                        <Button
+                          aria-hidden="true"
+                          variant="outline"
+                          intent="primary"
+                          size="lg"
+                          round
+                          disabled={offer.maxGuests >= 99}
+                          onClick={() =>
+                            setOffer(current => ({
+                              ...current,
+                              maxGuests: current.maxGuests + 1,
+                            }))
+                          }
+                          type="button"
+                        >
+                          <i className="icon-plus"></i>
+                        </Button>
+                      </span>
+                    </div>
+                  </fieldset>
+                )}
               </div>
             </div>
-          </TabsPanel>
-          <TabsPanel value="location">
-            <div id="location">
+          </section>
+          <section id="location" aria-label="Location">
+            <div className="offer-host-map">
               {!hasLocation && (
                 <Alert intent="info" role="status">
                   Search for a place or move the map to set your hosting
@@ -473,8 +475,19 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 }
               />
             </div>
-          </TabsPanel>
-        </Tabs>
+          </section>
+        </div>
+        <div className="offer-host-save">
+          <Button
+            intent="primary"
+            size="xl"
+            disabled={saveDisabled}
+            title={saveTitle}
+            type="submit"
+          >
+            Save and Exit
+          </Button>
+        </div>
       </form>
     </section>
   );

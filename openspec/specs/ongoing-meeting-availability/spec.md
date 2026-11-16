@@ -1,0 +1,93 @@
+# ongoing-meeting-availability Specification
+
+## Purpose
+
+Allow members to maintain their approximate location and independently offer ongoing meetings or accommodation, with shared privacy controls and accurate discovery.
+## Requirements
+### Requirement: Independent availability and shared location
+
+Members SHALL be able to select Yes, Maybe, or No for meeting availability independently of hosting. A missing or stored unanswered preference SHALL leave all choices unselected. Both the owner profile and offer editor SHALL use the same labelled radio control. Existing saved locations SHALL support immediate profile updates with visible errors on failure. Members without a saved location SHALL be directed to the location section of the editor. Meetings SHALL share the existing fuzzy location and privacy controls. Dated meetups SHALL retain independent locations and expiry dates.
+
+#### Scenario: Profile states
+
+- **WHEN** a member selects a meeting availability
+- **THEN** Yes shows wants to meet people, Maybe shows maybe up for meeting, and No shows too busy to meet people separately from accommodation
+
+#### Scenario: Unanswered preference
+
+- **WHEN** availability is missing or the stored value is unanswered
+- **THEN** visitors see no meeting status and the owner has three choices with none selected
+
+#### Scenario: Direct profile update
+
+- **WHEN** the owner selects a state on a profile with a saved location
+- **THEN** the state is saved without changing hosting and remains selected after reload
+
+#### Scenario: Non-host opts in
+
+- **WHEN** a member who cannot host saves a location and selects Yes or Maybe for meeting
+- **THEN** hosting remains unavailable and meeting availability is enabled without a date or duplicate location entry
+
+#### Scenario: Profile shows both states
+
+- **WHEN** an opted-in non-host's profile is viewed
+- **THEN** it shows Cannot host currently and a separate meeting availability row
+
+### Requirement: Discovery respects independent availability
+
+Meeting discovery SHALL include members choosing Yes or Maybe at their fuzzy location using meeting markers and existing visibility restrictions. No and unanswered preferences SHALL exclude ongoing meeting availability. Host-only discovery SHALL exclude members who cannot host. The editor SHALL explain map visibility.
+
+#### Scenario: Tentative availability
+
+- **WHEN** a non-host selects Maybe
+- **THEN** meeting search includes the member and their profile/search card describes the tentative availability
+
+#### Scenario: Opt out or reset
+
+- **WHEN** a member selects No or their stored meeting preference is cleared
+- **THEN** meeting discovery stops without changing hosting availability
+
+#### Scenario: Existing restrictions
+
+- **WHEN** meeting discovery is requested
+- **THEN** circle restrictions and non-public, suspended and shadowbanned member exclusions apply and exact coordinates are never returned
+
+#### Scenario: Separate filters
+
+- **WHEN** an opted-in non-host is searched for with meeting-only filters
+- **THEN** a meeting marker is returned and no result is returned with host-only filters
+
+#### Scenario: Meeting disabled
+
+- **WHEN** a member has an unanswered preference
+- **THEN** they are excluded from ongoing meeting discovery while independent hosting availability is preserved
+
+#### Scenario: Existing dated meetup
+
+- **WHEN** a dated meetup is created or edited
+- **THEN** its existing expiry and independently selected location continue to apply
+
+### Requirement: Single-page hosting offer editor
+
+The hosting offer editor SHALL present availability, description, and location together in one form. It SHALL support existing availability, description, and location fragment links and keep in-progress form values while members move between sections. The description section SHALL include circle visibility and guest count. The editor SHALL place location below availability on desktop with description alongside them, show a full-width map on phones, place map guidance after the map, and provide a prominent save action at the end of the form. The editor SHALL warn before leaving with unsaved changes and allow a successful save to exit without a warning.
+
+#### Scenario: Edit all settings on one page
+
+- **WHEN** a member opens the hosting offer editor
+- **THEN** they can change availability, description, and location on the same page and submit them together
+
+#### Scenario: Open a section directly
+
+- **WHEN** a member opens the editor with an availability, description, or location fragment
+- **THEN** the editor scrolls to the corresponding section after loading the offer
+
+#### Scenario: Leave the editor with an unsaved draft
+
+- **WHEN** a member changes any saved offer setting and tries to leave or reload the editor
+- **THEN** they are asked before the draft is discarded
+- **AND** cancelling preserves the edits
+
+#### Scenario: Navigate within the editor or save edits
+
+- **WHEN** a member follows a section link, reverts all changes, or successfully saves the offer
+- **THEN** the editor does not ask them to confirm leaving unsaved edits

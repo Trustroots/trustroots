@@ -1,11 +1,10 @@
+import type { HydratedDocument } from 'mongoose';
 import type {
-  OfferDocument,
-  OfferModel,
-  OfferRecord,
   UserModel,
   UserModelDocument,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
+import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
 /**
  * Module dependencies.
  */
@@ -13,13 +12,13 @@ const should: typeof import('should') = require('should');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model<UserRecord, UserModel>('User');
-const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 /**
  * Globals
  */
 let user: UserModelDocument;
-let offerHost: OfferDocument;
-let offerMeet: OfferDocument;
+let offerHost: HydratedDocument<OfferServerRecord>;
+let offerMeet: HydratedDocument<OfferServerRecord>;
 /**
  * Unit tests
  */
@@ -64,6 +63,17 @@ describe('Offer Model Unit Tests:', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+  it('defaults meeting availability to not-set and accepts only explicit choices', async () => {
+    should(offerHost.meetingStatus).equal('not-set');
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set'] as const) {
+      offerHost.meetingStatus = meetingStatus;
+      await offerHost.save();
+      const saved = await Offer.findById(offerHost._id);
+      should(saved?.meetingStatus).equal(meetingStatus);
+    }
+    offerHost.set('meetingStatus', 'unknown');
+    should(offerHost.validateSync()?.errors.meetingStatus).be.ok();
+  });
   describe('Method Save', function () {
     it('should be able to save host offer without problems', function (done) {
       offerHost
@@ -170,7 +180,7 @@ describe('Offer Model Unit Tests:', function () {
     });
     describe('Location Validation', function () {
       it('should be able to show an error when try to save with empty array location', function (done) {
-        offerHost.location = [];
+        offerHost.set('location', []);
         offerHost
           .save()
           .then(
@@ -200,7 +210,7 @@ describe('Offer Model Unit Tests:', function () {
           .catch(done);
       });
       it('should be able to show an error when try to save location with too few coordinate values', function (done) {
-        offerHost.location = [60.1];
+        offerHost.set('location', [60.1]);
         offerHost
           .save()
           .then(
@@ -215,7 +225,7 @@ describe('Offer Model Unit Tests:', function () {
           .catch(done);
       });
       it('should be able to show an error when try to save location with too many coordinate values', function (done) {
-        offerHost.location = [60.1, 24.1, 24.1];
+        offerHost.set('location', [60.1, 24.1, 24.1]);
         offerHost
           .save()
           .then(

@@ -36,4 +36,16 @@ describe('SearchTypesToggle', () => {
 
     expect(onChange).toHaveBeenCalledWith(['host', 'meet']);
   });
+  it('allows host-only discovery and keeps at least one type selected', () => {
+    const onChange = jest.fn();
+    const { rerender } = render(
+      <SearchTypesToggle onChange={onChange} types={['host', 'meet']} />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
+    expect(onChange).toHaveBeenCalledWith(['host']);
+    rerender(<SearchTypesToggle onChange={onChange} types={['host']} />);
+    expect(screen.getByRole('checkbox', { name: 'Hosts' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
+    expect(onChange).toHaveBeenLastCalledWith(['host', 'meet']);
+  });
 });

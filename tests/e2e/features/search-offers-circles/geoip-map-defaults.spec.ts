@@ -346,15 +346,23 @@ test.describe('approximate initial map locations', () => {
         name: 'Close information dialog about hosting location map',
       })
       .click();
-    await page.getByRole('tab', { name: 'Description' }).click();
+    await expect(
+      page.getByRole('region', { name: 'Availability' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Description' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Location' }),
+    ).toBeInViewport();
+    await expect(page.getByRole('tab')).toHaveCount(0);
     await page
       .getByLabel('Tell about your home and hosting possibilities', {
         exact: false,
       })
       .fill('A fictional spare room.');
-    const save = page.getByRole('button', { name: 'Save and Exit' });
+    const save = page.getByRole('button', { name: 'Save and Exit' }).last();
     await expect(save).toBeDisabled();
-    await page.getByRole('tab', { name: 'Location' }).click();
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(save).toBeDisabled();
     await map.click({ position: { x: 100, y: 100 } });

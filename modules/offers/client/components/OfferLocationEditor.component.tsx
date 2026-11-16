@@ -61,6 +61,22 @@ export default function OfferLocationEditor({
     (location?.length === 2
       ? 13
       : (approximateLocation?.zoom ?? DEFAULT_LOCATION.zoom));
+  const isHosting = offerType === 'host';
+  const mapGuidance = (
+    <p className={isHosting ? 'offer-map-guidance' : 'lead'} id="offerLocation">
+      <strong>
+        Zoom in, then click or drag the map to place the marker over your home.
+      </strong>
+      <br />
+      The location is publicly shown, randomised by a couple hundred metres.
+      {approximateLocation && (
+        <>
+          <br />
+          <MapDefaultAttribution />
+        </>
+      )}
+    </p>
+  );
 
   function handlePlaceSearch(
     data: MapBounds | MapPoint,
@@ -120,21 +136,8 @@ export default function OfferLocationEditor({
       onWheelCapture={stopDefaultLocation}
       onKeyDownCapture={stopDefaultLocation}
     >
-      <div className="panel-body">
-        <p className="lead" id="offerLocation">
-          <strong>
-            Zoom in, then click or drag the map below to place the marker over
-            your home.
-          </strong>
-          <br />
-          The location is publicly shown, randomised by a couple hundred metres.
-          {approximateLocation && (
-            <>
-              <br />
-              <MapDefaultAttribution />
-            </>
-          )}
-        </p>
+      <div className={isHosting ? 'offer-location-search' : 'panel-body'}>
+        {!isHosting && mapGuidance}
         <SearchPlaceInput
           id="offer-search-query"
           onPlaceSearch={handlePlaceSearch}
@@ -179,6 +182,7 @@ export default function OfferLocationEditor({
           onRequest={stopDefaultLocation}
         />
       </div>
+      {isHosting && <div className="panel-body">{mapGuidance}</div>}
     </div>
   );
 }

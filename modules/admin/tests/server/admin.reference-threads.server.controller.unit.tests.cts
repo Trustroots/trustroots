@@ -232,8 +232,12 @@ describe('Admin reference threads controller unit tests', () => {
     afterEach(utils.clearDatabase);
 
     it('lists negative references newest first with minimal user profiles', async () => {
+      const fixtureId = new mongoose.Types.ObjectId().toHexString();
       const users = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsersWithSharedPassword(3),
+        utils.generateUsersWithSharedPassword(3).map((user, index) => ({
+          ...user,
+          email: `reference-${fixtureId}-${index}@example.test`,
+        })),
       );
       const [a, b, c] = users.map(user => user._id);
       const reference = (

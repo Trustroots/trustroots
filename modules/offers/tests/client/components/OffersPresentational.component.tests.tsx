@@ -34,6 +34,148 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
+  it('shows meeting availability separately from the unavailable hosting state', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        offer={{ status: 'no', meetingStatus: 'yes' }}
+      />,
+    );
+    expect(screen.getByText('This member wants to meet people!')).toBeVisible();
+    expect(screen.getByText('Cannot host currently')).toBeVisible();
+    expect(screen.queryByText('Can host')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['yes', 'ada wants to meet people!'],
+    ['maybe', 'ada is maybe up for meeting'],
+    ['no', 'ada is too busy to meet people'],
+  ] as const)('shows %s to visitors', (meetingStatus, message) => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        username="ada"
+        offer={{ ...hostingOffer, meetingStatus }}
+      />,
+    );
+    expect(screen.getByText(message)).toBeVisible();
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+  });
+
+  it.each([undefined, 'not-set'] as const)(
+    'hides unanswered availability from visitors: %s',
+    meetingStatus => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ status: 'no', meetingStatus }}
+        />,
+      );
+      expect(screen.queryByText(/meet people/)).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(['maybe', 'no'] as const)(
+    'uses a generic member label without a username: %s',
+    meetingStatus => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ status: 'no', meetingStatus, location: [51, 4] }}
+        />,
+      );
+      expect(
+        screen.getByText(
+          meetingStatus === 'maybe'
+            ? 'This member is maybe up for meeting'
+            : 'This member is too busy to meet people',
+        ),
+      ).toBeVisible();
+      expect(screen.queryByTestId('hosting-map') !== null).toBe(
+        meetingStatus === 'maybe',
+      );
+    },
+  );
+
+  it.each([true, false])(
+    'shows a meeting map without the hosting description (owner: %s)',
+    isOwnOffer => {
+      render(
+        <OffersPresentational
+          isOwnOffer={isOwnOffer}
+          isUserPublic={true}
+          offer={{
+            status: 'no',
+            meetingStatus: 'yes',
+            description: 'I can host',
+            noOfferDescription: 'I am away from home.',
+            location: [51, 4],
+          }}
+        />,
+      );
+      expect(screen.getByText('Approximate meeting location')).toBeVisible();
+      expect(screen.getByText('Cannot host currently')).toBeVisible();
+      expect(screen.getByText('I am away from home.')).toBeVisible();
+      expect(screen.queryByText('I can host')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Approximate hosting location'),
+      ).not.toBeInTheDocument();
+      const map = screen.getByTestId('hosting-map');
+      expect(map).toHaveAttribute('data-location', '[51,4]');
+      expect(map).toHaveAttribute('data-height', '220');
+      expect(map).toHaveAttribute('data-status', 'yes');
+      expect(map).toHaveAttribute('data-type', 'meet');
+      if (isOwnOffer) {
+        expect(
+          screen.getByRole('link', { name: 'Edit location' }),
+        ).toHaveAttribute('href', '/offer/host#location');
+      } else {
+        expect(
+          screen.queryByRole('link', { name: 'Edit location' }),
+        ).not.toBeInTheDocument();
+      }
+    },
+  );
+
+  it.each([undefined, [51]])(
+    'omits a meeting map without valid coordinates: %s',
+    location => {
+      const offer: Offer = {
+        status: 'no',
+        meetingStatus: 'yes',
+        // @ts-expect-error Exercise malformed coordinates received at runtime.
+        location,
+      };
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={offer}
+        />,
+      );
+      expect(screen.queryByTestId('hosting-map')).not.toBeInTheDocument();
+    },
+  );
+
+  it('keeps the hosting map when the member also welcomes meetings', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        offer={{ ...hostingOffer, meetingStatus: 'yes', location: [51, 4] }}
+      />,
+    );
+    expect(screen.getByText('Approximate hosting location')).toBeVisible();
+    expect(screen.getByTestId('hosting-map')).toHaveAttribute(
+      'data-type',
+      'host',
+    );
+  });
+
   it('links the owner directly to the location editor', () => {
     render(
       <OffersPresentational

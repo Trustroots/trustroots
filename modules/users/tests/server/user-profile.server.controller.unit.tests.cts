@@ -167,7 +167,10 @@ function stubSearch(
 ): void {
   const query = {
     select: () => query,
-    sort: () => query,
+    sort: (sort: unknown) => {
+      should(sort).deepEqual({ score: { $meta: 'textScore' } });
+      return query;
+    },
     limit: () => query,
     skip: () => query,
     maxTimeMS: (budget: number) => {
@@ -532,18 +535,21 @@ describe('Profile controller unit tests', () => {
           profileController.update({ user: userDoc, body: { nostrNpub } }, res),
         );
         res.statusCode.should.equal(400);
-        responseString(res, 'message').should.startWith('Invalid nostr key.');
+        responseBody(res).should.deepEqual({
+          message:
+            'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+        });
       });
     }
 
-    it('accepts an unchanged valid nostrNpub without proof', async () => {
+    it('normalises an unchanged nostrNpub without asking for proof', async () => {
       userDoc.nostrNpub = validNpub;
       await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.update(
           {
             user: userDoc,
-            body: { nostrNpub: validNpub },
+            body: { nostrNpub: `  NPUB${validNpub.slice(4)}  ` },
             login: (_user: unknown, cb: () => void) => cb(),
           },
           res,
@@ -551,6 +557,24 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       responseString(res, 'nostrNpub').should.equal(validNpub);
+    });
+
+    it('clears a saved Nostr key when the submitted field contains only whitespace', async () => {
+      userDoc.nostrNpub = validNpub;
+      await userDoc.save();
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { nostrNpub: '   ' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      should((await findUser(userDoc._id)).nostrNpub).equal('');
     });
 
     it('returns 400 when checking nostr npub availability fails', async () => {
