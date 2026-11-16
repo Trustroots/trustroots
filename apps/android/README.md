@@ -58,17 +58,19 @@ For local testing, a release build with `-PtrustrootsPreviewUpdateAlerts=true`
 offers opt-in alerts under Account → APK updates and links to newer GitHub
 releases. The app does not download or install updates.
 
-## Message alerts without Google services
+## Message alerts
 
-Signed-in members can opt in under Account → Message alerts. The phone needs an
-installed [UnifiedPush distributor](https://unifiedpush.org/users/distributors/),
-such as ntfy, and Android notification permission. The app asks the member to
-choose a distributor, then registers a Web Push endpoint with Trustroots.
-Email reminders continue whether or not message alerts are enabled. Trustroots
-queues a generic alert when a new message arrives, and tapping it opens the
-conversation. Once the distributor is registered, choose **Test on locked
-screen**, then lock the phone. The test alert is due in about 15 seconds.
-The APK does not use Firebase or Google Play services for message delivery.
+Signed-in members can opt in from Messages or under Account → Message alerts.
+The app requests Android notification permission when required. Release builds
+can deliver alerts through Google Play Services without a separate app. They
+use an existing or default external [UnifiedPush distributor](https://unifiedpush.org/users/distributors/)
+when available. Phones without Play Services and debug builds can use an
+external distributor such as ntfy.
+
+Email reminders continue independently. Trustroots queues a generic encrypted
+alert when an eligible new message arrives. Tapping it opens the conversation.
+Once the device is registered, choose **Test on locked screen** under Account
+and lock the phone. The test alert is due in about 15 seconds.
 
 The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
 `TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY`, and
@@ -76,10 +78,22 @@ The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
 Generate one VAPID pair with `pnpm dlx web-push generate-vapid-keys` and keep its
 private key in the server's secret configuration. Set
 `TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS` to a comma-separated list of trusted HTTPS
-push endpoint hosts. It defaults to `ntfy.sh`; include self-hosted distributor
-hosts explicitly. The server rejects other hosts so registered endpoints
+push endpoint hosts. It defaults to `ntfy.sh,fcm.googleapis.com`. If you set
+an explicit list, include `fcm.googleapis.com` to support the bundled
+distributor and add any self-hosted distributor hosts you trust.
+The server rejects other hosts so registered endpoints
 cannot be used to contact arbitrary addresses. Without VAPID configuration,
 the Account control reports that message alerts are unavailable.
+
+The bundled open-source distributor uses the server's VAPID key to register
+with Play Services and returns a standard Web Push endpoint. Release builds
+do not require a Firebase project or any Firebase build credentials.
+
+To verify a release against production, install it fresh on a physical phone
+with Play Services and no external distributor. Enable notifications from
+Messages, grant the Android permission, and lock the phone. Send a message
+from a second account. Check that the alert arrives and opens the correct
+conversation. Repeat with an external distributor on a Google-free phone.
 
 ## Android preview distribution
 

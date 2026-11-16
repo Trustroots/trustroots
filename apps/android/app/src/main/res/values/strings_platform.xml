@@ -5,7 +5,7 @@
     <string name="message_alerts_registration_failed">Could not register this distributor endpoint with Trustroots.</string>
     <string name="message_alerts_ready">Message alerts are ready.</string>
     <string name="message_alerts_not_configured">Message alerts are not configured on this server.</string>
-    <string name="message_alerts_install_distributor">Install a UnifiedPush distributor such as ntfy, then try again.</string>
+    <string name="message_alerts_install_distributor">To get alerts on this device, install a UnifiedPush distributor such as ntfy. Email reminders are still available.</string>
     <string name="message_alerts_choose_distributor">Choose a UnifiedPush distributor to enable message alerts.</string>
     <string name="message_alerts_waiting_registration">Waiting for your distributor to register message alerts.</string>
     <string name="message_alerts_missing_encryption_keys">This distributor did not provide Web Push encryption keys.</string>

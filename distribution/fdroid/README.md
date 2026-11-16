@@ -24,6 +24,12 @@ The release derives its build timestamp from the pinned commit. Preview APK
 update alerts are disabled by default, so F-Droid users receive updates through
 their F-Droid client.
 
+Release builds support optional message alerts through external UnifiedPush
+distributors and include UnifiedPush's open-source embedded FCM distributor for
+phones with Google Play Services. A phone without Play Services can use an
+external distributor. Both distribution channels build the same APK contents.
+The F-Droid submission still needs review of the updated release.
+
 ## Validation
 
 The [October maintainer pipeline](https://gitlab.com/fdroid/fdroiddata/-/pipelines/2936123987)

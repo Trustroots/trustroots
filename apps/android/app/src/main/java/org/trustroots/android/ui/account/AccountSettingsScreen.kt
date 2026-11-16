@@ -8,9 +8,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -63,6 +61,7 @@ import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
+import org.trustroots.android.ui.common.canPostNotifications
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.rememberFormLeave
 import org.trustroots.android.ui.common.resolveFailureMessage
@@ -340,6 +339,3 @@ internal fun MessageAlertTestButton(
     ) { Text(stringResource(R.string.screen_message_alert_test)) }
     status?.let { Text(stringResource(it)) }
 }
-
-private fun Context.canPostNotifications(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
