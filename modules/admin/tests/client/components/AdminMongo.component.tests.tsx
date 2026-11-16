@@ -34,13 +34,14 @@ it('keeps collection storage visible when the job count is unavailable', async (
           name: 'agendaJobs',
           status: 'available',
           count: 2_000,
-          storageBytes: 32_768,
-          indexBytes: 4_096,
+          storageBytes: 6_093_045_760,
+          indexBytes: 74_768_384,
           reusableBytes: 0,
         },
         { name: 'agendaJobsArchived', status: 'missing' },
       ],
       jobs: null,
+      history: null,
     },
   });
   render(<AdminMongo />);
@@ -57,11 +58,18 @@ it('keeps collection storage visible when the job count is unavailable', async (
     within(live)
       .getAllByRole('cell')
       .map(cell => cell.textContent),
-  ).toEqual(['2,000', '32,768', '4,096', '0']);
+  ).toEqual(['2,000', '6.09 GB', '74.77 MB', '0 B']);
+  expect(within(live).getByRole('cell', { name: '6.09 GB' })).toHaveAttribute(
+    'title',
+    '6,093,045,760 bytes',
+  );
   expect(storage).toHaveTextContent('Collection does not exist');
   expect(screen.getByText('2025-01-02 12:00:00 UTC')).toBeInTheDocument();
-  expect(screen.getByRole('alert')).toHaveTextContent(
-    'Live job counts are unavailable',
+  expect(screen.getByText(/Live job counts are unavailable/)).toHaveRole(
+    'alert',
+  );
+  expect(screen.getByText(/Daily storage history is unavailable/)).toHaveRole(
+    'alert',
   );
 });
 
@@ -85,14 +93,19 @@ it('retries after a failed request and distinguishes unavailable storage from em
           reusableBytes: null,
         },
       ],
+      jobsCapturedAt: '2025-01-01T03:00:00.000Z',
       jobs: [],
+      history: [],
     },
   });
   render(<AdminMongo />);
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not load');
   fireEvent.click(screen.getByRole('button', { name: 'Refresh snapshot' }));
-  expect(await screen.findByText('No live jobs.')).toBeInTheDocument();
+  expect(await screen.findByText('No Agenda jobs.')).toBeInTheDocument();
+  expect(screen.getByText('Saved inventory from')).toHaveTextContent(
+    '2025-01-01 03:00:00 UTC',
+  );
   expect(
     screen.getByText('Storage statistics unavailable'),
   ).toBeInTheDocument();
@@ -112,30 +125,64 @@ it('shows each job state and uses zero for states absent from the snapshot', asy
         fcv: { version: '6.0', targetVersion: null, transitioning: false },
       },
       collections: [],
-      jobs: [{ name: 'sample job', counts: { completed: 4 } }],
+      jobs: [
+        {
+          name: 'sample job',
+          counts: { completed: 4 },
+          total: 4,
+          bsonBytes: 1_024,
+          oldestCompletedAt: '2024-12-02T12:00:00.000Z',
+        },
+        {
+          name: 'pending job',
+          counts: { queued: 1 },
+          total: 1,
+          bsonBytes: 40,
+          oldestCompletedAt: null,
+        },
+      ],
+      history: [
+        {
+          capturedAt: '2025-01-01T03:00:00.000Z',
+          collections: [{ name: 'agendaJobsArchived', status: 'missing' }],
+        },
+      ],
     },
   });
   render(<AdminMongo />);
 
-  const table = await screen.findByRole('table', { name: 'Live jobs by name' });
+  const table = await screen.findByRole('table', {
+    name: 'Agenda jobs by name',
+  });
   expect(
     within(table)
       .getAllByRole('columnheader')
       .map(cell => cell.textContent),
   ).toEqual([
     'Job name',
+    'Total',
+    'BSON size',
     'Queued',
     'Locked',
     'Completed',
     'Failed',
     'Disabled',
     'Unscheduled',
+    'Oldest completed (UTC)',
   ]);
   expect(
-    within(table)
+    within(within(table).getByRole('row', { name: /^sample job / }))
       .getAllByRole('cell')
       .map(cell => cell.textContent),
-  ).toEqual(['0', '0', '4', '0', '0', '0']);
+  ).toEqual(['4', '1.02 kB', '0', '0', '4', '0', '0', '0', '2024-12-02']);
+  const pending = within(table).getByRole('row', { name: /^pending job / });
+  expect(within(pending).getByRole('cell', { name: '—' })).toBeInTheDocument();
+  expect(
+    within(pending).getByRole('cell', { name: '40 B' }),
+  ).toBeInTheDocument();
+  const history = screen.getByRole('table', { name: 'Daily Agenda storage' });
+  expect(history).toHaveTextContent('2025-01-01');
+  expect(history).toHaveTextContent('Collection does not exist');
 });
 
 it.each<[MongoServerDiagnostics, string]>([
@@ -198,6 +245,7 @@ it.each<[MongoServerDiagnostics, string]>([
       server,
       collections: [],
       jobs: [],
+      history: [],
     },
   });
   render(<AdminMongo />);

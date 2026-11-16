@@ -166,7 +166,11 @@ describe('Worker tests', function () {
   });
 
   it('defines right number of repeating jobs', function () {
-    scheduledJobs.length.should.equal(8);
+    scheduledJobs.length.should.equal(9);
+    scheduledJobs.should.containEql({
+      name: 'capture agenda storage',
+      repeat: '0 3 * * *',
+    });
   });
 
   it('starts Agenda before scheduling recurring jobs', function () {

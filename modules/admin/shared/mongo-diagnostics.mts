@@ -25,6 +25,9 @@ export type AgendaJobState = (typeof AGENDA_JOB_STATES)[number];
 export interface AgendaJobCounts {
   name: string;
   counts: Partial<Record<AgendaJobState, number>>;
+  total: number;
+  bsonBytes: number;
+  oldestCompletedAt: string | null;
 }
 
 export interface MongoServerDiagnostics {
@@ -37,9 +40,16 @@ export interface MongoServerDiagnostics {
   } | null;
 }
 
+export interface AgendaStorageSample {
+  capturedAt: string;
+  collections: AgendaCollectionStorage[];
+}
+
 export interface MongoDiagnosticsSnapshot {
   capturedAt: string;
   server: MongoServerDiagnostics;
   collections: AgendaCollectionStorage[];
   jobs: AgendaJobCounts[] | null;
+  jobsCapturedAt: string | null;
+  history: AgendaStorageSample[] | null;
 }

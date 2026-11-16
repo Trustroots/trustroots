@@ -4,6 +4,7 @@ import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
+import mongoose from 'mongoose';
 interface WorkerOptions {
   maxAttempts: number;
   retryDelaySeconds: number;
@@ -74,7 +75,24 @@ async function start(options: WorkerOptions, callback?: Done) {
   const { deliverTest, testPushJobName } =
     await import('../../modules/users/server/services/unified-push.server.service.mts');
 
+  const { captureAgendaStorage, captureAgendaStorageJob } =
+    await import('../../modules/admin/server/services/agenda-storage.server.service.mts');
+
+  const { captureAgendaInventory } =
+    await import('../../modules/admin/server/services/agenda-inventory.server.service.mts');
+
   // Define jobs
+
+  agenda.define(
+    captureAgendaStorageJob,
+    async () => {
+      // The worker connects Mongoose before registering Agenda jobs.
+      const db = mongoose.connection.db!;
+      await captureAgendaStorage(db);
+      await captureAgendaInventory(db);
+    },
+    { concurrency: 1 },
+  );
 
   defineJob('send email', dependency4, {
     priority: 'high',
@@ -146,6 +164,9 @@ async function start(options: WorkerOptions, callback?: Done) {
       return Promise.all([
         agenda.every('5 minutes', 'check unread messages'),
         agenda.every('24 hours', 'daily statistics'),
+        agenda.every('0 3 * * *', captureAgendaStorageJob, undefined, {
+          timezone: 'UTC',
+        }),
         agenda.every('30 minutes', 'send signup reminders'),
         agenda.every('30 minutes', 'reactivate hosts'),
         agenda.every('15 minutes', 'welcome sequence first'),
