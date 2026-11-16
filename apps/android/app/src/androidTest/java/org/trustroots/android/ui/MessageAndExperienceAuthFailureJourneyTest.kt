@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import android.content.Context
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -11,6 +12,9 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -18,7 +22,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.AnnotatedString
 import androidx.test.core.app.ApplicationProvider
@@ -101,12 +105,17 @@ class MessageAndExperienceAuthFailureJourneyTest {
             )
         }
 
+        val enabledComposer = hasTestTag("messageComposer") and isEnabled()
         compose.waitUntil(10_000) {
-            apiFixture.requests.any { it.method == "GET" && it.path == "/api/messages/$recipientID?limit=100" }
+            apiFixture.requests.any { it.method == "GET" && it.path == "/api/messages/$recipientID?limit=100" } &&
+                compose.onAllNodes(enabledComposer).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("messageComposer").performTextInput(draft)
-        hideTestKeyboard()
-        compose.onNodeWithContentDescription("Send").assertIsEnabled().performClick()
+        compose.onNode(enabledComposer).performSemanticsAction(SemanticsActions.SetText) {
+            assertTrue(it(AnnotatedString(draft)))
+        }
+        val enabledSend = hasContentDescription("Send") and isEnabled()
+        compose.waitUntil(10_000) { compose.onAllNodes(enabledSend).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(enabledSend).performClick()
         compose.waitUntil(10_000) {
             invalidations.get() == 1 &&
                 apiFixture.requests.any { it.method == "POST" && it.path == "/api/messages" } &&

@@ -82,6 +82,12 @@ describe('Mobile aliases for existing member features', function () {
     should.not.exist(response.headers['set-cookie']);
   });
 
+  it('accepts a test alert request through bearer authentication', async function () {
+    await mobileRequest('post', '/api/mobile/v0/users/unified-push/test')
+      .send({ endpoint: 'https://ntfy.sh/unregistered-test-device' })
+      .expect(404);
+  });
+
   it('loads a circle and its members through bearer aliases', async function () {
     const tribe = await new Tribe({
       slug: 'sample-circle',

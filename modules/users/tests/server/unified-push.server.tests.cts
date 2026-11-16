@@ -11,7 +11,7 @@ const webPush: typeof import('../../server/services/web-push.server.transport.mt
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
-const push: typeof import('../../server/services/unified-push.server.service.mjs') = require('../../server/services/unified-push.server.service.mjs');
+const push: typeof import('../../server/services/unified-push.server.service.mjs').default = require('../../server/services/unified-push.server.service.mjs');
 const Registration = mongoose.model<{
   user: import('mongoose').Types.ObjectId;
   endpoint: string;
@@ -49,22 +49,39 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     config.webPush = originalConfiguration;
     await utils.clearDatabase();
   });
-  it('exposes the service and controller from a fresh module load', function () {
+  it('exposes the service and controller from a fresh module load', async function () {
     const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
-    const keysOf = (path: string) =>
-      Object.keys(mockModule<object>(require.resolve(path), {}));
-    keysOf(
-      '../../server/services/unified-push.server.service.mts',
-    ).should.deepEqual([
+    const freshService = mockModule<typeof push>(
+      require.resolve('../../server/services/unified-push.server.service.mts'),
+      {},
+    );
+    Object.keys(freshService).should.deepEqual([
       'pushConfiguration',
       'validRegistration',
       'register',
       'unregister',
       'notifyUnread',
+      'hasRegistrations',
+      'scheduleTest',
     ]);
-    keysOf(
-      '../../server/controllers/users.unified-push.server.controller.mts',
-    ).should.deepEqual(['configuration', 'add', 'remove']);
+    const controller = mockModule<object>(
+      require.resolve('../../server/controllers/users.unified-push.server.controller.mts'),
+      {},
+    );
+    Object.keys(controller).should.deepEqual([
+      'configuration',
+      'add',
+      'remove',
+      'test',
+    ]);
+
+    const { default: agenda } =
+      await import('../../../../config/lib/agenda.mts');
+    const schedule = sinon.stub(agenda, 'schedule').resolves();
+    await freshService.register(user._id, registration);
+    await freshService.scheduleTest(user._id, registration.endpoint);
+    schedule.calledOnce.should.equal(true);
+    schedule.firstCall.args[1].should.equal('send Android test notification');
   });
   it('connects the transport to the real web-push delivery functions', function () {
     const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
@@ -84,9 +101,25 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     config.webPush.privateKey = '';
     const settings = await agent.get('/api/users/unified-push').expect(200);
     settings.body.enabled.should.equal(false);
+    const { deliverTest } =
+      await import('../../server/services/unified-push.server.service.mts');
+    const sent = sinon.stub(webPush, 'sendNotification');
+    await push.register(user._id, registration);
+    (await push.hasRegistrations(user._id)).should.equal(false);
+    const registered = await Registration.findOne({ user: user._id }).orFail();
+    await deliverTest({
+      userId: String(user._id),
+      registrationId: String(registered._id),
+      expiresAt: Date.now() + 60_000,
+    });
+    sent.called.should.equal(false);
     await agent
       .post('/api/users/unified-push')
       .send(registration)
+      .expect(503, { message: 'Message alerts are not configured.' });
+    await agent
+      .post('/api/users/unified-push/test')
+      .send({ endpoint: registration.endpoint })
       .expect(503, { message: 'Message alerts are not configured.' });
     config.webPush = {
       ...originalConfiguration,
@@ -95,7 +128,102 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     const missingKey = await agent.get('/api/users/unified-push').expect(200);
     missingKey.body.enabled.should.equal(false);
     (missingKey.body.publicKey === null).should.equal(true);
+
+    config.webPush = {
+      ...originalConfiguration,
+      allowedHosts: ['distributor.example.test'],
+    };
+    await push.notifyUnread(user._id, other._id);
+    sent.called.should.equal(false);
   });
+  it('schedules a test for the caller’s device and limits repeated requests', async function () {
+    const { default: agenda } =
+      await import('../../../../config/lib/agenda.mts');
+    const { deliverTest } =
+      await import('../../server/services/unified-push.server.service.mts');
+    const schedule = sinon.stub(agenda, 'schedule').resolves();
+    const sent = sinon.stub(webPush, 'sendNotification').resolves();
+    const testPath = '/api/users/unified-push/test';
+    const body = { endpoint: registration.endpoint };
+    await request(app).post(testPath).send(body).expect(403);
+    const invalid = { message: 'Invalid push endpoint.' };
+    const missing = {
+      message: 'Message alerts are not registered on this device.',
+    };
+    await agent.post(testPath).send({}).expect(400, invalid);
+    await agent.post(testPath).send({ endpoint: '' }).expect(400, invalid);
+    await agent.post(testPath).send({ endpoint: 42 }).expect(400, invalid);
+    await agent
+      .post(testPath)
+      .send({ endpoint: `https://ntfy.sh/${'x'.repeat(2048 - 16)}` })
+      .expect(404, missing);
+    await agent
+      .post(testPath)
+      .send({ endpoint: 'x'.repeat(2049) })
+      .expect(400, invalid);
+    await push.register(other._id, registration);
+    await agent.post(testPath).send(body).expect(404, missing);
+    await push.register(user._id, registration);
+    const otherDevice = {
+      ...registration,
+      endpoint: 'https://ntfy.sh/another-anonymous-endpoint',
+    };
+    await push.register(user._id, otherDevice);
+    const before = Date.now();
+    await agent.post(testPath).send(body).expect(202);
+    const after = Date.now();
+    await agent.post(testPath).send(body).expect(429, {
+      message: 'Please wait a minute before requesting another test.',
+    });
+
+    schedule.calledOnce.should.equal(true);
+    sent.called.should.equal(false);
+    const [dueAt, jobName, data] = schedule.firstCall.args;
+    (dueAt as Date).getTime().should.be.within(before + 15_000, after + 15_000);
+    jobName.should.equal('send Android test notification');
+    const job = data as Parameters<typeof deliverTest>[0];
+    const now = Date.now();
+    const clock = sinon.stub(Date, 'now').returns(now);
+    await deliverTest({ ...job, expiresAt: now });
+    clock.restore();
+    sent.called.should.equal(false);
+    await deliverTest(job);
+    sent.calledOnce.should.equal(true);
+    sent.firstCall.args[0].endpoint.should.equal(registration.endpoint);
+    sent.firstCall.args[1].should.equal('{"test":true}');
+    sent.firstCall.args.slice(2).should.deepEqual([{ TTL: 60 }]);
+    await push.register(other._id, registration);
+    await deliverTest(job);
+    sent.calledOnce.should.equal(true);
+  });
+
+  it('allows another request when the test job could not be queued', async function () {
+    const { default: agenda } =
+      await import('../../../../config/lib/agenda.mts');
+    const schedule = sinon.stub(agenda, 'schedule').resolves();
+    const otherDevice = {
+      ...registration,
+      endpoint: 'https://ntfy.sh/anonymous-device-with-a-pending-test',
+    };
+    await push.register(other._id, otherDevice);
+    (await push.scheduleTest(other._id, otherDevice.endpoint)).should.equal(
+      'scheduled',
+    );
+    schedule.onSecondCall().rejects(new Error('Agenda unavailable'));
+    await push.register(user._id, registration);
+    const path = '/api/users/unified-push/test';
+    const body = { endpoint: registration.endpoint };
+    await agent
+      .post(path)
+      .send(body)
+      .expect(500, { message: 'Could not schedule the test notification.' });
+    (await push.scheduleTest(other._id, otherDevice.endpoint)).should.equal(
+      'limited',
+    );
+    await agent.post(path).send(body).expect(202);
+    schedule.callCount.should.equal(3);
+  });
+
   it('rejects unsafe endpoints and invalid keys', async function () {
     for (const endpoint of [
       registration.endpoint,
@@ -152,6 +280,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
   it('rejects requests without a parsed body', async function () {
     const controller: {
       add(request: Request, response: Response): Promise<unknown>;
+      test(request: Request, response: Response): Promise<unknown>;
     } = require('./../../server/controllers/users.unified-push.server.controller.mjs');
     const response = {
       status: sinon.stub().returnsThis(),
@@ -160,6 +289,16 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     await controller.add({} as Request, response as unknown as Response);
     response.status.calledOnceWithExactly(400).should.equal(true);
     response.json.calledOnce.should.equal(true);
+
+    response.status.resetHistory();
+    response.json.resetHistory();
+    await controller.test({} as Request, response as unknown as Response);
+    response.status.calledOnceWithExactly(400).should.equal(true);
+    response.json
+      .calledOnceWithExactly({
+        message: 'Invalid push endpoint.',
+      })
+      .should.equal(true);
   });
   it('attaches an endpoint to the current account and removes it on opt-out', async function () {
     await push.register(other._id, registration);
@@ -258,14 +397,17 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     log.calledOnce.should.equal(true);
     (log.firstCall.args as unknown[]).should.eql([
       'error',
-      'UnifiedPush unread-message delivery failed.',
-      { error: failure },
+      'UnifiedPush delivery failed.',
+      { statusCode: 503 },
     ]);
   });
   it('does not send when Web Push is disabled', async function () {
+    await push.register(user._id, registration);
     config.webPush.privateKey = '';
+    const lookup = sinon.spy(Registration, 'find');
     const sent = sinon.stub(webPush, 'sendNotification');
     await push.notifyUnread(user._id, other._id);
+    lookup.called.should.equal(false);
     sent.called.should.equal(false);
   });
 });

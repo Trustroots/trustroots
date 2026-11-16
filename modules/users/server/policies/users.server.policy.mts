@@ -129,6 +129,10 @@ function invokeRolesPolicies() {
           permissions: ['get', 'post', 'delete'],
         },
         {
+          resources: '/api/users/unified-push/test',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/blocked-users',
           permissions: ['get'],
         },

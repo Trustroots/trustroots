@@ -39,6 +39,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -277,6 +281,10 @@ internal fun AccountSettingsScreen(
                     Text(if (state.messageAlertsEnabled) turnOffMessageAlerts else turnOnMessageAlerts)
                 }
                 messageStatus?.let { Text(it) }
+                val endpoint = MessageAlerts.endpoint(context)
+                if (state.messageAlertsEnabled && endpoint != null && context.canPostNotifications()) {
+                    MessageAlertTestButton(session, endpoint, api::testMessagePush)
+                }
                 state.notice?.let { notice ->
                     val text = when (notice) {
                         AccountNotice.AccountSaved -> accountSaved
@@ -301,6 +309,36 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is android.content.ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+@Composable
+internal fun MessageAlertTestButton(
+    session: MemberSession,
+    endpoint: String,
+    requestTest: suspend (MemberSession, String) -> Result<Unit>,
+) {
+    val scope = rememberCoroutineScope()
+    var sending by remember(session.member.username, endpoint) { mutableStateOf(false) }
+    var status by remember(session.member.username, endpoint) { mutableStateOf<Int?>(null) }
+    TextButton(
+        enabled = !sending,
+        onClick = {
+            sending = true
+            status = null
+            scope.launch {
+                try {
+                    status = if (requestTest(session, endpoint).isSuccess) {
+                        R.string.screen_message_alert_test_scheduled
+                    } else {
+                        R.string.screen_message_alert_test_failed
+                    }
+                } finally {
+                    sending = false
+                }
+            }
+        },
+    ) { Text(stringResource(R.string.screen_message_alert_test)) }
+    status?.let { Text(stringResource(it)) }
 }
 
 private fun Context.canPostNotifications(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

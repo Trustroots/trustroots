@@ -30,6 +30,13 @@ module.exports = function (app) {
     .get(unifiedPush.configuration)
     .post(unifiedPush.add)
     .delete(unifiedPush.remove);
+  app.post(
+    '/api/mobile/v0/users/unified-push/test',
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    resourcePolicy(usersPolicy.isAllowed, '/api/users/unified-push/test'),
+    unifiedPush.test,
+  );
   app.route('/api/mobile/v0/members/:mobileMemberId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,

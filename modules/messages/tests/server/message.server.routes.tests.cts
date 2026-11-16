@@ -10,11 +10,18 @@ import type {
   UserModelDocument,
 } from '../../../../testutils/server/model-contracts.mts';
 
+const { once }: typeof import('node:events') = require('node:events');
 const _ = require('lodash');
 const should = require('should');
 const request = require('supertest');
 const moment = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+const winston: typeof import('winston') = require('winston');
+const push: typeof import('../../../users/server/services/unified-push.server.service.mjs').default = require('../../../users/server/services/unified-push.server.service.mjs');
+const {
+  webPush,
+}: typeof import('../../../users/server/services/web-push.server.transport.mts') = require('../../../users/server/services/web-push.server.transport.mts');
 const config: TestConfigModule = require('./../../../../config/config.mts');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -92,6 +99,121 @@ describe('Message CRUD tests', function () {
     };
   });
   afterEach(utils.clearDatabase);
+
+  describe('Android message alerts', function () {
+    const registration = {
+      endpoint: 'https://ntfy.sh/anonymous-message-route',
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    };
+
+    beforeEach(async function () {
+      await agent.post('/api/auth/signin').send(credentials).expect(200);
+      await push.register(userToId, registration);
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it('persists a due-now push job for a saved message and delivers it to the recipient', async function () {
+      const { messagePushJobName } =
+        await import('../../server/jobs/message-push.server.job.mts');
+      const { default: agenda } =
+        await import('../../../../config/lib/agenda.mts');
+      const { default: worker } =
+        await import('../../../../config/lib/worker.mts');
+      const jobs = mongoose.connection.collection<{
+        name: string;
+        nextRunAt: Date;
+        data: { messageId: string };
+      }>('agendaJobs');
+      const sent = sinon.stub(webPush, 'sendNotification').resolves();
+      // Run the real push processor without starting unrelated recurring jobs.
+      sinon.stub(agenda, 'every').resolves();
+      await User.updateOne({ _id: userToId }, { blocked: null });
+      await push.register(userFromId, {
+        ...registration,
+        endpoint: 'https://ntfy.sh/anonymous-sender-device',
+      });
+      const before = Date.now();
+      const response = await agent
+        .post('/api/messages')
+        .send(message)
+        .expect(200);
+      const job = await jobs.findOne({
+        name: messagePushJobName,
+        'data.messageId': String(response.body._id),
+      });
+      if (!job)
+        throw new Error('The message route did not persist a push job.');
+      try {
+        job.nextRunAt.getTime().should.be.within(before, Date.now());
+        sent.called.should.equal(false);
+        await Promise.all([
+          once(agenda, `success:${messagePushJobName}`, {
+            signal: AbortSignal.timeout(6_000),
+          }),
+          worker.start({ maxAttempts: 3, retryDelaySeconds: 3 }),
+        ]);
+        sent.calledOnce.should.equal(true);
+        sent.firstCall.args[0].endpoint.should.equal(registration.endpoint);
+        should(sent.firstCall.args[1]).equal(
+          JSON.stringify({ senderId: String(userFromId) }),
+        );
+      } finally {
+        // Other server suites share Agenda's MongoDB connection.
+        await agenda.stop(false);
+        worker.removeExitListeners();
+        await jobs.deleteOne({ _id: job._id });
+      }
+    });
+
+    it('keeps a saved message available when push scheduling fails', async function () {
+      const { default: agenda } =
+        await import('../../../../config/lib/agenda.mts');
+      const schedule = sinon
+        .stub(agenda, 'schedule')
+        .rejects(new Error('Agenda unavailable'));
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+
+      const response = await agent
+        .post('/api/messages')
+        .send(message)
+        .expect(200);
+      schedule.calledOnce.should.equal(true);
+      const saved = await Message.findById(String(response.body._id));
+      should(saved?.content).equal(message.content);
+      const warning = 'Could not queue Android message notification.';
+      const entry = log.getCalls().find(call => call.args[1] === warning);
+      should(entry?.args).deepEqual([
+        'error',
+        warning,
+        { error: { name: 'Error' } },
+      ]);
+    });
+
+    it('skips scheduling for members without a registration', async function () {
+      const { default: agenda } =
+        await import('../../../../config/lib/agenda.mts');
+      const schedule = sinon.spy(agenda, 'schedule');
+      await push.unregister(userToId, registration.endpoint);
+      await push.register(userFromId, registration);
+      await agent.post('/api/messages').send(message).expect(200);
+      schedule.called.should.equal(false);
+    });
+
+    it('skips scheduling when an admin writes to a restricted recipient', async function () {
+      const { default: agenda } =
+        await import('../../../../config/lib/agenda.mts');
+      const schedule = sinon.spy(agenda, 'schedule');
+      await User.updateOne({ _id: userFromId }, { roles: ['user', 'admin'] });
+      await User.updateOne({ _id: userToId }, { roles: ['user', 'shadowban'] });
+      await agent.post('/api/messages').send(message).expect(200);
+      schedule.called.should.equal(false);
+    });
+  });
 
   it('formats authenticated previews without creating a message or thread', async () => {
     await agent.post('/api/auth/signin').send(credentials).expect(200);

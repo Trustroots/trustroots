@@ -133,7 +133,10 @@
     <string name="screen_password_changed">Password changed.</string>
     <string name="screen_forgot_your_password">Forgot your password?</string>
     <string name="screen_message_alerts">Message alerts</string>
-    <string name="screen_message_alerts_description">Receive an alert for an unread conversation after ten minutes. This requires an installed UnifiedPush distributor, such as ntfy.</string>
+    <string name="screen_message_alerts_description">Receive an alert when a new message arrives. This requires an installed UnifiedPush distributor, such as ntfy.</string>
+    <string name="screen_message_alert_test">Test on locked screen</string>
+    <string name="screen_message_alert_test_scheduled">Lock your phone now. The test alert is due in about 15 seconds.</string>
+    <string name="screen_message_alert_test_failed">Could not schedule the test alert. Check your message alert setup and wait a minute before trying again.</string>
     <string name="screen_message_alerts_off">Message alerts are off.</string>
     <string name="screen_turn_off_message_alerts">Turn off message alerts</string>
     <string name="screen_turn_on_message_alerts">Turn on message alerts</string>

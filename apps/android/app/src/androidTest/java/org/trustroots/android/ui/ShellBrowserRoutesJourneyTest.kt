@@ -3,7 +3,9 @@ package org.trustroots.android.ui
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -11,9 +13,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.text.AnnotatedString
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -114,7 +117,9 @@ class ShellBrowserRoutesJourneyTest {
         showApp()
 
         waitForText("Username or email")
-        compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
+        compose.onNodeWithTag("signin-username").performSemanticsAction(SemanticsActions.SetText) {
+            assertTrue(it(AnnotatedString("anonymous-heron")))
+        }
         compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
         assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
 
@@ -212,7 +217,8 @@ class ShellBrowserRoutesJourneyTest {
     }
 
     private fun assertBrowserRoute(title: String, url: String) {
-        compose.onNodeWithTag("offlineBrowserSurface").assertIsDisplayed()
+        val browser = compose.onNodeWithTag("offlineBrowserSurface")
+        compose.waitUntil(10_000) { browser.isDisplayed() }
         compose.onNodeWithText("Fake browser: $title").assertIsDisplayed()
         compose.onNodeWithText(url).assertIsDisplayed()
     }

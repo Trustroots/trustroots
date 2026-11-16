@@ -1,9 +1,13 @@
 package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -11,14 +15,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
@@ -97,17 +100,17 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
             }
         }
 
+        val enabledComposer = hasTestTag("messageComposer") and isEnabled()
         compose.waitUntil(10_000) {
             model.state.value.member != null && repository.messageCalls.get() == 1 &&
-                compose.onAllNodesWithTag("messageComposer").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodes(enabledComposer).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("messageComposer").performTextInput("A fictional message while history loads.")
-        hideTestKeyboard()
-        compose.waitUntil(10_000) {
-            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
-                ?.isVisible(WindowInsetsCompat.Type.ime()) != true
+        compose.onNode(enabledComposer).performSemanticsAction(SemanticsActions.SetText) {
+            assertTrue(it(AnnotatedString("A fictional message while history loads.")))
         }
-        compose.onNodeWithContentDescription("Send").assertIsDisplayed().assertIsEnabled().performClick()
+        val enabledSend = hasContentDescription("Send") and isEnabled()
+        compose.waitUntil(10_000) { compose.onAllNodes(enabledSend).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(enabledSend).assertIsDisplayed().performClick()
         compose.waitUntil(10_000) { repository.sendStarted.isCompleted }
 
         repository.history.complete(Result.failure(IOException("A fictional history lookup failed.")))

@@ -90,6 +90,10 @@ const defaultExport = function (app: RouteApplication) {
     .post(unifiedPush.add)
     .delete(unifiedPush.remove);
   app
+    .route('/api/users/unified-push/test')
+    .all(usersPolicy.isAllowed)
+    .post(unifiedPush.test);
+  app
     .route('/api/users/mini/:userId')
     .all(usersPolicy.isAllowed)
     .get(userProfile.getMiniUser);

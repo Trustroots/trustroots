@@ -69,6 +69,11 @@ async function start(options: WorkerOptions, callback?: Done) {
   const { recoverSupportMessages: recoverSupportMessagesJob } =
     await import('./../../modules/support/server/jobs/recover-support-messages.server.job.mts');
 
+  const { deliverMessagePush, messagePushJobName } =
+    await import('../../modules/messages/server/jobs/message-push.server.job.mts');
+  const { deliverTest, testPushJobName } =
+    await import('../../modules/users/server/services/unified-push.server.service.mts');
+
   // Define jobs
 
   defineJob('send email', dependency4, {
@@ -76,8 +81,20 @@ async function start(options: WorkerOptions, callback?: Done) {
     concurrency: 10,
   });
 
-  // Future push: re-register a delivery job here (previously
-  // `send push message` via modules/core/server/jobs/send-push-message).
+  agenda.define<Parameters<typeof deliverMessagePush>[0]>(
+    messagePushJobName,
+    async job => {
+      if (job.attrs.data) await deliverMessagePush(job.attrs.data);
+    },
+    { priority: 'high', removeOnComplete: true },
+  );
+  agenda.define<Parameters<typeof deliverTest>[0]>(
+    testPushJobName,
+    async job => {
+      if (job.attrs.data) await deliverTest(job.attrs.data);
+    },
+    { priority: 'high', removeOnComplete: true },
+  );
 
   defineJob('check unread messages', dependency5, {
     lockLifetime: 10000,

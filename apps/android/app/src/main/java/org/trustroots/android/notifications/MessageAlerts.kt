@@ -316,7 +316,9 @@ object MessageAlerts {
 
     fun show(context: Context, message: PushMessage) {
         if (!message.decrypted) return
-        val senderId = senderIdFromPushPayload(message.content.toString(Charsets.UTF_8)) ?: return
+        val payload = message.content.toString(Charsets.UTF_8)
+        val isTest = isTestPushPayload(payload)
+        val senderId = if (isTest) null else senderIdFromPushPayload(payload) ?: return
         val session = SecureMobileSessionStore(context).load() ?: return
         if (!isEnabled(context, session.member.username)) return
         if (Build.VERSION.SDK_INT >= 33 &&
@@ -326,6 +328,17 @@ object MessageAlerts {
         notifications.createNotificationChannel(NotificationChannel(
             CHANNEL, context.getString(R.string.message_alerts_channel), NotificationManager.IMPORTANCE_DEFAULT,
         ))
+        val builder = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setAutoCancel(true)
+        if (senderId == null) {
+            notifications.notify("message-alert-test", 0, builder
+                .setContentTitle(context.getString(R.string.message_alerts_test_title))
+                .setContentText(context.getString(R.string.message_alerts_test_text))
+                .build())
+            return
+        }
+
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(ACCOUNT_EXTRA, session.member.username)
             .putExtra(SENDER_EXTRA, senderId)
@@ -333,12 +346,10 @@ object MessageAlerts {
         val pending = PendingIntent.getActivity(
             context, senderId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        notifications.notify(senderId.hashCode(), Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_notification)
+        notifications.notify(senderId.hashCode(), builder
             .setContentTitle(context.getString(R.string.message_alerts_notification_title))
             .setContentText(context.getString(R.string.message_alerts_notification_text))
             .setContentIntent(pending)
-            .setAutoCancel(true)
             .build())
     }
 }

@@ -524,16 +524,23 @@ describe('API route registrations', () => {
     const {
       challenge,
     }: typeof import('../../../users/server/controllers/users.nostr.server.controller.mts') = require('../../../users/server/controllers/users.nostr.server.controller.mts');
+    const {
+      test: testPush,
+    }: typeof import('../../../users/server/controllers/users.unified-push.server.controller.mjs').default = require('../../../users/server/controllers/users.unified-push.server.controller.mjs');
     const { params, routes } = register(
       './../../../users/server/routes/users.server.routes.mts',
       { '../policies/users.server.policy': policy },
     );
 
-    assert.strictEqual(routes.length, 16);
+    assert.strictEqual(routes.length, 17);
     routes.forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],
+    );
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/users/unified-push/test').post,
+      [testPush],
     );
     assert.deepStrictEqual(
       params.map(param => param.name),

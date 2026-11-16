@@ -9,6 +9,7 @@ interface UnifiedPushRegistrationRecord {
   publicKey: string;
   auth: string;
   updated: Date;
+  lastTestRequested?: Date;
 }
 
 interface PushRegistrationInput {
@@ -36,6 +37,8 @@ interface UnifiedPushService {
   register: typeof register;
   unregister: typeof unregister;
   notifyUnread: typeof notifyUnread;
+  hasRegistrations: typeof hasRegistrations;
+  scheduleTest: typeof scheduleTest;
 }
 
 let service = {} as UnifiedPushService;
@@ -115,59 +118,132 @@ async function unregister(
     endpoint,
   });
 }
-async function notifyUnread(
-  userId: Types.ObjectId | string,
-  senderId: Types.ObjectId | string,
-): Promise<void> {
-  if (!pushConfiguration().enabled) return;
-  const registrations = await Registration.find({
-    user: userId,
+const testDelayMs = 15_000;
+const testCooldownMs = 60_000;
+
+export const testPushJobName = 'send Android test notification';
+
+interface TestPushJobData {
+  userId: string;
+  registrationId: string;
+  expiresAt: number;
+}
+
+async function scheduleTest(
+  userId: Types.ObjectId,
+  endpoint: string,
+): Promise<'scheduled' | 'missing' | 'limited'> {
+  const requestedAt = new Date();
+  const target = { user: userId, endpoint };
+  const registration = await Registration.findOneAndUpdate(
+    {
+      ...target,
+      $or: [
+        { lastTestRequested: { $exists: false } },
+        {
+          lastTestRequested: {
+            $lte: new Date(requestedAt.getTime() - testCooldownMs),
+          },
+        },
+      ],
+    },
+    { $set: { lastTestRequested: requestedAt } },
+  );
+  if (!registration)
+    return (await Registration.exists(target)) ? 'limited' : 'missing';
+
+  const dueAt = Date.now() + testDelayMs;
+  try {
+    const { default: agenda } =
+      await import('../../../../config/lib/agenda.mts');
+    await agenda.schedule<TestPushJobData>(new Date(dueAt), testPushJobName, {
+      userId: String(userId),
+      registrationId: String(registration._id),
+      expiresAt: dueAt + testCooldownMs,
+    });
+  } catch (error) {
+    await Registration.updateOne(
+      { _id: registration._id, user: userId, lastTestRequested: requestedAt },
+      { $unset: { lastTestRequested: 1 } },
+    );
+    throw error;
+  }
+  return 'scheduled';
+}
+
+export async function deliverTest(data: TestPushJobData): Promise<void> {
+  if (!pushConfiguration().enabled || Date.now() >= data.expiresAt) return;
+  const registration = await Registration.findOne({
+    _id: data.registrationId,
+    user: data.userId,
   });
+  if (registration) await sendPush(registration, { test: true }, 60);
+}
+
+async function sendPush(
+  registration: UnifiedPushRegistrationRecord,
+  payload: { senderId: string } | { test: true },
+  ttl: number,
+): Promise<void> {
+  if (!validRegistration(registration)) return;
   webPush.setVapidDetails(
     config.webPush.subject,
     config.webPush.publicKey,
     config.webPush.privateKey,
   );
+  try {
+    await webPush.sendNotification(
+      {
+        endpoint: registration.endpoint,
+        keys: { p256dh: registration.publicKey, auth: registration.auth },
+      },
+      JSON.stringify(payload),
+      { TTL: ttl },
+    );
+  } catch (error) {
+    const pushError = error as { statusCode?: number };
+    if (pushError.statusCode === 404 || pushError.statusCode === 410) {
+      await Registration.deleteOne({
+        _id: registration._id,
+        user: registration.user,
+        updated: registration.updated,
+      });
+    } else {
+      log('error', 'UnifiedPush delivery failed.', {
+        statusCode: pushError.statusCode,
+      });
+    }
+  }
+}
+
+async function notifyUnread(
+  userId: Types.ObjectId | string,
+  senderId: Types.ObjectId | string,
+): Promise<void> {
+  if (!pushConfiguration().enabled) return;
+  const registrations = await Registration.find({ user: userId });
   await Promise.all(
-    registrations.map(async registration => {
-      try {
-        await webPush.sendNotification(
-          {
-            endpoint: registration.endpoint,
-            keys: {
-              p256dh: registration.publicKey,
-              auth: registration.auth,
-            },
-          },
-          JSON.stringify({
-            senderId: String(senderId),
-          }),
-          {
-            TTL: 3600,
-          },
-        );
-      } catch (error) {
-        const pushError = error as { statusCode?: number };
-        if (pushError.statusCode === 404 || pushError.statusCode === 410) {
-          await Registration.deleteOne({
-            _id: registration._id,
-            user: userId,
-          });
-        } else {
-          log('error', 'UnifiedPush unread-message delivery failed.', {
-            error,
-          });
-        }
-      }
-    }),
+    registrations.map(registration =>
+      sendPush(registration, { senderId: String(senderId) }, 3600),
+    ),
   );
 }
+
+async function hasRegistrations(userId: Types.ObjectId): Promise<boolean> {
+  return (
+    pushConfiguration().enabled &&
+    Boolean(await Registration.exists({ user: userId }))
+  );
+}
+
 service = {
   pushConfiguration,
   validRegistration,
   register,
   unregister,
   notifyUnread,
+  hasRegistrations,
+  scheduleTest,
 };
 export default service;
 /** @commonjs */

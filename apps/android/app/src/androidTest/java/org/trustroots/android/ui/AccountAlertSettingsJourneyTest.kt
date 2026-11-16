@@ -4,9 +4,14 @@ import org.trustroots.android.ui.account.AccountSettingsScreen
 
 import android.Manifest
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -21,10 +26,13 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -145,6 +153,79 @@ class AccountAlertSettingsJourneyTest {
         responder?.join(1_000)
     }
 
+    @Test fun requestsALockedScreenTestAfterRegistration() {
+        registerAlertFixture()
+        val releaseResponse = CountDownLatch(1)
+        respondToAccountRequest(
+            """{"username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
+            alertTestResponses = listOf("202 Accepted", "429 Too Many Requests"),
+            firstAlertTestRelease = releaseResponse,
+        )
+        compose.setContent {
+            TrustrootsTheme {
+                AccountSettingsScreen(
+                    api = api(),
+                    session = session,
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onResetPassword = {},
+                    onSignedOut = {},
+                )
+            }
+        }
+
+        waitForText("member@example.test")
+        val testButton = compose.onNodeWithText("Test on locked screen")
+        try {
+            testButton.performScrollTo().performClick()
+            testButton.assertIsNotEnabled()
+        } finally {
+            releaseResponse.countDown()
+        }
+        waitForText("Lock your phone now. The test alert is due in about 15 seconds.")
+        testButton.performScrollTo().performClick()
+        waitForText("Could not schedule the test alert. Check your message alert setup and wait a minute before trying again.")
+    }
+
+    @Test fun hidesTheLockedScreenTestWhenNotificationPermissionIsDenied() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        registerAlertFixture()
+        respondToAccountRequest(
+            """{"username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
+        )
+        val deniedContext = object : ContextWrapper(compose.activity) {
+            override fun checkSelfPermission(permission: String): Int =
+                if (permission == Manifest.permission.POST_NOTIFICATIONS) PackageManager.PERMISSION_DENIED
+                else super.checkSelfPermission(permission)
+        }
+        compose.setContent {
+            CompositionLocalProvider(LocalContext provides deniedContext) {
+                TrustrootsTheme {
+                    AccountSettingsScreen(
+                        api = api(),
+                        session = session,
+                        onSessionInvalidated = {},
+                        onBack = {},
+                        onResetPassword = {},
+                        onSignedOut = {},
+                    )
+                }
+            }
+        }
+
+        waitForText("member@example.test")
+        compose.onNodeWithText("Turn off message alerts").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Test on locked screen").assertDoesNotExist()
+    }
+
+    private fun registerAlertFixture() {
+        preferences.edit()
+            .putString("account", session.member.username)
+            .putBoolean("enabled", true)
+            .putString("endpoint", "https://ntfy.sh/anonymous-test-device")
+            .commit()
+    }
+
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
 
     private fun waitForText(text: String) {
@@ -153,7 +234,11 @@ class AccountAlertSettingsJourneyTest {
         }
     }
 
-    private fun respondToAccountRequest(payload: String) {
+    private fun respondToAccountRequest(
+        payload: String,
+        alertTestResponses: List<String> = emptyList(),
+        firstAlertTestRelease: CountDownLatch? = null,
+    ) {
         responder = thread(isDaemon = true, name = "account-alert-settings-fixture") {
             try {
                 val socket = try {
@@ -181,6 +266,21 @@ class AccountAlertSettingsJourneyTest {
                     }
                 }
                 activeSocket.compareAndSet(socket, null)
+                for ((index, response) in alertTestResponses.withIndex()) {
+                    server.accept().use { testSocket ->
+                        activeSocket.set(testSocket)
+                        testSocket.soTimeout = 5_000
+                        val input = testSocket.getInputStream()
+                        check(readLine(input) == "POST /api/users/unified-push/test HTTP/1.1")
+                        while (!readLine(input).isNullOrEmpty()) Unit
+                        if (index == 0 && firstAlertTestRelease != null) {
+                            check(firstAlertTestRelease.await(10, TimeUnit.SECONDS))
+                        }
+                        testSocket.getOutputStream().write(
+                            "HTTP/1.1 $response\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray(),
+                        )
+                    }
+                }
             } catch (error: IOException) {
                 if (!server.isClosed) throw error
             } finally {

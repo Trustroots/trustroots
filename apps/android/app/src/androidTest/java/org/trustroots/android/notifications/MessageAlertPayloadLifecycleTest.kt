@@ -147,6 +147,31 @@ class MessageAlertPayloadLifecycleTest {
     }
 
     @Test
+    fun testPushPostsADistinctNotificationWithoutOpeningAConversation() {
+        assumeTrue("App notifications must be enabled for this device test", notifications.areNotificationsEnabled())
+        SecureMobileSessionStore(context).save(
+            MemberSession("connect.sid=fake-session", MobileMember("quiet-fox", "Quiet Fox")),
+        )
+        preferencesFor("quiet-fox", enabled = true)
+
+        try {
+            MessageAlerts.show(context, PushMessage("""{"test":true}""".toByteArray(), decrypted = true))
+
+            val deadline = SystemClock.elapsedRealtime() + 5_000
+            var alert = notifications.activeNotifications.firstOrNull { it.tag == "message-alert-test" }
+            while (alert == null && SystemClock.elapsedRealtime() < deadline) {
+                Thread.sleep(25)
+                alert = notifications.activeNotifications.firstOrNull { it.tag == "message-alert-test" }
+            }
+            val notification = requireNotNull(alert).notification
+            assertEquals("Trustroots test notification", notification.extras.getString(android.app.Notification.EXTRA_TITLE))
+            assertNull(notification.contentIntent)
+        } finally {
+            notifications.cancel("message-alert-test", 0)
+        }
+    }
+
+    @Test
     fun showPostsANotificationThatRoutesToItsConversation() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val senderId = unusedSenderId()
