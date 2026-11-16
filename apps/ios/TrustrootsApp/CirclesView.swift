@@ -30,20 +30,22 @@ struct CirclesView: View {
                         VStack(spacing: 6) {
                             LazyVStack(spacing: 0) {
                                 if filteredCircles.isEmpty {
-                                    ContentUnavailableView(
-                                        filterText.isEmpty ? "No circles available" : "No matching circles",
-                                        systemImage: "person.2",
-                                        description: Text(
+                                    ContentUnavailableView {
+                                        Label(
+                                            filterText.isEmpty ? "No circles available" : "No matching circles",
+                                            systemImage: "person.2"
+                                        )
+                                    } description: {
+                                        Text(
                                             filterText.isEmpty
                                                 ? "Circles will appear here when they are available."
                                                 : "Try another circle name or description."
-                                        ),
-                                        actions: {
-                                            if !filterText.isEmpty {
-                                                Button("Clear filter") { filterText = "" }
-                                            }
+                                        )
+                                    } actions: {
+                                        if !filterText.isEmpty {
+                                            Button("Clear filter") { filterText = "" }
                                         }
-                                    )
+                                    }
                                 }
                                 ForEach(filteredCircles.sorted { lhs, rhs in
                                 memberCircleIDs.contains(lhs.id) && !memberCircleIDs.contains(rhs.id)
