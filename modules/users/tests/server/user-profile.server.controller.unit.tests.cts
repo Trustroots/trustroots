@@ -167,7 +167,10 @@ function stubSearch(
 ): void {
   const query = {
     select: () => query,
-    sort: () => query,
+    sort: (sort: unknown) => {
+      should(sort).deepEqual({ score: { $meta: 'textScore' } });
+      return query;
+    },
     limit: () => query,
     skip: () => query,
     maxTimeMS: (budget: number) => {
