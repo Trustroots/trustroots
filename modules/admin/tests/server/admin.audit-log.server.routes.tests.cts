@@ -29,14 +29,9 @@ describe('Admin Audit Log CRUD tests', () => {
           agent.get('/api/admin/audit-log').expect(403).end(done);
         });
     });
-    it('admin users should be allowed to read audit log', done => {
-      agent
-        .post('/api/auth/signin')
-        .send(_users[0])
-        .expect(200)
-        .end(() => {
-          agent.get('/api/admin/audit-log').expect(200).end(done);
-        });
+    it('admin users should be allowed to read audit log', async () => {
+      await utils.signInPrivileged(_users[0], agent);
+      await agent.get('/api/admin/audit-log').expect(200);
     });
   });
 });

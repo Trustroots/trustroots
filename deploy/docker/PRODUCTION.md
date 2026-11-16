@@ -35,6 +35,19 @@ docker build \
 
 ## Production resilience
 
+Before deploying administrator MFA, provide the same dedicated
+`MFA_ENCRYPTION_KEY` to both `webapp` and `worker`. It must be the canonical
+base64 encoding of a random 32-byte key; the generation and backup procedure
+is documented in [Server.md](../../docs/Server.md#authenticator-mfa-encryption-key).
+The shared Compose environment passes it to both services, including the worker
+when it sets `NODE_ENV`. Production hosts with a separate Compose file must add
+the variable to each application service's environment there as well. Keep the
+value in the deployment secret store or protected Compose environment file.
+Deployment preflight validates the desired key configuration without printing
+it, before pulling or replacing images. Rollback retains the existing storage
+and logging checks and can restore a previous image without requiring this new
+configuration.
+
 Application telemetry is best effort: statistics callbacks acknowledge local
 validation, not InfluxDB persistence. Outstanding writes are capped at 32;
 InfluxDB requests use a two-second timeout without retries. Daily statistics

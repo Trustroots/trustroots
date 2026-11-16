@@ -4,6 +4,8 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 interface SessionUser {
   id: string;
   authVersion?: number;
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
 }
 type SerializeHandler = (
   user: SessionUser,
@@ -65,19 +67,39 @@ describe('Users Passport session configuration', () => {
     sinon.stub(User, 'findOne').callsFake(findOne);
     const { serialize, restore } = await installSessionHandlers();
 
-    serialize({ id: 'member-id', authVersion: 3 }, (error, session) => {
-      should.not.exist(error);
-      should(session).deepEqual({ id: 'member-id', authVersion: 3 });
-    });
+    serialize(
+      {
+        id: 'member-id',
+        authVersion: 3,
+        mfaEnabled: true,
+        $locals: { mfaVerified: true },
+      },
+      (error, session) => {
+        should.not.exist(error);
+        should(session).deepEqual({
+          id: 'member-id',
+          authVersion: 3,
+          mfaVerified: true,
+        });
+      },
+    );
     serialize({ id: 'member-id' }, (error, session) =>
-      should(session).deepEqual({ id: 'member-id', authVersion: 0 }),
+      should(session).deepEqual({
+        id: 'member-id',
+        authVersion: 0,
+        mfaVerified: false,
+      }),
     );
     for (const session of [
       null,
       undefined,
       'member-id',
       // Not an object, even though it carries both fields.
-      Object.assign(() => {}, { id: 'member-id', authVersion: 0 }),
+      Object.assign(() => {}, {
+        id: 'member-id',
+        authVersion: 0,
+        mfaVerified: false,
+      }),
       { id: 'member-id' },
       { authVersion: 0 },
       { id: 'member-id', authVersion: 1.5 },
@@ -88,7 +110,11 @@ describe('Users Passport session configuration', () => {
   });
 
   it('rejects stale versions and deleted accounts while accepting the current version', async () => {
-    const currentUser = { id: 'member-id', authVersion: 4 };
+    const currentUser = {
+      id: 'member-id',
+      authVersion: 4,
+      mfaEnabled: true,
+    };
     const findOne = sinon
       .stub()
       .callsFake(async (query: { _id: string }) =>
@@ -98,9 +124,14 @@ describe('Users Passport session configuration', () => {
     const { restore } = await installSessionHandlers();
 
     should(await restore({ id: 'member-id', authVersion: 3 })).equal(false);
-    should(await restore({ id: 'member-id', authVersion: 4 })).equal(
-      currentUser,
-    );
+    const restored = await restore({
+      id: 'member-id',
+      authVersion: 4,
+      mfaVerified: true,
+    });
+    should(restored).equal(currentUser);
+    if (!restored) throw new Error('Expected the current session user');
+    should(restored.$locals?.mfaVerified).equal(true);
     should(await restore({ id: 'deleted-id', authVersion: 0 })).equal(null);
     findOne
       .alwaysCalledWithMatch(sinon.match.object, '-salt -password')
@@ -134,7 +165,7 @@ describe('Users Passport session configuration', () => {
     strategies.args
       .map(([strategy]) => strategy.name)
       .should.deepEqual(['local']);
-    app.use.args.should.have.length(3);
+    app.use.args.should.have.length(4);
     should(app.use.args[0]).deepEqual(['initialize']);
     should(app.use.args[2]).deepEqual([
       usersSuspended.invalidateSuspendedSessions,

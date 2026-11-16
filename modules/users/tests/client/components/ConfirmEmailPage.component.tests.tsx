@@ -113,6 +113,25 @@ describe('ConfirmEmailPage', () => {
       screen.getByRole('button', { name: 'Cancel email change' }),
     ).toBeEnabled();
   });
+  it('requires sign-in again when confirming email for an MFA account', async () => {
+    mockedAuthApi.confirmEmail.mockResolvedValue({
+      mfaRequired: true,
+      profileMadePublic: true,
+    });
+    renderPage();
+    fireEvent.click(await confirmButton());
+    expect(
+      await screen.findByText(
+        /Sign in with your password and authenticator code/,
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/signin',
+    );
+    expect(window.location.pathname).toBe('/confirm-email/opaque-token');
+  });
+
   beforeEach(() => {
     jest.resetAllMocks();
     window.history.pushState({}, '', '/confirm-email/opaque-token');

@@ -13,6 +13,7 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
+import { signinWithPasskey } from '../api/passkeys.api';
 
 const BoardWithPhotoList = Board as unknown as React.ComponentType<{
   names: string | string[];
@@ -40,8 +41,12 @@ export default function SigninPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
   const hasRedirected = useRef(false);
   const usernameInput = useDesktopAutofocus<HTMLInputElement>();
+  const mfaInput = useDesktopAutofocus<HTMLInputElement>(mfaRequired);
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
     returnTo,
@@ -65,14 +70,25 @@ export default function SigninPage() {
     }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function authenticate(usePasskey = false) {
     setIsLoading(true);
     setAuthError(false);
     setErrorMessage('');
 
     try {
-      const signedInUser = await authApi.signin(credentials);
+      const authentication = usePasskey
+        ? await signinWithPasskey()
+        : mfaRequired
+          ? await authApi.verifyMfa(mfaCode)
+          : await authApi.signin(credentials);
+
+      if ('mfaRequired' in authentication) {
+        setMfaRequired(true);
+        setPasskeyAvailable(authentication.passkeyAvailable === true);
+        setIsLoading(false);
+        return;
+      }
+      const signedInUser = authentication;
 
       let session;
       try {
@@ -104,6 +120,11 @@ export default function SigninPage() {
     }
   }
 
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void authenticate();
+  }
+
   const forgotHref = credentials.username
     ? `/password/forgot?userhandle=${encodeURIComponent(credentials.username)}`
     : '/password/forgot';
@@ -128,84 +149,128 @@ export default function SigninPage() {
                 onSubmit={handleSubmit}
               >
                 <fieldset>
-                  <div className="form-group">
-                    <label htmlFor="username" className="lead">
-                      Email or username
-                    </label>
-                    <input
-                      ref={usernameInput}
-                      type="text"
-                      autoCapitalize="off"
-                      required
-                      id="username"
-                      name="username"
-                      className="form-control input-lg"
-                      placeholder="Email or username"
-                      value={credentials.username}
-                      disabled={isLoading}
-                      onChange={event =>
-                        updateCredential('username', event.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="password" className="lead">
-                      Password
-                    </label>
-                    <div className="input-group">
+                  {!mfaRequired && (
+                    <>
+                      <div className="form-group">
+                        <label htmlFor="username" className="lead">
+                          Email or username
+                        </label>
+                        <input
+                          ref={usernameInput}
+                          type="text"
+                          autoCapitalize="off"
+                          required
+                          id="username"
+                          name="username"
+                          className="form-control input-lg"
+                          placeholder="Email or username"
+                          value={credentials.username}
+                          disabled={isLoading}
+                          onChange={event =>
+                            updateCredential('username', event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="password" className="lead">
+                          Password
+                        </label>
+                        <div className="input-group">
+                          <input
+                            required
+                            id="password"
+                            name="password"
+                            placeholder="Password"
+                            className="form-control input-lg"
+                            type={showPassword ? 'text' : 'password'}
+                            autoCapitalize="off"
+                            disabled={isLoading}
+                            value={credentials.password}
+                            onChange={event =>
+                              updateCredential('password', event.target.value)
+                            }
+                          />
+                          <span className="input-group-btn">
+                            <Button
+                              size="lg"
+                              className="password-toggle"
+                              type="button"
+                              aria-label="Toggle password visibility"
+                              onClick={() =>
+                                setShowPassword(current => !current)
+                              }
+                            >
+                              <i
+                                className={`icon-lg ${
+                                  showPassword ? 'icon-eye-off' : 'icon-eye'
+                                }`}
+                              />
+                            </Button>
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {mfaRequired && (
+                    <div className="form-group">
+                      <label htmlFor="mfa-code" className="lead">
+                        Authenticator or recovery code
+                      </label>
                       <input
                         required
-                        id="password"
-                        name="password"
-                        placeholder="Password"
+                        id="mfa-code"
+                        name="mfaCode"
                         className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="one-time-code"
                         autoCapitalize="off"
+                        ref={mfaInput}
                         disabled={isLoading}
-                        value={credentials.password}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
+                        value={mfaCode}
+                        onChange={event => setMfaCode(event.target.value)}
                       />
-                      <span className="input-group-btn">
-                        <Button
-                          size="lg"
-                          className="password-toggle"
-                          type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </Button>
-                      </span>
+                      <p className="help-block">
+                        Enter the current code from your authenticator app or
+                        one of your recovery codes.
+                      </p>
                     </div>
-                  </div>
+                  )}
+                  {mfaRequired && passkeyAvailable && (
+                    <Button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => void authenticate(true)}
+                    >
+                      Use a registered passkey
+                    </Button>
+                  )}
                   <div className="form-group">
                     <Button size="lg" type="submit" disabled={isLoading}>
                       {isLoading
                         ? 'Wait...'
-                        : continueSignin
-                          ? 'Sign in to continue'
-                          : 'Login'}
+                        : mfaRequired
+                          ? 'Verify and sign in'
+                          : continueSignin
+                            ? 'Sign in to continue'
+                            : 'Login'}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      render={<span />}
-                      className="space-h"
-                    />
-                    <a href={forgotHref}>
-                      Forgot?
-                      {authError && (
-                        <span className="hidden-xs">
-                          {' '}
-                          Recover your password
-                        </span>
-                      )}
-                    </a>
+                    {!mfaRequired && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          render={<span />}
+                          className="space-h"
+                        />
+                        <a href={forgotHref}>
+                          Forgot?
+                          {authError && (
+                            <span className="hidden-xs">
+                              {' '}
+                              Recover your password
+                            </span>
+                          )}
+                        </a>
+                      </>
+                    )}
                   </div>
                 </fieldset>
               </form>

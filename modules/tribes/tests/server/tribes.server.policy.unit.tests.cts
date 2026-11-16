@@ -108,6 +108,8 @@ describe('Tribes policy unit tests', () => {
                     _id: { valueOf: () => 'user-id' },
                     public: true,
                     roles: [role],
+                    mfaEnabled: role === 'admin',
+                    $locals: { mfaVerified: role === 'admin' },
                   },
             route: { path },
             method,
@@ -151,6 +153,32 @@ describe('Tribes policy unit tests', () => {
       (await decide('guest', members, 'GET')).should.equal(403);
       (await decide('guest', connections, 'GET')).should.equal(403);
     });
+  });
+
+  it('uses signed-in user roles for ACL checks', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          roles: ['admin'],
+          mfaEnabled: true,
+          $locals: { mfaVerified: true },
+        },
+        route: { path: '/api/tribes/:tribe' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['admin'], '/api/tribes/:tribe', 'get')
+      .should.be.true();
+    next.calledOnce.should.be.true();
   });
 
   it('keeps active circle-member listings private to signed-in roles', () => {
