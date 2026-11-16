@@ -26,11 +26,13 @@ struct MessageInboxView: View {
                     if isLoading && threads.isEmpty {
                         ProgressView("Loading messages…")
                     } else if let errorMessage, threads.isEmpty {
-                        ContentUnavailableView(
-                            "Messages unavailable",
-                            systemImage: "exclamationmark.bubble",
-                            description: Text(errorMessage)
-                        )
+                        ContentUnavailableView {
+                            Label("Messages unavailable", systemImage: "exclamationmark.bubble")
+                        } description: {
+                            Text(errorMessage)
+                        } actions: {
+                            Button("Try again") { Task { await loadInbox() } }
+                        }
                     } else if threads.isEmpty {
                         ContentUnavailableView(
                             "No conversations yet",
@@ -39,6 +41,14 @@ struct MessageInboxView: View {
                         )
                     } else {
                         List {
+                            if filteredThreads.isEmpty && !isSearchingThreadContent {
+                                ContentUnavailableView(
+                                    "No matching conversations",
+                                    systemImage: "bubble.left.and.bubble.right",
+                                    description: Text("Try another name, username or message.")
+                                )
+                                .listRowSeparator(.hidden)
+                            }
                             if isSearchingThreadContent {
                                 HStack(spacing: 8) {
                                     ProgressView()
@@ -76,10 +86,13 @@ struct MessageInboxView: View {
                             }
 
                             if let errorMessage, !threads.isEmpty {
-                                Text("Older conversations could not be loaded: \(errorMessage)")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .listRowSeparator(.hidden)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Older conversations could not be loaded: \(errorMessage)")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                    Button("Try again") { Task { await loadInbox() } }
+                                }
+                                .listRowSeparator(.hidden)
                             }
                         }
                         .listStyle(.plain)
@@ -219,7 +232,13 @@ struct ConversationView: View {
     var body: some View {
         Group {
             if let errorMessage, messages.isEmpty {
-                ContentUnavailableView("Conversation unavailable", systemImage: "exclamationmark.bubble", description: Text(errorMessage))
+                ContentUnavailableView {
+                    Label("Conversation unavailable", systemImage: "exclamationmark.bubble")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button("Try again") { Task { await loadConversation() } }
+                }
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {

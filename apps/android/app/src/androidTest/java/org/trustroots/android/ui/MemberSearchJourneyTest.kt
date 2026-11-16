@@ -238,9 +238,10 @@ class MemberSearchJourneyTest {
         compose.onNodeWithTag("memberSearchField").performTextReplacement("  fox  ")
         compose.onNodeWithContentDescription("Search members").performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("No members found. Try another name or username.")
-                .fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("memberSearchEmpty").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithText("No members found").assertIsDisplayed()
+        compose.onNodeWithText("Try another name or username.").assertIsDisplayed()
         assertEquals(1, requestCount.get())
         assertTrue(requestedPath.get().contains("/api/users?search=fox&limit=50"))
         responder.join(1_000)
@@ -285,7 +286,9 @@ class MemberSearchJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.onNodeWithTag("memberSearchFailure").assertIsDisplayed()
+        compose.onNodeWithText("Member search unavailable").assertIsDisplayed()
+        compose.onNodeWithTag("memberSearchRetry").assertIsDisplayed().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }

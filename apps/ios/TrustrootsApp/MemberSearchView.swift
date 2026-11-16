@@ -18,11 +18,16 @@ struct MemberSearchView: View {
                     ProgressView("Finding members…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
-                    ContentUnavailableView(
-                        "Member search unavailable",
-                        systemImage: "person.crop.circle.badge.exclamationmark",
-                        description: Text(errorMessage)
-                    )
+                    ContentUnavailableView {
+                        Label(
+                            "Member search unavailable",
+                            systemImage: "person.crop.circle.badge.exclamationmark"
+                        )
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button("Try again") { Task { await search() } }
+                    }
                 } else if hasSearched && results.isEmpty {
                     ContentUnavailableView(
                         "No members found",

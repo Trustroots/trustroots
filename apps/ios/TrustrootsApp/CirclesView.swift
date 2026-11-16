@@ -18,11 +18,35 @@ struct CirclesView: View {
                     ProgressView("Loading circles…")
                         .frame(maxHeight: .infinity)
                 } else if let errorMessage {
-                    ContentUnavailableView("Circles unavailable", systemImage: "person.2.badge.gearshape", description: Text(errorMessage))
+                    ContentUnavailableView {
+                        Label("Circles unavailable", systemImage: "person.2.badge.gearshape")
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button("Try again") { Task { await loadCircles() } }
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: 6) {
                             LazyVStack(spacing: 0) {
+                                if filteredCircles.isEmpty {
+                                    ContentUnavailableView {
+                                        Label(
+                                            filterText.isEmpty ? "No circles available" : "No matching circles",
+                                            systemImage: "person.2"
+                                        )
+                                    } description: {
+                                        Text(
+                                            filterText.isEmpty
+                                                ? "Circles will appear here when they are available."
+                                                : "Try another circle name or description."
+                                        )
+                                    } actions: {
+                                        if !filterText.isEmpty {
+                                            Button("Clear filter") { filterText = "" }
+                                        }
+                                    }
+                                }
                                 ForEach(filteredCircles.sorted { lhs, rhs in
                                 memberCircleIDs.contains(lhs.id) && !memberCircleIDs.contains(rhs.id)
                             }) { circle in

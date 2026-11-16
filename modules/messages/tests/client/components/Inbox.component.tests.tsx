@@ -35,6 +35,21 @@ const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 const analytics = fakeAnalytics();
 
 describe('<Inbox>', () => {
+  it('announces an inbox failure and retries the request', async () => {
+    api.fetchThreads
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockResolvedValueOnce({ threads });
+    const { findByRole, findAllByRole, getByRole } = render(
+      <Inbox user={me} />,
+      { wrapper: analytics.wrapper },
+    );
+
+    expect(await findByRole('alert')).toHaveTextContent('Messages unavailable');
+    fireEvent.click(getByRole('button', { name: 'Try again' }));
+    expect(await findAllByRole('listitem')).toHaveLength(threads.length);
+    expect(api.fetchThreads).toHaveBeenCalledTimes(2);
+  });
+
   it('filters a conversation with an absent participant by its preview', async () => {
     const missingParticipant: messagesApi.MessageThreadSummary = {
       _id: 'thread-without-sender',
@@ -75,12 +90,11 @@ describe('<Inbox>', () => {
 
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole } = render(<Inbox user={me} />, {
+    const { findByRole, getByRole } = render(<Inbox user={me} />, {
       wrapper: analytics.wrapper,
     });
-    expect(await findByRole('alert')).toHaveTextContent(
-      'No conversations yet.',
-    );
+    expect(getByRole('status')).toHaveTextContent('Loading conversations…');
+    await findByRole('heading', { name: 'No conversations yet.' });
     expect(api.fetchThreads).toHaveBeenCalled();
   });
 
@@ -92,9 +106,7 @@ describe('<Inbox>', () => {
       wrapper: analytics.wrapper,
     });
 
-    expect(await findByRole('alert')).toHaveTextContent(
-      'No unread conversations.',
-    );
+    await findByRole('heading', { name: 'No unread conversations.' });
     expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unread' });
     expect(getByRole('link', { name: 'Unread conversations' })).toHaveAttribute(
       'aria-current',
@@ -202,6 +214,32 @@ describe('<Inbox>', () => {
     expect(items.length).toBe(threads.length + olderThreads.length);
   });
 
+  it('retries a failed pagination request at the same page', async () => {
+    api.fetchThreads
+      .mockResolvedValueOnce({ threads, nextParams: { page: 2 } })
+      .mockRejectedValueOnce(new Error('Page unavailable'))
+      .mockResolvedValueOnce({ threads: moreThreads });
+    const { findAllByRole, findByRole, getAllByRole, getByRole } = render(
+      <Inbox user={me} />,
+      { wrapper: analytics.wrapper },
+    );
+    await findAllByRole('listitem');
+    fireEvent.click(await findByRole('button', { name: 'More messages' }));
+
+    expect(await findByRole('alert')).toHaveTextContent(
+      'More conversations unavailable',
+    );
+    fireEvent.click(getByRole('button', { name: 'Try again' }));
+
+    await waitFor(() =>
+      expect(getAllByRole('listitem')).toHaveLength(
+        threads.length + moreThreads.length,
+      ),
+    );
+    expect(api.fetchThreads.mock.calls[1]?.[0]).toEqual({ page: 2 });
+    expect(api.fetchThreads.mock.calls[2]?.[0]).toEqual({ page: 2 });
+  });
+
   it('filters by member name and latest preview across older pages', async () => {
     const firstPage = generateThreads(1);
     const olderPage = generateThreads(1);
@@ -252,7 +290,7 @@ describe('<Inbox>', () => {
       target: { value: 'no matching member or preview' },
     });
 
-    expect(getByRole('alert')).toHaveTextContent('No matching conversations.');
+    expect(getByRole('status')).toHaveTextContent('No matching conversations.');
   });
 
   it('searches the other member in a conversation I sent', async () => {
@@ -332,11 +370,11 @@ describe('<Inbox>', () => {
   });
 
   it('reports a failure while loading older conversations for search', async () => {
-    api.fetchThreads.mockImplementation((params = {}) =>
-      params.page === 2
-        ? Promise.reject(new Error('Page unavailable'))
-        : Promise.resolve({ threads, nextParams: { page: 2 } }),
+    api.fetchThreads.mockImplementationOnce(() =>
+      Promise.resolve({ threads, nextParams: { page: 2 } }),
     );
+    api.fetchThreads.mockRejectedValueOnce(new Error('Page unavailable'));
+    api.fetchThreads.mockResolvedValueOnce({ threads: moreThreads });
     const { findAllByRole, findByText, getByRole } = render(
       <Inbox user={me} />,
       { wrapper: analytics.wrapper },
@@ -350,5 +388,7 @@ describe('<Inbox>', () => {
     expect(
       await findByText('Older conversations could not be loaded.'),
     ).toBeInTheDocument();
+    fireEvent.click(getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(api.fetchThreads).toHaveBeenCalledTimes(3));
   });
 });

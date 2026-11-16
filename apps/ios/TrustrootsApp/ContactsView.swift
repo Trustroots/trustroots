@@ -14,7 +14,16 @@ struct ContactsView: View {
                 if isLoading && contacts.isEmpty {
                     ProgressView("Loading contacts…")
                 } else if let errorMessage {
-                    ContentUnavailableView("Contacts unavailable", systemImage: "person.crop.circle.badge.exclamationmark", description: Text(errorMessage))
+                    ContentUnavailableView {
+                        Label(
+                            "Contacts unavailable",
+                            systemImage: "person.crop.circle.badge.exclamationmark"
+                        )
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button("Try again") { Task { await loadContacts() } }
+                    }
                 } else if contacts.isEmpty {
                     ContentUnavailableView(
                         "No contacts yet",

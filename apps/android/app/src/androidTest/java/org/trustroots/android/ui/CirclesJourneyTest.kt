@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -12,6 +13,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.ByteArrayOutputStream
@@ -113,6 +117,15 @@ class CirclesJourneyTest {
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
         assertTrue("Queued Back actions must keep the Circles root open", !compose.activity.isFinishing)
         captureUsabilityScreenshot(compose, "android_navigation")
+
+        compose.onNodeWithTag("circlesList").performScrollToNode(hasText("Filter circles"))
+        compose.onNodeWithContentDescription("Filter circles")
+            .performTextReplacement("no matching circle here")
+        compose.onNodeWithTag("circlesList").performScrollToNode(hasText("No matching circles"))
+        compose.onNodeWithText("No matching circles").assertIsDisplayed()
+        compose.onNodeWithText("Clear filter").performScrollTo().performClick()
+        compose.onNodeWithTag("circlesList").performScrollToNode(hasText("Wanderers"))
+        compose.onNodeWithText("Wanderers").assertIsDisplayed()
         responder.join(1_000)
     }
 }

@@ -48,7 +48,16 @@ struct CircleDetailView: View {
                             )
                         }
 
-                        if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
+                        if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty,
+                           let errorMessage {
+                            ContentUnavailableView {
+                                Label("Circle members unavailable", systemImage: "person.2.badge.exclamationmark")
+                            } description: {
+                                Text(errorMessage)
+                            } actions: {
+                                Button("Try again") { Task { await loadMembers() } }
+                            }
+                        } else if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
                             ContentUnavailableView(
                                 "No members to show yet",
                                 systemImage: "person.2",
@@ -57,10 +66,14 @@ struct CircleDetailView: View {
                         }
                     }
 
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                    if let errorMessage,
+                       !contacts.isEmpty || !positiveExperienceMembers.isEmpty || !otherMembers.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(errorMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Button("Try again") { Task { await loadMembers() } }
+                        }
                     }
 
                     Button {

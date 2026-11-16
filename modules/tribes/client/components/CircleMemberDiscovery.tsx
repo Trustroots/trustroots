@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
+import ContentState from '@/modules/core/client/components/ContentState';
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import type { UserProfile } from '@/modules/users/client/types';
@@ -169,20 +170,40 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
         members={sections.active}
         t={t}
       />
+      {isLoading && (
+        <ContentState
+          kind="loading"
+          heading={t('Loading circle members…')}
+          description={t('Please wait while we find members of this circle.')}
+        />
+      )}
       {!isLoading && hasError && (
-        <div className="circle-member-error" role="alert">
-          <p>{t('Could not load circle members. Please try again.')}</p>
-          <Button type="button" onClick={() => setAttempt(value => value + 1)}>
-            {t('Try again')}
-          </Button>
-        </div>
+        <ContentState
+          className="circle-member-error"
+          kind="error"
+          heading={t('Circle members unavailable')}
+          description={t('Could not load circle members. Please try again.')}
+          action={
+            <Button
+              type="button"
+              onClick={() => setAttempt(value => value + 1)}
+            >
+              {t('Try again')}
+            </Button>
+          }
+        />
       )}
       {!isLoading &&
         !hasError &&
         !sections.contacts.length &&
         !sections.recommenders.length &&
         !sections.active.length && (
-          <p className="circle-member-empty">{t('No members to show yet')}</p>
+          <ContentState
+            className="circle-member-empty"
+            kind="empty"
+            heading={t('No members to show yet')}
+            description={t('Members may appear here as this circle grows.')}
+          />
         )}
     </div>
   );

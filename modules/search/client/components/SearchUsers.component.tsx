@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import ContentState from '@/modules/core/client/components/ContentState';
 
 // Internal dependencies
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
-import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import UsersResults from './UsersResults';
 
 const MINIMUM_QUERY_LENGTH = 3;
@@ -113,15 +113,30 @@ export default function SearchUsers() {
   return (
     <section className="container container-spacer">
       {searchForm}
-      {isSearching && <LoadingIndicator />}
+      {isSearching && (
+        <ContentState
+          kind="loading"
+          heading={String(t('Searching members…'))}
+          description={String(
+            t('Please wait while we find members matching your search.'),
+          )}
+        />
+      )}
       {searchFailed && (
-        <p role="alert">
-          {String(
+        <ContentState
+          kind="error"
+          heading={String(t('Member search unavailable'))}
+          description={String(
             t(
               'Could not search members. Please try again with a more specific search.',
             ),
           )}
-        </p>
+          action={
+            <Button type="button" onClick={() => fetchUsers(searchQuery)}>
+              {String(t('Try again'))}
+            </Button>
+          }
+        />
       )}
       {!isSearching && !searchFailed && hasSearched && (
         <UsersResults users={users} query={searchQuery} />

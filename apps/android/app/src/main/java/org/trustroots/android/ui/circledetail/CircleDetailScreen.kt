@@ -36,6 +36,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.pluralStringResource
@@ -157,8 +161,23 @@ internal fun CircleDetailContent(
                         .padding(contentPadding.bottomInset()),
                 ) {
                     NativeBackButton(onBack)
-                    if (isLoading) CircularProgressIndicator()
-                    failureMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                        Text(stringResource(R.string.screen_circle_loading))
+                    }
+                    failureMessage?.let {
+                        Text(
+                            stringResource(R.string.screen_circle_unavailable),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics {
+                                heading()
+                                liveRegion = LiveRegionMode.Assertive
+                            },
+                        )
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
                     if (canRetryLoad) Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
                 }
             } else {
@@ -245,8 +264,19 @@ internal fun CircleDetailContent(
                             }
                             if (isMember && membershipsLoaded) {
                                 if (isLoadingMembers) {
-                                    CircularProgressIndicator(Modifier.padding(top = 20.dp))
+                                    Column(Modifier.padding(top = 20.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+                                        CircularProgressIndicator()
+                                        Text(stringResource(R.string.screen_circle_members_loading))
+                                    }
                                 } else if (failure?.kind == CirclesFailureKind.CIRCLE_MEMBERS_LOAD) {
+                                    Text(
+                                        stringResource(R.string.screen_circle_members_unavailable),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(top = 20.dp).semantics {
+                                            heading()
+                                            liveRegion = LiveRegionMode.Assertive
+                                        },
+                                    )
                                     Text(
                                         circlesFailureMessage(failure),
                                         color = MaterialTheme.colorScheme.error,
@@ -281,11 +311,20 @@ private fun CircleMemberDiscovery(
         groups.recommenders.isEmpty() &&
         groups.active.isEmpty()
     if (allEmpty) {
-        Text(
-            stringResource(R.string.screen_circle_members_empty),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 24.dp),
-        )
+        Column(
+            Modifier.padding(top = 24.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        ) {
+            Text(
+                stringResource(R.string.screen_circle_members_empty_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                stringResource(R.string.screen_circle_members_empty),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         return
     }
     CircleMemberGroup(

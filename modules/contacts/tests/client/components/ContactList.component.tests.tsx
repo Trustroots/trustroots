@@ -53,16 +53,22 @@ jest.mock(
 );
 
 describe('<ContactList />', () => {
-  it('shows a loading indicator while contacts are unresolved', () => {
+  it('announces loading while contacts are unresolved', () => {
     render(
       <ContactList
         appUser={appUser}
         contacts={undefined}
         onContactRemoved={() => {}}
+        loadFailed={false}
+        onRetry={() => {}}
       />,
     );
 
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('Wait a moment');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+    expect(
+      screen.getByRole('heading', { name: 'Loading contacts…' }),
+    ).toBeInTheDocument();
   });
 
   it('shows an empty state when resolved contacts are empty', () => {
@@ -73,10 +79,34 @@ describe('<ContactList />', () => {
         appUser={appUser}
         contacts={contacts}
         onContactRemoved={() => {}}
+        loadFailed={false}
+        onRetry={() => {}}
       />,
     );
 
     expect(screen.getByText('No contacts yet.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'People you connect with on Trustroots will appear here.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('offers an accessible retry when loading contacts fails', () => {
+    const onRetry = jest.fn();
+    render(
+      <ContactList
+        appUser={appUser}
+        contacts={resolvedContacts([])}
+        onContactRemoved={() => {}}
+        loadFailed
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Contacts unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it('passes resolved contacts and filter changes to the presentational list', () => {
@@ -98,6 +128,8 @@ describe('<ContactList />', () => {
         appUser={appUser}
         contacts={contacts}
         onContactRemoved={() => {}}
+        loadFailed={false}
+        onRetry={() => {}}
       />,
     );
 
