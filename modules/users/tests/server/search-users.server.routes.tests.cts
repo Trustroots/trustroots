@@ -203,13 +203,13 @@ describe('Search users: GET /users?search=string', function () {
       it('finds public locations and taglines, ranking names higher', function (done) {
         createUsers(
           [
-            { username: 'riverside' },
-            { username: 'locationmatch', locationLiving: 'Riverside' },
-            { username: 'originmatch', locationFrom: 'Riverside' },
             {
               username: 'taglinematch',
               tagline: 'Riverside pottery enthusiast',
             },
+            { username: 'originmatch', locationFrom: 'Riverside' },
+            { username: 'locationmatch', locationLiving: 'Riverside' },
+            { username: 'riverside' },
             {
               username: 'privatematch',
               locationLiving: 'Riverside',

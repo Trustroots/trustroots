@@ -1267,13 +1267,19 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns an empty object without a profile', async () => {
-      const { res } = await runHandler(res =>
-        profileController.getUser(
-          { user: { _id: new mongoose.Types.ObjectId() } },
-          res,
-        ),
-      );
+      let thrown: unknown;
+      const { res } = await runHandler(res => {
+        try {
+          profileController.getUser(
+            { user: { _id: new mongoose.Types.ObjectId() } },
+            res,
+          );
+        } catch (error) {
+          thrown = error;
+        }
+      });
       responseBody(res).should.deepEqual({});
+      should(thrown).be.undefined();
     });
   });
 
