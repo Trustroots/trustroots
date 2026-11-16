@@ -285,7 +285,7 @@ describe('OfferLocationEditor', () => {
 
     expect(
       screen.getByText(
-        /Zoom in, then click or drag the map below to place the marker/,
+        /Zoom in, then click or drag the map to place the marker/,
       ),
     ).toBeInTheDocument();
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();

@@ -1,5 +1,6 @@
-import { useLocation, useSearch } from '@tanstack/react-router';
-import React, { useEffect, useState } from 'react';
+import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
+import isEqual from 'lodash/isEqual';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
@@ -51,10 +52,24 @@ export default function OfferHostPage({ user }: HostPageProps) {
   const routeParams = useSearch({ strict: false });
   const { hash, pathname, searchStr } = useLocation();
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
+  const savedOffer = useRef(offer);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [firstTimeAround, setFirstTimeAround] = useState(false);
   const [loadError, setLoadError] = useState(false);
+
+  function hasUnsavedChanges() {
+    return !isEqual(offer, savedOffer.current);
+  }
+
+  useBlocker({
+    shouldBlockFn: ({ current, next }) =>
+      hasUnsavedChanges() &&
+      (current.pathname !== next.pathname ||
+        !isEqual(current.search, next.search)) &&
+      !window.confirm('Leave without saving your hosting offer changes?'),
+    enableBeforeUnload: hasUnsavedChanges,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +93,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         }
 
         if (isMounted) {
+          savedOffer.current = nextOffer;
           setOffer(nextOffer);
           setFirstTimeAround(!offers?.length);
         }
@@ -135,11 +151,17 @@ export default function OfferHostPage({ user }: HostPageProps) {
     offer.status !== 'no' && plainTextLength(offer.description) < 5;
   const hasLocation =
     Array.isArray(offer.location) && offer.location.length === 2;
+  const saveDisabled = isSaving || isDescriptionTooShort || !hasLocation;
+  const saveTitle = isDescriptionTooShort
+    ? 'Write longer description first'
+    : !hasLocation
+      ? 'Choose a location first'
+      : undefined;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSaving || isDescriptionTooShort || !hasLocation) {
+    if (saveDisabled) {
       return;
     }
 
@@ -169,6 +191,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         status: offer.status,
       });
 
+      savedOffer.current = offer;
       window.location.assign(`/profile/${user.username}`);
     } catch (error: unknown) {
       track('offer_save_failed', {
@@ -188,14 +211,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
             variant="outline"
             intent="primary"
             size="lg"
-            disabled={isSaving || isDescriptionTooShort || !hasLocation}
-            title={
-              isDescriptionTooShort
-                ? 'Write longer description first'
-                : !hasLocation
-                  ? 'Choose a location first'
-                  : undefined
-            }
+            disabled={saveDisabled}
+            title={saveTitle}
             type="submit"
           >
             Save and Exit
@@ -203,8 +220,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         </div>
 
         <div className="offer-host-sections">
-          <section id="availability" aria-labelledby="offerAvailabilityHeading">
-            <h2 id="offerAvailabilityHeading">Availability</h2>
+          <section id="availability" aria-label="Availability">
             {!hasLocation && (
               <Alert intent="info" role="status">
                 <a href={`${pathname}${searchStr}#location`}>
@@ -269,7 +285,54 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   Meetings use this same approximate location and circle
                   visibility setting.
                 </p>
-                <fieldset>
+              </div>
+            </div>
+          </section>
+          <section id="description" aria-label="Description">
+            {offer.status === 'no' && (
+              <div className="panel panel-default">
+                <div className="panel-heading">
+                  <h4 id="noOfferDescriptionLabel">
+                    Tell others why you cannot host...
+                  </h4>
+                </div>
+                <div className="panel-body">
+                  <textarea
+                    aria-labelledby="noOfferDescriptionLabel"
+                    className="form-control"
+                    onChange={({ target: { value } }) =>
+                      setOffer(current => ({
+                        ...current,
+                        noOfferDescription: value,
+                      }))
+                    }
+                    placeholder="Write here..."
+                    rows={6}
+                    value={offer.noOfferDescription || ''}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="panel panel-default">
+              <div className="panel-heading">
+                <h4 id="offerDescriptionLabel">
+                  Tell about your home and hosting possibilities
+                  {offer.status !== 'no' && <i> (required)</i>}
+                </h4>
+              </div>
+              <div className="panel-body">
+                <textarea
+                  aria-labelledby="offerDescriptionLabel"
+                  aria-required={offer.status !== 'no'}
+                  className="form-control offer-description"
+                  onChange={({ target: { value } }) =>
+                    setOffer(current => ({ ...current, description: value }))
+                  }
+                  placeholder="Write here..."
+                  rows={8}
+                  value={offer.description || ''}
+                />
+                <fieldset className="offer-circle-settings">
                   <legend>
                     <h4>Available only in my circles?</h4>
                   </legend>
@@ -362,56 +425,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
               </div>
             </div>
           </section>
-          <section id="description" aria-labelledby="offerDescriptionHeading">
-            <h2 id="offerDescriptionHeading">Description</h2>
-            {offer.status === 'no' && (
-              <div className="panel panel-default">
-                <div className="panel-heading">
-                  <h4 id="noOfferDescriptionLabel">
-                    Tell others why you cannot host...
-                  </h4>
-                </div>
-                <div className="panel-body">
-                  <textarea
-                    aria-labelledby="noOfferDescriptionLabel"
-                    className="form-control"
-                    onChange={({ target: { value } }) =>
-                      setOffer(current => ({
-                        ...current,
-                        noOfferDescription: value,
-                      }))
-                    }
-                    placeholder="Write here..."
-                    rows={6}
-                    value={offer.noOfferDescription || ''}
-                  />
-                </div>
-              </div>
-            )}
-            <div className="panel panel-default">
-              <div className="panel-heading">
-                <h4 id="offerDescriptionLabel">
-                  Tell about your home and hosting possibilities
-                  {offer.status !== 'no' && <i> (required)</i>}
-                </h4>
-              </div>
-              <div className="panel-body">
-                <textarea
-                  aria-labelledby="offerDescriptionLabel"
-                  aria-required={offer.status !== 'no'}
-                  className="form-control offer-description"
-                  onChange={({ target: { value } }) =>
-                    setOffer(current => ({ ...current, description: value }))
-                  }
-                  placeholder="Write here..."
-                  rows={8}
-                  value={offer.description || ''}
-                />
-              </div>
-            </div>
-          </section>
-          <section id="location" aria-labelledby="offerLocationHeading">
-            <h2 id="offerLocationHeading">Location</h2>
+          <section id="location" aria-label="Location">
             <div className="offer-host-map">
               {!hasLocation && (
                 <Alert intent="info" role="status">
@@ -462,6 +476,17 @@ export default function OfferHostPage({ user }: HostPageProps) {
               />
             </div>
           </section>
+        </div>
+        <div className="offer-host-save">
+          <Button
+            intent="primary"
+            size="xl"
+            disabled={saveDisabled}
+            title={saveTitle}
+            type="submit"
+          >
+            Save and Exit
+          </Button>
         </div>
       </form>
     </section>

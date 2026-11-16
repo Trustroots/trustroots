@@ -9,20 +9,31 @@
 @offer-map-height-xs: 220px;
 
 .offers-edit.offers-edit-host {
-  .offer-circle-visibility input {
-    accent-color: @brand-primary;
+  .offer-circle-settings {
+    margin-top: 20px;
+  }
+
+  .offer-circle-visibility {
+    margin: 0;
+
+    input {
+      accent-color: @brand-primary;
+    }
   }
 
   .offer-circle-visibility label {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding-left: 0;
+    gap: 8px;
+    padding: 6px 0;
+    text-align: start;
 
     input[type='checkbox'] {
       position: static;
       flex: 0 0 auto;
-      margin: 0.25em 0 0;
+      width: 16px;
+      height: 16px;
+      margin: 0.15em 0 0;
     }
   }
 
@@ -49,11 +60,6 @@
       scroll-margin-top: (@navbar-height + 16px);
     }
 
-    h2 {
-      margin: 0 0 12px;
-      font-size: 22px;
-    }
-
     .panel:last-child {
       margin-bottom: 0;
     }
@@ -65,8 +71,8 @@
     @media (min-width: @screen-sm-min) {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-areas:
-        'availability location'
-        'description location';
+        'availability description'
+        'location description';
 
       #availability {
         grid-area: availability;
@@ -86,8 +92,27 @@
     position: relative;
   }
 
-  @media (max-width: @screen-xs) {
+  .offer-map-guidance {
+    margin: 0;
+  }
+
+  .offer-location-search .form-group {
+    margin: 0;
+  }
+
+  .offer-host-save {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  @media (max-width: @screen-xs-max) {
+    margin-bottom: 0;
+
     .offer-host-header {
+      gap: 8px;
+      margin-bottom: 12px;
+
       h1 {
         font-size: 22px;
       }
@@ -98,16 +123,79 @@
       }
     }
 
+    .offer-host-sections {
+      gap: 14px;
+
+      .panel-body {
+        padding: 10px;
+      }
+
+      .panel-heading {
+        margin: 0 10px;
+        padding: 8px 0;
+      }
+
+      legend h4 {
+        font-size: 20px;
+      }
+
+      .offer-circle-visibility label {
+        min-height: 44px;
+        padding-inline: 6px;
+      }
+
+      .offer-circle-settings,
+      .meeting-availability-control,
+      .offer-maxguests {
+        margin-top: 12px;
+      }
+
+      .offer-description {
+        height: 180px;
+      }
+    }
+
     .offer-map,
     .offer-location-overlay {
       position: relative;
       top: auto;
-      height: 320px;
+      height: 300px;
+    }
+
+    .offer-map,
+    .offer-location-search {
+      margin-inline: calc(-1 * var(--bs-gutter-x, 1.5rem) / 2);
+    }
+
+    // Overlap the 256px raster tiles to cover gaps at fractional positions.
+    .offer-map img.leaflet-tile {
+      width: 257px !important;
+      height: 257px !important;
+      mix-blend-mode: normal;
+    }
+
+    .offer-panel-map {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+
+      .panel-body {
+        padding-inline: 0;
+      }
     }
 
     .offer-location-overlay {
       position: absolute;
       top: 0;
+    }
+
+    .offer-host-save {
+      margin-top: 12px;
+
+      button {
+        width: 100%;
+      }
     }
   }
 }

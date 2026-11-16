@@ -26,7 +26,7 @@ import {
   prepareRasterSearchMap,
   routeRasterMapTiles,
 } from '../../support/maps.mts';
-import type { Locator, Page, Request } from '@playwright/test';
+import type { Dialog, Locator, Page, Request } from '@playwright/test';
 
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
@@ -208,7 +208,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
           response.url().endsWith(`/api/offers/${original._id}`) &&
           response.request().method() === 'PUT',
       );
-      await page.getByRole('button', { name: 'Save and Exit' }).click();
+      await page.getByRole('button', { name: 'Save and Exit' }).last().click();
       expect((await saved).ok()).toBeTruthy();
       await expect(page).toHaveURL(
         new RegExp(`/profile/${berlin.username}(?:/overview)?$`),
@@ -303,30 +303,61 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.route('**/api/offers-by/**', route =>
       route.fulfill({ json: [] }),
     );
-    await page.goto('/offer/host#availability');
-    await expect(page.locator('#availability h2')).toHaveText('Availability');
-    await expect(page.locator('#description h2')).toHaveText('Description');
-    await expect(page.locator('#location h2')).toHaveText('Location');
+    await page.goto('/offer/host#location');
+    const availability = page.getByRole('region', { name: 'Availability' });
+    const descriptionRegion = page.getByRole('region', { name: 'Description' });
+    const location = page.getByRole('region', { name: 'Location' });
+    await expect(availability).toBeVisible();
+    await expect(descriptionRegion).toBeVisible();
+    await expect(location).toBeVisible();
     await expect(page.getByRole('tab')).toHaveCount(0);
-    await expect(page.locator('#availability h2')).toBeInViewport();
+    await expect(location).toBeInViewport();
+    await expect(
+      page.getByLabel('Search places', { exact: true }),
+    ).toBeVisible();
+
+    await page.goto('/offer/host#availability');
+    await expect(availability).toBeInViewport();
     await expect(
       page.getByRole('link', { name: 'Choose a location', exact: true }),
     ).toBeVisible();
+    const saveButtons = page.getByRole('button', { name: 'Save and Exit' });
+    await expect(saveButtons).toHaveCount(2);
+    const bottomSave = saveButtons.last();
+    await bottomSave.scrollIntoViewIfNeeded();
+    await expect(bottomSave).toBeInViewport();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
     );
     await description.fill('An unsaved spare room description.');
+    let fragmentNavigationPrompted = false;
+    const dismissFragmentDialog = async (dialog: Dialog) => {
+      fragmentNavigationPrompted = true;
+      await dialog.dismiss();
+    };
+    page.on('dialog', dismissFragmentDialog);
     await page
       .getByRole('link', { name: 'Choose a location', exact: true })
       .click();
+    page.off('dialog', dismissFragmentDialog);
+    expect(fragmentNavigationPrompted).toBe(false);
     await expect(page).toHaveURL(/\/offer\/host#location$/);
-    await expect(page.locator('#location h2')).toBeInViewport();
+    await expect(location).toBeInViewport();
     await page.goBack();
     await expect(page).toHaveURL(/\/offer\/host#availability$/);
     await expect(description).toHaveValue('An unsaved spare room description.');
-    await page.goto('/offer/host#location');
-    await expect(page.locator('#location h2')).toBeInViewport();
+
+    const dialogPromise = page.waitForEvent('dialog');
+    const leaveAttempt = page.evaluate(() =>
+      window.location.assign('/offer/meet'),
+    );
+    const leaveDialog = await dialogPromise;
+    expect(['beforeunload', 'confirm']).toContain(leaveDialog.type());
+    await leaveDialog.dismiss();
+    await leaveAttempt.catch(() => {});
+    await expect(page).toHaveURL(/\/offer\/host#availability$/);
+    await expect(description).toHaveValue('An unsaved spare room description.');
   });
 
   test('mobile hosting map keeps search and save controls accessible', async ({
@@ -341,22 +372,37 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(
       page.getByRole('heading', { name: 'Hosting offer' }),
     ).toBeVisible();
-    await expect(
-      page.getByLabel('Search places', { exact: true }),
-    ).toBeVisible();
+    const search = page.getByLabel('Search places', { exact: true });
+    await expect(search).toBeVisible();
     const map = page.locator('.offer-map .offer-location');
     await expect(map).toBeVisible();
     const mapBox = await map.boundingBox();
     const frameBox = await page.locator('.offer-map').boundingBox();
+    const searchBox = await search.boundingBox();
     expectPresent(mapBox);
     expectPresent(frameBox);
+    expectPresent(searchBox);
     expect(mapBox.height).toBe(frameBox.height);
-    await page
+    expect(frameBox.x).toBeLessThanOrEqual(1);
+    expect(frameBox.width).toBeGreaterThanOrEqual(389);
+    expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(frameBox.y + 1);
+    await expect(page.locator('#offerLocation')).toBeVisible();
+    const guidanceFollowsMap = await page.evaluate(() => {
+      const map = document.querySelector('#location .offer-map');
+      const guidance = document.querySelector('#offerLocation');
+      return Boolean(
+        map &&
+        guidance &&
+        map.compareDocumentPosition(guidance) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+    expect(guidanceFollowsMap).toBe(true);
+    const bottomSave = page
       .getByRole('button', { name: 'Save and Exit' })
-      .scrollIntoViewIfNeeded();
-    await expect(
-      page.getByRole('button', { name: 'Save and Exit' }),
-    ).toBeInViewport();
+      .last();
+    await bottomSave.scrollIntoViewIfNeeded();
+    await expect(bottomSave).toBeInViewport();
   });
 
   test('mobile offer editors expose working save controls', async ({
@@ -377,7 +423,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         response.url().includes('/api/offers/') &&
         response.request().method() === 'PUT',
     );
-    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    await page.getByRole('button', { name: 'Save and Exit' }).last().click();
     const hostResponse = await savedHost;
     expect(hostResponse.ok()).toBeTruthy();
     expect(hostResponse.request().postDataJSON().description).toBe(
@@ -581,7 +627,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await mockDeviceLocation(page, 0, 0);
     await page.goto('/offer/host#location');
-    await expect(page.locator('#location h2')).toBeInViewport();
+    await expect(
+      page.getByRole('region', { name: 'Location' }),
+    ).toBeInViewport();
     await expect(page.getByRole('tab')).toHaveCount(0);
 
     const map = page.getByTestId('leaflet-map');
@@ -617,7 +665,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         response.url().includes('/api/offers/') &&
         response.request().method() === 'PUT',
     );
-    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    await page.getByRole('button', { name: 'Save and Exit' }).last().click();
     const response = await saved;
     page.off('request', countSave);
     expect(response.ok()).toBeTruthy();
@@ -640,7 +688,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockDeviceLocation(page, 0, 0);
     await page.goto('/offer/host#location');
-    await expect(page.locator('#location h2')).toBeInViewport();
+    await expect(
+      page.getByRole('region', { name: 'Location' }),
+    ).toBeInViewport();
     const locate = page.getByRole('button', {
       name: 'Use my location',
       exact: true,
@@ -664,9 +714,19 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await page.goto('/offer/host#location');
     await expect(page.getByRole('tab')).toHaveCount(0);
-    await expect(page.locator('#availability h2')).toHaveText('Availability');
-    await expect(page.locator('#description h2')).toHaveText('Description');
-    await expect(page.locator('#location h2')).toBeInViewport();
+    const availability = page.getByRole('region', { name: 'Availability' });
+    const descriptionSection = page.getByRole('region', {
+      name: 'Description',
+    });
+    await expect(availability).toBeVisible();
+    await expect(descriptionSection).toBeVisible();
+    await expect(
+      descriptionSection.getByRole('checkbox', { name: /my circles/ }),
+    ).toBeVisible();
+    await expect(descriptionSection.getByRole('spinbutton')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Location' }),
+    ).toBeInViewport();
     await page
       .getByRole('radiogroup', { name: 'Can you host?' })
       .getByText('Maybe', { exact: true })
@@ -718,7 +778,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         response.url().includes('/api/offers/') &&
         response.request().method() === 'PUT',
     );
-    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    await page.getByRole('button', { name: 'Save and Exit' }).last().click();
     const response = await saved;
     await page.request.put(response.url(), {
       data: {
@@ -990,7 +1050,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
           response.url().endsWith(`/api/offers/${aliceOffer._id}`) &&
           response.request().method() === 'PUT',
       );
-      await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
+      await hostPage
+        .getByRole('button', { name: 'Save and Exit' })
+        .last()
+        .click();
       expect((await saved).ok()).toBeTruthy();
 
       const withoutSharedCircle = await request.get(

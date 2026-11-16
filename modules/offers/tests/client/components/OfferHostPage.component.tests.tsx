@@ -15,10 +15,24 @@ import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
+type BlockerOptions = {
+  shouldBlockFn: (args: {
+    current: { pathname: string; search: Record<string, unknown> };
+    next: { pathname: string; search: Record<string, unknown> };
+  }) => boolean;
+  enableBeforeUnload: () => boolean;
+};
+const mockUseBlocker = jest.fn<void, [BlockerOptions]>();
+const getLatestBlockerOptions = () => {
+  const calls = mockUseBlocker.mock.calls;
+  return calls[calls.length - 1]![0];
+};
+const hasUnsavedChanges = () => getLatestBlockerOptions().enableBeforeUnload();
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
-);
+jest.mock('@tanstack/react-router', () => ({
+  ...jest.requireActual('@/testutils/client/router-location.testutil'),
+  useBlocker: (options: BlockerOptions) => mockUseBlocker(options),
+}));
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
@@ -70,16 +84,19 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     for (const name of ['Availability', 'Description', 'Location']) {
-      const heading = await screen.findByRole('heading', { name, level: 2 });
-      expect(heading.closest('section')).toHaveAttribute(
-        'id',
-        name.toLowerCase(),
-      );
+      const section = await screen.findByRole('region', { name });
+      expect(section).toHaveAttribute('id', name.toLowerCase());
     }
     expect(
       screen.getByRole('heading', { name: 'Hosting offer' }),
     ).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Save and Exit' })).toBeVisible();
+    const saveButtons = screen.getAllByRole('button', {
+      name: 'Save and Exit',
+    });
+    expect(saveButtons).toHaveLength(2);
+    expect(saveButtons[0]).toHaveAttribute('data-variant', 'outline');
+    expect(saveButtons[1]).toHaveAttribute('data-variant', 'solid');
+    saveButtons.forEach(button => expect(button).toBeEnabled());
   });
 
   it.each(['availability', 'description', 'location'])(
@@ -98,14 +115,11 @@ describe('OfferHostPage', () => {
         window.history.replaceState({}, '', `/offer/host#${id}`);
         render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-        const heading = await screen.findByRole('heading', {
+        const section = await screen.findByRole('region', {
           name: id.charAt(0).toUpperCase() + id.slice(1),
-          level: 2,
         });
         await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
-        expect(scrollIntoView.mock.contexts).toContain(
-          heading.closest('section'),
-        );
+        expect(scrollIntoView.mock.contexts).toContain(section);
       } finally {
         if (originalScrollIntoView) {
           Object.defineProperty(
@@ -126,6 +140,118 @@ describe('OfferHostPage', () => {
 
     await screen.findByRole('radiogroup', { name: 'Can you host?' });
     expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('blocks leaving unsaved changes and allows same-location navigation', async () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    await screen.findByRole('radiogroup', { name: 'Can you host?' });
+
+    const options = getLatestBlockerOptions;
+    expect(hasUnsavedChanges()).toBe(false);
+    expect(
+      options().shouldBlockFn({
+        current: { pathname: '/offer/host', search: { page: 1 } },
+        next: { pathname: '/offer/host', search: { page: 1 } },
+      }),
+    ).toBe(false);
+    expect(confirm).not.toHaveBeenCalled();
+
+    fireEvent.change(
+      screen.getByLabelText(/Tell about your home and hosting possibilities/),
+      { target: { value: 'A changed hosting description.' } },
+    );
+    expect(hasUnsavedChanges()).toBe(true);
+    expect(
+      options().shouldBlockFn({
+        current: { pathname: '/offer/host', search: { page: 1 } },
+        next: { pathname: '/offer/host', search: { page: 1 } },
+      }),
+    ).toBe(false);
+    expect(confirm).not.toHaveBeenCalled();
+    const navigation = {
+      current: { pathname: '/offer/host', search: { page: 1 } },
+      next: { pathname: '/profile/ada', search: {} },
+    };
+    expect(options().shouldBlockFn(navigation)).toBe(true);
+    expect(confirm).toHaveBeenLastCalledWith(
+      'Leave without saving your hosting offer changes?',
+    );
+
+    confirm.mockReturnValue(true);
+    expect(options().shouldBlockFn(navigation)).toBe(false);
+    const confirmationsBeforeSearchChange = confirm.mock.calls.length;
+    expect(
+      options().shouldBlockFn({
+        current: { pathname: '/offer/host', search: { page: 1 } },
+        next: { pathname: '/offer/host', search: { page: 2 } },
+      }),
+    ).toBe(false);
+    expect(confirm).toHaveBeenCalledTimes(confirmationsBeforeSearchChange + 1);
+    expect(confirm).toHaveBeenLastCalledWith(
+      'Leave without saving your hosting offer changes?',
+    );
+    confirm.mockRestore();
+  });
+
+  it('clears the unsaved-change guard when edits are reverted', async () => {
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    const description = await screen.findByLabelText(
+      /Tell about your home and hosting possibilities/,
+    );
+    fireEvent.change(description, {
+      target: { value: 'A changed hosting description.' },
+    });
+    expect(hasUnsavedChanges()).toBe(true);
+    fireEvent.change(description, { target: { value: hostOffer.description } });
+    expect(hasUnsavedChanges()).toBe(false);
+  });
+
+  it('resets the unsaved-change guard after saving', async () => {
+    const update = jest
+      .spyOn(offersApi, 'updateOffer')
+      .mockResolvedValue({ message: 'Offer updated.' });
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    const description = await screen.findByLabelText(
+      /Tell about your home and hosting possibilities/,
+    );
+    fireEvent.change(description, {
+      target: { value: 'A saved hosting description.' },
+    });
+    expect(hasUnsavedChanges()).toBe(true);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
+    );
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    await waitFor(() => expect(hasUnsavedChanges()).toBe(false));
+    update.mockRestore();
+  });
+
+  it('keeps the unsaved-change guard after a failed save', async () => {
+    const update = jest
+      .spyOn(offersApi, 'updateOffer')
+      .mockRejectedValue(new Error('offline'));
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    const description = await screen.findByLabelText(
+      /Tell about your home and hosting possibilities/,
+    );
+    fireEvent.change(description, {
+      target: { value: 'A failed hosting update.' },
+    });
+    expect(hasUnsavedChanges()).toBe(true);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Save and Exit' })[0],
+    );
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith(
+        'offer-1',
+        expect.objectContaining({
+          description: 'A failed hosting update.',
+        }),
+      ),
+    );
+    expect(hasUnsavedChanges()).toBe(true);
+    update.mockRestore();
   });
 
   it('keeps description edits while following the location anchor', async () => {
@@ -151,9 +277,9 @@ describe('OfferHostPage', () => {
     window.history.replaceState({}, '', '/offer/host#location');
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     expect(await screen.findByTestId('location-editor')).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: 'Save and Exit' }),
-    ).toBeDisabled();
+    screen
+      .getAllByRole('button', { name: 'Save and Exit' })
+      .forEach(button => expect(button).toBeDisabled());
   });
 
   it.each(['yes', 'maybe', 'no'] as const)(
@@ -252,13 +378,15 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome to my home.' },
     });
-    expect(
-      screen.getByRole('button', { name: 'Save and Exit' }),
-    ).toBeDisabled();
+    screen
+      .getAllByRole('button', { name: 'Save and Exit' })
+      .forEach(button => expect(button).toBeDisabled());
     fireEvent.click(
       document.querySelector('[data-testid="location-editor"] button')!,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Save and Exit' }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
+    );
 
     await waitFor(() => {
       expect(offersApiMock.createOffer).toHaveBeenCalledWith(
@@ -417,9 +545,9 @@ describe('OfferHostPage', () => {
       screen.getByRole('link', { name: /Choose a location/ }),
     ).toHaveAttribute('href', '/offer/host#location');
     expect(document.getElementById('location')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Save and Exit' }),
-    ).toBeDisabled();
+    screen
+      .getAllByRole('button', { name: 'Save and Exit' })
+      .forEach(button => expect(button).toBeDisabled());
     fireEvent.click(screen.getByRole('link', { name: /Choose a location/ }));
     await waitFor(() =>
       expect(window.location.href).toContain('/offer/host#location'),
