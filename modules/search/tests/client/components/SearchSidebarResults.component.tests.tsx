@@ -109,7 +109,7 @@ describe('<SearchSidebarResults />', () => {
       );
       expect(
         screen.getByRole('button', {
-          name: 'Open meet offer from fictional-member',
+          name: 'Open meet offer from fictional-member · Cannot host currently',
         }),
       ).toHaveTextContent(
         meetingStatus === 'yes'
@@ -124,7 +124,9 @@ describe('<SearchSidebarResults />', () => {
           meetingStatus === 'yes' ? 'Happy to meet' : 'Maybe up for meeting',
         ),
       ).toBeVisible();
-      expect(screen.getByLabelText('Hosting offer: no')).toBeVisible();
+      expect(
+        screen.getByLabelText('Hosting offer: Cannot host currently'),
+      ).toBeVisible();
       expect(screen.getByText('Available for a walk only.')).toBeVisible();
       expect(
         screen.queryByText('An old hosting description.'),
@@ -150,12 +152,15 @@ describe('<SearchSidebarResults />', () => {
     );
 
     fireEvent.click(
-      screen.getByRole('button', { name: /open hosting offer from a host/i }),
+      screen.getByRole('button', {
+        name: /open hosting offer from a host · can host/i,
+      }),
     );
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Offers in this map area: 1. Community note threads: 0.',
     );
+    expect(screen.getByText('Can host')).toBeInTheDocument();
 
     expect(onOfferSelect).toHaveBeenCalledWith(visibleOffer);
   });
@@ -401,7 +406,10 @@ describe('<SearchSidebarResults />', () => {
       />,
     );
 
-    expect(screen.getByText('maybe')).toHaveAttribute('data-intent', 'warning');
+    expect(screen.getByText('Might be able to host')).toHaveAttribute(
+      'data-intent',
+      'warning',
+    );
     expect(screen.getByText('female.')).toBeInTheDocument();
   });
 
@@ -423,6 +431,28 @@ describe('<SearchSidebarResults />', () => {
     );
 
     expect(screen.getByText('Future Host')).toBeInTheDocument();
+    expect(screen.getByText('Cannot host currently')).toHaveAttribute(
+      'data-intent',
+      'danger',
+    );
+  });
+
+  it('keeps hosting results without a status generic', () => {
+    render(
+      <SearchSidebarResults
+        offer={{
+          _id: 'offer-no-status',
+          type: 'host',
+          user: { username: 'status-unknown', displayName: 'Status Unknown' },
+        }}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('Hosting', { selector: '.search-result-label' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Cannot host currently')).not.toBeInTheDocument();
   });
 
   it('falls back to a language code that has no display name', () => {
@@ -443,7 +473,10 @@ describe('<SearchSidebarResults />', () => {
     );
 
     expect(screen.getByText('zz')).toBeInTheDocument();
-    expect(screen.getByText('yes')).toHaveAttribute('data-intent', 'success');
+    expect(screen.getByText('Can host')).toHaveAttribute(
+      'data-intent',
+      'success',
+    );
   });
 
   it('renders an offer while the language names are not loaded', () => {

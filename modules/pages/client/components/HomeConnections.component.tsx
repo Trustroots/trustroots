@@ -6,6 +6,7 @@ import CircleLocationMap, {
 } from '@/modules/tribes/client/components/CircleLocationMap';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type { ConnectionsDiscovery } from '@/modules/tribes/client/api/tribes.api';
+import { memberActivityLabel } from '@/modules/tribes/client/utils/memberActivityLabel';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 
 const EMPTY_CONNECTIONS: ConnectionsDiscovery = { recent: [], hosts: [] };
@@ -74,13 +75,7 @@ export default function HomeConnections() {
                 <MemberSearchCard
                   user={member}
                   compact
-                  activityLabel={
-                    member.activity === 'today'
-                      ? t('Active today')
-                      : member.activity === 'week'
-                        ? t('Active this week')
-                        : t('Active this month')
-                  }
+                  activityLabel={memberActivityLabel(member.activity, t)}
                 />
               </li>
             ))}

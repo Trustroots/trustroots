@@ -1212,6 +1212,7 @@ test.describe('rendered search map feature coverage', () => {
       'Results lists offers whose pins are visible in the current map area.',
       'Selecting a listed offer opens its details without moving the map.',
     ]);
+    useElementScreenshot(testInfo, '.search-sidebar-container');
 
     await context.route('**/api/offers/665100000000000000000002', route =>
       route.fulfill({
@@ -1237,14 +1238,18 @@ test.describe('rendered search map feature coverage', () => {
     ).toContainText('Offers in this map area:');
 
     const visibleHost = resultList.getByRole('button', {
-      name: /open hosting offer from berlin host/i,
+      name: /open hosting offer from berlin host · can host/i,
     });
     await expect(visibleHost).toBeVisible();
+    await expect(visibleHost).toContainText('Can host');
     await visibleHost.focus();
     await page.keyboard.press('Enter');
 
     await expect(
       sidebar.locator('.search-result').getByText(/berlin host/i),
+    ).toBeVisible();
+    await expect(
+      sidebar.locator('.search-result').getByText('Can host', { exact: true }),
     ).toBeVisible();
     await expect(page).toHaveURL(/offer=665100000000000000000001/);
     await sidebar.getByRole('button', { name: 'Back to results' }).focus();
