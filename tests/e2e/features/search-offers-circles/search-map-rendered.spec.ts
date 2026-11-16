@@ -1260,6 +1260,7 @@ test.describe('rendered search map feature coverage', () => {
       'Rendered map offer deep-link opens deterministic sidebar data.',
     ]);
 
+    await page.setViewportSize({ width: 1024, height: 800 });
     await page.goto('/search?offer=665100000000000000000001');
     await waitForSearchMap(page);
 
@@ -1268,7 +1269,17 @@ test.describe('rendered search map feature coverage', () => {
       .filter({ hasText: /E2E offline map host offer/i });
 
     await expect(result).toBeVisible();
-    await expect(result.getByText(/Berlin Host/i)).toBeVisible();
+    await page.locator('html').evaluate(element => {
+      element.style.fontSize = '200%';
+    });
+    await expect(
+      result.getByRole('link', { name: /Berlin Host/i }),
+    ).toBeVisible();
+    await expect
+      .poll(() => result.evaluate(element => element.scrollWidth))
+      .toBeLessThanOrEqual(
+        await result.evaluate(element => element.clientWidth),
+      );
   });
 
   test('device location centres search only after activation and preserves filters', async ({
