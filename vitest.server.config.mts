@@ -53,7 +53,7 @@ class PathSequencer extends BaseSequencer {
 // every file runs in the same process, in order, as it did under Mocha.
 export default defineConfig({
   test: {
-    include: explicitFiles ?? ['modules/*/tests/server/**/*.mts'],
+    include: explicitFiles ?? ['modules/*/tests/server/**/*.{mts,mjs}'],
     globals: true,
     pool: 'forks',
     maxWorkers: 1,
@@ -73,6 +73,7 @@ export default defineConfig({
       provider: 'v8',
       include: [
         'modules/*/server/**/*.mts',
+        'modules/users/server/**/*{mfa,passkey,passkeys,mfa-session}.server.*.mjs',
         'modules/mobile/server/**/*.cjs',
         'packages/analytics/server/**/*.mts',
         // Coverage re-parses sources from disk and cannot read the JSX that
