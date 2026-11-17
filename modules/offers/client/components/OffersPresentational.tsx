@@ -178,12 +178,14 @@ export class OffersPresentational extends Component<
                 ) : (
                   <a href="/offer/host#location">
                     {t(
-                      'Would you like to meet people? Set your location and availability.',
+                      'Are you open to meeting people? Set your location and availability.',
                     )}
                   </a>
                 )}
                 {this.props.isSavingMeeting && (
-                  <span role="status">{t('Saving…')}</span>
+                  <span className="sr-only" role="status">
+                    {t('Saving…')}
+                  </span>
                 )}
                 {this.props.meetingError && (
                   <span role="alert">

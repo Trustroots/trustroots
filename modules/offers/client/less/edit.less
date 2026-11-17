@@ -72,7 +72,12 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-areas:
         'availability description'
-        'location description';
+        'location description'
+        'save .';
+
+      .offer-host-save {
+        grid-area: save;
+      }
 
       #availability {
         grid-area: availability;
@@ -101,9 +106,7 @@
   }
 
   .offer-host-save {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
+    justify-self: end;
   }
 
   @media (max-width: @screen-xs-max) {
@@ -116,11 +119,12 @@
       h1 {
         font-size: 22px;
       }
+    }
 
-      button {
-        font-size: @font-size-base;
-        white-space: nowrap;
-      }
+    .offer-host-header button,
+    .offer-host-save button {
+      font-size: @font-size-base;
+      white-space: nowrap;
     }
 
     .offer-host-sections {
@@ -188,14 +192,6 @@
     .offer-location-overlay {
       position: absolute;
       top: 0;
-    }
-
-    .offer-host-save {
-      margin-top: 12px;
-
-      button {
-        width: 100%;
-      }
     }
   }
 }
@@ -361,11 +357,6 @@
     &,
     &:hover {
       border-color: transparent;
-    }
-    span {
-      border-bottom: 2px solid transparent;
-      padding: 1px 2px;
-      margin: 0 5px;
     }
   }
 }

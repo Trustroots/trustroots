@@ -45,7 +45,7 @@ function getAvailability(
   t: (key: string) => string,
 ) {
   const meetingLabel = match(meetingStatus)
-    .with('yes', () => t('Can meet'))
+    .with('yes', () => t('Happy to meet'))
     .with('maybe', () => t('Might meet'))
     .with(P.union('no', 'not-set', undefined), () => undefined)
     .exhaustive();
