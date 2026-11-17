@@ -22,6 +22,8 @@ overrides:
 
 patchedDependencies:
   'deepmerge@4.3.1': patches/deepmerge@4.3.1.patch
+  'picomatch@2.3.2': patches/picomatch@2.3.2.patch
+  'picomatch@4.0.7': patches/picomatch@4.0.7.patch
 
 allowBuilds:
   '@parcel/watcher': true
