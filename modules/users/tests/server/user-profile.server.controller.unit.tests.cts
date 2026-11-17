@@ -165,15 +165,18 @@ function stubSearch(
   users: ProfileUserDocument[],
   error: Error | null = null,
 ) {
+  let sorted = false;
   const query = {
     select: () => query,
     sort: (sort: unknown) => {
       should(sort).deepEqual({ score: { $meta: 'textScore' } });
+      sorted = true;
       return query;
     },
     limit: () => query,
     skip: () => query,
     maxTimeMS: (budget: number) => {
+      sorted.should.be.true();
       budget.should.equal(2000);
       return {
         exec: (
