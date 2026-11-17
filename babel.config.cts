@@ -5,9 +5,7 @@ const babelConfig: BabelConfiguration = {
     [
       '@babel/preset-env',
       {
-        corejs: '3.49',
         modules: 'commonjs',
-        useBuiltIns: 'usage',
       },
     ],
     ['@babel/preset-react'],

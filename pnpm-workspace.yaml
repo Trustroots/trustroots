@@ -26,7 +26,6 @@ patchedDependencies:
 allowBuilds:
   '@parcel/watcher': true
   'unrs-resolver': true
-  'core-js': false
   'esbuild': false
 
 peerDependencyRules:
