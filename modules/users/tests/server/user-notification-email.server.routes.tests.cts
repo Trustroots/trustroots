@@ -44,7 +44,15 @@ function createMember(username: string, extra: Partial<UserRecord> = {}) {
 describe('Optional email unsubscribe route', function () {
   afterEach(async function () {
     await User.deleteMany({
-      username: { $in: ['sampleemailmember', 'examplemember'] },
+      username: {
+        $in: [
+          'sampleemailmember',
+          'examplemember',
+          'othermember',
+          'pagemember',
+          'racemember',
+        ],
+      },
     });
   });
 
