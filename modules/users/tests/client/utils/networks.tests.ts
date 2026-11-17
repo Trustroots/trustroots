@@ -1,7 +1,7 @@
 import {
   getNetworkName,
   hasConnectedAdditionalSocialAccounts,
-  isWarmshowersId,
+  warmshowersProfileLink,
   socialAccountLink,
 } from '@/modules/users/client/utils/networks';
 
@@ -9,10 +9,13 @@ type SocialProfile = Parameters<typeof hasConnectedAdditionalSocialAccounts>[0];
 type SocialProviderData = Parameters<typeof socialAccountLink>[1];
 
 describe('user network utilities', () => {
-  it('identifies Warmshowers numeric ids', () => {
-    expect(isWarmshowersId('12345')).toBe(true);
-    expect(isWarmshowersId('')).toBe(true);
-    expect(isWarmshowersId('warmshowers-user')).toBe(false);
+  it('builds Warmshowers app profile links and escapes the profile ID', () => {
+    expect(warmshowersProfileLink('00000000-0000-4000-8000-000000000001')).toBe(
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
+    );
+    expect(warmshowersProfileLink('id?query#fragment')).toBe(
+      'https://app.warmshowers.org/profiles/id%3Fquery%23fragment',
+    );
   });
 
   it('detects connected additional social accounts', () => {

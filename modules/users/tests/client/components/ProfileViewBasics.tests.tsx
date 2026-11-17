@@ -59,15 +59,14 @@ describe('<ProfileViewBasics />', () => {
       const { rerender } = render(
         <ProfileViewBasics profile={makeProfile({ extSitesServas: path })} />,
       );
-      expect(screen.getByRole('link', { name: 'Servas' })).toHaveAttribute(
-        'href',
-        `https://servas.org/${path}`,
-      );
+      expect(
+        screen.getByRole('link', { name: `Servas: ${path}` }),
+      ).toHaveAttribute('href', `https://servas.org/${path}`);
       rerender(
         <ProfileViewBasics profile={makeProfile({ extSitesServas: '' })} />,
       );
       expect(
-        screen.queryByRole('link', { name: 'Servas' }),
+        screen.queryByRole('link', { name: `Servas: ${path}` }),
       ).not.toBeInTheDocument();
     },
   );
@@ -107,7 +106,7 @@ describe('<ProfileViewBasics />', () => {
             extSitesBW: 'member-bw',
             extSitesCS: 'member-cs',
             extSitesCouchers: 'member-couchers',
-            extSitesWS: '12345',
+            extSitesWS: '00000000-0000-4000-8000-000000000001',
             gender: 'female',
             isVolunteer: true,
             languages: ['en', 'pt'],
@@ -160,21 +159,24 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
       'sr-only',
     );
-    expect(screen.getByRole('link', { name: 'Couchers.org' })).toHaveAttribute(
-      'href',
-      'https://couchers.org/user/member-couchers',
-    );
-    expect(screen.getByRole('link', { name: 'BeWelcome' })).toHaveAttribute(
+    expect(
+      screen.getByRole('link', { name: 'CO: member-couchers' }),
+    ).toHaveAttribute('href', 'https://couchers.org/user/member-couchers');
+    expect(screen.getByRole('link', { name: 'BW: member-bw' })).toHaveAttribute(
       'href',
       'https://www.bewelcome.org/members/member-bw',
     );
-    expect(screen.getByText('Couchsurfing')).toBeVisible();
+    expect(screen.getByText('CS: member-cs')).toBeVisible();
+    expect(screen.getByText('CS: member-cs').closest('a')).toBeNull();
+    expect(screen.getByTitle('Couchsurfing')).toHaveTextContent('CS');
+    expect(screen.getByTitle('Couchers.org')).toHaveTextContent('CO');
+    expect(screen.getByTitle('BeWelcome')).toHaveTextContent('BW');
     expect(
-      screen.queryByRole('link', { name: 'Couchsurfing' }),
+      screen.queryByRole('link', { name: 'CS: member-cs' }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Warmshowers' })).toHaveAttribute(
       'href',
-      'https://www.warmshowers.org/user/12345',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
     );
   });
 
@@ -233,12 +235,12 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
-  it('renders Warmshowers usernames and volunteer alumni labels', () => {
+  it('renders Warmshowers profile UUIDs and volunteer alumni labels', () => {
     render(
       <ProfileViewBasics
         profile={makeProfile({
           created: '2020-01-01T00:00:00.000Z',
-          extSitesWS: 'member-warmshowers',
+          extSitesWS: '00000000-0000-4000-8000-000000000002',
           isVolunteerAlumni: true,
           languages: [],
           seen: undefined,
@@ -249,7 +251,7 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('Trustroots volunteer alumni')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Warmshowers' })).toHaveAttribute(
       'href',
-      'https://www.warmshowers.org/users/member-warmshowers',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000002',
     );
   });
 

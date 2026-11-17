@@ -7,8 +7,8 @@ import { nip19 } from 'nostr-tools';
 import {
   getNetworkName,
   hasConnectedAdditionalSocialAccounts,
-  isWarmshowersId,
   socialAccountLink,
+  warmshowersProfileLink,
 } from '../utils/networks';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import LanguageList from './LanguageList';
@@ -198,8 +198,9 @@ export default function ProfileViewBasics({
               rel="noopener"
               className="social-profile-handle"
               href={`https://couchers.org/user/${profile.extSitesCouchers}`}
+              title="Couchers.org"
             >
-              Couchers.org
+              CO: {profile.extSitesCouchers}
             </a>
           </li>
         )}
@@ -212,8 +213,9 @@ export default function ProfileViewBasics({
               rel="noopener"
               className="social-profile-handle"
               href={`https://www.bewelcome.org/members/${profile.extSitesBW}`}
+              title="BeWelcome"
             >
-              BeWelcome
+              BW: {profile.extSitesBW}
             </a>
           </li>
         )}
@@ -222,7 +224,9 @@ export default function ProfileViewBasics({
         {profile.extSitesCS && (
           <li className="social-profile">
             <i className="social-profile-icon icon-fw icon-lg icon-cs"></i>
-            <span className="social-profile-handle">Couchsurfing</span>
+            <span className="social-profile-handle" title="Couchsurfing">
+              CS: {profile.extSitesCS}
+            </span>
           </li>
         )}
         {profile.extSitesServas && (
@@ -233,7 +237,7 @@ export default function ProfileViewBasics({
               className="social-profile-handle"
               href={`https://servas.org/${profile.extSitesServas}`}
             >
-              Servas
+              Servas: {profile.extSitesServas}
             </a>
           </li>
         )}
@@ -243,9 +247,7 @@ export default function ProfileViewBasics({
             <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
             <a
               className="social-profile-handle"
-              href={`https://www.warmshowers.org/${
-                isWarmshowersId(profile.extSitesWS) ? 'user' : 'users'
-              }/${profile.extSitesWS}`}
+              href={warmshowersProfileLink(profile.extSitesWS)}
             >
               Warmshowers
             </a>
