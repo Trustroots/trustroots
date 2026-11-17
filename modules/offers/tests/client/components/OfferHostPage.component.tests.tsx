@@ -94,9 +94,12 @@ describe('OfferHostPage', () => {
       name: 'Save and Exit',
     });
     expect(saveButtons).toHaveLength(2);
-    expect(saveButtons[0]).toHaveAttribute('data-variant', 'outline');
-    expect(saveButtons[1]).toHaveAttribute('data-variant', 'solid');
-    saveButtons.forEach(button => expect(button).toBeEnabled());
+    saveButtons.forEach(button => {
+      expect(button).toHaveAttribute('data-variant', 'solid');
+      expect(button).toHaveAttribute('data-intent', 'primary');
+      expect(button).toHaveAttribute('data-size', 'lg');
+      expect(button).toBeEnabled();
+    });
   });
 
   it.each(['availability', 'description', 'location'])(
@@ -291,7 +294,7 @@ describe('OfferHostPage', () => {
       render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
       const group = within(
         await screen.findByRole('radiogroup', {
-          name: 'Would you like to meet people?',
+          name: 'Are you open to meeting people?',
         }),
       );
       const meeting = group.getByRole('radio', { name: 'Yes' });
@@ -314,7 +317,7 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     const meeting = within(
       await screen.findByRole('radiogroup', {
-        name: 'Would you like to meet people?',
+        name: 'Are you open to meeting people?',
       }),
     ).getByRole('radio', { name: 'Yes' });
     expect(meeting).not.toBeChecked();
@@ -344,7 +347,7 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     const meeting = within(
       await screen.findByRole('radiogroup', {
-        name: 'Would you like to meet people?',
+        name: 'Are you open to meeting people?',
       }),
     ).getByRole('radio', { name: 'Yes' });
     expect(
@@ -446,12 +449,10 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    await screen.findByRole('radiogroup', { name: 'Can you host?' });
-    expect(
-      document.querySelector(
-        '.offer-hosting-button[data-intent="warning"].active',
-      ),
-    ).toBeInTheDocument();
+    const hosting = await screen.findByRole('radiogroup', {
+      name: 'Can you host?',
+    });
+    expect(within(hosting).getByRole('radio', { name: 'Maybe' })).toBeChecked();
   });
 
   it('shows first-time location guidance for new host offers', async () => {
@@ -612,12 +613,10 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    await screen.findByRole('radiogroup', { name: 'Can you host?' });
-    expect(
-      document.querySelector(
-        '.offer-hosting-button[data-intent="danger"].active',
-      ),
-    ).toBeInTheDocument();
+    const hosting = await screen.findByRole('radiogroup', {
+      name: 'Can you host?',
+    });
+    expect(within(hosting).getByRole('radio', { name: 'No' })).toBeChecked();
   });
 
   it('does not submit when the description is too short', async () => {

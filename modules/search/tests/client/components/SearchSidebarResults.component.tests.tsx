@@ -93,15 +93,15 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it.each([
-    ['yes', 'yes', 'Can host', 'Can meet'],
+    ['yes', 'yes', 'Can host', 'Happy to meet'],
     ['yes', 'maybe', 'Can host', 'Might meet'],
     ['yes', 'no', 'Can host', undefined],
     ['yes', 'not-set', 'Can host', undefined],
-    ['maybe', 'yes', 'Might be able to host', 'Can meet'],
+    ['maybe', 'yes', 'Might be able to host', 'Happy to meet'],
     ['maybe', 'maybe', 'Might be able to host', 'Might meet'],
     ['maybe', 'no', 'Might be able to host', undefined],
     ['maybe', 'not-set', 'Might be able to host', undefined],
-    ['no', 'yes', undefined, 'Can meet'],
+    ['no', 'yes', undefined, 'Happy to meet'],
     ['no', 'maybe', undefined, 'Might meet'],
     ['no', 'no', 'Cannot host currently', undefined],
     ['no', 'not-set', 'Cannot host currently', undefined],

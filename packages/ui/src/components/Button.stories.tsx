@@ -6,7 +6,7 @@ import { intents } from '#lib/intent';
 
 import { Button, type ButtonSize, type ButtonVariant } from './Button';
 
-const variants: ButtonVariant[] = ['solid', 'outline', 'ghost', 'link'];
+const variants: ButtonVariant[] = ['solid', 'outline', 'soft', 'ghost', 'link'];
 const sizes: ButtonSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 /** The default size, and `xs`, the smallest padding and radius. */
 const gridSizes: ButtonSize[] = ['md', 'xs'];

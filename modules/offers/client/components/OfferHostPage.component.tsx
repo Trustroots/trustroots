@@ -202,21 +202,24 @@ export default function OfferHostPage({ user }: HostPageProps) {
     }
   }
 
+  const saveButton = (
+    <Button
+      intent="primary"
+      size="lg"
+      disabled={saveDisabled}
+      title={saveTitle}
+      type="submit"
+    >
+      Save and Exit
+    </Button>
+  );
+
   return (
     <section className="offers-edit offers-edit-host">
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         <div className="offer-host-header">
           <h1>Hosting offer</h1>
-          <Button
-            variant="outline"
-            intent="primary"
-            size="lg"
-            disabled={saveDisabled}
-            title={saveTitle}
-            type="submit"
-          >
-            Save and Exit
-          </Button>
+          {saveButton}
         </div>
 
         <div className="offer-host-sections">
@@ -244,9 +247,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                         // children through the render prop.
                         // eslint-disable-next-line jsx-a11y/label-has-associated-control
                         render={<label />}
-                        className={`offer-hosting-button${
-                          offer.status === status ? ' active' : ''
-                        }`}
+                        className="offer-hosting-button"
                         key={status}
                       >
                         <input
@@ -476,17 +477,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
               />
             </div>
           </section>
-        </div>
-        <div className="offer-host-save">
-          <Button
-            intent="primary"
-            size="xl"
-            disabled={saveDisabled}
-            title={saveTitle}
-            type="submit"
-          >
-            Save and Exit
-          </Button>
+          <div className="offer-host-save">{saveButton}</div>
         </div>
       </form>
     </section>

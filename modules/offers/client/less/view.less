@@ -73,6 +73,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 15px;
 
@@ -87,35 +88,15 @@
       font-size: 19px;
     }
   }
-
-  > a {
-    flex-shrink: 0;
-  }
 }
 
 .meeting-availability-control {
   min-width: 0;
   margin: 0;
 
-  legend {
-    margin-bottom: 8px;
-    border: 0;
-    font-size: 22px;
-    line-height: 24px;
-    .font-brand-regular();
-
-    @media (max-width: @screen-xs-max) {
-      font-size: 19px;
-    }
-  }
-
-  .btn-group {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    padding: 8px 12px;
+  &:disabled [data-slot='button'] {
+    cursor: default;
+    opacity: 0.65;
   }
 }
 
@@ -131,26 +112,31 @@
   border: 0;
 }
 
-.offer-meta .offer-hosting-button:focus-within,
-.meeting-availability-control .btn:focus-within {
-  outline: 2px solid @brand-primary;
-  outline-offset: 2px;
-  z-index: 1;
-}
-
-.offer-meta .offer-hosting-button.active,
-.offer-meta .btn-group > .btn.active,
-.offer-meeting-status .meeting-availability-control .btn.active {
-  box-shadow:
-    inset 0 0 0 2px #fff,
-    inset 0 0 0 3px fade(#000, 20%);
+.offer-meta .offer-hosting-button,
+.meeting-availability-control [data-slot='button'] {
   font-weight: 600;
-  z-index: 1;
 
   &::before {
     content: '✓' / '';
     display: inline-block;
-    margin-right: 6px;
-    font-weight: 700;
+    margin-inline-end: 6px;
+    visibility: hidden;
+  }
+
+  &:has(:checked) {
+    box-shadow:
+      inset 0 0 0 2px #fff,
+      inset 0 0 0 3px fade(#000, 20%);
+    z-index: 1;
+
+    &::before {
+      visibility: visible;
+    }
+  }
+
+  &:focus-within {
+    outline: 2px solid @brand-primary;
+    outline-offset: 2px;
+    z-index: 2;
   }
 }

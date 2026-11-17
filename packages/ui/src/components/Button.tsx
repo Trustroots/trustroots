@@ -34,6 +34,10 @@ const buttonVariants = cva(
           'tw:border-(--intent) tw:bg-transparent tw:text-(--intent) tw:[&:hover,&:focus]:text-(--intent)',
           'tw:hover:bg-[color-mix(in_oklab,var(--intent)_10%,transparent)] tw:active:bg-[color-mix(in_oklab,var(--intent)_10%,transparent)]',
         ],
+        soft: [
+          'tw:border-[color-mix(in_srgb,var(--intent)_40%,transparent)] tw:bg-[color-mix(in_srgb,var(--intent)_20%,white)] tw:text-text tw:[&:hover,&:focus]:text-text',
+          'tw:hover:bg-[color-mix(in_srgb,var(--intent)_30%,white)] tw:active:bg-[color-mix(in_srgb,var(--intent)_40%,white)] tw:has-checked:bg-[color-mix(in_srgb,var(--intent)_40%,white)]',
+        ],
         ghost:
           'tw:border-transparent tw:bg-transparent tw:text-text tw:[&:hover,&:focus]:text-text',
         link: 'tw:border-transparent tw:bg-transparent tw:text-link tw:underline tw:hover:text-link-hover tw:disabled:text-muted',
@@ -66,7 +70,7 @@ const buttonVariants = cva(
   },
 );
 
-export type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'link';
+export type ButtonVariant = 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface ButtonGroupContextValue {

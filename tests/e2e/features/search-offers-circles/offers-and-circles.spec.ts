@@ -160,23 +160,29 @@ test.describe.serial('search offers and circles feature coverage', () => {
         .poll(() =>
           mightHost.evaluate(
             input =>
-              getComputedStyle(input.closest('label')!, '::before').content,
+              getComputedStyle(input.closest('label')!, '::before').visibility,
           ),
         )
-        .toContain('✓');
+        .toBe('visible');
       await mightHost.press('ArrowRight');
       await expect(cannotHost).toBeChecked();
 
       const meetingAvailability = page.getByRole('radiogroup', {
-        name: 'Would you like to meet people?',
+        name: 'Are you open to meeting people?',
       });
       await expect(
         meetingAvailability.getByRole('radio', { checked: true }),
       ).toHaveCount(0);
-      await page
-        .getByRole('radiogroup', { name: 'Would you like to meet people?' })
-        .getByText('Yes', { exact: true })
-        .click();
+      const choiceBoxes = () =>
+        meetingAvailability.locator('label').evaluateAll(labels =>
+          labels.map(label => {
+            const { x, width } = label.getBoundingClientRect();
+            return { x, width };
+          }),
+        );
+      const originalChoiceBoxes = await choiceBoxes();
+      await meetingAvailability.getByText('Yes', { exact: true }).click();
+      expect(await choiceBoxes()).toEqual(originalChoiceBoxes);
       await expect(
         page.getByText(/for meetings, but not as a host/),
       ).toBeVisible();
@@ -268,7 +274,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
             response.request().method() === 'PUT',
         );
         await page
-          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByRole('radiogroup', { name: 'Are you open to meeting people?' })
           .getByText(label, { exact: true })
           .click();
         expect((await savedFromProfile).ok()).toBeTruthy();
@@ -323,7 +329,16 @@ test.describe.serial('search offers and circles feature coverage', () => {
     ).toBeVisible();
     const saveButtons = page.getByRole('button', { name: 'Save and Exit' });
     await expect(saveButtons).toHaveCount(2);
+    const topSave = saveButtons.first();
     const bottomSave = saveButtons.last();
+    const saveStyle = (element: HTMLElement) => {
+      const { backgroundColor, color } = getComputedStyle(element);
+      const { width, height } = element.getBoundingClientRect();
+      return { backgroundColor, color, width, height };
+    };
+    expect(await topSave.evaluate(saveStyle)).toEqual(
+      await bottomSave.evaluate(saveStyle),
+    );
     await bottomSave.scrollIntoViewIfNeeded();
     await expect(bottomSave).toBeInViewport();
     const description = page.getByLabel(
@@ -732,7 +747,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       .getByText('Maybe', { exact: true })
       .click();
     await page
-      .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+      .getByRole('radiogroup', { name: 'Are you open to meeting people?' })
       .getByText('Yes', { exact: true })
       .click();
     const description = page.getByLabel(

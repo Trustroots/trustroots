@@ -1,5 +1,8 @@
 import React, { useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
+import { hostStatusIntent } from './hostStatusIntent';
 import type { MeetingStatus } from '../../shared/offer';
 
 type MeetingChoice = Exclude<MeetingStatus, 'not-set'>;
@@ -24,12 +27,18 @@ export default function MeetingAvailabilityControl({
   ];
   return (
     <fieldset className="meeting-availability-control" disabled={disabled}>
-      <legend id={id}>{t('Would you like to meet people?')}</legend>
-      <div aria-labelledby={id} className="btn-group" role="radiogroup">
+      <legend>
+        <h4 id={id}>{t('Are you open to meeting people?')}</h4>
+      </legend>
+      <ButtonGroup aria-labelledby={id} role="radiogroup" size="lg">
         {options.map(([status, label]) => (
-          <label
+          <Button
             key={status}
-            className={`btn btn-lg btn-offer-hosting btn-offer-hosting-${status}${value === status ? ' active' : ''}`}
+            intent={hostStatusIntent[status]}
+            variant="soft"
+            // The radio is rendered inside the label below.
+            // eslint-disable-next-line jsx-a11y/label-has-associated-control
+            render={<label />}
           >
             <input
               checked={value === status}
@@ -40,9 +49,9 @@ export default function MeetingAvailabilityControl({
               value={status}
             />
             <span>{label}</span>
-          </label>
+          </Button>
         ))}
-      </div>
+      </ButtonGroup>
     </fieldset>
   );
 }
