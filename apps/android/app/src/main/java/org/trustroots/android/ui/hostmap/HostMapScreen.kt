@@ -159,8 +159,10 @@ internal fun HostMapScreen(
     var languageMenuOpen by remember { mutableStateOf(false) }
     val circles = mapState.circles
     var circleMenuOpen by remember { mutableStateOf(false) }
-    var showFilters by rememberSaveable { mutableStateOf(true) }
+    var showMapFilters by rememberSaveable { mutableStateOf(true) }
+    var showResultFilters by rememberSaveable { mutableStateOf(false) }
     var showResults by rememberSaveable { mutableStateOf(false) }
+    val showFilters = if (showResults) showResultFilters else showMapFilters
     LaunchedEffect(showFilters, mapViewModel, api.backendURL, session.credentialKey, session.member.username) {
         if (showFilters) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
     }
@@ -173,7 +175,7 @@ internal fun HostMapScreen(
         when {
             showSuggestions -> showSuggestions = false
             showResults -> showResults = false
-            showFilters -> showFilters = false
+            showFilters -> showMapFilters = false
             else -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
         }
     }
@@ -338,7 +340,7 @@ internal fun HostMapScreen(
                     )
                     IconButton(onClick = {
                         closePlaceSearch()
-                        showFilters = !showFilters
+                        if (showResults) showResultFilters = !showResultFilters else showMapFilters = !showMapFilters
                     }, modifier = Modifier.testTag("openFilters")) {
                         Icon(painterResource(R.drawable.ic_material_filter_list), if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -509,21 +511,29 @@ internal fun HostMapScreen(
                         }
                     }
                 }
-                if (noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
+                if (!showResults && noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
                 TextButton(
-                    onClick = { closePlaceSearch(); showResults = !showResults },
+                    onClick = {
+                        closePlaceSearch()
+                        if (!showResults) showResultFilters = false
+                        showResults = !showResults
+                    },
                     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).testTag("mapResultsToggle"),
                 ) {
                     Text(stringResource(if (showResults) R.string.screen_back_to_map else R.string.screen_map_show_results))
                 }
-                Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (!showResults) FlowRow(
+                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
                         if (loading) searchingArea else mapStatisticsLabel(
                             offers.size,
                             communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) },
                         ),
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.weight(1f).testTag("mapStatistics"),
+                        modifier = Modifier.testTag("mapStatistics"),
                     )
                     Text(
                         attribution,

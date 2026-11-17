@@ -1,11 +1,19 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.res.Configuration
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -102,6 +110,39 @@ class HostMapResultsJourneyTest {
         assertEquals(0, invalidations.get())
     }
 
+    @Test fun narrowShortResultsWithLargerTextKeepOffersAndReturnNavigationUsable() {
+        val local = apiFixture()
+        showMap(local, compactLargeText = true)
+        compose.waitUntil(15_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        waitForText("Quiet Fox")
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Show filters").assertIsDisplayed()
+        compose.onNodeWithText("Back to map").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android-map-narrow-large-text-results")
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onNodeWithTag("map-result-offer-one").performClick()
+        waitForTag("hostDetailRoute")
+        compose.onNodeWithContentDescription("Close host result").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
+        compose.onNodeWithText("Last active: 6 months").assertIsDisplayed()
+        // A deliberately collapsed map also stays collapsed after inspecting Results.
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        waitForText("Quiet Fox")
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithContentDescription("Show filters").assertIsDisplayed()
+        compose.onNodeWithText("Hosting").assertDoesNotExist()
+        assertEquals(0, invalidations.get())
+    }
+
     @Test fun retriesAnUnavailableListOfferAndShowsEmptyResultsWhenHostingIsDisabled() {
         val attempts = AtomicInteger()
         val local = apiFixture { request ->
@@ -116,6 +157,7 @@ class HostMapResultsJourneyTest {
         compose.onNodeWithTag("map-result-retry-offer-one").performClick()
         waitForText("Quiet Fox")
         assertEquals(2, attempts.get())
+        compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").performClick()
         compose.onNodeWithText("No offers in this area. Try changing the filters or moving the map.").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertDoesNotExist()
@@ -281,18 +323,31 @@ class HostMapResultsJourneyTest {
 
     private fun showMap(
         local: LocalTransportFixture,
+        compactLargeText: Boolean = false,
         geocoderLookup: (Context, String, Int) -> List<Address>? = { _, _, _ -> emptyList() },
     ) {
         compose.setContent {
-            NativeTestAppFrame(Destination.Search) {
-                SearchHubScreen(
-                    api = MobileApiClient(local.baseURL),
-                    session = session,
-                    onSessionInvalidated = { invalidations.incrementAndGet() },
-                    geocoderLookup = geocoderLookup,
-                    notesClientFactory = { _, _ -> org.trustroots.android.ui.hostmap.HostMapNotesConnection {} },
-                    mapViewFactory = { context -> MapView(context).apply { setUseDataConnection(false); map.set(this) } },
-                )
+            val density = LocalDensity.current
+            val configuration = LocalConfiguration.current
+            val fixtureConfiguration = if (compactLargeText) Configuration(configuration).apply {
+                fontScale = 1.3f; screenWidthDp = 320; screenHeightDp = 520
+            } else configuration
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, if (compactLargeText) 1.3f else density.fontScale),
+                LocalConfiguration provides fixtureConfiguration,
+            ) {
+                Box(if (compactLargeText) Modifier.requiredSize(320.dp, 520.dp) else Modifier.fillMaxSize()) {
+                    NativeTestAppFrame(Destination.Search) {
+                        SearchHubScreen(
+                            api = MobileApiClient(local.baseURL),
+                            session = session,
+                            onSessionInvalidated = { invalidations.incrementAndGet() },
+                            geocoderLookup = geocoderLookup,
+                            notesClientFactory = { _, _ -> org.trustroots.android.ui.hostmap.HostMapNotesConnection {} },
+                            mapViewFactory = { context -> MapView(context).apply { setUseDataConnection(false); map.set(this) } },
+                        )
+                    }
+                }
             }
         }
     }
