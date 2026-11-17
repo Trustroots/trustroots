@@ -1,5 +1,6 @@
 import L from 'leaflet';
-import React, { useEffect, useRef, type ReactNode } from 'react';
+import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { getRasterMapTiles } from '@/modules/core/client/utils/map';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import './circle-location-map.less';
@@ -29,6 +30,7 @@ export interface CircleLocation {
   latitude: number;
   longitude: number;
   details: string[];
+  popupHeading?: ReactNode;
   facts?: {
     label: string;
     value: string | { label: string; url?: string }[];
@@ -39,8 +41,10 @@ export interface CircleLocation {
 export function locationPopup(location: CircleLocation): HTMLElement {
   const root = document.createElement('div');
   root.className = 'circle-location-popup';
-  const title = document.createElement('strong');
-  title.textContent = location.name;
+  const title = document.createElement(
+    location.popupHeading == null ? 'strong' : 'div',
+  );
+  if (location.popupHeading == null) title.textContent = location.name;
   root.append(title);
   if (location.facts?.length) {
     const facts = document.createElement('dl');
@@ -117,6 +121,10 @@ export default function CircleLocationMap(props: Props) {
   const openLocation = useRef<string | null>(null);
   const initialViewSet = useRef(false);
   const fittingResults = useRef(false);
+  const [popupHeading, setPopupHeading] = useState<{
+    container: HTMLElement;
+    content: ReactNode;
+  } | null>(null);
   useEffect(() => {
     const element = container.current!;
     const minimumZoom = () =>
@@ -178,6 +186,8 @@ export default function CircleLocationMap(props: Props) {
     const selected = openLocation.current;
     markers.clearLayers();
     props.locations.forEach(location => {
+      const content = locationPopup(location);
+      const heading = content.firstElementChild as HTMLElement;
       const marker = L.circleMarker([location.latitude, location.longitude], {
         radius: 8,
         color: '#fff',
@@ -185,14 +195,42 @@ export default function CircleLocationMap(props: Props) {
         fillColor: props.markerColor || '#488261',
         fillOpacity: 1,
       })
-        .bindPopup(locationPopup(location))
+        .bindPopup(content)
         .on('popupopen', () => {
           openLocation.current = location.id;
+          if (location.popupHeading != null) {
+            setPopupHeading({
+              container: heading,
+              content: location.popupHeading,
+            });
+          }
         })
         .on('popupclose', () => {
           openLocation.current = null;
+          if (location.popupHeading != null) {
+            setPopupHeading(current =>
+              current?.container === heading ? null : current,
+            );
+          }
         })
         .addTo(markers);
+      if (location.popupHeading != null) {
+        const element = marker.getElement();
+        element?.setAttribute('tabindex', '0');
+        element?.setAttribute('role', 'button');
+        element?.setAttribute('aria-label', location.name);
+        element?.addEventListener('keydown', event => {
+          if (
+            event instanceof KeyboardEvent &&
+            (event.key === 'Enter' || event.key === ' ')
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            marker.openPopup();
+            content.querySelector('a')?.focus();
+          }
+        });
+      }
       if (selected === location.id) {
         const popup = marker.getPopup()!;
         // Refresh the selected popup without undoing the visitor's map position.
@@ -257,6 +295,8 @@ export default function CircleLocationMap(props: Props) {
             });
           }}
         />
+        {popupHeading &&
+          createPortal(popupHeading.content, popupHeading.container)}
       </div>
       <div className="circle-location-map-footer">
         <span className="circle-location-map-status" aria-live="polite">

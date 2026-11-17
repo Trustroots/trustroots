@@ -39,6 +39,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.RemoteArtwork
 
 internal enum class ProfileSection(val label: Int) {
@@ -114,16 +115,13 @@ internal fun ProfileOverviewSection(
         (if (showAllReferences) references else references.take(6)).forEach { reference ->
             Column(Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("profileReference-${reference.id}")) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    RemoteArtwork(
-                        reference.author.id?.let { api.avatarURL(it, 64, session) },
-                        session.cookieHeader,
-                        accessToken = session.accessToken,
-                        label = reference.author.localizedLabel(),
-                        size = 36.dp,
+                    MemberIdentity(
+                        api = api,
+                        session = session,
+                        member = reference.author,
+                        modifier = Modifier.weight(1f),
+                        onClick = reference.author.username?.let { username -> { onOpenRelated(username) } },
                     )
-                    TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
-                        Text(reference.author.localizedLabel())
-                    }
                 }
                 val colours = MaterialTheme.colorScheme
                 val (background, foreground, sentiment) = when (reference.recommendation) {

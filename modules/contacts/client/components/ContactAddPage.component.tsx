@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Button } from '@trustroots/ui/Button';
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import { fetchMini } from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -135,20 +135,14 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
               <div className="panel panel-default contacts-connection">
                 <div className="panel-body">
                   <div className="row">
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile text-center">
-                      <Avatar size={128} user={user} link={false} />
-                      <h4 className="contacts-connection-name">
-                        {user.displayName}
-                      </h4>
+                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                      <MemberIdentity user={user} size={64} />
                     </div>
                     <div className="hidden-xs col-sm-2">
                       <i className="icon-exchange icon-3x text-muted contacts-connection-divider" />
                     </div>
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile text-center">
-                      <Avatar size={128} user={friend} link={false} />
-                      <h4 className="contacts-connection-name">
-                        {friend.displayName}
-                      </h4>
+                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                      <MemberIdentity user={friend} size={64} />
                     </div>
                   </div>
                 </div>

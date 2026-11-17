@@ -55,32 +55,28 @@ struct MemberProfileView: View {
                 } else if let profile {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 22) {
-                            HStack(alignment: .bottom, spacing: 16) {
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(profile.displayName)
-                                        .font(.title.bold())
-                                        .foregroundStyle(.white)
-                                    Text("@\(profile.username)")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.white.opacity(0.82))
-                                    if let tagline = profile.tagline, !tagline.isEmpty {
-                                        Text(tagline.plainText)
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundStyle(.white)
-                                            .lineLimit(2)
-                                    }
-                                }
-                                Spacer(minLength: 0)
-                                MemberAvatarView(
-                                    memberID: profile.id,
-                                    displayName: profile.displayName,
+                            VStack(alignment: .leading, spacing: 9) {
+                                MemberIdentityView(
+                                    member: MiniMember(
+                                        id: profile.id,
+                                        username: profile.username,
+                                        displayName: profile.displayName
+                                    ),
                                     serverURLString: session.serverURLString,
-                                    size: 112
+                                    avatarSize: 84,
+                                    primaryFont: .title.bold(),
+                                    secondaryFont: .subheadline,
+                                    foreground: .white,
+                                    secondaryForeground: .white.opacity(0.86)
                                 )
-                                .overlay {
-                                    Circle().stroke(.white.opacity(0.9), lineWidth: 2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                if let tagline = profile.tagline, !tagline.isEmpty {
+                                    Text(tagline.plainText)
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(2)
+                                        .padding(.leading, 94)
                                 }
-                                .shadow(color: .black.opacity(0.28), radius: 8, y: 3)
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 76)
@@ -475,17 +471,13 @@ struct MemberProfileView: View {
     }
 
     private func profileContactRow(_ contact: TrustrootsContact) -> some View {
-        HStack(spacing: 9) {
-            MemberAvatarView(
-                memberID: contact.user.id,
-                displayName: contact.user.displayName ?? contact.user.username ?? "Trustroots member",
-                serverURLString: session.serverURLString,
-                size: 34
-            )
-            Text(contact.user.displayName ?? contact.user.username ?? "Trustroots member")
-                .foregroundStyle(.primary)
-            Spacer()
-        }
+        MemberIdentityView(
+            member: contact.user,
+            serverURLString: session.serverURLString,
+            avatarSize: 34,
+            primaryFont: .subheadline.weight(.medium),
+            secondaryFont: .caption
+        )
     }
 
     private func profileSectionToggle(
@@ -841,56 +833,40 @@ private struct ExperienceRow: View {
         feedback: String?,
         recommend: String?
     ) -> some View {
-        HStack(alignment: .top, spacing: 9) {
+        VStack(alignment: .leading, spacing: 4) {
+            let identity = MemberIdentityView(
+                member: member,
+                serverURLString: session.serverURLString,
+                avatarSize: 38,
+                primaryFont: .subheadline.weight(.semibold),
+                secondaryFont: .caption
+            )
             if let username = member.username {
                 NavigationLink {
                     MemberProfileView(session: session, username: username)
                 } label: {
-                    MemberAvatarView(
-                        memberID: member.id,
-                        displayName: member.displayName ?? username,
-                        serverURLString: session.serverURLString,
-                        size: 38
-                    )
+                    identity
                 }
+                .buttonStyle(.plain)
             } else {
-                MemberAvatarView(
-                    memberID: member.id,
-                    displayName: member.displayName ?? "Trustroots member",
-                    serverURLString: session.serverURLString,
-                    size: 38
-                )
+                identity
             }
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    if let username = member.username {
-                        NavigationLink {
-                            MemberProfileView(session: session, username: username)
-                        } label: {
-                            Text(member.displayName ?? username)
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Text(member.displayName ?? "Trustroots member")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    Spacer()
-                    if let recommend {
-                        Text(recommend == "yes" ? "Recommends" : recommend == "no" ? "Does not recommend" : "Experience")
-                            .font(.caption)
-                            .foregroundStyle(recommend == "yes" ? TrustrootsPalette.darkGreen : .secondary)
-                    }
-                }
+            HStack {
                 Text(label)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                if let feedback = feedback?.plainText, !feedback.isEmpty {
-                    Text(feedback)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(4)
+                Spacer()
+                if let recommend {
+                    Text(recommend == "yes" ? "Recommends" : recommend == "no" ? "Does not recommend" : "Experience")
+                        .font(.caption)
+                        .foregroundStyle(recommend == "yes" ? TrustrootsPalette.darkGreen : .secondary)
                 }
+            }
+            if let feedback = feedback?.plainText, !feedback.isEmpty {
+                Text(feedback)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(4)
             }
         }
     }

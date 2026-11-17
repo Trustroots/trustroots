@@ -23,34 +23,61 @@ struct MemberAvatarView: View {
 struct MemberIdentityView: View {
     let member: MiniMember
     let serverURLString: String
+    var avatarSize: CGFloat = 48
+    var primaryFont: Font = .headline
+    var secondaryFont: Font = .subheadline
+    var foreground: Color = .primary
+    var secondaryForeground: Color = .secondary
+    var lineLimit: Int? = nil
 
     var body: some View {
-        let name = identityText(member.displayName)
-        let handle = identityText(member.username)
-        let label = name ?? handle.map { "@\($0)" } ?? String(localized: "Unknown member")
+        let identity = MemberIdentityText(member: member)
 
         HStack(spacing: 10) {
             MemberAvatarView(
                 memberID: member.id,
-                displayName: name ?? handle ?? "",
-                serverURLString: serverURLString
+                displayName: identity.name ?? identity.handle ?? "",
+                serverURLString: serverURLString,
+                size: avatarSize
             )
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(label)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                if name != nil, let handle {
-                    Text("@\(handle)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                Text(identity.primary)
+                    .font(primaryFont)
+                    .foregroundStyle(foreground)
+                    .lineLimit(lineLimit)
+                if let secondary = identity.secondary {
+                    Text(secondary)
+                        .font(secondaryFont)
+                        .foregroundStyle(secondaryForeground)
+                        .lineLimit(lineLimit)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct MemberIdentityText: Equatable {
+    let name: String?
+    let handle: String?
+
+    init(member: MiniMember) {
+        name = Self.normalised(member.displayName)
+        handle = Self.normalised(member.username)
     }
 
-    private func identityText(_ value: String?) -> String? {
+    var primary: String {
+        name ?? handle.map { "@\($0)" } ?? String(localized: "Unknown member")
+    }
+
+    var secondary: String? {
+        guard name != nil, let handle else { return nil }
+        return "@\(handle)"
+    }
+
+    private static func normalised(_ value: String?) -> String? {
         guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines),
               !text.isEmpty else { return nil }
         return text

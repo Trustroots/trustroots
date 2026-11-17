@@ -3,7 +3,7 @@ import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import type { Message, MessageUser } from '../api/messages.api';
 import { Alert } from '@trustroots/ui/Alert';
@@ -47,11 +47,9 @@ export default function ThreadMessages({
       {isExtraSmall && otherUser.username && (
         <div className="message">
           <div className="message-recipient panel panel-default">
-            <a className="panel-body" href={`/profile/${otherUser.username}`}>
-              <Avatar user={otherUser} size={32} link={false} />
-              <h4>{otherUser.displayName}</h4>
-              <small className="text-muted">@{otherUser.username}</small>
-            </a>
+            <div className="panel-body">
+              <MemberIdentity user={otherUser} size={32} profileLink />
+            </div>
           </div>
         </div>
       )}

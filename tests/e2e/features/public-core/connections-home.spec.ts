@@ -76,11 +76,18 @@ test('signed-in homepage lays out recent connections and opens hosting offers', 
   await expect(hostingMap).toBeVisible();
   const pins = hostingMap.locator('.leaflet-interactive');
   await expect(pins).toHaveCount(2);
-  await pins.first().click();
+  const firstHostingPin = hostingMap.getByRole('button', {
+    name: 'Older Host',
+  });
+  await firstHostingPin.focus();
+  await page.keyboard.press('Enter');
   const popup = hostingMap.locator('.leaflet-popup-content');
   const hostName = popup.getByText('Older Host', { exact: true });
   const offer = popup.getByRole('link', { name: 'View hosting offer' });
   await expect(hostName).toBeVisible();
+  await expect(popup.getByText('@olderhost')).toBeVisible();
+  await expect(popup.locator('.member-avatar-fallback')).toHaveText('OH');
+  await expect(offer).toBeFocused();
   await expect(offer).toHaveAttribute(
     'href',
     '/profile/olderhost/accommodation',

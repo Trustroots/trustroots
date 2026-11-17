@@ -4,7 +4,7 @@ import keyBy from 'lodash/keyBy';
 import { useTranslation } from 'react-i18next';
 
 // Internal dependencies
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from './MemberIdentity';
 import LanguageList from './LanguageList';
 import type { UserProfile, TribeMembership } from '../types';
 
@@ -74,10 +74,12 @@ export default function Monkeybox({
   return (
     <div className="monkeybox panel panel-default">
       <div className="panel-body">
-        <Avatar user={user} size={64} />
-        <h3>
-          <a href={`/profile/${user.username}`}>{user.displayName}</a>
-        </h3>
+        <MemberIdentity
+          user={user}
+          size={36}
+          className="tw:text-start"
+          profileLink
+        />
         <TribesInCommon user={user} otherUser={otherUser} />
         {user.languages.length > 0 && (
           <div className="monkeybox-section">

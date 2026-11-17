@@ -93,13 +93,15 @@ describe('profile onboarding components', () => {
     expect(screen.getByText('@Member One')).toBeVisible();
     expect(screen.getByText('Hosting guests in Northport')).toBeVisible();
 
-    const avatarButton = screen.getByText('Avatar 512 Member One').closest('a');
+    const avatarButton = screen.getByRole('button', {
+      name: 'Open profile picture of Member One',
+    });
+    expect(avatarButton).toHaveAttribute('aria-expanded', 'false');
 
-    expect(avatarButton).not.toHaveClass('profile-avatar-lg');
+    fireEvent.click(avatarButton);
 
-    fireEvent.click(avatarButton!);
-
-    expect(avatarButton).toHaveClass('profile-avatar-lg');
+    expect(avatarButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Avatar 512 Member One')).toBeVisible();
   });
 
   it('renders mobile avatar identity without optional display fields', () => {

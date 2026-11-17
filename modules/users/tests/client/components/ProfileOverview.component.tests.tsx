@@ -14,10 +14,8 @@ jest.mock('@/modules/users/client/components/Avatar.component', () => {
     user,
   }: React.ComponentProps<typeof Avatar>) {
     return (
-      <div onClick={onClick}>
-        <button data-testid={`avatar-${size}`} type="button">
-          {`Avatar ${size} ${user.displayName}`}
-        </button>
+      <div data-testid={`avatar-${size}`} onClick={onClick}>
+        {`Avatar ${size} ${user.displayName}`}
       </div>
     );
   }

@@ -4,9 +4,10 @@
  */
 
 import React, { useState } from 'react';
-import { cn } from '@trustroots/ui/cn';
+import { useTranslation } from 'react-i18next';
 
 import Avatar from './Avatar.component';
+import MemberIdentity from './MemberIdentity';
 import type { UserProfile } from '../types';
 
 export default function AvatarNameMobile({
@@ -17,43 +18,45 @@ export default function AvatarNameMobile({
   isSelf?: boolean;
 }) {
   const [isBiggerAvatar, setIsBiggerAvatar] = useState(false);
+  const { t } = useTranslation('users');
   const showPhotoEditLink =
     isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   return (
-    <div className="text-center visible-xs-block" role="dialog">
-      {/* Avatar */}
-      <a
-        href={showPhotoEditLink ? '/profile/edit/photo' : undefined}
-        onClick={
-          showPhotoEditLink
-            ? undefined
-            : () => setIsBiggerAvatar(prevState => !prevState)
+    <div className="visible-xs-block">
+      <MemberIdentity
+        user={{
+          ...profile,
+          username: profile.displayUsername || profile.username,
+        }}
+        size={64}
+        className="tw:mb-2 tw:text-xl"
+        heading
+        renderAvatar={avatar =>
+          showPhotoEditLink ? (
+            <a href="/profile/edit/photo" aria-label="Edit profile photo">
+              {avatar}
+            </a>
+          ) : (
+            <button
+              type="button"
+              className="tw:shrink-0 tw:cursor-zoom-in tw:border-0 tw:bg-transparent tw:p-0"
+              aria-label={t('Open profile picture of {{name}}', {
+                name: profile.displayName || profile.username,
+              })}
+              aria-expanded={isBiggerAvatar}
+              onClick={() => setIsBiggerAvatar(open => !open)}
+            >
+              {avatar}
+            </button>
+          )
         }
-        className={cn('visible-xs-block', 'avatar-circle', {
-          'profile-avatar-lg': isBiggerAvatar,
-        })}
-        aria-label={showPhotoEditLink ? 'Edit profile photo' : undefined}
-        aria-hidden={showPhotoEditLink ? undefined : true}
-      >
-        <Avatar user={profile} size={512} link={false} />
-      </a>
-
-      {/* Name */}
-      {profile.displayName && (
-        <h2 className="profile-name">{profile.displayName}</h2>
+      />
+      {isBiggerAvatar && (
+        <div className="profile-avatar-lg">
+          <Avatar user={profile} size={512} link={false} />
+        </div>
       )}
-
-      <br />
-
-      {/* Username */}
-      <h4 className="profile-username">
-        @{profile.displayUsername || profile.username}
-      </h4>
-
-      <br />
-
-      {/* Tagline */}
       {profile.tagline && <p className="profile-tagline">{profile.tagline}</p>}
     </div>
   );

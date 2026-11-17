@@ -8,6 +8,7 @@ import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type { ConnectionsDiscovery } from '@/modules/tribes/client/api/tribes.api';
 import { memberActivityLabel } from '@/modules/tribes/client/utils/memberActivityLabel';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 
 const EMPTY_CONNECTIONS: ConnectionsDiscovery = { recent: [], hosts: [] };
 
@@ -32,6 +33,7 @@ function hostingLocations(
         latitude,
         longitude,
         details: [],
+        popupHeading: <MemberIdentity user={host} size={36} />,
         link: {
           url: `/profile/${encodeURIComponent(host.username)}/accommodation`,
           label: t('View hosting offer'),

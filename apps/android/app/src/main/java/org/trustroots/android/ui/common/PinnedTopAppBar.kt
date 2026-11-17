@@ -3,6 +3,7 @@
 package org.trustroots.android.ui.common
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,16 +34,20 @@ internal fun PinnedTopAppBar(
     contentPadding: PaddingValues,
     onBack: (() -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
+    titleContent: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         title = {
-            Text(
-                title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag("memberLargeTopAppBarTitle"),
-            )
+            Box(Modifier.testTag("memberLargeTopAppBarTitle")) {
+                if (titleContent != null) titleContent() else {
+                    Text(
+                        title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         },
         modifier = Modifier.padding(contentPadding.horizontalInset()).testTag("memberLargeTopAppBar"),
         windowInsets = WindowInsets(
