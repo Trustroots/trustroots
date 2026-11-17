@@ -1,15 +1,15 @@
 import { validLanguageLevels } from '@/modules/users/shared/language-levels';
 it.each([
-  null,
-  undefined,
-  [],
-  'basic',
-  1,
-  { eng: null },
-  { eng: 1 },
-  { eng: 'fluent' },
-  { eng: 'toString' },
-  { fra: 'native' },
+  [null],
+  [undefined],
+  [[]],
+  ['basic'],
+  [1],
+  [{ eng: null }],
+  [{ eng: 1 }],
+  [{ eng: 'fluent' }],
+  [{ eng: 'toString' }],
+  [{ fra: 'native' }],
 ])('rejects invalid levels: %o', levels => {
   expect(validLanguageLevels(levels, ['eng'])).toBe(false);
 });

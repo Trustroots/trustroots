@@ -489,7 +489,7 @@ describe('<AdminAcquisitionStories />', () => {
     },
   );
 
-  it.each([[], undefined] as Array<string[] | undefined>)(
+  it.each([[[]], [undefined]] as Array<[string[] | undefined]>)(
     'shows Not specified for recipient languages %j',
     async languages => {
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([

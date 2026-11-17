@@ -65,7 +65,7 @@ describe('Hitchwiki ride origins', () => {
       ],
     });
   });
-  it.each([undefined, null, {}, [], [null, {}, { nickname: false }]])(
+  it.each([[undefined], [null], [{}], [[]], [[null, {}, { nickname: false }]]])(
     'omits unavailable hitchhiker names: %j',
     hitchhikers => {
       expect(

@@ -734,13 +734,13 @@ describe('<SupportStatusImport />', () => {
   });
 
   it.each([
-    'not an object',
-    null,
-    [],
-    {},
-    { version: 3, items: [] },
-    { version: 1 },
-    { version: 1, items: null },
+    ['not an object'],
+    [null],
+    [[]],
+    [{}],
+    [{ version: 3, items: [] }],
+    [{ version: 1 }],
+    [{ version: 1, items: null }],
   ])(
     'rejects invalid reduced manifest shapes before uploading: %j',
     async value => {

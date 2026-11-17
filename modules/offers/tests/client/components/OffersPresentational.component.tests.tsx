@@ -161,7 +161,7 @@ describe('<OffersPresentational />', () => {
     },
   );
 
-  it.each([undefined, [51]])(
+  it.each([[undefined], [[51]]])(
     'omits a meeting map without valid coordinates: %s',
     location => {
       const offer: Offer = {

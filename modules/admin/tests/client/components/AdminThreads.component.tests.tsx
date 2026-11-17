@@ -118,7 +118,7 @@ test('shows an instruction with no member and does not query', () => {
   expect(threads).not.toHaveBeenCalled();
 });
 
-test.each([[], null])('handles empty thread payloads: %j', async result => {
+test.each([[[]], [null]])('handles empty thread payloads: %j', async result => {
   threads.mockResolvedValue(result as unknown as AdminThread[]);
   render(<AdminThreads />);
   expect(await screen.findByText('Nothing found…')).toBeInTheDocument();

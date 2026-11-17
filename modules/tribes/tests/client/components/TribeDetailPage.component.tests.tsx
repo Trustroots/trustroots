@@ -173,7 +173,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     ).toBeVisible();
   });
 
-  it.each([undefined, ['user'], ['support-team'], ['admin']])(
+  it.each([[undefined], [['user']], [['support-team']], [['admin']]])(
     'shows the editor only to circle administrators (%j)',
     async roles => {
       render(

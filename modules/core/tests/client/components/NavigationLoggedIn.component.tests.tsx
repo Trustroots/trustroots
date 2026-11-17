@@ -179,7 +179,7 @@ describe('<NavigationLoggedIn />', () => {
     ).not.toHaveClass('active');
   });
 
-  it.each([undefined, [], ['user']])(
+  it.each([[undefined], [[]], [['user']]])(
     'omits the administrator shortcut for non-admin roles %j',
     (roles: string[] | undefined) => {
       render(
@@ -337,7 +337,7 @@ describe('<NavigationLoggedIn />', () => {
     expect(member[0].tribe._id).toBe('circle-0');
   });
 
-  it.each([undefined, []])('omits an empty circles menu for %j', member => {
+  it.each([[undefined], [[]]])('omits an empty circles menu for %j', member => {
     render(
       <NavigationLoggedIn currentPath="/search" user={{ ...user, member }} />,
     );
