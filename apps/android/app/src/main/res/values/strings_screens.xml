@@ -139,7 +139,7 @@
     <string name="screen_was_their_guest">I was their guest</string>
     <string name="screen_recommend_them">Would you recommend them?</string>
     <string name="screen_not_sure">Not sure</string>
-    <string name="screen_could_not_choose_push_distributor">Could not choose a push distributor.</string>
+    <string name="screen_could_not_choose_push_distributor">Could not choose a notification app. Try again in Account → Message alerts.</string>
     <string name="screen_allow_message_notifications">Allow notifications in Android settings to receive message alerts.</string>
     <string name="screen_latest_android_preview">You have the latest Android preview.</string>
     <string name="screen_update_available">%1$s is available.</string>

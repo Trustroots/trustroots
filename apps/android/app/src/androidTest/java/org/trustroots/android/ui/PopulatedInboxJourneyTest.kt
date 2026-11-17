@@ -188,7 +188,7 @@ class PopulatedInboxJourneyTest {
             alertsEnabled.value = true
             requireNotNull(resultCallback.get())(MessageAlertStatusMetadata(R.string.message_alerts_waiting_registration))
         }
-        compose.onNodeWithText("Waiting for your distributor to register message alerts.")
+        compose.onNodeWithText("Setting up message alerts. Please wait.")
             .performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_ready)
@@ -255,7 +255,7 @@ class PopulatedInboxJourneyTest {
             compose.onAllNodesWithText("Get message notifications").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Turn on").performScrollTo().performClick()
-        compose.onNodeWithText("Waiting for your distributor to register message alerts.")
+        compose.onNodeWithText("Setting up message alerts. Please wait.")
             .performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_registration_failed)

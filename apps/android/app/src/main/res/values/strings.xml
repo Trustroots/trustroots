@@ -9,7 +9,7 @@
     <string name="filter_conversations">Filter conversations</string>
     <string name="clear_conversation_filter">Clear conversation filter</string>
     <string name="inbox_message_alerts_title">Get message notifications</string>
-    <string name="inbox_message_alerts_description">Get an alert when a new message arrives. Uses Google Play services when available, or UnifiedPush on other devices.</string>
+    <string name="inbox_message_alerts_description">Get an alert when a new message arrives.</string>
     <string name="inbox_message_alerts_enable">Turn on</string>
     <string name="inbox_message_alerts_dismiss">Not now</string>
     <string name="inbox_message_alerts_enabling">Enabling…</string>

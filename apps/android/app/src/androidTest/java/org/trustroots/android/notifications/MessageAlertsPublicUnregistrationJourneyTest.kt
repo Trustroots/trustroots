@@ -123,7 +123,7 @@ class MessageAlertsPublicUnregistrationJourneyTest {
         assertTrue("Unregistration should remove the saved account and endpoint", messagePreferences.all.isEmpty())
         assertNull(MessageAlerts.endpoint(context))
         assertEquals(
-            "Your push distributor stopped message alerts. Choose one again to resume.",
+            "Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.",
             MessageAlerts.status.value,
         )
         assertTrue("The public wrapper should send its API request", responseSent.await(10, TimeUnit.SECONDS))

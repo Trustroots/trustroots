@@ -2,15 +2,15 @@
 <resources>
     <string name="browser_external_website_title">Open external website?</string>
     <string name="browser_open_external">Open</string>
-    <string name="message_alerts_registration_failed">Trustroots could not register your push distributor. Check that your distributor app is connected, or try ntfy with its default server. Then turn alerts off and back on in Account → Message alerts.</string>
+    <string name="message_alerts_registration_failed">Trustroots could not turn on message alerts. Check your internet connection, then turn alerts off and back on in Account → Message alerts. If you use a separate notification app, check that it is connected.</string>
     <string name="message_alerts_ready">Message alerts are ready.</string>
     <string name="message_alerts_not_configured">Message alerts are not configured on this server.</string>
     <string name="message_alerts_install_distributor">To get alerts on this device, install a UnifiedPush distributor such as ntfy. Email reminders are still available.</string>
-    <string name="message_alerts_choose_distributor">Choose a UnifiedPush distributor to enable message alerts.</string>
-    <string name="message_alerts_waiting_registration">Waiting for your distributor to register message alerts.</string>
+    <string name="message_alerts_choose_distributor">Choose a notification app to enable message alerts.</string>
+    <string name="message_alerts_waiting_registration">Setting up message alerts. Please wait.</string>
     <string name="message_alerts_missing_encryption_keys">This distributor did not provide Web Push encryption keys.</string>
-    <string name="message_alerts_distributor_stopped">Your push distributor stopped message alerts. Choose one again to resume.</string>
-    <string name="message_alerts_registration_error">Push distributor registration failed: %1$s.</string>
+    <string name="message_alerts_distributor_stopped">Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.</string>
+    <string name="message_alerts_registration_error">Could not turn on message alerts. Try again in Account → Message alerts.</string>
     <string name="message_alerts_push_name">Trustroots messages</string>
     <string name="message_alerts_channel">Messages</string>
     <string name="message_alerts_test_title">Trustroots test notification</string>

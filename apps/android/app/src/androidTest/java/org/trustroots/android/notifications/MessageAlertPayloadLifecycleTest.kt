@@ -105,7 +105,7 @@ class MessageAlertPayloadLifecycleTest {
         }.invoke(service, context)
         service.onRegistrationFailed(FailedReason.NETWORK, "anonymous-instance")
 
-        assertEquals("Push distributor registration failed: NETWORK.", MessageAlerts.status.value)
+        assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
     }
 
     @Test

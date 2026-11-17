@@ -151,8 +151,8 @@ class AccountPermissionFallbackJourneyTest {
         waitForText("member@example.test")
 
         compose.onNodeWithText("Turn on message alerts").performScrollTo().performClick()
-        waitForText("Could not choose a push distributor.")
-        compose.onNodeWithText("Could not choose a push distributor.")
+        waitForText("Could not choose a notification app. Try again in Account → Message alerts.")
+        compose.onNodeWithText("Could not choose a notification app. Try again in Account → Message alerts.")
             .performScrollTo()
             .assertIsDisplayed()
         org.junit.Assert.assertEquals(0, enableCalls.get())

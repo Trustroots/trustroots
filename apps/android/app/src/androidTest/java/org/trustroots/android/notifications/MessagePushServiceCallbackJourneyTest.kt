@@ -47,12 +47,12 @@ class MessagePushServiceCallbackJourneyTest {
         service.onMessage(PushMessage("not JSON".toByteArray(), decrypted = false), "fixture-instance")
         assertEquals("This distributor did not provide Web Push encryption keys.", MessageAlerts.status.value)
         service.onRegistrationFailed(FailedReason.NETWORK, "fixture-instance")
-        assertEquals("Push distributor registration failed: NETWORK.", MessageAlerts.status.value)
+        assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
 
         service.onUnregistered("fixture-instance")
         assertFalse(MessageAlerts.isEnabled(context, "quiet-fox"))
         assertEquals(
-            "Your push distributor stopped message alerts. Choose one again to resume.",
+            "Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.",
             MessageAlerts.status.value,
         )
         assertNull(MessageAlerts.endpoint(context))
