@@ -340,7 +340,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                   <a
                     key={circle._id}
                     href={`/circles/${circle.slug}`}
-                    className="img-circle tribe-xs tribe-image"
+                    className="tribe-xs tribe-image tw:rounded-[50%]"
                     style={getCircleBackgroundStyle(circle, '742x496')}
                   >
                     {!circle.image && <span>{circle.label.charAt(0)}</span>}
@@ -355,7 +355,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                   })}
                 >
                   <div
-                    className="img-circle tribe tribe-image"
+                    className="tribe tribe-image tw:rounded-[50%]"
                     style={getCircleBackgroundStyle(circle, '742x496')}
                   >
                     <a href={`/circles/${circle.slug}`} className="tribe-link">
