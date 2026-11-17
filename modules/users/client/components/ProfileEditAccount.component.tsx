@@ -30,6 +30,13 @@ interface ProfileEditAccountProps {
   user: UserProfile;
 }
 
+const messageEmailLabels = {
+  immediate: 'Individual emails for unread messages',
+  daily: 'One email per day',
+  weekly: 'One email per week',
+  off: 'No emails about messages',
+} satisfies Record<(typeof messageEmailFrequencies)[number], string>;
+
 export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -432,29 +439,44 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       </div>
 
       <div className="panel panel-default">
-        <div className="panel-heading">{t('News and updates')}</div>
-        <div className="panel-body">
-          <div className="checkbox profile-newsletter">
-            <label>
-              <input
-                type="checkbox"
-                disabled={isSavingSubscriptions}
-                checked={Boolean(draftUser.newsletter)}
-                onChange={event =>
-                  void handleSubscriptionsChange({
-                    newsletter: event.target.checked,
-                  })
-                }
-              />
-              <span>{t('Community newsletter')}</span>
-            </label>
-          </div>
-          <div className="checkbox">
-            <label>
+        <div className="panel-heading">{t('Email preferences')}</div>
+        <div className="panel-body tw:flex tw:flex-col tw:gap-5">
+          <fieldset disabled={isSavingSubscriptions}>
+            <legend className="tw:mb-2 tw:border-0 tw:font-semibold">
+              {t('Emails when other members message you')}
+            </legend>
+            <div className="tw:flex tw:flex-col tw:gap-1">
+              {messageEmailFrequencies.map(frequency => (
+                <label
+                  key={frequency}
+                  className="tw:m-0 tw:flex tw:cursor-pointer tw:items-start tw:gap-2 tw:py-2 tw:font-normal"
+                >
+                  <input
+                    type="radio"
+                    name="message-email-frequency"
+                    value={frequency}
+                    checked={
+                      (draftUser.messageEmailFrequency ?? 'immediate') ===
+                      frequency
+                    }
+                    onChange={() =>
+                      void handleSubscriptionsChange({
+                        messageEmailFrequency: frequency,
+                      })
+                    }
+                  />
+                  <span>{t(messageEmailLabels[frequency])}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div>
+            <label className="tw:m-0 tw:flex tw:cursor-pointer tw:items-start tw:gap-2">
               <input
                 type="checkbox"
                 disabled={isSavingSubscriptions}
                 checked={draftUser.hostingReminderEmails !== false}
+                aria-describedby="hosting-reminder-help"
                 onChange={event =>
                   void handleSubscriptionsChange({
                     hostingReminderEmails: event.target.checked,
@@ -463,32 +485,25 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               />
               <span>{t('Hosting reminder emails')}</span>
             </label>
+            <p id="hosting-reminder-help" className="tw:mt-1 tw:mb-0">
+              {t(
+                'We recommend keeping these on. If you’ve been unavailable to host for a while, we’ll remind you to review your hosting status.',
+              )}
+            </p>
           </div>
-          <div className="form-group">
-            <label htmlFor="message-email-frequency">
-              {t('Unread-message emails')}
-            </label>
-            <select
-              id="message-email-frequency"
+          <label className="tw:m-0 tw:flex tw:cursor-pointer tw:items-start tw:gap-2">
+            <input
+              type="checkbox"
               disabled={isSavingSubscriptions}
-              className="form-control"
-              value={draftUser.messageEmailFrequency ?? 'immediate'}
-              onChange={event => {
-                const frequency = messageEmailFrequencies.find(
-                  value => value === event.target.value,
-                );
-                if (frequency)
-                  void handleSubscriptionsChange({
-                    messageEmailFrequency: frequency,
-                  });
-              }}
-            >
-              <option value="immediate">{t('As they arrive')}</option>
-              <option value="daily">{t('Daily digest')}</option>
-              <option value="weekly">{t('Weekly digest')}</option>
-              <option value="off">{t('Off')}</option>
-            </select>
-          </div>
+              checked={Boolean(draftUser.newsletter)}
+              onChange={event =>
+                void handleSubscriptionsChange({
+                  newsletter: event.target.checked,
+                })
+              }
+            />
+            <span>{t('Community newsletter')}</span>
+          </label>
           {subscriptionMessage && <p role="alert">{subscriptionMessage}</p>}
         </div>
       </div>

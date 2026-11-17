@@ -350,17 +350,24 @@ describe('ProfileEditAccount', () => {
 
   it('sets the digest frequency and hosting reminders independently', async () => {
     renderPage();
-    const frequency = screen.getByLabelText('Unread-message emails');
     const hosting = screen.getByLabelText('Hosting reminder emails');
-    expect(frequency).toHaveValue('immediate');
+    expect(
+      screen.getByRole('radio', {
+        name: 'Individual emails for unread messages',
+      }),
+    ).toBeChecked();
     expect(hosting).toBeChecked();
+    expect(hosting).toHaveAccessibleDescription(
+      expect.stringContaining('We recommend keeping these on.'),
+    );
 
+    const daily = screen.getByRole('radio', { name: 'One email per day' });
     updateUser.mockResolvedValueOnce({
       ...user,
       messageEmailFrequency: 'daily',
     });
-    fireEvent.change(frequency, { target: { value: 'daily' } });
-    await waitFor(() => expect(frequency).toHaveValue('daily'));
+    fireEvent.click(daily);
+    await waitFor(() => expect(daily).toBeChecked());
     expect(updateUser).toHaveBeenLastCalledWith({
       messageEmailFrequency: 'daily',
     });
