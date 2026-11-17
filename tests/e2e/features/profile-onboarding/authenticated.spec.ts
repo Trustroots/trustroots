@@ -532,6 +532,25 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Account - Trustroots/);
   });
 
+  test('member can set email subscriptions independently', async ({ page }) => {
+    await page.goto('/profile/edit/account');
+    const frequency = page.getByLabel('Unread-message emails');
+    const hosting = page.getByLabel('Hosting reminder emails');
+    await expect(frequency).toHaveValue('immediate');
+    await expect(hosting).toBeChecked();
+
+    await frequency.selectOption('weekly');
+    await expect(frequency).toHaveValue('weekly');
+    await hosting.click();
+    await expect(hosting).not.toBeChecked();
+    await page.reload();
+
+    await expect(frequency).toHaveValue('weekly');
+    await expect(hosting).not.toBeChecked();
+    await frequency.selectOption('off');
+    await expect(frequency).toHaveValue('off');
+  });
+
   test('member can view their own profile', async ({
     browser,
     baseURL,

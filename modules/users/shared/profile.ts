@@ -1,3 +1,4 @@
+import type { MessageEmailFrequency } from './email-preferences.js';
 import type { LanguageLevels } from './language-levels.js';
 
 /** A tribe membership included in a full member profile. */
@@ -87,6 +88,8 @@ export interface OwnProfile<
   email?: string;
   emailTemporary?: string;
   newsletter?: boolean;
+  messageEmailFrequency?: MessageEmailFrequency;
+  hostingReminderEmails?: boolean;
   locale?: string;
   provider?: string;
   blocked?: Id[];
@@ -150,6 +153,8 @@ export interface UpdateProfileRequest {
   avatarSource?: string;
   avatarUploaded?: boolean;
   newsletter?: boolean;
+  messageEmailFrequency?: MessageEmailFrequency;
+  hostingReminderEmails?: boolean;
   locale?: string;
   /** Empty string clears the email; a new address starts confirmation. */
   email?: string;

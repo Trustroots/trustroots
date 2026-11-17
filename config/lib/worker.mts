@@ -81,6 +81,9 @@ async function start(options: WorkerOptions, callback?: Done) {
   const { captureAgendaInventory } =
     await import('../../modules/admin/server/services/agenda-inventory.server.service.mts');
 
+  const { queueMessageDigests, messageDigestJobName } =
+    await import('../../modules/messages/server/jobs/message-digest.server.job.mts');
+
   // Define jobs
 
   agenda.define(
@@ -114,6 +117,10 @@ async function start(options: WorkerOptions, callback?: Done) {
     { priority: 'high', removeOnComplete: true },
   );
 
+  agenda.define(messageDigestJobName, async () => queueMessageDigests(), {
+    concurrency: 1,
+    lockLifetime: 60000,
+  });
   defineJob('check unread messages', dependency5, {
     lockLifetime: 10000,
   });
@@ -163,6 +170,7 @@ async function start(options: WorkerOptions, callback?: Done) {
     .then(function () {
       return Promise.all([
         agenda.every('5 minutes', 'check unread messages'),
+        agenda.every('5 minutes', messageDigestJobName),
         agenda.every('24 hours', 'daily statistics'),
         agenda.every('0 3 * * *', captureAgendaStorageJob, undefined, {
           timezone: 'UTC',

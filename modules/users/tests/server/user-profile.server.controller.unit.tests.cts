@@ -439,6 +439,16 @@ describe('Profile controller unit tests', () => {
         'Please enter a valid email address.',
       ],
       ['a non-string username', { username: 42 }, usernameFormatMessage],
+      [
+        'an unsupported unread-message email frequency',
+        { messageEmailFrequency: 'monthly' },
+        'Invalid email preferences.',
+      ],
+      [
+        'a non-boolean hosting reminder preference',
+        { hostingReminderEmails: 'false' },
+        'Invalid email preferences.',
+      ],
     ];
     for (const [label, body, message] of rejections) {
       it(`rejects ${label}`, async () => {
@@ -452,6 +462,29 @@ describe('Profile controller unit tests', () => {
         (userDoc.emailTemporary || '').should.equal('');
       });
     }
+
+    it('saves both notification email preferences', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: {
+              messageEmailFrequency: 'weekly',
+              hostingReminderEmails: false,
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      responseBody(res).should.containEql({
+        messageEmailFrequency: 'weekly',
+        hostingReminderEmails: false,
+      });
+      const saved = await findUser(userDoc._id);
+      should(saved.get('messageEmailFrequency')).equal('weekly');
+      should(saved.get('hostingReminderEmails')).equal(false);
+    });
 
     it('keeps levels of the saved languages when the request omits languages', async () => {
       userDoc.languages = ['eng'];

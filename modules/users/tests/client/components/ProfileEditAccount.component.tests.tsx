@@ -330,6 +330,35 @@ describe('ProfileEditAccount', () => {
     });
   });
 
+  it('sets the digest frequency and hosting reminders independently', async () => {
+    renderPage();
+    const frequency = screen.getByLabelText('Unread-message emails');
+    const hosting = screen.getByLabelText('Hosting reminder emails');
+    expect(frequency).toHaveValue('immediate');
+    expect(hosting).toBeChecked();
+
+    updateUser.mockResolvedValueOnce({
+      ...user,
+      messageEmailFrequency: 'daily',
+    });
+    fireEvent.change(frequency, { target: { value: 'daily' } });
+    await waitFor(() => expect(frequency).toHaveValue('daily'));
+    expect(updateUser).toHaveBeenLastCalledWith({
+      messageEmailFrequency: 'daily',
+    });
+
+    updateUser.mockResolvedValueOnce({
+      ...user,
+      messageEmailFrequency: 'daily',
+      hostingReminderEmails: false,
+    });
+    fireEvent.click(hosting);
+    await waitFor(() => expect(hosting).not.toBeChecked());
+    expect(updateUser).toHaveBeenLastCalledWith({
+      hostingReminderEmails: false,
+    });
+  });
+
   it('toggles the newsletter subscription immediately', async () => {
     updateUser.mockResolvedValue({ ...user, newsletter: true });
     renderPage();

@@ -44,6 +44,7 @@ describe('Job: message unread', function () {
   const jobs = testutils.catchJobs<{
     subject: string;
     to: { address: string };
+    text: string;
   }>();
 
   before(function () {
@@ -149,6 +150,225 @@ describe('Job: message unread', function () {
         });
       })
       .catch(err => done(err));
+  });
+
+  it('uses one digest per recipient and period, grouping eligible conversations', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const otherSender = await User.create({
+      ..._userFrom,
+      email: 'othersender@example.test',
+      username: 'othersender',
+      firstName: 'Other',
+      lastName: 'Sender',
+      displayName: 'Other Sender',
+    });
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    await message.updateOne({ $set: { created } });
+    await Message.create([
+      { ..._message, userFrom: otherSender._id, created },
+      { ..._message, userFrom: otherSender._id, created, read: true },
+    ]);
+
+    await Promise.all([queueMessageDigests(now), queueMessageDigests(now)]);
+    jobs.length.should.equal(1);
+    jobs[0].data.to.address.should.equal(_userTo.email);
+    jobs[0].data.text.should.containEql('FullFrom NameFrom (1 unread)');
+    jobs[0].data.text.should.containEql('Other Sender (1 unread)');
+    jobs[0].data.text.should.containEql('/email/unsubscribe/');
+
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(now);
+    jobs.length.should.equal(1);
+    await queueMessageDigests(new Date('2026-01-06T12:00:00.000Z'));
+    jobs.length.should.equal(2);
+    jobs[1].data.text.should.not.containEql('Other Sender');
+
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'weekly' } },
+    );
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
+    jobs.length.should.equal(3);
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(new Date('2026-01-11T12:00:00.000Z'));
+    jobs.length.should.equal(3);
+    await queueMessageDigests(new Date('2026-01-12T12:00:00.000Z'));
+    jobs.length.should.equal(4);
+  });
+
+  it('skips digest recipients without an email address or with a restricted role', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    await message.updateOne({ $set: { created } });
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' }, $unset: { email: 1 } },
+    );
+    await queueMessageDigests(now);
+    jobs.length.should.equal(0);
+
+    await User.updateOne(
+      { _id: userToId },
+      {
+        $set: {
+          email: _userTo.email,
+          messageEmailFrequency: 'daily',
+          roles: ['suspended'],
+        },
+      },
+    );
+    await queueMessageDigests(now);
+    jobs.length.should.equal(0);
+  });
+
+  it('skips recipients with an unsupported digest frequency', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const recipient = await User.findById(userToId).lean().exec();
+    const recipients = async function* () {
+      yield { ...required(recipient), messageEmailFrequency: 'off' };
+    };
+    const findRecipient = sinon.stub(User, 'find').returns({
+      lean: () => ({ cursor: recipients }),
+    } as never);
+    try {
+      await queueMessageDigests(new Date('2026-01-05T12:00:00.000Z'));
+      jobs.length.should.equal(0);
+    } finally {
+      findRecipient.restore();
+    }
+  });
+
+  it('uses the sender username when their display name is empty', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    await User.updateOne({ _id: userFromId }, { $set: { displayName: '' } });
+    await message.updateOne({
+      $set: { created: new Date('2026-01-05T11:30:00.000Z') },
+    });
+    await queueMessageDigests(new Date('2026-01-05T12:00:00.000Z'));
+    jobs.length.should.equal(1);
+    jobs[0].data.text.should.containEql('userfrom (1 unread)');
+  });
+
+  it('skips blocked senders, restricted senders and conversations with no unread messages', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily', blocked: [userFromId] } },
+    );
+    await message.updateOne({ $set: { created } });
+    await queueMessageDigests(now);
+    jobs.length.should.equal(0);
+
+    await User.updateOne({ _id: userToId }, { $set: { blocked: [] } });
+    await User.updateOne(
+      { _id: userFromId },
+      { $set: { roles: ['shadowban'] } },
+    );
+    await queueMessageDigests(now);
+    jobs.length.should.equal(0);
+
+    await User.updateOne({ _id: userFromId }, { $set: { roles: [] } });
+    await User.updateOne({ _id: userToId }, { $unset: { blocked: 1 } });
+    await queueMessageDigests(now);
+    jobs.length.should.equal(1);
+    const jobsAfterMissingBlockList = jobs.length;
+    await User.deleteOne({ _id: userFromId });
+    await message.updateOne({
+      $set: { read: false, notificationCount: 0 },
+    });
+    await queueMessageDigests(new Date('2026-01-06T12:00:00.000Z'));
+    jobs.length.should.equal(jobsAfterMissingBlockList);
+
+    await User.updateOne({ _id: userToId }, { $set: { blocked: [] } });
+    await message.updateOne({ $set: { read: true } });
+    await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
+    jobs.length.should.equal(jobsAfterMissingBlockList);
+  });
+
+  it('does not send a digest when another worker has reserved the period', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    await message.updateOne({
+      $set: { created: new Date('2026-01-05T11:30:00.000Z') },
+    });
+    const reserve = sinon
+      .stub(User, 'updateOne')
+      .resolves({ modifiedCount: 0 } as never);
+    try {
+      await queueMessageDigests(now);
+      jobs.length.should.equal(0);
+    } finally {
+      reserve.restore();
+    }
+  });
+
+  it('releases the digest reservation when email queueing fails', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    await message.updateOne({
+      $set: { created: new Date('2026-01-05T11:30:00.000Z') },
+    });
+    const failure = new Error('queue failure');
+    const queueEmail = sinon
+      .stub(emailService, 'renderEmailAndSend')
+      .callsFake((_template, _params, callback) => callback(failure));
+    try {
+      await queueMessageDigests(now).should.be.rejectedWith(failure);
+      const recipient = await User.findById(userToId).lean().exec();
+      Object.hasOwn(
+        required(recipient),
+        'dailyMessageDigestPeriod',
+      ).should.equal(false);
+    } finally {
+      queueEmail.restore();
+    }
+  });
+
+  it('does not send immediate reminders to members choosing a digest or off', async function () {
+    await message.updateOne({
+      $set: { created: new Date(Date.now() - 30 * 60_000) },
+    });
+    for (const messageEmailFrequency of ['off', 'weekly']) {
+      await User.updateOne(
+        { _id: userToId },
+        { $set: { messageEmailFrequency } },
+      );
+      await new Promise<void>((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+    }
+    jobs.length.should.equal(0);
+    (await Message.findById(message._id))!.notificationCount!.should.equal(0);
   });
 
   it('skips push for messages already read, hidden or stale', async function () {
@@ -1070,7 +1290,9 @@ describe('Job: message unread', function () {
         .map(String)
         .sort()
         .should.deepEqual([String(userFromId), String(userToId)].sort());
-      projection.should.equal('email displayName username roles');
+      projection.should.equal(
+        'email displayName username roles messageEmailFrequency',
+      );
       logCalls(log, queueErrorMessage).length.should.equal(0);
     });
 

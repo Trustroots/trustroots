@@ -12,4 +12,7 @@
   {% endif %}
 
   <p>Thanks for being part of the Trustroots community!</p>
+{% if unsubscribeUrl %}
+<p><a href="{{ unsubscribeUrl }}">Unsubscribe from hosting reminders</a></p>
+{% endif %}
 {% endblock textcontent %}

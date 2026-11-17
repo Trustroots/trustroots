@@ -532,8 +532,18 @@ describe('API route registrations', () => {
       { '../policies/users.server.policy': policy },
     );
 
-    assert.strictEqual(routes.length, 17);
-    routes.forEach(route => assertPolicy(route, policy));
+    assert.strictEqual(routes.length, 18);
+    const {
+      showUnsubscribe,
+      unsubscribe,
+    }: typeof import('../../../users/server/controllers/users.notification-email.server.controller.mts') = require('../../../users/server/controllers/users.notification-email.server.controller.mts');
+    const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
+    assert.deepStrictEqual(unsubscribeRoute.all, []);
+    assert.deepStrictEqual(unsubscribeRoute.get, [showUnsubscribe]);
+    assert.deepStrictEqual(unsubscribeRoute.post, [unsubscribe]);
+    routes
+      .filter(route => route !== unsubscribeRoute)
+      .forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],

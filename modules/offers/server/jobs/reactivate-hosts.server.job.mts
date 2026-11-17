@@ -6,6 +6,8 @@ import mongoose, { type Types } from 'mongoose';
 import type { OfferServerRecord } from '../models/offer.server.types.mts';
 
 interface ReactivationUser {
+  _id: Types.ObjectId;
+  hostingReminderEmails?: boolean;
   public: boolean;
   email: string;
   firstName: string;
@@ -61,12 +63,17 @@ function run(_job: unknown, agendaDone: Done): void {
         $exists: false,
       },
     })
-      .populate('user', 'public email firstName displayName')
+      .populate(
+        'user',
+        'public email firstName displayName hostingReminderEmails',
+      )
       .exec();
     for (const offer of offers) {
+      if (!offer.user || offer.user.hostingReminderEmails === false) continue;
+      const user = offer.user;
       await new Promise<void>((resolve, reject) => {
         emailService.sendReactivateHosts(
-          offer.user as ReactivationUser,
+          user,
           function (err: Error | null | undefined) {
             if (err) {
               reject(err);

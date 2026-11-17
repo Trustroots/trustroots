@@ -24,7 +24,10 @@ interface Notification {
   notificationCount: number;
   dontSend?: boolean;
 }
+type MessageEmailFrequency =
+  import('../../../users/shared/email-preferences.ts').MessageEmailFrequency;
 interface ReminderUser {
+  messageEmailFrequency?: MessageEmailFrequency;
   _id: Types.ObjectId;
   email: string;
   displayName: string;
@@ -240,6 +243,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
         'displayName',
         'username',
         'roles',
+        'messageEmailFrequency',
       ].join(' '),
     ).exec();
     users.forEach(function (user) {
@@ -248,6 +252,11 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
       _.set(collectedUsers, user._id.toString(), user);
     });
   }
+  const immediateNotifications = notifications.filter(notification => {
+    const frequency =
+      collectedUsers[String(notification._id.userTo)]?.messageEmailFrequency;
+    return !frequency || frequency === 'immediate';
+  });
   async function notify(notification: Notification): Promise<void> {
     const userTo: ReminderUser | undefined = _.get(
       collectedUsers,
@@ -295,8 +304,8 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   let nextNotification = 0;
   let queueError: unknown;
   async function worker(): Promise<void> {
-    while (nextNotification < notifications.length) {
-      const notification = notifications[nextNotification++];
+    while (nextNotification < immediateNotifications.length) {
+      const notification = immediateNotifications[nextNotification++];
       try {
         await notify(notification);
       } catch (error) {
@@ -305,7 +314,9 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     }
   }
   await Promise.all(
-    Array.from({ length: Math.min(5, notifications.length) }, () => worker()),
+    Array.from({ length: Math.min(5, immediateNotifications.length) }, () =>
+      worker(),
+    ),
   );
   if (queueError)
     log(
@@ -313,13 +324,15 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
       'Sending unread message notifications caused an error. #j38vax',
       { error: queueError },
     );
-  if (!notifications.length) return;
+  if (!immediateNotifications.length) return;
   // Holds ids of messages to be set `notified:true`
   const messageIds: Types.ObjectId[] = [];
 
   // Collect message ids for updating documents to `notified:true` later
-  for (let i = 0, len = notifications.length; i < len; i++) {
-    notifications[i].messages.forEach(function (message: ReminderMessage) {
+  for (let i = 0, len = immediateNotifications.length; i < len; i++) {
+    immediateNotifications[i].messages.forEach(function (
+      message: ReminderMessage,
+    ) {
       messageIds.push(message.id);
     });
   }

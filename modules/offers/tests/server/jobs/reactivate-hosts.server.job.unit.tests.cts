@@ -100,6 +100,21 @@ describe('Job: reactivate hosts unit tests', () => {
     });
   });
 
+  it('skips members who have disabled hosting reminders', async function () {
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { hostingReminderEmails: false } },
+    );
+    const send = sinon.stub(emailService, 'sendReactivateHosts');
+    await new Promise<void>((resolve, reject) => {
+      reactivateHostsJobHandler({}, error =>
+        error ? reject(error) : resolve(),
+      );
+    });
+    sinon.assert.notCalled(send);
+    jobs.length.should.equal(0);
+  });
+
   it('finishes without logging when the reminders went out', function (done) {
     const log = sinon.stub(winston, 'log');
     sinon.stub(emailService, 'sendReactivateHosts').callsFake((_, cb) => cb());

@@ -118,6 +118,12 @@ export function selectProfileUpdateFields(
     ...(Object.hasOwn(body, 'avatarUploaded')
       ? { avatarUploaded: body.avatarUploaded }
       : {}),
+    ...(Object.hasOwn(body, 'messageEmailFrequency')
+      ? { messageEmailFrequency: body.messageEmailFrequency }
+      : {}),
+    ...(Object.hasOwn(body, 'hostingReminderEmails')
+      ? { hostingReminderEmails: body.hostingReminderEmails }
+      : {}),
     ...(Object.hasOwn(body, 'newsletter')
       ? { newsletter: body.newsletter }
       : {}),
@@ -214,6 +220,8 @@ export function selectProfileResponse<Id, Timestamp>(
     email: profile.email,
     emailTemporary: profile.emailTemporary,
     newsletter: profile.newsletter,
+    messageEmailFrequency: profile.messageEmailFrequency,
+    hostingReminderEmails: profile.hostingReminderEmails,
     locale: profile.locale,
     provider: profile.provider,
     blocked: profile.blocked,
