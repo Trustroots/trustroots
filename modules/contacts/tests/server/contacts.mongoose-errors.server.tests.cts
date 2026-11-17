@@ -34,7 +34,8 @@ describe('Contacts controller mongoose error handling', () => {
       const [user1, user2] = await utils.saveUsersWithCachedPasswords(
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
-      sinon.stub(User, 'findOne').rejects(new Error('db down'));
+      const findOne = sinon.stub(User, 'findOne').callThrough();
+      findOne.withArgs(sinon.match.has('roles')).rejects(new Error('db down'));
       const sendBadRequest = sinon.spy(errorService, 'sendBadRequest');
 
       const res = deferredResponse();
