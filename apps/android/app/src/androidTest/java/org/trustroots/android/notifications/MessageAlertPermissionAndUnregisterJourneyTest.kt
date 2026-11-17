@@ -159,7 +159,7 @@ class MessageAlertPermissionAndUnregisterJourneyTest {
         assertNull(MessageAlerts.endpoint(context))
         assertTrue(messagePreferences.all.isEmpty())
         assertEquals(
-            "Your push distributor stopped message alerts. Choose one again to resume.",
+            "Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.",
             MessageAlerts.status.value,
         )
     }

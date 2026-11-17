@@ -84,7 +84,7 @@ class MessageAlertsUnavailableJourneyTest {
         }
 
         assertCompletedRequest(api)
-        assertEquals("Message alerts are not configured on this server.", result.get())
+        assertEquals("Message alerts are not available right now. Email reminders are still available.", result.get())
         assertEquals("silver-otter", preferences.getString("account", null))
         assertTrue(preferences.getBoolean("enabled", false))
         assertEquals("https://push.invalid/previous", MessageAlerts.endpoint(context))

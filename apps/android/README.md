@@ -65,7 +65,12 @@ The app requests Android notification permission when required. Release builds
 can deliver alerts through Google Play Services without a separate app. They
 use an existing or default external [UnifiedPush distributor](https://unifiedpush.org/users/distributors/)
 when available. Phones without Play Services and debug builds can use an
-external distributor such as ntfy.
+external distributor such as ntfy. The app calls these “notification apps”.
+If one cannot set up secure message alerts, update it or select another
+UnifiedPush distributor that supports Web Push encryption keys, then turn
+alerts off and back on under Account → Message alerts. For registration
+errors, first check the internet connection and that the notification app is
+connected; ntfy users can also try its default server.
 
 Email reminders continue independently. Trustroots queues a generic encrypted
 alert when an eligible new message arrives. Tapping it opens the conversation.

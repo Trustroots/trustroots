@@ -42,17 +42,17 @@ class MessagePushServiceCallbackJourneyTest {
         val binder = serviceRule.bindService(Intent(context, MessagePushService::class.java)) as PushService.PushBinder
         val service = binder.getService() as MessagePushService
         service.onNewEndpoint(PushEndpoint("https://push.invalid/topic", null, temporary = false), "fixture-instance")
-        assertEquals("This distributor did not provide Web Push encryption keys.", MessageAlerts.status.value)
+        assertEquals("Your notification app could not set up secure message alerts. Update it or choose another notification app, then turn alerts off and back on in Account → Message alerts.", MessageAlerts.status.value)
 
         service.onMessage(PushMessage("not JSON".toByteArray(), decrypted = false), "fixture-instance")
-        assertEquals("This distributor did not provide Web Push encryption keys.", MessageAlerts.status.value)
+        assertEquals("Your notification app could not set up secure message alerts. Update it or choose another notification app, then turn alerts off and back on in Account → Message alerts.", MessageAlerts.status.value)
         service.onRegistrationFailed(FailedReason.NETWORK, "fixture-instance")
-        assertEquals("Push distributor registration failed: NETWORK.", MessageAlerts.status.value)
+        assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
 
         service.onUnregistered("fixture-instance")
         assertFalse(MessageAlerts.isEnabled(context, "quiet-fox"))
         assertEquals(
-            "Your push distributor stopped message alerts. Choose one again to resume.",
+            "Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.",
             MessageAlerts.status.value,
         )
         assertNull(MessageAlerts.endpoint(context))

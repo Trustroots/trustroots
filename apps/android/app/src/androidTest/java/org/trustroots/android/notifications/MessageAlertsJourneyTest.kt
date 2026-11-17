@@ -95,7 +95,7 @@ class MessageAlertsJourneyTest {
         assertFalse(MessageAlerts.isEnabled(context, "quiet-fox"))
         assertNull(MessageAlerts.endpoint(context))
         assertEquals(
-            "Your push distributor stopped message alerts. Choose one again to resume.",
+            "Your notification app stopped message alerts. Turn alerts on again in Account → Message alerts.",
             MessageAlerts.status.value,
         )
     }

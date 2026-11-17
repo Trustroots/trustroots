@@ -139,7 +139,7 @@
     <string name="screen_was_their_guest">I was their guest</string>
     <string name="screen_recommend_them">Would you recommend them?</string>
     <string name="screen_not_sure">Not sure</string>
-    <string name="screen_could_not_choose_push_distributor">Could not choose a push distributor.</string>
+    <string name="screen_could_not_choose_push_distributor">Could not choose a notification app. Try again in Account → Message alerts.</string>
     <string name="screen_allow_message_notifications">Allow notifications in Android settings to receive message alerts.</string>
     <string name="screen_latest_android_preview">You have the latest Android preview.</string>
     <string name="screen_update_available">%1$s is available.</string>
@@ -157,7 +157,7 @@
     <string name="screen_password_changed">Password changed.</string>
     <string name="screen_forgot_your_password">Forgot your password?</string>
     <string name="screen_message_alerts">Message alerts</string>
-    <string name="screen_message_alerts_description">To get new message alerts, install and open a UnifiedPush app such as ntfy. Then come back here and turn on message alerts.</string>
+    <string name="screen_message_alerts_description">Turn on alerts for new messages. If this device needs a separate notification app, install and open one such as ntfy, then come back here.</string>
     <string name="screen_ntfy_setup_guide">Install and set up ntfy</string>
     <string name="screen_message_alert_test">Test on locked screen</string>
     <string name="screen_message_alert_test_scheduled">Lock your phone now. The test alert is due in about 15 seconds.</string>

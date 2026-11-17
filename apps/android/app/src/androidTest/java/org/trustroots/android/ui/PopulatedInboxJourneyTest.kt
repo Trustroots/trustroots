@@ -188,7 +188,7 @@ class PopulatedInboxJourneyTest {
             alertsEnabled.value = true
             requireNotNull(resultCallback.get())(MessageAlertStatusMetadata(R.string.message_alerts_waiting_registration))
         }
-        compose.onNodeWithText("Waiting for your distributor to register message alerts.")
+        compose.onNodeWithText("Setting up message alerts. Please wait.")
             .performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_ready)
@@ -232,6 +232,7 @@ class PopulatedInboxJourneyTest {
             if (request.startsWith("GET /api/messages?")) "200 OK" to "[]" else "404 Not Found" to "{}"
         }
         val alertsEnabled = mutableStateOf(false)
+        val nextEnrolmentResult = mutableStateOf(R.string.message_alerts_waiting_registration)
         val grantedContext = object : ContextWrapper(compose.activity) {
             override fun checkSelfPermission(permission: String): Int =
                 if (permission == Manifest.permission.POST_NOTIFICATIONS) PackageManager.PERMISSION_GRANTED
@@ -244,7 +245,7 @@ class PopulatedInboxJourneyTest {
                         api(), session, onSessionInvalidated = {},
                         enableMessageAlerts = { _, _, onResult ->
                             alertsEnabled.value = true
-                            onResult(MessageAlertStatusMetadata(R.string.message_alerts_waiting_registration))
+                            onResult(MessageAlertStatusMetadata(nextEnrolmentResult.value))
                         },
                         isMessageAlertsEnabled = { _, _ -> alertsEnabled.value },
                     )
@@ -255,14 +256,21 @@ class PopulatedInboxJourneyTest {
             compose.onAllNodesWithText("Get message notifications").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Turn on").performScrollTo().performClick()
-        compose.onNodeWithText("Waiting for your distributor to register message alerts.")
+        compose.onNodeWithText("Setting up message alerts. Please wait.")
             .performScrollTo().assertIsDisplayed()
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_registration_failed)
         }
-        compose.onNodeWithText("Then turn alerts off and back on in Account → Message alerts.", substring = true)
+        compose.onNodeWithText("Check your internet connection, then turn alerts off and back on in Account → Message alerts.", substring = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("inboxMessageAlertsStatus").performScrollTo().assertIsDisplayed()
+        compose.runOnIdle {
+            nextEnrolmentResult.value = R.string.message_alerts_not_configured
+        }
+        compose.onNodeWithText("Turn on").performScrollTo().performClick()
+        compose.onNodeWithText("Message alerts are not available right now. Email reminders are still available.")
+            .performScrollTo().assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android-message-alerts-unavailable-email-alternative")
     }
 
     @Test fun inboxPromptReportsNotificationPermissionDenial() {

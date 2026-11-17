@@ -158,7 +158,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
             .putBoolean("enabled", true)
             .putString("endpoint", "https://push.invalid/retained-endpoint")
             .commit()
-        MessageAlerts.status.value = "Waiting for your distributor to register message alerts."
+        MessageAlerts.status.value = "Setting up message alerts. Please wait."
 
         val scopeJob = messageAlertsScopeJob()
         val existingJobs = scopeJob.children.toSet()
@@ -177,7 +177,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         assertEquals(session.member.username, alertPreferences.getString("account", null))
         assertTrue(alertPreferences.getBoolean("enabled", false))
         assertEquals("https://push.invalid/retained-endpoint", MessageAlerts.endpoint(targetContext))
-        assertEquals("Waiting for your distributor to register message alerts.", MessageAlerts.status.value)
+        assertEquals("Setting up message alerts. Please wait.", MessageAlerts.status.value)
         assertNull(UnifiedPush.getSavedDistributor(targetContext))
         assertResponderHealthy()
     }
@@ -218,7 +218,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
             MessageAlerts.enable(activity, session) { enableResult.set(it) }
         }
         waitUntil("enable callback reports selected distributor") {
-            enableResult.get() == "Waiting for your distributor to register message alerts."
+            enableResult.get() == "Setting up message alerts. Please wait."
         }
         waitUntil("enable fetched configuration and sent REGISTER") {
             countRequests("GET") >= 1 && distributorEvents.any { it.action == ACTION_REGISTER }
