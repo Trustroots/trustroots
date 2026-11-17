@@ -2,6 +2,7 @@
 import {
   expectPresent,
   annotateFeature,
+  captureSection,
   expect,
   test,
   useViewportScreenshot,
@@ -45,23 +46,23 @@ test('home circles have room below the preceding image', async ({
   const section = page.locator('.home-how:has(.tribe-image)');
   await expect(section).toBeVisible();
   const desktopSection = await section.boundingBox();
-  const desktopCircle = await section
-    .locator('.tribe-image:visible')
-    .first()
-    .boundingBox();
+  const desktopImage = section.locator('.tribe-image:visible').first();
+  await expect(desktopImage).toHaveCSS('border-radius', '50%');
+  const desktopCircle = await desktopImage.boundingBox();
   expectPresent(desktopCircle);
   expectPresent(desktopSection);
   expect(desktopCircle.y - desktopSection.y).toBeGreaterThanOrEqual(75);
+  await captureSection(section, 'home-circles-desktop');
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileSection = await section.boundingBox();
-  const mobileCircle = await section
-    .locator('.tribe-xs:visible')
-    .first()
-    .boundingBox();
+  const mobileImage = section.locator('.tribe-xs:visible').first();
+  await expect(mobileImage).toHaveCSS('border-radius', '50%');
+  const mobileCircle = await mobileImage.boundingBox();
   expectPresent(mobileCircle);
   expectPresent(mobileSection);
   expect(mobileCircle.y - mobileSection.y).toBeGreaterThanOrEqual(75);
+  await captureSection(section, 'home-circles-mobile');
 });
 
 test('primary navigation links show a hover state', async ({ page }) => {

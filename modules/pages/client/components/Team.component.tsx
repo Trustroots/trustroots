@@ -75,7 +75,7 @@ export default function Team({ user }: { user?: PageUser | null }) {
                     <a href={`/profile/${username}`}>
                       <img
                         alt={firstName || username}
-                        className="img-circle"
+                        className="tw:rounded-[50%]"
                         src={
                           user
                             ? `/api/users/${_id}/avatar?size=256`

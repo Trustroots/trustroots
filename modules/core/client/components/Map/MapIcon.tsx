@@ -11,7 +11,7 @@ export default function MapIcon({ mapboxStyle }: MapIconProps) {
 
   return (
     <svg
-      className="img-circle"
+      className="tw:rounded-[50%]"
       aria-hidden="true"
       focusable="false"
       width="24"
