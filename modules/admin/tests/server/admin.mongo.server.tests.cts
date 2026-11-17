@@ -171,6 +171,32 @@ describe('Admin Mongo diagnostics', () => {
     );
   });
 
+  it('uses live job counts when the saved inventory cannot be read', async () => {
+    const name = 'live inventory fallback fixture';
+    await agenda.insertOne({ name });
+    const findOne = sinon
+      .stub(inventory, 'findOne')
+      .rejects(new Error('inventory unavailable'));
+    const collection = db.collection.bind(db);
+    sinon
+      .stub(db, 'collection')
+      .callsFake((collectionName: string) =>
+        collectionName === 'agendaInventory'
+          ? inventory
+          : collection(collectionName),
+      );
+
+    const response = mockResponse();
+    await adminMongo.diagnostics({} as never, response as never);
+
+    sinon.assert.calledOnce(findOne);
+    assert.equal(
+      mongoBody(response).jobs?.find(job => job.name === name)?.total,
+      1,
+    );
+    assert.equal(mongoBody(response).jobsCapturedAt, null);
+  });
+
   it('keeps the first capture on each UTC date and prunes expired readings', async () => {
     const now = new Date('2025-02-01T03:00:00Z');
     const oldest = new Date('2025-01-03T03:00:00Z');

@@ -71,7 +71,7 @@ async function readAgendaInventory(
   db: Db,
   liveJobs: boolean,
 ): Promise<Pick<MongoDiagnosticsSnapshot, 'jobs' | 'jobsCapturedAt'>> {
-  const saved = await readSavedAgendaInventory(db).catch(() => null);
+  const saved = await readSavedAgendaInventory(db).catch(() => undefined);
   if (saved && !liveJobs) return saved;
 
   try {
