@@ -260,7 +260,7 @@ class PopulatedInboxJourneyTest {
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_registration_failed)
         }
-        compose.onNodeWithText("Then turn alerts off and back on in Account → Message alerts.", substring = true)
+        compose.onNodeWithText("Check your internet connection, then turn alerts off and back on in Account → Message alerts.", substring = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("inboxMessageAlertsStatus").performScrollTo().assertIsDisplayed()
     }
