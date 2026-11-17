@@ -91,7 +91,7 @@ describe('Experience change requests', () => {
     recipientAgent = request.agent(app);
     unrelatedAgent = request.agent(app);
   });
-  const users = utils.generateUsers(4, { public: true });
+  const users = utils.generateUsersWithSharedPassword(4, { public: true });
   users[0].roles = ['user', 'admin'];
 
   let author: UserDocument;
@@ -119,7 +119,7 @@ describe('Experience change requests', () => {
   });
 
   beforeEach(async () => {
-    [, author, recipient] = await utils.saveUsers(users);
+    [, author, recipient] = await utils.saveUsersWithCachedPasswords(users);
     experience = await Experience.create({
       userFrom: author._id,
       userTo: recipient._id,
@@ -130,8 +130,6 @@ describe('Experience change requests', () => {
     });
     await utils.signIn(users[0], adminAgent);
     await utils.signIn(users[1], authorAgent);
-    await utils.signIn(users[2], recipientAgent);
-    await utils.signIn(users[3], unrelatedAgent);
   });
 
   afterEach(async () => {
@@ -195,10 +193,12 @@ describe('Experience change requests', () => {
       // A new issuer must not replace attribution on an already submitted request.
       await issue(String(author._id));
       await unrelatedAgent.post(path).send({ decision: 'approve' }).expect(403);
-      const [peerFixture] = utils.generateUsers(1, { public: true });
+      const [peerFixture] = utils.generateUsersWithSharedPassword(1, {
+        public: true,
+      });
       if (!peerFixture) throw new Error('Expected a peer member');
       peerFixture.roles = ['user', 'support-team'];
-      await utils.saveUsers([peerFixture]);
+      await utils.saveUsersWithCachedPasswords([peerFixture]);
       const peerAgent = request.agent(app);
       await utils.signIn(peerFixture, peerAgent);
       const peerQueue = await peerAgent
@@ -526,6 +526,7 @@ describe('Experience change requests', () => {
   });
 
   it('allows the recipient to request removal, then hides only the approved Experience', async () => {
+    await utils.signIn(users[2], recipientAgent);
     experience.public = false;
     experience.created = new Date(0);
     await experience.save();
@@ -655,6 +656,8 @@ describe('Experience change requests', () => {
   });
 
   it('rejects expired, replaced, unrelated, and unauthorised links', async () => {
+    await utils.signIn(users[2], recipientAgent);
+    await utils.signIn(users[3], unrelatedAgent);
     const first = await issue(author._id.toString());
     const second = await issue(author._id.toString());
     first.should.not.equal(second);
