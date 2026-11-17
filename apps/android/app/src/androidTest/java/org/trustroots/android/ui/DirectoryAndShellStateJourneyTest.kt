@@ -167,7 +167,7 @@ class MapOfferAuxiliaryLoadFailureJourneyTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("openFilters").performTouchInput { click(center) }
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.waitUntil(10_000) {
             local.requests.any { it.method == "GET" && it.path == "/api/tribes?limit=150" }
         }

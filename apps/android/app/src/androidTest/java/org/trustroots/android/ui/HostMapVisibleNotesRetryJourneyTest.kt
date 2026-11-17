@@ -113,7 +113,7 @@ class HostMapVisibleNotesRetryJourneyTest {
             )
             map.controller.setZoom(12.5)
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 1 }
         val connection = sockets.connections.single()

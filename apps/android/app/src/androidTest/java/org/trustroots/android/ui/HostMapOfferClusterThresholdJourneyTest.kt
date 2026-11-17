@@ -59,7 +59,7 @@ class HostMapOfferClusterThresholdJourneyTest {
                     LocalTransportFixture.Response(
                         """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox"}""",
                     )
-                request.method == "GET" && request.path == "/api/users/memberships" ->
+                request.method == "GET" && (request.path == "/api/users/memberships" || request.path.startsWith("/api/tribes?")) ->
                     LocalTransportFixture.Response("[]")
                 else -> LocalTransportFixture.Response("{}", status = 404)
             }

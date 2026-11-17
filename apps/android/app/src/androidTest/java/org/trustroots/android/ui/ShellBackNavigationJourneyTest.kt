@@ -160,6 +160,10 @@ class ShellBackNavigationJourneyTest {
         compose.onNodeWithTag("navigation-search").performClick()
         waitForText("Search places")
 
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        pressSystemBack()
+        compose.onNodeWithText("Hosting").assertDoesNotExist()
+        compose.onNodeWithTag("navigation-search").assertIsSelected()
         pressSystemBack()
         compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
         compose.onNodeWithTag("navigation-messages").assertIsSelected()

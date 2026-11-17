@@ -114,7 +114,7 @@ class MapAndCircleTransportJourneysTest {
 
         val initialSearchCount = offersRequests.get()
         val initialSuccessfulSearches = successfulOfferResponses.get()
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.waitUntil(10_000) {
             offersRequests.get() > initialSearchCount &&
@@ -417,6 +417,7 @@ class MapAndCircleTransportJourneysTest {
             "1 offer · 0 Nostroots notes in this area",
             "Searching this area…",
             "Potential host",
+            "Results in this area",
             "© OpenStreetMap contributors",
             "© Mapbox · © OpenStreetMap contributors",
         )

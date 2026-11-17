@@ -85,7 +85,7 @@ class HostMapCommunityNotesClusterJourneyTest {
             requests.any { it.startsWith("GET /api/offers?") } &&
                 mapReference.get()?.width?.let { it > 0 } == true
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 1 }
         val connection = sockets.connections.single()

@@ -80,7 +80,7 @@ class HostMapHighZoomCommunityNotesJourneyTest {
         }
 
         compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 1 }
         val connection = sockets.connections.single()
@@ -233,7 +233,7 @@ class HostMapHighZoomCommunityNotesJourneyTest {
         }
 
         compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 1 }
         val connection = sockets.connections.single()

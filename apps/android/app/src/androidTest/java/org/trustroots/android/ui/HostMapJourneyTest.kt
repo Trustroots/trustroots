@@ -30,28 +30,20 @@ class HostMapJourneyTest {
     @get:Rule val compose = createComposeRule()
     private val server = ServerSocket(0)
 
-    @After fun closeServer() = server.close()
+    private var initialFixture: LocalTransportFixture? = null
+    @After fun closeServer() { initialFixture?.close(); server.close() }
 
     @Test fun loadsHostsForVisibleMapArea() {
-        val responder = thread {
-            server.accept().use { socket ->
-                val input = socket.getInputStream().bufferedReader()
-                val request = input.readLine()
-                while (!input.readLine().isNullOrEmpty()) Unit
-                check(request.contains("/api/offers?"))
-                val payload = """{"features":[{"properties":{"id":"offer-one"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
-                val bytes = payload.toByteArray()
-                socket.getOutputStream().write(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
-                )
-                socket.getOutputStream().write(bytes)
-                socket.getOutputStream().flush()
-            }
+        val local = LocalTransportFixture { request ->
+            if (request.path.startsWith("/api/offers?")) LocalTransportFixture.Response(
+                """{"features":[{"properties":{"id":"offer-one"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}""",
+            ) else LocalTransportFixture.Response("[]")
         }
+        initialFixture = local
         compose.setContent {
             NativeTestAppFrame(Destination.Search) {
                 SearchHubScreen(
-                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    api = MobileApiClient(local.baseURL),
                     session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                     onSessionInvalidated = {},
                 )
@@ -63,15 +55,16 @@ class HostMapJourneyTest {
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         compose.onNodeWithTag("mapStatistics").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android_host_map")
-        assertTrue(compose.onAllNodesWithText("Hosting").fetchSemanticsNodes().isEmpty())
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithText("Meet").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Last active: any time").assertIsDisplayed()
         compose.onNodeWithText("Last active: any time").performClick()
         compose.onNodeWithText("Last active: 1 month").assertIsDisplayed()
-        compose.onNodeWithText("Spoken languages").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Spoken languages").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_host_map_wrapped_filters")
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Back to map").fetchSemanticsNodes().isEmpty())
@@ -80,7 +73,6 @@ class HostMapJourneyTest {
         compose.onNodeWithText("Find a member").assertIsDisplayed()
         compose.onNodeWithText("Switch to map search").performClick()
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
-        responder.join(1_000)
     }
 
     @Test fun searchesWithSeveralSelectedCircles() {
@@ -121,7 +113,7 @@ class HostMapJourneyTest {
             )
         }
         compose.waitUntil(15_000) { offerFilters.isNotEmpty() }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("All circles").performClick()
         compose.onNodeWithTag("circleFilterOption-all").assertIsSelected()
         compose.waitUntil(10_000) {

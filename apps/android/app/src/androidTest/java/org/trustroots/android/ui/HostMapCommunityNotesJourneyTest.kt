@@ -120,6 +120,7 @@ class HostMapCommunityNotesJourneyTest {
         compose.waitUntil(15_000) { requests.any { it.startsWith("GET /api/offers?") } }
         compose.onNodeWithTag("placeSearchField").performTextReplacement("Fi")
         compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 1 }
         val failedConnection = sockets.connections[0]

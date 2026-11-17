@@ -59,7 +59,7 @@ class HostMapEmptyCircleAndActivityCycleJourneyTest {
         showMap()
         waitForInitialOffers()
 
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         waitForRequestCount("GET /api/tribes?", 1)
         compose.onNodeWithText("All circles").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Wanderers").fetchSemanticsNodes().isEmpty())
@@ -74,7 +74,7 @@ class HostMapEmptyCircleAndActivityCycleJourneyTest {
         startFixture()
         showMap()
         waitForInitialOffers()
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
 
         // The screen starts at six months. This first transition establishes the null/any-time
         // state before exercising the full null -> 1 -> 6 -> null cycle.

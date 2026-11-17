@@ -116,7 +116,7 @@ class HostMapMeetOfferJourneyTest {
                 .any { requestedTypes(it.path) == setOf("host") },
         )
 
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
 
         val markerReady = AtomicReference(false)

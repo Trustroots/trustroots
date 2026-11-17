@@ -94,7 +94,7 @@ class HostMapMarkerJourneyTest {
                                 """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","maxGuests":2,"user":{"username":"quiet-fox","displayName":"Quiet Fox"}}"""
                             request.startsWith("GET /api/users/quiet-fox") ->
                                 """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox","tagline":"A fictional host"}"""
-                            request.startsWith("GET /api/users/memberships") -> "[]"
+                            request.startsWith("GET /api/users/memberships") || request.startsWith("GET /api/tribes?") -> "[]"
                             else -> "{}"
                         }
                         val bytes = payload.toByteArray()
@@ -218,7 +218,7 @@ class HostMapMarkerJourneyTest {
         }
         compose.onNodeWithContentDescription("Close host result").performClick()
         compose.onNodeWithText("A fictional spare room.").assertDoesNotExist()
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Hosting").assertDoesNotExist()
@@ -259,7 +259,7 @@ class HostMapMarkerJourneyTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText(oneOfferMapStatistics).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Meet").performClick()
         try {
             compose.waitUntil(10_000) {
