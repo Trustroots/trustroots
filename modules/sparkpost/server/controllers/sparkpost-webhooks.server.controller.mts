@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
-import { parse as parseBasicAuth } from 'basic-auth';
 import speakingurl from 'speakingurl';
 import mongoose from 'mongoose';
 import validator from 'validator';
@@ -14,6 +13,22 @@ import statService, {
 
 type EventCallback = (error?: Error | null) => void;
 type SparkpostEvent = { msys?: Record<string, Record<string, unknown>> };
+
+// Stryker disable next-line StringLiteral: any non-credential string, like the empty one, parses to undefined and is denied identically
+function parseBasicAuth(header = '') {
+  const encoded = /^ *Basic +([a-z0-9+/]+={0,2}) *$/i.exec(header)?.[1];
+  if (
+    !encoded ||
+    encoded.length % 4 === 1 ||
+    (encoded.endsWith('=') && encoded.length % 4 !== 0)
+  ) {
+    return undefined;
+  }
+  const decoded = Buffer.from(encoded, 'base64').toString();
+  const colon = decoded.indexOf(':');
+  if (colon === -1) return undefined;
+  return { name: decoded.slice(0, colon), pass: decoded.slice(colon + 1) };
+}
 
 const service = {} as {
   receiveBatch: (req: Request, res: Response) => unknown;
@@ -231,11 +246,7 @@ service.processAndSendMetrics = function (event, callback) {
  * Basic authentication middleware
  */
 service.basicAuthenticate = function (req, res, next) {
-  // Get the basic auth credentials from the request.
-  // The Authorization header is parsed and if the header is invalid,
-  // undefined is returned, otherwise an object with name and pass properties.
-  // Stryker disable next-line StringLiteral: any non-credential string, like the empty one, parses to undefined and is denied identically
-  const credentials = parseBasicAuth(req.headers.authorization || '');
+  const credentials = parseBasicAuth(req.headers.authorization);
   const enabled = _.get(config, 'sparkpostWebhook.enabled');
 
   // Access denied
