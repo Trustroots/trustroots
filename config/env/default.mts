@@ -276,24 +276,6 @@ const service = {
   },
   // Mapbox is publicly exposed to the frontend
   mapbox: {
-    maps: {
-      streets: {
-        map: 'streets-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-      satellite: {
-        map: 'satellite-streets-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-      outdoors: {
-        map: 'outdoors-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-    },
-    user: '',
     publicKey: '',
   },
   twitter: {

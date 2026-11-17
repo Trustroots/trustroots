@@ -150,12 +150,6 @@ const service = {
   },
   mapbox: {
     // Mapbox is publicly exposed to the frontend
-    user: 'trustroots',
-    map: {
-      default: false,
-      satellite: false,
-      hitchmap: false,
-    },
     publicKey:
       'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g',
   },
