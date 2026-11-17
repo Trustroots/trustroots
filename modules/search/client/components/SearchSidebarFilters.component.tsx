@@ -28,6 +28,7 @@ export default function SearchSidebarFilters({
   onOnlineInPast6MonthsChange,
 }: SearchSidebarFiltersProps) {
   const { track } = useAnalytics();
+  const connectionsOnly = filters.connectionsOnly === true;
 
   function changeFilters(
     filter: SearchFilter,
@@ -48,7 +49,8 @@ export default function SearchSidebarFilters({
         <p>
           <label className="tr-switch">
             <input
-              checked={communityNotesEnabled}
+              checked={communityNotesEnabled && !connectionsOnly}
+              disabled={connectionsOnly}
               onChange={() => {
                 track('search_filter_changed', { filter: 'community_notes' });
                 onCommunityNotesToggle();
@@ -59,6 +61,23 @@ export default function SearchSidebarFilters({
             Community Notes <small className="text-muted">via Nostroots</small>
           </label>
         </p>
+      </div>
+
+      <hr className="hr-gray hr-tight" />
+
+      <div className="checkbox">
+        <label>
+          <input
+            checked={connectionsOnly}
+            onChange={() =>
+              changeFilters('connections_only', {
+                connectionsOnly: !connectionsOnly,
+              })
+            }
+            type="checkbox"
+          />
+          My connections only
+        </label>
       </div>
 
       <hr className="hr-gray hr-tight" />

@@ -18,6 +18,7 @@
       "users"
     ],
     "experiences": [
+      "contacts",
       "core",
       "support",
       "users"
@@ -40,6 +41,7 @@
     ],
     "offers": [
       "core",
+      "experiences",
       "search",
       "tribes",
       "users"

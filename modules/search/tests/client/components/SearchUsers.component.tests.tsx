@@ -7,13 +7,17 @@ import SearchUsers from '@/modules/search/client/components/SearchUsers.componen
 import type { UserProfile } from '@/modules/users/client/types';
 
 type MockSearchResponse = { data: UserProfile[] | null };
-const mockSearchUsers = jest.fn<Promise<MockSearchResponse>, [query: string]>();
+const mockSearchUsers = jest.fn<
+  Promise<MockSearchResponse>,
+  [query: string, connectionsOnly: boolean]
+>();
 
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
 );
 jest.mock('@/modules/users/client/api/search-users.api.js', () => ({
-  searchUsers: (query: string) => mockSearchUsers(query),
+  searchUsers: (query: string, connectionsOnly: boolean) =>
+    mockSearchUsers(query, connectionsOnly),
 }));
 
 afterEach(() => {
@@ -76,7 +80,9 @@ describe('<SearchUsers />', () => {
     expect(
       screen.getByRole('heading', { name: 'Searching members…' }),
     ).toBeInTheDocument();
-    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() =>
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+    );
 
     expect(await screen.findByText('1 members found')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Alice Example/ })).toHaveAttribute(
@@ -95,7 +101,7 @@ describe('<SearchUsers />', () => {
       'traveler',
     );
     await waitFor(() =>
-      expect(mockSearchUsers).toHaveBeenCalledWith('traveler'),
+      expect(mockSearchUsers).toHaveBeenCalledWith('traveler', false),
     );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
@@ -110,7 +116,9 @@ describe('<SearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
-    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() =>
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+    );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
@@ -119,6 +127,9 @@ describe('<SearchUsers />', () => {
 
     render(<SearchUsers />);
 
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'My connections only' }),
+    );
     expect(mockSearchUsers).not.toHaveBeenCalled();
     expect(screen.getByText('No members found.')).toBeInTheDocument();
   });
@@ -175,7 +186,9 @@ describe('<SearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
-    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() =>
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+    );
     const error = await screen.findByRole('alert');
     expect(error).toHaveTextContent('Member search unavailable');
     expect(error).toHaveTextContent('Could not search members.');
@@ -184,4 +197,26 @@ describe('<SearchUsers />', () => {
     expect(mockSearchUsers).toHaveBeenCalledTimes(2);
     expect(screen.queryByText('No members found.')).not.toBeInTheDocument();
   });
+});
+
+it('searches again when the connections filter changes after a completed search', async () => {
+  window.history.pushState({}, 'Search', '/search');
+  mockSearchUsers.mockResolvedValue({ data: [] });
+  render(<SearchUsers />);
+
+  const contacts = screen.getByRole('checkbox', {
+    name: 'My connections only',
+  });
+  fireEvent.click(contacts);
+  expect(mockSearchUsers).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Search members' }), {
+    target: { value: 'Exampleville' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+  await waitFor(() => expect(contacts).toBeEnabled());
+  expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', true);
+
+  fireEvent.click(contacts);
+  await waitFor(() => expect(contacts).toBeEnabled());
+  expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', false);
 });

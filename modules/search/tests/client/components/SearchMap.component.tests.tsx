@@ -1588,6 +1588,14 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(6);
   });
 
+  it('does not subscribe to community notes while filtering by connections', () => {
+    renderCommunityNotesMap({
+      filters: JSON.stringify({ communityNotes: true, connectionsOnly: true }),
+    });
+
+    expect(mockSubscribeMapNotes).not.toHaveBeenCalled();
+  });
+
   it('subscribes to community notes and converts valid location events to geojson', async () => {
     jest.useFakeTimers();
     mockSubscribeMapNotes.mockImplementationOnce(onEvent => {

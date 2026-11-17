@@ -1,3 +1,4 @@
+import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
@@ -377,7 +378,7 @@ function deleteOffer(req: OfferRequest, res: OfferResponse) {
 /**
  * List of Offers
  */
-function list(req: OfferRequest, res: OfferResponse) {
+async function list(req: OfferRequest, res: OfferResponse) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -679,41 +680,49 @@ function list(req: OfferRequest, res: OfferResponse) {
     },
   });
 
-  // Pick fields and convert to GeoJson Feature
-  query.push({
-    $project: {
-      _id: 0,
-      // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the feature type itself and drops the one from the pipeline
-      type: 'Feature',
-      properties: {
-        id: '$_id',
-        status: '$status',
-        type: '$type',
-        offer: {
-          $concat: ['$type', '-', '$status'],
+  try {
+    if (Reflect.get(filters, 'connectionsOnly') === true) {
+      const connectionIds = await findSearchConnectionIds(req.user._id);
+      query.push({
+        $match: {
+          'user._id': { $in: connectionIds, $nin: req.user.blocked || [] },
+          'user.blocked': { $ne: req.user._id },
+        },
+      });
+    }
+
+    // Pick fields and convert to GeoJson Feature
+    query.push({
+      $project: {
+        _id: 0,
+        // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the feature type itself and drops the one from the pipeline
+        type: 'Feature',
+        properties: {
+          id: '$_id',
+          status: '$status',
+          type: '$type',
+          offer: {
+            $concat: ['$type', '-', '$status'],
+          },
+        },
+        geometry: {
+          coordinates: '$locationFuzzy',
+          // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the geometry type itself and drops the one from the pipeline
+          type: 'Point',
         },
       },
-      geometry: {
-        coordinates: '$locationFuzzy',
-        // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the geometry type itself and drops the one from the pipeline
-        type: 'Point',
-      },
-    },
-  });
-  Offer.aggregate<OfferSearchAggregationFeature<Types.ObjectId>>(query)
-    .exec()
-    .then(
-      function (features) {
-        res.json(prepareOfferSearchResults(features));
-      },
-      function (err) {
-        // Log the failure
-        log('error', 'Querying for offers caused an error. #g28fb1', {
-          error: err,
-        });
-        return errorService.sendBadRequest(res, err);
-      },
-    );
+    });
+    const features =
+      await Offer.aggregate<OfferSearchAggregationFeature<Types.ObjectId>>(
+        query,
+      ).exec();
+    return res.json(prepareOfferSearchResults(features));
+  } catch (err) {
+    log('error', 'Querying for offers caused an error. #g28fb1', {
+      error: err,
+    });
+    return errorService.sendBadRequest(res, err);
+  }
 }
 
 /**

@@ -8,6 +8,7 @@ import { setEmailConfirmationToken } from '../services/email-confirmation.server
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mjs';
+import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mjs';
 import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mjs';
 import _ from 'lodash';
@@ -1339,7 +1340,7 @@ function isUserMemberOfTribe(
  * This middleware sends response with an array of found users
  * We assume that req.query.search exists
  */
-service.search = function (req, res, next) {
+service.search = async function (req, res, next) {
   // check that the search string is provided
   if (!_.has(req.query, 'search')) {
     return next();
@@ -1363,7 +1364,17 @@ service.search = function (req, res, next) {
         'Please refine your member search instead of requesting more pages.',
     });
   }
-  const blocked = req.user!.blocked || [];
+  const user = req.user!;
+  const blocked = user.blocked || [];
+  let connectionIds: mongoose.Types.ObjectId[] | undefined;
+  if (req.query.connectionsOnly === 'true') {
+    try {
+      connectionIds = await findSearchConnectionIds(user._id);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   // perform the search
   User.find(
     {
@@ -1373,9 +1384,7 @@ service.search = function (req, res, next) {
         },
         // only public users
         {
-          _id: {
-            $nin: blocked,
-          },
+          _id: { $nin: blocked, ...(connectionIds && { $in: connectionIds }) },
         },
         // remove ones that I blocked
         {

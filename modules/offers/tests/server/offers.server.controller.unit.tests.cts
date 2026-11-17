@@ -696,6 +696,48 @@ describe('Offers controller unit tests', () => {
       res.body.type.should.equal('FeatureCollection');
     });
 
+    it('limits offers to confirmed contacts with no blocks in either direction', async () => {
+      const contact = await mongoose.model('Contact').create({
+        userFrom: stranger._id,
+        userTo: owner._id,
+        confirmed: false,
+      });
+      await createOffer(owner._id, { location: [15, 25] });
+      const host = await createOffer(stranger._id, {
+        location: [16, 26],
+        status: 'maybe',
+      });
+      const search = async (blocked?: UserDocument['_id'][]) => {
+        const { res } = await runHandler(res =>
+          offersController.list(
+            {
+              user: { _id: owner._id, blocked },
+              query: {
+                ...validCoords,
+                filters: JSON.stringify({ connectionsOnly: true }),
+              },
+            },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(200);
+        return res.body.features;
+      };
+
+      (await search()).should.eql([]);
+      contact.confirmed = true;
+      await contact.save();
+      (await search()).should.match([
+        { properties: { id: host._id.toString(), type: 'host' } },
+      ]);
+      (await search([stranger._id])).should.eql([]);
+      await User.updateOne(
+        { _id: stranger._id },
+        { $set: { blocked: [owner._id] } },
+      );
+      (await search()).should.eql([]);
+    });
+
     it('filters offers by a single tribe', async () => {
       const tribe = await mongoose
         .model('Tribe')

@@ -9,16 +9,17 @@ import {
 } from '@/modules/search/client/utils/search-filters';
 
 describe('search-filters utils', () => {
-  it('counts circles, languages and leaving out hosts as narrowing filters', () => {
+  it('counts connections, circles, languages and leaving out hosts as narrowing filters', () => {
     expect(countNarrowingFilters({})).toBe(0);
     expect(countNarrowingFilters(DEFAULT_FILTERS)).toBe(0);
     expect(
       countNarrowingFilters({
+        connectionsOnly: true,
         tribes: ['circle-1'],
         languages: ['fin'],
         types: ['meet'],
       }),
-    ).toBe(3);
+    ).toBe(4);
     expect(countNarrowingFilters({ types: [{ id: 'host' }] })).toBe(0);
   });
 

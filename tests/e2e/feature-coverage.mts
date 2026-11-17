@@ -1796,6 +1796,7 @@ const features = [
     requiredScenarios: [
       'Search map loads for a signed-in member.',
       'Location bounding-box query returns seeded offers.',
+      'Map search can show only eligible connections with visible offers.',
       'Offer deep-link query resolves the selected offer.',
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
@@ -1893,6 +1894,7 @@ const features = [
       'Map search links to a keyboard-accessible member search.',
       'Search matches public home locations and shows their context.',
       'Search returns seeded hosts.',
+      'Member search can find eligible connections without offers.',
       'Search handles empty or no-result states.',
     ],
     relatedSpecs: [

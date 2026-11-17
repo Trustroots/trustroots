@@ -137,6 +137,108 @@ describe('Search users: GET /users?search=string', function () {
         .end(done);
     });
     context('valid request', function () {
+      it('restricts results to confirmed contacts and fails closed if the lookup fails', async function () {
+        const [confirmed, pending] = await promisify(createUsers)([
+          { username: 'fernwalker', locationLiving: 'Exampleville' },
+          { username: 'meadowwalker', locationLiving: 'Exampleville' },
+        ]);
+        const Contact = mongoose.model('Contact');
+        const endpoint = '/api/users?search=Exampleville&connectionsOnly=true';
+        await Contact.create([
+          { userFrom: confirmed._id, userTo: loggedUser._id, confirmed: true },
+          { userFrom: loggedUser._id, userTo: pending._id, confirmed: false },
+        ]);
+        const response = await agent.get(endpoint).expect(200);
+        (response.body as SearchResponse)
+          .map(member => member.username)
+          .should.eql(['fernwalker']);
+
+        const lookup = sinon
+          .stub(Contact, 'find')
+          .throws(new Error('Lookup failed'));
+        try {
+          await agent.get(endpoint).expect(500);
+        } finally {
+          lookup.restore();
+        }
+      });
+
+      it('applies Experience visibility and gives negative recommendations precedence', async function () {
+        const members = await promisify(createUsers)(
+          [
+            'incomingpositive',
+            'outgoingpositive',
+            'incomingnegative',
+            'outgoingnegative',
+            'bothnegative',
+            'privatepositive',
+            'privatelynegative',
+            'removedpositive',
+            'neutralexperience',
+          ].map(username => ({ username, locationLiving: 'Sampleville' })),
+        );
+        const [
+          incoming,
+          outgoing,
+          negativeIn,
+          negativeOut,
+          both,
+          privateYes,
+          privateNo,
+          removed,
+          neutral,
+        ] = members.map(member => member._id);
+        const self = loggedUser._id;
+        const recommendation = (
+          userFrom: typeof self,
+          userTo: typeof self,
+          recommend: 'yes' | 'no' | 'unknown',
+          published = true,
+        ) => ({
+          userFrom,
+          userTo,
+          recommend,
+          public: published,
+          created: new Date(),
+        });
+
+        await mongoose.model('Contact').create(
+          [negativeIn, negativeOut, both, privateNo].map(userTo => ({
+            userFrom: self,
+            userTo,
+            confirmed: true,
+          })),
+        );
+        await mongoose
+          .model('Experience')
+          .collection.insertMany([
+            recommendation(incoming, self, 'yes'),
+            recommendation(self, outgoing, 'yes', false),
+            recommendation(self, negativeIn, 'yes'),
+            recommendation(negativeIn, self, 'no'),
+            recommendation(negativeOut, self, 'yes'),
+            recommendation(self, negativeOut, 'no', false),
+            recommendation(self, both, 'no'),
+            recommendation(both, self, 'no'),
+            recommendation(privateYes, self, 'yes', false),
+            recommendation(privateNo, self, 'no', false),
+            { ...recommendation(removed, self, 'yes'), removedAt: new Date() },
+            recommendation(neutral, self, 'unknown'),
+          ]);
+
+        const response = await agent
+          .get('/api/users?search=Sampleville&connectionsOnly=true')
+          .expect(200);
+        (response.body as SearchResponse)
+          .map(member => member.username)
+          .sort()
+          .should.eql([
+            'incomingpositive',
+            'outgoingpositive',
+            'privatelynegative',
+          ]);
+      });
+
       it('caps result count even when a larger limit is requested', function (done) {
         // These profiles are only searched, so reuse the signed-in fixture's
         // hash and insert them without running password hashing for every row.

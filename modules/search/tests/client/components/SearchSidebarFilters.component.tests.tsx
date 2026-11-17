@@ -106,9 +106,12 @@ describe('<SearchSidebarFilters />', () => {
     expect(
       screen.getByRole('checkbox', { name: /online in the past 6 months/i }),
     ).toBeChecked();
-    screen.getAllByRole('checkbox').forEach(toggle => {
-      expect(toggle.nextElementSibling).toHaveClass('toggle');
-    });
+    screen
+      .getAllByRole('checkbox')
+      .filter(toggle => toggle.closest('.tr-switch'))
+      .forEach(toggle => {
+        expect(toggle.nextElementSibling).toHaveClass('toggle');
+      });
   });
 
   it('forwards filter changes from child controls', () => {
@@ -139,6 +142,33 @@ describe('<SearchSidebarFilters />', () => {
       ['search_filter_changed', { filter: 'my_circles' }],
       ['search_filter_changed', { filter: 'languages' }],
     ]);
+  });
+
+  it('toggles confirmed contacts and temporarily hides community notes', () => {
+    const { rerender } = render(<SearchSidebarFilters {...defaultProps} />);
+    const connectionsOnly = screen.getByRole('checkbox', {
+      name: 'My connections only',
+    });
+    expect(connectionsOnly).not.toBeChecked();
+    fireEvent.click(connectionsOnly);
+    expect(defaultProps.onFiltersChange).toHaveBeenCalledWith({
+      connectionsOnly: true,
+    });
+
+    rerender(
+      <SearchSidebarFilters
+        {...defaultProps}
+        filters={{ ...defaultProps.filters, connectionsOnly: true }}
+      />,
+    );
+    expect(connectionsOnly).toBeChecked();
+    const notes = screen.getByRole('checkbox', { name: /community notes/i });
+    expect(notes).not.toBeChecked();
+    expect(notes).toBeDisabled();
+    fireEvent.click(connectionsOnly);
+    expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({
+      connectionsOnly: false,
+    });
   });
 
   it('clears selected circles and toggles sidebar switches', () => {
