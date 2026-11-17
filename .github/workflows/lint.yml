@@ -56,9 +56,6 @@ jobs:
 
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      checks: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -90,13 +87,11 @@ jobs:
         # Continue to the next step even if this fails
         continue-on-error: true
       - name: Set up reviewdog
-        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: reviewdog/action-setup@4f5b515603ab893c46dee23b06b21a5c8ec365f2 # v1
         continue-on-error: true
         with:
           reviewdog_version: v0.21.2
       - name: Annotate existing ESLint results
-        if: github.event.pull_request.head.repo.full_name == github.repository
         continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,7 +104,7 @@ jobs:
             process.stdout.write(formatter.format(JSON.parse(fs.readFileSync('eslint_report.json', 'utf8'))));
           })().catch(error => { console.error(error); process.exitCode = 1; });
           NODE
-          reviewdog -f=eslint -name=eslint -reporter=github-check \
+          reviewdog -f=eslint -name=eslint -reporter=github-annotations \
             -filter-mode=file -fail-level=none < eslint_report.txt
       - name: Enforce lint
         if: always()
