@@ -1,10 +1,9 @@
-import type { SinonStub } from 'sinon';
 import type { StatObject } from '../../../server/services/stats.server.service.mts';
 
-const should: typeof import('should') = require('should');
-const statsService: typeof import('../../../server/services/stats.server.service.mts').default = require('./../../../server/services/stats.server.service.mts');
-const influxService: typeof import('../../../server/services/influx.server.service.mts').default = require('./../../../server/services/influx.server.service.mts');
-const sinon: typeof import('sinon') = require('sinon');
+import should from 'should';
+import statsService from './../../../server/services/stats.server.service.mts';
+import influxService from './../../../server/services/influx.server.service.mts';
+import sinon, { type SinonStub } from 'sinon';
 
 describe('General Stats API Service Unit Tests', function () {
   let influxStat: SinonStub;

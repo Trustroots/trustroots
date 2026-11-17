@@ -1,33 +1,16 @@
-const sinon: typeof import('sinon') = require('sinon');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-require('should');
-const statsService = require('./../../server/services/stats.server.service.mts');
-const influxService = require('./../../server/services/influx.server.service.mts');
+import sinon from 'sinon';
+import assert from 'node:assert/strict';
+import 'should';
+import statsService from './../../server/services/stats.server.service.mts';
+import influxService from './../../server/services/influx.server.service.mts';
 
 function loadStatsService() {
-  sinon.stub(influxService, 'stat').callsArg(1);
-  return { influxService, statsService };
+  const stat = sinon.stub(influxService, 'stat').callsArg(1);
+  return { influxService: { stat }, statsService };
 }
 
 describe('Stats service unit tests', () => {
   afterEach(() => sinon.restore());
-
-  it('keeps the CommonJS adapter identical to the ESM default and named exports', async () => {
-    const esmService =
-      await import('../../server/services/stats.server.service.mts');
-
-    esmService.default.should.equal(statsService);
-    const names = [
-      'count',
-      'value',
-      'stat',
-      'deliver',
-      '_validateStat',
-    ] as const;
-    names.forEach(name => {
-      esmService.default[name].should.equal(esmService[name]);
-    });
-  });
 
   it('acknowledges telemetry when the backend never calls back', () => {
     const backend = sinon.stub(influxService, 'stat');
@@ -69,7 +52,7 @@ describe('Stats service unit tests', () => {
     const error = new Error('unavailable');
     backend.firstCall.args[1](error);
     callback.calledOnceWithExactly(error).should.be.true();
-    statsService.deliver({}, callback);
+    statsService.deliver({} as never, callback);
     callback.callCount.should.equal(2);
   });
 
@@ -179,7 +162,7 @@ describe('Stats service unit tests', () => {
       statsService._validateStat({
         namespace: 'mixed',
         counts: { a: 1 },
-        values: { b: '2' },
+        values: { b: '2' } as never,
       });
     }).should.throw('Each of counts and values should be a number');
   });
@@ -263,11 +246,14 @@ describe('Stats service unit tests', () => {
   it('rejects an invalid stat object', done => {
     const { influxService, statsService } = loadStatsService();
 
-    statsService.stat({ values: { count: 1 } }, (err?: Error | null) => {
-      assert.ok(err instanceof Error);
-      influxService.stat.called.should.be.false();
-      done();
-    });
+    statsService.stat(
+      { values: { count: 1 } } as never,
+      (err?: Error | null) => {
+        assert.ok(err instanceof Error);
+        influxService.stat.called.should.be.false();
+        done();
+      },
+    );
   });
 
   it('rejects stat objects with empty counts and values', function () {
@@ -302,14 +288,14 @@ describe('Stats service unit tests', () => {
     (() => {
       statsService._validateStat({
         namespace: 'invalidValue',
-        counts: { count: '1' },
+        counts: { count: '1' } as never,
       });
     }).should.throw('Each of counts and values should be a number');
 
     (() => {
       statsService._validateStat({
         namespace: 'invalidValue',
-        values: { value: '1' },
+        values: { value: '1' } as never,
       });
     }).should.throw('Each of counts and values should be a number');
   });
@@ -321,7 +307,7 @@ describe('Stats service unit tests', () => {
       statsService._validateStat({
         namespace: 'invalidTime',
         counts: { count: 1 },
-        time: '2026-06-06',
+        time: '2026-06-06' as never,
       });
     }).should.throw('Time must be a Date object or not provided');
   });

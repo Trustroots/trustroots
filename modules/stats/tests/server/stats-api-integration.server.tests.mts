@@ -1,9 +1,11 @@
 // Testing that when we send general proper data points to stats api,
 // the correct data will arrive to the InfluxDB endpoint
 
-const should: typeof import('should') = require('should');
-const influx: typeof import('influx') = require('influx');
-const sinon: typeof import('sinon') = require('sinon');
+import should from 'should';
+import influx from 'influx';
+import sinon from 'sinon';
+import statsService from './../../server/services/stats.server.service.mts';
+import config from './../../../../config/config.mts';
 
 type WriteMeasurementArgs = Parameters<
   typeof influx.InfluxDB.prototype.writeMeasurement
@@ -12,8 +14,6 @@ type WriteMeasurementStub = import('sinon').SinonStub<
   WriteMeasurementArgs,
   ReturnType<typeof influx.InfluxDB.prototype.writeMeasurement>
 >;
-const statsService: typeof import('../../server/services/stats.server.service.mts').default = require('./../../server/services/stats.server.service.mts');
-const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 let writeMeasurement: WriteMeasurementStub;
 
 describe('Stat API integration tests', function () {

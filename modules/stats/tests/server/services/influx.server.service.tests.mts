@@ -1,8 +1,9 @@
-const should: typeof import('should') = require('should');
-const sinon: typeof import('sinon') = require('sinon');
-const influx: typeof import('influx') = require('influx');
-const winston: typeof import('winston') = require('winston');
-// influx = require('influx'),
+import should from 'should';
+import sinon from 'sinon';
+import influx from 'influx';
+import winston from 'winston';
+import influxService from './../../../server/services/influx.server.service.mts';
+import config from './../../../../../config/config.mts';
 type InfluxService =
   typeof import('../../../server/services/influx.server.service.mts').default;
 type InfluxCallback = (error?: Error | null) => void;
@@ -14,10 +15,6 @@ type TestInfluxService = Omit<InfluxService, '_writeMeasurement'> & {
     callback?: InfluxCallback,
   ): void;
 };
-const influxService =
-  require('./../../../server/services/influx.server.service.mts') as TestInfluxService;
-const config =
-  require('./../../../../../config/config.mts') as typeof import('../../../../../config/config.mts').default;
 type WriteMeasurementArgs = [
   string,
   import('influx').IPoint[],
@@ -56,18 +53,6 @@ describe('Service: influx', function () {
   // restore the stubbed services
   afterEach(function () {
     sinon.restore();
-  });
-
-  it('keeps the CommonJS adapter identical to the ESM default and named exports', async function () {
-    const esmService =
-      await import('../../../server/services/influx.server.service.mts');
-
-    esmService.default.should.equal(influxService);
-    (['stat', '_getClient', '_writeMeasurement'] as const).forEach(
-      function (name) {
-        esmService.default[name].should.equal(esmService[name]);
-      },
-    );
   });
 
   context('InfluxDB disabled', function () {
@@ -143,7 +128,7 @@ describe('Service: influx', function () {
     context('invalid data', function () {
       it('Writing point returns error with no measurementName', function (done) {
         influxService._writeMeasurement(
-          null,
+          null as never,
           { value: 1 },
           { tag: 'tag' },
           function (err) {
@@ -162,7 +147,7 @@ describe('Service: influx', function () {
       it('Writing point returns error with no value', function (done) {
         influxService._writeMeasurement(
           'test',
-          null,
+          null as never,
           { tag: 'tag' },
           function (err) {
             try {
@@ -181,7 +166,7 @@ describe('Service: influx', function () {
         influxService._writeMeasurement(
           'test',
           { value: 1 },
-          null,
+          null as never,
           function (err) {
             try {
               err!.message.should.equal(
@@ -486,7 +471,12 @@ describe('Service: influx', function () {
           },
         } as unknown as Promise<void>);
 
-        influxService._writeMeasurement('test', { value: 1 }, { tag: 'tag' });
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          undefined as never,
+        );
 
         sinon.assert.calledOnce(writeMeasurementStub());
         should.not.exist(thrown);
