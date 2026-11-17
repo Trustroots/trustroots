@@ -208,9 +208,7 @@ export default function CircleLocationMap(props: Props) {
         .on('popupclose', () => {
           openLocation.current = null;
           if (location.popupHeading != null) {
-            setPopupHeading(current =>
-              current?.container === heading ? null : current,
-            );
+            setPopupHeading(null);
           }
         })
         .addTo(markers);
