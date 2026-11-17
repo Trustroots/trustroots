@@ -16,6 +16,7 @@ interface AvatarFailureOptions {
   thumbnailBytes?: string;
   fallback?: boolean;
   onWrite?: () => void;
+  onMetadata?: () => void | Promise<void>;
 }
 interface AvatarServiceResult {
   version: string;
@@ -96,6 +97,7 @@ function createBackend(options: AvatarFailureOptions = {}): SharpFactory {
         return this;
       },
       async metadata() {
+        await options.onMetadata?.();
         if (options.metadataError) throw options.metadataError;
         return options.metadata || { format: 'png', width: 600, height: 600 };
       },
@@ -494,11 +496,11 @@ describe('Avatar processing failure handling', () => {
   it('rejects processing when its 60-second deadline expires at each publication stage', async () => {
     const originalSetTimeout = global.setTimeout;
     const originalClearTimeout = global.clearTimeout;
-    const deadlines = ['native', 'private', 'public', 'published'];
+    const deadlines = ['metadata', 'native', 'private', 'public', 'published'];
 
     try {
       for (const deadlineStage of deadlines) {
-        if (deadlineStage === 'native') {
+        if (['metadata', 'native'].includes(deadlineStage)) {
           delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
         } else {
           process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -546,7 +548,10 @@ describe('Avatar processing failure handling', () => {
           return actualFs.rename(from, to);
         };
         const { inputPath, service } = await makeService(
-          deadlineStage === 'native' ? { onWrite: fireDeadline } : {},
+          {
+            metadata: { onMetadata: fireDeadline },
+            native: { onWrite: fireDeadline },
+          }[deadlineStage] ?? {},
           { copyFile, chmod, rename },
         );
         await assert.rejects(
@@ -560,6 +565,61 @@ describe('Avatar processing failure handling', () => {
         seen.writes.should.equal(deadlineStage === 'native' ? 1 : 0);
         seen.writes = 0;
       }
+    } finally {
+      global.setTimeout = originalSetTimeout;
+      global.clearTimeout = originalClearTimeout;
+    }
+  });
+
+  it('releases processing slots when the deadline expires during metadata inspection', async () => {
+    const originalSetTimeout = global.setTimeout;
+    const originalClearTimeout = global.clearTimeout;
+    const expires: Array<() => void> = [];
+    const metadataReleases: Array<() => void> = [];
+    global.setTimeout = ((callback: () => void, delay?: number) => {
+      if (delay === 60000) {
+        expires.push(callback);
+        return { deadline: true } as unknown as NodeJS.Timeout;
+      }
+      return originalSetTimeout(callback, delay);
+    }) as typeof global.setTimeout;
+    global.clearTimeout = ((timer?: NodeJS.Timeout) => {
+      if (!timer || !('deadline' in timer)) {
+        return originalClearTimeout(timer);
+      }
+      return undefined;
+    }) as typeof global.clearTimeout;
+    try {
+      const { inputPath, service } = await makeService({
+        onMetadata: () =>
+          seen.opened <= 2
+            ? new Promise<void>(resolve => metadataReleases.push(resolve))
+            : undefined,
+      });
+      const enqueue = () =>
+        new Promise<Error | null | undefined>(resolve => {
+          service
+            .enqueueAvatarProcessing({
+              sourcePath: inputPath,
+              userId: validUserId,
+              callback: error => resolve(error),
+            })
+            .should.be.true();
+        });
+      const outcomes = [enqueue(), enqueue()];
+      while (metadataReleases.length < 2) {
+        await new Promise<void>(resolve => setImmediate(resolve));
+      }
+      outcomes.push(enqueue());
+      await new Promise<void>(resolve => setImmediate(resolve));
+      seen.opened.should.equal(2);
+      expires.forEach(expire => expire());
+      metadataReleases.forEach(release => release());
+      const [first, second, third] = await Promise.all(outcomes);
+      assert.match(String(first?.message), /exceeded its time limit/);
+      assert.match(String(second?.message), /exceeded its time limit/);
+      assert.equal(third, null);
+      seen.writes.should.equal(7);
     } finally {
       global.setTimeout = originalSetTimeout;
       global.clearTimeout = originalClearTimeout;
