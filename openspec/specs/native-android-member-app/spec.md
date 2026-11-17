@@ -2068,3 +2068,9 @@ The Android app SHALL show an Edit hosting action beneath Edit your profile on t
 
 - **WHEN** the signed-in member views another member's profile
 - **THEN** the Edit hosting action is absent
+
+#### Scenario: Member returns after saving hosting
+
+- **WHEN** the member saves hosting changes and returns to their profile
+- **THEN** the profile refreshes its hosting information without reloading the canonical profile
+- **AND** cancelling unsaved edits retains the existing discard confirmation

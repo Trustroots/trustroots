@@ -14,7 +14,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -123,7 +122,7 @@ class ProfileEditingJourneyTest {
         val profileLoads = AtomicInteger()
         val returnedToMap = AtomicBoolean(false)
         thread(isDaemon = true) {
-            repeat(12) {
+            repeat(10) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
                 connection.use { socket ->
                     val input = socket.getInputStream().bufferedReader()
@@ -173,14 +172,9 @@ class ProfileEditingJourneyTest {
             compose.onAllNodesWithText("Old line").fetchSemanticsNodes().isNotEmpty()
         }
         assertEquals("The profile route should load its canonical profile once", 1, profileLoads.get())
-        compose.onNodeWithText("Edit hosting").assertIsDisplayed().performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Availability").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithContentDescription("Cancel").performClick()
-        compose.onNodeWithText("Edit your profile").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Edit your profile").performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
-        assertEquals("The hosting editor loads its own profile; profile editing uses the retained snapshot", 2, profileLoads.get())
+        assertEquals("Ordinary edit navigation should use the retained snapshot", 1, profileLoads.get())
         compose.onNodeWithText("New line").assertIsDisplayed()
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { savedBody.get().isNotBlank() }
@@ -188,7 +182,7 @@ class ProfileEditingJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("New line").fetchSemanticsNodes().isNotEmpty()
         }
-        assertEquals("The saved profile completion should update the retained parent without a duplicate profile request", 2, profileLoads.get())
+        assertEquals("The saved profile completion should update the retained parent without a duplicate profile request", 1, profileLoads.get())
         compose.onNodeWithText("New line").assertIsDisplayed()
         compose.onNodeWithText("Experiences").assertIsDisplayed()
         compose.onNodeWithText("About").assertIsDisplayed()

@@ -4,6 +4,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ProfileNavigationRouteTest {
+    @Test fun hostingKeyRetainsItsParentWithoutSessionOrProfileData() {
+        val route = MemberProfileHostingVisit(parentVisitID = 10L, visitID = 11L)
+        val descriptor = MemberProfileHostingVisit.serializer().descriptor
+        assertEquals(setOf("parentVisitID", "visitID"), (0 until descriptor.elementsCount).map(descriptor::getElementName).toSet())
+        assertEquals(10L, route.parentVisitID)
+        assertEquals(11L, route.visitID)
+    }
+
     @Test fun profileConversationKeyContainsOnlyMemberIDAndVisitID() {
         val route = ProfileConversationVisit(memberID = "member-fox", visitID = 12L)
         val descriptor = ProfileConversationVisit.serializer().descriptor

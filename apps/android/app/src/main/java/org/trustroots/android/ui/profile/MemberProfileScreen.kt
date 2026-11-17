@@ -110,6 +110,9 @@ internal fun MemberProfileScreen(
     val popProfile: () -> Unit = {
         if (backStack.size > 1) {
             val removed = backStack.lastOrNull()
+            if (removed is MemberProfileHostingVisit) {
+                handoffViewModel.completeHostingClosed(removed.parentVisitID, handoffEnvironment)
+            }
             if (removed is MemberProfileVisit) {
                 handoffViewModel.removeProfileVisit(removed.visitID)
             }
@@ -151,7 +154,7 @@ internal fun MemberProfileScreen(
                     onOpenContactBrowser = pushContactBrowser,
                     onOpenCircle = { slug -> backStack.add(CircleDetailVisit(slug, nextVisitID++)) },
                     isActiveProfileRoute = isActiveRoute.value,
-                    onOpenEditHosting = { backStack.add(MemberProfileHostingVisit(nextVisitID++)) },
+                    onOpenEditHosting = { backStack.add(MemberProfileHostingVisit(route.visitID, nextVisitID++)) },
                     onOpenEditProfile = { backStack.add(MemberProfileEditVisit(route.username, route.visitID, nextVisitID++)) },
                     onOpenExperience = { memberID -> backStack.add(MemberProfileExperienceVisit(route.username, memberID, route.visitID, nextVisitID++)) },
                     onDisplayNameChanged = { handoffViewModel.retainDisplayName(route.visitID, it, handoffEnvironment) },
