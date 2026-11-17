@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.captureToImage
@@ -204,7 +206,7 @@ class RichMemberProfileJourneyTest {
         revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
         compose.onNodeWithText("A thoughtful visit with kind company.").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Response: We would happily welcome them again.").performScrollTo().assertIsDisplayed()
+        assertRootReferenceResponse()
         compose.onNodeWithText("Reference Author").performScrollTo().performClick()
 
         waitForText("Space for up to 4 guests")
@@ -213,7 +215,7 @@ class RichMemberProfileJourneyTest {
         compose.onNodeWithContentDescription("Back").performClick()
 
         compose.onNodeWithTag("profileSection-experiences").assertIsDisplayed()
-        compose.onNodeWithText("Response: We would happily welcome them again.").performScrollTo().assertIsDisplayed()
+        assertRootReferenceResponse()
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-related?types=host ") })
     }
@@ -601,6 +603,16 @@ class RichMemberProfileJourneyTest {
         )) {
             assertEquals("$message ($edge)", expectedValue, actualValue, 1f)
         }
+    }
+
+    private fun assertRootReferenceResponse() {
+        val heading = compose.onNodeWithText("quiet-fox’s response").performScrollTo().assertIsDisplayed()
+        val layouts = mutableListOf<TextLayoutResult>()
+        heading.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            assertTrue(action(layouts))
+        }
+        assertEquals(FontWeight.Bold, layouts.single().layoutInput.style.fontWeight)
+        compose.onNodeWithText("We would happily welcome them again.").performScrollTo().assertIsDisplayed()
     }
 
     private fun waitForText(text: String) {

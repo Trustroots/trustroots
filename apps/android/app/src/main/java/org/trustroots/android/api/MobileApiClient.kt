@@ -150,6 +150,8 @@ data class ProfileReference(
     val feedback: String?,
     val recommendation: String?,
     val response: String?,
+    val authorWasGuest: Boolean = false,
+    val authorWasHost: Boolean = false,
 )
 
 data class TrustrootsCircle(
@@ -1043,6 +1045,8 @@ internal fun parseReferences(values: JSONArray): List<ProfileReference> =
             feedback = item.optionalText("feedbackPublic"),
             recommendation = item.optionalText("recommend"),
             response = item.optJSONObject("response")?.optionalText("feedbackPublic"),
+            authorWasGuest = item.optJSONObject("interactions")?.optBoolean("guest", false) == true,
+            authorWasHost = item.optJSONObject("interactions")?.optBoolean("host", false) == true,
         )
     }
 

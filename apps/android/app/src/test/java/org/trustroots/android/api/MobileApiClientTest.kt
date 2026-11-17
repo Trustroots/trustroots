@@ -319,6 +319,21 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun preservesReferenceHostingRolesWithoutInferringMissingRoles() {
+        val references = parseReferences(JSONArray("""[
+            {"_id":"guest","userFrom":{"username":"quiet-fox"},"recommend":"yes","interactions":{"guest":true,"host":false}},
+            {"_id":"host","userFrom":{"username":"steady-heron"},"recommend":"no","interactions":{"guest":false,"host":true}},
+            {"_id":"both","userFrom":{"username":"calm-lynx"},"interactions":{"guest":true,"host":true}},
+            {"_id":"missing","userFrom":{"username":"wandering-owl"}},
+            {"_id":"empty","userFrom":{"username":"gentle-badger"},"interactions":{}},
+            {"_id":"invalid","userFrom":{"username":"bright-wren"},"interactions":null}
+        ]"""))
+        assertEquals(listOf(true, false, true, false, false, false), references.map { it.authorWasGuest })
+        assertEquals(listOf(false, true, true, false, false, false), references.map { it.authorWasHost })
+        assertEquals(listOf("yes", "no", null, null, null, null), references.map { it.recommendation })
+    }
+
+    @Test
     fun skipsMalformedContactAndReferenceRows() {
         val contacts = parseContacts(
             JSONArray(
