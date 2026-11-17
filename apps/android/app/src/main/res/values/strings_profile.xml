@@ -12,7 +12,14 @@
         <item quantity="other">Experiences (%1$d)</item>
     </plurals>
     <string name="profile_no_experiences">No experiences shared yet.</string>
-    <string name="profile_response_prefix">Response: %1$s</string>
+    <string name="profile_response_heading">%1$s’s response</string>
+    <string name="profile_response_heading_fallback">Response</string>
+    <string name="profile_recommend_yes">Recommends this member</string>
+    <string name="profile_recommend_no">Does not recommend this member</string>
+    <string name="profile_recommend_unknown">Not sure about recommending this member</string>
+    <string name="profile_recommend_unavailable">No recommendation shared</string>
+    <string name="profile_reference_guest">Author was their guest</string>
+    <string name="profile_reference_host">Author hosted this member</string>
     <string name="profile_show_fewer">Show fewer</string>
     <plurals name="profile_more_experiences">
         <item quantity="one">1 more experience</item>

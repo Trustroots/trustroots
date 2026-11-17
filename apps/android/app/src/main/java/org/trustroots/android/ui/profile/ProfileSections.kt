@@ -2,13 +2,16 @@ package org.trustroots.android.ui.profile
 
 import android.text.Html
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -102,13 +105,14 @@ internal fun ProfileOverviewSection(
     onOpenRelated: (String) -> Unit,
     api: MobileApiClient,
     session: MemberSession,
+    responseAuthor: String? = null,
 ) {
     if (references.isEmpty()) {
         Text(stringResource(R.string.profile_no_experiences), color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
         Text(stringResource(R.string.profile_section_experiences), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         (if (showAllReferences) references else references.take(6)).forEach { reference ->
-            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(vertical = 12.dp).testTag("profileReference-${reference.id}")) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RemoteArtwork(
                         reference.author.id?.let { api.avatarURL(it, 64, session) },
@@ -121,11 +125,50 @@ internal fun ProfileOverviewSection(
                         Text(reference.author.localizedLabel())
                     }
                 }
-                reference.feedback?.let {
-                    Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                val colours = MaterialTheme.colorScheme
+                val (background, foreground, sentiment) = when (reference.recommendation) {
+                    "yes" -> Triple(colours.primaryContainer, colours.onPrimaryContainer, R.string.profile_recommend_yes)
+                    "no" -> Triple(colours.errorContainer, colours.onErrorContainer, R.string.profile_recommend_no)
+                    "unknown" -> Triple(colours.secondaryContainer, colours.onSecondaryContainer, R.string.profile_recommend_unknown)
+                    else -> Triple(colours.surfaceVariant, colours.onSurfaceVariant, R.string.profile_recommend_unavailable)
+                }
+                Surface(
+                    color = background,
+                    contentColor = foreground,
+                    shape = RoundedCornerShape(
+                        topStart = if (reference.authorWasHost) 4.dp else 16.dp,
+                        topEnd = if (reference.authorWasGuest) 4.dp else 16.dp,
+                        bottomStart = 16.dp,
+                        bottomEnd = 16.dp,
+                    ),
+                    modifier = Modifier.fillMaxWidth().testTag("profileReferenceFeedback-${reference.id}"),
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(sentiment), fontWeight = FontWeight.SemiBold)
+                        if (reference.authorWasGuest) Text(stringResource(R.string.profile_reference_guest))
+                        if (reference.authorWasHost) Text(stringResource(R.string.profile_reference_host))
+                        reference.feedback?.let {
+                            Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                        }
+                    }
                 }
                 reference.response?.let {
-                    Text(stringResource(R.string.profile_response_prefix, Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()))
+                    Surface(
+                        color = colours.surfaceContainerHigh,
+                        contentColor = colours.onSurface,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp)
+                            .testTag("profileReferenceResponse-${reference.id}"),
+                    ) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                if (responseAuthor != null) stringResource(R.string.profile_response_heading, responseAuthor)
+                                else stringResource(R.string.profile_response_heading_fallback),
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                        }
+                    }
                 }
             }
         }

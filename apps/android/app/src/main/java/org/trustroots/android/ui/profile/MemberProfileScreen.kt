@@ -525,6 +525,7 @@ private fun MemberProfileContent(
                                             ProfileCirclesSection(member = member, api = api, onOpenCircle = onOpenCircle)
                                         }
                                         ProfileSection.Experiences -> ProfileOverviewSection(
+                                            responseAuthor = member.username,
                                             references = references,
                                             showAllReferences = showAllReferences,
                                             onToggleReferences = { showAllReferences = !showAllReferences },
