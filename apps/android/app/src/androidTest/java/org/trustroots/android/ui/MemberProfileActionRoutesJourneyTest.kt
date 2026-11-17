@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -68,6 +69,7 @@ class MemberProfileActionRoutesJourneyTest {
         compose.setContent { showProfile() }
 
         waitForEnabledText("Send a message")
+        compose.onNodeWithText("Edit hosting").assertDoesNotExist()
         compose.onNodeWithText("Send a message").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.path == "/api/messages/member-two?limit=100" } &&

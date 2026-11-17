@@ -47,4 +47,5 @@
     <string name="profile_confirm">Confirm</string>
     <string name="profile_cancel">Cancel</string>
     <string name="profile_load_error">Could not load profile.</string>
+    <string name="profile_edit_hosting">Edit hosting</string>
 </resources>

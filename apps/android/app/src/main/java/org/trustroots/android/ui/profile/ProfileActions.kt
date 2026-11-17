@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.profile
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,7 @@ internal fun ProfileActionBar(
     isSelf: Boolean,
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
+    onEditHosting: () -> Unit,
     onMessage: () -> Unit,
     onShareExperience: () -> Unit,
     contactAction: ProfileContactAction?,
@@ -87,14 +89,23 @@ internal fun ProfileActionBar(
             )
         }
         if (isSelf) {
-            TextButton(
-                onClick = onEditProfile,
-                modifier = Modifier.heightIn(min = 48.dp).testTag("profileEditAction"),
-                colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.artwork_on_scrim)),
-            ) {
-                Icon(painterResource(R.drawable.ic_material_edit), contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.profile_edit_your_profile))
+            Column(horizontalAlignment = Alignment.End) {
+                TextButton(
+                    onClick = onEditProfile,
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("profileEditAction"),
+                    colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.artwork_on_scrim)),
+                ) {
+                    Icon(painterResource(R.drawable.ic_material_edit), contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.profile_edit_your_profile))
+                }
+                TextButton(
+                    onClick = onEditHosting,
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("profileEditHostingAction"),
+                    colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.artwork_on_scrim)),
+                ) {
+                    Text(stringResource(R.string.profile_edit_hosting))
+                }
             }
         } else {
             if (isBlocked != true) Button(

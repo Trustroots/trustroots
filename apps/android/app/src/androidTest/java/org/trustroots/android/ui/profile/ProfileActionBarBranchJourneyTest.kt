@@ -82,6 +82,7 @@ class ProfileActionBarBranchJourneyTest {
             isSelf = false,
             onBack = {},
             onEditProfile = {},
+            onEditHosting = {},
             onMessage = {},
             onShareExperience = {},
             contactAction = null,
