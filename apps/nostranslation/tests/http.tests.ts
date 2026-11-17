@@ -34,13 +34,42 @@ function sign(body: string) {
 
 function waitForSignalOrRequestFailure<T>(
   signal: Promise<T>,
-  request: Promise<{ status: number }>,
+  pendingRequest: Promise<{ status: number }>,
 ) {
-  const settledEarly = request.then<never>(({ status }) => {
-    throw new Error(`Request finished with ${status} before the signal`);
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const finish = (settle: () => void) => {
+      if (settled) return;
+      settled = true;
+      settle();
+    };
+    signal.then(
+      value => finish(() => resolve(value)),
+      error => finish(() => reject(error)),
+    );
+    pendingRequest.then(
+      ({ status }) =>
+        finish(() => {
+          reject(
+            new Error(`Request finished with ${status} before the signal`),
+          );
+        }),
+      error => finish(() => reject(error)),
+    );
   });
-  return Promise.race([signal, settledEarly]);
 }
+
+describe('waitForSignalOrRequestFailure', () => {
+  it('rejects with the transport error when the request fails before the signal', async () => {
+    const transport = new Error('socket hang up');
+    await expect(
+      waitForSignalOrRequestFailure(
+        new Promise(() => {}),
+        Promise.reject(transport),
+      ),
+    ).rejects.toBe(transport);
+  });
+});
 
 describe('review API', () => {
   let store: Store;
