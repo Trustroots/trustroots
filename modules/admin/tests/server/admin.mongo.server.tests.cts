@@ -2,6 +2,14 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 require('should');
+const {
+  captureAgendaInventory,
+}: typeof import('../../server/services/agenda-inventory.server.service.mts') = require('../../server/services/agenda-inventory.server.service.mts');
+const { BSON }: typeof import('mongodb') = require('mongodb');
+const {
+  captureAgendaStorage,
+  readAgendaStorageHistory,
+}: typeof import('../../server/services/agenda-storage.server.service.mts') = require('../../server/services/agenda-storage.server.service.mts');
 const adminMongo: typeof import('../../server/controllers/admin.mongo.server.controller.mts') = require('../../server/controllers/admin.mongo.server.controller.mts');
 
 type MongoBody =
@@ -44,11 +52,15 @@ describe('Admin Mongo diagnostics', () => {
   const db = mongoose.connection.db!;
   const agenda = db.collection('agendaJobs');
   const archived = db.collection('agendaJobsArchived');
+  const inventory = db.collection('agendaInventory');
+  const history = db.collection<{ _id: string }>('agendaStorageSnapshots');
 
   afterEach(async () => {
     sinon.restore();
     await agenda.deleteMany({});
     await archived.deleteMany({});
+    await history.deleteMany({});
+    await inventory.deleteMany({});
   });
 
   it('reports live Mongo metadata, storage statistics and grouped Agenda states', async () => {
@@ -64,6 +76,7 @@ describe('Admin Mongo diagnostics', () => {
       { name: 'sample' },
       { name: 'sample', failedAt: null, lastFinishedAt: null },
       { lastFinishedAt: earlier },
+      { name: 'larger fixture', data: { text: 'x'.repeat(2048) } },
     ]);
     await archived.insertOne({ name: 'archived' });
 
@@ -82,22 +95,153 @@ describe('Admin Mongo diagnostics', () => {
       .map(collection => collection.status)
       .should.deepEqual(['available', 'available']);
     const jobs = body.jobs!;
-    jobs
-      .find(job => job.name === 'sample')!
-      .counts.should.deepEqual({
-        queued: 1,
-        disabled: 1,
-        locked: 1,
-        failed: 2,
-        completed: 1,
-        unscheduled: 2,
-      });
+    const sample = jobs.find(job => job.name === 'sample');
+    const largerFixture = jobs.find(job => job.name === 'larger fixture');
+    assert.ok(sample);
+    assert.ok(largerFixture);
+    assert.ok(largerFixture.bsonBytes > sample.bsonBytes);
+    assert.ok(jobs.indexOf(largerFixture) < jobs.indexOf(sample));
+    assert.equal(sample.total, 8);
+    assert.equal(sample.oldestCompletedAt, later.toISOString());
+    assert.equal(
+      sample.bsonBytes,
+      (await agenda.find({ name: 'sample' }).toArray()).reduce(
+        (bytes, job) => bytes + BSON.calculateObjectSize(job),
+        0,
+      ),
+    );
+    assert.deepEqual(body.history, []);
+    sample.counts.should.deepEqual({
+      queued: 1,
+      disabled: 1,
+      locked: 1,
+      failed: 2,
+      completed: 1,
+      unscheduled: 2,
+    });
     jobs
       .find(job => job.name === '(Unnamed job)')!
       .counts.should.deepEqual({
         completed: 1,
       });
     response.headers['Cache-Control'].should.equal('no-store');
+  });
+
+  it('serves a dated worker inventory and falls back to it when a fresh query fails', async () => {
+    const name = 'inventory fixture';
+    await agenda.insertOne({ name });
+    await captureAgendaInventory(db);
+    await agenda.insertOne({ name });
+
+    const saved = mockResponse();
+    await adminMongo.diagnostics({} as never, saved as never);
+    assert.equal(
+      mongoBody(saved).jobs?.find(job => job.name === name)?.total,
+      1,
+    );
+    assert.match(mongoBody(saved).jobsCapturedAt!, /^\d{4}-\d{2}-\d{2}T/);
+
+    const liveRequest = { query: { liveJobs: 'true' } };
+    const live = mockResponse();
+    await adminMongo.diagnostics(liveRequest as never, live as never);
+    assert.equal(
+      mongoBody(live).jobs?.find(job => job.name === name)?.total,
+      2,
+    );
+    assert.equal(mongoBody(live).jobsCapturedAt, null);
+
+    const collection = db.collection.bind(db);
+    const aggregate = agenda.aggregate.bind(agenda);
+    sinon.stub(agenda, 'aggregate').callsFake((pipeline, options) => {
+      if (pipeline?.[0]?.$group) throw new Error('query timed out');
+      return aggregate(pipeline, options);
+    });
+    sinon
+      .stub(db, 'collection')
+      .callsFake((name: string) =>
+        name === 'agendaJobs' ? agenda : collection(name),
+      );
+
+    const fallback = mockResponse();
+    await adminMongo.diagnostics(liveRequest as never, fallback as never);
+    assert.deepEqual(mongoBody(fallback).jobs, mongoBody(saved).jobs);
+    assert.equal(
+      mongoBody(fallback).jobsCapturedAt,
+      mongoBody(saved).jobsCapturedAt,
+    );
+  });
+
+  it('uses live job counts when the saved inventory cannot be read', async () => {
+    const name = 'live inventory fallback fixture';
+    await agenda.insertOne({ name });
+    const findOne = sinon
+      .stub(inventory, 'findOne')
+      .rejects(new Error('inventory unavailable'));
+    const collection = db.collection.bind(db);
+    sinon
+      .stub(db, 'collection')
+      .callsFake((collectionName: string) =>
+        collectionName === 'agendaInventory'
+          ? inventory
+          : collection(collectionName),
+      );
+
+    const response = mockResponse();
+    await adminMongo.diagnostics({} as never, response as never);
+
+    sinon.assert.calledOnce(findOne);
+    assert.equal(
+      mongoBody(response).jobs?.find(job => job.name === name)?.total,
+      1,
+    );
+    assert.equal(mongoBody(response).jobsCapturedAt, null);
+  });
+
+  it('keeps the first capture on each UTC date and prunes expired readings', async () => {
+    const now = new Date('2025-02-01T03:00:00Z');
+    const oldest = new Date('2025-01-03T03:00:00Z');
+    await captureAgendaStorage(db, new Date('2025-01-02T03:00:00Z'));
+    await captureAgendaStorage(db, oldest);
+    await agenda.insertOne({
+      name: 'diagnostics fixture',
+      data: { text: 'Private fixture body' },
+    });
+    await captureAgendaStorage(db, now);
+    await agenda.insertOne({ name: 'later job' });
+    await captureAgendaStorage(db, new Date('2025-02-01T23:59:00Z'));
+
+    const readings = await readAgendaStorageHistory(db, now);
+    assert.deepEqual(
+      readings.map(reading => reading.capturedAt),
+      [now.toISOString(), oldest.toISOString()],
+    );
+    const live = readings[0]!.collections[0]!;
+    assert.equal(live.status === 'available' && live.count, 1);
+    assert.doesNotMatch(JSON.stringify(readings), /Private fixture body/);
+    assert.equal(await history.countDocuments({ _id: '2025-01-02' }), 0);
+
+    const nextDay = new Date('2025-02-02T00:00:00Z');
+    await captureAgendaStorage(db, nextDay);
+    assert.equal(await history.countDocuments({ _id: '2025-01-03' }), 0);
+    assert.equal((await readAgendaStorageHistory(db, now)).length, 1);
+    assert.equal((await readAgendaStorageHistory(db, nextDay)).length, 2);
+  });
+
+  it('does not persist a capture when storage statistics are unavailable', async () => {
+    sinon.stub(agenda, 'aggregate').throws(new Error('unavailable'));
+    const collection = sinon.stub(db, 'collection');
+    collection.withArgs('agendaJobs').returns(agenda);
+    collection.withArgs('agendaJobsArchived').returns(archived);
+    collection.withArgs('agendaStorageSnapshots').returns(history as never);
+    sinon.stub(db, 'listCollections').returns({
+      toArray: async () => [{ name: 'agendaJobs' }],
+    } as never);
+
+    await assert.rejects(
+      captureAgendaStorage(db),
+      /statistics are unavailable/,
+    );
+    assert.equal(await history.countDocuments({}), 0);
   });
 
   it('recognises a sharded topology and FCV target-version transition', async () => {
@@ -305,7 +449,7 @@ describe('Admin Mongo diagnostics', () => {
       );
     }
     sinon.assert.calledWithExactly(aggregate, 'agendaJobs', sinon.match.array, {
-      maxTimeMS: 5_000,
+      maxTimeMS: 15_000,
       allowDiskUse: false,
     });
     for (const request of [
@@ -316,7 +460,8 @@ describe('Admin Mongo diagnostics', () => {
     ]) {
       sinon.assert.calledWithExactly(command, request, { timeoutMS: 5_000 });
     }
-    collection.callCount.should.equal(3);
+    collection.callCount.should.equal(5);
+    assert.equal(body.history, null);
   });
 
   it('marks storage and job counts unavailable when their reads fail', async () => {

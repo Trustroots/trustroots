@@ -3711,7 +3711,7 @@ const features = [
     area: AREA.adminModeration,
     status: STATUS.active,
     description:
-      'Administrators inspect MongoDB version, topology, feature compatibility, collection storage, and live Agenda job counts.',
+      'Administrators inspect MongoDB version, topology, feature compatibility, collection storage history, and live Agenda job inventory.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -3726,6 +3726,7 @@ const features = [
       'Admin sees the live MongoDB server version, feature compatibility version, and topology.',
       'Admin sees the ordered 4.4 → 5.0 → 6.0 → 7.0 migration path.',
       'Admin compares collection storage and refreshes live job counts.',
+      'Admin sees saved daily storage and the size and oldest completed run of each job type.',
       'Non-admin access is rejected.',
     ],
     relatedSpecs: [

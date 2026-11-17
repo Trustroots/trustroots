@@ -1,3 +1,4 @@
+import { captureAgendaStorage } from '../../../../modules/admin/server/services/agenda-storage.server.service.mts';
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import {
   SEEDED_ADMIN,
@@ -14,10 +15,12 @@ test('admin inspects MongoDB diagnostics and refreshes live job counts', async (
     'Admin sees the live MongoDB server version, feature compatibility version, and topology.',
     'Admin sees the ordered 4.4 → 5.0 → 6.0 → 7.0 migration path.',
     'Admin compares collection storage and refreshes live job counts.',
+    'Admin sees saved daily storage and the size and oldest completed run of each job type.',
   ]);
   await signInViaApi(page, request, SEEDED_ADMIN);
 
   const name = 'sample storage diagnostic job';
+  const recordedAt = new Date(Date.now() - 86_400_000);
   const lastFinishedAt = new Date('2025-01-02T12:00:00Z');
   await withE2eDb(async db => {
     await db
@@ -33,6 +36,7 @@ test('admin inspects MongoDB diagnostics and refreshes live job counts', async (
     await db
       .collection('agendaJobsArchived')
       .insertOne({ name, lastFinishedAt });
+    await captureAgendaStorage(db, recordedAt);
   });
   try {
     const response = page.waitForResponse(response =>
@@ -80,6 +84,13 @@ test('admin inspects MongoDB diagnostics and refreshes live job counts', async (
       page.getByRole('link', { name: 'MongoDB 7 migration runbook' }),
     ).toBeVisible();
 
+    await expect(
+      page.getByRole('link', { name: 'Agenda storage issue #2714' }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/trustroots/issues/2714',
+    );
+
     const storage = page.getByRole('table', { name: 'Collection storage' });
     for (const collection of ['agendaJobs', 'agendaJobsArchived']) {
       const row = storage.getByRole('row').filter({
@@ -88,33 +99,49 @@ test('admin inspects MongoDB diagnostics and refreshes live job counts', async (
       await expect(row.getByRole('cell')).toHaveCount(4);
     }
 
+    const history = page.getByRole('table', { name: 'Daily Agenda storage' });
+    await expect(history).toContainText(recordedAt.toISOString().slice(0, 10));
+    await expect(history.getByRole('rowheader')).toHaveText([
+      'agendaJobs',
+      'agendaJobsArchived',
+    ]);
+
     const job = page.getByRole('row').filter({
       has: page.getByRole('rowheader', { name, exact: true }),
     });
     await expect(job.getByRole('cell')).toHaveText([
+      '6',
+      /^\d[\d,.]* (?:B|kB|MB|GB)$/,
       '1',
       '1',
       '1',
       '1',
       '1',
       '1',
+      '2025-01-02',
     ]);
     await withE2eDb(db =>
       db.collection('agendaJobs').insertOne({ name, lastFinishedAt }),
     );
     await page.getByRole('button', { name: 'Refresh snapshot' }).click();
     await expect(job.getByRole('cell')).toHaveText([
+      '7',
+      /^\d[\d,.]* (?:B|kB|MB|GB)$/,
       '1',
       '1',
       '2',
       '1',
       '1',
       '1',
+      '2025-01-02',
     ]);
   } finally {
     await withE2eDb(async db => {
       await db.collection('agendaJobs').deleteMany({ name });
       await db.collection('agendaJobsArchived').deleteMany({ name });
+      await db.collection<{ _id: string }>('agendaStorageSnapshots').deleteOne({
+        _id: recordedAt.toISOString().slice(0, 10),
+      });
     });
   }
 });

@@ -2,14 +2,22 @@ import type { Request, Response } from 'express';
 import type { Db } from 'mongodb';
 import mongoose from 'mongoose';
 import type {
-  AgendaCollection,
-  AgendaCollectionStorage,
-  AgendaJobCounts,
   MongoDiagnosticsSnapshot,
   MongoServerDiagnostics,
 } from '../../shared/mongo-diagnostics.mts';
 
-const collections = ['agendaJobs', 'agendaJobsArchived'] as const;
+import {
+  agendaCollections,
+  discoverAgendaCollections,
+  readAgendaCollectionStorage,
+  readAgendaStorageHistory,
+} from '../services/agenda-storage.server.service.mts';
+
+import {
+  readJobCounts,
+  readSavedAgendaInventory,
+} from '../services/agenda-inventory.server.service.mts';
+
 const maxTimeMS = 5_000;
 
 async function readServerDiagnostics(db: Db): Promise<MongoServerDiagnostics> {
@@ -59,158 +67,52 @@ async function readServerDiagnostics(db: Db): Promise<MongoServerDiagnostics> {
   };
 }
 
-interface StorageStats {
-  count: number;
-  storageSize: number;
-  totalIndexSize: number;
-  freeStorageSize?: number;
-  wiredTiger?: {
-    'block-manager'?: { 'file bytes available for reuse'?: number };
-  };
-}
-
-async function readStorage(
+async function readAgendaInventory(
   db: Db,
-  name: AgendaCollection,
-): Promise<AgendaCollectionStorage> {
+  liveJobs: boolean,
+): Promise<Pick<MongoDiagnosticsSnapshot, 'jobs' | 'jobsCapturedAt'>> {
+  const saved = await readSavedAgendaInventory(db).catch(() => undefined);
+  if (saved && !liveJobs) return saved;
+
   try {
-    const rows = await db
-      .collection(name)
-      .aggregate<{ storageStats: StorageStats }>(
-        [{ $collStats: { storageStats: {} } }],
-        { maxTimeMS },
-      )
-      .toArray();
-
-    // MongoDB reports one row per shard. Older versions expose reusable
-    // space under WiredTiger's block manager.
-    let count = 0;
-    let storageBytes = 0;
-    let indexBytes = 0;
-    let reusableBytes: number | null = 0;
-    for (const { storageStats: stats } of rows) {
-      count += stats.count;
-      storageBytes += stats.storageSize;
-      indexBytes += stats.totalIndexSize;
-      const reusable =
-        stats.freeStorageSize ??
-        stats.wiredTiger?.['block-manager']?.['file bytes available for reuse'];
-      reusableBytes =
-        reusableBytes === null || reusable === undefined
-          ? null
-          : reusableBytes + reusable;
-    }
-    return {
-      name,
-      status: 'available',
-      count,
-      storageBytes,
-      indexBytes,
-      reusableBytes,
-    };
+    return { jobs: await readJobCounts(db, 15_000), jobsCapturedAt: null };
   } catch {
-    return { name, status: 'unavailable' };
+    return saved ?? { jobs: null, jobsCapturedAt: null };
   }
-}
-
-function readJobCounts(db: Db): Promise<AgendaJobCounts[]> {
-  return db
-    .collection('agendaJobs')
-    .aggregate<AgendaJobCounts>(
-      [
-        {
-          $group: {
-            _id: {
-              name: { $ifNull: ['$name', '(Unnamed job)'] },
-              state: {
-                $switch: {
-                  branches: [
-                    { case: { $eq: ['$disabled', true] }, then: 'disabled' },
-                    {
-                      case: { $ne: [{ $ifNull: ['$lockedAt', null] }, null] },
-                      then: 'locked',
-                    },
-                    {
-                      case: { $ne: [{ $ifNull: ['$nextRunAt', null] }, null] },
-                      then: 'queued',
-                    },
-                    {
-                      case: {
-                        $and: [
-                          { $ne: [{ $ifNull: ['$failedAt', null] }, null] },
-                          {
-                            $gte: [
-                              '$failedAt',
-                              { $ifNull: ['$lastFinishedAt', null] },
-                            ],
-                          },
-                        ],
-                      },
-                      then: 'failed',
-                    },
-                    {
-                      case: {
-                        $ne: [{ $ifNull: ['$lastFinishedAt', null] }, null],
-                      },
-                      then: 'completed',
-                    },
-                  ],
-                  default: 'unscheduled',
-                },
-              },
-            },
-            count: { $sum: 1 },
-          },
-        },
-        {
-          $group: {
-            _id: '$_id.name',
-            states: { $push: { k: '$_id.state', v: '$count' } },
-          },
-        },
-        { $sort: { _id: 1 } },
-        {
-          $project: {
-            _id: 0,
-            name: '$_id',
-            counts: { $arrayToObject: '$states' },
-          },
-        },
-      ],
-      { maxTimeMS, allowDiskUse: false },
-    )
-    .toArray();
 }
 
 async function readAgendaDiagnostics(
   db: Db,
-): Promise<Pick<MongoDiagnosticsSnapshot, 'collections' | 'jobs'>> {
+  liveJobs: boolean,
+): Promise<
+  Pick<MongoDiagnosticsSnapshot, 'collections' | 'jobs' | 'jobsCapturedAt'>
+> {
   try {
-    const existing = await db
-      .listCollections(
-        { name: { $in: [...collections] } },
-        { nameOnly: true, maxTimeMS },
-      )
-      .toArray();
-    const names = new Set(existing.map(collection => collection.name));
-    const [storage, jobs] = await Promise.all([
+    const collections = await discoverAgendaCollections(db);
+    const [storage, inventory] = await Promise.all([
       Promise.all(
-        collections.map(async (name): Promise<AgendaCollectionStorage> =>
-          names.has(name) ? readStorage(db, name) : { name, status: 'missing' },
+        agendaCollections.map(name =>
+          readAgendaCollectionStorage(db, name, collections),
         ),
       ),
-      names.has('agendaJobs') ? readJobCounts(db).catch(() => null) : [],
+      collections.includes('agendaJobs')
+        ? readAgendaInventory(db, liveJobs)
+        : { jobs: [], jobsCapturedAt: null },
     ]);
-    return { collections: storage, jobs };
+    return { collections: storage, ...inventory };
   } catch {
     return {
-      collections: collections.map(name => ({ name, status: 'unavailable' })),
+      collections: agendaCollections.map(name => ({
+        name,
+        status: 'unavailable',
+      })),
       jobs: null,
+      jobsCapturedAt: null,
     };
   }
 }
 
-export async function diagnostics(_req: Request, res: Response) {
+export async function diagnostics(req: Request, res: Response) {
   res.set('Cache-Control', 'no-store');
   const db = mongoose.connection.db;
   if (!db) {
@@ -219,14 +121,16 @@ export async function diagnostics(_req: Request, res: Response) {
       .json({ message: 'MongoDB diagnostics are unavailable.' });
   }
 
-  const capturedAt = new Date().toISOString();
-  const [server, agenda] = await Promise.all([
+  const capturedAt = new Date();
+  const [server, agenda, history] = await Promise.all([
     readServerDiagnostics(db),
-    readAgendaDiagnostics(db),
+    readAgendaDiagnostics(db, req.query?.liveJobs === 'true'),
+    readAgendaStorageHistory(db, capturedAt).catch(() => null),
   ]);
   return res.json({
-    capturedAt,
+    capturedAt: capturedAt.toISOString(),
     server,
+    history,
     ...agenda,
   } satisfies MongoDiagnosticsSnapshot);
 }
