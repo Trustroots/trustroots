@@ -5,8 +5,10 @@ import android.Manifest
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.ActivityResultRegistry
@@ -30,8 +32,12 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -151,6 +157,60 @@ class PopulatedInboxJourneyTest {
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
         assertTrue(requests.any { it.startsWith("GET /api/users/quiet-fox ") })
         assertFalse(requests.any { it.startsWith("GET /api/messages/member-fox?") })
+    }
+
+    @Test fun readAndUnreadCardsRemainReadableInLightTheme() = verifyInboxAppearance(false)
+
+    @Test fun readAndUnreadCardsRemainReadableInDarkTheme() = verifyInboxAppearance(true)
+
+    private fun verifyInboxAppearance(dark: Boolean) {
+        startResponder { request ->
+            when {
+                request.startsWith("GET /api/messages?") -> "200 OK" to inboxPayload()
+                request.contains("/avatar?") -> "404 Not Found" to ""
+                else -> "404 Not Found" to "{}"
+            }
+        }
+        // Keep the captures focused on read/unread cards, independently of alert enrolment.
+        dismissalPreferences.edit().putBoolean(session.member.username, true).commit()
+        val configuration = Configuration(compose.activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+        }
+        val themedContext = compose.activity.createConfigurationContext(configuration)
+        // Retain the activity in the base-context chain for native result launchers.
+        val context = object : ContextWrapper(compose.activity) {
+            override fun getResources() = themedContext.resources
+            override fun getTheme() = themedContext.theme
+        }
+        val colours = AtomicReference<ColorScheme?>()
+        compose.setContent {
+            CompositionLocalProvider(LocalContext provides context, LocalConfiguration provides configuration) {
+                NativeTestAppFrame(Destination.Messages) {
+                    val scheme = MaterialTheme.colorScheme
+                    SideEffect { colours.set(scheme) }
+                    MessageInboxScreen(api(), session, onSessionInvalidated = {})
+                }
+            }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithText("Amber Owl").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("message-thread-thread-fox").assertTextContains("Unread", substring = true)
+        compose.onNodeWithText("Unread").assertIsDisplayed()
+        compose.onNodeWithTag("message-thread-thread-owl").assertTextContains("Amber Owl", substring = true)
+        compose.onNodeWithTag("message-thread-thread-owl").assert(hasText("Unread", substring = true).not())
+        val scheme = requireNotNull(colours.get())
+        assertTrue("The capture must use the requested appearance", (scheme.surface.luminance() < 0.5f) == dark)
+        fun contrast(foreground: androidx.compose.ui.graphics.Color, background: androidx.compose.ui.graphics.Color): Float {
+            val a = foreground.luminance()
+            val b = background.luminance()
+            return (maxOf(a, b) + 0.05f) / (minOf(a, b) + 0.05f)
+        }
+        assertTrue("Read conversation text must contrast with its card", contrast(scheme.onSurface, scheme.surface) >= 4.5f)
+        assertTrue("Unread conversation text must contrast with its tint", contrast(scheme.onPrimaryContainer, scheme.primaryContainer) >= 4.5f)
+        captureUsabilityScreenshot(compose, "inbox-read-and-unread-${if (dark) "dark" else "light"}")
     }
 
     @Test fun inboxPromptRefreshesAfterOneTapEnrolment() {
