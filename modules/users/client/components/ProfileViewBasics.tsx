@@ -223,7 +223,6 @@ export default function ProfileViewBasics({
         {/* Couchsurfing */}
         {profile.extSitesCS && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg icon-cs"></i>
             <span className="social-profile-handle" title="Couchsurfing">
               CS: {profile.extSitesCS}
             </span>
