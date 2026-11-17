@@ -70,6 +70,11 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
     if (clientRoute.path === '/search') {
       delete remountSearch.offer;
     }
+    if (clientRoute.path === '/profile/edit/networks') {
+      // The editor consumes the Android signer result before clearing its URL.
+      delete remountSearch.nostrOperation;
+      delete remountSearch.nostrResult;
+    }
 
     return (
       <React.Fragment key={JSON.stringify({ params, search: remountSearch })}>

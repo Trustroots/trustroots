@@ -4,6 +4,7 @@ import {
   getPublicKey,
   nip19,
   type EventTemplate,
+  verifyEvent,
 } from 'nostr-tools';
 
 import { annotateFeature, test, expect } from '../../support/fixtures.mts';
@@ -17,6 +18,7 @@ import {
 } from '../../support/helpers.mts';
 import {
   createNostrProof,
+  installNostrBunkerStub,
   installNostrRelayStub,
 } from '../../support/nostr.mts';
 
@@ -316,6 +318,212 @@ test.describe.serial('nostr npub on the profile networks form', () => {
   });
 });
 
+test.describe.serial('Nostr signer profile flows', () => {
+  const user = SEEDED_MEMBERS[2];
+
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, user);
+    await page.request.put('/api/users', { data: { nostrNpub: '' } });
+  });
+
+  test('imports and saves the public key returned by a NIP-46 bunker', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Members can import a public key from a NIP-46 bunker.',
+      'The suggested key remains a draft until explicitly accepted and saved.',
+      'Members can prove ownership of a new key using a NIP-46 signer when saving the profile.',
+    ]);
+
+    const bunkerSecretKey = generateSecretKey();
+    const signerSecretKey = generateSecretKey();
+    const signerNpub = nip19.npubEncode(getPublicKey(signerSecretKey));
+    const { bunkerPubkey } = await installNostrBunkerStub(page, {
+      bunkerSecretKey,
+      signerSecretKey,
+    });
+
+    await page.goto('/profile/edit/networks');
+    await page
+      .getByLabel('NIP-46 bunker URI')
+      .fill(`bunker://${bunkerPubkey}?relay=wss://relay.trustroots.org`);
+    await page.getByRole('button', { name: 'Connect with NIP-46' }).click();
+
+    await expect(page.locator('.nostr-signer-suggestion')).toContainText(
+      signerNpub,
+    );
+    await expect(page.locator('#nostrNpub')).toHaveValue('');
+    await page.getByRole('button', { name: 'Use this npub' }).click();
+    await expect(page.locator('#nostrNpub')).toHaveValue(signerNpub);
+    const saveRequest = page.waitForRequest(
+      request =>
+        request.url().endsWith('/api/users') && request.method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText(/hospitality networks updated/i)).toBeVisible();
+    const saveBody = await (await saveRequest).postDataJSON();
+    expect(saveBody.nostrNpub).toBe(signerNpub);
+    expect(saveBody.nostrProof).toMatchObject({
+      pubkey: getPublicKey(signerSecretKey),
+      kind: 27235,
+    });
+    expect(verifyEvent(saveBody.nostrProof)).toBe(true);
+
+    await page.reload();
+    await expect(page.locator('#nostrNpub')).toHaveValue(signerNpub);
+  });
+
+  test('completes generated Nostr Connect pairing through the local encrypted relay', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Members can pair with a signer through a generated Nostr Connect URI.',
+      'The pairing URI is delivered over an encrypted local NIP-46 relay exchange.',
+    ]);
+
+    const bunkerSecretKey = generateSecretKey();
+    const signerSecretKey = generateSecretKey();
+    const signerNpub = nip19.npubEncode(getPublicKey(signerSecretKey));
+    await installNostrBunkerStub(page, { bunkerSecretKey, signerSecretKey });
+
+    await page.goto('/profile/edit/networks');
+    await page.getByRole('button', { name: 'Show Nostr Connect QR' }).click();
+    const uri = await page.getByLabel('Nostr Connect URI').inputValue();
+    const parsedUri = new URL(uri);
+    const clientPubkey = parsedUri.hostname;
+    const secret = parsedUri.searchParams.get('secret');
+    expect(secret).toBeTruthy();
+
+    await page.waitForFunction(() =>
+      [...window.__e2eNostrSockets].some(socket => socket.__e2eSubs.size),
+    );
+    await page.evaluate(
+      async ({ clientPubkey: pubkey, secret: responseSecret }) => {
+        const event = await window.__e2eCreateNostrConnectHandshake(
+          pubkey,
+          responseSecret,
+        );
+        window.__e2eInjectNostrRelayEvent(event);
+      },
+      { clientPubkey, secret },
+    );
+
+    await expect(page.locator('.nostr-signer-suggestion')).toContainText(
+      signerNpub,
+    );
+    await page.getByRole('button', { name: 'Use this npub' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText(/hospitality networks updated/i)).toBeVisible();
+    await page.reload();
+    await expect(page.locator('#nostrNpub')).toHaveValue(signerNpub);
+  });
+
+  test('imports a NIP-55 key and saves it with a signed profile challenge', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Members can import a public key through a correlated NIP-55 callback.',
+      'The callback is scrubbed from the URL after it is processed.',
+      'Members can prove ownership of a new key using a NIP-55 signer when saving the profile.',
+    ]);
+
+    const signerSecretKey = generateSecretKey();
+    const signerNpub = nip19.npubEncode(getPublicKey(signerSecretKey));
+    await page.goto('/profile/edit/networks');
+    await page.getByRole('button', { name: 'Use Android signer' }).click();
+
+    const signerUri = await page
+      .getByRole('link', { name: 'Open in Android signer' })
+      .getAttribute('href');
+    const callbackUrl = new URL(
+      new URL(signerUri!).searchParams.get('callbackUrl')!,
+    );
+    const pendingRequest = await page.evaluate(() =>
+      JSON.parse(window.sessionStorage.getItem('trustroots.nostr.pending')!),
+    );
+    expect(pendingRequest.operationId).toBe(
+      callbackUrl.searchParams.get('nostrOperation'),
+    );
+    callbackUrl.searchParams.set('nostrResult', signerNpub);
+    await page.goto(callbackUrl.toString());
+
+    await expect(page).toHaveURL(/\/profile\/edit\/networks$/);
+    await expect(page.locator('.nostr-signer-suggestion')).toContainText(
+      signerNpub,
+    );
+    await expect(page.locator('#nostrNpub')).toHaveValue('');
+    await page.getByRole('button', { name: 'Use this npub' }).click();
+
+    await page.getByLabel('Signing method').selectOption('nip55');
+    const saveRequest = page.waitForRequest(
+      request =>
+        request.url().endsWith('/api/users') && request.method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Save' }).click();
+    const proofLink = page.getByRole('link', {
+      name: 'Open in Android signer',
+    });
+    await expect(proofLink).toBeVisible();
+    const proofUri = (await proofLink.getAttribute('href'))!;
+    const proofQuery = new URLSearchParams(
+      proofUri.slice(proofUri.indexOf('?') + 1),
+    );
+    const proofCallback = new URL(proofQuery.get('callbackUrl')!);
+    const challenge = JSON.parse(
+      decodeURIComponent(
+        proofUri.slice('nostrsigner:'.length, proofUri.indexOf('?')),
+      ),
+    );
+    const signedProof = finalizeEvent(challenge, signerSecretKey);
+    const serialisedProof = JSON.stringify(signedProof);
+    proofCallback.searchParams.set('nostrResult', serialisedProof);
+    await page.goto(proofCallback.toString());
+    const saveBody = await (await saveRequest).postDataJSON();
+    expect(saveBody.nostrNpub).toBe(signerNpub);
+    expect(saveBody.nostrProof).toEqual(JSON.parse(serialisedProof));
+    expect(verifyEvent(saveBody.nostrProof)).toBe(true);
+    await expect(page.getByText(/hospitality networks updated/i)).toBeVisible();
+    await page.reload();
+    await expect(page.locator('#nostrNpub')).toHaveValue(signerNpub);
+  });
+
+  test('rejects a mismatched NIP-07 signer before updating the profile', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'A signer with a different public key cannot prove ownership of the profile key being saved.',
+    ]);
+
+    const savedSecretKey = generateSecretKey();
+    const otherSecretKey = generateSecretKey();
+    const savedNpub = nip19.npubEncode(getPublicKey(savedSecretKey));
+    const otherPubkey = getPublicKey(otherSecretKey);
+    await page.exposeFunction('__e2eSignNostrEvent', (event: EventTemplate) =>
+      finalizeEvent(event, otherSecretKey),
+    );
+    await page.addInitScript(publicKey => {
+      window.nostr = {
+        getPublicKey: async () => publicKey,
+        signEvent: event => window.__e2eSignNostrEvent(event),
+      };
+    }, otherPubkey);
+
+    await page.goto('/profile/edit/networks');
+    await page.locator('#nostrNpub').fill(savedNpub);
+    const profileUpdates: string[] = [];
+    page.on('request', request => {
+      if (request.url().endsWith('/api/users') && request.method() === 'PUT') {
+        profileUpdates.push(request.url());
+      }
+    });
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(
+      page.getByText('The signer public key does not match this npub.'),
+    ).toBeVisible();
+    expect(profileUpdates).toHaveLength(0);
+  });
+});
+
 test.describe('nostr community notes badge on the profile view', () => {
   test('shows the Nostroots badge and recent notes for a member with map notes', async ({
     page,
@@ -384,13 +592,14 @@ test.describe('nostr community notes badge on the profile view', () => {
   });
 });
 
-test('verifies a new npub through a browser signer and rejects unsigned API changes', async ({
+test('saves a new npub through a browser signer and rejects unsigned API changes', async ({
   page,
   request,
 }, testInfo) => {
   annotateFeature(testInfo, 'profile.edit-networks', [
     'Networks edit form is reachable.',
     'Valid npub is saved and shown on profile view.',
+    'Members can prove ownership of a new key using a browser signer when saving the profile.',
   ]);
   const member = createUser();
   await registerViaApi(request, member);
@@ -419,8 +628,16 @@ test('verifies a new npub through a browser signer and rejects unsigned API chan
   ).toBe(400);
   await page.goto('/profile/edit/networks');
   await page.locator('#nostrNpub').fill(npub);
+  const saveRequest = page.waitForRequest(
+    request =>
+      request.url().endsWith('/api/users') && request.method() === 'PUT',
+  );
   await page.locator('.profile-editor-save').click();
   await expect(page.getByText(/networks updated/i)).toBeVisible();
+  const saveBody = await (await saveRequest).postDataJSON();
+  expect(saveBody.nostrNpub).toBe(npub);
+  expect(saveBody.nostrProof).toMatchObject({ pubkey, kind: 27235 });
+  expect(verifyEvent(saveBody.nostrProof)).toBe(true);
   await page.reload();
   await expect(page.locator('#nostrNpub')).toHaveValue(npub);
 });
