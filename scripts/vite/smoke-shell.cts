@@ -9,6 +9,8 @@ const expressConfig = require('../../config/lib/express.mjs').default as {
   initLocalVariables(app: import('express').Express): void;
   initViewEngine(app: import('express').Express): void;
 };
+const { getStartShell, renderStartShell } =
+  require('../../modules/core/server/services/start-shell.server.service.mts') as typeof import('../../modules/core/server/services/start-shell.server.service.mts');
 
 type SmokeRoute = {
   path: string;
@@ -93,25 +95,23 @@ async function main() {
   app.get('/api/statistics', (_req, res) => {
     res.json({});
   });
-  app.get(
-    routes.map(({ path }) => path),
-    (_req, res) => {
-      res.render('react-index.server.view.html', {
-        user: null,
-        nonce: 'vite-smoke',
-      });
-    },
-  );
-  // Client redirects such as /offer -> /offer/host request a new document.
+  // Serve the Start shell as renderIndex does. Client redirects such as
+  // /offer -> /offer/host request a new document too.
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api/')) {
       next();
       return;
     }
-    res.render('react-index.server.view.html', {
-      user: null,
-      nonce: 'vite-smoke',
-    });
+    getStartShell().then(shell => {
+      res.render(
+        'react-index.server.view.html',
+        { user: null, nonce: 'vite-smoke' },
+        (error, head) => {
+          if (error) return next(error);
+          res.send(renderStartShell(shell, head, 'vite-smoke'));
+        },
+      );
+    }, next);
   });
 
   const server = app.listen(0, '127.0.0.1');
@@ -140,6 +140,7 @@ async function main() {
         throw new Error('Vite server did not bind to a TCP port.');
       }
       baseURL = `http://127.0.0.1:${viteAddress.port}`;
+      process.env.TRUSTROOTS_VITE_URL = baseURL;
     }
     browser = await chromium.launch({
       ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
@@ -149,13 +150,14 @@ async function main() {
     const page = await browser.newPage();
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    const scriptPath = development
-      ? '/assets/config/vite/react-main.tsx'
-      : '/assets/react-main.js';
+    const isEntry = (pathname: string) =>
+      development
+        ? pathname === '/assets/config/vite/react-main.tsx'
+        : /^\/assets\/react-main-[\w-]+\.js$/.test(pathname);
 
     for (const route of routes) {
-      const script = page.waitForResponse(
-        response => new URL(response.url()).pathname === scriptPath,
+      const script = page.waitForResponse(response =>
+        isEntry(new URL(response.url()).pathname),
       );
       await page.goto(baseURL + route.path);
       assert.ok([200, 304].includes((await script).status()));
@@ -175,9 +177,15 @@ async function main() {
         });
         throw error;
       }
-      assert.equal(
-        await page.locator(`script[src*="${scriptPath}"]`).getAttribute('type'),
-        development ? 'module' : null,
+      assert.deepEqual(
+        await page
+          .locator('script')
+          .evaluateAll(
+            scripts =>
+              scripts.filter(script => script.nonce !== 'vite-smoke').length,
+          ),
+        0,
+        `Every script on ${route.path} must carry the CSP nonce`,
       );
       if (development) {
         assert.ok(await page.evaluate(() => document.styleSheets.length > 0));
@@ -250,7 +258,7 @@ async function main() {
     console.log(
       `Vite ${
         development ? 'development proxy' : 'production bundle'
-      } renders public routes with the Express template.`,
+      } renders public routes in the Start shell from Express.`,
     );
   } finally {
     if (browser) await browser.close();

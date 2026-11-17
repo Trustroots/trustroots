@@ -342,8 +342,6 @@ if ! NODE_ENV=test \
     "End-to-end tests blocked because the test database could not be seeded."
 fi
 
-export TRUSTROOTS_E2E_USE_EXTRACTED_CSS=true
-
 if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
   echo "Building client assets for end-to-end tests..."
   if ! pnpm run build:e2e; then

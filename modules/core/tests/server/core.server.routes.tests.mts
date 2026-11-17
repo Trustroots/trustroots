@@ -111,7 +111,7 @@ describe('Core CRUD tests', function () {
         })
         .save();
     }
-    it('renders React assets and root for admin users on admin pages', function (done) {
+    it('renders the Start shell for admin users on admin pages', function (done) {
       const adminCredentials = {
         password: 'Password123!',
         username: 'frontendrootadmin',
@@ -127,8 +127,7 @@ describe('Core CRUD tests', function () {
         .then(function () {
           agent.get('/admin').end(function (err, res) {
             should.not.exist(err);
-            res.text.should.containEql('id="tr-react-root"');
-            res.text.should.containEql('assets/react-main.js');
+            res.text.should.match(/<script nonce="[^"]+">\s*var title =/);
             res.text.should.not.containEql('data-ui-view');
             utils
               .signOut(agent)
@@ -138,7 +137,7 @@ describe('Core CRUD tests', function () {
         })
         .catch(done);
     });
-    it('renders React assets and root for authenticated profile pages', function (done) {
+    it('renders the Start shell for authenticated profile pages', function (done) {
       const profileCredentials = {
         password: 'Password123!',
         username: 'frontendrootprofile',
@@ -154,8 +153,7 @@ describe('Core CRUD tests', function () {
         .then(function () {
           agent.get('/profile/frontend-root-profile').end(function (err, res) {
             should.not.exist(err);
-            res.text.should.containEql('id="tr-react-root"');
-            res.text.should.containEql('assets/react-main.js');
+            res.text.should.match(/<script nonce="[^"]+">\s*var title =/);
             res.text.should.not.containEql('data-ui-view');
             utils
               .signOut(agent)

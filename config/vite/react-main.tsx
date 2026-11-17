@@ -1,7 +1,7 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { hydrateRoot } from 'react-dom/client';
+import { hydrateStart } from '@tanstack/react-start/client';
 
-import '@vitejs/plugin-react/preamble';
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
@@ -13,29 +13,14 @@ import './load-styles';
 
 // Install the hook before activating the tracker from the page template.
 installUmamiBeforeSend();
+enableVisibilityWatching();
+enableFaviconUpdater();
 
-function enableMessageShellServices(): void {
-  enableVisibilityWatching();
-  enableFaviconUpdater();
-}
-
-function render(): void {
-  enableMessageShellServices();
-  const element = document.getElementById('tr-react-root');
-  if (!element) {
-    throw new Error('React root element is missing');
-  }
-  const root = createRoot(element);
-
-  root.render(
+void hydrateStart().then(router => {
+  hydrateRoot(
+    document,
     <AppProviders>
-      <ReactApp />
+      <ReactApp router={router} />
     </AppProviders>,
   );
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', render);
-} else {
-  render();
-}
+});

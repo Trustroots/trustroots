@@ -27,13 +27,19 @@ type MockResponse = {
   renderVars: Record<string, unknown> | undefined;
   headers: Record<string, string>;
   redirected: string;
+  locals: { nonce: string };
+  renderError: Error | null;
   status: (code: number) => MockResponse;
   format: (
     handlers: Record<string, () => void> & { default: () => void },
   ) => MockResponse;
   json: (value?: unknown) => MockResponse;
   send: (value: unknown) => MockResponse;
-  render: (view: string, vars?: Record<string, unknown>) => MockResponse;
+  render: (
+    view: string,
+    vars?: Record<string, unknown>,
+    callback?: (error: Error | null, html: string) => void,
+  ) => MockResponse;
   set: (key: string, value: string) => MockResponse;
   redirect: (url: string) => MockResponse;
 };
@@ -100,6 +106,8 @@ function mockResponse(acceptType?: string): MockResponse {
     renderVars: undefined,
     headers: {},
     redirected: '',
+    locals: { nonce: 'test-nonce' },
+    renderError: null,
 
     status(code: number) {
       res.statusCode = code;
@@ -121,9 +129,10 @@ function mockResponse(acceptType?: string): MockResponse {
       res.body = value;
       return res;
     },
-    render(view, vars) {
+    render(view, vars, callback) {
       res.rendered = view;
       res.renderVars = vars;
+      callback?.(res.renderError, '<title>Rendered head</title>');
       return res;
     },
     set(key, value) {
@@ -149,36 +158,85 @@ describe('Controller: core', function () {
     sinon.restore();
   });
   describe('renderIndex', function () {
-    it('renders anonymous visitors with only an empty user', function () {
+    const environment = { ...process.env };
+    const fail = (error: unknown) => {
+      throw error;
+    };
+
+    afterEach(function () {
+      process.env = { ...environment };
+    });
+
+    it('sends the Start shell with the rendered head and script nonces', async function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      await coreController.renderIndex({ path: '/' }, res, fail);
+      // A local client build replaces the empty test shell.
+      assert.match(
+        String(res.body),
+        /^<!DOCTYPE html><html lang="en"><head><title>Rendered head<\/title>/,
+      );
+      assert.doesNotMatch(String(res.body), /<script(?! nonce="test-nonce")/);
+    });
+
+    it('passes template errors to the next handler', async function () {
+      const res = mockResponse();
+      const error = new Error('template failed');
+      res.renderError = error;
+      const next = sinon.spy();
+      await coreController.renderIndex({ path: '/' }, res, next);
+      sinon.assert.calledOnceWithExactly(next, error);
+      should(res.body).be.null();
+    });
+
+    it('passes shell loading errors to the next handler', async function () {
+      process.env.NODE_ENV = 'development';
+      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
+      process.env.TRUSTROOTS_VITE_URL = 'http://127.0.0.1:9';
+      const res = mockResponse();
+      const next = sinon.spy();
+      await coreController.renderIndex({ path: '/' }, res, next);
+      sinon.assert.calledOnce(next);
+      res.rendered.should.equal('');
+    });
+
+    it('renders anonymous visitors with only an empty user', async function () {
+      const res = mockResponse();
+      await coreController.renderIndex(
+        { path: '/definitely-not-a-route' },
+        res,
+        fail,
+      );
       res.rendered.should.equal('react-index.server.view.html');
       assert.deepStrictEqual(renderVars(res), { user: null });
     });
 
-    it('marks the signup page as an invite', function () {
+    it('marks the signup page as an invite', async function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/signup' }, res);
+      await coreController.renderIndex({ path: '/signup' }, res, fail);
       res.rendered.should.equal('react-index.server.view.html');
       should(renderVars(res).invite).be.true();
     });
 
-    it('redirects legacy React routes to their replacement', function () {
+    it('redirects legacy React routes to their replacement', async function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/about' }, res);
+      await coreController.renderIndex({ path: '/about' }, res, fail);
       res.redirected.should.equal('/');
     });
 
-    it('renders the React index for unknown paths', function () {
+    it('renders the React index for unknown paths', async function () {
       const res = mockResponse();
       res.redirect = function () {
         throw new Error('should not redirect unknown paths');
       };
-      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      await coreController.renderIndex(
+        { path: '/definitely-not-a-route' },
+        res,
+        fail,
+      );
       res.rendered.should.equal('react-index.server.view.html');
     });
 
-    it('exposes a sanitized user profile when signed in', function () {
+    it('exposes a sanitized user profile when signed in', async function () {
       const res = mockResponse();
       const user = new User({
         username: 'alice',
@@ -188,17 +246,21 @@ describe('Controller: core', function () {
         provider: 'local',
       });
       user.set('roles', undefined);
-      coreController.renderIndex({ path: '/', user }, res);
+      await coreController.renderIndex({ path: '/', user }, res, fail);
       should(renderVars(res).user).deepEqual({
         sanitized: true,
         username: 'alice',
       });
     });
 
-    it('exposes the current tribe when browsing a tribe page', function () {
+    it('exposes the current tribe when browsing a tribe page', async function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
-      coreController.renderIndex({ path: '/tribes/test-tribe', tribe }, res);
+      await coreController.renderIndex(
+        { path: '/tribes/test-tribe', tribe },
+        res,
+        fail,
+      );
       should(renderVars(res).tribe).equal(tribe);
     });
   });

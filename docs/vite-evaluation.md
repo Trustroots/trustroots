@@ -16,29 +16,47 @@ after Bootstrap. Vite prepends `import.meta.glob` imports, so that glob lives in
 its own module; otherwise Bootstrap's later focus rules override app styles of
 equal specificity.
 
-`pnpm build:vite` emits a single IIFE `public/assets/react-main.js`,
+The client builds with the TanStack Start Vite plugin in SPA mode, with the
+code-based route tree in `layers/shell/client/routeTree.tsx`. Start's router
+entry, `layers/shell/client/start-router.tsx`, gives the browser the app routes
+and gives Start's server bundle only the document shell, so browser-only page
+modules are never imported in Node. Express is still the only server: Start's
+server bundle is used at build time only.
+
+`pnpm build:vite` prerenders that shell to `public/assets/_shell.html` and
+emits an ES module entry `react-main-<hash>.js` with its chunks,
 `react-main.css`, and `react-main.rtl.css`. The RTL file is produced with
-`rtlcss`, and the client loads it for right-to-left languages. The build keeps
-other files in `public/assets`. `pnpm build` runs this Vite build for
-production images.
+`rtlcss` from the client build, and the client loads it for right-to-left
+languages. The build keeps other files in `public/assets`. `pnpm build` runs
+this Vite build for production images.
+
+For client-rendered pages Express reads the shell once and adds the page head
+(`react-index.server.view.html`: title, description, social preview tags,
+Umami template and bootstrap data) and the request's CSP nonce on every
+script. In development it fetches the shell from the Vite server on each
+request instead; set `TRUSTROOTS_VITE_URL` when Vite does not run on
+<http://localhost:3000>. Express error pages keep the nunjucks layout and load
+only the stylesheet.
 
 After building Vite, run `pnpm test:vite:production`. This browser smoke test
-uses Express's production template and locals to load the bundle and CSS on
-public pages, including home, about, contact, contribute, FAQ sections,
-foundation, guide, media, rules, statistics, support, team, greeters,
-volunteering, circles, privacy, safety, password and email-confirmation states,
-and sign-in. It also loads the RTL stylesheet with an Arabic language cookie.
-It requires Playwright's Chromium browser (`pnpm exec playwright install
-chromium`), already included in the development container. It checks script
-execution and route rendering without a database. Map, circle-detail, and
-signed-in routes stay in the end-to-end suite because those pages need data
-before redirecting to sign-in.
+serves the Start shell with Express's page head and locals to load the bundle
+and CSS on public pages, including home, about, contact, contribute, FAQ
+sections, foundation, guide, media, rules, statistics, support, team,
+greeters, volunteering, circles, privacy, safety, password and
+email-confirmation states, and sign-in. It also loads the RTL stylesheet with
+an Arabic language cookie. It requires Playwright's Chromium browser (`pnpm
+exec playwright install chromium`), already included in the development
+container. It checks script execution, CSP nonces on every script and route
+rendering without a database. Map, circle-detail, and signed-in routes stay in
+the end-to-end suite because those pages need data before redirecting to
+sign-in.
 
 `pnpm test:vite:development` runs the same route checks through the Vite
-development server proxy to Express. It verifies module loading and injected
-styles from the Vite browser origin. Both smoke commands run in CI. Dependency
-scanning treats legacy `.js` components as JSX and injects the browser `process`
-shim into pre-bundled dependencies such as `parse-link-header`.
+development server proxy to Express, which fetches the shell from Vite. It
+verifies module loading and injected styles from the Vite browser origin. Both
+smoke commands run in CI. Dependency scanning treats legacy `.js` components
+as JSX and injects the browser `process` shim into pre-bundled dependencies
+such as `parse-link-header`.
 
 `pnpm test:vite:rtl` checks the RTL asset plugin without a browser and includes
 the source alias, package export, and `.js`-to-TypeScript import resolution

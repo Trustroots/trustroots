@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, transformWithOxc } from 'vite';
@@ -126,6 +127,31 @@ export default defineConfig({
     legacyCssImports,
     tailwindcss(),
     rtlStylesheetPlugin(),
+    ...tanstackStart({
+      srcDirectory: 'layers/shell/client',
+      router: {
+        entry: 'start-router.tsx',
+        basepath: '/',
+        // Routes stay code-based in routeTree.tsx; the file-route generator
+        // only needs the root route, and its output is unused.
+        routeFileIgnorePattern: '^(?!__root\\.)',
+        generatedRouteTree: '../../../build/start-routeTree.gen.ts',
+      },
+      client: { entry: '../../../config/vite/react-main.tsx' },
+      // Prerendered to public/assets/_shell.html, which Express serves.
+      spa: { enabled: true, maskPath: '/assets/' },
+    })
+      .flat(2)
+      // In development Start prefixes every path outside /assets/ with that
+      // base, before Vite's proxy could send it to Express.
+      .filter(
+        plugin =>
+          !(
+            plugin &&
+            'name' in plugin &&
+            plugin.name === 'tanstack-start-core:dev-base-rewrite'
+          ),
+      ),
     react(),
   ],
   resolve: {
@@ -173,8 +199,22 @@ export default defineConfig({
       },
     },
   },
+  // Start prerenders the SPA shell through the preview server.
+  preview: { proxy: {} },
+  environments: {
+    client: {
+      build: {
+        outDir: resolve(root, 'public/assets'),
+        rolldownOptions: {
+          transform: { inject: { process: 'process/browser' } },
+          output: { entryFileNames: 'react-main-[hash].js' },
+        },
+      },
+    },
+    // Start prerenders the SPA shell with this bundle; Express serves pages.
+    ssr: { build: { outDir: resolve(root, 'build/start-server') } },
+  },
   build: {
-    outDir: resolve(root, 'public/assets'),
     assetsDir: '.',
     emptyOutDir: false,
     // Inline small assets while keeping larger files independently cacheable.
@@ -183,14 +223,7 @@ export default defineConfig({
     manifest: 'vite-manifest.json',
     cssCodeSplit: false,
     rolldownOptions: {
-      transform: { inject: { process: 'process/browser' } },
-      input: {
-        'react-main': resolve(root, 'config/vite/react-main.tsx'),
-      },
       output: {
-        // Express serves the production entry with a classic script tag.
-        format: 'iife',
-        entryFileNames: 'react-main.js',
         assetFileNames: (assetInfo: { name?: string }) => {
           const extension = extname(assetInfo.name || '').toLowerCase();
           if (extension === '.css') return 'react-main.css';

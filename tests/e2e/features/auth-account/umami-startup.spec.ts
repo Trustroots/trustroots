@@ -51,7 +51,7 @@ for (const gpc of [false, true]) {
     const pending = new Promise<void>(resolve => {
       release = resolve;
     });
-    await page.route('**/assets/react-main.js*', async route => {
+    await page.route('**/assets/react-main-*.js', async route => {
       await pending;
       await route.continue();
     });
@@ -93,7 +93,7 @@ test('analytics stays inactive when the app bundle fails', async ({
     'Analytics stays inactive if the app cannot start.',
   ]);
   const tracker = await stubTracker(page);
-  await page.route('**/assets/react-main.js*', route => route.abort('failed'));
+  await page.route('**/assets/react-main-*.js', route => route.abort('failed'));
   await page.goto('/signin?returnTo=fictional-value#section');
   await expect(page.locator('#tr-umami-tracker')).toHaveCount(1);
   expect(tracker.scripts).toEqual([]);

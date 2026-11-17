@@ -43,6 +43,8 @@ export function rtlStylesheetPlugin(): Plugin {
   return {
     name: 'trustroots-rtl-stylesheet',
     apply: 'build',
+    // Start also builds an SSR bundle, which emits no stylesheet.
+    applyToEnvironment: environment => environment.name === 'client',
     // Vite adds the extracted stylesheet after normal plugins run.
     enforce: 'post',
     generateBundle(_options, bundle) {

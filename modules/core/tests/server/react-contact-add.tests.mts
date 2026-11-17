@@ -29,8 +29,7 @@ describe('React contact creation route responses', function () {
       '/profile/sample-member/experiences/new',
     ]) {
       const response = await agent.get(path).expect(200);
-      response.text.should.containEql('id="tr-react-root"');
-      response.text.should.containEql('assets/react-main.js');
+      response.text.should.match(/<script nonce="[^"]+">\s*var title =/);
       response.text.should.not.containEql('data-ui-view');
     }
   });

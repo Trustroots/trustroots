@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import errorService from './../services/error.server.service.mjs';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mjs';
 import textService from './../services/text.server.service.mts';
+import {
+  getStartShell,
+  renderStartShell,
+} from './../services/start-shell.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
 import reactRouteOwnership, {
@@ -40,7 +44,13 @@ type CoreResponse = {
   format(
     handlers: Record<string, () => void> & { default: () => void },
   ): unknown;
+  locals: { nonce: string };
   render(view: string, variables?: BootstrapVariables): unknown;
+  render(
+    view: string,
+    variables: BootstrapVariables,
+    callback: (error: Error | null, html: string) => void,
+  ): unknown;
   redirect(url: string): unknown;
   json(value?: unknown): unknown;
   send(value: string): unknown;
@@ -57,7 +67,11 @@ const { getReactRouteAccessRedirect, getReactRoutePolicy } =
 /**
  * Render the main application page
  */
-function renderIndex(req: IndexRequest, res: CoreResponse) {
+function renderIndex(
+  req: IndexRequest,
+  res: CoreResponse,
+  next: (error: unknown) => void,
+) {
   const renderVars: BootstrapVariables = {
     user: null,
   };
@@ -99,7 +113,12 @@ function renderIndex(req: IndexRequest, res: CoreResponse) {
   }
 
   // All SPA routes use the React shell; unknown paths render React NotFound.
-  res.render('react-index.server.view.html', renderVars);
+  return getStartShell().then(shell => {
+    res.render('react-index.server.view.html', renderVars, (error, head) => {
+      if (error) return next(error);
+      res.send(renderStartShell(shell, head, res.locals.nonce));
+    });
+  }, next);
 }
 
 /**
