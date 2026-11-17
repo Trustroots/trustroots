@@ -1,5 +1,11 @@
 import L from 'leaflet';
-import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { getRasterMapTiles } from '@/modules/core/client/utils/map';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
@@ -124,7 +130,20 @@ export default function CircleLocationMap(props: Props) {
   const [popupHeading, setPopupHeading] = useState<{
     container: HTMLElement;
     content: ReactNode;
+    popup: L.Popup;
+    autoPan: boolean;
+    focusAction: boolean;
   } | null>(null);
+  useLayoutEffect(() => {
+    if (!popupHeading) return;
+    const { popup, autoPan, container, focusAction } = popupHeading;
+    const previousAutoPan = popup.options.autoPan;
+    // Leaflet initially positions the popup before React adds its heading.
+    popup.options.autoPan = autoPan;
+    popup.update();
+    popup.options.autoPan = previousAutoPan;
+    if (focusAction) container.parentElement?.querySelector('a')?.focus();
+  }, [popupHeading]);
   useEffect(() => {
     const element = container.current!;
     const minimumZoom = () =>
@@ -188,6 +207,7 @@ export default function CircleLocationMap(props: Props) {
     props.locations.forEach(location => {
       const content = locationPopup(location);
       const heading = content.firstElementChild as HTMLElement;
+      let focusAction = false;
       const marker = L.circleMarker([location.latitude, location.longitude], {
         radius: 8,
         color: '#fff',
@@ -196,12 +216,16 @@ export default function CircleLocationMap(props: Props) {
         fillOpacity: 1,
       })
         .bindPopup(content)
-        .on('popupopen', () => {
+        .on('popupopen', (event: L.PopupEvent) => {
           openLocation.current = location.id;
           if (location.popupHeading != null) {
+            const { popup } = event;
             setPopupHeading({
               container: heading,
               content: location.popupHeading,
+              popup,
+              autoPan: popup.options.autoPan !== false,
+              focusAction,
             });
           }
         })
@@ -224,8 +248,13 @@ export default function CircleLocationMap(props: Props) {
           ) {
             event.preventDefault();
             event.stopPropagation();
-            marker.openPopup();
-            content.querySelector('a')?.focus();
+            if (marker.isPopupOpen()) {
+              content.querySelector('a')?.focus();
+            } else {
+              focusAction = true;
+              marker.openPopup();
+              focusAction = false;
+            }
           }
         });
       }
