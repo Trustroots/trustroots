@@ -1,5 +1,5 @@
 import type { Types } from 'mongoose';
-import type { Command } from 'gm';
+import type { Metadata } from 'sharp';
 
 export interface AvatarProcessingResult {
   version: string;
@@ -15,12 +15,7 @@ export interface AvatarProcessingJob {
 
 export interface AvatarProcessingService {
   avatarSizes: number[];
-  createLimitedCommand(
-    sourcePath: string | null,
-    cancellationEmitter?: NodeJS.EventEmitter,
-  ): Command;
   enqueueAvatarProcessing(job: AvatarProcessingJob): boolean;
-  getNativeResourceLimits(): Array<[string, string]>;
   maxHeight: number;
   maxPixels: number;
   maxQueuedUploads: number;
@@ -30,10 +25,8 @@ export interface AvatarProcessingService {
     job: Pick<AvatarProcessingJob, 'sourcePath' | 'userId'>,
   ): Promise<AvatarProcessingResult>;
   removeAvatarVersion(avatarDirectory: string, version: string): Promise<void>;
-  validateDimensions(output: string): void;
-  validateResourceList(output: string | Buffer): void;
-  validateNativeResourceLimits(
-    cancellationEmitter?: NodeJS.EventEmitter,
-  ): Promise<void>;
+  validateDimensions(
+    metadata: Pick<Metadata, 'format' | 'height' | 'pages' | 'width'>,
+  ): void;
   validateVersion(version: string): void;
 }
