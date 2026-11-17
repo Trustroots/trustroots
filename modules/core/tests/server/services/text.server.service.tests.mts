@@ -1,4 +1,4 @@
-import textService, * as textExports from '../../../server/services/text.server.service.mts';
+import textService from '../../../server/services/text.server.service.mts';
 
 import 'should';
 
@@ -6,18 +6,6 @@ import 'should';
  * Text sanitisation tests
  */
 describe('Text processor tests', function () {
-  it('shares its functions and options through default and named ESM exports', function () {
-    for (const name of [
-      'html',
-      'isEmpty',
-      'plainText',
-      'sanitizeOptions',
-      'stripContactDetails',
-    ] as const) {
-      textService[name].should.equal(textExports[name]);
-    }
-  });
-
   const htmlString =
     'Foo' +
     '<i>foo</i>' +

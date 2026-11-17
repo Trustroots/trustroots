@@ -85,7 +85,12 @@ const load: LoadHook = (url, context, nextLoad) => {
         id,
       )});\n` +
       'export default value;\n' +
-      names.map(name => `export const ${name} = value.${name};`).join('\n');
+      names
+        .map(
+          (name, index) =>
+            `const named${index} = value.${name};\nexport { named${index} as ${name} };`,
+        )
+        .join('\n');
     return { format: 'module', source, shortCircuit: true };
   }
   return nextLoad(url, context);

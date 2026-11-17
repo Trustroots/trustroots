@@ -99,11 +99,11 @@ interface Shard {
 // the tests that check them directly, which cover all of their code.
 const weeklyShardTests: Record<string, string[]> = {
   'package-analytics': [
-    'modules/core/tests/server/analytics.server.unit.tests.cts',
-    'modules/core/tests/server/controllers/analytics.server.controller.tests.cts',
+    'modules/core/tests/server/analytics.server.unit.tests.mts',
+    'modules/core/tests/server/controllers/analytics.server.controller.tests.mts',
   ],
   'package-logger': [
-    'modules/core/tests/server/log-redaction.unit.tests.cts',
+    'modules/core/tests/server/log-redaction.unit.tests.mts',
     'modules/users/tests/server/user-block.server.routes.tests.cts',
   ],
 };
