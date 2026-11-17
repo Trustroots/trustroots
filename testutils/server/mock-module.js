@@ -1,1 +1,1 @@
-module.exports = require('./mock-module.mts').default;
+module.exports = require('./mock-module.mts').mockModuleSync;

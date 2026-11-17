@@ -4,7 +4,7 @@ import {
   stripTypeScriptTypes,
 } from 'node:module';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 type MockStubs = Record<string, unknown>;
 
@@ -26,7 +26,9 @@ Reflect.set(globalThis, registryKey, values);
 let sequence = 0;
 
 const resolve: ResolveHook = (specifier, context, nextResolve) => {
-  const mock = mocks.get(specifier);
+  const mock = mocks.get(
+    specifier.startsWith('file:') ? fileURLToPath(specifier) : specifier,
+  );
   if (mock) {
     return { url: mock.url, format: 'module', shortCircuit: true };
   }
@@ -83,8 +85,7 @@ const load: LoadHook = (url, context, nextLoad) => {
         id,
       )});\n` +
       'export default value;\n' +
-      names.map(name => `export const ${name} = value.${name};`).join('\n') +
-      '\nexport { value as "module.exports" };';
+      names.map(name => `export const ${name} = value.${name};`).join('\n');
     return { format: 'module', source, shortCircuit: true };
   }
   return nextLoad(url, context);
@@ -92,12 +93,29 @@ const load: LoadHook = (url, context, nextLoad) => {
 
 registerHooks({ resolve, load });
 
-function mockModule<T = unknown>(filename: string, stubs: MockStubs): T {
+function register(filename: string, stubs: MockStubs): MockModule {
   const id = ++sequence;
   const virtual = `${filename}.mock-${id}.mjs`;
-  const url = pathToFileURL(virtual).href;
-  mocks.set(virtual, { filename, url, id, stubs });
-  return require(virtual) as T;
+  const mock = { filename, url: pathToFileURL(virtual).href, id, stubs };
+  mocks.set(virtual, mock);
+  return mock;
+}
+
+/** Imports a fresh copy of `target` whose listed dependencies are replaced by `stubs`. */
+async function mockModule<T = unknown>(
+  target: string | URL,
+  stubs: MockStubs,
+): Promise<T> {
+  const filename = typeof target === 'string' ? target : fileURLToPath(target);
+  return (await import(register(filename, stubs).url)) as T;
+}
+
+// TODO(#3494): remove with mock-module.js once no CommonJS test loads it.
+export function mockModuleSync<T = unknown>(
+  filename: string,
+  stubs: MockStubs,
+): T {
+  return require(fileURLToPath(register(filename, stubs).url)) as T;
 }
 
 export default mockModule;
