@@ -88,6 +88,7 @@ describe('Admin Gravatar usage', () => {
     });
     await User.collection.insertMany(fixtures.map(fixture => ({ ...fixture })));
     const find = sinon.spy(User.collection, 'find');
+    const update = sinon.spy(User, 'updateOne');
     const upstream = sinon.stub(globalThis, 'fetch');
     upstream
       .onCall(0)
@@ -144,6 +145,7 @@ describe('Admin Gravatar usage', () => {
         sinon.match({ projection: { emailHash: 1, _id: 0 }, batchSize: 50 }),
       ),
     );
+    sinon.assert.notCalled(update);
     assert.deepEqual(
       upstream.args.map(([target]) => new URL(String(target)).pathname).sort(),
       validHashes.map(hash => `/avatar/${hash}`).sort(),
@@ -173,6 +175,7 @@ describe('Admin Gravatar usage', () => {
       emailHash: letter.repeat(32),
     }));
     await User.collection.insertMany(fixtures);
+    const find = sinon.spy(User.collection, 'find');
     const upstream = sinon.stub(globalThis, 'fetch');
     upstream
       .withArgs(sinon.match(`/avatar/${'a'.repeat(32)}?`))
@@ -212,6 +215,12 @@ describe('Admin Gravatar usage', () => {
       unavailable: 2,
       inconclusive: 1,
     });
+    assert.ok(
+      find.calledWith(
+        { avatarSource: 'gravatar' },
+        sinon.match({ projection: { emailHash: 1, avatarVersion: 1 } }),
+      ),
+    );
 
     const members = await User.collection
       .find({ username: /^fictional-cleanup-/ })
