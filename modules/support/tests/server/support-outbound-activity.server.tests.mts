@@ -1,10 +1,8 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const {
-  applySupportOutboundActivity: applyActivity,
-}: typeof import('../../server/services/support-outbound-activity.server.service.mts') = require('../../server/services/support-outbound-activity.server.service.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import { applySupportOutboundActivity as applyActivity } from '../../server/services/support-outbound-activity.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const Request =
   mongoose.model<
     import('../../server/models/support.server.model.mts').SupportRequestRecord

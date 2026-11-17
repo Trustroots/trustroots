@@ -1,18 +1,15 @@
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const emailService: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
-const {
-  SupportEmailError,
-}: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
-const mailboxJob: typeof import('../../server/jobs/poll-support-mailbox.server.job.mts') = require('../../server/jobs/poll-support-mailbox.server.job.mts');
-const recoveryJob: typeof import('../../server/jobs/recover-support-messages.server.job.mts') = require('../../server/jobs/recover-support-messages.server.job.mts');
-const sendJob: typeof import('../../server/jobs/send-support-message.server.job.mts') = require('../../server/jobs/send-support-message.server.job.mts');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const MongoClient: typeof import('mongodb').MongoClient =
-  require('mongodb').MongoClient;
-const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
-const sinon: typeof import('sinon') = require('sinon');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import config from '../../../../config/config.mts';
+import assert from 'node:assert/strict';
+import * as emailService from '../../server/services/support-email.server.service.mts';
+import { SupportEmailError } from '../../server/services/support-email.server.service.mts';
+import * as mailboxJob from '../../server/jobs/poll-support-mailbox.server.job.mts';
+import * as recoveryJob from '../../server/jobs/recover-support-messages.server.job.mts';
+import * as sendJob from '../../server/jobs/send-support-message.server.job.mts';
+import mongoose from 'mongoose';
+import { MongoClient } from 'mongodb';
+import agenda from '../../../../config/lib/agenda.mts';
+import sinon from 'sinon';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const SupportRequest = mongoose.model('SupportRequest');
 const SupportMessage = mongoose.model('SupportMessage');

@@ -1,22 +1,14 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const emailService: {
-  sendSupportRequest: (
-    replyTo: { address: string; name?: string },
-    data: Record<string, unknown>,
-    callback: (error?: Error | null) => void,
-  ) => void;
-} = require('../../../core/server/services/email.server.service.mjs');
-const statsService: {
-  stat: (point: Record<string, unknown>, callback: () => void) => void;
-} = require('../../../stats/server/services/stats.server.service.mts');
-require('../../server/models/support.server.model.mts');
-const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
-const controller: typeof import('../../server/controllers/support.server.controller.mts') = require('../../server/controllers/support.server.controller.mts');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import winston from 'winston';
+import config from '../../../../config/config.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import statsService from '../../../stats/server/services/stats.server.service.mts';
+import '../../server/models/support.server.model.mts';
+import agenda from '../../../../config/lib/agenda.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import controller from '../../server/controllers/support.server.controller.mts';
 
 const User = mongoose.model('User');
 const SupportRequest = mongoose.model('SupportRequest');
@@ -74,10 +66,10 @@ describe('Support controller behaviour', () => {
     });
     email = sinon
       .stub(emailService, 'sendSupportRequest')
-      .callsFake((_replyTo, _data, callback) => callback(null));
+      .callsFake((_replyTo, _data, callback) => callback!(null));
     stat = sinon
       .stub(statsService, 'stat')
-      .callsFake((_point, callback) => callback());
+      .callsFake((_point, callback) => callback!());
     log = sinon.stub(winston.Logger.prototype, 'log');
     config.supportInbox.enabled = false;
   });

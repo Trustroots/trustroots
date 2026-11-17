@@ -1,13 +1,13 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const { createHash }: typeof import('node:crypto') = require('node:crypto');
-const {
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import {
   normaliseStoredSupportCategory,
   normaliseSupportImportMessage,
   supportImportMessageHash,
   supportImportSenderHash,
   supportRequestFingerprint,
   supportRequestImportFingerprints,
-}: typeof import('../../server/services/support-fingerprint.server.service.mts') = require('../../server/services/support-fingerprint.server.service.mts');
+} from '../../server/services/support-fingerprint.server.service.mts';
 
 const sha256 = (value: string) =>
   createHash('sha256').update(value, 'utf8').digest('hex');

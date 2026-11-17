@@ -1,15 +1,19 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const servicePath =
-  require.resolve('../../server/services/support-migration.server.service.mts');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import mockModule from '../../../../testutils/server/mock-module.mts';
 
-// The aggregation expressions are built when the module loads. Load a fresh
-// copy inside each test, so those constants run (and can be mutated) under a
-// test instead of during whichever file happened to import the module first.
-function freshService(): typeof import('../../server/services/support-migration.server.service.mts') {
-  delete require.cache[servicePath];
-  return require(servicePath);
+// Reload aggregation expressions inside each test so mutation testing exercises them.
+function freshService() {
+  return mockModule<
+    typeof import('../../server/services/support-migration.server.service.mts')
+  >(
+    new URL(
+      '../../server/services/support-migration.server.service.mts',
+      import.meta.url,
+    ),
+    {},
+  );
 }
 
 interface RawSupportRequest {
@@ -85,7 +89,7 @@ describe('support inbox compatibility migration', () => {
     );
 
   it('counts what needs migrating without changing anything by default', async () => {
-    assert.deepEqual(await freshService().migrateSupportInbox(), {
+    assert.deepEqual(await (await freshService()).migrateSupportInbox(), {
       ...SUMMARY,
       applied: false,
     });
@@ -95,7 +99,7 @@ describe('support inbox compatibility migration', () => {
   });
 
   it('migrates statuses, activity, revisions and categories when applied', async () => {
-    assert.deepEqual(await freshService().migrateSupportInbox(true), {
+    assert.deepEqual(await (await freshService()).migrateSupportInbox(true), {
       ...SUMMARY,
       applied: true,
     });
@@ -124,9 +128,9 @@ describe('support inbox compatibility migration', () => {
   });
 
   it('is repeatable: a second run finds nothing left to migrate', async () => {
-    await freshService().migrateSupportInbox(true);
+    await (await freshService()).migrateSupportInbox(true);
     const before = await stored();
-    assert.deepEqual(await freshService().migrateSupportInbox(true), {
+    assert.deepEqual(await (await freshService()).migrateSupportInbox(true), {
       resolved: 0,
       missing: 0,
       missingActivity: 0,

@@ -1,42 +1,19 @@
 import type { Request, Response } from 'express';
-import type { Types } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
-const mongoose: typeof import('mongoose') = require('mongoose');
+import mongoose, { type Types } from 'mongoose';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import statsService from '../../../stats/server/services/stats.server.service.mts';
+import config from '../../../../config/config.mts';
+import winston from 'winston';
+import './../../server/models/support.server.model.mts';
+import sinon from 'sinon';
+
+import should from 'should';
 interface BuildMetadata {
   committedAt: string;
   commitUrl: string;
   shortCommit: string;
-}
-interface SupportEmailData {
-  category: string;
-  message: string;
-  username: string;
-  email: string;
-  emailTemp: string | boolean;
-  displayName: string;
-  userId: string;
-  userAgent: string;
-  authenticated: 'yes' | 'no';
-  profilePublic: 'yes' | 'no';
-  signupDate: string;
-  reportMember: string | false;
-  build: BuildMetadata | false;
-}
-interface SupportStatPoint {
-  namespace: 'supportRequest';
-  counts: { count: number };
-  tags: { authenticated: 'yes' | 'no'; category: string; type: string };
-}
-interface EmailServiceModule {
-  sendSupportRequest(
-    replyTo: { address: string; name?: string },
-    data: SupportEmailData,
-    callback: (error?: Error | null) => void,
-  ): void;
-}
-interface StatsServiceModule {
-  stat(point: SupportStatPoint, callback: () => void): void;
 }
 interface StoredSupportRequest {
   category?: string;
@@ -47,16 +24,6 @@ interface StoredSupportRequest {
   userAgent?: string;
   username?: string;
 }
-const emailService: EmailServiceModule = require('../../../core/server/services/email.server.service.mjs');
-const statsService: StatsServiceModule = require('../../../stats/server/services/stats.server.service.mts');
-const config: typeof import('../../../../config/config.mts') & {
-  supportEmail: string;
-} = require('../../../../config/config.mts');
-const winston: typeof import('winston') = require('winston');
-require('./../../server/models/support.server.model.mjs');
-const sinon: typeof import('sinon') = require('sinon');
-
-require('should');
 
 interface SupportResponseBody {
   message: string;
@@ -105,7 +72,7 @@ function mockResponse(): MockResponse {
 }
 
 type SupportController = Pick<
-  typeof import('../../server/controllers/support.server.controller.mjs'),
+  typeof import('../../server/controllers/support.server.controller.mts'),
   'supportRequest'
 >;
 async function loadController(
@@ -154,15 +121,15 @@ async function loadController(
   const sendSupportRequest = sinon
     .stub(emailService, 'sendSupportRequest')
     .callsFake((replyTo, data, callback) =>
-      callback(options.emailError || null),
+      callback!(options.emailError || null),
     );
   const stat = sinon
     .stub(statsService, 'stat')
-    .callsFake((statsObject, callback) => callback());
+    .callsFake((statsObject, callback) => callback!());
   const log = sinon.stub(winston.Logger.prototype, 'log');
   sinon.stub(config, 'supportEmail').value('support@example.test');
   const importedController =
-    await import('../../server/controllers/support.server.controller.mjs');
+    await import('../../server/controllers/support.server.controller.mts');
   const controller: SupportController & {
     supportRequest(
       request: TestSupportRequest,
@@ -238,7 +205,7 @@ describe('Support controller unit tests', () => {
       userAgent: 'TestAgent',
       username: 'guest',
     });
-    harness.stat.firstCall.args[0].tags.should.deepEqual({
+    harness.stat.firstCall.args[0]!.tags!.should.deepEqual({
       authenticated: 'no',
       category: 'other',
       type: 'normal',
@@ -271,7 +238,7 @@ describe('Support controller unit tests', () => {
     await res.waitForResponse();
 
     const supportRequestData = harness.sendSupportRequest.firstCall.args[1];
-    supportRequestData.build.should.deepEqual(build);
+    should(supportRequestData.build).deepEqual(build);
   });
 
   it('falls back to support email for invalid guest reply-to addresses', async () => {
@@ -294,8 +261,8 @@ describe('Support controller unit tests', () => {
     const [replyTo, supportRequestData] =
       harness.sendSupportRequest.firstCall.args;
     replyTo.should.deepEqual({ address: 'support@example.test' });
-    supportRequestData.message.should.equal('—');
-    supportRequestData.userAgent.should.equal('—');
+    should(supportRequestData.message).equal('—');
+    should(supportRequestData.userAgent).equal('—');
   });
 
   it('uses signed-in user data for reply-to, storage, and stats', async () => {
@@ -350,7 +317,7 @@ describe('Support controller unit tests', () => {
       reportMember: 'reported-user',
       user: userId,
     });
-    harness.stat.firstCall.args[0].tags.should.deepEqual({
+    harness.stat.firstCall.args[0]!.tags!.should.deepEqual({
       authenticated: 'yes',
       category: 'reportMember',
       type: 'reportMember',
@@ -426,20 +393,18 @@ describe('Support controller unit tests', () => {
       harness.savedSupportRequests[0]!.category!.should.equal(category);
       const data = harness.sendSupportRequest.firstCall.args[1];
       data.category.should.equal(category);
-      harness.stat.firstCall.args[0].tags.should.containEql({
+      harness.stat.firstCall.args[0]!.tags!.should.containEql({
         category,
         type: category === 'reportMember' ? 'reportMember' : 'normal',
       });
       if (category === 'reportMember') {
-        data.reportMember.should.equal('example-member');
+        should(data.reportMember).equal('example-member');
         harness.savedSupportRequests[0]!.reportMember!.should.equal(
           'example-member',
         );
       } else {
-        data.reportMember.should.equal(false);
-        require('should').not.exist(
-          harness.savedSupportRequests[0]!.reportMember,
-        );
+        should(data.reportMember).equal(false);
+        should.not.exist(harness.savedSupportRequests[0]!.reportMember);
       }
     });
   }

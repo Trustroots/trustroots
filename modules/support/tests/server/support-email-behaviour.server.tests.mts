@@ -1,10 +1,10 @@
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
-const emailService: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import config from '../../../../config/config.mts';
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import agenda from '../../../../config/lib/agenda.mts';
+import * as emailService from '../../server/services/support-email.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const { SupportEmailError } = emailService;
 const SupportRequest = mongoose.model('SupportRequest');

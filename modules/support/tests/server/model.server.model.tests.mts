@@ -1,9 +1,9 @@
 /**
  * Module dependencies.
  */
-const should: typeof import('should') = require('should');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
+import should from 'should';
+import mongoose from 'mongoose';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 type SupportRequestRecord = {
   email?: string;
   username?: string;

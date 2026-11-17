@@ -1,12 +1,11 @@
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const MongoClient: typeof import('mongodb').MongoClient =
-  require('mongodb').MongoClient;
-const sinon: typeof import('sinon') = require('sinon');
-const recoveryJob: typeof import('../../server/jobs/recover-support-messages.server.job.mts') = require('../../server/jobs/recover-support-messages.server.job.mts');
-const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import config from '../../../../config/config.mts';
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import { MongoClient } from 'mongodb';
+import sinon from 'sinon';
+import * as recoveryJob from '../../server/jobs/recover-support-messages.server.job.mts';
+import agenda from '../../../../config/lib/agenda.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const SupportRequest = mongoose.model('SupportRequest');
 interface SupportMessageFields {

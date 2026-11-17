@@ -1,21 +1,20 @@
-import type { ReducedZendeskStatusItem } from '../../../../bin/db-maintenance/prepare-zendesk-statuses.mts';
-
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const childProcess: typeof import('node:child_process') = require('node:child_process');
-const fs: typeof import('node:fs') = require('node:fs');
-const path: typeof import('node:path') = require('node:path');
-const emailService: typeof import('../../../../modules/core/server/services/email.server.service.mjs') = require('../../../../modules/core/server/services/email.server.service.mjs');
-const {
+import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import emailService from '../../../../modules/core/server/services/email.server.service.mts';
+import {
   supportRequestFingerprint,
   supportImportMessageHash,
   supportImportSenderHash,
-} = require('../../server/services/support-fingerprint.server.service.mts');
-const {
+} from '../../server/services/support-fingerprint.server.service.mts';
+import {
   extractTicketStatusItem,
+  type ReducedZendeskStatusItem,
   parseSupportRequestTemplate,
   prepareZendeskStatusFiles,
   prepareZendeskStatusManifest,
-}: typeof import('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts') = require('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts');
+} from '../../../../bin/db-maintenance/prepare-zendesk-statuses.mts';
 
 async function renderedTemplate({
   category = 'Other',

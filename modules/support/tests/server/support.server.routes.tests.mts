@@ -2,13 +2,13 @@ import type { Application } from 'express';
 import type { UserDocument } from '../../../../testutils/server/model-contracts.mts';
 import type { CapturedJob } from '../../../../testutils/server/server.testutil.mts';
 
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const should = require('should');
-const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
-const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
-const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import mongoose from 'mongoose';
+import request from 'supertest';
+import should from 'should';
+import config from './../../../../config/config.mts';
+import express from './../../../../config/lib/express.mts';
+import * as testutils from '../../../../testutils/server/server.testutil.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 interface EmailJob extends CapturedJob {
   type: 'send email';

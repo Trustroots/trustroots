@@ -1,15 +1,14 @@
-import type { Types } from 'mongoose';
-const { Readable } = require('node:stream') as typeof import('node:stream');
+import { Readable } from 'node:stream';
 
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const {
+import assert from 'node:assert/strict';
+import mongoose, { type Types } from 'mongoose';
+import sinon from 'sinon';
+import config from '../../../../config/config.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import {
   parseSupportMailSource,
   pollSupportMailbox,
-}: typeof import('../../server/jobs/poll-support-mailbox.server.job.mts') = require('../../server/jobs/poll-support-mailbox.server.job.mts');
+} from '../../server/jobs/poll-support-mailbox.server.job.mts';
 
 interface RequestFixture {
   _id: Types.ObjectId;

@@ -1,10 +1,8 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const {
-  linkHistoricalReport,
-}: typeof import('../../server/services/report-link.server.service.mts') = require('../../server/services/report-link.server.service.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import { linkHistoricalReport } from '../../server/services/report-link.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const User = mongoose.model('User');
 type ObjectId = import('mongoose').Types.ObjectId;

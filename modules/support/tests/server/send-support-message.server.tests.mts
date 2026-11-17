@@ -1,10 +1,10 @@
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
-const sendJob: typeof import('../../server/jobs/send-support-message.server.job.mts') = require('../../server/jobs/send-support-message.server.job.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+import config from '../../../../config/config.mts';
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import winston from 'winston';
+import * as sendJob from '../../server/jobs/send-support-message.server.job.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 interface SupportMessageFields {
   deliveryState?: string;

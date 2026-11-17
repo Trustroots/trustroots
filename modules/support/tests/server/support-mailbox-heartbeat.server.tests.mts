@@ -1,8 +1,6 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const sinon: typeof import('sinon') = require('sinon');
-const {
-  startSupportMailboxHeartbeat,
-}: typeof import('../../server/services/support-mailbox-heartbeat.server.service.mts') = require('../../server/services/support-mailbox-heartbeat.server.service.mts');
+import assert from 'node:assert/strict';
+import sinon from 'sinon';
+import { startSupportMailboxHeartbeat } from '../../server/services/support-mailbox-heartbeat.server.service.mts';
 
 describe('support mailbox Agenda heartbeat', () => {
   afterEach(() => sinon.restore());

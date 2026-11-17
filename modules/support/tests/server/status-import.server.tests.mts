@@ -1,26 +1,23 @@
-import type { Types } from 'mongoose';
 import type { SupportStatusImportPreviewRecord } from '../../server/models/support-status-import-preview.server.model.mts';
 
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const emailService: typeof import('../../../core/server/services/email.server.service.mjs') = require('../../../core/server/services/email.server.service.mjs');
-const {
-  extractTicketStatusItem,
-}: typeof import('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts') = require('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts');
-const {
+import assert from 'node:assert/strict';
+import mongoose, { type Types } from 'mongoose';
+import sinon from 'sinon';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import { extractTicketStatusItem } from '../../../../bin/db-maintenance/prepare-zendesk-statuses.mts';
+import {
   applyPreview,
   previewReducedManifest,
-}: typeof import('../../server/services/status-import.server.service.mts') = require('../../server/services/status-import.server.service.mts');
-const {
+} from '../../server/services/status-import.server.service.mts';
+import {
   normaliseSupportImportMessage,
   normaliseStoredSupportCategory,
   supportRequestFingerprint,
   supportImportMessageHash,
   supportImportSenderHash,
   supportRequestImportFingerprints,
-}: typeof import('../../server/services/support-fingerprint.server.service.mts') = require('../../server/services/support-fingerprint.server.service.mts');
+} from '../../server/services/support-fingerprint.server.service.mts';
 
 interface SupportRequestFixture {
   _id: Types.ObjectId;
