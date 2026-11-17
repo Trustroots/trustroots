@@ -167,6 +167,12 @@ describe('<ProfileViewBasics />', () => {
       'https://www.bewelcome.org/members/member-bw',
     );
     expect(screen.getByText('CS: member-cs')).toBeVisible();
+    expect(
+      screen
+        .getByTitle('Couchsurfing')
+        .closest('li')
+        ?.querySelector('i, img, svg'),
+    ).toBeNull();
     expect(screen.getByText('CS: member-cs').closest('a')).toBeNull();
     expect(screen.getByTitle('Couchsurfing')).toHaveTextContent('CS');
     expect(screen.getByTitle('Couchers.org')).toHaveTextContent('CO');

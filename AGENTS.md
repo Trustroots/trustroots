@@ -170,6 +170,9 @@ Use British spelling for any new text (for example decentralisation, organisatio
 licence, emphasise). Do not change US spellings in code identifiers, CSS
 properties, URLs, or third-party names.
 
+Never use or reintroduce the Couchsurfing (CS) logo. Display Couchsurfing profile
+references as text only.
+
 Links between `modules/*` (imports and `mongoose.model('X')` lookups of another
 module's models) are recorded in `tooling/baselines/module-graph.json`, and CI fails when
 they differ from it. Do not add a link from one module to another without a
