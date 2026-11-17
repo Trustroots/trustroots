@@ -8,6 +8,7 @@ import {
 } from '@playwright/test';
 import { annotateFeature } from '../../../scripts/e2e/feature-coverage-summary.mts';
 import {
+  captureSection,
   trackScreenshotPages,
   sanitizeFileName,
   useElementScreenshot,
@@ -98,4 +99,10 @@ export function expectPresent<T>(
   }
 }
 
-export { expect, annotateFeature, useElementScreenshot, useViewportScreenshot };
+export {
+  expect,
+  annotateFeature,
+  captureSection,
+  useElementScreenshot,
+  useViewportScreenshot,
+};

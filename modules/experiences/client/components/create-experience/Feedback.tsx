@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { match, P } from 'ts-pattern';
 import type { ExperienceRecommendation } from '../../../shared/experience';
 import { Textarea } from '@trustroots/ui/Textarea';
 
@@ -28,20 +29,17 @@ export default function Feedback({
   const getRecommend = (
     recommendCode: ExperienceRecommendation | null | undefined,
     report: boolean | undefined,
-  ) => {
-    switch (recommendCode) {
-      case 'yes':
-        return t('Did you enjoy their cooking? singing?');
-      case 'no':
-        return report
+  ) =>
+    match(recommendCode)
+      .with('yes', () => t('Did you enjoy their cooking? singing?'))
+      .with('no', () =>
+        report
           ? t('Did you not like their cooking? singing?')
-          : t('Did you not enjoy their cooking? singing?');
-      case 'unknown':
-        return t('Did you maybe enjoy their cooking? singing?');
-      default:
-        return undefined;
-    }
-  };
+          : t('Did you not enjoy their cooking? singing?'),
+      )
+      .with('unknown', () => t('Did you maybe enjoy their cooking? singing?'))
+      .with(P.nullish, () => undefined)
+      .exhaustive(() => undefined);
 
   return (
     <div className="panel panel-default">

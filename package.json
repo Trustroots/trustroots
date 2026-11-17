@@ -193,6 +193,7 @@
     "sharp": "0.35.5",
     "speakingurl": "14.0.1",
     "supercluster": "9.1.0",
+    "ts-pattern": "5.9.2",
     "use-local-storage-state": "20.0.0",
     "validator": "13.15.35",
     "web-push": "4.0.0",

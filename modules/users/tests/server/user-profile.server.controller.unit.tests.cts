@@ -1240,6 +1240,33 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('getUser', () => {
+    it('queues a Gravatar check only when a profile is present', async () => {
+      const queued: unknown[] = [];
+      const controller = mockModule<typeof profileController>(
+        require.resolve(controllerModulePath),
+        {
+          '../services/gravatar-cleanup.server.service.mts': {
+            queueProfileGravatarCheck: (profile: unknown) =>
+              queued.push(profile),
+          },
+        },
+      );
+      const id = new mongoose.Types.ObjectId();
+      const profile = { _id: id, public: true };
+
+      await runHandler(res =>
+        controller.getUser({ user: { _id: id }, profile }, res),
+      );
+      await runHandler(res =>
+        controller.getUser(
+          { user: { _id: new mongoose.Types.ObjectId() } },
+          res,
+        ),
+      );
+
+      queued.should.deepEqual([profile]);
+    });
+
     it('returns another user profile without the public field', async () => {
       const ownId = new mongoose.Types.ObjectId();
       const { res } = await runHandler(res =>
