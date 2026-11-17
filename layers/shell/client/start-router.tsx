@@ -12,7 +12,12 @@ import ShellDocument from './ShellDocument';
  */
 export async function createStartRouter(server: boolean) {
   if (server) {
-    const rootRoute = createRootRoute({ shellComponent: ShellDocument });
+    const rootRoute = createRootRoute({
+      shellComponent: ShellDocument,
+      // Match ClientOnly's empty first render without an Outlet's Suspense
+      // boundaries, which would otherwise disagree during hydration.
+      component: () => null,
+    });
     const anyPath = createRoute({
       getParentRoute: () => rootRoute,
       path: '$',

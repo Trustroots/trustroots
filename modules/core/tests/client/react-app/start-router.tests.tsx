@@ -12,7 +12,10 @@ describe('TanStack Start router entry', () => {
   it('gives the server only the shell document, for every path', async () => {
     const router = await createStartRouter(true);
 
-    expect(router.routeTree.options.shellComponent).toBe(ShellDocument);
+    expect(router.routeTree.options).toHaveProperty(
+      'shellComponent',
+      ShellDocument,
+    );
     expect(Object.keys(router.routesById)).toEqual(['__root__', '/$']);
     expect(router.options.trailingSlash).toBe('preserve');
     expect(router.matchRoutes('/assets/').map(match => match.routeId)).toEqual([
@@ -35,7 +38,10 @@ describe('TanStack Start router entry', () => {
   it('gives the browser the app routes inside the shell document', async () => {
     const router = await getRouter();
 
-    expect(router.routeTree.options.shellComponent).toBe(ShellDocument);
+    expect(router.routeTree.options).toHaveProperty(
+      'shellComponent',
+      ShellDocument,
+    );
     expect(router.routesById).toHaveProperty('/signin');
     expect(router.routesById).toHaveProperty('/profile/$username');
   });
