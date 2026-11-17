@@ -164,7 +164,7 @@ function stubSearch(
   assertFilter: (filter: unknown) => void,
   users: ProfileUserDocument[],
   error: Error | null = null,
-): void {
+) {
   const query = {
     select: () => query,
     sort: (sort: unknown) => {
@@ -195,7 +195,9 @@ function stubSearch(
     assertFilter(filter);
     return query;
   };
+  const sort = sinon.spy(query, 'sort');
   sinon.stub(User, 'find').callsFake(fake as unknown as typeof User.find);
+  return sort;
 }
 
 const controllerPath =
@@ -2473,14 +2475,15 @@ describe('Profile controller unit tests', () => {
       });
     });
 
-    it('searches for the trimmed text', async () => {
-      stubSearch(
+    it('searches for the trimmed text and sorts matches by relevance', async () => {
+      const sort = stubSearch(
         filter =>
           assertFilterContains(filter, { $text: { $search: 'Findme' } }),
         [],
       );
       const { res } = await searchOutcome('  Findme  ', 0);
       res.statusCode.should.equal(200);
+      sinon.assert.calledOnce(sort);
     });
 
     it('returns matching public profiles', async () => {

@@ -13,6 +13,7 @@ import type { OfferServerRecord } from '../models/offer.server.types.mts';
 export interface AuthenticatedOfferUser {
   _id: Types.ObjectId;
   roles?: string[];
+  blocked?: Types.ObjectId[];
   member?: Array<{ tribe: Types.ObjectId }>;
 }
 

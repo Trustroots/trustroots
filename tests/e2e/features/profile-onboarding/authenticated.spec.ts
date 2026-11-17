@@ -86,7 +86,7 @@ test.describe('authenticated member flows', () => {
     await page.goto('/search/members');
 
     await page
-      .locator('#search-users-form input')
+      .getByRole('textbox', { name: 'Search members' })
       .fill(SEEDED_MEMBERS[0].username);
     const searchResponse = page.waitForResponse(
       response =>
@@ -114,7 +114,7 @@ test.describe('authenticated member flows', () => {
     // MongoDB text search treats hyphens as negation operators, so use the
     // unique display name rather than the fixture's hyphenated username.
     await page
-      .locator('#search-users-form input')
+      .getByRole('textbox', { name: 'Search members' })
       .fill(SEEDED_SHADOW.firstName);
     const searchResponse = page.waitForResponse(
       response =>

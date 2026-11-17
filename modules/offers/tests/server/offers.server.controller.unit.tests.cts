@@ -696,6 +696,56 @@ describe('Offers controller unit tests', () => {
       res.body.type.should.equal('FeatureCollection');
     });
 
+    it('limits offers to confirmed contacts with no blocks in either direction', async () => {
+      const contact = await mongoose.model('Contact').create({
+        userFrom: stranger._id,
+        userTo: owner._id,
+        confirmed: false,
+      });
+      await createOffer(owner._id, { location: [15, 25] });
+      const host = await createOffer(stranger._id, {
+        location: [16, 26],
+        status: 'maybe',
+      });
+      const aggregate = sinon.spy(Offer, 'aggregate');
+      const search = async (blocked?: UserDocument['_id'][]) => {
+        const { res } = await runHandler(res =>
+          offersController.list(
+            {
+              user: { _id: owner._id, blocked },
+              query: {
+                ...validCoords,
+                filters: JSON.stringify({ connectionsOnly: true }),
+              },
+            },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(200);
+        return res.body.features;
+      };
+
+      (await search()).should.eql([]);
+      const firstPipeline = aggregate.firstCall.args[0] as Array<{
+        $match?: Record<string, unknown>;
+      }>;
+      const connectionMatch = firstPipeline.find(
+        stage => stage.$match?.['user._id'],
+      )?.$match;
+      should(connectionMatch?.['user._id']).deepEqual({ $in: [], $nin: [] });
+      contact.confirmed = true;
+      await contact.save();
+      (await search()).should.match([
+        { properties: { id: host._id.toString(), type: 'host' } },
+      ]);
+      (await search([stranger._id])).should.eql([]);
+      await User.updateOne(
+        { _id: stranger._id },
+        { $set: { blocked: [owner._id] } },
+      );
+      (await search()).should.eql([]);
+    });
+
     it('filters offers by a single tribe', async () => {
       const tribe = await mongoose
         .model('Tribe')

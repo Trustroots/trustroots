@@ -41,3 +41,12 @@ it('encodes punctuation in the query as data', async () => {
     },
   );
 });
+
+it('scopes a member query to confirmed contacts when requested', async () => {
+  axiosMock.get.mockResolvedValueOnce(response([]));
+  await searchUsers('Exampleville', true);
+  expect(axiosMock.get).toHaveBeenCalledWith(
+    '/api/users?search=Exampleville&connectionsOnly=true',
+    { timeout: 10000 },
+  );
+});

@@ -36,6 +36,7 @@ export type SearchFilter =
   | 'my_circles'
   | 'languages'
   | 'online_recently'
+  | 'connections_only'
   | 'community_notes';
 
 /**

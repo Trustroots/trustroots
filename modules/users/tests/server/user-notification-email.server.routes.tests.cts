@@ -14,6 +14,12 @@ type UserRecord =
 const User = mongoose.model<UserRecord>('User');
 
 describe('Optional email unsubscribe route', function () {
+  afterEach(async function () {
+    await User.deleteMany({
+      username: { $in: ['sampleemailmember', 'examplemember'] },
+    });
+  });
+
   it('uses HTTPS links when the site uses HTTPS', function () {
     const https = sinon.stub(config, 'https').value(true);
     try {
@@ -103,10 +109,38 @@ describe('Optional email unsubscribe route', function () {
     const hosting = new URL(hostingMail.unsubscribeUrl!).pathname;
     const agent = request(app);
 
-    await agent
-      .get(messages)
-      .expect(200)
-      .expect(/Stop receiving unread-message emails/);
+    const messagesResponse = await agent.get(messages).expect(200);
+    assert.equal(messagesResponse.headers['cache-control'], 'no-store');
+    assert.equal(messagesResponse.headers['referrer-policy'], 'strict-origin');
+    assert.ok(
+      messagesResponse.text.startsWith(
+        '<!doctype html><html lang="en"><meta charset="utf-8">',
+      ),
+    );
+    assert.ok(
+      messagesResponse.text.includes(
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+      ),
+    );
+    assert.ok(
+      messagesResponse.text.includes(
+        '<title>Email preferences · Trustroots</title>',
+      ),
+    );
+    assert.ok(
+      messagesResponse.text.includes('<main><h1>Email preferences</h1>'),
+    );
+    assert.ok(
+      messagesResponse.text.includes(
+        '<p>Stop receiving unread-message emails from Trustroots?</p>',
+      ),
+    );
+    assert.ok(
+      messagesResponse.text.includes(
+        '<form method="post"><button type="submit">Unsubscribe</button></form>',
+      ),
+    );
+    assert.ok(messagesResponse.text.endsWith('</main></html>'));
     assert.equal(
       await canDeliverNotificationEmail(
         messageMail.notificationEmail!,
@@ -147,7 +181,14 @@ describe('Optional email unsubscribe route', function () {
       ),
       false,
     );
-    await agent.get('/email/unsubscribe/invalid').expect(400);
+    const invalidResponse = await agent
+      .get('/email/unsubscribe/invalid')
+      .expect(400);
+    assert.ok(
+      invalidResponse.text.includes(
+        '<p>This unsubscribe link is invalid. You can change your email preferences in Account settings.</p>',
+      ),
+    );
     await agent.post('/email/unsubscribe/invalid').expect(400);
   });
 });

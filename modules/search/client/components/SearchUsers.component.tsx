@@ -14,18 +14,19 @@ const MINIMUM_QUERY_LENGTH = 3;
 export default function SearchUsers() {
   const { t } = useTranslation('search');
   const [searchQuery, setSearchQuery] = useState('');
+  const [connectionsOnly, setConnectionsOnly] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchFailed, setSearchFailed] = useState(false);
 
-  async function fetchUsers(query: string) {
+  async function fetchUsers(query: string, onlyConnections = connectionsOnly) {
     setIsSearching(true);
     setHasSearched(true);
     setUsers([]);
     setSearchFailed(false);
     try {
-      const { data: users } = await searchUsers(query);
+      const { data: users } = await searchUsers(query, onlyConnections);
       setUsers(users || []);
       setIsSearching(false);
     } catch {
@@ -106,6 +107,22 @@ export default function SearchUsers() {
             </Button>
           </span>
         </span>
+      </div>
+      <div className="checkbox">
+        <label>
+          <input
+            checked={connectionsOnly}
+            disabled={isSearching}
+            onChange={({ target: { checked } }) => {
+              setConnectionsOnly(checked);
+              if (hasSearched && searchQuery.length >= MINIMUM_QUERY_LENGTH) {
+                void fetchUsers(searchQuery, checked);
+              }
+            }}
+            type="checkbox"
+          />
+          {String(t('My connections only'))}
+        </label>
       </div>
     </form>
   );

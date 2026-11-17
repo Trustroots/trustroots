@@ -423,7 +423,9 @@ export default function SearchMap({
   const parsedFilters: Partial<SearchFilters> = filters
     ? JSON.parse(filters)
     : {};
-  const communityNotesEnabled = parsedFilters.communityNotes || false;
+  const communityNotesEnabled =
+    Boolean(parsedFilters.communityNotes) &&
+    parsedFilters.connectionsOnly !== true;
   // A Mapbox style can be persisted in localStorage from a session that had a
   // token configured. Without a token, mapbox-gl can't load it and the map
   // renders blank, so fall back to the tokenless OSM style.

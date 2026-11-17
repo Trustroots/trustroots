@@ -21,10 +21,14 @@ import {
   findOffersByUser,
   updateUserByUsername,
   findUserByUsername,
+  insertContact,
+  objectId,
+  withE2eDb,
 } from '../../support/db.mts';
 import {
   prepareRasterSearchMap,
   routeRasterMapTiles,
+  seedMapState,
 } from '../../support/maps.mts';
 import type { Dialog, Locator, Page, Request } from '@playwright/test';
 
@@ -1410,5 +1414,157 @@ test('member search is reachable by keyboard and explains location matches', asy
         ? { $unset: { locationLiving: '' } }
         : { $set: { locationLiving: original.locationLiving } },
     );
+  }
+});
+
+test('connections search includes positive Experiences and respects negative ones', async ({
+  browser,
+  baseURL,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'search.map', [
+    'Map search can show only eligible connections with visible offers.',
+  ]);
+  annotateFeature(testInfo, 'search.members', [
+    'Member search can find eligible connections without offers.',
+  ]);
+  const viewer = createUser();
+  const meetingMember = createUser({ firstName: 'Rowan', lastName: 'Reed' });
+  const contactWithoutOffer = createUser({
+    firstName: 'Robin',
+    lastName: 'Pine',
+  });
+  const excludedMember = createUser({ firstName: 'Casey', lastName: 'Birch' });
+  const [
+    { _id: viewerId },
+    { _id: meetingId },
+    { _id: noOfferId },
+    { _id: excludedId },
+  ] = await Promise.all(
+    [viewer, meetingMember, contactWithoutOffer, excludedMember].map(member =>
+      registerViaApi(request, member),
+    ),
+  );
+  const place = `Exampleville${viewer.username}`;
+  const memberIds = [viewerId, meetingId, noOfferId, excludedId].map(objectId);
+  await withE2eDb(async db => {
+    await db
+      .collection('users')
+      .updateMany(
+        { _id: { $in: memberIds } },
+        { $set: { public: true, locationLiving: place, seen: new Date() } },
+      );
+    const created = new Date();
+    await db.collection('experiences').insertMany([
+      {
+        userFrom: objectId(meetingId),
+        userTo: objectId(viewerId),
+        recommend: 'yes',
+        public: true,
+        created,
+      },
+      {
+        userFrom: objectId(viewerId),
+        userTo: objectId(excludedId),
+        recommend: 'yes',
+        public: true,
+        created,
+      },
+      {
+        userFrom: objectId(excludedId),
+        userTo: objectId(viewerId),
+        recommend: 'no',
+        public: true,
+        created,
+      },
+    ]);
+    await db.collection('offers').insertMany([
+      {
+        user: objectId(meetingId),
+        type: 'host',
+        status: 'no',
+        meetingStatus: 'yes',
+        location: [52.53, 13.35],
+        locationFuzzy: [52.53, 13.35],
+        showOnlyInMyCircles: false,
+      },
+      {
+        user: objectId(excludedId),
+        type: 'host',
+        status: 'yes',
+        location: [52.55, 13.55],
+        locationFuzzy: [52.55, 13.55],
+        showOnlyInMyCircles: false,
+      },
+    ]);
+  });
+  await Promise.all([
+    insertContact(viewerId, noOfferId, true),
+    insertContact(viewerId, excludedId, true),
+  ]);
+
+  const context = await createIsolatedContext(browser, baseURL);
+  try {
+    const page = await context.newPage();
+    await prepareRasterSearchMap(page, context);
+    await seedMapState(page);
+    await signInViaApi(page, request, viewer);
+    await page.goto('/search');
+    const filter = page.getByRole('checkbox', { name: 'My connections only' });
+    await filter.check({ timeout: 5000 });
+    await page.getByRole('tab', { name: 'Results' }).click();
+    const results = page.getByRole('list', { name: 'Visible search results' });
+    await expect(
+      results.getByRole('button', { name: /Rowan Reed/i }),
+    ).toBeVisible();
+    await expect(
+      results.getByRole('button', { name: /Casey Birch/i }),
+    ).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Filters' }).click();
+    await filter.uncheck();
+    await page.getByRole('tab', { name: 'Results' }).click();
+    await expect(
+      results.getByRole('button', { name: /Casey Birch/i }),
+    ).toBeVisible();
+
+    await page.goto('/search/members');
+    await filter.check();
+    await page.getByRole('textbox', { name: 'Search members' }).fill(place);
+    await page
+      .getByRole('button', { name: 'Search members', exact: true })
+      .click();
+    const cards = page.locator('.member-search-card');
+    await expect(cards).toHaveCount(2);
+    await expect(
+      cards.filter({ hasText: '@' + meetingMember.username }),
+    ).toBeVisible();
+    await expect(
+      cards.filter({ hasText: '@' + contactWithoutOffer.username }),
+    ).toBeVisible();
+    await expect(
+      cards.filter({ hasText: '@' + excludedMember.username }),
+    ).toHaveCount(0);
+
+    await filter.uncheck();
+    await expect(
+      cards.filter({ hasText: '@' + excludedMember.username }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+    await withE2eDb(async db => {
+      await db.collection('contacts').deleteMany({
+        $or: [{ userFrom: objectId(viewerId) }, { userTo: objectId(viewerId) }],
+      });
+      await db
+        .collection('experiences')
+        .deleteMany({ userFrom: { $in: memberIds } });
+      await db.collection('offers').deleteMany({
+        user: { $in: [meetingId, excludedId].map(objectId) },
+      });
+      await db.collection('users').deleteMany({
+        _id: { $in: memberIds },
+      });
+    });
   }
 });
