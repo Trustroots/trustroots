@@ -1,0 +1,636 @@
+import express from '../../../../config/lib/express.mts';
+import mongoose, { type HydratedDocument, Types } from 'mongoose';
+import request from 'supertest';
+import sinon from 'sinon';
+import should from 'should';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import controller from '../../server/controllers/admin.support.server.controller.mts';
+import supportController from '../../../support/server/controllers/support.server.controller.mts';
+import { linkHistoricalReport } from '../../../support/server/services/report-link.server.service.mts';
+import type {
+  ExperienceRecord,
+  MessageRecord,
+  TestAgent,
+  TestExpressApp,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+interface SupportRequestRecord {
+  category?: string;
+  user?: Types.ObjectId;
+  reportedUser?: Types.ObjectId;
+  reportMember?: string;
+  message?: string;
+  username?: string;
+  email?: string;
+  status?: string;
+  resolvedAt?: Date | null;
+}
+interface AuditLogRecord {
+  user?: Types.ObjectId;
+}
+type SupportUserFixture = ReturnType<
+  typeof utils.generateUsersWithSharedPassword
+>[number] & {
+  removeProfileToken?: string;
+  emailToken?: string;
+};
+const User = mongoose.model<UserRecord, UserModel>('User');
+const SupportRequest = mongoose.model<SupportRequestRecord>('SupportRequest');
+const Message = mongoose.model<MessageRecord>('Message');
+const Experience = mongoose.model<ExperienceRecord>('Experience');
+const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
+
+describe('Support team access and investigation', () => {
+  let app: TestExpressApp;
+  let users: Awaited<ReturnType<typeof utils.saveUsers>>;
+  let raw: SupportUserFixture[];
+  let agent: TestAgent;
+  let report: HydratedDocument<SupportRequestRecord>;
+  before(async () => {
+    app = await express.init(mongoose.connection);
+  });
+  beforeEach(async () => {
+    raw = utils.generateUsersWithSharedPassword(5);
+    raw[0].roles = ['user', 'support-team'];
+    raw[1].roles = ['user', 'suspended', 'shadowban'];
+    raw[1].removeProfileToken = 'secret-deletion-token';
+    raw[1].emailToken = 'secret-email-token';
+    raw[1].public = false;
+    raw[3].roles = ['user', 'admin'];
+    users = await utils.saveUsers(raw);
+    agent = request.agent(app);
+    await utils.signIn(raw[0], agent);
+    report = await SupportRequest.create({
+      category: 'reportMember',
+      user: users[2]._id,
+      reportedUser: users[1]._id,
+      reportMember: users[1].username,
+      message: 'Fictional safety report.',
+      username: users[2].username,
+      email: users[2].email,
+    });
+  });
+  afterEach(async () => {
+    sinon.restore();
+    await utils.clearDatabase();
+  });
+  const endpoint = (id: Types.ObjectId | string) => `/api/admin/support/${id}`;
+  async function status(value: string) {
+    return agent
+      .patch(endpoint(report._id))
+      .set('X-Trustroots-Request', '1')
+      .send({ status: value });
+  }
+  it('flags and unflags profiles idempotently without changing account state', async () => {
+    const target = users[2];
+    const before = await User.findById(target._id).lean();
+    const path = `/api/admin/support-members/${target._id}/flag`;
+    for (const flagged of [true, true, false, false]) {
+      await agent
+        .patch(path)
+        .send({ flagged, roles: ['admin'], public: false })
+        .expect(200);
+      const saved = await User.findById(target._id).lean();
+      saved!.roles!.includes('flagged').should.equal(flagged);
+      saved!
+        .roles!.filter(role => role !== 'flagged')
+        .should.deepEqual(before!.roles);
+      (saved!.public === before!.public).should.be.true();
+      (saved!.newsletter === before!.newsletter).should.be.true();
+      (saved!.authVersion === before!.authVersion).should.be.true();
+    }
+    const audits = await AuditLog.find({
+      route: '/api/admin/support-members/:memberId/flag',
+    }).lean();
+    audits.length.should.equal(4);
+    const values = audits as unknown as { body: { flagged: boolean } }[];
+    values
+      .map(item => item.body.flagged)
+      .should.deepEqual([true, true, false, false]);
+    await utils.signOut(agent);
+    await utils.signIn(raw[3], agent);
+    await agent.patch(path).send({ flagged: true }).expect(200);
+    await agent
+      .post('/api/admin/users/by-role')
+      .send({ role: 'flagged' })
+      .expect(200);
+  });
+
+  it('lists flagged members on bounded stable pages without private content', async () => {
+    const fixtures = Array.from({ length: 51 }, (_, index) => ({
+      username: `flagged-fixture-${index}`,
+      email: `flagged-fixture-${index}@example.test`,
+      displayName: 'Fictional Member',
+      roles: ['user', 'flagged'],
+      public: true,
+    }));
+    await User.collection.insertMany(fixtures);
+    const first = await agent
+      .get('/api/admin/support-flagged-members')
+      .expect(200);
+    first.body.items.length.should.equal(50);
+    first.body.hasMore.should.equal(true);
+    first.body.items[0].username.should.equal('flagged-fixture-0');
+    Object.keys(first.body.items[0])
+      .sort()
+      .should.deepEqual(['_id', 'displayName', 'public', 'roles', 'username']);
+    const second = await agent
+      .get('/api/admin/support-flagged-members?page=2')
+      .expect(200);
+    second.body.items.length.should.equal(1);
+    second.body.items[0].username.should.equal('flagged-fixture-50');
+    second.body.hasMore.should.equal(false);
+    await User.updateOne(
+      { username: 'flagged-fixture-0' },
+      { $pull: { roles: 'flagged' } },
+    );
+    const changed = await agent
+      .get('/api/admin/support-flagged-members')
+      .expect(200);
+    changed.body.items[0].username.should.equal('flagged-fixture-1');
+    await agent
+      .get('/api/admin/support-flagged-members?page=1000000')
+      .expect(400);
+  });
+
+  it('rejects invalid flag inputs and missing accounts', async () => {
+    const path = `/api/admin/support-members/${users[2]._id}/flag`;
+    await agent.patch(path).set('X-Trustroots-Request', '1').expect(400);
+    for (const flagged of [undefined, null, 'true', 1, {}, []]) {
+      await agent.patch(path).send({ flagged }).expect(400);
+    }
+    await agent
+      .patch('/api/admin/support-members/invalid/flag')
+      .send({ flagged: true })
+      .expect(400);
+    await agent
+      .patch('/api/admin/support-members/000000000000000000000001/flag')
+      .send({ flagged: false })
+      .expect(404);
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects(new Error('audit unavailable'));
+    await agent.patch(path).send({ flagged: true }).expect(500);
+    const saved = await User.findById(users[2]._id).lean();
+    saved!.roles!.includes('flagged').should.be.false();
+  });
+
+  it('denies flag APIs to visitors, regular members, greeters and flagged members', async () => {
+    const path = `/api/admin/support-members/${users[2]._id}/flag`;
+    await request(app).get('/api/admin/support-flagged-members').expect(403);
+    await request(app).patch(path).send({ flagged: true }).expect(403);
+    await utils.signOut(agent);
+    for (const roles of [
+      ['user'],
+      ['user', 'welcome-team'],
+      ['user', 'flagged'],
+    ]) {
+      await User.updateOne({ _id: users[2]._id }, { $set: { roles } });
+      await utils.signIn(raw[2], agent);
+      await agent.get('/api/admin/support-flagged-members').expect(403);
+      await agent.patch(path).send({ flagged: true }).expect(403);
+      await agent
+        .post('/api/admin/user/change-role')
+        .send({ id: users[2]._id, role: 'admin' })
+        .expect(403);
+      const profile = await agent
+        .get(`/api/users/${users[2].username}`)
+        .expect(200);
+      should.not.exist(profile.body.roles);
+      const shell = await agent.get('/').expect(200);
+      shell.text.should.not.containEql('"flagged"');
+      await utils.signOut(agent);
+    }
+  });
+
+  it('triages requests, records access and keeps resolved investigations available', async () => {
+    await Message.create([
+      {
+        userFrom: users[1]._id,
+        userTo: users[2]._id,
+        content: 'Hidden context',
+        shadowHidden: true,
+      },
+      {
+        userFrom: users[2]._id,
+        userTo: users[1]._id,
+        content: 'Reply context',
+      },
+      {
+        userFrom: users[1]._id,
+        userTo: users[4]._id,
+        content: 'Unrelated private message',
+      },
+    ]);
+    await Experience.create({
+      userFrom: users[1]._id,
+      userTo: users[2]._id,
+      feedbackPublic: 'Unpublished feedback',
+      public: false,
+    });
+    const listed = await agent.get('/api/admin/support').expect(200);
+    listed.body.items.length.should.equal(1);
+    Object.hasOwn(listed.body.items[0], 'message').should.equal(false);
+    (
+      await agent.get(endpoint(report._id)).expect(200)
+    ).body.message.should.equal(report.message);
+    (await status('resolved')).status.should.equal(200);
+    (
+      await agent.get('/api/admin/support').expect(200)
+    ).body.items.length.should.equal(0);
+    (
+      await agent
+        .get('/api/admin/support?status=resolved&category=reportMember')
+        .expect(200)
+    ).body.items.length.should.equal(1);
+    const messages = (
+      await agent
+        .get(`${endpoint(report._id)}/messages?user1=${users[4]._id}`)
+        .expect(200)
+    ).body;
+    messages.items.length.should.equal(2);
+    messages.items[0].shadowHidden.should.equal(true);
+    const experiences = (
+      await agent.get(`${endpoint(report._id)}/experiences`).expect(200)
+    ).body;
+    experiences.items[0].feedbackPublic.should.equal('Unpublished feedback');
+    experiences.items[0].public.should.equal(false);
+    (await Message.countDocuments({ read: false })).should.equal(3);
+    (await AuditLog.countDocuments({ user: users[0]._id })).should.be.above(5);
+    (await status('open')).status.should.equal(200);
+    const reopened = await SupportRequest.findById(report._id);
+    if (!reopened) throw new Error('Expected the support request');
+    (reopened.resolvedAt === null).should.equal(true);
+  });
+  it('returns only safe member fields and permits notes and current greeter tools', async () => {
+    const member = (
+      await agent
+        .get(`/api/admin/support-members/${users[1].username}`)
+        .expect(200)
+    ).body;
+    member.roles.should.containEql('suspended');
+    member.pendingDeletion.should.equal(true);
+    (
+      await agent.get(`/api/admin/support-members/${users[1]._id}`).expect(200)
+    ).body.username.should.equal(users[1].username);
+    [
+      'password',
+      'salt',
+      'emailToken',
+      'resetPasswordToken',
+      'removeProfileToken',
+      'lastIpHash',
+    ].forEach(field => Object.hasOwn(member, field).should.equal(false));
+    (
+      await agent
+        .get(`/api/admin/support-members?search=${users[1].username}`)
+        .expect(200)
+    ).body.length.should.equal(1);
+    (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].email)}`,
+        )
+        .expect(200)
+    ).body
+      .map((member: { username: string }) => member.username)
+      .should.containEql(users[1].username);
+    const namedMembers = (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName!)}`,
+        )
+        .expect(200)
+    ).body;
+    namedMembers
+      .map((member: { username: string }) => member.username)
+      .should.containEql(users[1].username);
+    namedMembers.forEach((member: object) =>
+      Object.hasOwn(member, 'score').should.equal(false),
+    );
+    type FindUsers = (
+      filter?: import('mongoose').QueryFilter<
+        import('../../../../testutils/server/model-contracts.mts').UserRecord
+      >,
+    ) => ReturnType<typeof User.find>;
+    const originalFind = User.find as unknown as FindUsers;
+    (sinon.stub(User, 'find') as unknown as sinon.SinonStub).callsFake(
+      function (this: typeof User, ...args: Parameters<FindUsers>) {
+        const criteria = args[0];
+        if (
+          typeof criteria === 'object' &&
+          criteria !== null &&
+          '$text' in criteria
+        ) {
+          return {
+            select() {
+              return this;
+            },
+            sort() {
+              return this;
+            },
+            limit() {
+              return this;
+            },
+            lean: () => Promise.reject(new Error('text index unavailable')),
+          } as unknown as ReturnType<typeof User.find>;
+        }
+        return originalFind.apply(this, args);
+      },
+    );
+    (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName!)}`,
+        )
+        .expect(200)
+    ).body
+      .map((member: { username: string }) => member.username)
+      .should.containEql(users[1].username);
+    sinon.restore();
+    const page = Array.from({ length: 50 }, (_, index) => ({
+      _id: new mongoose.Types.ObjectId(),
+      username: `fictional-page-${index}`,
+    }));
+    let lookups = 0;
+    sinon.stub(User, 'find').callsFake(function (
+      this: typeof User,
+      ...args: Parameters<FindUsers>
+    ) {
+      lookups += 1;
+      const criteria = args[0];
+      if (
+        typeof criteria === 'object' &&
+        criteria !== null &&
+        '$text' in criteria
+      ) {
+        throw new Error('text search should not run for a full indexed page');
+      }
+      return {
+        select() {
+          return this;
+        },
+        sort() {
+          return this;
+        },
+        limit() {
+          return this;
+        },
+        lean: async () => page,
+      } as unknown as ReturnType<typeof User.find>;
+    });
+    (
+      await agent
+        .get('/api/admin/support-members?search=fictional-page')
+        .expect(200)
+    ).body.length.should.equal(50);
+    lookups.should.equal(1);
+    sinon.restore();
+    await agent
+      .post('/api/admin/notes')
+      .set('X-Trustroots-Request', '1')
+      .send({ userId: users[1]._id, note: 'Fictional support note.' })
+      .expect(200);
+    (
+      await agent.get(`/api/admin/notes?userId=${users[1]._id}`).expect(200)
+    ).body.length.should.equal(1);
+    await agent.get('/api/admin/staff-blockers').expect(200);
+    await agent
+      .post('/api/admin/acquisition-stories')
+      .set('X-Trustroots-Request', '1')
+      .expect(200);
+    await agent.get('/api/admin/dashboard').expect(200);
+    for (const url of [
+      '/api/admin/audit-log',
+      '/api/admin/reference-threads',
+      '/api/admin/newsletter-subscribers',
+    ])
+      await agent.get(url).expect(403);
+    for (const url of [
+      '/api/admin/messages',
+      '/api/admin/user',
+      '/api/admin/user/change-role',
+    ])
+      await agent
+        .post(url)
+        .set('X-Trustroots-Request', '1')
+        .send({ id: users[1]._id, role: 'suspended' })
+        .expect(403);
+  });
+  it('denies ordinary members, moderators and greeters, and permits administrators', async () => {
+    for (const role of ['user', 'moderator', 'welcome-team', 'admin']) {
+      await User.updateOne(
+        { _id: users[4]._id },
+        { $set: { roles: ['user', role] } },
+      );
+      const session = request.agent(app);
+      await utils.signIn(raw[4], session);
+      await session
+        .get('/api/admin/support')
+        .expect(role === 'admin' ? 200 : 403);
+    }
+    await request(app).get('/api/admin/support').expect(403);
+    await User.updateOne(
+      { _id: users[0]._id },
+      { $set: { roles: ['user'] }, $inc: { authVersion: 1 } },
+    );
+    await agent.get('/api/admin/support').expect(403);
+  });
+  it('handles legacy, guest and invalid reports without unlocking conversations', async () => {
+    await SupportRequest.collection.updateOne(
+      { _id: report._id },
+      { $unset: { status: '', reportedUser: '' } },
+    );
+    (
+      await agent.get('/api/admin/support').expect(200)
+    ).body.items.length.should.equal(1);
+    await agent.get(`${endpoint(report._id)}/messages`).expect(403);
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $set: { reportedUser: users[1]._id }, $unset: { user: '' } },
+    );
+    await agent.get(`${endpoint(report._id)}/messages`).expect(403);
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $set: { user: users[1]._id } },
+    );
+    await agent.get(`${endpoint(report._id)}/messages`).expect(403);
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $set: { category: 'account' } },
+    );
+    await agent.get(`${endpoint(report._id)}/messages`).expect(403);
+  });
+  it('validates filters, identifiers and paging', async () => {
+    for (const query of [
+      'page=1000000',
+      'status=invalid',
+      'category=invalid',
+      'category[]=account',
+    ])
+      await agent.get(`/api/admin/support?${query}`).expect(400);
+    for (const id of ['bad', new mongoose.Types.ObjectId().toString()]) {
+      await agent.get(endpoint(id)).expect(id === 'bad' ? 400 : 404);
+      await agent.get(`/api/admin/support-members/${id}`).expect(404);
+    }
+    for (const search of ['', 'ab', 'x'.repeat(255)])
+      await agent
+        .get(`/api/admin/support-members?search=${search}`)
+        .expect(400);
+    (await status('invalid')).status.should.equal(400);
+    await agent.get(`${endpoint(report._id)}/unknown`).expect(400);
+    (
+      await agent.get('/api/admin/support?status=all&page=2').expect(200)
+    ).body.items.length.should.equal(0);
+  });
+  it('paginates complete history and fails closed when audit storage fails', async () => {
+    await Message.insertMany(
+      Array.from({ length: 51 }, (_, i) => ({
+        userFrom: users[1]._id,
+        userTo: users[2]._id,
+        content: `Context ${i}`,
+      })),
+    );
+    (
+      await agent.get(`${endpoint(report._id)}/messages`).expect(200)
+    ).body.hasMore.should.equal(true);
+    (
+      await agent.get(`${endpoint(report._id)}/messages?page=2`).expect(200)
+    ).body.items.length.should.equal(1);
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects(new Error('Storage failure'));
+    const response = await agent
+      .get(`${endpoint(report._id)}/messages`)
+      .expect(500);
+    Object.hasOwn(response.body, 'items').should.equal(false);
+  });
+  it('preserves non-string error messages from legacy audit failures', async () => {
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects({ status: 422, message: 42 });
+    const response = await agent
+      .get(`${endpoint(report._id)}/messages`)
+      .expect(422);
+    response.body.message.should.equal(42);
+  });
+  it('covers controller defaults and request-list pagination', async () => {
+    await SupportRequest.insertMany(
+      Array.from({ length: 51 }, () => ({ message: 'Fictional request' })),
+    );
+    const res = {
+      send: sinon.spy(),
+      json: sinon.spy(),
+      status: sinon.stub().returnsThis(),
+    };
+    await controller.list(
+      {
+        user: users[0],
+        query: {},
+        params: {},
+        body: {},
+        route: { path: '/api/admin/support' },
+      },
+      res,
+    );
+    res.send.firstCall.args[0].hasMore.should.equal(true);
+    (
+      await agent.get('/api/admin/support?status=all&page=2').expect(200)
+    ).body.items.length.should.equal(2);
+  });
+  it('only links historical reports with administrator-verified evidence', async () => {
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $unset: { reportedUser: '' } },
+    );
+    const mapping = {
+      requestId: report._id.toString(),
+      reportedUserId: users[1]._id.toString(),
+      evidence: 'Verified immutable ID in archived support correspondence.',
+    };
+    await linkHistoricalReport(mapping, users[3]._id);
+    const unlinked = await SupportRequest.findById(report._id);
+    if (!unlinked) throw new Error('Expected the support request');
+    (unlinked.reportedUser === undefined).should.equal(true);
+    await linkHistoricalReport(mapping, users[3]._id, true);
+    (await SupportRequest.findById(report._id))!
+      .reportedUser!.toString()
+      .should.equal(mapping.reportedUserId);
+    for (const data of [
+      {},
+      { ...mapping, evidence: '' },
+      { ...mapping, reportedUserId: users[4]._id.toString() },
+    ]) {
+      await linkHistoricalReport(
+        data as never,
+        users[3]._id,
+        true,
+      ).should.be.rejected();
+    }
+    await linkHistoricalReport(mapping, users[0]._id).should.be.rejected();
+    await linkHistoricalReport(
+      { ...mapping, requestId: new mongoose.Types.ObjectId().toString() },
+      users[3]._id,
+    ).should.be.rejected();
+  });
+  it('allows administrators to grant and remove the support role', async () => {
+    const admin = request.agent(app);
+    await utils.signIn(raw[3], admin);
+    for (const action of ['add', 'remove']) {
+      await admin
+        .post('/api/admin/user/change-role')
+        .set('X-Trustroots-Request', '1')
+        .send({ id: users[4]._id, role: 'support-team', action })
+        .expect(200);
+      (await User.findById(users[4]._id))!
+        .roles!.includes('support-team')
+        .should.equal(action === 'add');
+    }
+  });
+  it('validates authenticated reports and handles target lookup errors', async () => {
+    for (const target of [
+      '',
+      null,
+      'missing-fictional-member',
+      raw[0].username,
+    ]) {
+      await agent
+        .post('/api/support')
+        .set('X-Trustroots-Request', '1')
+        .send({
+          category: 'reportMember',
+          reportMember: target,
+          message: 'Fictional report',
+        })
+        .expect(400);
+    }
+    sinon.stub(User, 'findOne').returns({
+      select: async () => {
+        throw new Error('Lookup unavailable');
+      },
+    } as unknown as ReturnType<typeof User.findOne>);
+    const response = {
+      status: sinon.stub().returnsThis(),
+      send: sinon.spy(),
+      json: sinon.spy(),
+    };
+    await supportController.supportRequest(
+      {
+        body: {
+          category: 'reportMember',
+          reportMember: raw[1].username,
+          message: 'Fictional report',
+        },
+        user: users[0],
+        headers: {},
+      },
+      response,
+    );
+    sinon.assert.calledWith(response.status, 500);
+    sinon.assert.calledWith(response.send, {
+      message: 'Unable to verify the reported member.',
+    });
+  });
+});
