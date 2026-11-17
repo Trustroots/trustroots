@@ -22,6 +22,11 @@ interface BlockController {
   unblockUser: Handler;
 }
 
+const Contact =
+  mongoose.model<
+    import('../../../contacts/server/models/contacts.server.model.mts').ContactRecord
+  >('Contact');
+
 interface MockResponse {
   statusCode: number;
   body: unknown;
@@ -140,6 +145,42 @@ describe('User block controller unit tests', () => {
       404,
       notFound,
     ]);
+  });
+
+  it('cancels pending contacts in both directions', async () => {
+    const [user, target] = await utils.saveUsers(utils.generateUsers(2));
+    const pending = await Contact.create([
+      { userFrom: user._id, userTo: target._id, confirmed: false },
+      { userFrom: target._id, userTo: user._id, confirmed: false },
+    ]);
+
+    const { response } = await call('blockUser', { user, profile: target });
+
+    response[0]!.should.equal(200);
+    const remaining = await Contact.find({
+      _id: { $in: pending.map(contact => contact._id) },
+    });
+    remaining.length.should.equal(0);
+  });
+
+  it('preserves confirmed contacts and unrelated pending requests', async () => {
+    const [user, target, other] = await utils.saveUsers(utils.generateUsers(3));
+    const confirmed = await Contact.create({
+      userFrom: user._id,
+      userTo: target._id,
+      confirmed: true,
+    });
+    const unrelated = await Contact.create({
+      userFrom: user._id,
+      userTo: other._id,
+      confirmed: false,
+    });
+
+    const { response } = await call('blockUser', { user, profile: target });
+
+    response[0]!.should.equal(200);
+    (await Contact.findById(confirmed._id))!.confirmed.should.be.true();
+    (await Contact.findById(unrelated._id))!.confirmed.should.be.false();
   });
 
   it('responds with 404 when the logged in user no longer exists', async () => {

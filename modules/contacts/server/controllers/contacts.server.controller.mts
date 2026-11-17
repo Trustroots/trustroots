@@ -105,6 +105,28 @@ const service = {} as ContactController;
 const Contact = mongoose.model<ContactRecord>('Contact');
 const User = mongoose.model<ContactUser>('User');
 
+export async function removePendingBetweenUsers(
+  first: Types.ObjectId,
+  second: Types.ObjectId,
+) {
+  await Contact.deleteMany({
+    confirmed: false,
+    $or: [
+      { userFrom: first, userTo: second },
+      { userFrom: second, userTo: first },
+    ],
+  });
+}
+
+async function isBlockedPair(first: Types.ObjectId, second: Types.ObjectId) {
+  return User.exists({
+    $or: [
+      { _id: first, blocked: second },
+      { _id: second, blocked: first },
+    ],
+  });
+}
+
 function isValidObjectId(value: unknown): value is ObjectIdInput {
   return mongoose.Types.ObjectId.isValid(value as ObjectIdInput);
 }
@@ -188,6 +210,12 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
     contact = newContact;
     await newContact.save();
 
+    // A block may have been recorded while this request was being saved.
+    if (await isBlockedPair(req.user._id, friendUserId)) {
+      await newContact.deleteOne();
+      return errorService.sendForbidden(res);
+    }
+
     await new Promise<void>((resolve, reject) => {
       emailService.sendConfirmContact(
         req.user,
@@ -257,13 +285,20 @@ service.confirm = async function (req, res) {
     return errorService.sendForbidden(res);
   }
 
-  // Ta'da!
   const contact = req.contact;
-  contact.confirmed = true;
-  return contact.save().then(
-    () => res.json(contact),
-    (error: Error) => errorService.sendBadRequest(res, error),
-  );
+  try {
+    if (
+      !contact.confirmed &&
+      (await isBlockedPair(contactPartyId(contact.userFrom), req.user._id))
+    ) {
+      return errorService.sendForbidden(res);
+    }
+    contact.confirmed = true;
+    await contact.save();
+    return res.json(contact);
+  } catch (error: unknown) {
+    return sendBadRequest(res, error);
+  }
 };
 
 /**
