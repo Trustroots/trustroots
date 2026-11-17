@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 
+// Testing Library's waitFor advances fake timers only through a `jest` global.
+Reflect.set(globalThis, 'jest', {
+  advanceTimersByTime: (ms: number) => vi.advanceTimersByTime(ms),
+});
+
 if (globalThis.HTMLCanvasElement) {
   const canvasElement = globalThis.HTMLCanvasElement;
 

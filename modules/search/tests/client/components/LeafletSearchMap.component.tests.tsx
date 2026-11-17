@@ -52,55 +52,59 @@ const mockClusterResults: TestPoint[][] = [];
 const mockClusterInstances: MockCluster[] = [];
 
 vi.mock('leaflet', () => ({
-  DomEvent: { stopPropagation: vi.fn() },
-  circleMarker: vi.fn((location: unknown, options: Record<string, unknown>) => {
-    const marker: MockMarker = {
-      location,
-      on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
-      handlers: {},
-      options,
-    };
-    marker.on.mockImplementation((name, handler) => {
-      marker.handlers[name] = handler;
+  default: {
+    DomEvent: { stopPropagation: vi.fn() },
+    circleMarker: vi.fn(
+      (location: unknown, options: Record<string, unknown>) => {
+        const marker: MockMarker = {
+          location,
+          on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
+          handlers: {},
+          options,
+        };
+        marker.on.mockImplementation((name, handler) => {
+          marker.handlers[name] = handler;
+          return marker;
+        });
+        mockCircleMarkers.push(marker);
+        return marker;
+      },
+    ),
+    control: {
+      zoom: vi.fn(() => ({ addTo: vi.fn() })),
+    },
+    divIcon: vi.fn(options => options),
+    layerGroup: vi.fn(() => {
+      const group: MockLayerGroup = {
+        addLayer: vi.fn(),
+        addTo: vi.fn<(...args: []) => MockLayerGroup>(),
+        clearLayers: vi.fn(),
+      };
+      group.addTo.mockReturnValue(group);
+      mockLayerGroups.push(group);
+      return group;
+    }),
+    map: vi.fn(() => mockMap),
+    marker: vi.fn((location: unknown, options: Record<string, unknown>) => {
+      const marker: MockMarker = {
+        location,
+        on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
+        handlers: {},
+        options,
+      };
+      marker.on.mockImplementation((name, handler) => {
+        marker.handlers[name] = handler;
+        return marker;
+      });
+      mockMarkers.push(marker);
       return marker;
-    });
-    mockCircleMarkers.push(marker);
-    return marker;
-  }),
-  control: {
-    zoom: vi.fn(() => ({ addTo: vi.fn() })),
+    }),
+    tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
   },
-  divIcon: vi.fn(options => options),
-  layerGroup: vi.fn(() => {
-    const group: MockLayerGroup = {
-      addLayer: vi.fn(),
-      addTo: vi.fn<(...args: []) => MockLayerGroup>(),
-      clearLayers: vi.fn(),
-    };
-    group.addTo.mockReturnValue(group);
-    mockLayerGroups.push(group);
-    return group;
-  }),
-  map: vi.fn(() => mockMap),
-  marker: vi.fn((location: unknown, options: Record<string, unknown>) => {
-    const marker: MockMarker = {
-      location,
-      on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
-      handlers: {},
-      options,
-    };
-    marker.on.mockImplementation((name, handler) => {
-      marker.handlers[name] = handler;
-      return marker;
-    });
-    mockMarkers.push(marker);
-    return marker;
-  }),
-  tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
 }));
 
-vi.mock('supercluster', () =>
-  vi.fn().mockImplementation(() => {
+vi.mock('supercluster', () => ({
+  default: vi.fn().mockImplementation(function () {
     const result = mockClusterResults[mockClusterInstances.length] || [];
     const instance: MockCluster = {
       getClusterExpansionZoom: vi.fn<(...args: [number]) => number>(() => 10),
@@ -111,7 +115,7 @@ vi.mock('supercluster', () =>
     mockClusterInstances.push(instance);
     return instance;
   }),
-);
+}));
 
 const bounds = {
   getEast: () => 14,

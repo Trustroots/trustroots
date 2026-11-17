@@ -34,7 +34,7 @@ interface MockRelayInstance {
   >;
 }
 
-interface MockRelayConstructor extends vi.Mock {
+interface MockRelayConstructor extends Mock {
   _lastInstance?: MockRelayInstance;
 }
 
@@ -42,7 +42,7 @@ let mockFetch: Mock<(...args: Parameters<typeof fetch>) => Promise<Response>>;
 
 // Mock nostr-tools/relay
 vi.mock('nostr-tools/relay', () => {
-  const MockRelay = vi.fn((url: string): MockRelayInstance => {
+  const MockRelay = vi.fn(function (url: string): MockRelayInstance {
     const instance = {
       url,
       connect: vi.fn().mockResolvedValue(undefined),
@@ -128,13 +128,15 @@ describe('NostrService', () => {
 
     it('closes a failed connection and keeps the other available', async () => {
       const close = vi.fn();
-      Relay.mockImplementationOnce((url: string) => ({
-        url,
-        connect: vi.fn().mockRejectedValue(new Error('offline')),
-        close,
-        subscribe: vi.fn(),
-        onclose: vi.fn(),
-      }));
+      Relay.mockImplementationOnce(function (url: string) {
+        return {
+          url,
+          connect: vi.fn().mockRejectedValue(new Error('offline')),
+          close,
+          subscribe: vi.fn(),
+          onclose: vi.fn(),
+        };
+      });
       const connections = await service.connectHackerPlaceRelays();
       expect(connections[0]).toEqual({
         url: 'wss://relay.trustroots.org',
@@ -211,11 +213,13 @@ describe('NostrService', () => {
     });
 
     it('keeps Nomadwiki discovery available when Trustroots cannot connect', async () => {
-      Relay.mockImplementationOnce((url: string) => ({
-        url,
-        connect: vi.fn().mockRejectedValue(new Error('offline')),
-        close: vi.fn(),
-      }));
+      Relay.mockImplementationOnce(function (url: string) {
+        return {
+          url,
+          connect: vi.fn().mockRejectedValue(new Error('offline')),
+          close: vi.fn(),
+        };
+      });
       const onEose = vi.fn();
       const onClose = vi.fn();
       await service.subscribeHackerPlaces(vi.fn(), { onEose, onClose });
@@ -308,15 +312,17 @@ describe('NostrService', () => {
 
     it('cleans up if relays synchronously end a preview subscription', async () => {
       for (let index = 0; index < 2; index++)
-        Relay.mockImplementationOnce((url: string) => ({
-          url,
-          connect: vi.fn().mockResolvedValue(undefined),
-          close: vi.fn(),
-          subscribe: vi.fn((_filters, callbacks) => {
-            callbacks.oneose();
-            return { close: vi.fn() };
-          }),
-        }));
+        Relay.mockImplementationOnce(function (url: string) {
+          return {
+            url,
+            connect: vi.fn().mockResolvedValue(undefined),
+            close: vi.fn(),
+            subscribe: vi.fn((_filters, callbacks) => {
+              callbacks.oneose();
+              return { close: vi.fn() };
+            }),
+          };
+        });
       expect(await service.fetchHackerPlaceEvents()).toEqual([]);
       for (let count = 0; count < 4; count++) await Promise.resolve();
       for (const relay of placeRelays())
@@ -539,7 +545,7 @@ describe('NostrService', () => {
     it('connects lazily if not already connected', async () => {
       const mockSub = { close: vi.fn() };
       // Service starts disconnected — subscribe should trigger connect
-      Relay.mockImplementationOnce((url: string): MockRelayInstance => {
+      Relay.mockImplementationOnce(function (url: string): MockRelayInstance {
         const instance = {
           url,
           connect: vi.fn().mockResolvedValue(undefined),

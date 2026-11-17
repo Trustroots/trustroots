@@ -18,11 +18,13 @@ mockMap.setView.mockImplementation(() => mockMap);
 const mockMarker = { remove: vi.fn() };
 
 vi.mock('leaflet', () => ({
-  circleMarker: vi.fn(() => ({
-    addTo: vi.fn(() => mockMarker),
-  })),
-  map: vi.fn(() => mockMap),
-  tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
+  default: {
+    circleMarker: vi.fn(() => ({
+      addTo: vi.fn(() => mockMarker),
+    })),
+    map: vi.fn(() => mockMap),
+    tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
+  },
 }));
 
 beforeEach(() => {
@@ -43,7 +45,7 @@ describe('<LeafletMap />', () => {
     let resize!: () => void;
     const observe = vi.fn();
     const disconnect = vi.fn();
-    global.ResizeObserver = vi.fn(callback => {
+    global.ResizeObserver = vi.fn(function (callback) {
       resize = () => callback([], {} as ResizeObserver);
       return { observe, disconnect, unobserve: vi.fn() };
     });
