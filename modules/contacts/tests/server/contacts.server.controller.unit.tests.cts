@@ -178,9 +178,35 @@ describe('Contacts controller unit tests', () => {
         }
         saveContact.called.should.be.false();
       });
+
+      it(`does not reveal an existing connection when the ${blocker} blocked the other member`, async () => {
+        await new Contact({
+          userFrom: user2._id,
+          userTo: user1._id,
+          confirmed: true,
+        }).save();
+        const [member, other] =
+          blocker === 'sender' ? [user1, user2] : [user2, user1];
+        member.blocked = [new mongoose.Types.ObjectId(other._id.toString())];
+        await member.save();
+        const { res } = await runHandler(res =>
+          contactsController.add(
+            { user: user1, body: { friendUserId: user2.id } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(403);
+        should.not.exist(res.body.confirmed);
+      });
     }
-    it('removes the new request if the sender session predates a block', async () => {
-      await user1.updateOne({ $addToSet: { blocked: user2._id } });
+    it('removes the new request if a block is recorded while it is saved', async () => {
+      const save = Contact.prototype.save;
+      sinon.stub(Contact.prototype, 'save').callsFake(async function (
+        this: ContactDocument,
+      ) {
+        await user2.updateOne({ $addToSet: { blocked: user1._id } });
+        return save.call(this);
+      });
       const email = sinon.spy(emailService, 'sendConfirmContact');
       const { res } = await runHandler(res =>
         contactsController.add(
@@ -426,13 +452,7 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('responds with 400 when the contact lookup fails before creation', async () => {
-      sinon
-        .stub(Contact, 'findOne')
-        .returns(
-          Promise.reject(new Error('lookup failed')) as unknown as ReturnType<
-            typeof Contact.findOne
-          >,
-        );
+      sinon.stub(Contact, 'findOne').rejects(new Error('lookup failed'));
 
       const { res } = await runHandler(res =>
         contactsController.add(

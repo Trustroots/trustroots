@@ -131,11 +131,6 @@ function isValidObjectId(value: unknown): value is ObjectIdInput {
   return mongoose.Types.ObjectId.isValid(value as ObjectIdInput);
 }
 
-function objectIdEquals(id: Types.ObjectId, value: ObjectIdInput): boolean {
-  // ObjectId.equals accepts fewer input forms than isValidObjectId does.
-  return id.equals(value as Parameters<typeof id.equals>[0]);
-}
-
 function sendBadRequest(res: ContactResponse, error: unknown) {
   // The legacy error service accepts raw rejection values; keep them unchanged.
   return errorService.sendBadRequest(res, error as Error);
@@ -159,9 +154,6 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   const friendUserId = new mongoose.Types.ObjectId(
     String(req.body.friendUserId),
   );
-  if (req.user.blocked?.some(id => objectIdEquals(id, friendUserId))) {
-    return errorService.sendForbidden(res);
-  }
 
   let messageHTML: string | false = false;
   let messagePlain: string | false = false;
@@ -174,6 +166,9 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   delete req.body.message;
 
   try {
+    if (await isBlockedPair(req.user._id, friendUserId)) {
+      return errorService.sendForbidden(res);
+    }
     const existingContact = await Contact.findOne({
       $or: [
         { userTo: friendUserId, userFrom: req.user._id },
@@ -194,13 +189,10 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
         _id: friendUserId,
         roles: { $nin: userRolesService.restrictedMessagingRoles },
       },
-      'email displayName roles blocked',
+      'email displayName roles',
     );
-    // Stryker disable next-line ConditionalExpression,StringLiteral,CallExpression: the error text never reaches the response (the error service ignores errors without validation details), and without this throw the next line throws a TypeError into the same catch, sending the same 400
+    // Stryker disable next-line ConditionalExpression,StringLiteral,CallExpression: the error text never reaches the response (the error service ignores errors without validation details), and without this throw the confirmation email throws a TypeError on the missing friend into the same catch, which removes the new contact and sends the same 400
     if (!friend) throw new Error('Failed to load user ' + friendUserId);
-    if (friend.blocked?.some(id => id.equals(req.user._id))) {
-      return errorService.sendForbidden(res);
-    }
 
     const newContact = new Contact({
       confirmed: false,
