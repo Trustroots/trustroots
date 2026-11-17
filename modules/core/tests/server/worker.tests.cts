@@ -130,6 +130,13 @@ describe('Worker tests', function () {
     jobNames.should.containEql('check unread messages');
   });
 
+  it('schedules unread-message digests', function () {
+    scheduledJobs.should.containEql({
+      name: 'queue unread message digests',
+      repeat: '5 minutes',
+    });
+  });
+
   it('defines [daily statistics] job', function () {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('daily statistics');
@@ -166,7 +173,7 @@ describe('Worker tests', function () {
   });
 
   it('defines right number of repeating jobs', function () {
-    scheduledJobs.length.should.equal(9);
+    scheduledJobs.length.should.equal(10);
     scheduledJobs.should.containEql({
       name: 'capture agenda storage',
       repeat: '0 3 * * *',

@@ -5,7 +5,7 @@ type SendEmailJob =
   typeof import('../../../server/jobs/send-email.server.job.mts').default;
 type SendCallback = (error?: Error | null) => void;
 
-function loadJob(sendError: Error | null) {
+function loadJob(sendError: Error | null, allow: boolean | Error = true) {
   const events: unknown[][] = [];
   const transport = {
     sent: [] as unknown[],
@@ -21,6 +21,12 @@ function loadJob(sendError: Error | null) {
   const job = mockModule<SendEmailJob>(
     require.resolve('../../../server/jobs/send-email.server.job.mts'),
     {
+      '../../../users/server/services/notification-email.server.service.mts': {
+        async canDeliverNotificationEmail() {
+          if (allow instanceof Error) throw allow;
+          return allow;
+        },
+      },
       nodemailer: {
         createTransport(options: unknown) {
           assert.deepEqual(options, { fictional: 'transport' });
@@ -70,6 +76,25 @@ describe('job: send email (delivery and logging)', function () {
         { jobId: 'fictional-job-id' },
       ],
     ]);
+  });
+
+  it('checks optional mail before delivering it', async function () {
+    const optionalEmail = {
+      ...email,
+      notificationEmail: { userId: 'fictional-member', category: 'hosting' },
+    };
+    const failure = new Error('database failed');
+    for (const allow of [true, false, failure]) {
+      const { job, transport } = loadJob(null, allow);
+      const error = await new Promise<Error | null | undefined>(resolve =>
+        job(
+          { attrs: { _id: 'fictional-job-id', data: optionalEmail } } as never,
+          resolve,
+        ),
+      );
+      assert.equal(error, allow === failure ? failure : undefined);
+      assert.deepEqual(transport.sent, allow === true ? [email] : []);
+    }
   });
 
   it('closes the pool, logs the failure and passes the error on', async function () {

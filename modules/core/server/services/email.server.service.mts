@@ -1,3 +1,7 @@
+import {
+  notificationEmail,
+  type NotificationEmail,
+} from '../../../users/server/services/notification-email.server.service.mts';
 import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mjs';
 import _ from 'lodash';
@@ -49,6 +53,7 @@ export interface EmailTemplateParams extends Record<string, unknown> {
   replyTo?: string | { name?: string; address?: string };
   subject?: string;
   skipHtmlTemplate?: unknown;
+  notificationEmail?: NotificationEmail;
   sparkpostCampaign?: string;
 }
 interface BaseEmailUrls extends Record<string, unknown> {
@@ -67,6 +72,7 @@ export interface RenderedEmail {
   html?: string;
   replyTo?: string | { name?: string; address?: string };
   headers?: Record<string, string>;
+  notificationEmail?: NotificationEmail;
 }
 const render = renderModule as (
   template: string,
@@ -194,6 +200,7 @@ function sendMessagesUnread(
 
   // Variables passed to email text/html templates
   const params = service.addEmailBaseTemplateParams({
+    ...notificationEmail(userTo, 'messages', 'immediate'),
     // Messages sent by administrators (including scam warnings) are
     // delivered as official Trustroots support mail rather than from an
     // individual administrator account.
@@ -230,6 +237,33 @@ function sendMessagesUnread(
   });
   service.renderEmailAndSend('messages-unread', params, callback);
 }
+export function sendMessageDigest(
+  user: MailUser,
+  frequency: 'daily' | 'weekly',
+  conversations: Array<{
+    username: string;
+    displayName: string;
+    count: number;
+  }>,
+  callback: MailCallback,
+) {
+  const subject = 'Unread messages on Trustroots';
+  const campaign = 'messages-digest';
+  const params = service.addEmailBaseTemplateParams({
+    ...notificationEmail(user, 'messages', frequency),
+    subject,
+    name: user.displayName,
+    email: user.email,
+    conversations: conversations.map(conversation => ({
+      ...conversation,
+      url: url + '/messages/' + encodeURIComponent(conversation.username),
+    })),
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign,
+  });
+  service.renderEmailAndSend('messages-digest', params, callback);
+}
+
 function sendConfirmContact(
   user: MailUser,
   friend: MailUser,
@@ -490,6 +524,7 @@ function sendReactivateHosts(user: MailUser, callback: MailCallback) {
     campaign,
   };
   const params = service.addEmailBaseTemplateParams({
+    ...notificationEmail(user, 'hosting'),
     subject: user.firstName + ', start hosting on Trustroots again?',
     firstName: user.firstName,
     name: user.displayName,
@@ -803,6 +838,8 @@ function renderEmail(
         subject: params.subject,
         text: result.text,
       };
+      if (params.notificationEmail)
+        email.notificationEmail = params.notificationEmail;
       if (result.html) {
         // Inline CSS with Juice
         email.html = juice(result.html);

@@ -1,0 +1,11 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
+You have unread conversations on Trustroots.
+
+{% for conversation in conversations %}
+{{ conversation.displayName }} ({{ conversation.count }} unread): {{ conversation.url }}
+{% endfor %}
+
+Unsubscribe: {{ unsubscribeUrl }}
+{% endblock content %}

@@ -23,4 +23,7 @@ Do not reply to this email directly.
 To reply, go to: {{urlReplyPlainText}}
 
 See their profile: {{urlUserFromProfilePlainText}}
+{% if unsubscribeUrl %}
+Unsubscribe: {{ unsubscribeUrl }}
+{% endif %}
 {% endblock content %}

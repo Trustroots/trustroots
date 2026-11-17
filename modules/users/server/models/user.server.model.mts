@@ -386,6 +386,14 @@ const UserSchema = new Schema<
   avatarVersion: {
     type: String,
   },
+  messageEmailFrequency: {
+    type: String,
+    enum: ['immediate', 'daily', 'weekly', 'off'],
+    index: true,
+  },
+  hostingReminderEmails: Boolean,
+  dailyMessageDigestPeriod: Date,
+  weeklyMessageDigestPeriod: Date,
   newsletter: {
     type: Boolean,
     default: false,

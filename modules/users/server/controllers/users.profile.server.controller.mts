@@ -1,3 +1,4 @@
+import { messageEmailFrequencies } from '../../shared/email-preferences.ts';
 import { validLanguageLevels } from '../../shared/language-levels.ts';
 import {
   hashToken,
@@ -278,6 +279,17 @@ service.update = function (req, res) {
   const requestedNostrNpub =
     // Stryker disable next-line ConditionalExpression: a present non-string nostrNpub was rejected above, so the value here is a string or undefined
     typeof req.body.nostrNpub === 'string' ? req.body.nostrNpub : undefined;
+  if (
+    (Object.hasOwn(req.body, 'messageEmailFrequency') &&
+      !messageEmailFrequencies.some(
+        value => value === req.body.messageEmailFrequency,
+      )) ||
+    (Object.hasOwn(req.body, 'hostingReminderEmails') &&
+      typeof req.body.hostingReminderEmails !== 'boolean')
+  ) {
+    return res.status(400).send({ message: 'Invalid email preferences.' });
+  }
+
   async function updateProfile(): Promise<void> {
     if (requestedEmail && requestedEmail !== authenticatedUser.email) {
       // Stryker disable MethodExpression,ArrowFunction: Mongoose lowercases email and emailTemporary filters itself (lowercase: true), and a failed lookup resolving to undefined instead of null still finds no other member

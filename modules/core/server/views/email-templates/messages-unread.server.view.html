@@ -21,4 +21,7 @@
 {% block actionbutton %}
   {% from "./partials/button.server.view.html" import button %}
   {{ button(urlReply, 'Reply to ' + userFromName) }}
+{% if unsubscribeUrl %}
+<p><a href="{{ unsubscribeUrl }}">Unsubscribe from unread-message emails</a></p>
+{% endif %}
 {% endblock actionbutton %}

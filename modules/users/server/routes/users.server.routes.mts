@@ -1,3 +1,8 @@
+import {
+  showUnsubscribe,
+  unsubscribe,
+} from '../controllers/users.notification-email.server.controller.mts';
+import { unsubscribePath } from '../services/notification-email.server.service.mts';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mjs';
 import userAvatar from './../controllers/users.avatar.server.controller.mjs';
@@ -26,6 +31,11 @@ interface RouteApplication {
 }
 
 const defaultExport = function (app: RouteApplication) {
+  app
+    .route(unsubscribePath + '/:token')
+    .get(showUnsubscribe)
+    .post(unsubscribe);
+
   // Setting up the users profile api
   app
     .route('/api/users')

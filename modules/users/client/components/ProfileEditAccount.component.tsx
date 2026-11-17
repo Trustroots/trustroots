@@ -1,3 +1,5 @@
+import { messageEmailFrequencies } from '../../shared/email-preferences';
+import type { UpdateProfileRequest } from '../../shared/profile';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
@@ -36,6 +38,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [emailMessage, setEmailMessage] = useState('');
+  const [subscriptionMessage, setSubscriptionMessage] = useState('');
+  const [isSavingSubscriptions, setIsSavingSubscriptions] = useState(false);
   const [isCancellingEmail, setIsCancellingEmail] = useState(false);
   const [usernameMessage, setUsernameMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
@@ -199,11 +203,15 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   }
 
   async function handleSubscriptionsChange(
-    field: 'newsletter',
-    value: boolean,
+    preferences: Pick<
+      UpdateProfileRequest,
+      'newsletter' | 'messageEmailFrequency' | 'hostingReminderEmails'
+    >,
   ) {
+    setIsSavingSubscriptions(true);
+    setSubscriptionMessage('');
     try {
-      const savedUser = await update({ newsletter: value });
+      const savedUser = await update(preferences);
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       track('profile_section_saved', { section: 'account' });
@@ -213,7 +221,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         reason: saveFailureReason(error),
       });
       const { message } = readApiError(error);
-      setEmailMessage(message || t('Something went wrong.'));
+      setSubscriptionMessage(message || t('Something went wrong.'));
+    } finally {
+      setIsSavingSubscriptions(false);
     }
   }
 
@@ -428,14 +438,58 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
             <label>
               <input
                 type="checkbox"
+                disabled={isSavingSubscriptions}
                 checked={Boolean(draftUser.newsletter)}
                 onChange={event =>
-                  handleSubscriptionsChange('newsletter', event.target.checked)
+                  void handleSubscriptionsChange({
+                    newsletter: event.target.checked,
+                  })
                 }
               />
               <span>{t('Community newsletter')}</span>
             </label>
           </div>
+          <div className="checkbox">
+            <label>
+              <input
+                type="checkbox"
+                disabled={isSavingSubscriptions}
+                checked={draftUser.hostingReminderEmails !== false}
+                onChange={event =>
+                  void handleSubscriptionsChange({
+                    hostingReminderEmails: event.target.checked,
+                  })
+                }
+              />
+              <span>{t('Hosting reminder emails')}</span>
+            </label>
+          </div>
+          <div className="form-group">
+            <label htmlFor="message-email-frequency">
+              {t('Unread-message emails')}
+            </label>
+            <select
+              id="message-email-frequency"
+              disabled={isSavingSubscriptions}
+              className="form-control"
+              value={draftUser.messageEmailFrequency ?? 'immediate'}
+              onChange={event => {
+                const frequency = messageEmailFrequencies.find(
+                  value => value === event.target.value,
+                );
+                if (frequency)
+                  void handleSubscriptionsChange({
+                    messageEmailFrequency: frequency,
+                  });
+              }}
+            >
+              <option value="immediate">{t('As they arrive')}</option>
+              <option value="daily">{t('Daily digest')}</option>
+              <option value="weekly">{t('Weekly digest')}</option>
+              <option value="off">{t('Off')}</option>
+            </select>
+          </div>
+          {subscriptionMessage && <p role="alert">{subscriptionMessage}</p>}
         </div>
       </div>
 

@@ -44,6 +44,7 @@ describe('Job: message unread', function () {
   const jobs = testutils.catchJobs<{
     subject: string;
     to: { address: string };
+    text: string;
   }>();
 
   before(function () {
@@ -149,6 +150,76 @@ describe('Job: message unread', function () {
         });
       })
       .catch(err => done(err));
+  });
+
+  it('uses one digest per recipient and period, grouping eligible conversations', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const otherSender = await User.create({
+      ..._userFrom,
+      email: 'othersender@example.test',
+      username: 'othersender',
+      firstName: 'Other',
+      lastName: 'Sender',
+      displayName: 'Other Sender',
+    });
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    const now = new Date('2026-01-05T12:00:00.000Z');
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    await message.updateOne({ $set: { created } });
+    await Message.create([
+      { ..._message, userFrom: otherSender._id, created },
+      { ..._message, userFrom: otherSender._id, created, read: true },
+    ]);
+
+    await Promise.all([queueMessageDigests(now), queueMessageDigests(now)]);
+    jobs.length.should.equal(1);
+    jobs[0].data.to.address.should.equal(_userTo.email);
+    jobs[0].data.text.should.containEql('FullFrom NameFrom (1 unread)');
+    jobs[0].data.text.should.containEql('Other Sender (1 unread)');
+    jobs[0].data.text.should.containEql('/email/unsubscribe/');
+
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(now);
+    jobs.length.should.equal(1);
+    await queueMessageDigests(new Date('2026-01-06T12:00:00.000Z'));
+    jobs.length.should.equal(2);
+    jobs[1].data.text.should.not.containEql('Other Sender');
+
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'weekly' } },
+    );
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
+    jobs.length.should.equal(3);
+    await Message.create({ ..._message, created });
+    await queueMessageDigests(new Date('2026-01-11T12:00:00.000Z'));
+    jobs.length.should.equal(3);
+    await queueMessageDigests(new Date('2026-01-12T12:00:00.000Z'));
+    jobs.length.should.equal(4);
+  });
+
+  it('does not send immediate reminders to members choosing a digest or off', async function () {
+    await message.updateOne({
+      $set: { created: new Date(Date.now() - 30 * 60_000) },
+    });
+    for (const messageEmailFrequency of ['off', 'weekly']) {
+      await User.updateOne(
+        { _id: userToId },
+        { $set: { messageEmailFrequency } },
+      );
+      await new Promise<void>((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+    }
+    jobs.length.should.equal(0);
+    (await Message.findById(message._id))!.notificationCount!.should.equal(0);
   });
 
   it('skips push for messages already read, hidden or stale', async function () {
@@ -1070,7 +1141,9 @@ describe('Job: message unread', function () {
         .map(String)
         .sort()
         .should.deepEqual([String(userFromId), String(userToId)].sort());
-      projection.should.equal('email displayName username roles');
+      projection.should.equal(
+        'email displayName username roles messageEmailFrequency',
+      );
       logCalls(log, queueErrorMessage).length.should.equal(0);
     });
 
