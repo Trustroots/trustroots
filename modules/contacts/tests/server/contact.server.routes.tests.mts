@@ -1,3 +1,11 @@
+import should from 'should';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import express from './../../../../config/lib/express.mts';
+import agenda from './../../../../config/lib/agenda.mts';
+import * as testutils from '../../../../testutils/server/server.testutil.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import errorService from '../../../core/server/services/error.server.service.mts';
 import type {
   ContactDocument,
   ContactModel,
@@ -5,17 +13,8 @@ import type {
   Credentials,
   TestAgent,
   TestExpressApp,
-  TestExpressModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const request: typeof import('supertest') = require('supertest');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const agenda: typeof import('./../../../../config/lib/agenda.mjs').default = require('./../../../../config/lib/agenda.mjs');
-const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('../../../core/server/services/error.server.service.mjs');
 
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 

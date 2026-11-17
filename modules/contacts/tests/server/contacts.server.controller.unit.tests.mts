@@ -1,3 +1,9 @@
+import mongoose from 'mongoose';
+import should from 'should';
+import sinon from 'sinon';
+import contactsController from './../../server/controllers/contacts.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import emailService from './../../../core/server/services/email.server.service.mts';
 import type {
   ContactDocument,
   ContactModel,
@@ -9,16 +15,8 @@ import type {
  * the route tests do not reach. Handlers are invoked directly with mock
  * req/res/next against the test database.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const should: typeof import('should') = require('should');
-const sinon: typeof import('sinon') = require('sinon');
-
-const contactsController: typeof import('./../../server/controllers/contacts.server.controller.mjs') = require('./../../server/controllers/contacts.server.controller.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
-
-const emailService: typeof import('./../../../core/server/services/email.server.service.mjs') = require('./../../../core/server/services/email.server.service.mjs');
 
 interface ControllerResponseBody extends Record<string, unknown> {
   confirmed?: boolean;

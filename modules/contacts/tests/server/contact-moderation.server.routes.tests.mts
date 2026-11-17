@@ -1,15 +1,15 @@
+import mongoose from 'mongoose';
+import request from 'supertest';
+import should from 'should';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import express from './../../../../config/lib/express.mts';
 import type {
   ContactModel,
   ContactRecord,
   TestAgent,
-  TestExpressModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const should: typeof import('should') = require('should');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 describe('Direct contact moderation visibility', () => {
   let agent: TestAgent;

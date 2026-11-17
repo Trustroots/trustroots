@@ -1,14 +1,14 @@
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import contactsController from './../../server/controllers/contacts.server.controller.mts';
+import emailService from './../../../core/server/services/email.server.service.mts';
+import errorService from './../../../core/server/services/error.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import should from 'should';
+import { deferredResponse } from '../../../../testutils/server/response.server.testutil.mts';
 /**
  * Contacts controller behaviour when the underlying Mongoose calls reject.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-
-const contactsController = require('./../../server/controllers/contacts.server.controller.mjs');
-const emailService = require('./../../../core/server/services/email.server.service.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should: typeof import('should') = require('should');
 
 const User =
   mongoose.model<
@@ -18,10 +18,6 @@ const Contact =
   mongoose.model<
     import('../../../../testutils/server/model-contracts.mts').ContactRecord
   >('Contact');
-
-const {
-  deferredResponse,
-}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 describe('Contacts controller mongoose error handling', () => {
   afterEach(() => {
@@ -46,7 +42,9 @@ describe('Contacts controller mongoose error handling', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(400);
-      sendBadRequest.firstCall.args[1].message.should.equal('db down');
+      (sendBadRequest.firstCall.args[1] as Error).message.should.equal(
+        'db down',
+      );
     });
 
     it('still responds with 400 when removing the unsent contact rejects', async () => {
