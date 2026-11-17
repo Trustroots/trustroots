@@ -273,7 +273,8 @@ private fun InboxContent(
                 Column(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
-                        .padding(contentPadding.horizontalInset()),
+                        .padding(contentPadding.horizontalInset())
+                        .padding(bottom = 12.dp),
                 ) {
                     LiveFilterField(
                         value = filter,
@@ -362,7 +363,7 @@ private fun InboxContent(
                                 Text(
                                     messageTime(LocalContext.current.resources, updated),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (thread.read) MaterialTheme.colorScheme.onSurfaceVariant else contentColor,
                                 )
                             }
                         }
