@@ -1,4 +1,6 @@
 /** @jest-environment node */
+import { once } from 'node:events';
+import type { Server } from 'node:http';
 import request from 'supertest';
 import { finalizeEvent, generateSecretKey } from 'nostr-tools';
 import { createApp } from '../server/app.mts';
@@ -30,12 +32,55 @@ function sign(body: string) {
   return 'Nostr ' + Buffer.from(JSON.stringify(event)).toString('base64');
 }
 
+function waitForSignalOrRequestFailure<T>(
+  signal: Promise<T>,
+  pendingRequest: Promise<{ status: number }>,
+) {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const finish = (settle: () => void) => {
+      if (settled) return;
+      settled = true;
+      settle();
+    };
+    signal.then(
+      value => finish(() => resolve(value)),
+      error => finish(() => reject(error)),
+    );
+    pendingRequest.then(
+      ({ status }) =>
+        finish(() => {
+          reject(
+            new Error(`Request finished with ${status} before the signal`),
+          );
+        }),
+      error => finish(() => reject(error)),
+    );
+  });
+}
+
+describe('waitForSignalOrRequestFailure', () => {
+  it('rejects with the transport error when the request fails before the signal', async () => {
+    const transport = new Error('socket hang up');
+    await expect(
+      waitForSignalOrRequestFailure(
+        new Promise(() => {}),
+        Promise.reject(transport),
+      ),
+    ).rejects.toBe(transport);
+  });
+});
+
 describe('review API', () => {
   let store: Store;
+  let server: Server | undefined;
   beforeEach(() => {
     store = new Store(':memory:');
   });
   afterEach(() => {
+    server?.closeAllConnections();
+    server?.close();
+    server = undefined;
     store.close();
   });
   function setup() {
@@ -86,22 +131,22 @@ describe('review API', () => {
 
   it('coalesces in-flight reads, refreshes expired cache and retries failed reads', async () => {
     const { app, repository } = setup();
-    let finish: (
-      value: ReturnType<typeof snapshot>['languages'],
-    ) => void = () => {};
-    repository.languages.mockImplementationOnce(
-      () =>
-        new Promise(resolve => {
-          finish = resolve;
-        }),
-    );
-    const first = request(app)
+    const started = new Promise<
+      (value: ReturnType<typeof snapshot>['languages']) => void
+    >(called => {
+      repository.languages.mockImplementationOnce(() => new Promise(called));
+    });
+    server = app.listen(0);
+    await once(server, 'listening');
+    const first = request(server)
       .get('/api/languages')
       .then(result => result);
-    const second = request(app)
+    const finish = await waitForSignalOrRequestFailure(started, first);
+    const arrived = once(server, 'request');
+    const second = request(server)
       .get('/api/languages')
       .then(result => result);
-    await new Promise(resolve => setTimeout(resolve, 20));
+    await waitForSignalOrRequestFailure(arrived, second);
     finish(snapshot().languages);
     expect((await first).status).toBe(200);
     expect((await second).status).toBe(200);
