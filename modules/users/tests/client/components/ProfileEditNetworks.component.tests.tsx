@@ -248,16 +248,18 @@ describe('ProfileEditNetworks', () => {
     mockedUsersApi.update.mockResolvedValue({
       ...user,
       extSitesCouchers: 'ada',
-      extSitesWS: 'rainy-cyclist',
+      extSitesWS: '00000000-0000-4000-8000-000000000003',
     });
-    renderPage({ extSitesWS: 'rainy-cyclist' });
+    renderPage({ extSitesWS: '00000000-0000-4000-8000-000000000003' });
 
     expect(
-      screen.getByText('This should be your numeric user id, not username.'),
+      screen.getByText(
+        'Copy the profile ID from your Warmshowers profile URL.',
+      ),
     ).toBeVisible();
     expect(screen.getByRole('link', { name: 'Test' })).toHaveAttribute(
       'href',
-      'https://www.warmshowers.org/users/rainy-cyclist',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000003',
     );
 
     fireEvent.change(screen.getByLabelText('couchers.org/user/'), {
@@ -421,7 +423,7 @@ describe('ProfileEditNetworks', () => {
       extSitesBW: 'ada-bw',
       extSitesCS: 'ada-cs',
       extSitesCouchers: 'ada-couchers',
-      extSitesWS: '123',
+      extSitesWS: '00000000-0000-4000-8000-000000000004',
     });
 
     expect(screen.getAllByRole('link', { name: 'Test' })[1]).toHaveAttribute(
@@ -467,12 +469,12 @@ describe('ProfileEditNetworks', () => {
       additionalProvidersData: {
         github: { login: 'fictional-login' },
       },
-      extSitesWS: '123',
+      extSitesWS: '00000000-0000-4000-8000-000000000004',
     });
 
     expect(screen.getByRole('link', { name: 'Test' })).toHaveAttribute(
       'href',
-      'https://www.warmshowers.org/user/123',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000004',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
@@ -481,30 +483,32 @@ describe('ProfileEditNetworks', () => {
     ).toBeVisible();
   });
 
-  it('uses the legacy warmshowers user URL for numeric ids', () => {
-    renderPage({ extSitesWS: '12345' });
+  it('uses the Warmshowers app profile URL for UUIDs', () => {
+    renderPage({ extSitesWS: '00000000-0000-4000-8000-000000000001' });
 
     expect(screen.getByRole('link', { name: 'Test' })).toHaveAttribute(
       'href',
-      'https://www.warmshowers.org/user/12345',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
     );
   });
 
-  it('uses the profile URL for non-numeric warmshowers ids', async () => {
+  it('saves the Warmshowers profile UUID', async () => {
     mockedUsersApi.update.mockResolvedValue({
       ...user,
-      extSitesWS: 'rainy-cyclist',
+      extSitesWS: '00000000-0000-4000-8000-000000000003',
     });
     renderPage();
 
-    fireEvent.change(screen.getByLabelText('warmshowers.org/user/'), {
-      target: { value: 'rainy-cyclist' },
+    fireEvent.change(screen.getByLabelText('app.warmshowers.org/profiles/'), {
+      target: { value: '00000000-0000-4000-8000-000000000003' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
       expect(mockedUsersApi.update).toHaveBeenCalledWith(
-        expect.objectContaining({ extSitesWS: 'rainy-cyclist' }),
+        expect.objectContaining({
+          extSitesWS: '00000000-0000-4000-8000-000000000003',
+        }),
       );
     });
   });

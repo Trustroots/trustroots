@@ -14,6 +14,7 @@ import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
+import { warmshowersProfileLink } from '../utils/networks';
 
 declare global {
   interface Window {
@@ -31,15 +32,6 @@ const NPUB_PATTERN = /^(|npub1[ac-hj-np-z02-9]+)$/i;
 
 function normalizeNpub(npub?: string) {
   return (npub || '').trim().toLowerCase();
-}
-
-function isWarmshowersId(value: string) {
-  if (Number.isNaN(Number(value))) {
-    return false;
-  }
-
-  const parsed = parseFloat(value);
-  return (parsed | 0) === parsed;
 }
 
 export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
@@ -419,12 +411,9 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                     },
                     {
                       id: 'extSitesWS',
-                      label: 'warmshowers.org/user/',
+                      label: 'app.warmshowers.org/profiles/',
                       field: 'extSitesWS',
-                      testUrl: (value: string) =>
-                        `https://www.warmshowers.org/${
-                          isWarmshowersId(value) ? 'user' : 'users'
-                        }/${value}`,
+                      testUrl: warmshowersProfileLink,
                     },
                   ] as Array<{
                     id: string;
@@ -479,15 +468,13 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                           {field.testUrl(fieldValue)}
                         </p>
                       )}
-                      {field.field === 'extSitesWS' &&
-                        draftUser.extSitesWS &&
-                        !isWarmshowersId(draftUser.extSitesWS) && (
-                          <p className="help-block text-warning">
-                            {t(
-                              'This should be your numeric user id, not username.',
-                            )}
-                          </p>
-                        )}
+                      {field.field === 'extSitesWS' && (
+                        <p className="help-block">
+                          {t(
+                            'Copy the profile ID from your Warmshowers profile URL.',
+                          )}
+                        </p>
+                      )}
                     </div>
                   );
                 })}

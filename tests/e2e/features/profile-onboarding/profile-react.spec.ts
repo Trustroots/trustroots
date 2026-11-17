@@ -273,7 +273,7 @@ test('profile descriptions disable links while dedicated network exceptions rema
         extSitesCouchers: 'fictional-member',
         extSitesBW: 'fictional-member',
         extSitesCS: 'fictional-member',
-        extSitesWS: '12345',
+        extSitesWS: '00000000-0000-4000-8000-000000000001',
       },
     });
   });
@@ -286,20 +286,32 @@ test('profile descriptions disable links while dedicated network exceptions rema
     page.getByRole('link', { name: /Fictional .* notes/ }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole('link', { name: 'Couchers.org', exact: true }),
+    page.getByRole('link', { name: 'CO: fictional-member', exact: true }),
   ).toHaveAttribute('href', 'https://couchers.org/user/fictional-member');
   await expect(
-    page.getByRole('link', { name: 'BeWelcome', exact: true }),
+    page.getByRole('link', { name: 'BW: fictional-member', exact: true }),
   ).toHaveAttribute(
     'href',
     'https://www.bewelcome.org/members/fictional-member',
   );
   await expect(
     page.getByRole('link', { name: 'Warmshowers', exact: true }),
-  ).toHaveAttribute('href', 'https://www.warmshowers.org/user/12345');
-  await expect(page.getByText('Couchsurfing', { exact: true })).toBeVisible();
+  ).toHaveAttribute(
+    'href',
+    'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
+  );
   await expect(
-    page.getByRole('link', { name: 'Couchsurfing', exact: true }),
+    page.getByText('CS: fictional-member', { exact: true }),
+  ).toBeVisible();
+  for (const [label, network] of [
+    ['CS: fictional-member', 'Couchsurfing'],
+    ['CO: fictional-member', 'Couchers.org'],
+    ['BW: fictional-member', 'BeWelcome'],
+  ]) {
+    await expect(page.getByTitle(network, { exact: true })).toHaveText(label);
+  }
+  await expect(
+    page.getByRole('link', { name: 'CS: fictional-member', exact: true }),
   ).toHaveCount(0);
 });
 
@@ -329,7 +341,7 @@ for (const path of ['household/fictional-host', 'address/fictional-host']) {
     await expect(page.getByLabel('servas.org/')).toHaveValue(path);
     await page.goto(`/profile/${member.username}`);
     await expect(
-      page.getByRole('link', { name: 'Servas', exact: true }),
+      page.getByRole('link', { name: `Servas: ${path}`, exact: true }),
     ).toHaveAttribute('href', `https://servas.org/${path}`);
     await page.goto('/profile/edit/networks');
     await page.getByLabel('servas.org/').fill('');
@@ -339,7 +351,7 @@ for (const path of ['household/fictional-host', 'address/fictional-host']) {
     );
     await page.goto(`/profile/${member.username}`);
     await expect(
-      page.getByRole('link', { name: 'Servas', exact: true }),
+      page.getByRole('link', { name: `Servas: ${path}`, exact: true }),
     ).toHaveCount(0);
   });
 }
