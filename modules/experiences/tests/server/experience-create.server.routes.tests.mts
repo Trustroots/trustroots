@@ -2,23 +2,21 @@ import type {
   ExperienceModel,
   ExperienceRecord,
   TestAgent,
-  TestConfigModule,
   TestExpressApp,
-  TestExpressModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const request: typeof import('supertest') = require('supertest');
-const sinon: typeof import('sinon') = require('sinon');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const { faker } = require('@faker-js/faker');
+import should from 'should';
+import request from 'supertest';
+import sinon from 'sinon';
+import mongoose from 'mongoose';
+import { faker } from '@faker-js/faker';
+import * as testutils from '../../../../testutils/server/server.testutil.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import express from './../../../../config/lib/express.mts';
+import config from './../../../../config/config.mts';
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
 );
-const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const config: TestConfigModule = require('./../../../../config/config.mts');
 describe('Create an experience', () => {
   let app: TestExpressApp;
   let agent: TestAgent;

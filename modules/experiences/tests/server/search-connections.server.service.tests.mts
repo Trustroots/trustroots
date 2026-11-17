@@ -1,9 +1,7 @@
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const {
-  findSearchConnectionIds,
-}: typeof import('../../server/services/search-connections.server.service.mts') = require('../../server/services/search-connections.server.service.mts');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import { findSearchConnectionIds } from '../../server/services/search-connections.server.service.mts';
 
 function queryReturning<T>(result: T[]) {
   const query = {

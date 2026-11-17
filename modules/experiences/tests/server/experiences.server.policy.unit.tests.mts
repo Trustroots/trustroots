@@ -1,10 +1,10 @@
+import sinon from 'sinon';
+import should from 'should';
 let policyModule: typeof import('../../server/policies/experiences.server.policy.mts');
 before(async function () {
   policyModule =
     await import('../../server/policies/experiences.server.policy.mts');
 });
-const sinon: typeof import('sinon') = require('sinon');
-const should: typeof import('should') = require('should');
 interface PolicyResponseDouble {
   statusCode: number;
   body: { message: string } | null;

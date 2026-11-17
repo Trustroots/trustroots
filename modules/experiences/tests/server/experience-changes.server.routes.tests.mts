@@ -4,23 +4,22 @@ import type {
   ExperienceRecord,
   TestAgent,
   TestExpressApp,
-  TestExpressModule,
   UserDocument,
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-const crypto: typeof import('crypto') = require('crypto');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const sinon: typeof import('sinon') = require('sinon');
-require('should');
+import crypto from 'crypto';
+import mongoose from 'mongoose';
+import request from 'supertest';
+import sinon from 'sinon';
+import 'should';
 
-const express: TestExpressModule = require('../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const statistics: typeof import('../../../statistics/server/controllers/statistics.server.controller.mjs') = require('../../../statistics/server/controllers/statistics.server.controller.mjs');
-const publishExperiences: typeof import('../../server/jobs/experiences-publish.server.job.mjs') = require('../../server/jobs/experiences-publish.server.job.mjs');
-const adminChanges: typeof import('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs') = require('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs');
-const memberChanges: typeof import('../../server/controllers/experience-changes.server.controller.mjs') = require('../../server/controllers/experience-changes.server.controller.mjs');
+import express from '../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import statistics from '../../../statistics/server/controllers/statistics.server.controller.mts';
+import publishExperiences from '../../server/jobs/experiences-publish.server.job.mts';
+import adminChanges from '../../../admin/server/controllers/admin.experience-changes.server.controller.mts';
+import memberChanges from '../../server/controllers/experience-changes.server.controller.mts';
 
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',

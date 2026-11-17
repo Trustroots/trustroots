@@ -4,13 +4,13 @@ import type {
   ExperienceRecord,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const crypto: typeof import('crypto') = require('crypto');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const should: typeof import('should') = require('should');
+import crypto from 'crypto';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import should from 'should';
 
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const memberChanges: typeof import('../../server/controllers/experience-changes.server.controller.mjs') = require('../../server/controllers/experience-changes.server.controller.mjs');
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import memberChanges from '../../server/controllers/experience-changes.server.controller.mts';
 
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',

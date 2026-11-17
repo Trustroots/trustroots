@@ -2,14 +2,13 @@ import type {
   ExperienceModel,
   ExperienceRecord,
   TestAgent,
-  TestExpressModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const express: TestExpressModule = require('../../../../config/lib/express.mjs');
-require('should');
+import mongoose from 'mongoose';
+import request from 'supertest';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import express from '../../../../config/lib/express.mts';
+import 'should';
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
 );

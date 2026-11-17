@@ -2,16 +2,15 @@ import type {
   ExperienceDocument,
   ExperienceModel,
   ExperienceRecord,
-  TestConfigModule,
 } from '../../../../testutils/server/model-contracts.mts';
-const moment: typeof import('moment') = require('moment');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const should: typeof import('should') = require('should');
-const sinon: typeof import('sinon') = require('sinon');
-const util: typeof import('util') = require('util');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const jobPublishExperience: typeof import('./../../server/jobs/experiences-publish.server.job.mjs').default = require('./../../server/jobs/experiences-publish.server.job.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import moment from 'moment';
+import mongoose from 'mongoose';
+import should from 'should';
+import sinon from 'sinon';
+import util from 'util';
+import config from './../../../../config/config.mts';
+import jobPublishExperience from './../../server/jobs/experiences-publish.server.job.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
 );

@@ -1,8 +1,7 @@
-const assert: typeof import('assert/strict') = require('assert/strict');
-const { ObjectId } = require('mongoose').Types;
-const {
-  prepareSendingToClient,
-} = require('../../server/services/experience-payload.server.service.cjs');
+import assert from 'assert/strict';
+import { Types } from 'mongoose';
+import { prepareSendingToClient } from '../../server/services/experience-payload.server.service.mts';
+const { ObjectId } = Types;
 
 describe('Experience API payload construction', () => {
   const author = new ObjectId('111111111111111111111111');
@@ -20,13 +19,16 @@ describe('Experience API payload construction', () => {
   };
 
   it('keeps private feedback hidden from the recipient', () => {
-    assert.deepEqual(prepareSendingToClient(experience, null, recipient), {
-      _id: experience._id,
-      created: experience.created,
-      public: false,
-      userFrom: author,
-      userTo: recipient,
-      response: null,
-    });
+    assert.deepEqual(
+      prepareSendingToClient(experience as never, null, recipient),
+      {
+        _id: experience._id,
+        created: experience.created,
+        public: false,
+        userFrom: author,
+        userTo: recipient,
+        response: null,
+      },
+    );
   });
 });

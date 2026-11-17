@@ -1,17 +1,16 @@
 import type {
   TestAgent,
   TestExpressApp,
-  TestExpressModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const _: typeof import('lodash') = require('lodash');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const should: typeof import('should') = require('should');
-const sinon: typeof import('sinon') = require('sinon');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+import _ from 'lodash';
+import mongoose from 'mongoose';
+import request from 'supertest';
+import should from 'should';
+import sinon from 'sinon';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
+import express from './../../../../config/lib/express.mts';
 describe('Read a single experience by experience id', () => {
   let app: TestExpressApp;
   let agent: TestAgent;

@@ -4,18 +4,17 @@ import type {
   ExperienceModel,
   ExperienceRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-import type { Types } from 'mongoose';
 /**
  * Unit tests for experiences controller branches not covered by route tests.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
+import mongoose, { type Types } from 'mongoose';
+import sinon from 'sinon';
 
-require('./../../../contacts/server/models/contacts.server.model.mjs');
-require('./../../server/models/experiences.server.model.mjs');
-const experiencesController: typeof import('./../../server/controllers/experiences.server.controller.mjs') = require('./../../server/controllers/experiences.server.controller.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-require('should');
+import './../../../contacts/server/models/contacts.server.model.mts';
+import './../../server/models/experiences.server.model.mts';
+import experiencesController from './../../server/controllers/experiences.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import 'should';
 
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',

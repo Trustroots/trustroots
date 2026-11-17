@@ -5,9 +5,9 @@ import type {
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import should from 'should';
+import mongoose from 'mongoose';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
