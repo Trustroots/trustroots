@@ -1,0 +1,41 @@
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -282,0 +283,31 @@
++const hasWildcardStar = (input, options) => {
++  const lastBracket = options.nobracket === true ? -1 : input.lastIndexOf(']');
++  let escaped = false;
++  let bracket = false;
++  let quoted = false;
++
++  for (let index = 0; index < input.length; index++) {
++    const char = input[index];
++    if (escaped) {
++      escaped = false;
++      continue;
++    }
++    if (char === '\\') {
++      escaped = true;
++      continue;
++    }
++    if (char === '"' && !bracket) {
++      quoted = !quoted;
++      continue;
++    }
++    if (quoted) continue;
++    if (char === '[' && index < lastBracket) bracket = true;
++    if (char === ']') bracket = false;
++    const extglob = input[index + 1] === '(' &&
++      input[index + 2] !== '?' && input[index + 2] !== undefined;
++    if (!bracket && char === '*' && !extglob) return true;
++  }
++
++  return false;
++};
++
+@@ -293,0 +325,5 @@
++
++  // Keep wildcard stars out of repeated bodies; use the existing literal fallback.
++  if (branches.some(branch => hasWildcardStar(branch, options))) {
++    return { risky: true };
++  }
