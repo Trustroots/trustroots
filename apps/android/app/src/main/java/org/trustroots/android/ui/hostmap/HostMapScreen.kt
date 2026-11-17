@@ -15,13 +15,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -76,6 +78,7 @@ import org.trustroots.android.api.MapOffer
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.CommunityNote
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.languageName
@@ -156,15 +159,20 @@ internal fun HostMapScreen(
     var languageMenuOpen by remember { mutableStateOf(false) }
     val circles = mapState.circles
     var circleMenuOpen by remember { mutableStateOf(false) }
-    var showFilters by remember { mutableStateOf(false) }
+    var showFilters by rememberSaveable { mutableStateOf(true) }
+    var showResults by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(showFilters, mapViewModel, api.backendURL, session.credentialKey, session.member.username) {
+        if (showFilters) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
+    }
     var showSuggestions by remember { mutableStateOf(false) }
     val suggestions = mapState.suggestions
     var mapRevision by remember { mutableIntStateOf(0) }
     BackHandler(
-        enabled = showFilters || showSuggestions || selectedNotes.isNotEmpty(),
+        enabled = showResults || showFilters || showSuggestions || selectedNotes.isNotEmpty(),
     ) {
         when {
             showSuggestions -> showSuggestions = false
+            showResults -> showResults = false
             showFilters -> showFilters = false
             else -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
         }
@@ -307,50 +315,52 @@ internal fun HostMapScreen(
             modifier = Modifier.fillMaxSize().testTag("hostMapView")
                 .onSizeChanged { map.post { dispatchViewport() } },
         )
-        Column(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
-                .testTag("map-controls").background(MaterialTheme.colorScheme.surface)
-                .padding(top = contentPadding.calculateTopPadding()),
-        ) {
-            Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                SubmittedSearchField(
-                    value = locationQuery,
-                    onValueChange = {
-                        mapViewModel.onEvent(HostMapEvent.LocationQueryChanged(it))
-                        showSuggestions = it.isNotEmpty()
-                    },
-                    label = stringResource(R.string.search_places),
-                    clearLabel = stringResource(R.string.clear_place_search),
-                    searchLabel = stringResource(R.string.search_places),
-                    leadingIcon = searchModeMenu,
-                    onSearch = findLocation,
-                    searchEnabled = locationQuery.isNotBlank(),
-                    modifier = Modifier.weight(1f).testTag("placeSearchField"),
-                )
-                IconButton(onClick = {
-                    closePlaceSearch()
-                    showFilters = !showFilters
-                    if (showFilters && circles.isEmpty()) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
-                }, modifier = Modifier.testTag("openFilters")) {
-                    Icon(painterResource(R.drawable.ic_material_filter_list), if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .testTag("map-controls").background(MaterialTheme.colorScheme.surface)
+                    .padding(top = contentPadding.calculateTopPadding()),
+            ) {
+                Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SubmittedSearchField(
+                        value = locationQuery,
+                        onValueChange = {
+                            mapViewModel.onEvent(HostMapEvent.LocationQueryChanged(it))
+                            showSuggestions = it.isNotEmpty()
+                        },
+                        label = stringResource(R.string.search_places),
+                        clearLabel = stringResource(R.string.clear_place_search),
+                        searchLabel = stringResource(R.string.search_places),
+                        leadingIcon = searchModeMenu,
+                        onSearch = findLocation,
+                        searchEnabled = locationQuery.isNotBlank(),
+                        modifier = Modifier.weight(1f).testTag("placeSearchField"),
+                    )
+                    IconButton(onClick = {
+                        closePlaceSearch()
+                        showFilters = !showFilters
+                    }, modifier = Modifier.testTag("openFilters")) {
+                        Icon(painterResource(R.drawable.ic_material_filter_list), if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-            }
-            if (showSuggestions) suggestions.forEach { suggestion ->
-                TextButton(onClick = {
-                    closePlaceSearch()
-                    mapViewModel.onEvent(HostMapEvent.PlaceSelected(suggestion))
-                }, modifier = Modifier.fillMaxWidth()) { Text(suggestion.label) }
-            }
-            if (showFilters) {
-                    Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(contentPadding.horizontalInset()).padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                if (showSuggestions) suggestions.forEach { suggestion ->
+                    TextButton(onClick = {
+                        closePlaceSearch()
+                        mapViewModel.onEvent(HostMapEvent.PlaceSelected(suggestion))
+                    }, modifier = Modifier.fillMaxWidth()) { Text(suggestion.label) }
+                }
+                if (showFilters) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().heightIn(max = 240.dp).verticalScroll(rememberScrollState())
+                            .padding(contentPadding.horizontalInset()).padding(horizontal = 8.dp)
+                            .testTag("mapFilters"),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
                         MultiChoiceSegmentedButtonRow {
                             SegmentedButton(checked = includeHosts, onCheckedChange = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(includeHosts = it))) }, shape = SegmentedButtonDefaults.itemShape(0, 2), label = { Text(hostingLabel) })
                             SegmentedButton(checked = includeMeet, onCheckedChange = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(includeMeet = it))) }, shape = SegmentedButtonDefaults.itemShape(1, 2), label = { Text(meetLabel) })
                         }
-                        Spacer(Modifier.width(6.dp))
                         FilterChip(
                             selected = seenMonths != null,
                             onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (activityMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },
@@ -360,7 +370,6 @@ internal fun HostMapScreen(
                                 else -> lastActiveAnyTime
                             }) },
                         )
-                        Spacer(Modifier.width(6.dp))
                         Box {
                             FilterChip(
                                 selectedCircleIDs.isNotEmpty(),
@@ -410,7 +419,6 @@ internal fun HostMapScreen(
                                 }
                             }
                         }
-                        Spacer(Modifier.width(6.dp))
                         Box {
                             FilterChip(
                                 selectedLanguages.isNotEmpty(),
@@ -453,54 +461,82 @@ internal fun HostMapScreen(
                             }
                         }
                     }
+                }
+            }
+            if (showResults) {
+                HostMapResults(
+                    offers = visibleMapOffers(offers, mapState.measuredBounds),
+                    loading = loading,
+                    failure = error,
+                    api = api,
+                    session = session,
+                    onRetrySearch = {
+                        mapViewModel.onEvent(when (error?.fallback) {
+                            UiFailureFallback.PLACE_SEARCH -> HostMapEvent.SubmitPlace
+                            UiFailureFallback.CIRCLES_LOAD -> HostMapEvent.CirclesRequested
+                            else -> HostMapEvent.RetrySearch
+                        })
+                    },
+                    onOpenOffer = onOpenHostDetail,
+                    onSessionInvalidated = onSessionInvalidated,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(contentPadding.horizontalInset()),
+                )
+            } else Spacer(Modifier.weight(1f))
+            Column(
+                Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
+            ) {
+                if (!showResults) HostMapDeviceLocation(
+                    onStart = closePlaceSearch,
+                    onLocation = {
+                        mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
+                    },
+                    modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp, vertical = 4.dp),
+                    lookup = deviceLocationLookup,
+                )
+                if (!showResults && selectedNotes.isNotEmpty()) {
+                    Column(
+                        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),
+                    ) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(notesHeading, style = MaterialTheme.typography.titleMedium)
+                            TextButton(onClick = { mapViewModel.onEvent(HostMapEvent.NotesDismissed) }) { Text(closeLabel) }
+                        }
+                        selectedNotes.take(5).forEach { note ->
+                            Text(note.content, modifier = Modifier.padding(vertical = 6.dp), maxLines = 4)
+                            Text(messageTime(context.resources, note.createdAt), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                if (noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
+                TextButton(
+                    onClick = { closePlaceSearch(); showResults = !showResults },
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).testTag("mapResultsToggle"),
+                ) {
+                    Text(stringResource(if (showResults) R.string.screen_back_to_map else R.string.screen_map_show_results))
+                }
+                Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (loading) searchingArea else mapStatisticsLabel(
+                            offers.size,
+                            communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) },
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.weight(1f).testTag("mapStatistics"),
+                    )
+                    Text(
+                        attribution,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         }
-        error?.let {
+        error?.takeUnless { showResults }?.let {
             Text(
                 resolveFailureMessage(it), color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.surface).padding(12.dp),
             )
-        }
-        Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
-        ) {
-        HostMapDeviceLocation(
-            onStart = closePlaceSearch,
-            onLocation = {
-                mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
-            },
-            modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp, vertical = 4.dp),
-            lookup = deviceLocationLookup,
-        )
-        if (selectedNotes.isNotEmpty()) {
-            Column(
-                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(notesHeading, style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { mapViewModel.onEvent(HostMapEvent.NotesDismissed) }) { Text(closeLabel) }
-                }
-                selectedNotes.take(5).forEach { note ->
-                    Text(note.content, modifier = Modifier.padding(vertical = 6.dp), maxLines = 4)
-                    Text(messageTime(context.resources, note.createdAt), style = MaterialTheme.typography.labelSmall)
-                }
-            }
-        }
-        if (noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
-        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                if (loading) searchingArea else mapStatisticsLabel(
-                    offers.size,
-                    communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) },
-                ),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.weight(1f).testTag("mapStatistics"),
-            )
-            Text(
-                attribution,
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
         }
     }
 }

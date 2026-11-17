@@ -68,7 +68,7 @@ class HostMapDetailAndCircleFilterJourneyTest {
         startFixture()
         showMap()
         waitForInitialOffers()
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
         compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
         compose.waitUntil(10_000) {
@@ -127,7 +127,7 @@ class HostMapDetailAndCircleFilterJourneyTest {
         showMap()
 
         compose.waitUntil(15_000) { offerFilters.isNotEmpty() }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("All circles").performClick()
         compose.onNodeWithTag("circleFilterOption-all").assertIsSelected()
         waitForText("Quiet Circle")

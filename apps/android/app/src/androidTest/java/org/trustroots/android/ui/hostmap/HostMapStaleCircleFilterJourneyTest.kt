@@ -61,7 +61,7 @@ class HostMapStaleCircleFilterJourneyTest {
             }
         }
 
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.waitUntil(10_000) {
             repository.circleLoads > 0 &&
                 compose.onAllNodesWithText("1 circle").fetchSemanticsNodes().isNotEmpty()

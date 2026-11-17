@@ -147,7 +147,7 @@ class HostMapLocationClusterJourneyTest {
                 compose.onAllNodesWithText("3 offers · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithTag("openFilters").performClick()
         val zoomBeforeCluster = requests.last { it.contains(TARGET_LATITUDE, TARGET_LONGITUDE) }

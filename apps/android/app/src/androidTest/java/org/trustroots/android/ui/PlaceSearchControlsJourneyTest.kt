@@ -54,7 +54,7 @@ class PlaceSearchControlsJourneyTest {
             waitForInitialResults(fixture)
             val offerRequestsBeforeClear = offerRequestCount(fixture)
 
-            compose.onNodeWithTag("openFilters").performClick()
+            compose.onNodeWithTag("openFilters").assertIsDisplayed()
             compose.onNodeWithText("Hosting").assertIsDisplayed()
             compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
             waitFor("Fictional Harbour, Somewhere")

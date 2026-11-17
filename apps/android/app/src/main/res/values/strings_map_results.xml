@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="screen_map_show_results">Results in this area</string>
+    <string name="screen_back_to_map">Back to map</string>
+    <string name="screen_map_results_heading">Offers in this map area</string>
+    <string name="screen_map_results_empty">No offers in this area. Try changing the filters or moving the map.</string>
+    <string name="screen_map_result_loading">Loading offer…</string>
+</resources>

@@ -87,7 +87,7 @@ class HostMapRetryJourneyTest {
 
         compose.waitUntil(15_000) { requests.isNotEmpty() && compose.onAllNodesWithText("Local search unavailable.").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Local search unavailable.").assertIsDisplayed()
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Last active: any time").performClick()
         compose.waitUntil(15_000) {

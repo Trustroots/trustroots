@@ -170,6 +170,10 @@ class SearchModeBackNavigationJourneyTest {
             compose.onNodeWithText("Find a member").assertDoesNotExist()
             org.junit.Assert.assertFalse("Returning to Map should remain inside Search", rootBack.get())
 
+            compose.onNodeWithText("Hosting").assertIsDisplayed()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.onNodeWithText("Hosting").assertDoesNotExist()
+            org.junit.Assert.assertFalse("Collapsing filters keeps Search open", rootBack.get())
             compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.waitUntil(5_000) { rootBack.get() }
         }
@@ -229,6 +233,10 @@ class SearchModeBackNavigationJourneyTest {
             compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
             org.junit.Assert.assertFalse("Dismissal should keep Search open", rootBack.get())
 
+            compose.onNodeWithText("Hosting").assertIsDisplayed()
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.onNodeWithText("Hosting").assertDoesNotExist()
+            org.junit.Assert.assertFalse("Collapsing filters keeps Search open", rootBack.get())
             compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.waitUntil(5_000) { rootBack.get() }
         }

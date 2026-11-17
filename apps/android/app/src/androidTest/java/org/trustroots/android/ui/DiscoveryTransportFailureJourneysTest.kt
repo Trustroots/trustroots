@@ -83,7 +83,7 @@ class DiscoveryTransportFailureJourneysTest {
 
         val failedAttempts = offersRequests.get()
         allowRecovery.set(true)
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.waitUntil(10_000) {
             offersRequests.get() > failedAttempts &&
