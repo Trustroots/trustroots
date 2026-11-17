@@ -119,3 +119,52 @@ it('opens a custom member heading from the keyboard and clears it when closed', 
     jest.restoreAllMocks();
   }
 });
+
+it('focuses the hosting offer from a pin that is already open', () => {
+  jest.replaceProperty(L.Browser, 'svg', true);
+  const markerSpy = jest.spyOn(L, 'circleMarker');
+  const { unmount } = render(
+    <CircleLocationMap
+      title="Hosting"
+      description="Approximate locations"
+      mapLabel="Hosting map"
+      locations={[
+        {
+          id: 'example',
+          name: 'Sample Host',
+          latitude: 0,
+          longitude: 0,
+          details: [],
+          popupHeading: <span>@sample-host</span>,
+          link: {
+            url: '/profile/sample-host/accommodation',
+            label: 'View hosting offer',
+          },
+        },
+      ]}
+      state="ready"
+      loadingText="Loading"
+      emptyText="Empty"
+      errorText="Unavailable"
+      countLabel="hosts"
+    />,
+    { wrapper: AuthProvider },
+  );
+
+  try {
+    const pin = screen.getByRole('button', { name: 'Sample Host' });
+    const marker = markerSpy.mock.results[0].value as L.CircleMarker;
+    act(() => {
+      marker.openPopup();
+    });
+    const offer = screen.getByRole('link', { name: 'View hosting offer' });
+    expect(screen.getByText('@sample-host')).toBeVisible();
+    expect(offer).not.toHaveFocus();
+
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    expect(offer).toHaveFocus();
+  } finally {
+    unmount();
+    jest.restoreAllMocks();
+  }
+});
