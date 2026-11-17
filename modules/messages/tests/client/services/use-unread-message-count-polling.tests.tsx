@@ -4,15 +4,15 @@ import useUnreadMessageCountPolling from '@/modules/messages/client/services/use
 import { start } from '@/modules/messages/client/services/unread-message-count.client.service';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock(
+vi.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
 
-const mockStart = jest.mocked(start);
-const stop = jest.fn();
+const mockStart = vi.mocked(start);
+const stop = vi.fn();
 const publicMember = { _id: 'fictional-member', public: true };
 
 beforeEach(() => {

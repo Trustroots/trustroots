@@ -15,18 +15,16 @@ describe('useMediaQuery', () => {
   function mockMatchMedia(initialMatch: boolean) {
     let matches = initialMatch;
     const events = new EventTarget();
-    const addEventListener = jest.fn(events.addEventListener.bind(events));
-    const removeEventListener = jest.fn(
-      events.removeEventListener.bind(events),
-    );
-    const matchMedia = jest.fn((media: string) => ({
+    const addEventListener = vi.fn(events.addEventListener.bind(events));
+    const removeEventListener = vi.fn(events.removeEventListener.bind(events));
+    const matchMedia = vi.fn((media: string) => ({
       get matches() {
         return matches;
       },
       media,
       onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
       addEventListener,
       removeEventListener,
       dispatchEvent: events.dispatchEvent.bind(events),

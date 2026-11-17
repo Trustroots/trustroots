@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import SearchMyCirclesToggle from '@/modules/search/client/components/SearchMyCirclesToggle.component';
 import {
@@ -12,21 +11,19 @@ type ChangeHandler = React.ComponentProps<
   typeof SearchMyCirclesToggle
 >['onChange'];
 
-const listMembershipsMock = jest.mocked(listMemberships);
+const listMembershipsMock = vi.mocked(listMemberships);
 function membership(id: string): MembershipUpdate {
   return { tribe: { _id: id, slug: id, label: 'Example Circle', count: 2 } };
 }
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
 
 describe('SearchMyCirclesToggle', () => {
-  const onChange = jest.fn<
-    ReturnType<ChangeHandler>,
-    Parameters<ChangeHandler>
-  >();
+  const onChange =
+    vi.fn<(...args: Parameters<ChangeHandler>) => ReturnType<ChangeHandler>>();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('prompts members without circles to join circles', async () => {

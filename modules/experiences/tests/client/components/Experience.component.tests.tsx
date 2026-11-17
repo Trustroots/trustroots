@@ -1,7 +1,6 @@
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';

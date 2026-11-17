@@ -1,6 +1,6 @@
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import type { UseQueryResult } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
@@ -22,25 +22,27 @@ type CapturedAsyncSelectProps = {
 };
 
 const asyncSelectProps: CapturedAsyncSelectProps[] = [];
-const useLanguagesQueryMock = useLanguagesQuery as jest.MockedFunction<
+const useLanguagesQueryMock = useLanguagesQuery as MockedFunction<
   typeof useLanguagesQuery
 >;
 
-jest.mock('react-select/async', () => {
-  return function MockAsyncSelect(props: CapturedAsyncSelectProps) {
-    asyncSelectProps.push(props);
-    return (
-      <div>
-        <div>{props.placeholder}</div>
-      </div>
-    );
+vi.mock('react-select/async', () => {
+  return {
+    default: function MockAsyncSelect(props: CapturedAsyncSelectProps) {
+      asyncSelectProps.push(props);
+      return (
+        <div>
+          <div>{props.placeholder}</div>
+        </div>
+      );
+    },
   };
 });
 
-jest.mock('@/modules/core/client/api/languages.api');
+vi.mock('@/modules/core/client/api/languages.api');
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   asyncSelectProps.length = 0;
 });
 
@@ -164,7 +166,7 @@ describe('<LanguageSelect />', () => {
   });
 
   it('forwards selected values to onChangeLanguages', async () => {
-    const onChangeLanguages = jest.fn();
+    const onChangeLanguages = vi.fn();
     mockLanguagesQuery({
       data: [
         { value: 'eng', label: 'English' },
@@ -195,7 +197,7 @@ describe('<LanguageSelect />', () => {
   });
 
   it('forwards an empty selection when onChange emits nothing', async () => {
-    const onChangeLanguages = jest.fn();
+    const onChangeLanguages = vi.fn();
     mockLanguagesQuery({
       data: [{ value: 'eng', label: 'English' }],
       isLoading: false,

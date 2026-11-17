@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import MemberAvatar from '@/modules/users/client/components/MemberAvatar';
 
 type MemberAvatarUser = React.ComponentProps<typeof MemberAvatar>['user'] & {

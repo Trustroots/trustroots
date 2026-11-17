@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import SiteFooter, {
   type Build,
@@ -14,8 +13,8 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  onClientEvent: jest.fn(() => () => {}),
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: vi.fn(() => () => {}),
 }));
 
 const build: Build = {

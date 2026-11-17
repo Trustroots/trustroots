@@ -1,13 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
 import type LanguageList from '@/modules/users/client/components/LanguageList';
 
-jest.mock('@/modules/users/client/components/LanguageList', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/LanguageList', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockLanguageList({
     languages = [],
@@ -21,7 +20,7 @@ jest.mock('@/modules/users/client/components/LanguageList', () => {
     );
   }
 
-  return MockLanguageList;
+  return { default: MockLanguageList };
 });
 
 type MonkeyboxUser = React.ComponentProps<typeof Monkeybox>['user'];

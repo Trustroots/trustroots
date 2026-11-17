@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContact';
@@ -30,8 +29,8 @@ function renderRemoveContact(
       show={true}
       inProgress={false}
       selfId="me"
-      onCancel={jest.fn()}
-      onRemove={jest.fn()}
+      onCancel={vi.fn()}
+      onRemove={vi.fn()}
       {...restProps}
     />,
   );
@@ -39,8 +38,8 @@ function renderRemoveContact(
 
 describe('<RemoveContact />', () => {
   it('renders confirmed-contact removal copy and calls handlers', () => {
-    const onCancel = jest.fn();
-    const onRemove = jest.fn();
+    const onCancel = vi.fn();
+    const onRemove = vi.fn();
 
     renderRemoveContact({ onCancel, onRemove });
 

@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminReferenceVoteItem from '@/modules/admin/client/components/AdminReferenceVoteItem.component';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
 describe('<AdminReferenceVoteItem />', () => {

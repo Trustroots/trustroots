@@ -1,16 +1,16 @@
 const client = {
   interceptors: {
-    request: { use: jest.fn() },
-    response: { use: jest.fn() },
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
   },
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
-  create: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+  create: vi.fn(),
 };
 
-client.create = jest.fn(() => client);
+client.create = vi.fn(() => client);
 
-module.exports = client;
+export default client;

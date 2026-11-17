@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import RichText from '../../../client/components/RichText';
 import { richTextLinkSchemes } from '../../../shared/rich-text-policy.mts';
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import type SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
@@ -8,15 +7,15 @@ import type { MapPoint } from '@/modules/search/client/utils/location';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 
 let mockApproximateLocation: MapDefaultLocation | null = null;
-const mockStopDefaultLocation = jest.fn();
-jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+const mockStopDefaultLocation = vi.fn();
+vi.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
   default: (enabled: boolean) => [
     enabled ? mockApproximateLocation : null,
     mockStopDefaultLocation,
   ],
 }));
-jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
+vi.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
   __esModule: true,
   default: ({
     onLocation,
@@ -58,55 +57,52 @@ type MockMapProps = {
   onLocationChange: (location: [number, number]) => void;
 };
 
-jest.mock(
-  '@/modules/search/client/components/SearchPlaceInput.component',
-  () => {
-    function MockSearchPlaceInput({
-      onPlaceSearch,
-      setSearchQuery,
-    }: React.ComponentProps<typeof SearchPlaceInput>) {
-      return (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery('Paris');
-              onPlaceSearch({ lat: 48.8566, lng: 2.3522 }, 'center');
-            }}
-          >
-            Search places
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              onPlaceSearch(
-                {
-                  northEast: { lat: 49, lng: 3 },
-                  southWest: { lat: 48, lng: 2 },
-                },
-                'bounds',
-              )
-            }
-          >
-            Search bounds
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              // Deliberately incomplete external place data.
-              onPlaceSearch({ lat: 0 } as MapPoint, 'center')
-            }
-          >
-            Invalid place
-          </button>
-        </>
-      );
-    }
+vi.mock('@/modules/search/client/components/SearchPlaceInput.component', () => {
+  function MockSearchPlaceInput({
+    onPlaceSearch,
+    setSearchQuery,
+  }: React.ComponentProps<typeof SearchPlaceInput>) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            setSearchQuery('Paris');
+            onPlaceSearch({ lat: 48.8566, lng: 2.3522 }, 'center');
+          }}
+        >
+          Search places
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onPlaceSearch(
+              {
+                northEast: { lat: 49, lng: 3 },
+                southWest: { lat: 48, lng: 2 },
+              },
+              'bounds',
+            )
+          }
+        >
+          Search bounds
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            // Deliberately incomplete external place data.
+            onPlaceSearch({ lat: 0 } as MapPoint, 'center')
+          }
+        >
+          Invalid place
+        </button>
+      </>
+    );
+  }
 
-    return MockSearchPlaceInput;
-  },
-);
-jest.mock('@/modules/core/client/components/Map/index', () => {
+  return { default: MockSearchPlaceInput };
+});
+vi.mock('@/modules/core/client/components/Map/index', () => {
   function MockMap({
     children,
     height,
@@ -162,9 +158,9 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
     );
   }
 
-  return MockMap;
+  return { default: MockMap };
 });
-jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
+vi.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
   __esModule: true,
   default: () => <div data-testid="location-overlay" />,
 }));
@@ -172,7 +168,7 @@ jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
 describe('OfferLocationEditor', () => {
   it('centres new offers approximately without choosing a location', () => {
     mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
-    const onLocationChange = jest.fn();
+    const onLocationChange = vi.fn();
     render(
       <OfferLocationEditor
         location={null}
@@ -197,7 +193,7 @@ describe('OfferLocationEditor', () => {
   it('keeps existing offer coordinates ahead of approximate defaults', () => {
     mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
     render(
-      <OfferLocationEditor location={[12, 23]} onLocationChange={jest.fn()} />,
+      <OfferLocationEditor location={[12, 23]} onLocationChange={vi.fn()} />,
     );
     expect(screen.getByTestId('offer-map')).toHaveAttribute(
       'data-location',
@@ -206,7 +202,7 @@ describe('OfferLocationEditor', () => {
     expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '13');
   });
   it('centres approximately without changing the chosen offer location', () => {
-    const onLocationChange = jest.fn();
+    const onLocationChange = vi.fn();
     render(
       <OfferLocationEditor
         location={[40, -70]}
@@ -227,9 +223,7 @@ describe('OfferLocationEditor', () => {
     expect(onLocationChange).not.toHaveBeenCalled();
   });
   it('shows a map without an offer marker before a location is chosen', () => {
-    render(
-      <OfferLocationEditor location={null} onLocationChange={jest.fn()} />,
-    );
+    render(<OfferLocationEditor location={null} onLocationChange={vi.fn()} />);
 
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();
     expect(screen.getByTestId('offer-map')).toHaveAttribute(
@@ -245,7 +239,7 @@ describe('OfferLocationEditor', () => {
   });
 
   it('waits for a place search or map movement before choosing a location', () => {
-    const onLocationChange = jest.fn();
+    const onLocationChange = vi.fn();
     render(
       <OfferLocationEditor
         location={null}
@@ -279,7 +273,7 @@ describe('OfferLocationEditor', () => {
         location={[51.5, -0.12]}
         offerStatus="yes"
         offerType="host"
-        onLocationChange={jest.fn()}
+        onLocationChange={vi.fn()}
       />,
     );
 
@@ -293,10 +287,10 @@ describe('OfferLocationEditor', () => {
   });
 
   it('updates the location when a place is searched', () => {
-    const onLocationChange = jest.fn<
-      ReturnType<LocationChange>,
-      Parameters<LocationChange>
-    >();
+    const onLocationChange =
+      vi.fn<
+        (...args: Parameters<LocationChange>) => ReturnType<LocationChange>
+      >();
 
     render(
       <OfferLocationEditor
@@ -312,7 +306,7 @@ describe('OfferLocationEditor', () => {
   });
 
   it('accepts zero coordinates from device location', () => {
-    const onLocationChange = jest.fn();
+    const onLocationChange = vi.fn();
     render(
       <OfferLocationEditor
         location={null}
@@ -326,10 +320,10 @@ describe('OfferLocationEditor', () => {
   });
 
   it('updates the location when the map is clicked', () => {
-    const onLocationChange = jest.fn<
-      ReturnType<LocationChange>,
-      Parameters<LocationChange>
-    >();
+    const onLocationChange =
+      vi.fn<
+        (...args: Parameters<LocationChange>) => ReturnType<LocationChange>
+      >();
 
     render(
       <OfferLocationEditor
@@ -352,10 +346,10 @@ describe('OfferLocationEditor', () => {
   });
 
   it('updates the location when a place bounds search completes', () => {
-    const onLocationChange = jest.fn<
-      ReturnType<LocationChange>,
-      Parameters<LocationChange>
-    >();
+    const onLocationChange =
+      vi.fn<
+        (...args: Parameters<LocationChange>) => ReturnType<LocationChange>
+      >();
 
     render(
       <OfferLocationEditor
@@ -371,10 +365,10 @@ describe('OfferLocationEditor', () => {
   });
 
   it('ignores incomplete place results', () => {
-    const onLocationChange = jest.fn<
-      ReturnType<LocationChange>,
-      Parameters<LocationChange>
-    >();
+    const onLocationChange =
+      vi.fn<
+        (...args: Parameters<LocationChange>) => ReturnType<LocationChange>
+      >();
 
     render(
       <OfferLocationEditor

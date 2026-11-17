@@ -1,4 +1,0 @@
-{
-  "extends": "./scripts.json",
-  "include": ["../../jest/**/*.cts"]
-}

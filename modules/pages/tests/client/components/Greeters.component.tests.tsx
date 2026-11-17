@@ -1,6 +1,5 @@
 import React, { act } from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import Greeters from '@/modules/pages/client/components/Greeters.component';
 import {
@@ -11,10 +10,10 @@ import {
 type GreeterUser = React.ComponentProps<typeof Greeters>['user'];
 type GreeterRoster = Awaited<ReturnType<typeof getGreeters>>;
 
-jest.mock('@/modules/pages/client/api/greeters.api');
-const mockedGetGreeters = jest.mocked(getGreeters);
+vi.mock('@/modules/pages/client/api/greeters.api');
+const mockedGetGreeters = vi.mocked(getGreeters);
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 const greeter: Greeter = {
   _id: 'greeter-1',

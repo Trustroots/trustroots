@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
@@ -9,22 +8,26 @@ import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/acquisition-stories.api');
-jest.mock('@/modules/core/client/api/languages.api');
-const mockedAcquisitionStoriesApi = jest.mocked(acquisitionStoriesApi);
-const mockedUseLanguagesQuery = jest.mocked(useLanguagesQuery);
-jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/api/acquisition-stories.api');
+vi.mock('@/modules/core/client/api/languages.api');
+const mockedAcquisitionStoriesApi = vi.mocked(acquisitionStoriesApi);
+const mockedUseLanguagesQuery = vi.mocked(useLanguagesQuery);
+vi.mock('@/modules/core/client/components/LoadingIndicator', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-  return function MockLoadingIndicator() {
-    return <div role="alertdialog">Wait a moment</div>;
+  return {
+    default: function MockLoadingIndicator() {
+      return <div role="alertdialog">Wait a moment</div>;
+    },
   };
 });
 
@@ -86,7 +89,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setViewer(null);
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<AdminAcquisitionStories />', () => {

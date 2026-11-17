@@ -1,24 +1,21 @@
-// Mutation testing for the Nostranslation Jest suite. See docs/mutation-testing.md.
-import { createRequire } from 'node:module';
+// Mutation testing for the Nostranslation Vitest suite. See docs/mutation-testing.md.
+import vitestConfig from './apps/nostranslation/vitest.config.mts';
 
-const require = createRequire(import.meta.url);
-const jestConfig = require('./apps/nostranslation/jest.config.cjs');
+const { coverage } = vitestConfig.test;
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
-  testRunner: 'jest',
+  testRunner: 'vitest',
   plugins: [
-    '@stryker-mutator/jest-runner',
+    '@stryker-mutator/vitest-runner',
     './tooling/stryker/ignore-export-names.mjs',
   ],
   ignorers: ['export-names'],
-  jest: {
-    configFile: 'apps/nostranslation/jest.config.cjs',
-    enableFindRelatedTests: true,
+  vitest: {
+    configFile: 'apps/nostranslation/vitest.config.mts',
+    related: true,
   },
-  mutate: jestConfig.collectCoverageFrom.map(glob =>
-    glob.replace('<rootDir>/', ''),
-  ),
+  mutate: [...coverage.include, ...coverage.exclude.map(glob => `!${glob}`)],
   ignorePatterns: [
     '/.stryker-tmp',
     '/.prune-tmp',

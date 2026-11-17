@@ -1,11 +1,10 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import http from '@/modules/core/client/api/http-client';
 import HomeFeaturedNostrNotes from '@/modules/pages/client/components/HomeFeaturedNostrNotes.component';
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => vi.restoreAllMocks());
 
 it('links safe Markdown and displays the author username as plain text', async () => {
   const note = {
@@ -22,7 +21,7 @@ it('links safe Markdown and displays the author username as plain text', async (
     authorUsername: 'fictionalauthor',
     publishedAt: '2026-11-01T12:00:00.000Z',
   };
-  const get = jest.spyOn(http, 'get').mockResolvedValue({ data: [note] });
+  const get = vi.spyOn(http, 'get').mockResolvedValue({ data: [note] });
   const { container, unmount } = render(<HomeFeaturedNostrNotes />);
   expect(
     await screen.findByRole('heading', { name: 'Trustroots updates' }),
@@ -65,7 +64,7 @@ it('shows only the date when the author has no public username', async () => {
     npub: 'npub1unlinked',
     publishedAt: '2026-11-01T12:00:00.000Z',
   };
-  jest.spyOn(http, 'get').mockResolvedValue({ data: [note] });
+  vi.spyOn(http, 'get').mockResolvedValue({ data: [note] });
   render(<HomeFeaturedNostrNotes />);
 
   expect(await screen.findByRole('article')).toHaveTextContent(
@@ -75,7 +74,7 @@ it('shows only the date when the author has no public username', async () => {
 });
 
 it('omits the section if the notes cannot be loaded', async () => {
-  jest.spyOn(http, 'get').mockRejectedValue(new Error('Offline'));
+  vi.spyOn(http, 'get').mockRejectedValue(new Error('Offline'));
   const { container } = render(<HomeFeaturedNostrNotes />);
   await act(async () => {});
   expect(container).toBeEmptyDOMElement();

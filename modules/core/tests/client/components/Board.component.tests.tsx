@@ -1,19 +1,18 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import Board from '@/modules/core/client/components/Board';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  broadcastClientEvent: jest.fn(),
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  broadcastClientEvent: vi.fn(),
 }));
 
-const mockedBroadcastClientEvent = jest.mocked(broadcastClientEvent);
+const mockedBroadcastClientEvent = vi.mocked(broadcastClientEvent);
 
 describe('<Board />', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders children, classes, and selected photo background', async () => {

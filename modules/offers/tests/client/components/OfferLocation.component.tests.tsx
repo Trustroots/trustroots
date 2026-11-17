@@ -1,15 +1,14 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferLocation from '@/modules/offers/client/components/OfferLocation.component';
 import type Map from '@/modules/core/client/components/Map';
 import type OfferLocationOverlay from '@/modules/offers/client/components/OfferLocationOverlay';
 
 type MockMapProps = React.ComponentProps<typeof Map>;
-const mockMap = jest.fn<void, [MockMapProps]>();
-jest.mock('@/modules/core/client/components/Map', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+const mockMap = vi.fn<(...args: [MockMapProps]) => void>();
+vi.mock('@/modules/core/client/components/Map', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockMap(props: MockMapProps) {
     return (
       <div data-testid="map">
@@ -19,19 +18,23 @@ jest.mock('@/modules/core/client/components/Map', () => {
     );
   }
 
-  return MockMap;
+  return { default: MockMap };
 });
 
-const mockOfferLocationOverlay = jest.fn<
-  void,
-  [React.ComponentProps<typeof OfferLocationOverlay>]
->();
-jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  return jest.fn((props: React.ComponentProps<typeof OfferLocationOverlay>) => {
-    mockOfferLocationOverlay(props);
-    return <div data-testid="offer-overlay" />;
-  });
+const mockOfferLocationOverlay =
+  vi.fn<
+    (...args: [React.ComponentProps<typeof OfferLocationOverlay>]) => void
+  >();
+vi.mock('@/modules/offers/client/components/OfferLocationOverlay', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+  return {
+    default: vi.fn(
+      (props: React.ComponentProps<typeof OfferLocationOverlay>) => {
+        mockOfferLocationOverlay(props);
+        return <div data-testid="offer-overlay" />;
+      },
+    ),
+  };
 });
 
 describe('<OfferLocation />', () => {

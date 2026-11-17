@@ -1,14 +1,10 @@
-const { TextDecoder, TextEncoder } =
-  require('node:util') as typeof import('node:util');
-
-globalThis.TextEncoder = globalThis.TextEncoder || TextEncoder;
-globalThis.TextDecoder = globalThis.TextDecoder || TextDecoder;
+import '@testing-library/jest-dom/vitest';
 
 if (globalThis.HTMLCanvasElement) {
   const canvasElement = globalThis.HTMLCanvasElement;
 
   function getContext(this: HTMLCanvasElement): CanvasRenderingContext2D {
-    // Jest only needs the small drawing surface used by these tests.
+    // The tests only need the small drawing surface they use.
     return {
       canvas: this,
       beginPath() {},
@@ -73,7 +69,5 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
 }
 
 if (typeof window !== 'undefined') {
-  const leafletModuleName: string = 'leaflet';
-  const leaflet: unknown = require(leafletModuleName);
-  Reflect.set(globalThis, 'L', leaflet);
+  Reflect.set(globalThis, 'L', (await import('leaflet')).default);
 }

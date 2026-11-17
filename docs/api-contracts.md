@@ -64,5 +64,4 @@ utilities are checked separately in `tooling/tsconfig/fixtures.json`. Their data
 use TypeScript with thin CommonJS entry points for legacy server tests. Node 24
 loads the implementations using its built-in type stripping; no runtime compiler
 package or production compilation step is required. Fixture sources must use
-erasable TypeScript syntax. Jest searches the module tree to avoid discovering
-duplicate packages in local worktrees.
+erasable TypeScript syntax.

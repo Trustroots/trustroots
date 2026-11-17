@@ -1,6 +1,5 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import CircleMemberDiscovery from '@/modules/tribes/client/components/CircleMemberDiscovery';
@@ -11,10 +10,10 @@ import {
 } from '@/modules/tribes/client/api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
-const listMembersMock = jest.mocked(listMembers);
+const listMembersMock = vi.mocked(listMembers);
 
-jest.mock('@/modules/tribes/client/api/tribes.api', () => ({
-  listMembers: jest.fn(),
+vi.mock('@/modules/tribes/client/api/tribes.api', () => ({
+  listMembers: vi.fn(),
 }));
 
 describe('<CircleMemberDiscovery />', () => {
@@ -40,7 +39,7 @@ describe('<CircleMemberDiscovery />', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     listMembersMock.mockResolvedValue({
       contacts: [member('contact-1', 'known')],
       recommenders: [
@@ -173,7 +172,7 @@ describe('<CircleMemberDiscovery />', () => {
   });
 
   it('retries a transient server failure once and shows the returned members', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     listMembersMock
       .mockRejectedValueOnce(
         Object.assign(new Error('temporarily unavailable'), {
@@ -190,14 +189,14 @@ describe('<CircleMemberDiscovery />', () => {
       render(<CircleMemberDiscovery circle={circle} user={user} />);
       await act(async () => {
         await Promise.resolve();
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
       });
 
       expect(await screen.findByText('Member known')).toBeInTheDocument();
       expect(listMembersMock).toHaveBeenCalledTimes(2);
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
@@ -241,7 +240,7 @@ describe('<CircleMemberDiscovery />', () => {
   });
 
   it('allows a manual retry after the transient retry is exhausted', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     listMembersMock
       .mockRejectedValueOnce(
         Object.assign(new Error('network unavailable'), {
@@ -263,7 +262,7 @@ describe('<CircleMemberDiscovery />', () => {
       render(<CircleMemberDiscovery circle={circle} user={user} />);
       await act(async () => {
         await Promise.resolve();
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
       });
 
       expect(
@@ -279,14 +278,14 @@ describe('<CircleMemberDiscovery />', () => {
       expect(await screen.findByText('Member known')).toBeInTheDocument();
       expect(listMembersMock).toHaveBeenCalledTimes(3);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('abandons a pending retry when the circle changes', async () => {
-    jest.useFakeTimers();
-    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
-    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+    vi.useFakeTimers();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
     listMembersMock
       .mockRejectedValueOnce(
         Object.assign(new Error('network unavailable'), {
@@ -320,7 +319,7 @@ describe('<CircleMemberDiscovery />', () => {
       expect(clearTimeoutSpy).toHaveBeenCalledWith(retryTimer);
       await act(async () => {
         await Promise.resolve();
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
       });
 
       expect(listMembersMock).toHaveBeenNthCalledWith(1, 'hitchhikers');
@@ -330,14 +329,14 @@ describe('<CircleMemberDiscovery />', () => {
     } finally {
       setTimeoutSpy.mockRestore();
       clearTimeoutSpy.mockRestore();
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('abandons a pending retry when the component unmounts', async () => {
-    jest.useFakeTimers();
-    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
-    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
+    vi.useFakeTimers();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
     listMembersMock.mockRejectedValueOnce(
       Object.assign(new Error('network unavailable'), { code: 'ERR_NETWORK' }),
     );
@@ -357,14 +356,14 @@ describe('<CircleMemberDiscovery />', () => {
       unmount();
       expect(clearTimeoutSpy).toHaveBeenCalledWith(retryTimer);
       await act(async () => {
-        await jest.advanceTimersByTimeAsync(250);
+        await vi.advanceTimersByTimeAsync(250);
       });
 
       expect(listMembersMock).toHaveBeenCalledTimes(1);
     } finally {
       setTimeoutSpy.mockRestore();
       clearTimeoutSpy.mockRestore();
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 

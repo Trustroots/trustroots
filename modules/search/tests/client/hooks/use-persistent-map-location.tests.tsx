@@ -16,10 +16,10 @@ const saved = {
 describe('Search viewport expiry', () => {
   beforeEach(() => {
     localStorage.clear();
-    jest.spyOn(Date, 'now').mockReturnValue(saved.savedAt + 100);
+    vi.spyOn(Date, 'now').mockReturnValue(saved.savedAt + 100);
   });
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('restores recent positions without refreshing their timestamp', () => {
@@ -79,9 +79,9 @@ describe('Search viewport expiry', () => {
       version: 1,
       savedAt: saved.savedAt + 100,
     });
-    jest
-      .spyOn(Date, 'now')
-      .mockReturnValue(saved.savedAt + MAP_LOCATION_MAX_AGE + 1000);
+    vi.spyOn(Date, 'now').mockReturnValue(
+      saved.savedAt + MAP_LOCATION_MAX_AGE + 1000,
+    );
     rerender();
     expect(result.current[0]).toEqual({ latitude: 12, longitude: 34, zoom: 8 });
   });
@@ -110,7 +110,7 @@ describe('Search viewport expiry', () => {
     });
     unmount();
 
-    jest.spyOn(Date, 'now').mockReturnValue(saved.savedAt + 200);
+    vi.spyOn(Date, 'now').mockReturnValue(saved.savedAt + 200);
     const restored = renderHook(() => usePersistentMapLocation(fallback));
     expect(restored.result.current[0]).toMatchObject({
       ...position,
@@ -123,13 +123,13 @@ describe('Search viewport expiry', () => {
   });
 
   it('remains usable when browser storage throws', () => {
-    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('unavailable');
     });
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full');
     });
-    jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new Error('unavailable');
     });
     const { result } = renderHook(() => usePersistentMapLocation(fallback));

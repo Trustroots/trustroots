@@ -1,6 +1,6 @@
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 
-jest.mock('@/modules/messages/client/api/messages.api');
+vi.mock('@/modules/messages/client/api/messages.api');
 
 type UnreadMessageCountService =
   typeof import('@/modules/messages/client/services/unread-message-count.client.service');
@@ -15,20 +15,17 @@ const originalHiddenDescriptor = Object.getOwnPropertyDescriptor(
   'hidden',
 );
 
-beforeEach(() => {
+beforeEach(async () => {
   defineDocumentProperty('hidden', false);
 
-  jest.isolateModules(() => {
-    const visibilityService = jest.requireActual<VisibilityService>(
-      '@/modules/messages/client/services/visibility.client.service',
-    );
-    ({ enable: enableVisibilityWatching, disable: disableVisibilityWatching } =
-      visibilityService);
-    enableVisibilityWatching();
-    unreadMessageCountService = jest.requireActual<UnreadMessageCountService>(
-      '@/modules/messages/client/services/unread-message-count.client.service',
-    );
-  });
+  vi.resetModules();
+  const visibilityService =
+    await import('@/modules/messages/client/services/visibility.client.service');
+  ({ enable: enableVisibilityWatching, disable: disableVisibilityWatching } =
+    visibilityService);
+  enableVisibilityWatching();
+  unreadMessageCountService =
+    await import('@/modules/messages/client/services/unread-message-count.client.service');
 });
 
 let stopPolling: (() => void) | undefined;
@@ -38,12 +35,12 @@ afterEach(() => {
   stopPolling = undefined;
   disableVisibilityWatching();
   restoreProperty('hidden', originalHiddenDescriptor);
-  jest.restoreAllMocks();
-  jest.clearAllMocks();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 const api = {
-  messages: jest.mocked(messagesAPI),
+  messages: vi.mocked(messagesAPI),
 };
 
 describe('Unread Message Count Service', () => {
@@ -53,25 +50,27 @@ describe('Unread Message Count Service', () => {
     unreadCount = 42;
   });
 
-  it('gives value immediately when polling starts', done => {
+  it('gives value immediately when polling starts', async () => {
     api.messages.unreadCount.mockResolvedValue(unreadCount);
-    unreadMessageCountService.watch(count => {
-      expect(count).toBe(unreadCount);
-      done();
+    await new Promise<void>(done => {
+      unreadMessageCountService.watch(count => {
+        expect(count).toBe(unreadCount);
+        done();
+      });
+      stopPolling = unreadMessageCountService.start();
     });
-    stopPolling = unreadMessageCountService.start();
   });
 
   it('does not poll before polling starts', () => {
     api.messages.unreadCount.mockResolvedValue(unreadCount);
 
-    unreadMessageCountService.watch(jest.fn());
+    unreadMessageCountService.watch(vi.fn());
 
     expect(api.messages.unreadCount).not.toHaveBeenCalled();
   });
 
   it('stops polling when stopped', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     const stop = unreadMessageCountService.start();
     expect(api.messages.unreadCount).toHaveBeenCalledTimes(1);
@@ -87,7 +86,7 @@ describe('Unread Message Count Service', () => {
   });
 
   it('does nothing when stopped twice', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     const stop = unreadMessageCountService.start();
     stop();
@@ -103,7 +102,7 @@ describe('Unread Message Count Service', () => {
       .mockResolvedValueOnce(unreadCount)
       .mockResolvedValueOnce(unreadCount);
 
-    const watcher = jest.fn<void, [count: number]>();
+    const watcher = vi.fn<(...args: [count: number]) => void>();
     unreadMessageCountService.watch(watcher);
 
     await unreadMessageCountService.update();
@@ -114,8 +113,8 @@ describe('Unread Message Count Service', () => {
   });
 
   it('sets a background polling interval when document is hidden', () => {
-    const setIntervalSpy = jest.spyOn(global, 'setInterval');
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    const setIntervalSpy = vi.spyOn(global, 'setInterval');
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
     disableVisibilityWatching();
     defineDocumentProperty('hidden', true);
     enableVisibilityWatching();
@@ -129,7 +128,7 @@ describe('Unread Message Count Service', () => {
   });
 
   it('polls in the foreground every 30 seconds', () => {
-    const setIntervalSpy = jest.spyOn(global, 'setInterval');
+    const setIntervalSpy = vi.spyOn(global, 'setInterval');
     api.messages.unreadCount.mockResolvedValue(unreadCount);
 
     stopPolling = unreadMessageCountService.start();
@@ -138,7 +137,7 @@ describe('Unread Message Count Service', () => {
   });
 
   it('restarts polling when started again', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
     api.messages.unreadCount.mockResolvedValue(unreadCount);
 
     unreadMessageCountService.start();
@@ -149,29 +148,29 @@ describe('Unread Message Count Service', () => {
   });
 
   it('swallows a failed poll and keeps polling', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     api.messages.unreadCount
       .mockRejectedValueOnce(new Error('offline'))
       .mockRejectedValueOnce(new Error('signed out'))
       .mockResolvedValue(unreadCount);
-    const watcher = jest.fn();
+    const watcher = vi.fn();
     unreadMessageCountService.watch(watcher);
 
     stopPolling = unreadMessageCountService.start();
-    await jest.advanceTimersByTimeAsync(30000);
+    await vi.advanceTimersByTimeAsync(30000);
     expect(watcher).not.toHaveBeenCalled();
-    await jest.advanceTimersByTimeAsync(30000);
+    await vi.advanceTimersByTimeAsync(30000);
 
     expect(api.messages.unreadCount).toHaveBeenCalledTimes(3);
     expect(watcher).toHaveBeenCalledWith(unreadCount);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('delivers cached unread count to late subscribers', async () => {
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     await unreadMessageCountService.update();
 
-    const watcher = jest.fn();
+    const watcher = vi.fn();
     unreadMessageCountService.watch(watcher);
 
     expect(watcher).toHaveBeenCalledWith(unreadCount);

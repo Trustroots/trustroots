@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Faq from '@/modules/pages/client/components/Faq.component';
@@ -8,14 +7,14 @@ import type PageBoard from '@/modules/pages/client/components/PageBoard';
 
 type BoardProps = React.ComponentProps<typeof PageBoard>;
 
-jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board.js', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockBoard({ children }: BoardProps) {
     return <div>{children}</div>;
   }
 
-  return MockBoard;
+  return { default: MockBoard };
 });
 
 describe('<Faq />', () => {

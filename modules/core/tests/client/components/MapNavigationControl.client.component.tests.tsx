@@ -1,15 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 
-const mockMap = { zoomIn: jest.fn(), zoomOut: jest.fn() };
+const mockMap = { zoomIn: vi.fn(), zoomOut: vi.fn() };
 let mockCurrentMap: typeof mockMap | undefined = mockMap;
-jest.mock('react-map-gl/mapbox', () => ({
+vi.mock('react-map-gl/mapbox', () => ({
   useMap: () => ({ current: mockCurrentMap }),
 }));
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => `i18n:${key}` }),
 }));
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SubmittedInfo from '@/modules/experiences/client/components/create-experience/SubmittedInfo';

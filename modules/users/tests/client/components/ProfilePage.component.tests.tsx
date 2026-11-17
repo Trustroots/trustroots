@@ -1,7 +1,6 @@
 import React from 'react';
 import { readOutreachSource } from '@trustroots/analytics/client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
@@ -17,113 +16,103 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/modules/contacts/client/api/contacts.api');
-jest.mock('@/modules/experiences/client/api/experiences.api');
-const fetchProfile = jest.mocked(usersApi.fetch);
-const getContact = jest.mocked(contactsApi.getByUserId);
-const listContacts = jest.mocked(contactsApi.list);
-jest.mock(
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('@/modules/contacts/client/api/contacts.api');
+vi.mock('@/modules/experiences/client/api/experiences.api');
+const fetchProfile = vi.mocked(usersApi.fetch);
+const getContact = vi.mocked(contactsApi.getByUserId);
+const listContacts = vi.mocked(contactsApi.list);
+vi.mock(
   '@/modules/users/client/components/TopNavigationSmall.component',
   () => ({
     __esModule: true,
     default: () => <nav data-testid="top-nav" />,
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/BottomNavigationSmall.component',
   () => ({
     __esModule: true,
     default: () => <nav data-testid="bottom-nav" />,
   }),
 );
-jest.mock(
-  '@/modules/users/client/components/ProfileOverview.component',
-  () => ({
-    __esModule: true,
-    default: ({ profile }: { profile: UserProfile }) => (
-      <div>{profile.displayName}</div>
-    ),
-  }),
-);
-jest.mock('@/modules/users/client/components/ProfileTabs.component', () => ({
+vi.mock('@/modules/users/client/components/ProfileOverview.component', () => ({
+  __esModule: true,
+  default: ({ profile }: { profile: UserProfile }) => (
+    <div>{profile.displayName}</div>
+  ),
+}));
+vi.mock('@/modules/users/client/components/ProfileTabs.component', () => ({
   __esModule: true,
   default: () => <div data-testid="profile-tabs" />,
 }));
-jest.mock('@/modules/users/client/components/AboutMe.component', () => ({
+vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
   __esModule: true,
   default: ({ profile }: { profile: UserProfile }) => (
     <div>About {profile.displayName}</div>
   ),
 }));
-jest.mock('@/modules/offers/client/components/Offers.component', () => ({
+vi.mock('@/modules/offers/client/components/Offers.component', () => ({
   __esModule: true,
   default: () => <div>Offers panel</div>,
 }));
-jest.mock(
+vi.mock(
   '@/modules/contacts/client/components/ContactsCommon.component',
   () => ({
     __esModule: true,
     default: () => <div>Contacts in common</div>,
   }),
 );
-jest.mock(
-  '@/modules/users/client/components/MembershipsList.component',
-  () => ({
-    __esModule: true,
-    default: () => <div>Memberships list</div>,
-  }),
-);
-jest.mock('@/modules/users/client/components/TribesInCommon.component', () => ({
+vi.mock('@/modules/users/client/components/MembershipsList.component', () => ({
+  __esModule: true,
+  default: () => <div>Memberships list</div>,
+}));
+vi.mock('@/modules/users/client/components/TribesInCommon.component', () => ({
   __esModule: true,
   default: () => <div>Tribes in common</div>,
 }));
-jest.mock('@/modules/support/client/components/ReportMember.component', () => ({
+vi.mock('@/modules/support/client/components/ReportMember.component', () => ({
   __esModule: true,
   default: () => <button type="button">Report</button>,
 }));
-jest.mock('@/modules/users/client/components/BlockMember.component', () => ({
+vi.mock('@/modules/users/client/components/BlockMember.component', () => ({
   __esModule: true,
   default: () => <button type="button">Block</button>,
 }));
-jest.mock(
-  '@/modules/contacts/client/components/RemoveContactContainer',
-  () => ({
-    __esModule: true,
-    default: ({
-      onCancel,
-      onSuccess,
-      show,
-    }: {
-      onCancel: () => void;
-      onSuccess: () => void;
-      show: boolean;
-    }) =>
-      show ? (
-        <div>
-          <button type="button" onClick={onCancel}>
-            Cancel removal
-          </button>
-          <button type="button" onClick={onSuccess}>
-            Confirm removal
-          </button>
-        </div>
-      ) : null,
-  }),
-);
-jest.mock(
-  '@/modules/users/client/components/AvatarNameMobile.component',
-  () => ({
-    __esModule: true,
-    default: ({ profile }: { profile: UserProfile }) => (
-      <div>Mobile {profile.displayName}</div>
-    ),
-  }),
-);
-jest.mock('@/modules/contacts/client/components/ContactList.component', () => ({
+vi.mock('@/modules/contacts/client/components/RemoveContactContainer', () => ({
+  __esModule: true,
+  default: ({
+    onCancel,
+    onSuccess,
+    show,
+  }: {
+    onCancel: () => void;
+    onSuccess: () => void;
+    show: boolean;
+  }) =>
+    show ? (
+      <div>
+        <button type="button" onClick={onCancel}>
+          Cancel removal
+        </button>
+        <button type="button" onClick={onSuccess}>
+          Confirm removal
+        </button>
+      </div>
+    ) : null,
+}));
+vi.mock('@/modules/users/client/components/AvatarNameMobile.component', () => ({
+  __esModule: true,
+  default: ({ profile }: { profile: UserProfile }) => (
+    <div>Mobile {profile.displayName}</div>
+  ),
+}));
+vi.mock('@/modules/contacts/client/components/ContactList.component', () => ({
   __esModule: true,
   default: ({
     loadFailed,
@@ -154,53 +143,50 @@ jest.mock('@/modules/contacts/client/components/ContactList.component', () => ({
     </div>
   ),
 }));
-jest.mock(
-  '@/modules/users/client/components/ProfileTribesTab.component',
-  () => ({
-    __esModule: true,
-    default: ({
-      onMembershipUpdated,
-    }: {
-      onMembershipUpdated?: (data: { user?: UserProfile } | null) => void;
-    }) => (
-      <div>
-        Tribes tab content
-        <button
-          type="button"
-          onClick={() =>
-            onMembershipUpdated?.({
-              user: {
-                _id: 'updated-user',
-                username: 'updated',
-                displayName: 'Updated User',
-              },
-            })
-          }
-        >
-          Update membership
-        </button>
-        <button type="button" onClick={() => onMembershipUpdated?.({})}>
-          Ignore membership update
-        </button>
-      </div>
-    ),
-  }),
-);
-jest.mock(
+vi.mock('@/modules/users/client/components/ProfileTribesTab.component', () => ({
+  __esModule: true,
+  default: ({
+    onMembershipUpdated,
+  }: {
+    onMembershipUpdated?: (data: { user?: UserProfile } | null) => void;
+  }) => (
+    <div>
+      Tribes tab content
+      <button
+        type="button"
+        onClick={() =>
+          onMembershipUpdated?.({
+            user: {
+              _id: 'updated-user',
+              username: 'updated',
+              displayName: 'Updated User',
+            },
+          })
+        }
+      >
+        Update membership
+      </button>
+      <button type="button" onClick={() => onMembershipUpdated?.({})}>
+        Ignore membership update
+      </button>
+    </div>
+  ),
+}));
+vi.mock(
   '@/modules/experiences/client/components/ListExperiences.component',
   () => ({
     __esModule: true,
     default: () => <div>Experiences list</div>,
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/experiences/client/components/CreateExperience.component',
   () => ({
     __esModule: true,
     default: () => <div>New experience form</div>,
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/BlockedMemberBanner.component',
   () => ({
     __esModule: true,
@@ -283,15 +269,15 @@ describe('ProfilePage', () => {
       username: profile.username,
       displayName: profile.displayName!,
     };
-    jest
-      .mocked(experiencesApi.readReplyRecipient)
-      .mockResolvedValueOnce(recipient);
+    vi.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce(
+      recipient,
+    );
     renderPage(authUser, '/profile/bob/experiences/new', {
       referencesEnabled: true,
     });
     expect(await screen.findByText('New experience form')).toBeVisible();
 
-    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+    vi.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
       ...recipient,
       ownExperience: {
         _id: 'experience-1',
@@ -314,7 +300,7 @@ describe('ProfilePage', () => {
 
   it('offers sharing and reporting on a blocked profile without an Experience', async () => {
     fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
-    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+    vi.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
       _id: profile._id,
       username: profile.username,
       displayName: profile.displayName!,
@@ -329,7 +315,7 @@ describe('ProfilePage', () => {
 
   it('shows only the viewer’s Experience and the report action on a blocked profile', async () => {
     fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
-    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+    vi.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
       _id: profile._id,
       username: profile.username,
       displayName: profile.displayName!,
@@ -353,7 +339,7 @@ describe('ProfilePage', () => {
 
   it('allows an Experience reply without loading a blocked profile or contacts', async () => {
     fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
-    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+    vi.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
       _id: profile._id,
       username: profile.username,
       displayName: profile.displayName,
@@ -376,9 +362,9 @@ describe('ProfilePage', () => {
 
   it('keeps an unavailable reply recipient unavailable', async () => {
     fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
-    jest
-      .mocked(experiencesApi.readReplyRecipient)
-      .mockRejectedValueOnce(new Error('unavailable'));
+    vi.mocked(experiencesApi.readReplyRecipient).mockRejectedValueOnce(
+      new Error('unavailable'),
+    );
     renderPage(authUser, '/profile/bob/experiences/new', {
       referencesEnabled: true,
     });
@@ -392,7 +378,7 @@ describe('ProfilePage', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     fetchProfile.mockResolvedValue(profile);
     getContact.mockResolvedValue(null);
     listContacts.mockResolvedValue([]);
@@ -404,7 +390,7 @@ describe('ProfilePage', () => {
       configurable: true,
       value: originalInnerWidth,
     });
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('loads another member profile and renders about content', async () => {
@@ -422,10 +408,7 @@ describe('ProfilePage', () => {
 
   it('renders an embedded profile for its explicit subject without page navigation', async () => {
     fetchProfile.mockResolvedValue({ ...profile, username: 'alice' });
-    const mobileRedirect = jest.spyOn(
-      profileRoutes,
-      'getMobileProfileRedirect',
-    );
+    const mobileRedirect = vi.spyOn(profileRoutes, 'getMobileProfileRedirect');
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 390,

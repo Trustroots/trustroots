@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { useNavigate } from '@tanstack/react-router';
 import AdminSearchUsers, {
@@ -9,15 +8,17 @@ import AdminSearchUsers, {
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/users.api');
-const mockedUsersApi = jest.mocked(usersApi);
+vi.mock('@/modules/admin/client/api/users.api');
+const mockedUsersApi = vi.mocked(usersApi);
 
 type SearchUserFixture = React.ComponentProps<
   typeof AdminUserResultsTable
@@ -37,7 +38,7 @@ type MemberListFixture = {
 };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
@@ -82,7 +83,7 @@ function routeProps() {
 }
 
 function mockImmediateSetState(component: SearchUsersContent) {
-  jest.spyOn(component, 'setState').mockImplementation((update, callback) => {
+  vi.spyOn(component, 'setState').mockImplementation((update, callback) => {
     const nextState =
       typeof update === 'function'
         ? update(component.state, component.props)

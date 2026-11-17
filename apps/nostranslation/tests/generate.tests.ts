@@ -1,4 +1,5 @@
-/** @jest-environment node */
+/** @vitest-environment node */
+import type { Mock } from 'vitest';
 import { catalogue } from '../server/catalogue.mts';
 import { generate, translate } from '../server/generate.mts';
 import { Store } from '../server/store.mts';
@@ -20,7 +21,7 @@ const successful = (translations: unknown) => ({
   ],
 });
 const fetcher = (body: unknown, status = 200) =>
-  jest.fn(
+  vi.fn(
     async () => new Response(JSON.stringify(body), { status }),
   ) as unknown as typeof fetch;
 const copySource = (_config: AIConfig, _language: Language, entries: Entry[]) =>
@@ -79,7 +80,7 @@ describe('AI drafts and human feedback', () => {
         mock,
       ),
     ).toEqual([{ entry, value: 'Willkommen {{name}}' }]);
-    const body = JSON.parse((mock as jest.Mock).mock.calls[0][1].body);
+    const body = JSON.parse((mock as Mock).mock.calls[0][1].body);
     expect(body.store).toBe(false);
     expect(body.model).toBe('test-model');
     const prompt = JSON.parse(body.input);
@@ -158,7 +159,7 @@ describe('AI drafts and human feedback', () => {
 
   it('uses the configured provider without making live calls in tests', async () => {
     const entry = catalogue('de', snapshot()).entries[0];
-    const mock = jest
+    const mock = vi
       .spyOn(globalThis, 'fetch')
       .mockImplementation(
         fetcher(successful([{ id: entry.id, value: 'Hallo {{name}}' }])),
@@ -175,10 +176,10 @@ describe('AI drafts and human feedback', () => {
     const state = snapshot();
     const repository = {
       languages: async () => state.languages,
-      load: jest.fn(async () => structuredClone(state)),
+      load: vi.fn(async () => structuredClone(state)),
     };
     const store = new Store(':memory:');
-    const translator = jest.fn(copySource);
+    const translator = vi.fn(copySource);
     expect(await generate(repository, store, config, 1, translator)).toBe(1);
     expect(
       await generate(repository, store, config, 100, translator),
@@ -211,7 +212,7 @@ describe('AI drafts and human feedback', () => {
       load: async () => state,
     };
     const store = new Store(':memory:');
-    const translator = jest.fn(copySource);
+    const translator = vi.fn(copySource);
     translator.mockRejectedValueOnce(new Error('provider offline'));
     await expect(
       generate(repository, store, config, 100, translator),
@@ -221,7 +222,7 @@ describe('AI drafts and human feedback', () => {
       20, 3,
     ]);
     const entry = catalogue('de', state).entries[0];
-    const mock = jest
+    const mock = vi
       .spyOn(globalThis, 'fetch')
       .mockImplementation(
         fetcher(successful([{ id: entry.id, value: entry.source }])),
@@ -235,35 +236,35 @@ describe('AI drafts and human feedback', () => {
 });
 
 describe('generation scheduling', () => {
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => vi.useRealTimers());
   it('runs immediately, retries failures later and stops cleanly', async () => {
-    jest.useFakeTimers();
-    const error = jest.fn();
-    const run = jest.fn(async () => {});
+    vi.useFakeTimers();
+    const error = vi.fn();
+    const run = vi.fn(async () => {});
     run.mockRejectedValueOnce(new Error('offline'));
     const stop = schedule(run, error, 1000);
-    await jest.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(error).toHaveBeenCalledTimes(1);
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     expect(run).toHaveBeenCalledTimes(2);
     stop();
-    await jest.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(2000);
     expect(run).toHaveBeenCalledTimes(2);
   });
   it('does not reschedule a run stopped while in flight', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let finish: () => void = () => {};
     const stop = schedule(
       () =>
         new Promise<void>(resolve => {
           finish = resolve;
         }),
-      jest.fn(),
+      vi.fn(),
       1000,
     );
     stop();
     finish();
-    await jest.advanceTimersByTimeAsync(0);
-    expect(jest.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

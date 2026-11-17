@@ -1,7 +1,6 @@
 import type { Event } from 'nostr-tools';
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminNostr from '@/modules/admin/client/components/AdminNostr.component';
 import {
   featureNostrNote,
@@ -14,16 +13,15 @@ import {
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
 
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () => () => null,
-);
-jest.mock('@/modules/admin/client/api/featured-nostr-notes.api');
-jest.mock('@/modules/core/client/api/featured-nostr-notes.api');
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: () => null,
+}));
+vi.mock('@/modules/admin/client/api/featured-nostr-notes.api');
+vi.mock('@/modules/core/client/api/featured-nostr-notes.api');
 
-const listNotes = jest.mocked(listFeaturedNostrNotes);
-const featureNote = jest.mocked(featureNostrNote);
-const removeNote = jest.mocked(removeFeaturedNostrNote);
+const listNotes = vi.mocked(listFeaturedNostrNotes);
+const featureNote = vi.mocked(featureNostrNote);
+const removeNote = vi.mocked(removeFeaturedNostrNote);
 const note = {
   id: 'ab'.repeat(32),
   content: 'A fictional update.',
@@ -31,13 +29,13 @@ const note = {
   publishedAt: '2026-11-01T12:00:00.000Z',
 };
 
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 
 it('keeps the draft and retries each failed step with the same signed event', async () => {
   const signed = { id: note.id, kind: 1 } as Event;
-  const sign = jest.mocked(signNostrTextNote);
-  const publish = jest.mocked(publishNostrTextNote);
-  const save = jest.mocked(featureSignedNostrNote);
+  const sign = vi.mocked(signNostrTextNote);
+  const publish = vi.mocked(publishNostrTextNote);
+  const save = vi.mocked(featureSignedNostrNote);
   listNotes.mockResolvedValue([]);
   sign
     .mockRejectedValueOnce(new Error('Signing cancelled.'))
@@ -166,8 +164,8 @@ it('aborts the list request when leaving the page', async () => {
 
 it('confirms a Nostr deletion and retries the local save without publishing twice', async () => {
   const signed = { id: 'cd'.repeat(32), kind: 5 } as Event;
-  const publish = jest.mocked(publishNostrNoteDeletion);
-  const record = jest.mocked(recordNostrNoteDeletion);
+  const publish = vi.mocked(publishNostrNoteDeletion);
+  const record = vi.mocked(recordNostrNoteDeletion);
   listNotes.mockResolvedValue([note]);
   publish
     .mockRejectedValueOnce(new Error('Relay unavailable.'))

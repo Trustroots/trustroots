@@ -1,6 +1,5 @@
 import React from 'react';
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminNegativeExperiencePreview from '@/modules/admin/client/components/AdminNegativeExperiencePreview.component';
 

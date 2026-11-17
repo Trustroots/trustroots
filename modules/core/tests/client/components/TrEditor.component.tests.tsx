@@ -1,6 +1,6 @@
+import type { Mock, MockedFunction } from 'vitest';
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -8,38 +8,36 @@ import TrEditor from '@/modules/core/client/components/TrEditor';
 type EditorEventName = 'editableInput' | 'editableKeydownEnter';
 type EditorHandler = (...args: unknown[]) => void;
 type EditorFixture = {
-  subscribe: jest.Mock<void, [EditorEventName, EditorHandler]>;
-  unsubscribe: jest.Mock<void, [EditorEventName, EditorHandler]>;
+  subscribe: Mock<(...args: [EditorEventName, EditorHandler]) => void>;
+  unsubscribe: Mock<(...args: [EditorEventName, EditorHandler]) => void>;
   trigger: (eventName: EditorEventName, ...args: unknown[]) => void;
   onChange: (value: string) => void;
-  setContent: jest.Mock<void, [string]>;
-  destroy: jest.Mock<void, []>;
+  setContent: Mock<(...args: [string]) => void>;
+  destroy: Mock<(...args: []) => void>;
   readonly text: string;
 };
 
 const mediumEditors: EditorFixture[] = [];
 type TrEditorProps = React.ComponentProps<typeof TrEditor>;
 
-function onChangeMock(): jest.MockedFunction<TrEditorProps['onChange']> {
-  return jest.fn();
+function onChangeMock(): MockedFunction<TrEditorProps['onChange']> {
+  return vi.fn();
 }
 
-function onCtrlEnterMock(): jest.MockedFunction<
+function onCtrlEnterMock(): MockedFunction<
   NonNullable<TrEditorProps['onCtrlEnter']>
 > {
-  return jest.fn();
+  return vi.fn();
 }
 
-jest.mock('medium-editor', () => {
-  return jest.fn().mockImplementation((element: HTMLElement) => {
+vi.mock('medium-editor', () => {
+  return vi.fn().mockImplementation((element: HTMLElement) => {
     const subscribers: Partial<Record<EditorEventName, EditorHandler>> = {};
     const medium: EditorFixture = {
-      subscribe: jest.fn(
-        (eventName: EditorEventName, handler: EditorHandler) => {
-          subscribers[eventName] = handler;
-        },
-      ),
-      unsubscribe: jest.fn(
+      subscribe: vi.fn((eventName: EditorEventName, handler: EditorHandler) => {
+        subscribers[eventName] = handler;
+      }),
+      unsubscribe: vi.fn(
         (eventName: EditorEventName, handler: EditorHandler) => {
           if (subscribers[eventName] === handler) delete subscribers[eventName];
         },
@@ -51,8 +49,8 @@ jest.mock('medium-editor', () => {
         element.innerHTML = value;
         medium.trigger('editableInput', new Event('input'), element);
       },
-      setContent: jest.fn((value: string) => medium.onChange(value)),
-      destroy: jest.fn(),
+      setContent: vi.fn((value: string) => medium.onChange(value)),
+      destroy: vi.fn(),
       get text() {
         return element.innerHTML;
       },
@@ -99,7 +97,7 @@ describe('<TrEditor />', () => {
     editor.trigger('editableKeydownEnter', { ctrlKey: false });
     editor.trigger('editableKeydownEnter', {
       ctrlKey: true,
-      preventDefault: jest.fn(),
+      preventDefault: vi.fn(),
     });
 
     expect(onCtrlEnter).toHaveBeenCalledTimes(1);
@@ -268,7 +266,7 @@ describe('<TrEditor />', () => {
     expect(() =>
       editor.trigger('editableKeydownEnter', {
         ctrlKey: true,
-        preventDefault: jest.fn(),
+        preventDefault: vi.fn(),
       }),
     ).not.toThrow();
   });

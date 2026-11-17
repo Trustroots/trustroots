@@ -1,27 +1,28 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import { getStaffBlockers } from '@/modules/admin/client/api/staff-blockers.api';
 import type { StaffBlocker } from '@/modules/admin/shared/staff-blockers';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/admin/client/api/staff-blockers.api');
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/admin/client/api/staff-blockers.api');
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-const mockedGetStaffBlockers = jest.mocked(getStaffBlockers);
+const mockedGetStaffBlockers = vi.mocked(getStaffBlockers);
 
 beforeEach(() => {
   setViewer({ roles: ['welcome-team'] });
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 it('shows a loading message while waiting for the support list', () => {

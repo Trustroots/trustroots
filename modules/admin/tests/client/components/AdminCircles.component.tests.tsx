@@ -8,25 +8,26 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
 import { getUserByUsername } from '@/modules/admin/client/api/users.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/circles.api');
-jest.mock('@/modules/admin/client/api/users.api');
+vi.mock('@/modules/admin/client/api/circles.api');
+vi.mock('@/modules/admin/client/api/users.api');
 
-const getCirclesMock = jest.mocked(getCircles);
-const saveCircleMock = jest.mocked(saveCircle);
-const getUserByUsernameMock = jest.mocked(getUserByUsername);
+const getCirclesMock = vi.mocked(getCircles);
+const saveCircleMock = vi.mocked(saveCircle);
+const getUserByUsernameMock = vi.mocked(getUserByUsername);
 
 type CircleFixture = {
   _id?: string;
@@ -209,7 +210,7 @@ describe('circle editor navigation and preview', () => {
     public: true,
   };
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getCirclesMock.mockResolvedValue([selected]);
   });
 
@@ -232,7 +233,7 @@ describe('circle editor navigation and preview', () => {
   );
 
   it('loads a slug directly, links to its public page and returns to a new circle', async () => {
-    const onNavigate = jest.fn();
+    const onNavigate = vi.fn();
     const { rerender } = render(
       <AdminCircles circleSlug="walkers" onNavigate={onNavigate} />,
     );
@@ -271,7 +272,7 @@ describe('circle editor navigation and preview', () => {
   });
 
   it('navigates to the created circle after saving', async () => {
-    const onNavigate = jest.fn();
+    const onNavigate = vi.fn();
     saveCircleMock.mockResolvedValue(selected);
     render(<AdminCircles onNavigate={onNavigate} />);
     await screen.findByRole('button', { name: 'Walkers' });
@@ -286,7 +287,7 @@ describe('circle editor navigation and preview', () => {
 
 describe('circle form feedback and fields', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getCirclesMock.mockResolvedValue([]);
   });
 

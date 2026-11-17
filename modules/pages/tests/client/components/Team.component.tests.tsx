@@ -1,19 +1,18 @@
 import React, { type PropsWithChildren } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Team from '@/modules/pages/client/components/Team.component';
 import { getVolunteers } from '@/modules/pages/client/api/volunteers.api';
 
-jest.mock('@/modules/pages/client/api/volunteers.api');
+vi.mock('@/modules/pages/client/api/volunteers.api');
 
-jest.mock('@/modules/core/client/components/Board.js', () => {
-  const actualReact = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board.js', async () => {
+  const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children }: PropsWithChildren) {
     return actualReact.createElement('div', null, children);
   }
-  return MockBoard;
+  return { default: MockBoard };
 });
 
 const loggedInUser: NonNullable<React.ComponentProps<typeof Team>['user']> = {
@@ -21,10 +20,10 @@ const loggedInUser: NonNullable<React.ComponentProps<typeof Team>['user']> = {
   username: 'sample-member',
   displayName: 'Sample Member',
 };
-const getVolunteersMock = jest.mocked(getVolunteers);
+const getVolunteersMock = vi.mocked(getVolunteers);
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<Team />', () => {

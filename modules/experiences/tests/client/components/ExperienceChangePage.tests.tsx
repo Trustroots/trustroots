@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ExperienceChangePage from '@/modules/experiences/client/components/ExperienceChangePage';
 import * as api from '@/modules/experiences/client/api/experience-changes.api';
@@ -9,12 +8,14 @@ import type {
   ExperienceChangeRequestSummary,
 } from '@/modules/experiences/shared/experience-change';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/experiences/client/api/experience-changes.api');
+vi.mock('@/modules/experiences/client/api/experience-changes.api');
 
-const apiMock = jest.mocked(api);
+const apiMock = vi.mocked(api);
 
 const experience: ExperienceChangeAccess = {
   _id: 'experience-1',
@@ -47,7 +48,7 @@ beforeEach(() => {
   apiMock.readMine.mockResolvedValue(null);
 });
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 it('lets the author propose an edit while retaining the current values initially', async () => {
   apiMock.submit.mockResolvedValue(request('edit', 'pending'));

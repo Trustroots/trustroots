@@ -1,15 +1,14 @@
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactListPresentational from '@/modules/contacts/client/components/ContactListPresentational';
 import type Contact from '@/modules/contacts/client/components/Contact';
 import type { ContactListEntry } from '@/modules/contacts/client/types';
 
-jest.mock('@/modules/contacts/client/components/Contact', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/contacts/client/components/Contact', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockContact({
     contact,
     onContactRemoved,
@@ -20,7 +19,7 @@ jest.mock('@/modules/contacts/client/components/Contact', () => {
       </button>
     );
   }
-  return MockContact;
+  return { default: MockContact };
 });
 
 function contact(username: string, confirmed = true): ContactListEntry {
@@ -56,7 +55,7 @@ describe('<ContactListPresentational />', () => {
   });
 
   it('shows a search field and calls onFilterChange when there are 6+ contacts', () => {
-    const onFilterChange = jest.fn();
+    const onFilterChange = vi.fn();
     const contacts = ['a', 'b', 'c', 'd', 'e', 'f'].map(name => contact(name));
 
     render(
@@ -158,7 +157,7 @@ describe('<ContactListPresentational />', () => {
   });
 
   it('reports the removed contact from the clicked row', () => {
-    const onContactRemoved = jest.fn();
+    const onContactRemoved = vi.fn();
     const alice = contact('alice');
 
     render(

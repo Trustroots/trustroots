@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import axios from 'axios';
 
 import {
@@ -5,12 +6,13 @@ import {
   type VolunteersResponse,
 } from '@/modules/pages/client/api/volunteers.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('volunteers api', () => {
@@ -22,7 +24,7 @@ describe('volunteers api', () => {
       alumni: [],
     };
     // The shared Axios test double only supplies the data field this API reads.
-    const getMock = axios.get as jest.MockedFunction<
+    const getMock = axios.get as MockedFunction<
       (url: string) => Promise<{ data: VolunteersResponse }>
     >;
     getMock.mockResolvedValueOnce({ data });

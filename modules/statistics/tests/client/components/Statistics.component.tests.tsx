@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
@@ -13,24 +12,24 @@ import { getSuggestion } from '@/modules/experiences/client/api/experiences.api'
 import { AxiosHeaders, type AxiosResponse } from 'axios';
 import type Board from '@/modules/core/client/components/Board';
 
-const getMock = jest.mocked(get);
-const getChartsMock = jest.mocked(getCharts);
-const getSuggestionMock = jest.mocked(getSuggestion);
+const getMock = vi.mocked(get);
+const getChartsMock = vi.mocked(getCharts);
+const getSuggestionMock = vi.mocked(getSuggestion);
 
 function response<T>(data: T): AxiosResponse<T> {
   const headers = new AxiosHeaders();
   return { data, status: 200, statusText: 'OK', headers, config: { headers } };
 }
 
-jest.mock('@/modules/statistics/client/api/statistics.api');
-jest.mock('@/modules/experiences/client/api/experiences.api');
+vi.mock('@/modules/statistics/client/api/statistics.api');
+vi.mock('@/modules/experiences/client/api/experiences.api');
 
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children }: React.ComponentProps<typeof Board>) {
     return <div>{children}</div>;
   }
-  return MockBoard;
+  return { default: MockBoard };
 });
 
 beforeEach(() => {
@@ -39,7 +38,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<Statistics />', () => {

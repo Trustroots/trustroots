@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import { AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axios';
 import httpClient from '@/modules/core/client/api/http-client';
 import { getVolunteers } from '@/modules/pages/client/api/volunteers.api';
@@ -6,21 +7,21 @@ import { get as getStatistics } from '@/modules/statistics/client/api/statistics
 describe('public TypeScript APIs use the configured HTTP client', () => {
   const originalAdapter = httpClient.defaults.adapter;
   const originalTimeout = httpClient.defaults.timeout;
-  let adapter!: jest.MockedFunction<AxiosAdapter>;
+  let adapter!: MockedFunction<AxiosAdapter>;
 
   beforeEach(() => {
-    adapter = jest.fn<ReturnType<AxiosAdapter>, Parameters<AxiosAdapter>>(
-      async config => {
-        const response: AxiosResponse = {
-          config,
-          data: { volunteers: [], alumni: [], total: 12 },
-          headers: new AxiosHeaders(),
-          status: 200,
-          statusText: 'OK',
-        };
-        return response;
-      },
-    );
+    adapter = vi.fn<
+      (...args: Parameters<AxiosAdapter>) => ReturnType<AxiosAdapter>
+    >(async config => {
+      const response: AxiosResponse = {
+        config,
+        data: { volunteers: [], alumni: [], total: 12 },
+        headers: new AxiosHeaders(),
+        status: 200,
+        statusText: 'OK',
+      };
+      return response;
+    });
     httpClient.defaults.adapter = adapter;
     httpClient.defaults.timeout = 45000;
   });

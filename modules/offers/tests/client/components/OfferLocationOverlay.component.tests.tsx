@@ -1,31 +1,30 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferLocationOverlay from '@/modules/offers/client/components/OfferLocationOverlay';
 
 let mockZoom = 10;
 const mockMap = {
   getZoom: () => mockZoom,
-  on: jest.fn(),
-  off: jest.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
 };
 let mockCurrentMap: typeof mockMap | undefined;
-const mockMarker = jest.fn();
-jest.mock('react-map-gl/mapbox', () => ({
+const mockMarker = vi.fn();
+vi.mock('react-map-gl/mapbox', () => ({
   useMap: () => ({ current: mockCurrentMap }),
   Marker: (props: { children: React.ReactNode }) => {
     mockMarker(props);
     return <div>{props.children}</div>;
   },
 }));
-jest.mock('@/modules/offers/client/utils/markers', () => ({
-  getOfferHexColor: jest.fn(() => '#abcdef'),
-  zoomToPixelMeters: jest.fn(() => 111),
+vi.mock('@/modules/offers/client/utils/markers', () => ({
+  getOfferHexColor: vi.fn(() => '#abcdef'),
+  zoomToPixelMeters: vi.fn(() => 111),
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockZoom = 10;
   mockCurrentMap = mockMap;
 });

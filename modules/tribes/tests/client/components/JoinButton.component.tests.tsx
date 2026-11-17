@@ -6,7 +6,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
@@ -24,17 +23,17 @@ const analytics = fakeAnalytics();
 const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
   rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-const joinMock = jest.mocked(join);
-const leaveMock = jest.mocked(leave);
+const joinMock = vi.mocked(join);
+const leaveMock = vi.mocked(leave);
 const user: UserProfile = {
   _id: 'user-1',
   username: 'circle-member',
   displayName: 'Circle Member',
 };
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
 
-jest.mock('@/modules/tribes/client/components/LeaveTribeModal', () => {
+vi.mock('@/modules/tribes/client/components/LeaveTribeModal', () => {
   function MockLeaveTribeModal({
     show,
     onConfirm,
@@ -49,7 +48,7 @@ jest.mock('@/modules/tribes/client/components/LeaveTribeModal', () => {
     );
   }
 
-  return MockLeaveTribeModal;
+  return { default: MockLeaveTribeModal };
 });
 
 describe('<JoinButton />', () => {
@@ -61,11 +60,11 @@ describe('<JoinButton />', () => {
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('links signed-out visitors to signup with the tribe preselected', () => {
-    render(<JoinButton tribe={tribe} user={undefined} onUpdated={jest.fn()} />);
+    render(<JoinButton tribe={tribe} user={undefined} onUpdated={vi.fn()} />);
 
     expect(screen.getByRole('link', { name: /Join/ })).toHaveAttribute(
       'href',
@@ -74,7 +73,7 @@ describe('<JoinButton />', () => {
   });
 
   it('joins a tribe and reports the updated membership', async () => {
-    const onUpdated = jest.fn<void, [MembershipUpdate]>();
+    const onUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
     const updatedMembership: MembershipUpdate = {
       user: { ...user, memberIds: ['tribe-1'] },
     };
@@ -172,7 +171,7 @@ describe('<JoinButton />', () => {
   });
 
   it('re-enables the button after a failed join without tracking it', async () => {
-    const onUpdated = jest.fn();
+    const onUpdated = vi.fn();
     joinMock.mockRejectedValueOnce(new Error('join failed'));
 
     render(
@@ -202,7 +201,7 @@ describe('<JoinButton />', () => {
         icon={false}
         tribe={tribe}
         user={{ ...user, memberIds: ['tribe-1'] }}
-        onUpdated={jest.fn()}
+        onUpdated={vi.fn()}
       />,
     );
 
@@ -220,7 +219,7 @@ describe('<JoinButton />', () => {
         memberLabel="You're a member"
         tribe={tribe}
         user={{ ...user, memberIds: ['tribe-1'] }}
-        onUpdated={jest.fn()}
+        onUpdated={vi.fn()}
       />,
     );
 
@@ -238,7 +237,7 @@ describe('<JoinButton />', () => {
       <JoinButton
         tribe={tribe}
         user={{ ...user, memberIds: [] }}
-        onUpdated={jest.fn()}
+        onUpdated={vi.fn()}
       />,
     );
 
@@ -257,7 +256,7 @@ describe('<JoinButton />', () => {
       <JoinButton
         tribe={tribe}
         user={{ ...user, memberIds: [] }}
-        onUpdated={jest.fn()}
+        onUpdated={vi.fn()}
       />,
     );
 
@@ -273,7 +272,7 @@ describe('<JoinButton />', () => {
       <JoinButton
         tribe={tribe}
         user={{ ...user, memberIds: ['tribe-1'] }}
-        onUpdated={jest.fn()}
+        onUpdated={vi.fn()}
       />,
     );
 
@@ -287,7 +286,7 @@ describe('<JoinButton />', () => {
   });
 
   it('leaves a tribe after confirmation and reports the update', async () => {
-    const onUpdated = jest.fn<void, [MembershipUpdate]>();
+    const onUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
     const updatedMembership: MembershipUpdate = {
       user: { ...user, memberIds: [] },
     };
@@ -319,7 +318,7 @@ describe('<JoinButton />', () => {
   });
 
   it('keeps the membership and closes the dialog when leaving fails', async () => {
-    const onUpdated = jest.fn<void, [MembershipUpdate]>();
+    const onUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
     leaveMock.mockRejectedValueOnce(new Error('offline'));
 
     render(

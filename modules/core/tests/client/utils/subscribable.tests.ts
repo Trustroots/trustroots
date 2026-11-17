@@ -3,8 +3,8 @@ import createSubscribable from '@/modules/core/client/utils/subscribable';
 describe('createSubscribable', () => {
   it('notifies all subscribers with the payload', () => {
     const { subscribe, notify } = createSubscribable<{ count: number }>();
-    const first = jest.fn();
-    const second = jest.fn();
+    const first = vi.fn();
+    const second = vi.fn();
 
     subscribe(first);
     subscribe(second);
@@ -16,7 +16,7 @@ describe('createSubscribable', () => {
 
   it('stops notifying unsubscribed callbacks', () => {
     const { subscribe, notify } = createSubscribable<string>();
-    const subscriber = jest.fn();
+    const subscriber = vi.fn();
     const unsubscribe = subscribe(subscriber);
 
     unsubscribe();
@@ -28,8 +28,8 @@ describe('createSubscribable', () => {
 
   it('does not skip later subscribers when a callback unsubscribes itself', () => {
     const { subscribe, notify } = createSubscribable<string>();
-    const first = jest.fn();
-    const second = jest.fn();
+    const first = vi.fn();
+    const second = vi.fn();
     const unsubscribeFirst = subscribe(payload => {
       first(payload);
       unsubscribeFirst();
@@ -49,10 +49,10 @@ describe('createSubscribable', () => {
   it('continues notifying other subscribers when one throws', () => {
     const { subscribe, notify } = createSubscribable<string>();
     const error = new Error('first failed');
-    const throwingSubscriber = jest.fn(() => {
+    const throwingSubscriber = vi.fn(() => {
       throw error;
     });
-    const healthySubscriber = jest.fn();
+    const healthySubscriber = vi.fn();
 
     subscribe(throwingSubscriber);
     subscribe(healthySubscriber);

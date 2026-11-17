@@ -5,7 +5,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import * as usersApi from '@/modules/users/client/api/users.api';
@@ -17,10 +16,10 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-const updateUserMock = jest.mocked(usersApi.update);
+const updateUserMock = vi.mocked(usersApi.update);
 
-jest.mock('@/modules/users/client/api/users.api');
-afterEach(() => jest.clearAllMocks());
+vi.mock('@/modules/users/client/api/users.api');
+afterEach(() => vi.clearAllMocks());
 
 beforeEach(() => i18n.changeLanguage('en'));
 

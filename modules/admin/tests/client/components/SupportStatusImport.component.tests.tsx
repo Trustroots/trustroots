@@ -7,22 +7,21 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import SupportStatusImport from '@/modules/admin/client/components/SupportStatusImport';
 import http from '@/modules/core/client/api/http-client';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
-  default: { post: jest.fn() },
+  default: { post: vi.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
 }));
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-const post = jest.mocked(http.post);
+const post = vi.mocked(http.post);
 
 const manifest = {
   version: 1,
@@ -233,7 +232,7 @@ describe('<SupportStatusImport />', () => {
       .mockResolvedValueOnce({
         data: { applied: 1, alreadyApplied: 0, skipped: 0 },
       } as never);
-    const onApplied = jest.fn();
+    const onApplied = vi.fn();
     render(<SupportStatusImport onApplied={onApplied} />);
     fireEvent.change(screen.getByLabelText('Reduced JSON manifest'), {
       target: { files: [fileFrom(JSON.stringify(v2Manifest))] },

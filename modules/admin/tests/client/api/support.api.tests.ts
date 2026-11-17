@@ -8,13 +8,11 @@ import {
   setStatus,
   setMemberFlag,
 } from '../../../client/api/support.api';
-jest.mock('../../../../core/client/api/http-client', () => ({
-  get: jest.fn(),
-  patch: jest.fn(),
-  post: jest.fn(),
+vi.mock('../../../../core/client/api/http-client', () => ({
+  default: { get: vi.fn(), patch: vi.fn(), post: vi.fn() },
 }));
 test('loads support information and updates request status', async () => {
-  jest.mocked(http.get).mockResolvedValue({ data: { items: [] } });
+  vi.mocked(http.get).mockResolvedValue({ data: { items: [] } });
   expect(await load('/api/admin/support')).toEqual({ items: [] });
   expect(http.get).toHaveBeenCalledWith('/api/admin/support');
   await setStatus('report/1', 'solved');
@@ -24,7 +22,7 @@ test('loads support information and updates request status', async () => {
 });
 
 test('serialises inbox filters and reads request conversations', async () => {
-  jest.mocked(http.get).mockResolvedValue({ data: { items: [], page: 2 } });
+  vi.mocked(http.get).mockResolvedValue({ data: { items: [], page: 2 } });
   await listRequests({
     status: 'unresolved',
     category: 'reportMember',
@@ -45,7 +43,7 @@ test('serialises inbox filters and reads request conversations', async () => {
 });
 
 test('queues replies and retries uncertain delivery explicitly', async () => {
-  jest.mocked(http.post).mockResolvedValue({ data: { _id: 'reply-1' } });
+  vi.mocked(http.post).mockResolvedValue({ data: { _id: 'reply-1' } });
   await sendReply('request/1', 'A plain text reply', 'key-1');
   expect(http.post).toHaveBeenNthCalledWith(
     1,

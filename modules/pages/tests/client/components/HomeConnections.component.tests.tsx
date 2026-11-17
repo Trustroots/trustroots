@@ -1,14 +1,13 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import HomeConnections from '@/modules/pages/client/components/HomeConnections.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/tribes/client/components/CircleLocationMap', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({
@@ -28,10 +27,10 @@ jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => {
   };
 });
 
-const getConnections = jest.mocked(tribesApi.getConnections);
+const getConnections = vi.mocked(tribesApi.getConnections);
 
 describe('<HomeConnections />', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('keeps the section hidden when discovery fails', async () => {
     getConnections.mockRejectedValueOnce(new Error('Offline'));

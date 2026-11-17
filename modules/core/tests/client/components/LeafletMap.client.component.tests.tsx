@@ -1,29 +1,28 @@
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import L from 'leaflet';
 
 import LeafletMap from '@/modules/core/client/components/Map/LeafletMap';
 
 type MoveListener = (event: L.LeafletMouseEvent) => void;
 const mockMap = {
-  on: jest.fn<void, [event: string, listener: MoveListener]>(),
-  getCenter: jest.fn(),
-  getZoom: jest.fn(),
-  invalidateSize: jest.fn(),
-  remove: jest.fn(),
-  setView: jest.fn(),
+  on: vi.fn<(...args: [event: string, listener: MoveListener]) => void>(),
+  getCenter: vi.fn(),
+  getZoom: vi.fn(),
+  invalidateSize: vi.fn(),
+  remove: vi.fn(),
+  setView: vi.fn(),
 };
 mockMap.setView.mockImplementation(() => mockMap);
-const mockMarker = { remove: jest.fn() };
+const mockMarker = { remove: vi.fn() };
 
-jest.mock('leaflet', () => ({
-  circleMarker: jest.fn(() => ({
-    addTo: jest.fn(() => mockMarker),
+vi.mock('leaflet', () => ({
+  circleMarker: vi.fn(() => ({
+    addTo: vi.fn(() => mockMarker),
   })),
-  map: jest.fn(() => mockMap),
-  tileLayer: jest.fn(() => ({ addTo: jest.fn() })),
+  map: vi.fn(() => mockMap),
+  tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
 }));
 
 beforeEach(() => {
@@ -33,20 +32,20 @@ beforeEach(() => {
   mockMap.remove.mockClear();
   mockMap.setView.mockClear();
   mockMarker.remove.mockClear();
-  jest.mocked(L.circleMarker).mockClear();
-  jest.mocked(L.map).mockClear();
-  jest.mocked(L.tileLayer).mockClear();
+  vi.mocked(L.circleMarker).mockClear();
+  vi.mocked(L.map).mockClear();
+  vi.mocked(L.tileLayer).mockClear();
 });
 
 describe('<LeafletMap />', () => {
   it('refreshes tiles when a hidden tab becomes visible and stops observing on unmount', () => {
     const original = global.ResizeObserver;
     let resize!: () => void;
-    const observe = jest.fn();
-    const disconnect = jest.fn();
-    global.ResizeObserver = jest.fn(callback => {
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    global.ResizeObserver = vi.fn(callback => {
       resize = () => callback([], {} as ResizeObserver);
-      return { observe, disconnect, unobserve: jest.fn() };
+      return { observe, disconnect, unobserve: vi.fn() };
     });
     try {
       const { container, unmount } = render(<LeafletMap location={[35, -7]} />);
@@ -119,7 +118,7 @@ describe('<LeafletMap />', () => {
   });
 
   it('does not update the map when no location is available', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 
@@ -140,8 +139,8 @@ describe('<LeafletMap />', () => {
 });
 
 it('reports the panned centre to the latest listener without resetting zoom', () => {
-  const first = jest.fn();
-  const latest = jest.fn();
+  const first = vi.fn();
+  const latest = vi.fn();
   const { rerender } = render(
     <LeafletMap location={[50.12, 19.89]} zoom={11} onLocationChange={first} />,
   );
@@ -179,7 +178,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
 });
 
 it('chooses a clicked location and accepts clicks without a callback', () => {
-  const onLocationChange = jest.fn();
+  const onLocationChange = vi.fn();
   const { rerender } = render(
     <LeafletMap location={[35, -7]} onLocationChange={onLocationChange} />,
   );

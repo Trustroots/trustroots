@@ -1,23 +1,24 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import * as messagesApi from '@/modules/admin/client/api/messages.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/messages.api');
-jest.mock('@/modules/admin/client/api/users.api');
+vi.mock('@/modules/admin/client/api/messages.api');
+vi.mock('@/modules/admin/client/api/users.api');
 
-const mockedMessagesApi = jest.mocked(messagesApi);
-const mockedUsersApi = jest.mocked(usersApi);
+const mockedMessagesApi = vi.mocked(messagesApi);
+const mockedUsersApi = vi.mocked(usersApi);
 
 type MemberFixture = { _id: string; displayName: string; username: string };
 
@@ -37,7 +38,7 @@ const bob: MemberFixture = {
 };
 
 afterEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   window.history.pushState({}, '', '/');
 });
 

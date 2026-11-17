@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Contact from '@/modules/contacts/client/components/Contact';
@@ -15,27 +14,32 @@ function memberReference(
   return { _id: id, username, displayName };
 }
 
-jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  function MockRemoveContact({
-    show,
-    onCancel,
-    onSuccess,
-  }: {
-    show?: boolean;
-    onCancel?: () => void;
-    onSuccess?: () => void;
-  }) {
-    return show ? (
-      <div>
-        <div>remove-modal-open</div>
-        <button onClick={() => onCancel && onCancel()}>remove-cancel</button>
-        <button onClick={() => onSuccess && onSuccess()}>remove-success</button>
-      </div>
-    ) : null;
-  }
-  return MockRemoveContact;
-});
+vi.mock(
+  '@/modules/contacts/client/components/RemoveContactContainer',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
+    function MockRemoveContact({
+      show,
+      onCancel,
+      onSuccess,
+    }: {
+      show?: boolean;
+      onCancel?: () => void;
+      onSuccess?: () => void;
+    }) {
+      return show ? (
+        <div>
+          <div>remove-modal-open</div>
+          <button onClick={() => onCancel && onCancel()}>remove-cancel</button>
+          <button onClick={() => onSuccess && onSuccess()}>
+            remove-success
+          </button>
+        </div>
+      ) : null;
+    }
+    return { default: MockRemoveContact };
+  },
+);
 
 function makeContact(
   overrides: Partial<ContactListEntry> = {},
@@ -112,7 +116,7 @@ describe('<Contact />', () => {
   });
 
   it('notifies the container when received-contact removal succeeds', () => {
-    const onContactRemoved = jest.fn();
+    const onContactRemoved = vi.fn();
     render(
       <Contact
         contact={makeContact({

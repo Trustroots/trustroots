@@ -8,7 +8,7 @@ describe('timeAgo', () => {
   });
 
   it('formats recent timestamps as relative time', () => {
-    Date.now = jest.fn(() => 1_700_000_000_000);
+    Date.now = vi.fn(() => 1_700_000_000_000);
 
     expect(timeAgo(1_699_999_970)).toBe('just now');
     expect(timeAgo(1_699_999_700)).toBe('5m ago');
@@ -17,7 +17,7 @@ describe('timeAgo', () => {
   });
 
   it('formats older timestamps as a locale date', () => {
-    Date.now = jest.fn(() => 1_700_000_000_000);
+    Date.now = vi.fn(() => 1_700_000_000_000);
 
     expect(timeAgo(1_699_000_000)).toBe(
       new Date(1_699_000_000_000).toLocaleDateString(),

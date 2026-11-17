@@ -1,3 +1,4 @@
+import type { Mocked } from 'vitest';
 import axios from 'axios';
 
 import {
@@ -5,21 +6,22 @@ import {
   type LanguageOption,
 } from '@/modules/core/client/api/languages.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const mockUseQuery = jest.fn();
-jest.mock('@tanstack/react-query', () => ({
+const mockUseQuery = vi.fn();
+vi.mock('@tanstack/react-query', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 type QueryFn = () => Promise<unknown>;
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockUseQuery.mockReset();
 });
 

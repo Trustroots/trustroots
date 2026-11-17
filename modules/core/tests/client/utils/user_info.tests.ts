@@ -1,7 +1,7 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import { getGender } from '@/modules/core/client/utils/user_info';
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => `users:${key}`,
   }),

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferRedirectPage, {
   defaultNavigate,
@@ -8,7 +7,7 @@ import OfferRedirectPage, {
 
 describe('OfferRedirectPage', () => {
   it('redirects to the host offer page on mount', () => {
-    const navigate = jest.fn<void, [string]>();
+    const navigate = vi.fn<(...args: [string]) => void>();
 
     render(<OfferRedirectPage navigate={navigate} />);
 
@@ -17,7 +16,7 @@ describe('OfferRedirectPage', () => {
   });
 
   it('provides a browser redirect fallback', () => {
-    const replace = jest.fn<void, [string]>();
+    const replace = vi.fn<(...args: [string]) => void>();
 
     Reflect.apply(defaultNavigate, undefined, ['/offer/host', { replace }]);
 

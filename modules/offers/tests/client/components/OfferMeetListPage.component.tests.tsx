@@ -1,22 +1,21 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferMeetListPage from '@/modules/offers/client/components/OfferMeetListPage.component';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
-const offersApiMock = jest.mocked(offersApi);
+const offersApiMock = vi.mocked(offersApi);
 
-jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/offers/client/components/OfferLocation.component', () => ({
+vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock('@/modules/offers/client/components/OfferLocation.component', () => ({
   __esModule: true,
   default: ({ location }: { location: number[] }) => (
     <div data-testid="offer-location" data-location={location.join(',')} />
   ),
 }));
-jest.mock('@/modules/offers/client/components/NoMeets.component', () => ({
+vi.mock('@/modules/offers/client/components/NoMeets.component', () => ({
   __esModule: true,
   default: () => <div>No meetups yet</div>,
 }));
@@ -29,8 +28,8 @@ const analytics = fakeAnalytics();
 
 describe('OfferMeetListPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    window.confirm = jest.fn(() => true);
+    vi.clearAllMocks();
+    window.confirm = vi.fn(() => true);
   });
 
   it('shows the empty state when there are no meet offers', async () => {
@@ -176,7 +175,7 @@ describe('OfferMeetListPage', () => {
   });
 
   it('does not remove a meet offer when confirmation is cancelled', async () => {
-    window.confirm = jest.fn(() => false);
+    window.confirm = vi.fn(() => false);
     offersApiMock.getOffers.mockResolvedValue([
       {
         _id: 'offer-1',

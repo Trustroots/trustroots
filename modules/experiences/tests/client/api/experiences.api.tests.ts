@@ -13,13 +13,14 @@ import type {
   ExperienceMine,
 } from '@/modules/experiences/shared/experience';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
-const mockedAxios = jest.mocked(axios);
+const mockedAxios = vi.mocked(axios);
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 const experienceMine: ExperienceMine = {

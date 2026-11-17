@@ -1,16 +1,15 @@
 import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Foundation from '@/modules/pages/client/components/Foundation.component';
 
-jest.mock('@/modules/core/client/components/Board.js', () => {
-  const actualReact = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board.js', async () => {
+  const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children }: PropsWithChildren) {
     return actualReact.createElement('div', null, children);
   }
-  return MockBoard;
+  return { default: MockBoard };
 });
 
 describe('<Foundation />', () => {

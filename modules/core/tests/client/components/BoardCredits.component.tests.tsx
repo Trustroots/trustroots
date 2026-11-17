@@ -1,6 +1,5 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import BoardCredits, {
@@ -8,10 +7,10 @@ import BoardCredits, {
 } from '@/modules/core/client/components/BoardCredits';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 
-const onClientEventMock = jest.mocked(onClientEvent);
+const onClientEventMock = vi.mocked(onClientEvent);
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  onClientEvent: jest.fn(() => () => {}),
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: vi.fn(() => () => {}),
 }));
 
 describe('<BoardCredits />', () => {

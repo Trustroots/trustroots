@@ -6,30 +6,30 @@ import {
   signWithConnectedNostr,
 } from '../../../client/services/nostr-proof.client';
 
-const mockDestroy = jest.fn();
-jest.mock('nostr-tools', () => ({
-  ...jest.requireActual('nostr-tools'),
-  SimplePool: jest.fn(() => ({ destroy: mockDestroy })),
+const mockDestroy = vi.fn();
+vi.mock('nostr-tools', async () => ({
+  ...(await vi.importActual('nostr-tools')),
+  SimplePool: vi.fn(() => ({ destroy: mockDestroy })),
 }));
-jest.mock('nostr-tools/nip46', () => ({
-  BunkerSigner: { fromBunker: jest.fn(), fromURI: jest.fn() },
-  createNostrConnectURI: jest.fn(() => 'nostrconnect://fictional'),
+vi.mock('nostr-tools/nip46', () => ({
+  BunkerSigner: { fromBunker: vi.fn(), fromURI: vi.fn() },
+  createNostrConnectURI: vi.fn(() => 'nostrconnect://fictional'),
 }));
-jest.mock('qrcode', () => ({ toDataURL: jest.fn() }));
+vi.mock('qrcode', () => ({ default: { toDataURL: vi.fn() } }));
 const pubkey = '11'.repeat(32);
 const npub = nip19.npubEncode(pubkey);
 const event = { kind: 27235, created_at: 1, content: '', tags: [] };
 const uri = `bunker://${'22'.repeat(32)}?relay=wss://relay.example.com&secret=fictional`;
 const signer = {
-  connect: jest.fn(),
-  getPublicKey: jest.fn(),
-  signEvent: jest.fn(),
-  close: jest.fn(),
+  connect: vi.fn(),
+  getPublicKey: vi.fn(),
+  signEvent: vi.fn(),
+  close: vi.fn(),
 };
 
 describe('Nostr proof signing transports', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     delete window.nostr;
     signer.connect.mockResolvedValue(undefined);
     signer.getPublicKey.mockResolvedValue(pubkey);
@@ -40,19 +40,19 @@ describe('Nostr proof signing transports', () => {
       sig: 'signature',
     });
     signer.close.mockResolvedValue(undefined);
-    jest
-      .mocked(QRCode.toDataURL)
-      .mockResolvedValue('data:image/png;base64,fictional' as never);
-    jest
-      .mocked(BunkerSigner.fromBunker)
-      .mockReturnValue(signer as unknown as BunkerSigner);
+    vi.mocked(QRCode.toDataURL).mockResolvedValue(
+      'data:image/png;base64,fictional' as never,
+    );
+    vi.mocked(BunkerSigner.fromBunker).mockReturnValue(
+      signer as unknown as BunkerSigner,
+    );
   });
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => vi.useRealTimers());
   const run = (
     method: 'browser' | 'bunker' = 'bunker',
     input = uri,
     signal = new AbortController().signal,
-    onAuth = jest.fn(),
+    onAuth = vi.fn(),
   ) => signNostrProof(event, npub, method, input, onAuth, signal);
 
   it('signs with a matching browser key', async () => {
@@ -78,7 +78,7 @@ describe('Nostr proof signing transports', () => {
         nip19.nsecEncode(new Uint8Array(32)),
         'browser',
         '',
-        jest.fn(),
+        vi.fn(),
         new AbortController().signal,
       ),
     ).rejects.toThrow('valid npub');
@@ -130,9 +130,9 @@ describe('Nostr proof signing transports', () => {
     expect(signer.signEvent).not.toHaveBeenCalled();
   });
   it('shows HTTPS authorisation URLs and rejects invalid ones', async () => {
-    const onAuth = jest.fn();
+    const onAuth = vi.fn();
     signer.connect.mockImplementation(async () => {
-      const calls = jest.mocked(BunkerSigner.fromBunker).mock.calls;
+      const calls = vi.mocked(BunkerSigner.fromBunker).mock.calls;
       calls[calls.length - 1][2]!.onauth!(
         'https://signer.example.com/authorise',
       );
@@ -140,7 +140,7 @@ describe('Nostr proof signing transports', () => {
     await run('bunker', uri, new AbortController().signal, onAuth);
     expect(onAuth).toHaveBeenCalledWith('https://signer.example.com/authorise');
     signer.connect.mockImplementation(() => {
-      const calls = jest.mocked(BunkerSigner.fromBunker).mock.calls;
+      const calls = vi.mocked(BunkerSigner.fromBunker).mock.calls;
       calls[calls.length - 1][2]!.onauth!('javascript:invalid');
       return new Promise(() => {});
     });
@@ -155,7 +155,7 @@ describe('Nostr proof signing transports', () => {
     expect(BunkerSigner.fromBunker).not.toHaveBeenCalled();
   });
   it('times out pending requests, closes and avoids signing after timeout', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let finish!: () => void;
     signer.connect.mockImplementation(
       () =>
@@ -165,7 +165,7 @@ describe('Nostr proof signing transports', () => {
     );
     const result = run();
     const assertion = expect(result).rejects.toThrow('timed out');
-    await jest.advanceTimersByTimeAsync(120_000);
+    await vi.advanceTimersByTimeAsync(120_000);
     await assertion;
     expect(mockDestroy).toHaveBeenCalledTimes(1);
     finish();
@@ -179,12 +179,12 @@ describe('Nostr proof signing transports', () => {
   });
 
   it('pairs a remote signer, requests the challenge for its key and closes after signing', async () => {
-    jest
-      .mocked(BunkerSigner.fromURI)
-      .mockResolvedValue(signer as unknown as BunkerSigner);
-    const requestChallenge = jest.fn().mockResolvedValue(event);
-    const onPairing = jest.fn();
-    const onAuth = jest.fn();
+    vi.mocked(BunkerSigner.fromURI).mockResolvedValue(
+      signer as unknown as BunkerSigner,
+    );
+    const requestChallenge = vi.fn().mockResolvedValue(event);
+    const onPairing = vi.fn();
+    const onAuth = vi.fn();
     const signal = new AbortController().signal;
 
     await expect(
@@ -224,16 +224,16 @@ describe('Nostr proof signing transports', () => {
   });
 
   it('closes the relay pool when pairing is cancelled before a signer connects', async () => {
-    jest
-      .mocked(BunkerSigner.fromURI)
-      .mockImplementationOnce(() => new Promise(() => {}));
+    vi.mocked(BunkerSigner.fromURI).mockImplementationOnce(
+      () => new Promise(() => {}),
+    );
     const controller = new AbortController();
-    const requestChallenge = jest.fn();
+    const requestChallenge = vi.fn();
     const result = signWithConnectedNostr(
       'pair',
       requestChallenge,
       () => controller.abort(),
-      jest.fn(),
+      vi.fn(),
       controller.signal,
     );
     await expect(result).rejects.toThrow('cancelled');

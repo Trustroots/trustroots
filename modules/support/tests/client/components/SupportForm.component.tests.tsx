@@ -5,7 +5,6 @@ import {
   fireEvent,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
@@ -17,7 +16,7 @@ let analytics = fakeAnalytics();
 const render = (ui: React.ReactElement) =>
   rtlRender(ui, { wrapper: analytics.wrapper });
 
-const sendMock = jest.mocked(send);
+const sendMock = vi.mocked(send);
 const supportUser: NonNullable<
   React.ComponentProps<typeof SupportForm>['user']
 > = {
@@ -26,9 +25,9 @@ const supportUser: NonNullable<
   email: 'member@example.test',
 };
 
-jest.mock('@/modules/support/client/api/support.api');
+vi.mock('@/modules/support/client/api/support.api');
 
-const scrollIntoView = jest.fn<void, [ScrollIntoViewOptions?]>();
+const scrollIntoView = vi.fn<(...args: [ScrollIntoViewOptions?]) => void>();
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 beforeAll(() => {
   HTMLElement.prototype.scrollIntoView = scrollIntoView;
@@ -42,7 +41,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.localStorage.clear();
   window.history.pushState({}, '', '/');
 });
@@ -50,7 +49,7 @@ afterEach(() => {
 describe('<SupportForm />', () => {
   it('focuses the primary field on desktop', () => {
     const originalMatchMedia = window.matchMedia;
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     try {
       render(<SupportForm user={{}} />);
       expect(screen.getByLabelText('What can we help with?')).toHaveFocus();
@@ -258,7 +257,7 @@ describe('<SupportForm />', () => {
   });
 
   it('falls back to the raw query string when report URL parsing fails', async () => {
-    const urlParser = jest.spyOn(global, 'URL').mockImplementation(() => {
+    const urlParser = vi.spyOn(global, 'URL').mockImplementation(() => {
       throw new Error('broken URL parser');
     });
 
@@ -403,7 +402,7 @@ describe('<SupportForm />', () => {
   });
 
   it('leaves the default category when URL parsing fails without a query string', () => {
-    const urlParser = jest.spyOn(global, 'URL').mockImplementation(() => {
+    const urlParser = vi.spyOn(global, 'URL').mockImplementation(() => {
       throw new Error('broken URL parser');
     });
     try {

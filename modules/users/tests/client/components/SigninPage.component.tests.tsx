@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SigninPage from '@/modules/users/client/components/SigninPage.component';
@@ -11,27 +10,29 @@ import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 
 type BoardProps = { children?: React.ReactNode };
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/users/client/utils/auth', () => ({
-  ...jest.requireActual('@/modules/users/client/utils/auth'),
-  redirectAfterSignin: jest.fn(),
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/users/client/utils/auth', async () => ({
+  ...(await vi.importActual('@/modules/users/client/utils/auth')),
+  redirectAfterSignin: vi.fn(),
 }));
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  broadcastClientEvent: jest.fn(),
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  broadcastClientEvent: vi.fn(),
 }));
 
-const signin = jest.mocked(authApi.signin);
-const getSession = jest.mocked(authApi.getSession);
+const signin = vi.mocked(authApi.signin);
+const getSession = vi.mocked(authApi.getSession);
 const analytics = fakeAnalytics();
 
 function renderPage() {
@@ -53,7 +54,7 @@ function renderPage() {
 
 describe('SigninPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getSession.mockReset();
     getSession.mockResolvedValue({ userId: 'user-1' });
     window.history.pushState({}, '', '/signin');
@@ -74,7 +75,7 @@ describe('SigninPage', () => {
     'focuses the username field only on desktop (%s)',
     desktop => {
       const originalMatchMedia = window.matchMedia;
-      window.matchMedia = jest.fn().mockReturnValue({ matches: desktop });
+      window.matchMedia = vi.fn().mockReturnValue({ matches: desktop });
       try {
         renderPage();
         if (desktop) {

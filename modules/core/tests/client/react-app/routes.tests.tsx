@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import {
@@ -31,7 +30,7 @@ type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
 // and make the Jest worker fail to exit gracefully.
-jest.mock('@/modules/core/client/api/http-client', () => {
+vi.mock('@/modules/core/client/api/http-client', () => {
   const pending = () => new Promise(() => {});
   return {
     __esModule: true,
@@ -49,182 +48,164 @@ jest.mock('@/modules/core/client/api/http-client', () => {
 });
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
-  <main>Admin</main>
-));
-jest.mock(
+vi.mock('@/modules/admin/client/components/Admin.component', () => ({
+  default: () => <main>Admin</main>,
+}));
+vi.mock(
   '@/modules/admin/client/components/AdminAcquisitionStories.component',
-  () => () => <main>Admin acquisition stories</main>,
+  () => ({ default: () => <main>Admin acquisition stories</main> }),
 );
-jest.mock(
-  '@/modules/admin/client/components/AdminAuditLog.component',
-  () => () => <main>Admin audit log</main>,
-);
-jest.mock(
+vi.mock('@/modules/admin/client/components/AdminAuditLog.component', () => ({
+  default: () => <main>Admin audit log</main>,
+}));
+vi.mock(
   '@/modules/admin/client/components/AdminUsernameChanges.component',
-  () => () => <main>Admin username changes</main>,
+  () => ({ default: () => <main>Admin username changes</main> }),
 );
-jest.mock(
-  '@/modules/admin/client/components/AdminCircles.component',
-  () => () => <main>Admin circles</main>,
-);
-jest.mock(
-  '@/modules/admin/client/components/AdminMessages.component',
-  () => () => <main>Admin messages</main>,
-);
-jest.mock(
+vi.mock('@/modules/admin/client/components/AdminCircles.component', () => ({
+  default: () => <main>Admin circles</main>,
+}));
+vi.mock('@/modules/admin/client/components/AdminMessages.component', () => ({
+  default: () => <main>Admin messages</main>,
+}));
+vi.mock(
   '@/modules/admin/client/components/AdminLocationCorrections.component',
-  () => () => <main>Location corrections</main>,
+  () => ({ default: () => <main>Location corrections</main> }),
 );
-jest.mock(
-  '@/modules/admin/client/components/AdminNewsletter.component',
-  () => () => <main>Admin newsletter</main>,
-);
-jest.mock(
+vi.mock('@/modules/admin/client/components/AdminNewsletter.component', () => ({
+  default: () => <main>Admin newsletter</main>,
+}));
+vi.mock(
   '@/modules/admin/client/components/AdminReferenceThreads.component',
-  () => () => <main>Admin reference threads</main>,
+  () => ({ default: () => <main>Admin reference threads</main> }),
 );
-jest.mock(
-  '@/modules/admin/client/components/AdminSearchUsers.component',
-  () => () => <main>Admin search users</main>,
-);
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () => () => <nav>Staff navigation</nav>,
-);
-jest.mock(
+vi.mock('@/modules/admin/client/components/AdminSearchUsers.component', () => ({
+  default: () => <main>Admin search users</main>,
+}));
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: () => <nav>Staff navigation</nav>,
+}));
+vi.mock(
   '@/modules/admin/client/components/NetworkConnections.component',
   () => ({
     NetworkConnectionSearchPage: () => <main>External connection search</main>,
   }),
 );
-jest.mock(
-  '@/modules/admin/client/components/AdminThreads.component',
-  () => () => <main>Admin threads</main>,
-);
-jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
+vi.mock('@/modules/admin/client/components/AdminThreads.component', () => ({
+  default: () => <main>Admin threads</main>,
+}));
+vi.mock('@/modules/admin/client/components/AdminUser.component', () => {
   function MockAdminUser({ username }: { username?: string }) {
     return <main data-username={username}>Admin user</main>;
   }
-  return MockAdminUser;
+  return { default: MockAdminUser };
 });
-jest.mock(
-  '@/modules/core/client/components/NotFoundPage.component',
-  () => () => <main>Not found</main>,
-);
-jest.mock('@/modules/pages/client/components/Home.component', () => ({
+vi.mock('@/modules/core/client/components/NotFoundPage.component', () => ({
+  default: () => <main>Not found</main>,
+}));
+vi.mock('@/modules/pages/client/components/Home.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
     <main>Home {user?.username || 'guest'}</main>
   ),
 }));
-jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
+vi.mock('@/modules/pages/client/components/Navigation.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
     <main>Navigation {user?.username}</main>
   ),
 }));
-jest.mock(
-  '@/modules/pages/client/components/Contribute.component',
-  () => () => <main>Contribute</main>,
-);
-jest.mock(
+vi.mock('@/modules/pages/client/components/Contribute.component', () => ({
+  default: () => <main>Contribute</main>,
+}));
+vi.mock(
   '@/modules/pages/client/components/FaqBugsAndFeatures.component',
-  () => () => <main>FAQ bugs</main>,
+  () => ({ default: () => <main>FAQ bugs</main> }),
 );
-jest.mock(
-  '@/modules/pages/client/components/FaqFoundation.component',
-  () => () => <main>FAQ foundation</main>,
-);
-jest.mock(
-  '@/modules/pages/client/components/FaqGeneral.component',
-  () => () => <main>FAQ general</main>,
-);
-jest.mock(
-  '@/modules/pages/client/components/FaqTechnology.component',
-  () => () => <main>FAQ technology</main>,
-);
-jest.mock('@/modules/pages/client/components/FaqTribes.component', () => () => (
-  <main>FAQ tribes</main>
-));
-jest.mock('@/modules/pages/client/components/Foundation.component', () => ({
+vi.mock('@/modules/pages/client/components/FaqFoundation.component', () => ({
+  default: () => <main>FAQ foundation</main>,
+}));
+vi.mock('@/modules/pages/client/components/FaqGeneral.component', () => ({
+  default: () => <main>FAQ general</main>,
+}));
+vi.mock('@/modules/pages/client/components/FaqTechnology.component', () => ({
+  default: () => <main>FAQ technology</main>,
+}));
+vi.mock('@/modules/pages/client/components/FaqTribes.component', () => ({
+  default: () => <main>FAQ tribes</main>,
+}));
+vi.mock('@/modules/pages/client/components/Foundation.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
     <main>Foundation {user?.username}</main>
   ),
 }));
-jest.mock('@/modules/pages/client/components/Guide.component', () => () => (
-  <main>Guide</main>
-));
-jest.mock('@/modules/pages/client/components/Media.component', () => () => (
-  <main>Media</main>
-));
-jest.mock('@/modules/pages/client/components/Privacy.component', () => () => (
-  <main>Privacy</main>
-));
-jest.mock('@/modules/pages/client/components/Rules.component', () => () => (
-  <main>Rules</main>
-));
-jest.mock('@/modules/pages/client/components/Safety.component', () => () => (
-  <main>Safety</main>
-));
-jest.mock(
-  '@/modules/statistics/client/components/Statistics.component',
-  () => ({
-    __esModule: true,
-    default: ({ isAuthenticated }: StatisticsRouteProps) => (
-      <main>Statistics {isAuthenticated ? 'auth' : 'guest'}</main>
-    ),
-  }),
-);
-jest.mock('@/modules/support/client/components/SupportPage.component', () => ({
+vi.mock('@/modules/pages/client/components/Guide.component', () => ({
+  default: () => <main>Guide</main>,
+}));
+vi.mock('@/modules/pages/client/components/Media.component', () => ({
+  default: () => <main>Media</main>,
+}));
+vi.mock('@/modules/pages/client/components/Privacy.component', () => ({
+  default: () => <main>Privacy</main>,
+}));
+vi.mock('@/modules/pages/client/components/Rules.component', () => ({
+  default: () => <main>Rules</main>,
+}));
+vi.mock('@/modules/pages/client/components/Safety.component', () => ({
+  default: () => <main>Safety</main>,
+}));
+vi.mock('@/modules/statistics/client/components/Statistics.component', () => ({
+  __esModule: true,
+  default: ({ isAuthenticated }: StatisticsRouteProps) => (
+    <main>Statistics {isAuthenticated ? 'auth' : 'guest'}</main>
+  ),
+}));
+vi.mock('@/modules/support/client/components/SupportPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Support {user?.username}</main>,
 }));
-jest.mock('@/modules/pages/client/components/Team.component', () => ({
+vi.mock('@/modules/pages/client/components/Team.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Team {user?.username}</main>,
 }));
-jest.mock(
-  '@/modules/pages/client/components/Volunteering.component',
-  () =>
-    ({ children }: React.PropsWithChildren) => (
-      <main>Volunteering{children}</main>
-    ),
-);
-jest.mock(
-  '@/modules/tribes/client/components/TopicChat',
-  () =>
-    ({ roomName, user }: UserRouteProps & { roomName: string }) => (
-      <p>
-        {roomName} chat for {user?.username ?? 'visitor'}
-        {typeof user?.nostrNpub === 'string' && ` with ${user.nostrNpub}`}
-      </p>
-    ),
-);
-jest.mock('@/modules/users/client/components/Welcome.component', () => () => (
-  <main>Welcome</main>
-));
-jest.mock('@/modules/messages/client/components/Inbox.component', () => ({
+vi.mock('@/modules/pages/client/components/Volunteering.component', () => ({
+  default: ({ children }: React.PropsWithChildren) => (
+    <main>Volunteering{children}</main>
+  ),
+}));
+vi.mock('@/modules/tribes/client/components/TopicChat', () => ({
+  default: ({ roomName, user }: UserRouteProps & { roomName: string }) => (
+    <p>
+      {roomName} chat for {user?.username ?? 'visitor'}
+      {typeof user?.nostrNpub === 'string' && ` with ${user.nostrNpub}`}
+    </p>
+  ),
+}));
+vi.mock('@/modules/users/client/components/Welcome.component', () => ({
+  default: () => <main>Welcome</main>,
+}));
+vi.mock('@/modules/messages/client/components/Inbox.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Inbox {user?.username}</main>,
 }));
-jest.mock('@/modules/messages/client/components/Thread.component', () => ({
+vi.mock('@/modules/messages/client/components/Thread.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Thread {user?.username}</main>,
 }));
-jest.mock(
-  '@/modules/search/client/components/SearchUsers.component',
-  () => () => <main>Search members</main>,
-);
-jest.mock('@/modules/search/client/components/SearchPage.component', () => ({
+vi.mock('@/modules/search/client/components/SearchUsers.component', () => ({
+  default: () => <main>Search members</main>,
+}));
+vi.mock('@/modules/search/client/components/SearchPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Search {user?.username}</main>,
 }));
-jest.mock('@/modules/offers/client/components/OfferShell.component', () => ({
+vi.mock('@/modules/offers/client/components/OfferShell.component', () => ({
   __esModule: true,
   default: ({ children, user }: OfferShellRouteProps) => (
     <main>
@@ -233,17 +214,17 @@ jest.mock('@/modules/offers/client/components/OfferShell.component', () => ({
     </main>
   ),
 }));
-jest.mock(
+vi.mock(
   '@/modules/offers/client/components/OfferRedirectPage.component',
-  () => () => <main>Offer redirect</main>,
+  () => ({ default: () => <main>Offer redirect</main> }),
 );
-jest.mock('@/modules/offers/client/components/OfferHostPage.component', () => ({
+vi.mock('@/modules/offers/client/components/OfferHostPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
     <main>Offer host {user?.username}</main>
   ),
 }));
-jest.mock(
+vi.mock(
   '@/modules/offers/client/components/OfferMeetListPage.component',
   () => ({
     __esModule: true,
@@ -252,7 +233,7 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/offers/client/components/OfferMeetEditPage.component',
   () => ({
     __esModule: true,
@@ -261,60 +242,54 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
-  '@/modules/users/client/components/SigninPage.component',
-  () => () => <main>Sign in</main>,
-);
-jest.mock(
-  '@/modules/users/client/components/SignupPage.component',
-  () => () => <main>Sign up</main>,
-);
-jest.mock(
-  '@/modules/users/client/components/ConfirmEmailPage.component',
-  () => () => <main>Confirm email</main>,
-);
-jest.mock(
+vi.mock('@/modules/users/client/components/SigninPage.component', () => ({
+  default: () => <main>Sign in</main>,
+}));
+vi.mock('@/modules/users/client/components/SignupPage.component', () => ({
+  default: () => <main>Sign up</main>,
+}));
+vi.mock('@/modules/users/client/components/ConfirmEmailPage.component', () => ({
+  default: () => <main>Confirm email</main>,
+}));
+vi.mock(
   '@/modules/users/client/components/ConfirmEmailInvalidPage.component',
-  () => () => <main>Confirm email invalid</main>,
+  () => ({ default: () => <main>Confirm email invalid</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ForgotPasswordPage.component',
-  () => () => <main>Forgot password</main>,
+  () => ({ default: () => <main>Forgot password</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ResetPasswordPage.component',
-  () => () => <main>Reset password</main>,
+  () => ({ default: () => <main>Reset password</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ResetPasswordSuccessPage.component',
-  () => () => <main>Reset password success</main>,
+  () => ({ default: () => <main>Reset password success</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ResetPasswordInvalidPage.component',
-  () => () => <main>Reset password invalid</main>,
+  () => ({ default: () => <main>Reset password invalid</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/RemoveProfilePage.component',
-  () => () => <main>Remove profile</main>,
+  () => ({ default: () => <main>Remove profile</main> }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ProfileSignupPage.component',
-  () => () => <main>Profile signup</main>,
+  () => ({ default: () => <main>Profile signup</main> }),
 );
-jest.mock('@/modules/users/client/components/ProfilePage.component', () => ({
+vi.mock('@/modules/users/client/components/ProfilePage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Profile {user?.username}</main>,
 }));
-jest.mock(
-  '@/modules/users/client/components/ProfileEditAbout.component',
-  () => ({
-    __esModule: true,
-    default: ({ user }: UserRouteProps) => (
-      <main>Profile edit about {user?.username}</main>
-    ),
-  }),
-);
-jest.mock(
+vi.mock('@/modules/users/client/components/ProfileEditAbout.component', () => ({
+  __esModule: true,
+  default: ({ user }: UserRouteProps) => (
+    <main>Profile edit about {user?.username}</main>
+  ),
+}));
+vi.mock(
   '@/modules/users/client/components/ProfileEditLocations.component',
   () => ({
     __esModule: true,
@@ -323,16 +298,13 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
-  '@/modules/users/client/components/ProfileEditPhoto.component',
-  () => ({
-    __esModule: true,
-    default: ({ user }: UserRouteProps) => (
-      <main>Profile edit photo {user?.username}</main>
-    ),
-  }),
-);
-jest.mock(
+vi.mock('@/modules/users/client/components/ProfileEditPhoto.component', () => ({
+  __esModule: true,
+  default: ({ user }: UserRouteProps) => (
+    <main>Profile edit photo {user?.username}</main>
+  ),
+}));
+vi.mock(
   '@/modules/users/client/components/ProfileEditNetworks.component',
   () => ({
     __esModule: true,
@@ -341,7 +313,7 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ProfileEditAccount.component',
   () => ({
     __esModule: true,
@@ -350,7 +322,7 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/contacts/client/components/ContactAddPage.component',
   () => ({
     __esModule: true,
@@ -359,7 +331,7 @@ jest.mock(
     ),
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/contacts/client/components/ContactConfirmPage.component',
   () => ({
     __esModule: true,
@@ -368,7 +340,7 @@ jest.mock(
     ),
   }),
 );
-jest.mock('@/modules/tribes/client/components/TribesPage.component', () => ({
+vi.mock('@/modules/tribes/client/components/TribesPage.component', () => ({
   __esModule: true,
   default: ({ onMembershipUpdated, user }: MembershipRouteProps) => (
     <main>
@@ -382,23 +354,20 @@ jest.mock('@/modules/tribes/client/components/TribesPage.component', () => ({
     </main>
   ),
 }));
-jest.mock(
-  '@/modules/tribes/client/components/TribeDetailPage.component',
-  () => ({
-    __esModule: true,
-    default: ({ onMembershipUpdated, user }: MembershipRouteProps) => (
-      <main>
-        Circle detail {user?.username || 'guest'}
-        <button
-          type="button"
-          onClick={() => onMembershipUpdated({ user: { username: 'updated' } })}
-        >
-          Update detail membership
-        </button>
-      </main>
-    ),
-  }),
-);
+vi.mock('@/modules/tribes/client/components/TribeDetailPage.component', () => ({
+  __esModule: true,
+  default: ({ onMembershipUpdated, user }: MembershipRouteProps) => (
+    <main>
+      Circle detail {user?.username || 'guest'}
+      <button
+        type="button"
+        onClick={() => onMembershipUpdated({ user: { username: 'updated' } })}
+      >
+        Update detail membership
+      </button>
+    </main>
+  ),
+}));
 /* eslint-enable react/display-name */
 
 function renderRoute(

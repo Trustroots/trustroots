@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Feedback from '@/modules/experiences/client/components/create-experience/Feedback';
@@ -62,7 +61,7 @@ describe('<Feedback />', () => {
   });
 
   it('calls onChangeFeedback with textarea values', () => {
-    const onChangeFeedback = jest.fn();
+    const onChangeFeedback = vi.fn();
     renderFeedback({ feedback: '', onChangeFeedback });
 
     fireEvent.change(screen.getByLabelText(/Leave your public feedback here/), {

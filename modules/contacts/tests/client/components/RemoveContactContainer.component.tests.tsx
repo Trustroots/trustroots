@@ -1,19 +1,18 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import type RemoveContact from '@/modules/contacts/client/components/RemoveContact';
 
-const removeMock = jest.mocked(contactsApi.remove);
+const removeMock = vi.mocked(contactsApi.remove);
 
-jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
-  remove: jest.fn(),
+vi.mock('@/modules/contacts/client/api/contacts.api', () => ({
+  remove: vi.fn(),
 }));
 
-jest.mock('@/modules/contacts/client/components/RemoveContact', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/contacts/client/components/RemoveContact', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockRemoveContact({
     inProgress,
     onCancel,
@@ -29,7 +28,7 @@ jest.mock('@/modules/contacts/client/components/RemoveContact', () => {
       </div>
     );
   }
-  return MockRemoveContact;
+  return { default: MockRemoveContact };
 });
 
 describe('<RemoveContactContainer />', () => {
@@ -38,8 +37,8 @@ describe('<RemoveContactContainer />', () => {
   });
 
   it('removes the contact and calls onSuccess after the API request resolves', async () => {
-    const onSuccess = jest.fn();
-    const onCancel = jest.fn();
+    const onSuccess = vi.fn();
+    const onCancel = vi.fn();
     removeMock.mockResolvedValue();
 
     render(
@@ -64,7 +63,7 @@ describe('<RemoveContactContainer />', () => {
   });
 
   it('re-enables the dialog when removing fails', async () => {
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     removeMock.mockRejectedValue(new Error('offline'));
 
     render(
@@ -73,7 +72,7 @@ describe('<RemoveContactContainer />', () => {
         contact={{ _id: 'contact-1' }}
         show
         onSuccess={onSuccess}
-        onCancel={jest.fn()}
+        onCancel={vi.fn()}
       />,
     );
 

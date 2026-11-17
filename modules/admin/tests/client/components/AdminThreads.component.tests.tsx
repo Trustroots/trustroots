@@ -7,7 +7,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import {
   getThreads,
@@ -15,17 +14,19 @@ import {
 } from '@/modules/admin/client/api/threads.api';
 import { getUser } from '@/modules/admin/client/api/users.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/threads.api');
-jest.mock('@/modules/admin/client/api/users.api');
-const threads = jest.mocked(getThreads);
-const user = jest.mocked(getUser);
+vi.mock('@/modules/admin/client/api/threads.api');
+vi.mock('@/modules/admin/client/api/users.api');
+const threads = vi.mocked(getThreads);
+const user = vi.mocked(getUser);
 const id = '111111111111111111111111';
 const alice = { _id: id, username: 'alice', displayName: 'Alice Example' };
 const bob = {
@@ -47,7 +48,7 @@ const thread: AdminThread = {
   ],
 };
 beforeEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   window.history.replaceState({}, '', '/admin/threads?username=alice');
   threads.mockResolvedValue([thread]);
 });

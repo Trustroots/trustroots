@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { readOutreachSource } from '@trustroots/analytics/client';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import OfferStatusButton from '@/modules/offers/client/components/OfferStatusButton';

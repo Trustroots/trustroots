@@ -8,7 +8,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Thread from '@/modules/messages/client/components/Thread.component';
@@ -36,14 +35,14 @@ const render = (ui: React.ReactElement) =>
   rtlRender(ui, { wrapper: analytics.wrapper });
 
 const api = {
-  users: { fetch: jest.mocked(usersAPI.fetch) },
+  users: { fetch: vi.mocked(usersAPI.fetch) },
   messages: {
-    fetchMessages: jest.mocked(messagesAPI.fetchMessages),
-    sendMessage: jest.mocked(messagesAPI.sendMessage),
-    markRead: jest.mocked(messagesAPI.markRead),
+    fetchMessages: vi.mocked(messagesAPI.fetchMessages),
+    sendMessage: vi.mocked(messagesAPI.sendMessage),
+    markRead: vi.mocked(messagesAPI.markRead),
   },
 };
-const updateUnreadCount = jest.mocked(updateUnreadMessageCount);
+const updateUnreadCount = vi.mocked(updateUnreadMessageCount);
 const showThread = ({ username, userId }: typeof routeParams) =>
   window.history.pushState(
     {},
@@ -51,47 +50,50 @@ const showThread = ({ username, userId }: typeof routeParams) =>
     `/messages/${username}${userId ? `?userId=${userId}` : ''}`,
   );
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/modules/messages/client/api/messages.api');
-jest.mock(
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('@/modules/messages/client/api/messages.api');
+vi.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
 let mockIsExtraSmall = true;
-jest.mock('@/modules/core/client/hooks/use-media-query', () => ({
-  ...jest.requireActual<object>('@/modules/core/client/hooks/use-media-query'),
+vi.mock('@/modules/core/client/hooks/use-media-query', async () => ({
+  ...(await vi.importActual<object>(
+    '@/modules/core/client/hooks/use-media-query',
+  )),
   __esModule: true,
   default: () => mockIsExtraSmall,
 }));
-jest.mock('@/modules/users/client/components/Monkeybox', () => {
-  return function MockMonkeybox() {
-    return <div data-testid="monkeybox" />;
+vi.mock('@/modules/users/client/components/Monkeybox', () => {
+  return {
+    default: function MockMonkeybox() {
+      return <div data-testid="monkeybox" />;
+    },
   };
 });
-jest.mock('@/modules/support/client/components/ReportMember.component', () => {
+vi.mock('@/modules/support/client/components/ReportMember.component', () => {
   function MockReportMember({ username }: { username?: string }) {
     return <button type="button">Report {username}</button>;
   }
-  return MockReportMember;
+  return { default: MockReportMember };
 });
-jest.mock('@/modules/users/client/components/BlockMember.component', () => {
+vi.mock('@/modules/users/client/components/BlockMember.component', () => {
   function MockBlockMember({ username }: { username?: string }) {
     return <button type="button">Block {username}</button>;
   }
-  return MockBlockMember;
+  return { default: MockBlockMember };
 });
-jest.mock(
-  '@/modules/references-thread/client/components/ReferenceThread',
-  () => {
-    function MockReferenceThread({ userToId }: { userToId: string }) {
-      return <div>References for {userToId}</div>;
-    }
-    return MockReferenceThread;
-  },
-);
-jest.mock('@/modules/core/client/components/TrEditor', () => {
+vi.mock('@/modules/references-thread/client/components/ReferenceThread', () => {
+  function MockReferenceThread({ userToId }: { userToId: string }) {
+    return <div>References for {userToId}</div>;
+  }
+  return { default: MockReferenceThread };
+});
+vi.mock('@/modules/core/client/components/TrEditor', () => {
   function MockTrEditor({
     id,
     onChange,
@@ -109,7 +111,7 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-  return MockTrEditor;
+  return { default: MockTrEditor };
 });
 
 const me: React.ComponentProps<typeof Thread>['user'] = {
@@ -147,7 +149,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.localStorage.clear();
 });
 
@@ -194,10 +196,10 @@ describe('<Thread>', () => {
     const visualViewport = {
       height: 500.4,
       offsetTop: 20.2,
-      addEventListener: jest.fn((event: string, listener: () => void) => {
+      addEventListener: vi.fn((event: string, listener: () => void) => {
         viewportListeners[event] = listener;
       }),
-      removeEventListener: jest.fn(),
+      removeEventListener: vi.fn(),
     };
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
@@ -712,18 +714,18 @@ describe('<Thread>', () => {
     render(<Thread user={me} profileMinimumLength={0} />);
 
     const message = await screen.findByText('Only message');
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     try {
       fireEvent.scroll(message.closest('.thread-messages')!);
-      act(() => jest.runOnlyPendingTimers());
+      act(() => vi.runOnlyPendingTimers());
       expect(api.messages.fetchMessages).toHaveBeenCalledTimes(1);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('displays an explicit rate-limit alert when send fails with 429', async () => {
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
     api.messages.sendMessage.mockRejectedValueOnce({
       response: { status: 429 },
@@ -753,7 +755,7 @@ describe('<Thread>', () => {
   });
 
   it('displays a generic alert when send fails without a rate limit', async () => {
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
     api.messages.sendMessage.mockRejectedValueOnce({
       response: { status: 500 },

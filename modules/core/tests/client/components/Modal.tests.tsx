@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import {
   Modal,
@@ -45,7 +44,7 @@ function Dialog({
 
 describe('Modal', () => {
   it('is a dialog labelled by its title, with its parts marked', async () => {
-    render(<Dialog onClose={jest.fn()} />);
+    render(<Dialog onClose={vi.fn()} />);
     const dialog = screen.getByRole('dialog', { name: 'Leave this circle?' });
     expect(dialog).toHaveAttribute('data-slot', 'modal');
     expect(dialog).toHaveAttribute('data-size', 'md');
@@ -57,12 +56,12 @@ describe('Modal', () => {
   });
 
   it('focuses the given element instead', async () => {
-    render(<Dialog onClose={jest.fn()} focusField />);
+    render(<Dialog onClose={vi.fn()} focusField />);
     await waitFor(() => expect(screen.getByLabelText('Reason')).toHaveFocus());
   });
 
   it('closes with Escape and the close button', () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     render(<Dialog onClose={onClose} closeLabel="Close" />);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -71,7 +70,7 @@ describe('Modal', () => {
   });
 
   it('ignores Escape when it is not dismissible, and has no close button', () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     render(<Dialog onClose={onClose} dismissible={false} />);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();

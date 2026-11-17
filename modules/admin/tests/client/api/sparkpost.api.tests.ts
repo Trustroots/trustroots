@@ -7,12 +7,13 @@ import {
   getRecoveryAccounts,
   sendRecovery,
 } from '@/modules/admin/client/api/sparkpost.api';
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 it('fetches read-only diagnostics with bounded request options', async () => {
-  jest.mocked(axios.get).mockResolvedValue({ data: { fixture: true } });
+  vi.mocked(axios.get).mockResolvedValue({ data: { fixture: true } });
   await expect(getSparkpostOverview('7')).resolves.toEqual({ fixture: true });
   expect(axios.get).toHaveBeenLastCalledWith('/api/admin/sparkpost/overview', {
     params: { days: '7' },
@@ -29,8 +30,8 @@ it('fetches read-only diagnostics with bounded request options', async () => {
 });
 
 it('fetches cursor pages and account lists, and posts only selected recovery IDs', async () => {
-  jest.mocked(axios.get).mockResolvedValue({ data: { candidates: [] } });
-  jest.mocked(axios.post).mockResolvedValue({ data: { results: [] } });
+  vi.mocked(axios.get).mockResolvedValue({ data: { candidates: [] } });
+  vi.mocked(axios.post).mockResolvedValue({ data: { results: [] } });
   await getSparkpostEvents('2026-10-30', 'next');
   expect(axios.get).toHaveBeenLastCalledWith('/api/admin/sparkpost/events', {
     params: { date: '2026-10-30', cursor: 'next' },

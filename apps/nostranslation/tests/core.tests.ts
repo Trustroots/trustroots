@@ -1,4 +1,4 @@
-/** @jest-environment node */
+/** @vitest-environment node */
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import { catalogue, digest } from '../server/catalogue.mts';
 import { validateTranslation } from '../shared.ts';
@@ -22,7 +22,7 @@ const url = 'https://translation-api.example/api/reviews';
 const response = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
 const fakeFetch = (body: unknown, status = 200) =>
-  jest.fn(() => response(body, status)) as unknown as typeof fetch;
+  vi.fn(() => response(body, status)) as unknown as typeof fetch;
 
 function batch(): Submission {
   const entry = catalogue('de', snapshot()).entries[0];
@@ -193,7 +193,7 @@ describe('translation formats and catalogue', () => {
 
 describe('authenticated human review', () => {
   it('uses the deployed identity endpoint by default', async () => {
-    const mocked = jest
+    const mocked = vi
       .spyOn(globalThis, 'fetch')
       .mockImplementation(fakeFetch({ names: { fictional: pubkey } }));
     await verifyIdentity('fictional', pubkey);
@@ -397,13 +397,13 @@ describe('durable draft and PR recovery', () => {
 
   function service(existing?: string) {
     const repo = {
-      load: jest.fn(async () => snapshot()),
-      publish: jest.fn(
+      load: vi.fn(async () => snapshot()),
+      publish: vi.fn(
         async () => 'https://github.com/Trustroots/trustroots/pull/99999',
       ),
-      existingPR: jest.fn(async () => existing),
+      existingPR: vi.fn(async () => existing),
     };
-    const identity = jest.fn(async () => {});
+    const identity = vi.fn(async () => {});
     return {
       repo,
       identity,

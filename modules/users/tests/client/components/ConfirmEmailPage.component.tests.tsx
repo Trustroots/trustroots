@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ConfirmEmailPage from '@/modules/users/client/components/ConfirmEmailPage.component';
@@ -16,15 +15,17 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 const analytics = fakeAnalytics();
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  broadcastClientEvent: jest.fn(),
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  broadcastClientEvent: vi.fn(),
 }));
-const mockedAuthApi = jest.mocked(authApi);
-const mockedClientRuntime = jest.mocked(clientRuntime);
+const mockedAuthApi = vi.mocked(authApi);
+const mockedClientRuntime = vi.mocked(clientRuntime);
 const details = {
   currentEmail: 'previous@example.org',
   newEmail: 'new@example.org',
@@ -114,7 +115,7 @@ describe('ConfirmEmailPage', () => {
     ).toBeEnabled();
   });
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     window.history.pushState({}, '', '/confirm-email/opaque-token');
     mockedAuthApi.getEmailConfirmationDetails.mockResolvedValue(details);
     mockedAuthApi.confirmEmail.mockResolvedValue({

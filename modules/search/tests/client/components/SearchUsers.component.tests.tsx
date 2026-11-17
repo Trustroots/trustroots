@@ -1,27 +1,30 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
 import type { UserProfile } from '@/modules/users/client/types';
 
 type MockSearchResponse = { data: UserProfile[] | null };
-const mockSearchUsers = jest.fn<
-  Promise<MockSearchResponse>,
-  [query: string, connectionsOnly: boolean]
->();
+const mockSearchUsers =
+  vi.fn<
+    (
+      ...args: [query: string, connectionsOnly: boolean]
+    ) => Promise<MockSearchResponse>
+  >();
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/search-users.api.js', () => ({
+vi.mock('@/modules/users/client/api/search-users.api.js', () => ({
   searchUsers: (query: string, connectionsOnly: boolean) =>
     mockSearchUsers(query, connectionsOnly),
 }));
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<SearchUsers />', () => {

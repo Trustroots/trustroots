@@ -26,9 +26,9 @@ it('normalises page wheel input at the original pointer position and cleans up',
     clientWidth: { value: 600 },
   });
   const canvas = screen.getByTestId('canvas');
-  const received = jest.fn();
+  const received = vi.fn();
   canvas.addEventListener('wheel', received);
-  const removeListener = jest.spyOn(surface, 'removeEventListener');
+  const removeListener = vi.spyOn(surface, 'removeEventListener');
   const original = new WheelEvent('wheel', {
     bubbles: true,
     cancelable: true,

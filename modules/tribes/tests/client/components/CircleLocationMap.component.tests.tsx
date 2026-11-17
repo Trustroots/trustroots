@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom';
 import React from 'react';
 import {
   act,
@@ -16,42 +15,42 @@ import CircleLocationMap, {
 import { useCircleMapEvents } from '@/modules/tribes/client/hooks/useCircleMapEvents';
 import type NostrService from '@/modules/search/client/services/nostr.client.service';
 
-jest.mock('leaflet', () => {
+vi.mock('leaflet', () => {
   const map = {
-    setView: jest.fn().mockReturnThis(),
-    remove: jest.fn(),
-    fitBounds: jest.fn(),
-    on: jest.fn(),
-    setMinZoom: jest.fn(),
-    getCenter: jest.fn(() => ({ lat: 12, lng: 34 })),
-    getZoom: jest.fn(() => 6),
+    setView: vi.fn().mockReturnThis(),
+    remove: vi.fn(),
+    fitBounds: vi.fn(),
+    on: vi.fn(),
+    setMinZoom: vi.fn(),
+    getCenter: vi.fn(() => ({ lat: 12, lng: 34 })),
+    getZoom: vi.fn(() => 6),
   };
-  const group = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
+  const group = { addTo: vi.fn().mockReturnThis(), clearLayers: vi.fn() };
   return {
     __esModule: true,
     default: {
-      map: jest.fn(() => map),
-      tileLayer: jest.fn(() => ({ addTo: jest.fn() })),
-      layerGroup: jest.fn(() => group),
-      circleMarker: jest.fn(() => ({
-        bindPopup: jest.fn().mockReturnThis(),
-        on: jest.fn().mockReturnThis(),
-        addTo: jest.fn().mockReturnThis(),
-        openPopup: jest.fn(),
-        getPopup: jest.fn(() => ({ options: { autoPan: true } })),
+      map: vi.fn(() => map),
+      tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
+      layerGroup: vi.fn(() => group),
+      circleMarker: vi.fn(() => ({
+        bindPopup: vi.fn().mockReturnThis(),
+        on: vi.fn().mockReturnThis(),
+        addTo: vi.fn().mockReturnThis(),
+        openPopup: vi.fn(),
+        getPopup: vi.fn(() => ({ options: { autoPan: true } })),
       })),
-      latLngBounds: jest.fn(value => value),
+      latLngBounds: vi.fn(value => value),
     },
   };
 });
-jest.mock('@/modules/core/client/utils/map', () => ({
+vi.mock('@/modules/core/client/utils/map', () => ({
   getRasterMapTiles: () => ({
     url: 'https://tiles.test/{z}/{x}/{y}',
     options: {},
   }),
 }));
-jest.mock('@/modules/core/client/components/DeviceLocationButton', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/DeviceLocationButton', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   type mockButtonProps = {
     onRequest?: () => void;
     onLocation: (location: { lat: number; lng: number }) => void;
@@ -123,28 +122,28 @@ const props = {
 
 describe('shared circle map', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     sessionStorage.clear();
   });
 
   it('restores the chosen view when opening another circle map', () => {
     const { unmount } = render(<CircleLocationMap {...props} />);
-    const map = jest.mocked(L.map).mock.results[0].value;
+    const map = vi.mocked(L.map).mock.results[0].value;
     const moveEnd = map.on.mock.calls.find(
       ([name]: [string]) => name === 'moveend',
     )[1];
     act(() => moveEnd());
     unmount();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     render(<CircleLocationMap {...props} />);
-    const nextMap = jest.mocked(L.map).mock.results[0].value;
+    const nextMap = vi.mocked(L.map).mock.results[0].value;
     expect(nextMap.setView).toHaveBeenCalledWith([12, 34], 6);
     expect(nextMap.fitBounds).not.toHaveBeenCalled();
   });
 
   it('does not save the automatic initial fit as a chosen view', () => {
-    jest.mocked(L.map)(document.createElement('div'));
-    const map = jest.mocked(L.map).mock.results[0].value;
+    vi.mocked(L.map)(document.createElement('div'));
+    const map = vi.mocked(L.map).mock.results[0].value;
     map.fitBounds.mockImplementationOnce(() => {
       const moveEnd = map.on.mock.calls.find(
         ([name]: [string]) => name === 'moveend',
@@ -156,19 +155,19 @@ describe('shared circle map', () => {
   });
 
   it('continues to work if session storage is unavailable', () => {
-    const getItem = jest
+    const getItem = vi
       .spyOn(Storage.prototype, 'getItem')
       .mockImplementation(() => {
         throw new Error('unavailable');
       });
-    const setItem = jest
+    const setItem = vi
       .spyOn(Storage.prototype, 'setItem')
       .mockImplementation(() => {
         throw new Error('unavailable');
       });
     try {
       render(<CircleLocationMap {...props} />);
-      const map = jest.mocked(L.map).mock.results[0].value;
+      const map = vi.mocked(L.map).mock.results[0].value;
       const moveEnd = map.on.mock.calls.find(
         ([name]: [string]) => name === 'moveend',
       )[1];
@@ -183,7 +182,7 @@ describe('shared circle map', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} locations={[]} state="loading" />,
     );
-    const map = jest.mocked(L.map).mock.results[0].value;
+    const map = vi.mocked(L.map).mock.results[0].value;
     rerender(<CircleLocationMap {...props} state="loading" />);
     const second = { ...location, id: 'second', latitude: -30, longitude: -80 };
     const locations = [location, second];
@@ -211,7 +210,7 @@ describe('shared circle map', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} state="loading" />,
     );
-    const map = jest.mocked(L.map).mock.results[0].value;
+    const map = vi.mocked(L.map).mock.results[0].value;
     const moveStart = map.on.mock.calls.find(
       ([name]: [string]) => name === 'movestart',
     )[1];
@@ -223,7 +222,7 @@ describe('shared circle map', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} locations={[]} state="loading" />,
     );
-    const map = jest.mocked(L.map).mock.results[0].value;
+    const map = vi.mocked(L.map).mock.results[0].value;
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock device location' }),
     );
@@ -233,7 +232,7 @@ describe('shared circle map', () => {
   });
   it('uses the approximate fallback location and zoom after a device failure', () => {
     render(<CircleLocationMap {...props} locations={[]} state="loading" />);
-    const map = jest.mocked(L.map).mock.results[0].value;
+    const map = vi.mocked(L.map).mock.results[0].value;
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock approximate location' }),
     );
@@ -241,18 +240,18 @@ describe('shared circle map', () => {
   });
   it('keeps the selected popup open when locations are refreshed', () => {
     const { rerender } = render(<CircleLocationMap {...props} />);
-    const marker = jest.mocked(L.circleMarker).mock.results[0].value;
+    const marker = vi.mocked(L.circleMarker).mock.results[0].value;
     const notify = (name: string) =>
       marker.on.mock.calls.find(([event]: [string]) => event === name)[1]();
     act(() => notify('popupopen'));
     rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
     expect(
-      jest.mocked(L.circleMarker).mock.results[1].value.openPopup,
+      vi.mocked(L.circleMarker).mock.results[1].value.openPopup,
     ).toHaveBeenCalled();
     act(() => notify('popupclose'));
     rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
     expect(
-      jest.mocked(L.circleMarker).mock.results[2].value.openPopup,
+      vi.mocked(L.circleMarker).mock.results[2].value.openPopup,
     ).not.toHaveBeenCalled();
   });
 
@@ -320,7 +319,7 @@ describe('shared circle map', () => {
     rerender(<CircleLocationMap {...props} state="error" />);
     expect(screen.getByText('Unavailable')).toBeInTheDocument();
     unmount();
-    expect(jest.mocked(L.map).mock.results[0].value.remove).toHaveBeenCalled();
+    expect(vi.mocked(L.map).mock.results[0].value.remove).toHaveBeenCalled();
   });
   it('renders labelled popup facts as safe text and handles empty facts', () => {
     const popup = locationPopup({
@@ -338,7 +337,7 @@ describe('shared circle map', () => {
     render(<CircleLocationMap {...props} />);
     const element = screen.getByRole('application');
     Object.defineProperty(element, 'clientWidth', { value: 2500 });
-    const map = jest.mocked(L.map).mock.results.slice(-1)[0].value;
+    const map = vi.mocked(L.map).mock.results.slice(-1)[0].value;
     const resize = map.on.mock.calls
       .filter(([name]: [string]) => name === 'resize')
       .slice(-1)[0][1];
@@ -387,13 +386,13 @@ describe('shared circle relay lifecycle', () => {
     oneose: () => void;
     onclose: () => void;
   };
-  const close = jest.fn();
-  const subscribe = jest.fn((_filters, cb) => {
+  const close = vi.fn();
+  const subscribe = vi.fn((_filters, cb) => {
     callbacks = cb;
     return { close };
   });
-  const connect = jest.fn();
-  const disconnect = jest.fn();
+  const connect = vi.fn();
+  const disconnect = vi.fn();
   const service = { connect, disconnect } as unknown as NostrService;
   function Consumer({ own }: { own?: boolean }) {
     const { events, state } = useCircleMapEvents(service, filters, own);
@@ -404,7 +403,7 @@ describe('shared circle relay lifecycle', () => {
     );
   }
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     connect.mockResolvedValue({ subscribe });
   });
   it('subscribes once, replaces repeated ids, handles lifecycle and closes on unmount', async () => {

@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SignupPage from '@/modules/users/client/components/SignupPage.component';
@@ -18,22 +17,24 @@ import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('lodash/shuffle', () => jest.fn(items => items));
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/tribes/client/api/tribes.api');
-const signup = jest.mocked(authApi.signup);
-const validateSignup = jest.mocked(authApi.validateSignup);
-const readTribes = jest.mocked(tribesApi.read);
-const getTribe = jest.mocked(tribesApi.get);
-const joinTribe = jest.mocked(tribesApi.join);
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  broadcastClientEvent: jest.fn(),
+vi.mock('lodash/shuffle', () => ({ default: vi.fn(items => items) }));
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
+const signup = vi.mocked(authApi.signup);
+const validateSignup = vi.mocked(authApi.validateSignup);
+const readTribes = vi.mocked(tribesApi.read);
+const getTribe = vi.mocked(tribesApi.get);
+const joinTribe = vi.mocked(tribesApi.join);
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  broadcastClientEvent: vi.fn(),
 }));
-jest.mock('@/modules/tribes/client/components/JoinButton', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/tribes/client/components/JoinButton', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockJoinButton({
     tribe,
@@ -63,7 +64,7 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => {
     );
   }
 
-  return MockJoinButton;
+  return { default: MockJoinButton };
 });
 
 const analytics = fakeAnalytics();
@@ -78,7 +79,7 @@ describe('SignupPage', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.pushState({}, '', '/signup');
     readTribes.mockResolvedValue(suggestedTribes);
     // Keep the default missing-circle response persistent so per-test circle
@@ -113,7 +114,7 @@ describe('SignupPage', () => {
 
   it('focuses the primary field on desktop', () => {
     const originalMatchMedia = window.matchMedia;
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     try {
       renderPage();
       expect(screen.getByLabelText('First Name')).toHaveFocus();
@@ -625,7 +626,7 @@ describe('SignupPage', () => {
   });
 
   it('shows the server explanation for a reserved username', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     validateSignup.mockResolvedValue({
       valid: false,
       message: 'This name is reserved.',
@@ -637,16 +638,16 @@ describe('SignupPage', () => {
       });
       fireEvent.blur(screen.getByLabelText('Username'));
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
       expect(await screen.findByText('This name is reserved.')).toBeVisible();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('checks username availability after debounce', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     try {
       renderPage();
@@ -657,7 +658,7 @@ describe('SignupPage', () => {
       fireEvent.blur(screen.getByLabelText('Username'));
 
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
 
       await waitFor(() => {
@@ -666,12 +667,12 @@ describe('SignupPage', () => {
         });
       });
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('shows a taken username message after validation', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     validateSignup.mockResolvedValue({ valid: false });
 
     try {
@@ -683,19 +684,19 @@ describe('SignupPage', () => {
       fireEvent.blur(screen.getByLabelText('Username'));
 
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
 
       expect(
         await screen.findByText('This username is already in use.'),
       ).toBeVisible();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('allows signup when username validation fails unexpectedly', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     validateSignup.mockRejectedValue(new Error('validation offline'));
     signup.mockResolvedValue({
       _id: 'user-1',
@@ -710,7 +711,7 @@ describe('SignupPage', () => {
       fireEvent.blur(screen.getByLabelText('Username'));
 
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
 
       await waitFor(() => {
@@ -719,13 +720,13 @@ describe('SignupPage', () => {
         });
       });
 
-      jest.useRealTimers();
+      vi.useRealTimers();
 
       fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
       expect(await screen.findByRole('button', { name: 'Skip' })).toBeVisible();
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
@@ -948,7 +949,7 @@ describe('SignupPage', () => {
   });
 
   it('ignores username validation updates after unmount', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     let resolveValidation!: (
       value: Awaited<ReturnType<typeof authApi.validateSignup>>,
@@ -968,7 +969,7 @@ describe('SignupPage', () => {
       fireEvent.blur(screen.getByLabelText('Username'));
 
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
 
       unmount();
@@ -978,12 +979,12 @@ describe('SignupPage', () => {
         await Promise.resolve();
       });
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 
   it('ignores validation failures after unmount', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let rejectValidation!: (error: Error) => void;
     validateSignup.mockReturnValue(
       new Promise((resolve, reject) => {
@@ -998,7 +999,7 @@ describe('SignupPage', () => {
       });
       fireEvent.blur(screen.getByLabelText('Username'));
       await act(async () => {
-        jest.advanceTimersByTime(1000);
+        vi.advanceTimersByTime(1000);
       });
       unmount();
       rejectValidation(new Error('late failure'));
@@ -1006,7 +1007,7 @@ describe('SignupPage', () => {
         await Promise.resolve();
       });
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
     }
   });
 });

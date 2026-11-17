@@ -5,7 +5,7 @@ import L from 'leaflet';
 import CircleLocationMap from '@/modules/tribes/client/components/CircleLocationMap';
 import { AuthProvider } from '@/modules/core/client/react-app/auth';
 
-jest.mock('@/modules/core/client/utils/map', () => ({
+vi.mock('@/modules/core/client/utils/map', () => ({
   getRasterMapTiles: () => ({
     url: 'https://tiles.test/{z}/{x}/{y}',
     options: {},
@@ -13,9 +13,10 @@ jest.mock('@/modules/core/client/utils/map', () => ({
 }));
 
 it('preserves a panned view when restoring a popup, but pans on an explicit reopen', () => {
-  jest.replaceProperty(L.Browser, 'svg', true);
-  const mapSpy = jest.spyOn(L, 'map');
-  const markerSpy = jest.spyOn(L, 'circleMarker');
+  const svg = L.Browser.svg;
+  L.Browser.svg = true;
+  const mapSpy = vi.spyOn(L, 'map');
+  const markerSpy = vi.spyOn(L, 'circleMarker');
   const location = {
     id: 'example',
     name: 'Example ride',
@@ -50,7 +51,7 @@ it('preserves a panned view when restoring a popup, but pans on an explicit reop
       map.panTo([0, 100], { animate: false });
     });
     const centre = map.getCenter();
-    const pan = jest.spyOn(map, 'panBy').mockReturnValue(map);
+    const pan = vi.spyOn(map, 'panBy').mockReturnValue(map);
     rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
     const replacement = markerSpy.mock.results[1].value as L.CircleMarker;
     expect(replacement.isPopupOpen()).toBe(true);
@@ -63,7 +64,8 @@ it('preserves a panned view when restoring a popup, but pans on an explicit reop
     expect(pan).toHaveBeenCalled();
   } finally {
     unmount();
-    jest.restoreAllMocks();
+    L.Browser.svg = svg;
+    vi.restoreAllMocks();
   }
 });
 

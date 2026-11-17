@@ -1,12 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 
-const mockScaleControl = jest.fn();
+const mockScaleControl = vi.fn();
 
-jest.mock('react-map-gl/mapbox', () => ({
+vi.mock('react-map-gl/mapbox', () => ({
   __esModule: true,
   ScaleControl: (props: unknown) => {
     mockScaleControl(props);

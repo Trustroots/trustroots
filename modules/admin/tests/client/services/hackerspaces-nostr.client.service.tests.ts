@@ -121,7 +121,7 @@ describe('NIP-41 SpaceAPI place events', () => {
     );
   });
   it('uses display defaults when optional details are missing and Plus Codes fail', () => {
-    const encode = jest
+    const encode = vi
       .spyOn(OpenLocationCode.prototype, 'encode')
       .mockImplementation(() => {
         throw new Error('optional encoding unavailable');

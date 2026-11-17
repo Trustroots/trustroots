@@ -6,15 +6,17 @@ import {
   type ReferenceThreadData,
 } from '@/modules/references-thread/client/api/reference-thread.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const RealAxiosHeaders =
-  jest.requireActual<typeof import('axios')>('axios').AxiosHeaders;
+const RealAxiosHeaders = (
+  await vi.importActual<typeof import('axios')>('axios')
+).AxiosHeaders;
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('reference-thread api', () => {
@@ -30,7 +32,7 @@ describe('reference-thread api', () => {
       status: 200,
       statusText: 'OK',
     };
-    jest.mocked(axios.get).mockResolvedValueOnce(response);
+    vi.mocked(axios.get).mockResolvedValueOnce(response);
 
     await expect(get('user-1')).resolves.toBe(data);
     expect(axios.get).toHaveBeenCalledWith('/api/references-thread/user-1');
@@ -45,7 +47,7 @@ describe('reference-thread api', () => {
       status: 200,
       statusText: 'OK',
     };
-    jest.mocked(axios.post).mockResolvedValueOnce(response);
+    vi.mocked(axios.post).mockResolvedValueOnce(response);
 
     await expect(send('yes', 'user-1')).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith('/api/references-thread', {

@@ -1,12 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import LanguageList from '@/modules/users/client/components/LanguageList';
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 
-const useLanguagesQueryMock = jest.mocked(useLanguagesQuery);
+const useLanguagesQueryMock = vi.mocked(useLanguagesQuery);
 
 function queryResult(
   data: Record<string, string> | undefined,
@@ -53,10 +52,10 @@ function queryResult(
   return result as unknown as ReturnType<typeof useLanguagesQuery>;
 }
 
-jest.mock('@/modules/core/client/api/languages.api');
+vi.mock('@/modules/core/client/api/languages.api');
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<LanguageList />', () => {

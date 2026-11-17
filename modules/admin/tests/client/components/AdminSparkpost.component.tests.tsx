@@ -6,34 +6,27 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminSparkpost from '@/modules/admin/client/components/AdminSparkpost.component';
 import * as api from '@/modules/admin/client/api/sparkpost.api';
 import type { SparkpostOverview } from '@/modules/admin/shared/sparkpost';
 
-jest.mock('@/modules/admin/client/api/sparkpost.api');
-jest.mock(
-  '@/modules/admin/client/components/SignupRecovery.component',
-  () =>
-    function Accounts() {
-      return <p>Unconfirmed account list</p>;
-    },
-);
-jest.mock(
-  '@/modules/admin/client/components/SparkpostDaily.component',
-  () =>
-    function Daily() {
-      return <p>Daily inspector</p>;
-    },
-);
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () =>
-    function MockAdminHeader() {
-      return <nav>Admin navigation</nav>;
-    },
-);
-const mocked = jest.mocked(api);
+vi.mock('@/modules/admin/client/api/sparkpost.api');
+vi.mock('@/modules/admin/client/components/SignupRecovery.component', () => ({
+  default: function Accounts() {
+    return <p>Unconfirmed account list</p>;
+  },
+}));
+vi.mock('@/modules/admin/client/components/SparkpostDaily.component', () => ({
+  default: function Daily() {
+    return <p>Daily inspector</p>;
+  },
+}));
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: function MockAdminHeader() {
+    return <nav>Admin navigation</nav>;
+  },
+}));
+const mocked = vi.mocked(api);
 const date = new Date().toISOString().slice(0, 10);
 const overview: SparkpostOverview = {
   provider: 'ready',
@@ -75,8 +68,8 @@ beforeEach(() => {
   mocked.getSparkpostOverview.mockResolvedValue(overview);
 });
 afterEach(() => {
-  jest.resetAllMocks();
-  jest.restoreAllMocks();
+  vi.resetAllMocks();
+  vi.restoreAllMocks();
 });
 
 it('shows loading, daily metrics and a read-only preview with UTC inputs', async () => {
@@ -233,9 +226,7 @@ it.each([
 );
 
 it('clamps a future end to now and updates the displayed UTC value', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
+  vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
   mocked.getSparkpostPreview.mockResolvedValue({
     from: '2026-10-28T07:30:00.000Z',
     to: '2026-10-31T12:34:56.789Z',
@@ -270,9 +261,7 @@ it('clamps a future end to now and updates the displayed UTC value', async () =>
 });
 
 it('clamps a future start too and explains when the resulting range is empty', async () => {
-  jest
-    .spyOn(Date, 'now')
-    .mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
+  vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
   render(<AdminSparkpost />);
   await screen.findByText('12');
   fireEvent.change(screen.getByLabelText('From (UTC, inclusive)'), {

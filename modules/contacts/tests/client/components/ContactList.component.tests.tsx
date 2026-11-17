@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
@@ -25,7 +24,7 @@ function resolvedContacts(entries: ContactListEntry[]): ContactListData {
   return Object.assign(entries, { $resolved: true });
 }
 
-jest.mock(
+vi.mock(
   '@/modules/contacts/client/components/ContactListPresentational',
   () => {
     function MockContactListPresentational({
@@ -48,7 +47,7 @@ jest.mock(
         </div>
       );
     }
-    return MockContactListPresentational;
+    return { default: MockContactListPresentational };
   },
 );
 
@@ -93,7 +92,7 @@ describe('<ContactList />', () => {
   });
 
   it('offers an accessible retry when loading contacts fails', () => {
-    const onRetry = jest.fn();
+    const onRetry = vi.fn();
     render(
       <ContactList
         appUser={appUser}

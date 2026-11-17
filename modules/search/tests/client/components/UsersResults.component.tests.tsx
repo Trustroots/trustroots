@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import UsersResults from '@/modules/search/client/components/UsersResults';
 import type { UserProfile } from '@/modules/users/client/types';

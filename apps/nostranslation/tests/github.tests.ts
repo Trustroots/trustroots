@@ -1,4 +1,4 @@
-/** @jest-environment node */
+/** @vitest-environment node */
 import { generateKeyPairSync } from 'node:crypto';
 import {
   GitHubError,
@@ -8,7 +8,7 @@ import {
 import { snapshot } from './fixtures.ts';
 
 function mockFetch() {
-  return jest.fn<Promise<Response>, Parameters<typeof fetch>>();
+  return vi.fn<(...args: Parameters<typeof fetch>) => Promise<Response>>();
 }
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status });
@@ -44,7 +44,7 @@ describe('GitHub-backed translation workflow', () => {
           .Authorization,
       ),
     ).toMatch(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
-    const defaultFetch = jest
+    const defaultFetch = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(json({}, 403));
     await expect(
@@ -244,7 +244,7 @@ describe('GitHub-backed translation workflow', () => {
   });
 
   it('uses native fetch by default and propagates failed reads', async () => {
-    const fetcher = jest
+    const fetcher = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(json({}, 503));
     await expect(

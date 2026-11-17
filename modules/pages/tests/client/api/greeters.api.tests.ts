@@ -5,9 +5,9 @@ import {
   type Greeter,
 } from '@/modules/pages/client/api/greeters.api';
 
-jest.mock('@/modules/core/client/api/http-client.js');
+vi.mock('@/modules/core/client/api/http-client.js');
 
-const mockedGet = jest.mocked(axios.get);
+const mockedGet = vi.mocked(axios.get);
 
 describe('greeters api', () => {
   it('fetches the public greeter roster', async () => {

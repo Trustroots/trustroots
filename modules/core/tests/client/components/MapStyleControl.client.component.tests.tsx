@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
 import type MapStyleButton from '@/modules/core/client/components/Map/MapStyleButton';
@@ -14,11 +13,12 @@ import { getMapBoxToken } from '@/modules/core/client/utils/map';
 
 type MapStyleButtonProps = React.ComponentProps<typeof MapStyleButton>;
 type MapIconProps = { mapboxStyle?: string };
-const mockMapStyleButton = jest.fn<void, [props: MapStyleButtonProps]>();
-const mockMapIcon = jest.fn<void, [props: MapIconProps]>();
-const mockedGetMapBoxToken = jest.mocked(getMapBoxToken);
+const mockMapStyleButton =
+  vi.fn<(...args: [props: MapStyleButtonProps]) => void>();
+const mockMapIcon = vi.fn<(...args: [props: MapIconProps]) => void>();
+const mockedGetMapBoxToken = vi.mocked(getMapBoxToken);
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   withTranslation:
     () =>
     <Props extends object>(Component: React.ComponentType<Props>) => {
@@ -36,10 +36,10 @@ jest.mock('react-i18next', () => ({
     },
 }));
 
-jest.mock('react-map-gl/mapbox', () => ({ useMap: () => ({}) }));
+vi.mock('react-map-gl/mapbox', () => ({ useMap: () => ({}) }));
 
-jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Map/MapStyleButton', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockMapStyleButton(props: MapStyleButtonProps) {
     mockMapStyleButton(props);
@@ -50,20 +50,22 @@ jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
     );
   }
 
-  return MockMapStyleButton;
+  return { default: MockMapStyleButton };
 });
 
-jest.mock('@/modules/core/client/components/Map/MapIcon', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Map/MapIcon', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-  return function MockMapIcon(props: MapIconProps) {
-    mockMapIcon(props);
-    return <div data-testid="map-icon" />;
+  return {
+    default: function MockMapIcon(props: MapIconProps) {
+      mockMapIcon(props);
+      return <div data-testid="map-icon" />;
+    },
   };
 });
 
-jest.mock('@/modules/core/client/utils/map', () => ({
-  getMapBoxToken: jest.fn(),
+vi.mock('@/modules/core/client/utils/map', () => ({
+  getMapBoxToken: vi.fn(),
 }));
 
 describe('<MapStyleControl />', () => {
@@ -77,7 +79,7 @@ describe('<MapStyleControl />', () => {
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_SATELLITE}
-        setMapstyle={jest.fn()}
+        setMapstyle={vi.fn()}
       />,
     );
 
@@ -105,7 +107,7 @@ describe('<MapStyleControl />', () => {
   });
 
   it('updates map style and closes when selecting a style', () => {
-    const setMapstyle = jest.fn();
+    const setMapstyle = vi.fn();
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}
@@ -133,7 +135,7 @@ describe('<MapStyleControl />', () => {
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}
-        setMapstyle={jest.fn()}
+        setMapstyle={vi.fn()}
       />,
     );
 
@@ -159,7 +161,7 @@ describe('<MapStyleControl />', () => {
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}
-        setMapstyle={jest.fn()}
+        setMapstyle={vi.fn()}
       />,
     );
 
@@ -183,7 +185,7 @@ describe('<MapStyleControl />', () => {
     render(
       <MapStyleControl
         mapStyle={{ name: 'Custom style' }}
-        setMapstyle={jest.fn()}
+        setMapstyle={vi.fn()}
       />,
     );
 
@@ -196,9 +198,7 @@ describe('<MapStyleControl />', () => {
   });
 
   it('does not pass a mapbox icon style when OSM is selected', () => {
-    render(
-      <MapStyleControl mapStyle={MAP_STYLE_OSM} setMapstyle={jest.fn()} />,
-    );
+    render(<MapStyleControl mapStyle={MAP_STYLE_OSM} setMapstyle={vi.fn()} />);
 
     expect(mockMapIcon).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -211,7 +211,7 @@ describe('<MapStyleControl />', () => {
   });
 
   it('updates to OSM style and closes when selecting OSM', () => {
-    const setMapstyle = jest.fn();
+    const setMapstyle = vi.fn();
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}
@@ -240,7 +240,7 @@ describe('<MapStyleControl />', () => {
       render(
         <MapStyleControl
           mapStyle={MAP_STYLE_MAPBOX_SATELLITE}
-          setMapstyle={jest.fn()}
+          setMapstyle={vi.fn()}
         />,
       );
 

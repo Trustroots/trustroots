@@ -1,6 +1,5 @@
 import React from 'react';
 import { render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
@@ -28,7 +27,7 @@ describe('<Tribe />', () => {
       <Tribe
         tribe={{ ...tribe, new: true, image: 'hitchhikers.jpg' }}
         user={undefined}
-        onMembershipUpdated={jest.fn<void, [MembershipUpdate]>()}
+        onMembershipUpdated={vi.fn<(...args: [MembershipUpdate]) => void>()}
       />,
     );
 
@@ -50,7 +49,7 @@ describe('<Tribe />', () => {
       <Tribe
         tribe={{ ...tribe, count: 12, new: false }}
         user={undefined}
-        onMembershipUpdated={jest.fn<void, [MembershipUpdate]>()}
+        onMembershipUpdated={vi.fn<(...args: [MembershipUpdate]) => void>()}
       />,
     );
 

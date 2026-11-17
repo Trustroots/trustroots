@@ -1,11 +1,12 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import FlaggedMembers from '../../../client/components/FlaggedMembers.component';
 import * as api from '../../../client/api/support.api';
-jest.mock('../../../client/components/AdminHeader.component', () => () => null);
-jest.mock('../../../client/api/support.api');
-const load = jest.mocked(api.load);
+vi.mock('../../../client/components/AdminHeader.component', () => ({
+  default: () => null,
+}));
+vi.mock('../../../client/api/support.api');
+const load = vi.mocked(api.load);
 const data = {
   items: [
     {
@@ -19,7 +20,7 @@ const data = {
   page: 1,
   hasMore: true,
 };
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 it('shows flagged member links and pages through results', async () => {
   load.mockResolvedValueOnce(data);
   render(<FlaggedMembers />);

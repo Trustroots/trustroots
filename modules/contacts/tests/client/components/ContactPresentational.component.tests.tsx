@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactPresentational from '@/modules/contacts/client/components/ContactPresentational';
@@ -50,7 +49,7 @@ describe('<ContactPresentational />', () => {
   });
 
   it('shows a revoke action for a request the user sent', () => {
-    const onClickRemove = jest.fn();
+    const onClickRemove = vi.fn();
     render(
       <ContactPresentational
         contact={makeContact({ confirmed: false })}

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileTribesTab from '@/modules/users/client/components/ProfileTribesTab.component';
@@ -11,8 +10,8 @@ import type {
 } from '@/modules/users/client/types';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
-jest.mock('@/modules/tribes/client/components/JoinButton', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/tribes/client/components/JoinButton', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockJoinButton({
     tribe,
@@ -20,7 +19,7 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => {
     return <button type="button">Join {tribe.label}</button>;
   }
 
-  return MockJoinButton;
+  return { default: MockJoinButton };
 });
 
 const user: UserProfile = {
@@ -68,7 +67,7 @@ describe('ProfileTribesTab', () => {
     render(
       <ProfileTribesTab
         memberships={memberships}
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -87,7 +86,7 @@ describe('ProfileTribesTab', () => {
 
   it('renders no cards when membership data is empty', () => {
     const { container } = render(
-      <ProfileTribesTab onMembershipUpdated={jest.fn()} user={user} />,
+      <ProfileTribesTab onMembershipUpdated={vi.fn()} user={user} />,
     );
 
     expect(container.querySelectorAll('.tribe')).toHaveLength(0);
@@ -104,7 +103,7 @@ describe('ProfileTribesTab', () => {
             },
           },
         ]}
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );

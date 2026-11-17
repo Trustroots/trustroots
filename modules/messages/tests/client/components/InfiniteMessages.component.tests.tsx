@@ -1,6 +1,5 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
 
@@ -94,17 +93,17 @@ describe('<InfiniteMessages>', function () {
   }
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.clearAllMocks();
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   it('scrolls to the bottom on initial render if content already exists', () => {
     const Component = makeScrollableComponent();
-    const onFetchMore = jest.fn();
+    const onFetchMore = vi.fn();
 
     const { getByTestId, rerender } = render(
       <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
@@ -126,7 +125,7 @@ describe('<InfiniteMessages>', function () {
         <div key="b">second</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     expect(scroller.scrollTop).toBe(80);
   });
@@ -134,7 +133,7 @@ describe('<InfiniteMessages>', function () {
   it('calls fetch more callback when user scrolls to top', () => {
     const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
-    const onFetchMore = jest.fn();
+    const onFetchMore = vi.fn();
 
     const { getByTestId, rerender } = render(
       <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
@@ -154,7 +153,7 @@ describe('<InfiniteMessages>', function () {
         <div key="only">first</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     setScrollMetrics(scroller, {
       scrollHeight: 160,
@@ -166,7 +165,7 @@ describe('<InfiniteMessages>', function () {
     act(() => {
       fireEvent.scroll(scroller);
       flush(onScrollCapture.current);
-      jest.advanceTimersByTime(25);
+      vi.advanceTimersByTime(25);
     });
 
     expect(onFetchMore).toHaveBeenCalledTimes(1);
@@ -176,7 +175,7 @@ describe('<InfiniteMessages>', function () {
   it('does not fetch more messages when scrolled away from the top', () => {
     const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
-    const onFetchMore = jest.fn();
+    const onFetchMore = vi.fn();
 
     const { getByTestId, rerender } = render(
       <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
@@ -196,11 +195,11 @@ describe('<InfiniteMessages>', function () {
         <div key="only">first</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     fireEvent.scroll(scroller);
     flush(onScrollCapture.current);
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     expect(onFetchMore).not.toHaveBeenCalled();
   });
@@ -209,7 +208,7 @@ describe('<InfiniteMessages>', function () {
     const Component = makeScrollableComponent();
 
     const { getByTestId, rerender } = render(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="second">B</div>
         <div key="third">C</div>
       </InfiniteMessages>,
@@ -223,12 +222,12 @@ describe('<InfiniteMessages>', function () {
     });
 
     rerender(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="second">B</div>
         <div key="third">C</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     setScrollMetrics(scroller, {
       scrollHeight: 260,
@@ -237,13 +236,13 @@ describe('<InfiniteMessages>', function () {
     });
 
     rerender(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">A</div>
         <div key="second">B</div>
         <div key="third">C</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     expect(scroller.scrollTop).toBe(60);
   });
@@ -252,7 +251,7 @@ describe('<InfiniteMessages>', function () {
     const Component = makeScrollableComponent();
 
     const { getByTestId, rerender } = render(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">A</div>
       </InfiniteMessages>,
     );
@@ -265,11 +264,11 @@ describe('<InfiniteMessages>', function () {
     });
 
     rerender(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">A</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     setScrollMetrics(scroller, {
       scrollHeight: 210,
@@ -278,21 +277,21 @@ describe('<InfiniteMessages>', function () {
     });
 
     rerender(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">A</div>
         <div key="second">B</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     expect(scroller.scrollTop).toBe(110);
   });
 
   it('registers and unregisters the resize handler', () => {
     const Component = makeScrollableComponent();
-    const onFetchMore = jest.fn();
-    const addEventListener = jest.spyOn(window, 'addEventListener');
-    const removeEventListener = jest.spyOn(window, 'removeEventListener');
+    const onFetchMore = vi.fn();
+    const addEventListener = vi.spyOn(window, 'addEventListener');
+    const removeEventListener = vi.spyOn(window, 'removeEventListener');
 
     const { unmount } = render(
       <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
@@ -313,10 +312,10 @@ describe('<InfiniteMessages>', function () {
 
   it('ignores debounced resize work after unmount', () => {
     const Component = makeScrollableComponent();
-    const addEventListener = jest.spyOn(window, 'addEventListener');
+    const addEventListener = vi.spyOn(window, 'addEventListener');
 
     const { unmount } = render(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">first</div>
       </InfiniteMessages>,
     );
@@ -334,7 +333,7 @@ describe('<InfiniteMessages>', function () {
 
   it('ignores scroll work when the component does not expose a ref', () => {
     const onScrollCapture: ScrollCapture = { current: null };
-    const onFetchMore = jest.fn();
+    const onFetchMore = vi.fn();
 
     const ComponentWithoutRef: React.FC<{
       children?: React.ReactNode;
@@ -360,7 +359,7 @@ describe('<InfiniteMessages>', function () {
     expect(() => {
       fireEvent.scroll(getByTestId('scrollable-without-ref'));
       flush(onScrollCapture.current);
-      jest.advanceTimersByTime(25);
+      vi.advanceTimersByTime(25);
     }).not.toThrow();
     expect(onFetchMore).not.toHaveBeenCalled();
   });
@@ -368,10 +367,10 @@ describe('<InfiniteMessages>', function () {
   it('preserves distance from the bottom when resizing while mounted', () => {
     const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
-    const addEventListener = jest.spyOn(window, 'addEventListener');
+    const addEventListener = vi.spyOn(window, 'addEventListener');
 
     const { getByTestId, rerender } = render(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">first</div>
       </InfiniteMessages>,
     );
@@ -384,11 +383,11 @@ describe('<InfiniteMessages>', function () {
     });
 
     rerender(
-      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+      <InfiniteMessages component={Component} onFetchMore={vi.fn()}>
         <div key="first">first</div>
       </InfiniteMessages>,
     );
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
 
     setScrollMetrics(scroller, {
       offsetHeight: 80,
@@ -399,7 +398,7 @@ describe('<InfiniteMessages>', function () {
     act(() => {
       fireEvent.scroll(scroller);
       flush(onScrollCapture.current);
-      jest.advanceTimersByTime(25);
+      vi.advanceTimersByTime(25);
     });
 
     const resizeListener = addEventListener.mock.calls
@@ -414,7 +413,7 @@ describe('<InfiniteMessages>', function () {
 
     act(() => {
       invokeResizeListener(resizeListener);
-      jest.advanceTimersByTime(25);
+      vi.advanceTimersByTime(25);
     });
 
     expect(scroller.scrollTop).toBe(60);

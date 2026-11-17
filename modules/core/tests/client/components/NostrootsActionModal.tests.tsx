@@ -1,12 +1,11 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 
 describe('NostrootsActionModal', () => {
-  const onClose = jest.fn<void, []>();
+  const onClose = vi.fn<(...args: []) => void>();
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => vi.clearAllMocks());
 
   it('renders when isOpen is true', () => {
     const { getByText } = render(

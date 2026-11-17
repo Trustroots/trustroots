@@ -1,3 +1,4 @@
+import type { Mocked } from 'vitest';
 import axios from 'axios';
 
 import {
@@ -16,11 +17,12 @@ import type {
   UpdateOfferRequest,
 } from '@/modules/offers/shared/offer';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 function makeOffer(overrides: Partial<OfferPayload> = {}): OfferPayload {
   return {
@@ -33,7 +35,7 @@ function makeOffer(overrides: Partial<OfferPayload> = {}): OfferPayload {
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('offers api', () => {

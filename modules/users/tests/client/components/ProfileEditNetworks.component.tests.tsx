@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
@@ -11,40 +10,42 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
 
-jest.mock('@/modules/users/client/services/nostr-proof.client', () => ({
-  ...jest.requireActual('@/modules/users/client/services/nostr-proof.client'),
-  signNostrProof: jest.fn().mockResolvedValue({ id: 'signed-proof' }),
-  signWithConnectedNostr: jest.fn(
-    jest.requireActual('@/modules/users/client/services/nostr-proof.client')
-      .signWithConnectedNostr,
+vi.mock('@/modules/users/client/services/nostr-proof.client', async () => ({
+  ...(await vi.importActual(
+    '@/modules/users/client/services/nostr-proof.client',
+  )),
+  signNostrProof: vi.fn().mockResolvedValue({ id: 'signed-proof' }),
+  signWithConnectedNostr: vi.fn(
+    (
+      await vi.importActual(
+        '@/modules/users/client/services/nostr-proof.client',
+      )
+    ).signWithConnectedNostr,
   ),
 }));
 
-const mockedUsersApi = jest.mocked(usersApi);
+const mockedUsersApi = vi.mocked(usersApi);
 
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('nostr-tools', () => ({
-  ...jest.requireActual('nostr-tools'),
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('nostr-tools', async () => ({
+  ...(await vi.importActual('nostr-tools')),
   nip19: {
-    ...jest.requireActual('nostr-tools').nip19,
-    npubEncode: jest.fn(() => 'npub1suggestedkey'),
+    ...(await vi.importActual('nostr-tools')).nip19,
+    npubEncode: vi.fn(() => 'npub1suggestedkey'),
   },
 }));
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, values?: { provider?: string }) =>
       values?.provider ? key.replace('{{provider}}', values.provider) : key,
   }),
 }));
-jest.mock(
-  '@/modules/users/client/components/ProfileEditPage.component',
-  () => ({
-    __esModule: true,
-    default: ({ children }: { children: React.ReactNode }) => (
-      <section>{children}</section>
-    ),
-  }),
-);
+vi.mock('@/modules/users/client/components/ProfileEditPage.component', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <section>{children}</section>
+  ),
+}));
 
 const user: UserProfile = {
   _id: 'user-1',
@@ -76,15 +77,13 @@ describe('ProfileEditNetworks', () => {
     const { signNostrProof } =
       await import('../../../client/services/nostr-proof.client');
     let signal: AbortSignal | undefined;
-    jest
-      .mocked(signNostrProof)
-      .mockImplementationOnce(
-        (_event, _npub, _method, _uri, onAuth, operationSignal) => {
-          signal = operationSignal;
-          onAuth('https://signer.example.com/authorise');
-          return new Promise(() => {});
-        },
-      );
+    vi.mocked(signNostrProof).mockImplementationOnce(
+      (_event, _npub, _method, _uri, onAuth, operationSignal) => {
+        signal = operationSignal;
+        onAuth('https://signer.example.com/authorise');
+        return new Promise(() => {});
+      },
+    );
     const view = renderPage();
     fireEvent.change(screen.getByLabelText('nostr npub'), {
       target: { value: 'npub1qqqq' },
@@ -234,7 +233,7 @@ describe('ProfileEditNetworks', () => {
   );
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     delete window.nostr;
     mockedUsersApi.nostrChallenge.mockResolvedValue({
       kind: 27235,
@@ -296,8 +295,8 @@ describe('ProfileEditNetworks', () => {
 
   it('reports save failures when linking with a browser signer', async () => {
     window.nostr = {
-      getPublicKey: jest.fn().mockResolvedValue('public-key'),
-      signEvent: jest.fn().mockResolvedValue({ id: 'browser-proof' }),
+      getPublicKey: vi.fn().mockResolvedValue('public-key'),
+      signEvent: vi.fn().mockResolvedValue({ id: 'browser-proof' }),
     };
     mockedUsersApi.update.mockRejectedValue({
       response: { status: 400, data: { message: 'Unable to save networks.' } },
@@ -343,8 +342,8 @@ describe('ProfileEditNetworks', () => {
 
   it('replaces the linked key with one click using the browser signer', async () => {
     window.nostr = {
-      getPublicKey: jest.fn().mockResolvedValue('public-key'),
-      signEvent: jest.fn().mockResolvedValue({ id: 'browser-proof' }),
+      getPublicKey: vi.fn().mockResolvedValue('public-key'),
+      signEvent: vi.fn().mockResolvedValue({ id: 'browser-proof' }),
     };
     mockedUsersApi.update.mockResolvedValue({
       ...user,
@@ -375,22 +374,20 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('offers a QR code and an app link for pairing when the browser signer is incomplete', async () => {
-    window.nostr = { getPublicKey: jest.fn() };
-    jest
-      .mocked(signWithConnectedNostr)
-      .mockImplementationOnce(
-        (_method, _challenge, onPairing, _onAuth, signal) => {
-          onPairing({
-            uri: 'nostrconnect://fictional',
-            qr: 'data:image/png;base64,fictional',
-          });
-          return new Promise((_resolve, reject) => {
-            signal.addEventListener('abort', () =>
-              reject(new Error('cancelled')),
-            );
-          });
-        },
-      );
+    window.nostr = { getPublicKey: vi.fn() };
+    vi.mocked(signWithConnectedNostr).mockImplementationOnce(
+      (_method, _challenge, onPairing, _onAuth, signal) => {
+        onPairing({
+          uri: 'nostrconnect://fictional',
+          qr: 'data:image/png;base64,fictional',
+        });
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () =>
+            reject(new Error('cancelled')),
+          );
+        });
+      },
+    );
     renderPage();
 
     fireEvent.click(

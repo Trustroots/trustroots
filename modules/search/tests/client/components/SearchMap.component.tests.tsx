@@ -7,7 +7,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 import '@/config/client/i18n';
@@ -34,16 +33,16 @@ const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
 
 let mockApproximateLocation: MapDefaultLocation | null = null;
 let mockHasSavedLocation = true;
-const mockStopDefaultLocation = jest.fn();
-const mockDefaultLocation = jest.fn();
-jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+const mockStopDefaultLocation = vi.fn();
+const mockDefaultLocation = vi.fn();
+vi.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
   default: (enabled: boolean) => {
     mockDefaultLocation(enabled);
     return [enabled ? mockApproximateLocation : null, mockStopDefaultLocation];
   },
 }));
-jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
+vi.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
   __esModule: true,
   default: ({
     onRequest,
@@ -136,12 +135,12 @@ type MockSourceProps = {
   data: { type: string; features: MockMapFeature[] };
 };
 
-const mockIsWebGLSupported = jest.fn();
-const mockGetMapBoxToken = jest.mocked(getMapBoxToken);
-jest.mock('@/modules/core/client/utils/map', () => ({
-  ...jest.requireActual('@/modules/core/client/utils/map'),
+const mockIsWebGLSupported = vi.fn();
+const mockGetMapBoxToken = vi.mocked(getMapBoxToken);
+vi.mock('@/modules/core/client/utils/map', async () => ({
+  ...(await vi.importActual('@/modules/core/client/utils/map')),
   isWebGLSupported: () => mockIsWebGLSupported(),
-  getMapBoxToken: jest.fn(() => 'test-token'),
+  getMapBoxToken: vi.fn(() => 'test-token'),
 }));
 
 type MockNostrEvent = Partial<NostrEvent> & { authorPubkey?: string };
@@ -155,19 +154,20 @@ type MockSubscribeMapNotes = (
   limit?: number,
   callbacks?: MockSubscriptionCallbacks,
 ) => Promise<unknown>;
-const mockGetNostrEventAuthorPubkey = jest.fn(
+const mockGetNostrEventAuthorPubkey = vi.fn(
   (event: MockNostrEvent) => event.authorPubkey || event.pubkey,
 );
-const mockSubscribeMapNotes = jest.fn<
-  ReturnType<MockSubscribeMapNotes>,
-  Parameters<MockSubscribeMapNotes>
->();
-const mockUnsubscribeMapNotes = jest.fn<void, []>();
-const mockFilterCommunityNotesByAuthorVisibility = jest.fn<
-  Promise<MockNostrEvent[]>,
-  [notes: MockNostrEvent[]]
+const mockSubscribeMapNotes =
+  vi.fn<
+    (
+      ...args: Parameters<MockSubscribeMapNotes>
+    ) => ReturnType<MockSubscribeMapNotes>
+  >();
+const mockUnsubscribeMapNotes = vi.fn<(...args: []) => void>();
+const mockFilterCommunityNotesByAuthorVisibility = vi.fn<
+  (...args: [notes: MockNostrEvent[]]) => Promise<MockNostrEvent[]>
 >(notes => Promise.resolve(notes));
-jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
   getNostrEventAuthorPubkey: (event: MockNostrEvent) =>
     mockGetNostrEventAuthorPubkey(event),
   nostrService: {
@@ -182,21 +182,19 @@ jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
 
 type MockGetOffer = typeof getOffer;
 type MockQueryOffers = typeof queryOffers;
-const mockGetOffer = jest.fn<
-  ReturnType<MockGetOffer>,
-  Parameters<MockGetOffer>
->();
-const mockQueryOffers = jest.fn<
-  ReturnType<MockQueryOffers>,
-  Parameters<MockQueryOffers>
->();
-jest.mock('@/modules/offers/client/api/offers.api', () => ({
+const mockGetOffer =
+  vi.fn<(...args: Parameters<MockGetOffer>) => ReturnType<MockGetOffer>>();
+const mockQueryOffers =
+  vi.fn<
+    (...args: Parameters<MockQueryOffers>) => ReturnType<MockQueryOffers>
+  >();
+vi.mock('@/modules/offers/client/api/offers.api', () => ({
   getOffer: (offerId: string) => mockGetOffer(offerId),
   queryOffers: (query?: Parameters<MockQueryOffers>[0]) =>
     mockQueryOffers(query),
 }));
 
-jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => ({
+vi.mock('@/modules/search/client/hooks/use-debounced-callback', () => ({
   __esModule: true,
   default: <Callback extends (...args: never[]) => unknown>(
     callback: Callback,
@@ -213,8 +211,8 @@ let mockPersistentMapLocation: {
   longitude: 9.14055555556,
   zoom: 2,
 };
-const mockSetPersistentMapLocation = jest.fn();
-jest.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
+const mockSetPersistentMapLocation = vi.fn();
+vi.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
   __esModule: true,
   default: () => [
     mockPersistentMapLocation,
@@ -224,55 +222,63 @@ jest.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
 }));
 
 let mockMapStyle: string | typeof MAP_STYLE_OSM = 'mock-map-style';
-const mockSetMapStyle = jest.fn();
-jest.mock('@/modules/search/client/hooks/use-persistent-map-style', () => ({
+const mockSetMapStyle = vi.fn();
+vi.mock('@/modules/search/client/hooks/use-persistent-map-style', () => ({
   __esModule: true,
   default: () => [mockMapStyle, mockSetMapStyle],
 }));
 
-jest.mock('@/modules/core/client/components/Map/MapNavigationControl', () => {
-  return function MockMapNavigationControl() {
-    return <div data-testid="map-navigation-control" />;
+vi.mock('@/modules/core/client/components/Map/MapNavigationControl', () => {
+  return {
+    default: function MockMapNavigationControl() {
+      return <div data-testid="map-navigation-control" />;
+    },
   };
 });
 
-jest.mock('@/modules/core/client/components/Map/MapScaleControl', () => {
-  return function MockMapScaleControl() {
-    return <div data-testid="map-scale-control" />;
+vi.mock('@/modules/core/client/components/Map/MapScaleControl', () => {
+  return {
+    default: function MockMapScaleControl() {
+      return <div data-testid="map-scale-control" />;
+    },
   };
 });
 
-jest.mock('@/modules/core/client/components/Map/MapStyleControl', () => {
-  return function MockMapStyleControl() {
-    return <button type="button">Map style</button>;
+vi.mock('@/modules/core/client/components/Map/MapStyleControl', () => {
+  return {
+    default: function MockMapStyleControl() {
+      return <button type="button">Map style</button>;
+    },
   };
 });
 
-jest.mock('@/modules/search/client/components/SearchMapNoContent', () => {
-  return function MockSearchMapNoContent() {
-    return <div>Zoom closer to find members.</div>;
+vi.mock('@/modules/search/client/components/SearchMapNoContent', () => {
+  return {
+    default: function MockSearchMapNoContent() {
+      return <div>Zoom closer to find members.</div>;
+    },
   };
 });
 
-const mockLeafletSearchMap = jest.fn();
-jest.mock('@/modules/search/client/components/LeafletSearchMap', () =>
-  jest.fn(props => {
+const mockLeafletSearchMap = vi.fn();
+vi.mock('@/modules/search/client/components/LeafletSearchMap', () => ({
+  default: vi.fn(props => {
     mockLeafletSearchMap(props);
     return <div data-testid="leaflet-search-map" />;
   }),
-);
+}));
 
-const mockFitBounds = jest.fn();
+const mockFitBounds = vi.fn();
 const mockMap = {
-  getBounds: jest.fn(),
+  getBounds: vi.fn(),
   cameraForBounds: mockFitBounds,
-  flyTo: jest.fn(),
-  touchZoomRotate: { disableRotation: jest.fn() },
-  scrollZoom: { setWheelZoomRate: jest.fn() },
-  getFeatureState: jest.fn(),
-  getSource: jest.fn(),
-  getZoom: jest.fn(),
-  setFeatureState: jest.fn(),
+  flyTo: vi.fn(),
+  touchZoomRotate: { disableRotation: vi.fn() },
+  scrollZoom: { setWheelZoomRate: vi.fn() },
+  getFeatureState: vi.fn(),
+  getSource: vi.fn(),
+  getZoom: vi.fn(),
+  setFeatureState: vi.fn(),
 };
 let mockMapInstance: typeof mockMap | null = mockMap;
 let mockMapProps!: MockMapProps;
@@ -281,12 +287,12 @@ let mockSourcePropsById: Record<string, MockSourceProps> = {};
 let mockLayerPropsById: Record<string, { layout: Record<string, unknown> }> =
   {};
 const mockSource = {
-  getClusterExpansionZoom: jest.fn(),
-  getClusterLeaves: jest.fn(),
+  getClusterExpansionZoom: vi.fn(),
+  getClusterLeaves: vi.fn(),
 };
 let mockSourceInstance: typeof mockSource | null = mockSource;
-jest.mock('react-map-gl/mapbox', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('react-map-gl/mapbox', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   type MockReactMapGLProps = MockMapProps & {
     children?: React.ReactNode;
@@ -345,9 +351,9 @@ function renderSearchMap(props: SearchMapRenderProps = {}) {
   const defaultProps: SearchMapProps = {
     filters: '{}',
     isUserPublic: true,
-    onCommunityNoteOpen: jest.fn(),
-    onOfferClose: jest.fn(),
-    onOfferOpen: jest.fn(),
+    onCommunityNoteOpen: vi.fn(),
+    onOfferClose: vi.fn(),
+    onOfferOpen: vi.fn(),
   };
   return render(<SearchMap {...{ ...defaultProps, ...props }} />);
 }
@@ -485,7 +491,7 @@ function flushMapViewport(viewport: Record<string, number>) {
 
 async function flushCommunityNotesTimers() {
   await act(async () => {
-    jest.advanceTimersByTime(200);
+    vi.advanceTimersByTime(200);
     await Promise.resolve();
   });
 }
@@ -543,11 +549,11 @@ beforeEach(() => {
   mockGetNostrEventAuthorPubkey.mockImplementation(
     event => event.authorPubkey || event.pubkey,
   );
-  mockSubscribeMapNotes.mockResolvedValue({ close: jest.fn() });
+  mockSubscribeMapNotes.mockResolvedValue({ close: vi.fn() });
   mockFilterCommunityNotesByAuthorVisibility.mockImplementation(notes =>
     Promise.resolve(notes),
   );
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('Search', () => {
@@ -585,9 +591,9 @@ describe('Search', () => {
     webgl => {
       mockHasSavedLocation = false;
       mockIsWebGLSupported.mockReturnValue(webgl);
-      const onDeviceLocationRequest = jest.fn();
-      const onDeviceLocation = jest.fn();
-      const onApproximateLocation = jest.fn();
+      const onDeviceLocationRequest = vi.fn();
+      const onDeviceLocation = vi.fn();
+      const onApproximateLocation = vi.fn();
       renderSearchMap({
         onDeviceLocationRequest,
         onDeviceLocation,
@@ -620,9 +626,9 @@ describe('Search', () => {
     const props = {
       filters: '{}',
       isUserPublic: true,
-      onCommunityNoteOpen: jest.fn(),
-      onOfferClose: jest.fn(),
-      onOfferOpen: jest.fn(),
+      onCommunityNoteOpen: vi.fn(),
+      onOfferClose: vi.fn(),
+      onOfferOpen: vi.fn(),
     };
     const { rerender } = render(<SearchMap {...props} location={{}} />);
     expect(mockMapProps.latitude).toBe(34);
@@ -770,7 +776,7 @@ describe('Search', () => {
   ])(
     'selects Mapbox by WebGL2 support regardless of user agent %s',
     userAgent => {
-      const currentUserAgent = jest
+      const currentUserAgent = vi
         .spyOn(navigator, 'userAgent', 'get')
         .mockReturnValue(userAgent);
       renderSearchMap();
@@ -1016,7 +1022,7 @@ describe('Search', () => {
   });
 
   it('ignores missing-layer errors caused by map style teardown', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     renderSearchMap();
@@ -1133,7 +1139,7 @@ describe('Search', () => {
   });
 
   it('keeps a newer offer response when an older viewport request finishes last', async () => {
-    const onVisibleOffersChange = jest.fn();
+    const onVisibleOffersChange = vi.fn();
     const requests: Array<(response: OfferSearchResponse) => void> = [];
     mockQueryOffers.mockImplementation(
       () => new Promise<OfferSearchResponse>(resolve => requests.push(resolve)),
@@ -1190,7 +1196,7 @@ describe('Search', () => {
   });
 
   it('reports only offer pins inside a viewport crossing the dateline', async () => {
-    const onVisibleOffersChange = jest.fn();
+    const onVisibleOffersChange = vi.fn();
     mockMap.getBounds.mockReturnValue(DATELINE_BOUNDS);
     mockQueryOffers.mockResolvedValue({
       features: DATELINE_OFFER_FEATURES,
@@ -1222,7 +1228,7 @@ describe('Search', () => {
   });
 
   it('does not query private member map offers', async () => {
-    const onOfferClose = jest.fn();
+    const onOfferClose = vi.fn();
     mockPersistentMapLocation = {
       ...mockPersistentMapLocation,
       zoom: 6,
@@ -1252,7 +1258,7 @@ describe('Search', () => {
   });
 
   it('closes any open offer when the map canvas is clicked', async () => {
-    const onOfferClose = jest.fn();
+    const onOfferClose = vi.fn();
     renderSearchMap({ onOfferClose });
 
     expect(onOfferClose).not.toHaveBeenCalled();
@@ -1263,7 +1269,7 @@ describe('Search', () => {
   });
 
   it('closes an open offer when search filters change', async () => {
-    const onOfferClose = jest.fn();
+    const onOfferClose = vi.fn();
     const { rerender } = renderSearchMap({ onOfferClose });
 
     expect(onOfferClose).not.toHaveBeenCalled();
@@ -1274,7 +1280,7 @@ describe('Search', () => {
         isUserPublic={true}
         onCommunityNoteOpen={() => {}}
         onOfferClose={onOfferClose}
-        onOfferOpen={jest.fn()}
+        onOfferOpen={vi.fn()}
       />,
     );
 
@@ -1309,7 +1315,7 @@ describe('Search', () => {
   });
 
   it('marks clicked offers selected and opens the offer details', async () => {
-    const onOfferOpen = jest.fn();
+    const onOfferOpen = vi.fn();
     const offer = readOffer();
     mockGetOffer.mockResolvedValueOnce(offer);
 
@@ -1338,9 +1344,9 @@ describe('Search', () => {
     const props = {
       filters: '{}',
       isUserPublic: true,
-      onCommunityNoteOpen: jest.fn(),
-      onOfferClose: jest.fn(),
-      onOfferOpen: jest.fn(),
+      onCommunityNoteOpen: vi.fn(),
+      onOfferClose: vi.fn(),
+      onOfferOpen: vi.fn(),
     };
     const { rerender } = renderSearchMap(props);
     clickOfferPin('offer-1');
@@ -1393,7 +1399,7 @@ describe('Search', () => {
   });
 
   it('does not open the sidebar when clicked offer details are unavailable', async () => {
-    const onOfferOpen = jest.fn();
+    const onOfferOpen = vi.fn();
     resolveMalformed(mockGetOffer, null);
 
     renderSearchMap({ onOfferOpen });
@@ -1597,7 +1603,7 @@ describe('Search', () => {
   });
 
   it('subscribes to community notes and converts valid location events to geojson', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
       onEvent({
         id: 'note-valid',
@@ -1648,11 +1654,11 @@ describe('Search', () => {
       }),
     );
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('hides community notes blocked by the Nostr visibility check', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
       onEvent({
         id: 'note-visible',
@@ -1704,11 +1710,11 @@ describe('Search', () => {
       ]),
     );
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('reconnects after an interrupted relay load and deduplicates replayed notes', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let firstCallbacks: MockSubscriptionCallbacks | undefined;
     let secondCallbacks: MockSubscriptionCallbacks | undefined;
     mockSubscribeMapNotes
@@ -1743,7 +1749,7 @@ describe('Search', () => {
     act(() => {
       first.onClose();
       first.onClose();
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     });
     await waitFor(() => expect(secondCallbacks).toBeDefined());
     const second = requireSubscriptionCallbacks(secondCallbacks);
@@ -1761,14 +1767,14 @@ describe('Search', () => {
     unmount();
     act(() => {
       second.onClose();
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     });
     expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(2);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('does not replace newer community notes with a stale visibility result', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let onEvent!: MockNoteListener;
     let resolveFirstVisibilityCheck!: (notes: MockNostrEvent[]) => void;
     const firstVisibilityCheck = new Promise<MockNostrEvent[]>(resolve => {
@@ -1820,11 +1826,11 @@ describe('Search', () => {
     expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
       2,
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('opens community note threads from stored map note events', () => {
-    const onCommunityNoteOpen = jest.fn();
+    const onCommunityNoteOpen = vi.fn();
     mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
       onEvent({
         id: 'note-1',
@@ -1882,7 +1888,7 @@ describe('Search', () => {
   });
 
   it('selects an individual offer when a community note cluster overlaps it', async () => {
-    const onOfferOpen = jest.fn();
+    const onOfferOpen = vi.fn();
     renderCommunityNotesMap({
       onOfferOpen,
     });
@@ -1914,8 +1920,8 @@ describe('Search', () => {
   });
 
   it('reports visible community note threads from visibility-filtered map features', async () => {
-    jest.useFakeTimers();
-    const onVisibleCommunityNoteThreadsChange = jest.fn();
+    vi.useFakeTimers();
+    const onVisibleCommunityNoteThreadsChange = vi.fn();
     const visiblePlusCode = '8FVC9G8F+5W';
     const outsidePlusCode = '7FG49Q00+';
     const visibleArea = new OpenLocationCode().decode(visiblePlusCode);
@@ -1992,12 +1998,12 @@ describe('Search', () => {
     expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
       3,
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('excludes community notes outside a viewport that crosses the dateline', async () => {
-    jest.useFakeTimers();
-    const onVisibleCommunityNoteThreadsChange = jest.fn();
+    vi.useFakeTimers();
+    const onVisibleCommunityNoteThreadsChange = vi.fn();
     const olc = new OpenLocationCode() as OpenLocationCodeRuntime;
     const eastPlusCode = olc.encode(0, 179, 10);
     const westPlusCode = olc.encode(0, -179, 10);
@@ -2038,11 +2044,11 @@ describe('Search', () => {
         },
       ]),
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('reconstructs a clicked community note when no stored thread is available', () => {
-    const onCommunityNoteOpen = jest.fn();
+    const onCommunityNoteOpen = vi.fn();
 
     renderCommunityNotesMap({
       onCommunityNoteOpen,
@@ -2078,7 +2084,7 @@ describe('Search', () => {
   });
 
   it('handles clicked community notes without plus-code tags', () => {
-    const onCommunityNoteOpen = jest.fn();
+    const onCommunityNoteOpen = vi.fn();
 
     renderCommunityNotesMap({
       onCommunityNoteOpen,
@@ -2136,7 +2142,7 @@ describe('Search', () => {
   });
 
   it('opens overlapping Community Notes instead of repeatedly zooming', () => {
-    const onCommunityNoteOpen = jest.fn();
+    const onCommunityNoteOpen = vi.fn();
     const makeLeaf = (id: string, content: string, createdAt: number) => ({
       properties: {
         id,
@@ -2298,7 +2304,7 @@ describe('Search', () => {
   });
 
   it('retries failed subscriptions and unsubscribes on unmount', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     mockSubscribeMapNotes.mockRejectedValueOnce(new Error('relay unavailable'));
 
     const { unmount } = renderCommunityNotesMap();
@@ -2306,18 +2312,18 @@ describe('Search', () => {
     await waitFor(() => expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(1));
 
     act(() => {
-      jest.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1000);
     });
     await waitFor(() => expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(2));
 
     unmount();
 
     expect(mockUnsubscribeMapNotes).toHaveBeenCalledTimes(1);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('flushes notes on relay EOSE and cancels a pending reconnect', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const { unmount } = renderCommunityNotesMap();
     await act(async () => {
       await Promise.resolve();
@@ -2343,12 +2349,12 @@ describe('Search', () => {
     unmount();
 
     expect(mockUnsubscribeMapNotes).toHaveBeenCalled();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('logs offer query failures in development without replacing current offers', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     process.env.NODE_ENV = 'development';
@@ -2373,7 +2379,7 @@ describe('Search', () => {
   });
 
   it('does not log offer query failures outside development', async () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     mockPersistentMapLocation = {

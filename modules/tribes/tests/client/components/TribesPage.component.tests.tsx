@@ -5,7 +5,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 
@@ -18,16 +17,16 @@ import type {
 } from '@/modules/tribes/client/api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
-const api = { tribes: jest.mocked(tribesApi) };
+const api = { tribes: vi.mocked(tribesApi) };
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock('@/modules/core/client/services/client-runtime');
+vi.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/core/client/services/client-runtime');
 
 const analytics = fakeAnalytics();
 const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
   rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-const onMembershipUpdated = jest.fn<void, [MembershipUpdate]>();
+const onMembershipUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
 
 const isMember = (user: UserProfile, tribe: TribeSummary) =>
   user.memberIds?.includes(tribe._id) ?? false;
@@ -101,7 +100,7 @@ describe('CirclesPage', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('not signed in', () => {

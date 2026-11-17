@@ -1,23 +1,24 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
 import * as referenceThreadsApi from '@/modules/admin/client/api/admin-reference-threads.api';
 import type { ReferenceThreadsResponse } from '@/modules/admin/client/api/admin-reference-threads.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/admin-reference-threads.api');
-const mockedReferenceThreadsApi = jest.mocked(referenceThreadsApi);
+vi.mock('@/modules/admin/client/api/admin-reference-threads.api');
+const mockedReferenceThreadsApi = vi.mocked(referenceThreadsApi);
 afterEach(() => {
-  jest.clearAllMocks();
-  jest.restoreAllMocks();
+  vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 type MemberFixture = {
@@ -154,7 +155,7 @@ describe('<AdminReferenceThreads />', () => {
   });
 
   it('logs and clears loading state when loading fails', async () => {
-    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     mockedReferenceThreadsApi.getReferenceThreads.mockRejectedValueOnce(
       new Error('failed'),
     );

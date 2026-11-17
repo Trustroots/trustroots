@@ -7,16 +7,14 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminGravatar from '@/modules/admin/client/components/AdminGravatar.component';
 import * as api from '@/modules/admin/client/api/gravatar.api';
 
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () => () => null,
-);
-jest.mock('@/modules/admin/client/api/gravatar.api');
-const getUsage = jest.mocked(api.getGravatarUsage);
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: () => null,
+}));
+vi.mock('@/modules/admin/client/api/gravatar.api');
+const getUsage = vi.mocked(api.getGravatarUsage);
 const usage: api.GravatarUsage = {
   accounts: 51,
   page: 1,
@@ -31,10 +29,8 @@ const usage: api.GravatarUsage = {
     },
   ],
 };
-beforeEach(() =>
-  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValue(null),
-);
-afterEach(() => jest.resetAllMocks());
+beforeEach(() => vi.mocked(api.getGravatarPhotoCheck).mockResolvedValue(null));
+afterEach(() => vi.resetAllMocks());
 
 it('shows the count, measurement time, member links and pagination', async () => {
   getUsage.mockResolvedValueOnce(usage);
@@ -159,13 +155,13 @@ it('starts a photo check and displays the result', async () => {
   getUsage.mockResolvedValue(usage);
   const startedAt = '2026-11-06T12:00:00.000Z';
   const counts = { available: 3, unavailable: 5, inconclusive: 2 };
-  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
-  jest.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
+  vi.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
+  vi.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
     state: 'running',
     startedAt,
     counts: { available: 0, unavailable: 0, inconclusive: 0 },
   });
-  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
+  vi.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
     state: 'complete',
     startedAt,
     finishedAt: '2026-11-06T12:05:00.000Z',
@@ -185,13 +181,12 @@ it('starts a photo check and displays the result', async () => {
 });
 
 it('retries loading the photo check and shows when a running check stops early', async () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
   try {
     const startedAt = '2026-11-06T12:00:00.000Z';
     const counts = { available: 3, unavailable: 5, inconclusive: 2 };
     getUsage.mockResolvedValue(usage);
-    jest
-      .mocked(api.getGravatarPhotoCheck)
+    vi.mocked(api.getGravatarPhotoCheck)
       .mockRejectedValueOnce(new Error('Offline'))
       .mockResolvedValueOnce({ state: 'running', startedAt, counts })
       .mockResolvedValueOnce({
@@ -205,7 +200,7 @@ it('retries loading the photo check and shows when a running check stops early',
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not load photo check results. Retrying…',
     );
-    await act(async () => jest.advanceTimersByTimeAsync(5000));
+    await act(async () => vi.advanceTimersByTimeAsync(5000));
     expect(
       screen.getByText('Checking photos… 10 accounts checked.'),
     ).toBeVisible();
@@ -213,13 +208,13 @@ it('retries loading the photo check and shows when a running check stops early',
       name: 'Check Gravatar photos',
     });
     expect(button).toBeDisabled();
-    await act(async () => jest.advanceTimersByTimeAsync(2000));
+    await act(async () => vi.advanceTimersByTimeAsync(2000));
     expect(
       screen.getByText('Check stopped early. Counts are partial.'),
     ).toBeVisible();
     expect(button).toBeEnabled();
   } finally {
-    jest.useRealTimers();
+    vi.useRealTimers();
   }
 });
 
@@ -229,14 +224,14 @@ it('starts cleanup explicitly and refreshes the usage total after changes', asyn
     accounts: 49,
   });
   const startedAt = '2026-11-06T12:00:00.000Z';
-  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
-  jest.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
+  vi.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
+  vi.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
     state: 'running',
     startedAt,
     counts: { available: 0, unavailable: 0, inconclusive: 0 },
     retired: 0,
   });
-  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
+  vi.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
     state: 'complete',
     startedAt,
     finishedAt: '2026-11-06T12:05:00.000Z',
@@ -258,9 +253,9 @@ it('starts cleanup explicitly and refreshes the usage total after changes', asyn
 
 it('shows a start error and lets the administrator try again', async () => {
   getUsage.mockResolvedValue(usage);
-  jest
-    .mocked(api.startGravatarPhotoCheck)
-    .mockRejectedValueOnce(new Error('Offline'));
+  vi.mocked(api.startGravatarPhotoCheck).mockRejectedValueOnce(
+    new Error('Offline'),
+  );
 
   render(<AdminGravatar />);
   const button = screen.getByRole('button', { name: 'Check Gravatar photos' });

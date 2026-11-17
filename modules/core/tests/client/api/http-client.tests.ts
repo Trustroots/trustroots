@@ -14,15 +14,15 @@ describe('shared module HTTP client', () => {
 
   it('passes per-request timeout and headers to Axios', async () => {
     const response = { ok: true };
-    const adapter = jest.fn<ReturnType<AxiosAdapter>, Parameters<AxiosAdapter>>(
-      async config => ({
-        config,
-        data: response,
-        headers: new AxiosHeaders(),
-        status: 200,
-        statusText: 'OK',
-      }),
-    );
+    const adapter = vi.fn<
+      (...args: Parameters<AxiosAdapter>) => ReturnType<AxiosAdapter>
+    >(async config => ({
+      config,
+      data: response,
+      headers: new AxiosHeaders(),
+      status: 200,
+      statusText: 'OK',
+    }));
 
     await expect(
       httpClient.get('/api/example', {
@@ -50,9 +50,8 @@ describe('shared module HTTP client', () => {
   it.each(['POST', 'put', 'PATCH', 'delete'])(
     'marks %s API mutations while preserving caller headers',
     async (method: string) => {
-      const adapter = jest.fn<
-        ReturnType<AxiosAdapter>,
-        Parameters<AxiosAdapter>
+      const adapter = vi.fn<
+        (...args: Parameters<AxiosAdapter>) => ReturnType<AxiosAdapter>
       >(async config => ({
         config,
         data: {},
@@ -76,15 +75,15 @@ describe('shared module HTTP client', () => {
   );
 
   it('leaves safe HEAD requests without the mutation marker', async () => {
-    const adapter = jest.fn<ReturnType<AxiosAdapter>, Parameters<AxiosAdapter>>(
-      async config => ({
-        config,
-        data: {},
-        headers: new AxiosHeaders(),
-        status: 200,
-        statusText: 'OK',
-      }),
-    );
+    const adapter = vi.fn<
+      (...args: Parameters<AxiosAdapter>) => ReturnType<AxiosAdapter>
+    >(async config => ({
+      config,
+      data: {},
+      headers: new AxiosHeaders(),
+      status: 200,
+      statusText: 'OK',
+    }));
 
     await httpClient.head('/api/example', { adapter });
 
@@ -96,9 +95,8 @@ describe('shared module HTTP client', () => {
   it.each([false, 'caller-value'])(
     'sets the required mutation marker when a caller supplies %s',
     async (marker: string | boolean) => {
-      const adapter = jest.fn<
-        ReturnType<AxiosAdapter>,
-        Parameters<AxiosAdapter>
+      const adapter = vi.fn<
+        (...args: Parameters<AxiosAdapter>) => ReturnType<AxiosAdapter>
       >(async config => ({
         config,
         data: {},
@@ -184,7 +182,7 @@ describe('shared module HTTP client', () => {
   });
 
   it('tells subscribers about failed requests until they unsubscribe', async () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = onRequestFailure(listener);
     const adapter: AxiosAdapter = async config => {
       throw Object.assign(new Error('Unavailable'), {
@@ -210,7 +208,7 @@ describe('shared module HTTP client', () => {
   });
 
   it('skips expected statuses and requests without a response', async () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = onRequestFailure(listener);
     const failWith =
       (failure: object): AxiosAdapter =>
@@ -268,7 +266,7 @@ describe('shared module HTTP client', () => {
   });
 
   it('does not report cancelled requests', async () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = onRequestFailure(listener);
     const controller = new AbortController();
     controller.abort();

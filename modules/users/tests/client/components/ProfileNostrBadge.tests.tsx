@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 import type NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
@@ -8,7 +7,7 @@ import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBad
 type NostrEvent = Awaited<
   ReturnType<typeof nostrService.fetchUserNotes>
 >[number];
-const fetchUserNotesMock = jest.mocked(nostrService.fetchUserNotes);
+const fetchUserNotesMock = vi.mocked(nostrService.fetchUserNotes);
 
 function note(id: string, content: string, createdAt: number): NostrEvent {
   return {
@@ -27,20 +26,20 @@ const recentNotes = [
   note('note2', 'Free camping by the river', 1_700_000_001),
 ];
 
-jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
   __esModule: true,
   default: class NostrService {},
   nostrService: {
-    fetchUserNotes: jest.fn(),
-    connect: jest.fn().mockResolvedValue(undefined),
-    disconnect: jest.fn(),
+    fetchUserNotes: vi.fn(),
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn(),
   },
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/core/client/components/NostrootsActionModal.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockNostrootsActionModal({
       isOpen,

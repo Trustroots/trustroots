@@ -1,15 +1,15 @@
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 
 import { previewMessage } from '@/modules/messages/client/api/messages.api';
-jest.mock('@/modules/messages/client/api/messages.api', () => ({
-  previewMessage: jest.fn(),
+vi.mock('@/modules/messages/client/api/messages.api', () => ({
+  previewMessage: vi.fn(),
 }));
-const previewMessageMock = previewMessage as jest.MockedFunction<
+const previewMessageMock = previewMessage as MockedFunction<
   typeof previewMessage
 >;
 
@@ -21,7 +21,7 @@ type EditorMockProps = {
 };
 type OnSend = React.ComponentProps<typeof ThreadReply>['onSend'];
 
-jest.mock('@/modules/core/client/components/TrEditor', () => {
+vi.mock('@/modules/core/client/components/TrEditor', () => {
   function MockTrEditor({ id, onChange, onCtrlEnter, text }: EditorMockProps) {
     return (
       <textarea
@@ -36,11 +36,11 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-  return MockTrEditor;
+  return { default: MockTrEditor };
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.localStorage.clear();
 });
 
@@ -55,18 +55,16 @@ function getForm(container: HTMLElement): HTMLFormElement {
 describe('<ThreadReply>', () => {
   it('resizes with the keyboard within limits without replacing the editor or changing the draft', () => {
     const { container, getByRole } = render(
-      <ThreadReply cacheKey="expanded-draft" onSend={jest.fn()} />,
+      <ThreadReply cacheKey="expanded-draft" onSend={vi.fn()} />,
     );
     const editor = getByRole('textbox');
     fireEvent.change(editor, { target: { value: 'A longer fictional draft' } });
     const form = getForm(container);
     Object.defineProperty(form.parentElement, 'clientHeight', { value: 1000 });
-    jest
-      .spyOn(form, 'getBoundingClientRect')
-      .mockImplementation(
-        () =>
-          ({ height: Number.parseFloat(form.style.height) || 120 }) as DOMRect,
-      );
+    vi.spyOn(form, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({ height: Number.parseFloat(form.style.height) || 120 }) as DOMRect,
+    );
     const handle = getByRole('separator', { name: 'Resize message editor' });
     expect(handle).toHaveAttribute(
       'aria-controls',
@@ -98,14 +96,14 @@ describe('<ThreadReply>', () => {
   it('drags upwards and downwards and stops resizing after pointer capture is lost', () => {
     const originalPointerEvent = window.PointerEvent;
     window.PointerEvent = MouseEvent as typeof PointerEvent;
-    const { container, getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+    const { container, getByRole } = render(<ThreadReply onSend={vi.fn()} />);
     const form = getForm(container);
     Object.defineProperty(form.parentElement, 'clientHeight', { value: 1000 });
-    jest
-      .spyOn(form, 'getBoundingClientRect')
-      .mockReturnValue({ height: 120 } as DOMRect);
+    vi.spyOn(form, 'getBoundingClientRect').mockReturnValue({
+      height: 120,
+    } as DOMRect);
     const handle = getByRole('separator');
-    handle.setPointerCapture = jest.fn();
+    handle.setPointerCapture = vi.fn();
     fireEvent.pointerMove(handle, { clientY: 50 });
     expect(form).not.toHaveClass('message-reply-resized');
     fireEvent.pointerDown(handle, { button: 2, clientY: 100 });
@@ -125,7 +123,7 @@ describe('<ThreadReply>', () => {
   it('disables preview for empty drafts and shows formatted content without changing the cached draft', async () => {
     const draft = '<p><strong>Fictional draft</strong></p>';
     previewMessageMock.mockResolvedValue('<p><b>Fictional draft</b></p>');
-    const onSend = jest.fn();
+    const onSend = vi.fn();
     const { getByRole, queryByRole } = render(
       <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
     );
@@ -154,7 +152,7 @@ describe('<ThreadReply>', () => {
       .mockResolvedValueOnce(
         '<p><a href="https://outside.example/">External</a> <a href="/profile/fictional">Internal</a> <a href="https://www.trustroots.org/safety">Guidance</a></p>',
       );
-    const { getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+    const { getByRole } = render(<ThreadReply onSend={vi.fn()} />);
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>Draft</p>' },
     });
@@ -204,9 +202,7 @@ describe('<ThreadReply>', () => {
           }),
       )
       .mockResolvedValueOnce('<p>Newest preview</p>');
-    const { getByRole, queryByRole } = render(
-      <ThreadReply onSend={jest.fn()} />,
-    );
+    const { getByRole, queryByRole } = render(<ThreadReply onSend={vi.fn()} />);
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>First</p>' },
     });
@@ -243,7 +239,7 @@ describe('<ThreadReply>', () => {
           resolvePreview = resolve;
         }),
     );
-    const { getByRole, unmount } = render(<ThreadReply onSend={jest.fn()} />);
+    const { getByRole, unmount } = render(<ThreadReply onSend={vi.fn()} />);
     fireEvent.change(getByRole('textbox'), { target: { value: 'Draft' } });
     fireEvent.click(getByRole('button', { name: 'Preview' }));
     unmount();
@@ -254,7 +250,7 @@ describe('<ThreadReply>', () => {
   it('sends the original draft from preview, preserves it on failure and clears it on success', async () => {
     const draft = '<p><strong>Original draft</strong></p>';
     previewMessageMock.mockResolvedValue('<p><b>Original draft</b></p>');
-    const onSend = jest
+    const onSend = vi
       .fn()
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(true);
@@ -283,13 +279,13 @@ describe('<ThreadReply>', () => {
   });
 
   it('focuses the editor when desktop autofocus is enabled', () => {
-    const { getByRole } = render(<ThreadReply autoFocus onSend={jest.fn()} />);
+    const { getByRole } = render(<ThreadReply autoFocus onSend={vi.fn()} />);
 
     expect(getByRole('textbox')).toHaveFocus();
   });
 
   it('does not focus the editor on initial mobile render', () => {
-    const { getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+    const { getByRole } = render(<ThreadReply onSend={vi.fn()} />);
 
     expect(getByRole('textbox')).not.toHaveFocus();
   });
@@ -298,7 +294,7 @@ describe('<ThreadReply>', () => {
     window.localStorage.setItem('messages-draft-user', 'Hello there');
 
     const { getByRole } = render(
-      <ThreadReply cacheKey="messages-draft-user" onSend={jest.fn()} />,
+      <ThreadReply cacheKey="messages-draft-user" onSend={vi.fn()} />,
     );
 
     const editor = getByRole('textbox');
@@ -313,7 +309,7 @@ describe('<ThreadReply>', () => {
 
   it('sends content and clears a saved draft after a successful send', async () => {
     window.localStorage.setItem('messages-draft-user', 'Saved draft');
-    const onSend: OnSend = jest.fn().mockResolvedValue(true);
+    const onSend: OnSend = vi.fn().mockResolvedValue(true);
     const { container, getByRole } = render(
       <ThreadReply cacheKey="messages-draft-user" onSend={onSend} />,
     );
@@ -332,7 +328,7 @@ describe('<ThreadReply>', () => {
   });
 
   it('keeps content when sending does not complete', async () => {
-    const onSend: OnSend = jest.fn().mockResolvedValue(false);
+    const onSend: OnSend = vi.fn().mockResolvedValue(false);
     const { container, getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {
@@ -345,7 +341,7 @@ describe('<ThreadReply>', () => {
   });
 
   it('does not send empty content or disable the send button', () => {
-    const onSend: OnSend = jest.fn();
+    const onSend: OnSend = vi.fn();
     const { container, getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {
@@ -359,7 +355,7 @@ describe('<ThreadReply>', () => {
 
   it('ignores duplicate submits while a message is still sending', async () => {
     let resolveSend!: (sent: boolean) => void;
-    const onSend: OnSend = jest.fn(
+    const onSend: OnSend = vi.fn(
       () =>
         new Promise<boolean>(resolve => {
           resolveSend = resolve;
@@ -385,7 +381,7 @@ describe('<ThreadReply>', () => {
   });
 
   it('sends content from the editor ctrl-enter shortcut', async () => {
-    const onSend: OnSend = jest.fn().mockResolvedValue(true);
+    const onSend: OnSend = vi.fn().mockResolvedValue(true);
     const { getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {

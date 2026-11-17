@@ -1,6 +1,5 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import UnreadCount from 'modules/messages/client/components/UnreadCount.component';
@@ -18,12 +17,12 @@ beforeAll(enableVisibilityWatching);
 afterAll(disableVisibilityWatching);
 
 const api = {
-  messages: jest.mocked(messagesAPI),
+  messages: vi.mocked(messagesAPI),
 };
 
-jest.mock('@/modules/messages/client/api/messages.api');
+vi.mock('@/modules/messages/client/api/messages.api');
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 let stopUnreadMessageCountPolling: () => void;
 

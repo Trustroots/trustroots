@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
@@ -17,26 +16,28 @@ type PageUser = AddPageProps['user'];
 type Friend = Awaited<ReturnType<typeof usersApi.fetchMini>>;
 type ExistingContact = Awaited<ReturnType<typeof contactsApi.getByUserId>>;
 
-const fetchMiniMock = jest.mocked(usersApi.fetchMini);
-const getByUserIdMock = jest.mocked(contactsApi.getByUserId);
-const createContactMock = jest.mocked(contactsApi.create);
+const fetchMiniMock = vi.mocked(usersApi.fetchMini);
+const getByUserIdMock = vi.mocked(contactsApi.getByUserId);
+const createContactMock = vi.mocked(contactsApi.create);
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/modules/contacts/client/api/contacts.api');
-jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('@/modules/contacts/client/api/contacts.api');
+vi.mock('@/modules/users/client/components/Avatar.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar({ user }: React.ComponentProps<typeof Avatar>) {
     return <div>{user.displayName}</div>;
   }
 
-  return MockAvatar;
+  return { default: MockAvatar };
 });
-jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/TrEditor', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockTrEditor({
     onChange,
@@ -51,7 +52,7 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
     );
   }
 
-  return MockTrEditor;
+  return { default: MockTrEditor };
 });
 
 const user: PageUser = {
@@ -84,7 +85,7 @@ function renderContactAddPage(pageUser: PageUser = user) {
 
 describe('ContactAddPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     analytics = fakeAnalytics();
     window.history.pushState({}, '', '/contact-add/friend-1');
     fetchMiniMock.mockResolvedValue(friend);

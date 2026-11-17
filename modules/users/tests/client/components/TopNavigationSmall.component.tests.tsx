@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TopNavigationSmall from '@/modules/users/client/components/TopNavigationSmall.component';
@@ -21,7 +20,7 @@ function asContactRecord(contact: ContactFixture): ContactRecord {
   return contact as ContactRecord;
 }
 
-jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
+vi.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
   function MockRemoveContact({
     show,
     onCancel,
@@ -39,7 +38,7 @@ jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
     ) : null;
   }
 
-  return MockRemoveContact;
+  return { default: MockRemoveContact };
 });
 
 function renderNavigation(props: Partial<TopNavigationProps> = {}) {
@@ -47,7 +46,7 @@ function renderNavigation(props: Partial<TopNavigationProps> = {}) {
     <TopNavigationSmall
       contact={{}}
       isResolved
-      onContactRemoved={jest.fn<void, [contact: ContactRecord]>()}
+      onContactRemoved={vi.fn<(...args: [contact: ContactRecord]) => void>()}
       referencesEnabled
       selfId="me"
       userId="alice-id"
@@ -72,7 +71,7 @@ describe('<TopNavigationSmall />', () => {
         username="river"
         referencesEnabled={false}
         isResolved={false}
-        onContactRemoved={jest.fn()}
+        onContactRemoved={vi.fn()}
       />,
     );
     expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
@@ -162,7 +161,8 @@ describe('<TopNavigationSmall />', () => {
   });
 
   it('confirms contact removal and reports the normalized contact', () => {
-    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
+    const onContactRemoved =
+      vi.fn<(...args: [contact: ContactRecord]) => void>();
     const contact = asContactRecord({
       _id: 'contact-1',
       confirmed: true,
@@ -208,7 +208,8 @@ describe('<TopNavigationSmall />', () => {
   });
 
   it('can cancel contact removal without reporting success', () => {
-    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
+    const onContactRemoved =
+      vi.fn<(...args: [contact: ContactRecord]) => void>();
 
     renderNavigation({
       contact: {

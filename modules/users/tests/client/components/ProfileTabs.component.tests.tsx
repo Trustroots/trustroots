@@ -1,20 +1,19 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileTabs from '@/modules/users/client/components/ProfileTabs.component';
 import { getCount } from '@/modules/experiences/client/api/experiences.api';
 
-jest.mock('@/modules/experiences/client/api/experiences.api');
+vi.mock('@/modules/experiences/client/api/experiences.api');
 
 describe('<ProfileTabs />', () => {
   beforeEach(() => {
-    jest.mocked(getCount).mockResolvedValue({ count: 2, hasPending: true });
+    vi.mocked(getCount).mockResolvedValue({ count: 2, hasPending: true });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders profile tabs with contact and experience counts', async () => {
@@ -99,7 +98,7 @@ describe('<ProfileTabs />', () => {
   });
 
   it('shows an experiences notification dot when experiences are pending', async () => {
-    jest.mocked(getCount).mockResolvedValue({ count: 5, hasPending: true });
+    vi.mocked(getCount).mockResolvedValue({ count: 5, hasPending: true });
 
     render(
       <ProfileTabs
@@ -127,7 +126,7 @@ describe('<ProfileTabs />', () => {
   });
 
   it('hides unavailable experience tabs without pending notification', async () => {
-    jest.mocked(getCount).mockResolvedValue({ count: -1, hasPending: false });
+    vi.mocked(getCount).mockResolvedValue({ count: -1, hasPending: false });
 
     render(
       <ProfileTabs

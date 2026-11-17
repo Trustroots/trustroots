@@ -1,6 +1,6 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import {
   AnalyticsProvider,
@@ -10,9 +10,10 @@ import {
   type AnalyticsTracker,
 } from '@trustroots/analytics/client';
 
-type TrackMock = jest.Mock<
-  Promise<unknown> | void,
-  [eventName: string, eventData?: Record<string, string | number>]
+type TrackMock = Mock<
+  (
+    ...args: [eventName: string, eventData?: Record<string, string | number>]
+  ) => Promise<unknown> | void
 >;
 
 function setReadyState(state: DocumentReadyState) {
@@ -23,9 +24,10 @@ function setReadyState(state: DocumentReadyState) {
 }
 
 const trackMock = (): TrackMock =>
-  jest.fn<
-    Promise<unknown> | void,
-    [eventName: string, eventData?: Record<string, string | number>]
+  vi.fn<
+    (
+      ...args: [eventName: string, eventData?: Record<string, string | number>]
+    ) => Promise<unknown> | void
   >();
 
 function installTracker(track: TrackMock = trackMock()): TrackMock {
@@ -58,7 +60,7 @@ describe('createUmamiTracker', () => {
   it('drops events once the page has loaded without a tracker', () => {
     setReadyState('complete');
     const tracker = createUmamiTracker();
-    const addEventListener = jest.spyOn(window, 'addEventListener');
+    const addEventListener = vi.spyOn(window, 'addEventListener');
 
     tracker.track('signup_rules_opened');
     window.dispatchEvent(new Event('load'));
@@ -163,7 +165,7 @@ function TrackButtons() {
 
 describe('AnalyticsProvider', () => {
   it('hands events from useAnalytics to the tracker it is given', () => {
-    const tracker = { track: jest.fn() };
+    const tracker = { track: vi.fn() };
 
     render(
       <AnalyticsProvider tracker={tracker}>
@@ -180,7 +182,7 @@ describe('AnalyticsProvider', () => {
   });
 
   it('keeps the same tracker across rerenders', () => {
-    const tracker: AnalyticsTracker = { track: jest.fn() };
+    const tracker: AnalyticsTracker = { track: vi.fn() };
     const seen: AnalyticsTracker[] = [];
     function Consumer() {
       seen.push(useAnalytics());
@@ -215,7 +217,7 @@ describe('AnalyticsProvider', () => {
   });
 
   it('throws when useAnalytics is used outside AnalyticsProvider', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
 import * as api from '@/modules/admin/client/api/admin-experience-changes.api';
@@ -9,14 +8,16 @@ import type {
   AdminExperienceChangeSearchExperience,
 } from '@/modules/admin/shared/admin-experience-change';
 
-jest.mock('@/modules/admin/client/api/admin-experience-changes.api');
-jest.mock('@/modules/admin/client/components/AdminHeader.component', () => {
-  return function MockAdminHeader() {
-    return <nav>Admin</nav>;
+vi.mock('@/modules/admin/client/api/admin-experience-changes.api');
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => {
+  return {
+    default: function MockAdminHeader() {
+      return <nav>Admin</nav>;
+    },
   };
 });
 
-const apiMock = jest.mocked(api);
+const apiMock = vi.mocked(api);
 
 const experience: AdminExperienceChangeSearchExperience = {
   _id: 'experience-1',
@@ -49,7 +50,7 @@ function editRequest(
   };
 }
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 it('finds an Experience and creates a link for the selected member', async () => {
   apiMock.listRequests.mockResolvedValueOnce([]);
@@ -241,7 +242,7 @@ it('shows a load error when the review queue is unavailable', async () => {
 });
 
 it('copies an issued link and shows empty proposed feedback', async () => {
-  const writeText = jest.fn().mockRejectedValue(new Error('clipboard blocked'));
+  const writeText = vi.fn().mockRejectedValue(new Error('clipboard blocked'));
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText },

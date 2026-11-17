@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import SearchCirclesToggle from '@/modules/search/client/components/SearchCirclesToggle.component';
 import {
@@ -12,7 +11,7 @@ type ChangeHandler = React.ComponentProps<
   typeof SearchCirclesToggle
 >['onChange'];
 
-const readMock = jest.mocked(read);
+const readMock = vi.mocked(read);
 const cyclists: TribeSummary = {
   _id: 'cyclists',
   slug: 'cyclists',
@@ -26,16 +25,14 @@ const hikers: TribeSummary = {
   count: 2,
 };
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
 
 describe('SearchCirclesToggle', () => {
-  const onChange = jest.fn<
-    ReturnType<ChangeHandler>,
-    Parameters<ChangeHandler>
-  >();
+  const onChange =
+    vi.fn<(...args: Parameters<ChangeHandler>) => ReturnType<ChangeHandler>>();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders circle toggles and reports selection changes', async () => {

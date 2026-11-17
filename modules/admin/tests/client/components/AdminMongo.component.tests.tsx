@@ -1,20 +1,18 @@
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import httpClient from '@/modules/core/client/api/http-client';
 import AdminMongo from '@/modules/admin/client/components/AdminMongo.component';
 import type { MongoServerDiagnostics } from '@/modules/admin/shared/mongo-diagnostics.mts';
 
-jest.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: vi.fn() },
 }));
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () => () => null,
-);
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: () => null,
+}));
 
-const get = jest.mocked(httpClient.get);
+const get = vi.mocked(httpClient.get);
 
 beforeEach(() => {
   get.mockReset();

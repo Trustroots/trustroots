@@ -48,8 +48,13 @@
       // tailwind.css importing tailwindcss.
       "project": ["**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts,css,less}"],
       "vitest": {
-        // scripts/test-server.cts passes this config to Vitest.
-        "config": ["vitest.server.config.mts"],
+        // scripts/test-server.cts and the client and Nostranslation test
+        // scripts pass these configs to Vitest.
+        "config": [
+          "vitest.server.config.mts",
+          "vitest.client.config.mts",
+          "apps/nostranslation/vitest.config.mts",
+        ],
       },
       "pm2": {
         // PM2 starts server.js and worker.js from these in production.
@@ -87,7 +92,7 @@
         "server/routes/**/*.{mjs,mts}",
         "server/config/*.{mjs,mts}",
         "server/policies/*.{mjs,mts}",
-        // The root Jest and Vitest configs run these, but Knip attributes a
+        // The root Vitest configs run these, but Knip attributes a
         // plugin's entries to the workspace that holds the config.
         "tests/client/**/*.tests.{js,jsx,ts,tsx}",
         "tests/server/**/*.mts",

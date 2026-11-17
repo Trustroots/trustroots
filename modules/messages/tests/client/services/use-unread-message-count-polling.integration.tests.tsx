@@ -9,26 +9,26 @@ import {
 } from '@/modules/messages/client/services/visibility.client.service';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@/modules/messages/client/api/messages.api');
+vi.mock('@/modules/messages/client/api/messages.api');
 
 beforeEach(() => {
-  jest.useFakeTimers();
-  jest.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+  vi.useFakeTimers();
+  vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
   enable();
 });
 
 afterEach(() => {
   disable();
-  jest.restoreAllMocks();
-  jest.useRealTimers();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 it('immediately polls the new public member when the signed-in account changes', async () => {
-  jest.mocked(unreadCount).mockResolvedValueOnce(4).mockResolvedValueOnce(1);
-  const onCount = jest.fn();
+  vi.mocked(unreadCount).mockResolvedValueOnce(4).mockResolvedValueOnce(1);
+  const onCount = vi.fn();
   const unwatch = watch(onCount);
   setViewer({ _id: 'fictional-member-a', public: true });
   const { rerender, unmount } = renderHook(() =>

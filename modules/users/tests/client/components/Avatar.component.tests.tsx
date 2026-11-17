@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -184,7 +183,7 @@ describe('<Avatar />', () => {
   });
 
   it('omits the profile link and forwards click handlers', () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
 
     const { container } = render(
       <Avatar user={user} link={false} onClick={onClick} />,
@@ -199,7 +198,7 @@ describe('<Avatar />', () => {
   });
 
   it('names an interactive avatar using the username when the display name is missing', () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     render(
       <Avatar
         user={{ username: 'fictional-member' }}

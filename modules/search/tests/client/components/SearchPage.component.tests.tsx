@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import {
   act,
@@ -7,7 +8,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchPage from '@/modules/search/client/components/SearchPage.component';
@@ -50,17 +50,15 @@ type SearchPageLocation =
   | ReturnType<typeof locationApiModule.locatePlace>
   | { data: MapPoint & { zoom: number }; type: 'center' };
 const locationApi = {
-  ...jest.mocked(locationApiModule),
-  locatePlace: jest.mocked(
-    locationApiModule.locatePlace,
-  ) as jest.MockedFunction<
+  ...vi.mocked(locationApiModule),
+  locatePlace: vi.mocked(locationApiModule.locatePlace) as MockedFunction<
     (
       feature: Parameters<typeof locationApiModule.locatePlace>[0],
     ) => SearchPageLocation
   >,
 };
-const tribesApi = jest.mocked(tribesApiModule);
-const offersApi = jest.mocked(offersApiModule);
+const tribesApi = vi.mocked(tribesApiModule);
+const offersApi = vi.mocked(offersApiModule);
 const analytics = fakeAnalytics();
 
 const sampleTribe = (id: string, slug: string): TribeSummary => ({
@@ -70,15 +68,17 @@ const sampleTribe = (id: string, slug: string): TribeSummary => ({
   count: 1,
 });
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/search/client/api/location.api');
-jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock('@/modules/offers/client/api/offers.api');
+vi.mock('@/modules/search/client/api/location.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/offers/client/api/offers.api');
 
-jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/search/client/hooks/use-debounced-callback', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   return {
     __esModule: true,
@@ -98,7 +98,7 @@ jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   };
 });
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchTypesToggle.component',
   () => ({
     __esModule: true,
@@ -120,7 +120,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -128,7 +128,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchMyCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -136,7 +136,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchFilterLanguage.component',
   () => ({
     __esModule: true,
@@ -152,16 +152,16 @@ jest.mock(
   }),
 );
 
-jest.mock('@/modules/core/client/api/languages.api', () => ({
+vi.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { en: 'English', fi: 'Finnish' } }),
 }));
 
-jest.mock('@/modules/users/client/components/Avatar.component', () => ({
+vi.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
   default: () => <span data-testid="avatar" />,
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/CommunityNotesSidebar.component',
   () => ({
     __esModule: true,
@@ -200,7 +200,7 @@ const mockOffer: SearchResultOffer & {
   },
 };
 
-jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
+vi.mock('@/modules/search/client/components/SearchMap.component', () => ({
   __esModule: true,
   default: (props: SearchMapHarnessProps) => {
     searchMapProps = props;
@@ -295,7 +295,7 @@ function openResultsWithVisibleOfferIds(offerIds: string[]) {
 
 describe('<SearchPage />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     searchMapProps = {
       filters: '{}',
       isUserPublic: false,

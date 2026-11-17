@@ -1,7 +1,6 @@
 import React from 'react';
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import Map from '@/modules/core/client/components/Map';
 import type MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -11,21 +10,22 @@ type MapProps = React.ComponentProps<typeof Map>;
 type MapStyleControlProps = React.ComponentProps<typeof MapStyleControl>;
 type LeafletMapProps = React.ComponentProps<typeof LeafletMap>;
 
-const mockIsWebGLSupported = jest.fn<boolean, []>();
-const mockGetMapBoxToken = jest.mocked(getMapBoxToken);
+const mockIsWebGLSupported = vi.fn<(...args: []) => boolean>();
+const mockGetMapBoxToken = vi.mocked(getMapBoxToken);
 beforeEach(() => mockGetMapBoxToken.mockReturnValue('test-token'));
-jest.mock('@/modules/core/client/utils/map', () => ({
-  ...jest.requireActual<typeof import('@/modules/core/client/utils/map')>(
+vi.mock('@/modules/core/client/utils/map', async () => ({
+  ...(await vi.importActual<typeof import('@/modules/core/client/utils/map')>(
     '@/modules/core/client/utils/map',
-  ),
+  )),
   isWebGLSupported: () => mockIsWebGLSupported(),
-  getMapBoxToken: jest.fn(() => 'test-token'),
+  getMapBoxToken: vi.fn(() => 'test-token'),
 }));
 
-const mockMapGL = jest.fn<void, [props: MapProps]>();
-const mockMapStyleControl = jest.fn<void, [props: MapStyleControlProps]>();
-jest.mock('react-map-gl/mapbox', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+const mockMapGL = vi.fn<(...args: [props: MapProps]) => void>();
+const mockMapStyleControl =
+  vi.fn<(...args: [props: MapStyleControlProps]) => void>();
+vi.mock('react-map-gl/mapbox', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: function MockMapGL(props: MapProps) {
@@ -35,20 +35,20 @@ jest.mock('react-map-gl/mapbox', () => {
   };
 });
 
-jest.mock('@/modules/core/client/components/Map/MapNavigationControl', () =>
-  jest.fn(() => <div data-testid="map-navigation-control" />),
-);
-jest.mock('@/modules/core/client/components/Map/MapScaleControl', () =>
-  jest.fn(() => <div data-testid="map-scale-control" />),
-);
-const mockLeafletMap = jest.fn<void, [props: LeafletMapProps]>();
-jest.mock('@/modules/core/client/components/Map/LeafletMap', () =>
-  jest.fn((props: LeafletMapProps) => {
+vi.mock('@/modules/core/client/components/Map/MapNavigationControl', () => ({
+  default: vi.fn(() => <div data-testid="map-navigation-control" />),
+}));
+vi.mock('@/modules/core/client/components/Map/MapScaleControl', () => ({
+  default: vi.fn(() => <div data-testid="map-scale-control" />),
+}));
+const mockLeafletMap = vi.fn<(...args: [props: LeafletMapProps]) => void>();
+vi.mock('@/modules/core/client/components/Map/LeafletMap', () => ({
+  default: vi.fn((props: LeafletMapProps) => {
     mockLeafletMap(props);
     return <div data-testid="leaflet-map" />;
   }),
-);
-jest.mock('@/modules/core/client/components/Map/MapStyleControl', () => ({
+}));
+vi.mock('@/modules/core/client/components/Map/MapStyleControl', () => ({
   __esModule: true,
   default: (props: MapStyleControlProps) => {
     mockMapStyleControl(props);
@@ -72,12 +72,12 @@ describe('<Map />', () => {
 
     expect(screen.getByText('Map child')).toBeInTheDocument();
     expect(latestReactMapProps().mapboxAccessToken).toBe('test-token');
-    const disableRotation = jest.fn();
+    const disableRotation = vi.fn();
     act(() =>
       latestReactMapProps().onLoad!({
         target: {
           touchZoomRotate: { disableRotation },
-          scrollZoom: { setWheelZoomRate: jest.fn() },
+          scrollZoom: { setWheelZoomRate: vi.fn() },
         },
       } as unknown as Parameters<NonNullable<MapProps['onLoad']>>[0]),
     );
@@ -176,7 +176,7 @@ function changeMapViewport(
 
 it('synchronises panning and external place searches while retaining zoom', () => {
   mockIsWebGLSupported.mockReturnValue(true);
-  const onLocationChange = jest.fn();
+  const onLocationChange = vi.fn();
   const { rerender } = render(
     <Map location={[50, 10]} onLocationChange={onLocationChange} />,
   );

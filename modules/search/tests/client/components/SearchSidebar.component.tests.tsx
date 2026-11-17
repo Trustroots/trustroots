@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 import '@/config/client/i18n';
@@ -10,8 +9,8 @@ const analyticsWrapper = fakeAnalytics().wrapper;
 const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
   rtlRender(ui, { wrapper: analyticsWrapper, ...options });
 
-jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/search/client/hooks/use-debounced-callback', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   return {
     __esModule: true,
@@ -31,12 +30,12 @@ jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   };
 });
 
-jest.mock('@/modules/search/client/api/location.api', () => ({
-  fetchLocationSuggestions: jest.fn().mockResolvedValue([]),
-  locatePlace: jest.fn(),
+vi.mock('@/modules/search/client/api/location.api', () => ({
+  fetchLocationSuggestions: vi.fn().mockResolvedValue([]),
+  locatePlace: vi.fn(),
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchTypesToggle.component',
   () => ({
     __esModule: true,
@@ -44,7 +43,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -52,7 +51,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchMyCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -60,7 +59,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchFilterLanguage.component',
   () => ({
     __esModule: true,
@@ -68,16 +67,16 @@ jest.mock(
   }),
 );
 
-jest.mock('@/modules/core/client/api/languages.api', () => ({
+vi.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: {} }),
 }));
 
-jest.mock('@/modules/users/client/components/Avatar.component', () => ({
+vi.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
   default: () => <span data-testid="avatar" />,
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/CommunityNotesSidebar.component',
   () => ({
     __esModule: true,
@@ -100,23 +99,23 @@ const defaultProps: React.ComponentProps<typeof SearchSidebar> = {
   offer: null,
   offers: [],
   communityNoteThreads: [],
-  onOfferSelect: jest.fn(),
-  onCommunityNoteSelect: jest.fn(),
-  onBackToOffers: jest.fn(),
-  onCloseSidebar: jest.fn(),
-  onCommunityNotesToggle: jest.fn(),
-  onFiltersChange: jest.fn(),
-  onPlaceSearch: jest.fn(),
-  onTabSelect: jest.fn(),
+  onOfferSelect: vi.fn(),
+  onCommunityNoteSelect: vi.fn(),
+  onBackToOffers: vi.fn(),
+  onCloseSidebar: vi.fn(),
+  onCommunityNotesToggle: vi.fn(),
+  onFiltersChange: vi.fn(),
+  onPlaceSearch: vi.fn(),
+  onTabSelect: vi.fn(),
   onlineInPast6Months: true,
-  onOnlineInPast6MonthsChange: jest.fn(),
+  onOnlineInPast6MonthsChange: vi.fn(),
   searchQuery: '',
-  setSearchQuery: jest.fn(),
+  setSearchQuery: vi.fn(),
 };
 
 describe('<SearchSidebar />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders place search, filters, and results tabs', () => {
@@ -132,7 +131,7 @@ describe('<SearchSidebar />', () => {
   });
 
   it('switches tabs through onTabSelect', () => {
-    const onTabSelect = jest.fn();
+    const onTabSelect = vi.fn();
 
     render(<SearchSidebar {...defaultProps} onTabSelect={onTabSelect} />);
 

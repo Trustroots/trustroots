@@ -1,13 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
 
 type BoardProps = { children?: React.ReactNode };
 
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({ children }: BoardProps) => <section>{children}</section>,

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ReactFooter from '@/layers/shell/client/ReactFooter';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
@@ -15,8 +14,8 @@ type BuildMetadata = NonNullable<
   React.ComponentProps<typeof ReactFooter>['build']
 >;
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  onClientEvent: jest.fn(() => () => {}),
+vi.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: vi.fn(() => () => {}),
 }));
 
 const build: BuildMetadata = {

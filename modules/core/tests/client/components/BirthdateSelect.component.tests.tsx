@@ -1,6 +1,5 @@
 import React, { type ComponentProps } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.component';
 
@@ -11,7 +10,7 @@ type BirthdateSelectChange = NonNullable<
 describe('<BirthdateSelect />', () => {
   it('parses an initial ISO birthdate into the selects', () => {
     render(
-      <BirthdateSelect onChange={jest.fn()} value="1990-05-15T00:00:00.000Z" />,
+      <BirthdateSelect onChange={vi.fn()} value="1990-05-15T00:00:00.000Z" />,
     );
 
     expect(screen.getByLabelText('Month')).toHaveValue('5');
@@ -20,10 +19,12 @@ describe('<BirthdateSelect />', () => {
   });
 
   it('emits null while the birthdate is incomplete', () => {
-    const onChange = jest.fn<
-      ReturnType<BirthdateSelectChange>,
-      Parameters<BirthdateSelectChange>
-    >();
+    const onChange =
+      vi.fn<
+        (
+          ...args: Parameters<BirthdateSelectChange>
+        ) => ReturnType<BirthdateSelectChange>
+      >();
 
     render(<BirthdateSelect onChange={onChange} value="" />);
 
@@ -35,10 +36,12 @@ describe('<BirthdateSelect />', () => {
   });
 
   it('emits an ISO date when month, day, and year are selected', () => {
-    const onChange = jest.fn<
-      ReturnType<BirthdateSelectChange>,
-      Parameters<BirthdateSelectChange>
-    >();
+    const onChange =
+      vi.fn<
+        (
+          ...args: Parameters<BirthdateSelectChange>
+        ) => ReturnType<BirthdateSelectChange>
+      >();
 
     render(<BirthdateSelect onChange={onChange} value="" />);
 
@@ -56,7 +59,7 @@ describe('<BirthdateSelect />', () => {
   });
 
   it('limits day options to the selected month and year', () => {
-    render(<BirthdateSelect onChange={jest.fn()} value="" />);
+    render(<BirthdateSelect onChange={vi.fn()} value="" />);
 
     fireEvent.change(screen.getByLabelText('Month'), {
       target: { value: '2' },
@@ -74,7 +77,7 @@ describe('<BirthdateSelect />', () => {
   });
 
   it('resets invalid birthdate values to empty selects', () => {
-    render(<BirthdateSelect onChange={jest.fn()} value="not-a-date" />);
+    render(<BirthdateSelect onChange={vi.fn()} value="not-a-date" />);
 
     expect(screen.getByLabelText('Month')).toHaveValue('');
     expect(screen.getByLabelText('Day')).toHaveValue('');
@@ -83,11 +86,11 @@ describe('<BirthdateSelect />', () => {
 
   it('updates local state when the value prop changes', () => {
     const { rerender } = render(
-      <BirthdateSelect onChange={jest.fn()} value="1988-12-01T00:00:00.000Z" />,
+      <BirthdateSelect onChange={vi.fn()} value="1988-12-01T00:00:00.000Z" />,
     );
 
     rerender(
-      <BirthdateSelect onChange={jest.fn()} value="2001-07-04T00:00:00.000Z" />,
+      <BirthdateSelect onChange={vi.fn()} value="2001-07-04T00:00:00.000Z" />,
     );
 
     expect(screen.getByLabelText('Month')).toHaveValue('7');
@@ -96,10 +99,12 @@ describe('<BirthdateSelect />', () => {
   });
 
   it('clears a part when the user selects the empty option', () => {
-    const onChange = jest.fn<
-      ReturnType<BirthdateSelectChange>,
-      Parameters<BirthdateSelectChange>
-    >();
+    const onChange =
+      vi.fn<
+        (
+          ...args: Parameters<BirthdateSelectChange>
+        ) => ReturnType<BirthdateSelectChange>
+      >();
 
     render(
       <BirthdateSelect onChange={onChange} value="1990-05-15T00:00:00.000Z" />,

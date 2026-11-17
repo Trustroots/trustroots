@@ -7,7 +7,7 @@ const STORAGE_KEY = 'tr.analytics.outreach';
 
 describe('outreach source', () => {
   beforeEach(() => window.sessionStorage.clear());
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('is other until something was remembered for the same member', () => {
     expect(readOutreachSource('ada')).toBe('other');
@@ -60,10 +60,10 @@ describe('outreach source', () => {
   });
 
   it('keeps working when storage is blocked', () => {
-    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
 

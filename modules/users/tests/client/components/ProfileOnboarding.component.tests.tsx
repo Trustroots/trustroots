@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AvatarNameMobile from '@/modules/users/client/components/AvatarNameMobile.component';
@@ -11,8 +10,8 @@ import Welcome from '@/modules/users/client/components/Welcome.component';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type { UserProfile } from '@/modules/users/client/types';
 
-jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/Avatar.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar({
     size,
@@ -21,7 +20,7 @@ jest.mock('@/modules/users/client/components/Avatar.component', () => {
     return <span>{`Avatar ${size} ${user.displayName}`}</span>;
   }
 
-  return MockAvatar;
+  return { default: MockAvatar };
 });
 
 const sparseProfile = {

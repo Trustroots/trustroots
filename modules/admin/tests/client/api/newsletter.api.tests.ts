@@ -9,21 +9,22 @@ import {
   type NewsletterAudienceCriteria,
 } from '@/modules/admin/client/api/newsletter.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const axiosMock = jest.mocked(axios);
+const axiosMock = vi.mocked(axios);
 
-function response<T>(data: T): AxiosResponse<T> {
+async function response<T>(data: T): AxiosResponse<T> {
   const { AxiosHeaders: ActualAxiosHeaders } =
-    jest.requireActual<typeof import('axios')>('axios');
+    await vi.importActual<typeof import('axios')>('axios');
   const headers = new ActualAxiosHeaders();
   return { data, status: 200, statusText: 'OK', headers, config: { headers } };
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('admin newsletter api', () => {

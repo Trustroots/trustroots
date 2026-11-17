@@ -12,25 +12,23 @@ import {
   signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 
-jest.mock('nostr-tools/pool', () => ({ SimplePool: jest.fn() }));
+vi.mock('nostr-tools/pool', () => ({ SimplePool: vi.fn() }));
 
 const id = 'ab'.repeat(32);
 const event = { id, kind: 1, content: 'A fictional note.' };
 const featuredNote = { id, content: event.content };
-const get = jest.fn();
-const destroy = jest.fn();
-const publish = jest.fn();
+const get = vi.fn();
+const destroy = vi.fn();
+const publish = vi.fn();
 
 beforeEach(() => {
-  jest.resetAllMocks();
-  jest
-    .mocked(SimplePool)
-    .mockImplementation(
-      () => ({ get, destroy, publish }) as unknown as SimplePool,
-    );
+  vi.resetAllMocks();
+  vi.mocked(SimplePool).mockImplementation(
+    () => ({ get, destroy, publish }) as unknown as SimplePool,
+  );
 });
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => vi.restoreAllMocks());
 
 it.each([
   id.toUpperCase(),
@@ -41,7 +39,7 @@ it.each([
   'resolves a reference on supported relays and submits the signed event',
   async reference => {
     get.mockResolvedValue(event);
-    const post = jest
+    const post = vi
       .spyOn(http, 'post')
       .mockResolvedValue({ data: featuredNote });
     await expect(featureNostrNote(reference)).resolves.toEqual(featuredNote);
@@ -78,7 +76,7 @@ it('closes relay connections if the event cannot be found', async () => {
 });
 
 it('removes a featured note by event ID', async () => {
-  const remove = jest.spyOn(http, 'delete').mockResolvedValue({});
+  const remove = vi.spyOn(http, 'delete').mockResolvedValue({});
   await removeFeaturedNostrNote(id);
   expect(remove).toHaveBeenCalledWith(`/api/admin/nostr/featured-notes/${id}`);
 });
@@ -87,7 +85,7 @@ describe('NIP-07 text notes', () => {
   const author = new Uint8Array(32).fill(7);
   const publicKey = getPublicKey(author);
   const content = 'A fictional note.\nSecond line.';
-  const signEvent = jest.fn();
+  const signEvent = vi.fn();
 
   beforeEach(() => {
     signEvent.mockImplementation(async (template: Record<string, unknown>) => ({
@@ -208,7 +206,7 @@ describe('NIP-09 deletion', () => {
       maxWait: 5000,
     });
     expect(destroy).toHaveBeenCalledTimes(1);
-    const post = jest.spyOn(http, 'post').mockResolvedValue({});
+    const post = vi.spyOn(http, 'post').mockResolvedValue({});
     await recordNostrNoteDeletion(note.id, signed);
     expect(post).toHaveBeenCalledWith(
       `/api/admin/nostr/featured-notes/${id}/deletion`,

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import {
   act,
@@ -6,16 +7,15 @@ import {
   renderHook,
   screen,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import useDeviceLocation from '@/modules/core/client/utils/use-device-location';
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => `i18n:${key}` }),
 }));
-const mockRequestMapDefaultLocation = jest.fn();
-jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+const mockRequestMapDefaultLocation = vi.fn();
+vi.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
   useRequestMapDefaultLocation: () => mockRequestMapDefaultLocation,
 }));
@@ -23,9 +23,8 @@ jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
 type SuccessCallback = PositionCallback;
 type ErrorCallback = PositionErrorCallback;
 
-let getCurrentPosition: jest.Mock<
-  void,
-  [SuccessCallback, ErrorCallback, PositionOptions?]
+let getCurrentPosition: Mock<
+  (...args: [SuccessCallback, ErrorCallback, PositionOptions?]) => void
 >;
 let originalGeolocation: PropertyDescriptor | undefined;
 let originalNavigator: PropertyDescriptor | undefined;
@@ -63,11 +62,11 @@ beforeEach(() => {
     'geolocation',
   );
   originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
-  getCurrentPosition = jest.fn();
+  getCurrentPosition = vi.fn();
   setGeolocation({
     getCurrentPosition,
-    clearWatch: jest.fn(),
-    watchPosition: jest.fn(),
+    clearWatch: vi.fn(),
+    watchPosition: vi.fn(),
   });
 });
 
@@ -84,8 +83,8 @@ afterEach(() => {
 });
 
 it('requests location only after click and sends valid zero coordinates', () => {
-  const onLocation = jest.fn();
-  const onRequest = jest.fn();
+  const onLocation = vi.fn();
+  const onRequest = vi.fn();
   const sequence: string[] = [];
   onRequest.mockImplementation(() => sequence.push('request'));
   getCurrentPosition.mockImplementation(() => sequence.push('geolocation'));
@@ -108,7 +107,7 @@ it('requests location only after click and sends valid zero coordinates', () => 
 });
 
 it('prevents duplicate requests while pending and exposes pending accessibly', () => {
-  render(<DeviceLocationButton onLocation={jest.fn()} />);
+  render(<DeviceLocationButton onLocation={vi.fn()} />);
   const button = screen.getByRole('button', {
     name: 'i18n:Use my location',
   });
@@ -144,7 +143,7 @@ it.each([
     'i18n:Your location is unavailable. Try again, or choose a location manually.',
   ],
 ])('announces geolocation error code %s', (code, message) => {
-  render(<DeviceLocationButton onLocation={jest.fn()} />);
+  render(<DeviceLocationButton onLocation={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
   act(() =>
     getCurrentPosition.mock.calls[0][1]({ code } as GeolocationPositionError),
@@ -158,8 +157,8 @@ it.each([
 
 it('reports unsupported browsers without asking for a position', () => {
   setGeolocation(undefined);
-  const onRequest = jest.fn();
-  render(<DeviceLocationButton onLocation={jest.fn()} onRequest={onRequest} />);
+  const onRequest = vi.fn();
+  render(<DeviceLocationButton onLocation={vi.fn()} onRequest={onRequest} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
 
   expect(onRequest).toHaveBeenCalledTimes(1);
@@ -177,7 +176,7 @@ it.each([
   [1, 181],
   [1, -181],
 ])('rejects invalid coordinates (%s, %s)', (lat, lng) => {
-  const onLocation = jest.fn();
+  const onLocation = vi.fn();
   render(<DeviceLocationButton onLocation={onLocation} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
   act(() => getCurrentPosition.mock.calls[0][0](makePosition(lat, lng)));
@@ -192,7 +191,7 @@ it('reports a synchronous browser failure', () => {
   getCurrentPosition.mockImplementation(() => {
     throw new Error('browser failure');
   });
-  render(<DeviceLocationButton onLocation={jest.fn()} />);
+  render(<DeviceLocationButton onLocation={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
 
   expect(screen.getByRole('status')).toHaveTextContent(
@@ -201,7 +200,7 @@ it('reports a synchronous browser failure', () => {
 });
 
 it('ignores callbacks after unmount', () => {
-  const onLocation = jest.fn();
+  const onLocation = vi.fn();
   const { unmount } = render(<DeviceLocationButton onLocation={onLocation} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
   const success = getCurrentPosition.mock.calls[0][0];
@@ -215,8 +214,8 @@ it('ignores callbacks after unmount', () => {
 });
 
 it('clears an error when retrying and uses the latest location handler', () => {
-  const firstHandler = jest.fn();
-  const latestHandler = jest.fn();
+  const firstHandler = vi.fn();
+  const latestHandler = vi.fn();
   const { rerender } = render(
     <DeviceLocationButton onLocation={firstHandler} />,
   );
@@ -239,7 +238,7 @@ it('clears an error when retrying and uses the latest location handler', () => {
 });
 
 it('ignores duplicate browser callbacks for one request', () => {
-  const onLocation = jest.fn();
+  const onLocation = vi.fn();
   render(<DeviceLocationButton onLocation={onLocation} />);
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
   const success = getCurrentPosition.mock.calls[0][0];
@@ -251,7 +250,7 @@ it('ignores duplicate browser callbacks for one request', () => {
 });
 
 it('guards against duplicate requests at the hook boundary', () => {
-  const { result } = renderHook(() => useDeviceLocation(jest.fn()));
+  const { result } = renderHook(() => useDeviceLocation(vi.fn()));
   act(() => {
     result.current.requestLocation();
     result.current.requestLocation();
@@ -265,7 +264,7 @@ it('handles an environment without navigator', () => {
     configurable: true,
     value: undefined,
   });
-  const { result } = renderHook(() => useDeviceLocation(jest.fn()));
+  const { result } = renderHook(() => useDeviceLocation(vi.fn()));
   act(() => result.current.requestLocation());
 
   expect(result.current.error).toBe('unsupported');
@@ -273,7 +272,7 @@ it('handles an environment without navigator', () => {
 });
 
 it('ignores a failure callback after unmount', () => {
-  const { result, unmount } = renderHook(() => useDeviceLocation(jest.fn()));
+  const { result, unmount } = renderHook(() => useDeviceLocation(vi.fn()));
   act(() => result.current.requestLocation());
   const failure = getCurrentPosition.mock.calls[0][1];
 
@@ -284,7 +283,7 @@ it('ignores a failure callback after unmount', () => {
 });
 
 it('does not update hook state if a synchronous browser failure follows unmount', () => {
-  const { result, unmount } = renderHook(() => useDeviceLocation(jest.fn()));
+  const { result, unmount } = renderHook(() => useDeviceLocation(vi.fn()));
   getCurrentPosition.mockImplementation(() => {
     unmount();
     throw new Error('browser failure');
@@ -296,7 +295,7 @@ it('does not update hook state if a synchronous browser failure follows unmount'
 });
 
 it('ignores a thrown error after a success callback has completed', () => {
-  const onLocation = jest.fn();
+  const onLocation = vi.fn();
   getCurrentPosition.mockImplementation(success => {
     success(makePosition(45, 12));
     throw new Error('late browser failure');
@@ -311,8 +310,8 @@ it('ignores a thrown error after a success callback has completed', () => {
 it('uses and attributes the approximate location after a device error', async () => {
   const approximate = { latitude: 34, longitude: -17, zoom: 6 };
   mockRequestMapDefaultLocation.mockResolvedValue(approximate);
-  const onLocation = jest.fn();
-  const onApproximateLocation = jest.fn();
+  const onLocation = vi.fn();
+  const onApproximateLocation = vi.fn();
   render(
     <DeviceLocationButton
       onLocation={onLocation}
@@ -350,10 +349,10 @@ it('stays pending while the approximate location is loading', async () => {
       resolveApproximate = resolve;
     }),
   );
-  const onApproximateLocation = jest.fn();
+  const onApproximateLocation = vi.fn();
   render(
     <DeviceLocationButton
-      onLocation={jest.fn()}
+      onLocation={vi.fn()}
       onApproximateLocation={onApproximateLocation}
     />,
   );
@@ -382,8 +381,8 @@ it('retains the device error when the approximate location is unavailable', asyn
   mockRequestMapDefaultLocation.mockResolvedValue(null);
   render(
     <DeviceLocationButton
-      onLocation={jest.fn()}
-      onApproximateLocation={jest.fn()}
+      onLocation={vi.fn()}
+      onApproximateLocation={vi.fn()}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
@@ -410,10 +409,10 @@ it('ignores a late approximate response after unmount', async () => {
       resolveApproximate = resolve;
     }),
   );
-  const onApproximateLocation = jest.fn();
+  const onApproximateLocation = vi.fn();
   const { unmount } = render(
     <DeviceLocationButton
-      onLocation={jest.fn()}
+      onLocation={vi.fn()}
       onApproximateLocation={onApproximateLocation}
     />,
   );
@@ -432,38 +431,38 @@ it('ignores a late approximate response after unmount', async () => {
 });
 
 it('fades warnings after eight seconds and restores them when retried', () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
   try {
     setGeolocation(undefined);
-    render(<DeviceLocationButton onLocation={jest.fn()} />);
+    render(<DeviceLocationButton onLocation={vi.fn()} />);
     const locate = screen.getByRole('button', { name: 'i18n:Use my location' });
     fireEvent.click(locate);
     const status = screen.getByRole('status');
-    act(() => jest.advanceTimersByTime(7999));
+    act(() => vi.advanceTimersByTime(7999));
     expect(status).not.toHaveClass('device-location-feedback-dismissed');
-    act(() => jest.advanceTimersByTime(1));
+    act(() => vi.advanceTimersByTime(1));
     expect(status).toHaveClass('device-location-feedback-dismissed');
     fireEvent.click(locate);
     expect(status).not.toHaveClass('device-location-feedback-dismissed');
-    act(() => jest.advanceTimersByTime(8000));
+    act(() => vi.advanceTimersByTime(8000));
     expect(status).toHaveClass('device-location-feedback-dismissed');
   } finally {
-    jest.useRealTimers();
+    vi.useRealTimers();
   }
 });
 
 it('cancels warning dismissal when unmounted', () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
   try {
     setGeolocation(undefined);
-    const { unmount } = render(<DeviceLocationButton onLocation={jest.fn()} />);
+    const { unmount } = render(<DeviceLocationButton onLocation={vi.fn()} />);
     fireEvent.click(
       screen.getByRole('button', { name: 'i18n:Use my location' }),
     );
-    expect(jest.getTimerCount()).toBe(1);
+    expect(vi.getTimerCount()).toBe(1);
     unmount();
-    expect(jest.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
   } finally {
-    jest.useRealTimers();
+    vi.useRealTimers();
   }
 });
