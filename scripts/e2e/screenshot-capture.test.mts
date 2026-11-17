@@ -97,3 +97,81 @@ test('captures a named section instead of its whole page', async () => {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('captures the same board photo across revisions at each viewport', async () => {
+  const browser = await chromium.launch();
+  const origin = 'http://boards.example';
+  const variants = [
+    { route: '/', classes: 'home-intro', width: 800, photo: 'ak-sahara.jpg' },
+    {
+      route: '/',
+      classes: 'home-intro',
+      width: 390,
+      photo: 'ak-sahara--mobile.jpg',
+    },
+    {
+      route: '/?circle=hitchhikers',
+      classes: 'home-intro',
+      width: 390,
+      photo: 'ab-hitchroad-toned.jpg',
+    },
+    {
+      route: '/faq',
+      classes: 'faq-header',
+      width: 390,
+      photo: 'af-happyhippies--mobile.jpg',
+    },
+    {
+      route: '/signin',
+      classes: 'board container-fullscreen',
+      width: 800,
+      photo: 'nordic-lights.jpg',
+    },
+  ];
+  try {
+    for (const { route, classes, width, photo } of variants) {
+      const url = origin + route;
+      for (const originalColour of ['red', 'yellow']) {
+        const finish = trackScreenshotPages(browser, info);
+        const page = await browser.newPage({ viewport: { width, height: 80 } });
+        await page.route(url, route =>
+          route.fulfill({
+            contentType: 'text/html',
+            body: `<body style="margin:0"><section class="${classes}" style="height:80px;background-image:linear-gradient(${originalColour}, ${originalColour})"></section></body>`,
+          }),
+        );
+        await page.route(`${origin}/img/board/${photo}`, route =>
+          route.fulfill({
+            contentType: 'image/svg+xml',
+            body: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="blue"/></svg>',
+          }),
+        );
+        await page.goto(url);
+        const board = page.locator('section');
+        if (originalColour === 'red') {
+          await captureSection(board, 'Board');
+          assert.match(
+            await board.evaluate(
+              element => getComputedStyle(element).backgroundImage,
+            ),
+            /^linear-gradient/,
+          );
+        }
+        await finish();
+        await page.close();
+      }
+      const before = fs.readFileSync(
+        path.join(directory, 'chromium-Board.png'),
+      );
+      const after = fs.readFileSync(
+        path.join(directory, 'chromium-Screenshot_regression-page-1.png'),
+      );
+      assert.deepEqual(before, after, `${route} at ${width}px`);
+      const pixels = await sharp(after).raw().toBuffer();
+      assert.deepEqual([...pixels.subarray(0, 3)], [0, 0, 255]);
+    }
+  } finally {
+    await browser.close();
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
