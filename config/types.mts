@@ -115,7 +115,6 @@ export interface Config {
     publicKey: string;
   };
   twitter: { username: string };
-  google: { page: string };
   webPush: {
     publicKey: string;
     privateKey: string;

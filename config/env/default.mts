@@ -281,9 +281,6 @@ const service = {
   twitter: {
     username: '',
   },
-  google: {
-    page: '',
-  },
   webPush: {
     publicKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY || '',
     privateKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY || '',
