@@ -13,10 +13,46 @@ type UserRecord =
   import('../../server/models/user.server.types.mts').UserServerRecord;
 const User = mongoose.model<UserRecord>('User');
 
+function emailPage(content: string) {
+  return (
+    '<!doctype html><html lang="en"><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>Email preferences · Trustroots</title>' +
+    '<main><h1>Email preferences</h1>' +
+    content +
+    '</main></html>'
+  );
+}
+
+const invalidLinkPage = emailPage(
+  '<p>This unsubscribe link is invalid. You can change your email preferences in Account settings.</p>',
+);
+
+function createMember(username: string, extra: Partial<UserRecord> = {}) {
+  return User.create({
+    firstName: 'Example',
+    lastName: 'Member',
+    username,
+    email: `${username}@example.test`,
+    provider: 'local',
+    password: 'Fict1onal!member',
+    public: true,
+    ...extra,
+  });
+}
+
 describe('Optional email unsubscribe route', function () {
   afterEach(async function () {
     await User.deleteMany({
-      username: { $in: ['sampleemailmember', 'examplemember'] },
+      username: {
+        $in: [
+          'sampleemailmember',
+          'examplemember',
+          'othermember',
+          'pagemember',
+          'racemember',
+        ],
+      },
     });
   });
 
@@ -93,14 +129,10 @@ describe('Optional email unsubscribe route', function () {
 
   it('changes only the signed category after confirmation, without a session', async function () {
     const app = await express.init(mongoose.connection);
-    const user = await User.create({
-      firstName: 'Example',
-      lastName: 'Member',
-      username: 'examplemember',
-      email: 'examplemember@example.test',
-      provider: 'local',
-      password: 'Fict1onal!member',
-      public: true,
+    const otherMember = await createMember('othermember', {
+      messageEmailFrequency: 'weekly',
+    });
+    const user = await createMember('examplemember', {
       messageEmailFrequency: 'weekly',
     });
     const messageMail = notificationEmail(user, 'messages', 'weekly');
@@ -155,6 +187,10 @@ describe('Optional email unsubscribe route', function () {
       .expect(/You have unsubscribed/);
     await agent.post(messages).expect(200);
     assert.equal(
+      (await User.findById(user._id).lean())?.messageEmailFrequency,
+      'off',
+    );
+    assert.equal(
       await canDeliverNotificationEmail(
         messageMail.notificationEmail!,
         user.email!,
@@ -190,5 +226,73 @@ describe('Optional email unsubscribe route', function () {
       ),
     );
     await agent.post('/email/unsubscribe/invalid').expect(400);
+
+    const other = await User.findById(otherMember._id).lean();
+    assert.equal(other?.messageEmailFrequency, 'weekly');
+    assert.equal(other?.hostingReminderEmails, undefined);
+    await User.deleteMany({ _id: { $in: [user._id, otherMember._id] } });
+  });
+
+  it('serves uncached standalone pages that ask before unsubscribing', async function () {
+    const app = await express.init(mongoose.connection);
+    const user = await createMember('pagemember');
+    const path = new URL(notificationEmail(user, 'hosting').unsubscribeUrl!)
+      .pathname;
+
+    const confirmation = await request(app).get(path).expect(200);
+    assert.equal(confirmation.headers['cache-control'], 'no-store');
+    assert.equal(confirmation.headers['referrer-policy'], 'strict-origin');
+    assert.match(confirmation.headers['content-type'], /^text\/html/);
+    assert.equal(
+      confirmation.text,
+      emailPage(
+        '<p>Stop receiving hosting reminders from Trustroots?</p>' +
+          '<form method="post"><button type="submit">Unsubscribe</button></form>',
+      ),
+    );
+
+    const done = await request(app).post(path).expect(200);
+    assert.equal(
+      done.text,
+      emailPage(
+        '<p>You have unsubscribed. You can change your email preferences in Account settings.</p>',
+      ),
+    );
+
+    const invalid = await request(app)
+      .get('/email/unsubscribe/invalid')
+      .expect(400);
+    assert.equal(invalid.headers['cache-control'], 'no-store');
+    assert.equal(invalid.text, invalidLinkPage);
+    await User.deleteOne({ _id: user._id });
+  });
+
+  it('reads only the fields it needs and rejects a link whose update matched no member', async function () {
+    const app = await express.init(mongoose.connection);
+    const user = await createMember('racemember');
+    const mail = notificationEmail(user, 'messages', 'immediate');
+    const findById = sinon.spy(User, 'findById');
+    const updateOne = sinon
+      .stub(User, 'updateOne')
+      .resolves({ matchedCount: 0 } as never);
+    try {
+      await canDeliverNotificationEmail(mail.notificationEmail!, user.email);
+      const invalid = await request(app)
+        .post(new URL(mail.unsubscribeUrl!).pathname)
+        .expect(400);
+      assert.equal(invalid.text, invalidLinkPage);
+      assert.deepEqual(
+        findById.getCalls().map(call => call.args[1]),
+        ['email messageEmailFrequency hostingReminderEmails', 'email'],
+      );
+      assert.deepEqual(updateOne.firstCall.args, [
+        { _id: String(user._id), email: user.email },
+        { $set: { messageEmailFrequency: 'off' } },
+      ]);
+    } finally {
+      findById.restore();
+      updateOne.restore();
+      await User.deleteOne({ _id: user._id });
+    }
   });
 });
