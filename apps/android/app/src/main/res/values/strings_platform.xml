@@ -4,7 +4,7 @@
     <string name="browser_open_external">Open</string>
     <string name="message_alerts_registration_failed">Trustroots could not turn on message alerts. Check your internet connection, then turn alerts off and back on in Account → Message alerts. If you use a separate notification app, check that it is connected.</string>
     <string name="message_alerts_ready">Message alerts are ready.</string>
-    <string name="message_alerts_not_configured">Message alerts are not configured on this server.</string>
+    <string name="message_alerts_not_configured">Message alerts are not available right now. Email reminders are still available.</string>
     <string name="message_alerts_install_distributor">To get alerts on this device, install a compatible notification app such as ntfy, then turn alerts on again. Email reminders are still available.</string>
     <string name="message_alerts_choose_distributor">Choose a notification app to enable message alerts.</string>
     <string name="message_alerts_waiting_registration">Setting up message alerts. Please wait.</string>

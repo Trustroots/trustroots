@@ -197,7 +197,7 @@ class MessageAlertsAdapterJourneyTest {
                 )
             }
             assertTrue("Unconfigured-server result did not complete", unconfiguredLatch.await(10, TimeUnit.SECONDS))
-            assertEquals("Message alerts are not configured on this server.", unconfiguredResult.get())
+            assertEquals("Message alerts are not available right now. Email reminders are still available.", unconfiguredResult.get())
 
             val blankKeySession = MemberSession(
                 "connect.sid=fixture-session",
@@ -217,7 +217,7 @@ class MessageAlertsAdapterJourneyTest {
                 )
             }
             assertTrue("Blank-key result did not complete", blankKeyLatch.await(10, TimeUnit.SECONDS))
-            assertEquals("Message alerts are not configured on this server.", blankKeyResult.get())
+            assertEquals("Message alerts are not available right now. Email reminders are still available.", blankKeyResult.get())
             assertFalse(MessageAlerts.isEnabled(context, blankKeySession.member.username))
             assertEquals("quiet-fox", preferences.getString("account", null))
         }

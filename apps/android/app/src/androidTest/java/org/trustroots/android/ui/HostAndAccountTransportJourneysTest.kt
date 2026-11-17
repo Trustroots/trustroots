@@ -350,7 +350,7 @@ class HostAndAccountTransportJourneysTest {
             "Account", "Email", "Email address", "Community newsletter", "Save email settings",
             "Change password", "Current password", "New password", "Verify new password",
             "Change password", "Forgot your password?", "Message alerts",
-            "To get new message alerts, install and open a UnifiedPush app such as ntfy. Then come back here and turn on message alerts.",
+            "Turn on alerts for new messages. If this device needs a separate notification app, install and open one such as ntfy, then come back here.",
             "Install and set up ntfy", "Turn on message alerts", "Sign out", "Usage analytics", "Check account", "Saving…", "Account saved.",
         )
     }

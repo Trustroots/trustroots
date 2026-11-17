@@ -157,7 +157,7 @@
     <string name="screen_password_changed">Password changed.</string>
     <string name="screen_forgot_your_password">Forgot your password?</string>
     <string name="screen_message_alerts">Message alerts</string>
-    <string name="screen_message_alerts_description">To get new message alerts, install and open a UnifiedPush app such as ntfy. Then come back here and turn on message alerts.</string>
+    <string name="screen_message_alerts_description">Turn on alerts for new messages. If this device needs a separate notification app, install and open one such as ntfy, then come back here.</string>
     <string name="screen_ntfy_setup_guide">Install and set up ntfy</string>
     <string name="screen_message_alert_test">Test on locked screen</string>
     <string name="screen_message_alert_test_scheduled">Lock your phone now. The test alert is due in about 15 seconds.</string>
