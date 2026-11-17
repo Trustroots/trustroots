@@ -27,7 +27,6 @@ function LevelSelectors({
     <div key={code}>
       <label htmlFor={`language-level-${code}`}>
         {t('Level for {{language}}', {
-          // i18next-extract-disable-next-line
           language: names?.[code] ? t(names[code], { ns: 'languages' }) : code,
         })}
       </label>
@@ -45,7 +44,6 @@ function LevelSelectors({
       >
         <option value="">{t('Not specified')}</option>
         {Object.entries(languageLevelLabels).map(([value, label]) => (
-          // i18next-extract-disable-next-line
           <option key={value} value={value}>
             {t(label)}
           </option>

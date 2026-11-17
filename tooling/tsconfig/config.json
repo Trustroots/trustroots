@@ -2,7 +2,7 @@
   "extends": "./server.json",
   "include": [
     "../../*.cts",
-    "../../tooling/babel/*.cts",
+    "../../i18next.config.ts",
     "../../vite.config.mts",
     "../../vitest.server.config.mts",
     "../../config/**/*.cts",
