@@ -2,4 +2,5 @@
 <resources>
     <string name="messages_title">Messages</string>
     <string name="view_profile">View profile</string>
+    <string name="inbox_conversation_unread">Unread</string>
 </resources>

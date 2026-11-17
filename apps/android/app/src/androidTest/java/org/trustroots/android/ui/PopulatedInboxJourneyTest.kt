@@ -13,6 +13,9 @@ import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -120,6 +123,11 @@ class PopulatedInboxJourneyTest {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodesWithText("Amber Owl").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("message-thread-thread-fox").assertTextContains("Unread", substring = true)
+        compose.onNodeWithText("Unread").assertIsDisplayed()
+        compose.onNodeWithTag("message-thread-thread-owl").assertTextContains("Amber Owl", substring = true)
+        compose.onNodeWithTag("message-thread-thread-owl").assert(hasText("Unread", substring = true).not())
+        captureUsabilityScreenshot(compose, "inbox-read-and-unread-conversations")
         compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("  quiet-fox ")
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
