@@ -30,7 +30,7 @@ vi.mock('@/modules/tribes/client/components/RadioCircle', () => ({
 }));
 
 it.each([undefined, user])(
-  'renders radio only on the Radio circle for viewer %p',
+  'renders radio only on the Radio circle for viewer %o',
   async viewer => {
     getMock.mockResolvedValue({
       _id: 'fictional-radio',
@@ -237,7 +237,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   });
 
   it.each([undefined, user, { ...user, memberIds: ['tribe-1'] }])(
-    'renders the Hackers map and attributed resources for viewer %p',
+    'renders the Hackers map and attributed resources for viewer %o',
     async viewer => {
       getMock.mockResolvedValue({
         ...tribe,

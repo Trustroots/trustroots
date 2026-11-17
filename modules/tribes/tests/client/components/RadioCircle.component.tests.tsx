@@ -33,9 +33,9 @@ vi.mock('@tanstack/react-router', async () =>
   ).mockRouterModule(),
 );
 vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
-  const original = await vi.importActual(
-    '@/modules/tribes/client/services/radio.client.service',
-  );
+  const original = await vi.importActual<
+    typeof import('@/modules/tribes/client/services/radio.client.service')
+  >('@/modules/tribes/client/services/radio.client.service');
   return {
     ...original,
     // Service tests cover the complete catalogue; player tests use three stations.
@@ -100,7 +100,7 @@ beforeEach(() => {
     setSigner: vi.fn(),
     loadFavourites: vi.fn(),
   };
-  vi.mocked(RadioRoom).mockImplementation((onEvent, onError) => {
+  vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
     receive = onEvent;
     relayFailure = onError;
     return room as unknown as RadioRoom;
@@ -437,7 +437,7 @@ it('does not look up public room identities for a guest', () => {
 });
 
 it.each([false, true])(
-  'aborts pending author lookups on unmount (rejected: %p)',
+  'aborts pending author lookups on unmount (rejected: %o)',
   async reject => {
     let finish!: () => void;
     const lookup = vi.mocked(fetchRadioAuthorUsernames).mockImplementationOnce(
@@ -677,7 +677,7 @@ it('sorts chat, omits unknown station links and expires messages', () => {
 });
 
 it.each([false, true])(
-  'ignores connection completion after unmount (rejected: %p)',
+  'ignores connection completion after unmount (rejected: %o)',
   async reject => {
     let finish!: () => void;
     vi.mocked(connectRadioSigner).mockImplementationOnce(
@@ -717,7 +717,7 @@ it('ignores playback rejection after unmount', async () => {
 });
 
 it.each([false, true])(
-  'cleans up pending chat and favourite publications (rejected: %p)',
+  'cleans up pending chat and favourite publications (rejected: %o)',
   async reject => {
     const { unmount } = render(<RadioCircle user={user} />);
     await connect();
@@ -746,7 +746,7 @@ it.each([false, true])(
 );
 
 it.each([false, true])(
-  'does not schedule another heartbeat after unmount (rejected: %p)',
+  'does not schedule another heartbeat after unmount (rejected: %o)',
   async reject => {
     vi.useFakeTimers();
     const { unmount } = render(<RadioCircle user={user} />);

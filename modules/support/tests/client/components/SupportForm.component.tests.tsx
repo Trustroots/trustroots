@@ -257,7 +257,7 @@ describe('<SupportForm />', () => {
   });
 
   it('falls back to the raw query string when report URL parsing fails', async () => {
-    const urlParser = vi.spyOn(global, 'URL').mockImplementation(() => {
+    const urlParser = vi.spyOn(global, 'URL').mockImplementation(function () {
       throw new Error('broken URL parser');
     });
 
@@ -402,7 +402,7 @@ describe('<SupportForm />', () => {
   });
 
   it('leaves the default category when URL parsing fails without a query string', () => {
-    const urlParser = vi.spyOn(global, 'URL').mockImplementation(() => {
+    const urlParser = vi.spyOn(global, 'URL').mockImplementation(function () {
       throw new Error('broken URL parser');
     });
     try {

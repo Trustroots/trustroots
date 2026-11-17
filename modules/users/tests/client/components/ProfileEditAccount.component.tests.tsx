@@ -603,11 +603,7 @@ describe('ProfileEditAccount', () => {
     const button = screen.getByRole('button', { name: 'Remove profile' });
     button.removeAttribute('disabled');
     button.dispatchEvent(
-      new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-      }),
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
     );
 
     expect(usersApi.removeProfile).not.toHaveBeenCalled();

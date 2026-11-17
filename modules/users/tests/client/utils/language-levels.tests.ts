@@ -10,7 +10,7 @@ it.each([
   { eng: 'fluent' },
   { eng: 'toString' },
   { fra: 'native' },
-])('rejects invalid levels: %p', levels => {
+])('rejects invalid levels: %o', levels => {
   expect(validLanguageLevels(levels, ['eng'])).toBe(false);
 });
 it('accepts unspecified levels and all four levels', () => {

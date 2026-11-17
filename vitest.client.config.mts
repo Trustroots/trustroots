@@ -9,6 +9,8 @@ export default mergeConfig(
     test: {
       include: ['modules/*/tests/client/**/*.tests.{js,jsx,ts,tsx}'],
       environment: 'jsdom',
+      // Match the Jest default the tests were written against.
+      environmentOptions: { jsdom: { url: 'http://localhost/' } },
       globals: true,
       setupFiles: ['./testutils/client/vitest.setup.ts'],
       coverage: {

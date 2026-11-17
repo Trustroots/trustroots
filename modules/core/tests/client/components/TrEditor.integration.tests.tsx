@@ -46,7 +46,7 @@ describe('<TrEditor /> with MediumEditor', () => {
     ['initial', 'initial'],
     ['initial', '<p>Replacement note</p>'],
   ] as Array<[string, string]>)(
-    'applies external text after typing (%p → %p)',
+    'applies external text after typing (%o → %o)',
     (initial, replacement) => {
       const onChange: MockedFunction<TrEditorProps['onChange']> = vi.fn();
       const { container, rerender } = render(

@@ -1043,7 +1043,7 @@ describe('Search', () => {
   });
 
   it.each([MAP_STYLE_OSM, 'mapbox://styles/trustroots/custom'])(
-    'uses Leaflet without a token even when WebGL is supported (style %p)',
+    'uses Leaflet without a token even when WebGL is supported (style %o)',
     style => {
       mockGetMapBoxToken.mockReturnValue(undefined);
       mockMapStyle = style;

@@ -281,7 +281,7 @@ function relayFixture(fail = false) {
     onclose?: () => void;
     onauth?: (template: EventTemplate) => Promise<Event>;
   }> = [];
-  vi.mocked(Relay).mockImplementation(() => {
+  vi.mocked(Relay).mockImplementation(function () {
     const relay = {
       connect: vi.fn(async () => {
         if (fail) throw new Error('offline');

@@ -71,9 +71,7 @@ describe('ready', () => {
 describe('canUseWebP', () => {
   let detectWebP: DetectWebP;
   let image: ImageProbe;
-  let imageConstructor: MockInstance<
-    (...args: ConstructorParameters<typeof Image>) => HTMLImageElement
-  >;
+  let imageConstructor: MockInstance<typeof Image>;
 
   beforeEach(async () => {
     vi.resetModules();

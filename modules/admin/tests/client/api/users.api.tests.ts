@@ -19,9 +19,10 @@ vi.mock(
 
 const axiosMock = vi.mocked(axios);
 
-async function response<T>(data: T): AxiosResponse<T> {
-  const { AxiosHeaders: ActualAxiosHeaders } =
-    await vi.importActual<typeof import('axios')>('axios');
+const { AxiosHeaders: ActualAxiosHeaders } =
+  await vi.importActual<typeof import('axios')>('axios');
+
+function response<T>(data: T): AxiosResponse<T> {
   const headers = new ActualAxiosHeaders();
   return { data, status: 200, statusText: 'OK', headers, config: { headers } };
 }

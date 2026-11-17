@@ -31,7 +31,9 @@ function onCtrlEnterMock(): MockedFunction<
 }
 
 vi.mock('medium-editor', () => {
-  return vi.fn().mockImplementation((element: HTMLElement) => {
+  const MediumEditor = vi.fn().mockImplementation(function (
+    element: HTMLElement,
+  ) {
     const subscribers: Partial<Record<EditorEventName, EditorHandler>> = {};
     const medium: EditorFixture = {
       subscribe: vi.fn((eventName: EditorEventName, handler: EditorHandler) => {
@@ -58,6 +60,7 @@ vi.mock('medium-editor', () => {
     mediumEditors.push(medium);
     return medium;
   });
+  return { default: MediumEditor };
 });
 
 describe('<TrEditor />', () => {

@@ -11,15 +11,15 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 const analytics = fakeAnalytics();
 
 vi.mock('@/modules/users/client/services/nostr-proof.client', async () => ({
-  ...(await vi.importActual(
-    '@/modules/users/client/services/nostr-proof.client',
-  )),
+  ...(await vi.importActual<
+    typeof import('@/modules/users/client/services/nostr-proof.client')
+  >('@/modules/users/client/services/nostr-proof.client')),
   signNostrProof: vi.fn().mockResolvedValue({ id: 'signed-proof' }),
   signWithConnectedNostr: vi.fn(
     (
-      await vi.importActual(
-        '@/modules/users/client/services/nostr-proof.client',
-      )
+      await vi.importActual<
+        typeof import('@/modules/users/client/services/nostr-proof.client')
+      >('@/modules/users/client/services/nostr-proof.client')
     ).signWithConnectedNostr,
   ),
 }));
@@ -28,9 +28,10 @@ const mockedUsersApi = vi.mocked(usersApi);
 
 vi.mock('@/modules/users/client/api/users.api');
 vi.mock('nostr-tools', async () => ({
-  ...(await vi.importActual('nostr-tools')),
+  ...(await vi.importActual<typeof import('nostr-tools')>('nostr-tools')),
   nip19: {
-    ...(await vi.importActual('nostr-tools')).nip19,
+    ...(await vi.importActual<typeof import('nostr-tools')>('nostr-tools'))
+      .nip19,
     npubEncode: vi.fn(() => 'npub1suggestedkey'),
   },
 }));

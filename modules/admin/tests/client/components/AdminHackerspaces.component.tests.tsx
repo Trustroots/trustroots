@@ -496,7 +496,7 @@ describe('administrator place import', () => {
   });
 
   it.each([undefined, {}, { getPublicKey: vi.fn() }])(
-    'requires a complete NIP-07 signer: %p',
+    'requires a complete NIP-07 signer: %o',
     async signer => {
       window.nostr = signer;
       render(<AdminHackerspaces />);
@@ -628,7 +628,7 @@ describe('administrator place import', () => {
     let finishSigning!: (value: Record<string, unknown>) => void;
     window.nostr!.signEvent = vi.fn(
       () =>
-        new Promise(resolve => {
+        new Promise<Record<string, unknown>>(resolve => {
           finishSigning = resolve;
         }),
     );

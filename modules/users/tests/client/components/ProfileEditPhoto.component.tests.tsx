@@ -89,7 +89,9 @@ function mockFileReader(result: FileReader['result']): FileReader {
     value: result,
   });
   vi.spyOn(reader, 'readAsDataURL').mockImplementation(() => {});
-  vi.spyOn(window, 'FileReader').mockImplementation(() => reader);
+  vi.spyOn(window, 'FileReader').mockImplementation(function () {
+    return reader;
+  });
   return reader;
 }
 

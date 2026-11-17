@@ -14,7 +14,7 @@ vi.mock('@/modules/core/client/utils/map', () => ({
 
 it('preserves a panned view when restoring a popup, but pans on an explicit reopen', () => {
   const svg = L.Browser.svg;
-  L.Browser.svg = true;
+  Reflect.set(L.Browser, 'svg', true);
   const mapSpy = vi.spyOn(L, 'map');
   const markerSpy = vi.spyOn(L, 'circleMarker');
   const location = {
@@ -64,7 +64,7 @@ it('preserves a panned view when restoring a popup, but pans on an explicit reop
     expect(pan).toHaveBeenCalled();
   } finally {
     unmount();
-    L.Browser.svg = svg;
+    Reflect.set(L.Browser, 'svg', svg);
     vi.restoreAllMocks();
   }
 });

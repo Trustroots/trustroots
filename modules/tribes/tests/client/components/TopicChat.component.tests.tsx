@@ -60,7 +60,7 @@ beforeEach(() => {
     publish: vi.fn(async () => {}),
     setSigner: vi.fn(),
   };
-  vi.mocked(RadioRoom).mockImplementation((onEvent, onError) => {
+  vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
     receive = onEvent;
     relayFailure = onError;
     return room as unknown as RadioRoom;

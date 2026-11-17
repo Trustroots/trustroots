@@ -15,6 +15,8 @@ export default mergeConfig(
     test: {
       include: ['apps/nostranslation/tests/**/*.tests.{ts,tsx}'],
       environment: 'jsdom',
+      // Match the Jest default the tests were written against.
+      environmentOptions: { jsdom: { url: 'http://localhost/' } },
       globals: true,
       setupFiles: ['./apps/nostranslation/tests/setup.ts'],
       coverage: {

@@ -156,13 +156,15 @@ describe('CirclesPage', () => {
       expect(api.tribes.read).toHaveBeenCalledWith();
 
       // it should broadcast photo credit changes
-      expect(broadcastClientEvent).toHaveBeenCalledTimes(2);
-      expect(broadcastClientEvent).toHaveBeenCalledWith(
-        'photoCreditsRemoved',
-        expect.anything(),
-      );
+      expect(broadcastClientEvent).toHaveBeenCalledTimes(1);
       expect(broadcastClientEvent).toHaveBeenCalledWith(
         'photoCreditsUpdated',
+        expect.anything(),
+      );
+      page.unmount();
+      expect(broadcastClientEvent).toHaveBeenCalledTimes(2);
+      expect(broadcastClientEvent).toHaveBeenLastCalledWith(
+        'photoCreditsRemoved',
         expect.anything(),
       );
     });

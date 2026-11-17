@@ -9,7 +9,9 @@ import {
 const mockDestroy = vi.fn();
 vi.mock('nostr-tools', async () => ({
   ...(await vi.importActual('nostr-tools')),
-  SimplePool: vi.fn(() => ({ destroy: mockDestroy })),
+  SimplePool: vi.fn(function () {
+    return { destroy: mockDestroy };
+  }),
 }));
 vi.mock('nostr-tools/nip46', () => ({
   BunkerSigner: { fromBunker: vi.fn(), fromURI: vi.fn() },

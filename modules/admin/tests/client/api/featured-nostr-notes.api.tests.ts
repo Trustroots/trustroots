@@ -23,9 +23,9 @@ const publish = vi.fn();
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(SimplePool).mockImplementation(
-    () => ({ get, destroy, publish }) as unknown as SimplePool,
-  );
+  vi.mocked(SimplePool).mockImplementation(function () {
+    return { get, destroy, publish } as unknown as SimplePool;
+  });
 });
 
 afterEach(() => vi.restoreAllMocks());

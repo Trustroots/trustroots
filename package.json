@@ -76,7 +76,7 @@
     "test:client:watch": "vitest --config vitest.client.config.mts",
     "test:boundaries": "SERVER_TEST_SKIP_DATABASE=true SERVER_TEST_FILES=modules/core/tests/server/api-input.server.tests.mts,modules/core/tests/server/csrf-protection.server.tests.mts NODE_ENV=test node ./scripts/test-server.cts",
     "test:content": "pnpm run test:client modules/core/tests/client/components/RichText.tests.tsx modules/core/tests/client/components/TrEditor.integration.tests.tsx modules/core/tests/client/utils/filters.tests.ts",
-    "test:client": "vitest run --config vitest.client.config.mts --silent",
+    "test:client": "vitest run --config vitest.client.config.mts --silent=true",
     "test:coverage:client": "vitest run --config vitest.client.config.mts --coverage",
     "test:coverage:server": "SERVER_TEST_COVERAGE=true pnpm run test:server",
     "test:coverage:server:codex": "SERVER_TEST_COVERAGE=true pnpm run test:server:codex",
