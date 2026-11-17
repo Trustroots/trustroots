@@ -1,0 +1,908 @@
+import { promisify } from 'node:util';
+import fs from 'fs';
+import * as actionTokenService from '../../server/services/action-token.server.service.mts';
+import should from 'should';
+import sinon from 'sinon';
+import request from 'supertest';
+import path from 'path';
+import mongoose from 'mongoose';
+import config from './../../../../config/config.mts';
+import express from './../../../../config/lib/express.mts';
+import * as testutils from '../../../../testutils/server/server.testutil.mts';
+import * as dataUtils from '../../../../testutils/server/data.server.testutil.mts';
+
+const { hashToken } = actionTokenService;
+
+type StepCallback = (error?: unknown, result?: unknown) => void;
+type DoneCallback = (error?: unknown) => void;
+
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type UserModel =
+  import('../../../../testutils/server/model-contracts.mts').UserModel;
+type UserModelDocument =
+  import('../../../../testutils/server/model-contracts.mts').UserModelDocument;
+type Credentials =
+  import('../../../../testutils/server/model-contracts.mts').Credentials;
+type TestExpressApp =
+  import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+type TestAgent =
+  import('../../../../testutils/server/model-contracts.mts').TestAgent;
+type ContactRecord =
+  import('../../../../testutils/server/model-contracts.mts').ContactRecord;
+type ContactModel =
+  import('../../../../testutils/server/model-contracts.mts').ContactModel;
+type MessageRecord =
+  import('../../../../testutils/server/model-contracts.mts').MessageRecord;
+type MessageModel =
+  import('../../../../testutils/server/model-contracts.mts').MessageModel;
+type OfferRecord =
+  import('../../../../testutils/server/model-contracts.mts').OfferRecord;
+type OfferModel =
+  import('../../../../testutils/server/model-contracts.mts').OfferModel;
+type TribeRecord =
+  import('../../../../testutils/server/model-contracts.mts').TribeRecord;
+type TribeModel =
+  import('../../../../testutils/server/model-contracts.mts').TribeModel;
+function requireUserDocument(
+  user: UserModelDocument | null,
+): UserModelDocument {
+  if (!user) throw new Error('Expected test user to exist');
+  return user;
+}
+function removalToken(user: UserModelDocument): string {
+  if (!user.removeProfileToken) throw new Error('Expected removal token');
+  return user.removeProfileToken;
+}
+function tokenFromRemovalEmail(text: string): string {
+  const match = text.match(/\/remove\/([a-f0-9]+)/);
+  if (!match?.[1]) throw new Error('Expected removal token in email');
+  return match[1];
+}
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Message = mongoose.model<MessageRecord, MessageModel>('Message');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+/**
+ * Globals
+ */
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentialsA: Credentials;
+let credentialsB: Credentials;
+type UserDocument = UserModelDocument;
+let userA: UserDocument;
+let _userA: UserRecord;
+let userB: UserDocument;
+let _userB: UserRecord;
+/**
+ * User routes tests
+ */
+describe('User removal CRUD tests', function () {
+  interface RemovalMailData {
+    subject: string;
+    to: {
+      address: string;
+    };
+    text: string;
+  }
+  const jobs = testutils.catchJobs<RemovalMailData>();
+  before(function (done: DoneCallback) {
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
+  });
+  // initialize sinon
+  beforeEach(function () {
+    const testClockStart = Date.now();
+    sinon.useFakeTimers({
+      // Use the current clock because Mongo's TTL monitor uses real time.
+      now: testClockStart,
+      toFake: ['Date'],
+    });
+  });
+  afterEach(function () {
+    sinon.restore();
+  });
+  // Create an user A
+  beforeEach(function (done: DoneCallback) {
+    // Create user credentials for user A
+    credentialsA = {
+      username: 'usera',
+      password: 'M3@n.jsI$Aw3$0m3',
+    };
+    // Create a new user A
+    _userA = {
+      public: true,
+      firstName: 'Full',
+      lastName: 'Name A',
+      displayName: 'Full Name A',
+      email: 'user_a@example.com',
+      username: credentialsA.username.toLowerCase(),
+      password: credentialsA.password,
+      provider: 'local',
+    };
+    userA = new User(_userA);
+    // Save a user to the test db
+    userA
+      .save()
+      .then(() => done())
+      .catch(done);
+  });
+  // Create user B
+  beforeEach(function (done: DoneCallback) {
+    // Create user credentials for user B
+    credentialsB = {
+      username: 'userb',
+      password: 'M3@n.jsI$Aw3$0m3',
+    };
+    // Create a new user B
+    _userB = {
+      public: true,
+      firstName: 'Full',
+      lastName: 'Name B',
+      displayName: 'Full Name B',
+      email: 'user_b@example.com',
+      username: credentialsB.username.toLowerCase(),
+      password: credentialsB.password,
+      provider: 'local',
+    };
+    userB = new User(_userB);
+    // Save a user to the test db
+    userB
+      .save()
+      .then(() => done())
+      .catch(done);
+  });
+  afterEach(dataUtils.clearDatabase);
+
+  it('cancels only the signed-in member request and rejects the old confirmation', async () => {
+    const token = 'fictional-cancelled-removal';
+    for (const user of [userA, userB]) {
+      user.removeProfileToken = hashToken(token);
+      user.removeProfileExpires = new Date(Date.now() + 3600000);
+      await user.save();
+    }
+    await agent.post('/api/auth/signin').send(credentialsA).expect(200);
+    const status = await agent.get('/api/users/removal/pending').expect(200);
+    status.body.should.deepEqual({ pending: true });
+    status.headers['cache-control'].should.equal('no-store');
+    const cancelled = await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .send({ userId: userB.id })
+      .expect(200);
+    cancelled.body.should.deepEqual({ pending: false });
+    cancelled.headers['cache-control'].should.equal('no-store');
+    const stored = requireUserDocument(await User.findById(userA.id));
+    should.not.exist(stored.removeProfileToken);
+    should.not.exist(stored.removeProfileExpires);
+    requireUserDocument(
+      await User.findById(userB.id),
+    ).removeProfileToken!.should.equal(hashToken(token));
+    await agent
+      .delete('/api/users/remove/' + token)
+      .set('X-Trustroots-Request', '1')
+      .expect(400);
+    await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .expect(200);
+    (
+      await agent.get('/api/users/removal/pending').expect(200)
+    ).body.should.deepEqual({
+      pending: false,
+    });
+  });
+
+  it('does not report missing or expired tokens as pending and clears expired state', async () => {
+    await agent.post('/api/auth/signin').send(credentialsA).expect(200);
+    for (const fields of [
+      { removeProfileExpires: new Date(Date.now() + 3600000) },
+      {
+        removeProfileToken: hashToken('fictional-expired-removal'),
+        removeProfileExpires: new Date(Date.now()),
+      },
+      {
+        removeProfileToken: hashToken('fictional-expired-removal'),
+        removeProfileExpires: new Date(Date.now() - 1),
+      },
+    ]) {
+      await User.updateOne({ _id: userA.id }, { $set: fields });
+      (
+        await agent.get('/api/users/removal/pending').expect(200)
+      ).body.should.deepEqual({ pending: false });
+    }
+    await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .expect(200);
+    const stored = requireUserDocument(await User.findById(userA.id));
+    should.not.exist(stored.removeProfileToken);
+    should.not.exist(stored.removeProfileExpires);
+  });
+
+  it('should be able to initiate removing profile when signed in', function (done: DoneCallback) {
+    agent
+      .post('/api/auth/signin')
+      .send(credentialsA)
+      .expect(200)
+      .end(function (signinErr, signedInUser) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+        agent
+          .del('/api/users')
+          .set('X-Trustroots-Request', '1')
+          .expect(200)
+          .end(function (deleteErr, deleteRes) {
+            // Handle signup error
+            if (deleteErr) {
+              return done(deleteErr);
+            }
+            deleteRes.body.message.should.equal(
+              'We sent you an email with further instructions.',
+            );
+            jobs.length.should.equal(1);
+            jobs[0].type.should.equal('send email');
+            jobs[0].data.subject.should.equal(
+              'Confirm removing your Trustroots profile',
+            );
+            jobs[0].data.to.address.should.equal(_userA.email);
+            User.findById(signedInUser.body._id)
+              .then((findUser: UserModelDocument | null) => {
+                removalToken(requireUserDocument(findUser)).should.equal(
+                  hashToken(tokenFromRemovalEmail(jobs[0].data.text)),
+                );
+                should.exist(findUser!.removeProfileExpires);
+                should.exist(findUser!.removeProfileToken);
+                done();
+              })
+              .catch(done);
+          });
+      });
+  });
+  it('should be able to initiate removing profile when already initiated once earlier', function (done: DoneCallback) {
+    agent
+      .post('/api/auth/signin')
+      .send(credentialsA)
+      .expect(200)
+      .end(function (signinErr, signedInUser) {
+        // Handle signin error
+        if (signinErr) {
+          return done(signinErr);
+        }
+        agent
+          .del('/api/users')
+          .set('X-Trustroots-Request', '1')
+          .expect(200)
+          .end(function (deleteErr1, deleteRes1) {
+            // Handle signup error
+            if (deleteErr1) {
+              return done(deleteErr1);
+            }
+            deleteRes1.body.message.should.equal(
+              'We sent you an email with further instructions.',
+            );
+            jobs.length.should.equal(1);
+            jobs[0].type.should.equal('send email');
+            jobs[0].data.subject.should.equal(
+              'Confirm removing your Trustroots profile',
+            );
+            jobs[0].data.to.address.should.equal(_userA.email);
+            User.findById(signedInUser.body._id)
+              .then((findUser1: UserModelDocument | null) => {
+                removalToken(requireUserDocument(findUser1)).should.equal(
+                  hashToken(tokenFromRemovalEmail(jobs[0].data.text)),
+                );
+                should.exist(findUser1!.removeProfileExpires);
+                should.exist(findUser1!.removeProfileToken);
+                // Send another delete request
+                // This should refresh token to new one so check everything again
+                agent
+                  .del('/api/users')
+                  .set('X-Trustroots-Request', '1')
+                  .expect(200)
+                  .end(function (deleteErr2, deleteRes2) {
+                    // Handle signup error
+                    if (deleteErr2) {
+                      return done(deleteErr2);
+                    }
+                    deleteRes2.body.message.should.equal(
+                      'We sent you an email with further instructions.',
+                    );
+                    jobs.length.should.equal(2); // now two because earlier we sent already one
+                    jobs[1].type.should.equal('send email');
+                    jobs[1].data.subject.should.equal(
+                      'Confirm removing your Trustroots profile',
+                    );
+                    jobs[1].data.to.address.should.equal(_userA.email);
+                    User.findById(signedInUser.body._id)
+                      .then((findUser2: UserModelDocument | null) => {
+                        removalToken(
+                          requireUserDocument(findUser2),
+                        ).should.equal(
+                          hashToken(tokenFromRemovalEmail(jobs[1].data.text)),
+                        );
+                        should.exist(findUser2!.removeProfileExpires);
+                        should.exist(findUser2!.removeProfileToken);
+                        done();
+                      })
+                      .catch(done);
+                  });
+              })
+              .catch(done);
+          });
+      });
+  });
+  it('should be able to confirm removing profile when signed in', function (done: DoneCallback) {
+    userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
+    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + savedUser.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(200)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Your profile has been removed.',
+                );
+                jobs.length.should.equal(1);
+                jobs[0].type.should.equal('send email');
+                jobs[0].data.subject.should.equal(
+                  'Your Trustroots profile has been removed',
+                );
+                jobs[0].data.to.address.should.equal(_userA.email);
+                jobs[0].data.text.should.containEql(
+                  'Your Trustroots account has been removed.',
+                );
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    should.not.exist(findUser);
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
+  });
+  it('should not able to initiate removing profile with role "shadowban"', function (done: DoneCallback) {
+    userA.roles = ['user', 'shadowban'];
+    userA
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+            agent
+              .del('/api/users')
+              .set('X-Trustroots-Request', '1')
+              .expect(403)
+              .end(function (deleteErr, deleteRes) {
+                should.not.exist(deleteErr);
+                deleteRes.body.message.should.equal(
+                  'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
+                );
+                jobs.length.should.equal(0);
+                done();
+              });
+          });
+      })
+      .catch(done);
+  });
+  it('should not be able to confirm removing profile with wrong token', function (done: DoneCallback) {
+    userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
+    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/wrongtoken')
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
+  });
+  it('should not be able to confirm removing profile with expired token', function (done: DoneCallback) {
+    userA.removeProfileExpires = new Date(Date.now() - 24 * 3600000); // 24h in the past
+    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + userA.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
+  });
+  it('should not be able to confirm removing profile when signed in as wrong user', function (done: DoneCallback) {
+    userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
+    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsB) // User B signs in insetead of user A
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + userA.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    // Signed in user should still exist
+                    User.findOne({
+                      username: userB.username,
+                    })
+                      .then((findUser: UserModelDocument | null) => {
+                        findUser!.username.should.equal(userB.username);
+                        should.not.exist(userB.removeProfileExpires);
+                        should.not.exist(userB.removeProfileToken);
+                        done();
+                      })
+                      .catch(done);
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
+  });
+  context('logged in & valid token', function () {
+    function sendDeleteRequest(cb: StepCallback): void {
+      agent
+        .del('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
+        .expect(200)
+        .end(function (deleteErr) {
+          cb(deleteErr);
+        });
+    }
+    // sign in
+    beforeEach(function (done: DoneCallback) {
+      agent
+        .post('/api/auth/signin')
+        .send(credentialsA)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          return done(signinErr);
+        });
+    });
+    // save removeToken for user a
+    beforeEach(function (done: DoneCallback) {
+      userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
+      userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
+      userA
+        .save()
+        .then(() => done())
+        .catch(done);
+    });
+    it('should remove profile images', function (done: DoneCallback) {
+      // Each user has their own folder for avatars
+      const uploadDir =
+        path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
+      function checkAvatarExistence(
+        shouldExist: boolean,
+        cb: StepCallback,
+      ): void {
+        const exists = fs.existsSync(uploadDir);
+        try {
+          should(exists).eql(shouldExist);
+          cb();
+        } catch (e) {
+          cb(e);
+        }
+      }
+      (async () => {
+        await promisify(checkAvatarExistence.bind(null, false))();
+        await promisify(function (cb: StepCallback) {
+          agent
+            .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
+            .attach('avatar', './modules/users/tests/server/img/avatar.png')
+            .expect(200)
+            .end(function (err: Error | null) {
+              cb(err);
+            });
+        })();
+        await promisify(checkAvatarExistence.bind(null, true))();
+        await promisify(sendDeleteRequest)();
+        const step4 = await promisify(checkAvatarExistence.bind(null, false))();
+        return step4;
+      })().then(() => done(), done);
+    });
+    it('should mark all messages to the removed user as notified and keep the ones from her untouched', function (done: DoneCallback) {
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          const messageAB = new Message({
+            content: 'Message content',
+            userFrom: userA._id,
+            userTo: userB._id,
+            read: false,
+          });
+          const messageBA = new Message({
+            content: 'Message content',
+            userFrom: userB._id,
+            userTo: userA._id,
+            read: false,
+          });
+          Promise.all([messageAB, messageBA].map(msg => msg.save())).then(
+            () => cb(),
+            cb,
+          );
+        })();
+        await promisify(sendDeleteRequest)();
+        await promisify(function (cb: StepCallback) {
+          Message.findOne({
+            userTo: userA._id,
+          })
+            .then((msg: MessageRecord | null) => {
+              if (!msg) return done(new Error('Expected test message'));
+              try {
+                should(msg.notificationCount).eql(2);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        const step3 = await promisify(function (cb: StepCallback) {
+          Message.findOne({
+            userFrom: userA._id,
+          })
+            .then((msg: MessageRecord | null) => {
+              if (!msg) return done(new Error('Expected test message'));
+              try {
+                should(msg.notificationCount).eql(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        return step3;
+      })().then(() => done(), done);
+    });
+    it('should subtract 1 from tribes.count for each tribe user is member of', function (done: DoneCallback) {
+      let tribeA: import('mongoose').HydratedDocument<TribeRecord>;
+      let tribeB: import('mongoose').HydratedDocument<TribeRecord>;
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          tribeA = new Tribe({
+            label: 'Tribe A',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+            description: 'Lorem ipsum.',
+            count: 5,
+          });
+          tribeB = new Tribe({
+            label: 'Tribe B',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team2',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
+            description: 'Lorem ipsum.',
+            count: 5,
+          });
+          Promise.all([tribeA, tribeB].map(tribe => tribe.save())).then(
+            () => cb(),
+            cb,
+          );
+        })();
+        await promisify(function (cb: StepCallback) {
+          agent
+            .post('/api/users/memberships/' + tribeA._id)
+            .set('X-Trustroots-Request', '1')
+            .send()
+            .expect(200)
+            .end(function (err: Error | null) {
+              cb(err);
+            });
+        })();
+        await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeA._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(6);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        await promisify(sendDeleteRequest)();
+        await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeA._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        const step5 = await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeB._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        return step5;
+      })().then(() => done(), done);
+    });
+    it('should remove hosting offer of the user', function (done: DoneCallback) {
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          const offer = new Offer({
+            user: userA._id,
+            location: [0, 0],
+          });
+          offer
+            .save()
+            .then(() => {
+              cb(null);
+            })
+            .catch(cb);
+        })();
+        await promisify(function (cb: StepCallback) {
+          Offer.find({
+            user: userA._id,
+          })
+            .then((offer: OfferRecord[]) => {
+              try {
+                should(offer).length(1);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        await promisify(sendDeleteRequest)();
+        const step3 = await promisify(function (cb: StepCallback) {
+          Offer.find({
+            user: userA._id,
+          })
+            .then((offers: OfferRecord[]) => {
+              try {
+                should(offers).length(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        return step3;
+      })().then(() => done(), done);
+    });
+    it('removes a pending request sent by the deleted member', async () => {
+      const contact = await Contact.create({
+        userFrom: userA._id,
+        userTo: userB._id,
+        confirmed: false,
+      });
+      const recipient = request.agent(app);
+      await recipient.post('/api/auth/signin').send(credentialsB).expect(200);
+      const listPath = '/api/contacts/' + userB._id;
+      const contactPath = '/api/contact/' + contact._id;
+      const before = await recipient.get(listPath).expect(200);
+      should(before.body.map((entry: { _id: string }) => entry._id)).containEql(
+        contact.id,
+      );
+
+      await promisify(sendDeleteRequest)();
+
+      should.not.exist(await Contact.findById(contact._id));
+      await recipient.get(listPath).expect(200, []);
+      await recipient.get(contactPath).expect(404);
+      await recipient
+        .put(contactPath)
+        .set('X-Trustroots-Request', '1')
+        .expect(404);
+    });
+
+    it('should remove contacts of the user', function (done: DoneCallback) {
+      let userC: UserModelDocument;
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          userC = new User({
+            public: true,
+            firstName: 'Full',
+            lastName: 'Name C',
+            displayName: 'Full Name C',
+            email: 'user_c@example.com',
+            username: 'userc',
+            password: '**********asdfasdf',
+            provider: 'local',
+          });
+          userC
+            .save()
+            .then(() => {
+              cb(null);
+            })
+            .catch(cb);
+        })();
+        await promisify(function (cb: StepCallback) {
+          const contactAB = new Contact({
+            userFrom: userA._id,
+            userTo: userB._id,
+            confirmed: true,
+          });
+          const contactBC = new Contact({
+            userFrom: userB._id,
+            userTo: userC._id,
+            confirmed: true,
+          });
+          const contactCA = new Contact({
+            userFrom: userC._id,
+            userTo: userA._id,
+            confirmed: false,
+          });
+          Promise.all(
+            [contactAB, contactBC, contactCA].map(contact => contact.save()),
+          ).then(() => cb(), cb);
+        })();
+        const step2 = await promisify(function (cb: StepCallback) {
+          Contact.find()
+            .exec()
+            .then(contacts => {
+              cb(null, contacts);
+            })
+            .catch(cb);
+        })();
+        await promisify(function (contacts: unknown, cb: StepCallback) {
+          try {
+            should(contacts).length(3);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        })(step2);
+        await promisify(sendDeleteRequest)();
+        const step5 = await promisify(function (cb: StepCallback) {
+          Contact.find()
+            .exec()
+            .then(contacts => {
+              cb(null, contacts);
+            })
+            .catch(cb);
+        })();
+        const step6 = await promisify(function (
+          contacts: unknown,
+          cb: StepCallback,
+        ) {
+          try {
+            should(contacts).length(1);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        })(step5);
+        return step6;
+      })().then(() => done(), done);
+    });
+  });
+});
