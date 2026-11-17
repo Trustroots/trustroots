@@ -707,6 +707,7 @@ describe('Offers controller unit tests', () => {
         location: [16, 26],
         status: 'maybe',
       });
+      const aggregate = sinon.spy(Offer, 'aggregate');
       const search = async (blocked?: UserDocument['_id'][]) => {
         const { res } = await runHandler(res =>
           offersController.list(
@@ -725,6 +726,13 @@ describe('Offers controller unit tests', () => {
       };
 
       (await search()).should.eql([]);
+      const firstPipeline = aggregate.firstCall.args[0] as Array<{
+        $match?: Record<string, unknown>;
+      }>;
+      const connectionMatch = firstPipeline.find(
+        stage => stage.$match?.['user._id'],
+      )?.$match;
+      should(connectionMatch?.['user._id']).deepEqual({ $in: [], $nin: [] });
       contact.confirmed = true;
       await contact.save();
       (await search()).should.match([
