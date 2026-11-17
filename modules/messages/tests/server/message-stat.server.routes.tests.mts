@@ -1,17 +1,16 @@
+import should from 'should';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import express from './../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import type {
   MessageStatDocument,
   MessageStatModel,
   MessageStatRecord,
   TestAgent,
-  TestExpressModule,
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const request: typeof import('supertest') = require('supertest');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const MessageStat = mongoose.model<MessageStatRecord, MessageStatModel>(

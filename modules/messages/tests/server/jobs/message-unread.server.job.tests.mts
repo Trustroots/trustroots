@@ -1,3 +1,13 @@
+import unreadJob from '../../../server/jobs/message-unread.server.job.mts';
+import config from '../../../../../config/config.mts';
+import moment from 'moment';
+import emailService from './../../../../core/server/services/email.server.service.mts';
+import sinon from 'sinon';
+import winston from 'winston';
+import * as testutils from '../../../../../testutils/server/server.testutil.mts';
+import mongoose from 'mongoose';
+import { webPush } from '../../../../users/server/services/web-push.server.transport.mts';
+import pushService from './../../../../users/server/services/unified-push.server.service.mts';
 import type {
   MessageDocument,
   MessageModel,
@@ -9,15 +19,8 @@ import type {
 /**
  * Module dependencies.
  */
-require('should');
-const moment: typeof import('moment') = require('moment');
-const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
-const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const webPush: typeof import('../../../../users/server/services/web-push.server.transport.mts').webPush =
-  require('../../../../users/server/services/web-push.server.transport.mts').webPush;
+import 'should';
+
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const Registration = mongoose.model('UnifiedPushRegistration');
@@ -48,7 +51,7 @@ describe('Job: message unread', function () {
   }>();
 
   before(function () {
-    messageUnreadJobHandler = require('./../../../server/jobs/message-unread.server.job.mjs');
+    messageUnreadJobHandler = unreadJob;
   });
 
   // Create an user
@@ -374,7 +377,7 @@ describe('Job: message unread', function () {
   it('skips push for messages already read, hidden or stale', async function () {
     const { deliverMessagePush } =
       await import('../../../server/jobs/message-push.server.job.mts');
-    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
+
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-unread-test',
       publicKey:
@@ -618,7 +621,6 @@ describe('Job: message unread', function () {
   }
 
   it('rechecks member restrictions and recipient blocks at push delivery', async function () {
-    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-restricted-test',
       publicKey:
@@ -1110,7 +1112,6 @@ describe('Job: message unread', function () {
     });
 
     it('logs the first queue error and completes after multiple task failures', function (done) {
-      const jobWithQueueError = require('./../../../server/jobs/message-unread.server.job.mjs');
       const queueLog = sinon.stub(winston.Logger.prototype, 'log');
       const missingRecipientId = new mongoose.Types.ObjectId();
 
@@ -1155,7 +1156,7 @@ describe('Job: message unread', function () {
         .callsArgWith(3, emailFailure);
       sinon.stub(Message, 'updateMany').resolves();
 
-      jobWithQueueError({}, function (err?: Error | null) {
+      unreadJob({}, function (err?: Error | null) {
         if (err) return done(err);
         const queueErrorLog = queueLog
           .getCalls()
@@ -1178,7 +1179,6 @@ describe('Job: message unread', function () {
     });
 
     it('continues when notifications have no message ids', function (done) {
-      const jobWithEmptyMessages = require('./../../../server/jobs/message-unread.server.job.mjs');
       sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
 
       sinon.stub(Message, 'aggregate').resolves([
@@ -1208,7 +1208,7 @@ describe('Job: message unread', function () {
       } as unknown as ReturnType<typeof findUsers>);
       sinon.stub(Message, 'updateMany').resolves();
 
-      jobWithEmptyMessages({}, function (err?: Error | null) {
+      unreadJob({}, function (err?: Error | null) {
         if (err) return done(err);
         done();
       });
@@ -1237,12 +1237,6 @@ describe('Job: message unread', function () {
   describe('reminder details', function () {
     const queueErrorMessage =
       'Sending unread message notifications caused an error. #j38vax';
-    const config: {
-      limits: {
-        unreadMessageReminders: moment.DurationInputArg1[];
-        unreadMessageRemindersTooLate: moment.DurationInputArg1;
-      };
-    } = require('./../../../../../config/config.mts');
 
     function ageMessage(minutes = 11) {
       message.created = moment().subtract({ minutes }).toDate();
@@ -1415,7 +1409,7 @@ describe('Job: message unread', function () {
     it('still queues the first email reminder after push delivery fails', async function () {
       const { deliverMessagePush } =
         await import('../../../server/jobs/message-push.server.job.mts');
-      const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
+
       await pushService.register(userToId, {
         endpoint: 'https://ntfy.sh/anonymous-unavailable-distributor',
         publicKey:

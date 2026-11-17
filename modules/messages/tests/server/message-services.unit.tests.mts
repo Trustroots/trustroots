@@ -1,18 +1,19 @@
+import should from 'should';
+import mongoose from 'mongoose';
+import config from './../../../../config/config.mts';
+import winston from 'winston';
+import statService from './../../../stats/server/services/stats.server.service.mts';
+import sinon from 'sinon';
+import mockModule from '../../../../testutils/server/mock-module.mts';
+import messageToStatsService from './../../server/services/message-to-stats.server.service.mts';
+import messageStatService from './../../server/services/message-stat.server.service.mts';
 import type {
   MessageModel,
   MessageRecord,
   MessageStatModel,
   MessageStatRecord,
   MessageStatsPoint,
-  TestConfigModule,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const winston: typeof import('winston') = require('winston');
-const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
-const sinon: typeof import('sinon') = require('sinon');
-const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
 type TestQueryResult<T> = {
   sort(): TestQueryResult<T>;
@@ -82,9 +83,8 @@ describe('Message server services unit tests', function () {
       sinon.stub(config, 'limits').value(serviceConfig.limits);
       const stat = sinon.stub(statService, 'stat');
       const log = sinon.stub(winston.Logger.prototype, 'log');
-      const service = require('./../../server/services/message-to-stats.server.service.mjs');
 
-      return { Message, findOne, log, service, stat };
+      return { Message, findOne, log, service: messageToStatsService, stat };
     }
 
     it('normalizes object-valued message users before building stats', function (done) {
@@ -103,9 +103,10 @@ describe('Message server services unit tests', function () {
       );
 
       service.process(
-        message,
-        function (err: Error | null, stat: MessageStatsPoint) {
+        message as never,
+        function (err: unknown, point?: MessageStatsPoint) {
           try {
+            const stat = required(point);
             should.not.exist(err);
             sinon.assert.calledOnce(findOne);
             required(findOne.firstCall.args[0]).should.eql({
@@ -156,9 +157,10 @@ describe('Message server services unit tests', function () {
       );
 
       service.process(
-        message,
-        function (err: Error | null, stat: MessageStatsPoint) {
+        message as never,
+        function (err: unknown, point?: MessageStatsPoint) {
           try {
+            const stat = required(point);
             should.not.exist(err);
             const query = required(findOne.firstCall.args[0]);
             if (!('$or' in query) || !Array.isArray(query.$or))
@@ -215,9 +217,10 @@ describe('Message server services unit tests', function () {
         );
 
       service.process(
-        firstReply,
-        function (err: Error | null, stat: MessageStatsPoint) {
+        firstReply as never,
+        function (err: unknown, point?: MessageStatsPoint) {
           try {
+            const stat = required(point);
             should.not.exist(err);
             sinon.assert.calledTwice(findOne);
             required(findOne.secondCall.args[0]).should.eql({
@@ -277,9 +280,10 @@ describe('Message server services unit tests', function () {
         );
 
       service.process(
-        laterReply,
-        function (err: Error | null, stat: MessageStatsPoint) {
+        laterReply as never,
+        function (err: unknown, point?: MessageStatsPoint) {
           try {
+            const stat = required(point);
             should.not.exist(err);
             stat.tags.position.should.equal('other');
             stat.values.should.not.have.property('timeToFirstReply');
@@ -303,7 +307,7 @@ describe('Message server services unit tests', function () {
       sinon.stub(service, 'send').callsArgWith(1, error);
 
       try {
-        service.save({ _id: 'message-id' });
+        service.save({ _id: 'message-id' } as never);
         sinon.assert.calledOnce(log);
         log.firstCall.args
           .slice(0, 2)
@@ -330,7 +334,7 @@ describe('Message server services unit tests', function () {
         .callsArgWith(1, null, { namespace: 'messages' });
       sinon.stub(service, 'send').callsArgWith(1, error);
 
-      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+      service.save({ _id: 'message-id' } as never, function (err?: unknown) {
         try {
           should(err).equal(error);
           sinon.assert.notCalled(log);
@@ -366,9 +370,10 @@ describe('Message server services unit tests', function () {
       );
 
       service.process(
-        followUp,
-        function (err: Error | null, stat: MessageStatsPoint) {
+        followUp as never,
+        function (err: unknown, point?: MessageStatsPoint) {
           try {
+            const stat = required(point);
             should.not.exist(err);
             sinon.assert.calledOnce(findOne);
             stat.tags.position.should.equal('other');
@@ -383,9 +388,10 @@ describe('Message server services unit tests', function () {
     it('treats missing influx config as disabled', function (done) {
       const { service } = loadMessageToStatsService({ config: {} });
 
-      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+      service.save({ _id: 'message-id' } as never, function (err?: unknown) {
         try {
-          if (!err) throw new Error('Expected disabled InfluxDB error');
+          if (!(err instanceof Error))
+            throw new Error('Expected disabled InfluxDB error');
           err.should.be.an.Error();
           err.message.should.match(/InfluxDB disabled/);
           done();
@@ -400,7 +406,7 @@ describe('Message server services unit tests', function () {
       const error = new Error('message stats processing failed');
       sinon.stub(service, 'process').callsArgWith(1, error);
 
-      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+      service.save({ _id: 'message-id' } as never, function (err?: unknown) {
         try {
           should(err).equal(error);
           sinon.assert.notCalled(stat);
@@ -416,7 +422,7 @@ describe('Message server services unit tests', function () {
       const statObject = { namespace: 'messages', counts: { sent: 1 } };
       stat.callsArgWith(1, null);
 
-      service.send(statObject, function (err?: Error | null) {
+      service.send(statObject as never, function (err?: unknown) {
         try {
           should.not.exist(err);
           sinon.assert.calledOnceWithExactly(
@@ -443,7 +449,6 @@ describe('Message server services unit tests', function () {
       const statFindOne = sinon.stub(MessageStat, 'findOne');
       const statFindOneAndUpdate = sinon.stub(MessageStat, 'findOneAndUpdate');
       const statFind = sinon.stub(MessageStat, 'find');
-      const service = require('./../../server/services/message-stat.server.service.mjs');
 
       if (options.messageStatFindOne) {
         statFindOne.returns(
@@ -463,7 +468,7 @@ describe('Message server services unit tests', function () {
       return {
         Message,
         MessageStat,
-        service,
+        service: messageStatService,
         messageFindOne,
         save,
         statFindOne,
@@ -486,15 +491,18 @@ describe('Message server services unit tests', function () {
       const error = new Error('save failed');
       save.rejects(error);
 
-      service.updateMessageStat(firstMessage, function (err?: Error | null) {
-        try {
-          if (!err) throw new Error('Expected save error');
-          err.should.equal(error);
-          done();
-        } catch (assertionError) {
-          done(assertionError);
-        }
-      });
+      service.updateMessageStat(
+        firstMessage as never,
+        function (err?: unknown) {
+          try {
+            if (!err) throw new Error('Expected save error');
+            err.should.equal(error);
+            done();
+          } catch (assertionError) {
+            done(assertionError);
+          }
+        },
+      );
     });
 
     it('returns first-reply update errors', function (done) {
@@ -520,7 +528,7 @@ describe('Message server services unit tests', function () {
         exec: () => Promise.reject(error),
       } as unknown as ReturnType<typeof statFindOneAndUpdate>);
 
-      service.updateMessageStat(firstReply, function (err?: Error | null) {
+      service.updateMessageStat(firstReply as never, function (err?: unknown) {
         try {
           if (!err) throw new Error('Expected update error');
           err.should.equal(error);
@@ -548,9 +556,9 @@ describe('Message server services unit tests', function () {
       );
 
       service.readMessageStatsOfUser(
-        'user-id',
+        'user-id' as never,
         new Date('2026-02-01T00:00:00Z').getTime(),
-        function (err?: Error | null) {
+        function (err?: unknown) {
           try {
             if (!err) throw new Error('Expected read error');
             err.should.equal(error);
@@ -562,28 +570,34 @@ describe('Message server services unit tests', function () {
       );
     });
 
-    it('returns read errors from formatted message stats', function (done) {
+    it('returns read errors from formatted message stats', async function () {
       const error = new Error('find failed');
       const { statFind } = loadMessageStatService();
       statFind.returns(queryResult([], error) as never);
       // A fresh copy, loaded inside this test, so it covers the service object.
-      const service: typeof import('./../../server/services/message-stat.server.service.mts') =
-        mockModule(
-          require.resolve('./../../server/services/message-stat.server.service.mts'),
-          {},
-        );
+      const { default: service } = await mockModule<
+        typeof import('../../server/services/message-stat.server.service.mts')
+      >(
+        new URL(
+          './../../server/services/message-stat.server.service.mts',
+          import.meta.url,
+        ),
+        {},
+      );
 
-      service.readFormattedMessageStatsOfUser(
-        new mongoose.Types.ObjectId(),
-        new Date('2026-02-01T00:00:00Z').getTime(),
-        function (err?: Error | null) {
-          try {
-            should(err).equal(error);
-            done();
-          } catch (assertionError) {
-            done(assertionError);
-          }
-        },
+      await new Promise<void>((resolve, reject) =>
+        service.readFormattedMessageStatsOfUser(
+          new mongoose.Types.ObjectId(),
+          new Date('2026-02-01T00:00:00Z').getTime(),
+          function (err?: unknown) {
+            try {
+              should(err).equal(error);
+              resolve();
+            } catch (assertionError) {
+              reject(assertionError);
+            }
+          },
+        ),
       );
     });
   });

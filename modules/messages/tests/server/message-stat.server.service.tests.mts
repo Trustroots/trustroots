@@ -1,3 +1,8 @@
+import should from 'should';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import messageStatService from './../../server/services/message-stat.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import type {
   MessageDocument,
   MessageModel,
@@ -9,11 +14,6 @@ import type {
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const messageStatService: typeof import('./../../server/services/message-stat.server.service.mjs') = require('./../../server/services/message-stat.server.service.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');

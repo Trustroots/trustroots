@@ -1,18 +1,15 @@
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import agenda from '../../../../config/lib/agenda.mts';
+import config from '../../../../config/config.mts';
+import emailService, {
+  type RenderedEmail,
+} from '../../../core/server/services/email.server.service.mts';
 import type { MessageThrottleAlertRecord } from '../../server/models/message-throttle-alert.server.model.mts';
-import type { RenderedEmail } from '../../../core/server/services/email.server.service.mts';
 
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose = require('mongoose') as typeof import('mongoose');
-const sinon = require('sinon') as typeof import('sinon');
-const agenda =
-  require('../../../../config/lib/agenda.mjs') as import('agenda').Agenda;
-const config =
-  require('../../../../config/config.mts') as typeof import('../../../../config/config.mts').default;
-const alerts =
-  require('../../server/services/message-throttle-alert.server.service.mts')
-    .default as typeof import('../../server/services/message-throttle-alert.server.service.mts').default;
-const emailService =
-  require('../../../core/server/services/email.server.service.mts') as typeof import('../../../core/server/services/email.server.service.mts').default;
+import alerts from '../../server/services/message-throttle-alert.server.service.mts';
+
 const Alert = mongoose.model<MessageThrottleAlertRecord>(
   'MessageThrottleAlert',
 );

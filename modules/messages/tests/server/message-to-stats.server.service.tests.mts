@@ -1,9 +1,15 @@
+import mongoose from 'mongoose';
+import _ from 'lodash';
+import sinon from 'sinon';
+import winston from 'winston';
+import config from './../../../../config/config.mts';
+import messageToStatsService from './../../server/services/message-to-stats.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import type {
   MessageDocument,
   MessageModel,
   MessageRecord,
   MessageStatsPoint,
-  TestConfigModule,
   UserModel,
   UserModelDocument,
   UserRecord,
@@ -11,14 +17,8 @@ import type {
 /**
  * Module dependencies.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const _: typeof import('lodash') = require('lodash');
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const messageToStatsService: typeof import('./../../server/services/message-to-stats.server.service.mjs') = require('./../../server/services/message-to-stats.server.service.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-require('should');
+
+import 'should';
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 type MessageStatsService = {

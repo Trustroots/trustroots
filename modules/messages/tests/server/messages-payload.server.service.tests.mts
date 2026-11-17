@@ -1,9 +1,9 @@
-const assert: typeof import('assert/strict') = require('assert/strict');
-const {
+import assert from 'assert/strict';
+import {
   prepareMarkReadResponse,
   preparePreviewMessageResponse,
   prepareUnreadMessageCount,
-} = require('../../server/services/messages-payload.server.service.mts');
+} from '../../server/services/messages-payload.server.service.mts';
 
 describe('Message API payload construction', () => {
   it('preserves count and preview response shapes', () => {

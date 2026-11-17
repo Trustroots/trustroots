@@ -1,20 +1,19 @@
+import mongoose from 'mongoose';
+import should from 'should';
+import _ from 'lodash';
+import sinon from 'sinon';
+import config from './../../../../config/config.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import messageStatService from './../../server/services/message-stat.server.service.mts';
+import messageController from './../../server/controllers/messages.server.controller.mts';
+import { EventEmitter } from 'events';
 import type {
   MessageDocument,
   MessageModel,
   MessageRecord,
-  TestConfigModule,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-const mongoose: typeof import('mongoose') = require('mongoose');
-const should: typeof import('should') = require('should');
-const _: typeof import('lodash') = require('lodash');
-const sinon: typeof import('sinon') = require('sinon');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const messageStatService: typeof import('./../../server/services/message-stat.server.service.mjs') = require('./../../server/services/message-stat.server.service.mjs');
-const messageController: typeof import('./../../server/controllers/messages.server.controller.mjs') = require('./../../server/controllers/messages.server.controller.mjs');
-const EventEmitter: typeof import('events').EventEmitter =
-  require('events').EventEmitter;
+
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 type StatUpdateArgs = [MessageDocument, ...unknown[]];
 describe('Integration of the MessageStat service', function () {

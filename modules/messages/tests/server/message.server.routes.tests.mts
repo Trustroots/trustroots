@@ -1,30 +1,26 @@
+import { once } from 'node:events';
+import _ from 'lodash';
+import should from 'should';
+import request from 'supertest';
+import moment from 'moment';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import winston from 'winston';
+import push from '../../../users/server/services/unified-push.server.service.mts';
+import { webPush } from '../../../users/server/services/web-push.server.transport.mts';
+import config from './../../../../config/config.mts';
+import express from './../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import type {
   Credentials,
   MessageModel,
   TestAgent,
-  TestConfigModule,
   TestExpressApp,
-  TestExpressModule,
   ThreadModel,
   UserModel,
   UserModelDocument,
 } from '../../../../testutils/server/model-contracts.mts';
 
-const { once }: typeof import('node:events') = require('node:events');
-const _ = require('lodash');
-const should = require('should');
-const request = require('supertest');
-const moment = require('moment');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
-const push: typeof import('../../../users/server/services/unified-push.server.service.mjs').default = require('../../../users/server/services/unified-push.server.service.mjs');
-const {
-  webPush,
-}: typeof import('../../../users/server/services/web-push.server.transport.mts') = require('../../../users/server/services/web-push.server.transport.mts');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model('User') as unknown as UserModel;
 const Message = mongoose.model('Message') as MessageModel;
 const Thread = mongoose.model('Thread') as ThreadModel;

@@ -1,15 +1,13 @@
-import type {
-  TestConfigModule,
-  UserDocument,
-} from '../../../../testutils/server/model-contracts.mts';
-const should: typeof import('should') = require('should');
-const _: typeof import('lodash') = require('lodash');
-const sinon: typeof import('sinon') = require('sinon');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const EventEmitter: typeof import('events') = require('events');
-const influx: typeof import('influx') = require('influx');
-const messageController: typeof import('./../../server/controllers/messages.server.controller.mjs') = require('./../../server/controllers/messages.server.controller.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import should from 'should';
+import _ from 'lodash';
+import sinon from 'sinon';
+import config from './../../../../config/config.mts';
+import EventEmitter from 'events';
+import influx from 'influx';
+import messageController from './../../server/controllers/messages.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import type { UserDocument } from '../../../../testutils/server/model-contracts.mts';
+
 describe('Message to Stats API server service Integration Test', function () {
   let reachEventEmitter: import('node:events').EventEmitter;
   before(function () {

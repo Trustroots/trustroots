@@ -1,9 +1,18 @@
+import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
+import sinon from 'sinon';
+import messagesController from './../../server/controllers/messages.server.controller.mts';
+import config from './../../../../config/config.mts';
+import messageStatService from './../../server/services/message-stat.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import winston from 'winston';
+import messageThrottleAlerts from '../../server/services/message-throttle-alert.server.service.mts';
+import 'should';
+import statService from './../../../stats/server/services/stats.server.service.mts';
 /**
  * Unit tests for the messages controller guard, validation and error
  * branches that the higher-level route tests do not reach. Handlers are
  * called directly with mock req/res objects against the test database.
  */
-import type { QueryFilter, UpdateQuery } from 'mongoose';
 import type {
   MessageDocument,
   MessageModel,
@@ -21,22 +30,6 @@ type PaginationPayload = {
   pages?: number;
   total?: number;
 };
-
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-
-const messagesController: typeof import('../../server/controllers/messages.server.controller.mjs').default = require('./../../server/controllers/messages.server.controller.mjs');
-interface ControllerTestConfig {
-  limits: { messagesToIndividualsThrottle: { count: number } };
-  https: boolean;
-}
-const config: ControllerTestConfig = require('./../../../../config/config.mts');
-const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
-const messageThrottleAlerts =
-  require('../../server/services/message-throttle-alert.server.service.mts')
-    .default as typeof import('../../server/services/message-throttle-alert.server.service.mts').default;
-const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
 
 const User = mongoose.model('User') as unknown as UserModel;
 const Thread = mongoose.model('Thread') as ThreadModel;
@@ -2011,8 +2004,6 @@ describe('Messages controller unit tests', () => {
       'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
     const genericError =
       'Snap! Something went wrong. If this keeps happening, please contact us.';
-    const winston: typeof import('winston') = require('winston');
-    const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
 
     function saveMembers(count: number): Promise<UserDocument[]> {
       return utils.saveUsersWithCachedPasswords(
