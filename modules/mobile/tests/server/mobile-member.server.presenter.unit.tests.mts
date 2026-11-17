@@ -1,6 +1,6 @@
-const should = require('should');
+import should from 'should';
 
-const mobileMember = require('../../server/presenters/mobile-member.server.presenter.cjs');
+import mobileMember from '../../server/presenters/mobile-member.server.presenter.cjs';
 
 describe('Mobile member presenter', function () {
   it('returns only the stable current-member fields', function () {
@@ -23,8 +23,8 @@ describe('Mobile member presenter', function () {
       email: 'mobile.member@example.org',
       newsletter: true,
     });
-    should.not.exist(member.password);
-    should.not.exist(member.roles);
+    should.not.exist((member as Record<string, unknown>).password);
+    should.not.exist((member as Record<string, unknown>).roles);
   });
 
   it('uses safe defaults for optional presentation fields', function () {
@@ -166,8 +166,8 @@ describe('Mobile member presenter', function () {
     );
 
     profile.should.not.have.property('email');
-    should.not.exist(profile.emailTemporary);
-    should.not.exist(profile.newsletter);
+    should.not.exist((profile as Record<string, unknown>).emailTemporary);
+    should.not.exist((profile as Record<string, unknown>).newsletter);
   });
 
   it("does not require roles to keep another member's account details private", function () {
@@ -184,19 +184,20 @@ describe('Mobile member presenter', function () {
   });
 
   it('allows an admin to view account details', function () {
-    mobileMember
-      .profile(
-        {
-          _id: 'profile-id',
-          username: 'mobile_member',
-          email: 'mobile.member@example.org',
-        },
-        {
-          _id: 'admin-id',
-          roles: ['admin'],
-        },
-      )
-      .email.should.equal('mobile.member@example.org');
+    const profile = mobileMember.profile(
+      {
+        _id: 'profile-id',
+        username: 'mobile_member',
+        email: 'mobile.member@example.org',
+      },
+      {
+        _id: 'admin-id',
+        roles: ['admin'],
+      },
+    );
+    (profile as { email?: string }).email!.should.equal(
+      'mobile.member@example.org',
+    );
   });
 
   it('uses an empty membership list when the profile has none', function () {

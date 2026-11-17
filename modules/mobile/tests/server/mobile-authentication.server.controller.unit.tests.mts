@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
+import mongoose from 'mongoose';
+import should from 'should';
+import sinon from 'sinon';
 
-const mobileAuthentication = require('../../server/controllers/mobile-authentication.server.controller.cjs');
-const mobileSession = require('../../server/services/mobile-session.server.service.cjs');
-const passwordHashing = require('../../../users/server/services/password-hashing.server.service.mjs');
+import mobileAuthentication from '../../server/controllers/mobile-authentication.server.controller.cjs';
+import mobileSession from '../../server/services/mobile-session.server.service.cjs';
+import passwordHashing from '../../../users/server/services/password-hashing.server.service.mts';
 
 const User = mongoose.model('User');
 const MobileSession = mongoose.model('MobileSession');
@@ -20,7 +20,7 @@ describe('Mobile credential versions and persistence failures', function () {
     [undefined, 1],
     [1, undefined],
   ]) {
-    for (const operation of ['authenticate', 'refresh']) {
+    for (const operation of ['authenticate', 'refresh'] as const) {
       it(`rejects ${operation} with credential versions ${storedVersion}/${currentVersion}`, function () {
         const session = {
           authVersion: storedVersion,
@@ -71,7 +71,7 @@ describe('Mobile credential versions and persistence failures', function () {
       mobileSession.findByAccessToken(validToken, callback),
     );
 
-    receivedError.should.equal(error);
+    should(receivedError).equal(error);
     should.not.exist(session);
   });
 
@@ -82,7 +82,7 @@ describe('Mobile credential versions and persistence failures', function () {
       mobileSession.revokeForRefreshTokenReuse('example-hash', callback),
     );
 
-    receivedError.should.equal(error);
+    should(receivedError).equal(error);
     should.not.exist(session);
     should.not.exist(tokens);
   });
@@ -94,40 +94,49 @@ describe('Mobile credential versions and persistence failures', function () {
       mobileSession.revoke(session, callback),
     );
 
-    receivedError.should.equal(error);
+    should(receivedError).equal(error);
   });
 });
 
 function response() {
-  const res = {};
+  const res = {
+    statusCode: 200,
+    body: {} as Record<string, unknown>,
+    set: sinon.stub(),
+    status: sinon.stub(),
+    send: sinon.stub(),
+    json: sinon.stub(),
+  };
   res.set = sinon.stub().returns(res);
-  res.status = sinon.stub().callsFake(function (statusCode) {
+  res.status = sinon.stub().callsFake(function (statusCode: number) {
     res.statusCode = statusCode;
     return res;
   });
-  res.send = sinon.stub().callsFake(function (body) {
+  res.send = sinon.stub().callsFake(function (body: Record<string, unknown>) {
     res.body = body;
     return res;
   });
-  res.json = sinon.stub().callsFake(function (body) {
+  res.json = sinon.stub().callsFake(function (body: Record<string, unknown>) {
     res.body = body;
     return res;
   });
   return res;
 }
 
-function sessionLookupResult(err, session) {
+function sessionLookupResult(err: Error | null, session?: object | null) {
   const promise = err ? Promise.reject(err) : Promise.resolve(session);
   return {
     populate() {
       return this;
     },
     then: promise.then.bind(promise),
-  };
+  } as unknown as ReturnType<typeof MobileSession.findOne>;
 }
 
-function serviceResult(run) {
-  return new Promise(resolve => run((...values) => resolve(values)));
+function serviceResult(
+  run: (callback: (...values: unknown[]) => void) => void,
+) {
+  return new Promise<unknown[]>(resolve => run((...values) => resolve(values)));
 }
 
 describe('Mobile authentication controller error branches', function () {
@@ -168,8 +177,8 @@ describe('Mobile authentication controller error branches', function () {
     mobileAuthentication.authenticate(req, res, next);
 
     res.statusCode.should.equal(401);
-    res.body.code.should.equal('authentication_required');
-    res.body.message.should.equal('Mobile authentication is required.');
+    should(res.body.code).equal('authentication_required');
+    should(res.body.message).equal('Mobile authentication is required.');
     sinon.assert.notCalled(next);
   });
 
@@ -265,7 +274,7 @@ describe('Mobile authentication controller error branches', function () {
     sinon.stub(User, 'findOne').resolves(null);
     const verifyPassword = sinon
       .stub(passwordHashing, 'verifyPassword')
-      .resolves(false);
+      .resolves(false as never);
 
     await mobileAuthentication.signin(
       { body: { username: 'unknown_member', password: 'secret' } },
@@ -286,7 +295,7 @@ describe('Mobile authentication controller error branches', function () {
     sinon.stub(User, 'findOne').resolves(suspendedMember);
     const verifyPassword = sinon
       .stub(passwordHashing, 'verifyPassword')
-      .resolves(false);
+      .resolves(false as never);
 
     await mobileAuthentication.signin(
       { body: { username: 'suspended_member', password: 'secret' } },
@@ -378,7 +387,7 @@ describe('Mobile session service error branches', function () {
     const [sessionError, tokens] = await serviceResult(callback =>
       mobileSession.create({ _id: new mongoose.Types.ObjectId() }, callback),
     );
-    sessionError.should.equal(error);
+    should(sessionError).equal(error);
     should.not.exist(tokens);
   });
 
@@ -388,7 +397,7 @@ describe('Mobile session service error branches', function () {
     const [sessionError, session, tokens] = await serviceResult(callback =>
       mobileSession.rotateRefreshToken('opaque-refresh-token', callback),
     );
-    sessionError.should.equal(error);
+    should(sessionError).equal(error);
     should.not.exist(session);
     should.not.exist(tokens);
   });
@@ -438,7 +447,7 @@ describe('Mobile session service error branches', function () {
     const [sessionError, session, tokens] = await serviceResult(callback =>
       mobileSession.rotateRefreshToken('opaque-refresh-token', callback),
     );
-    sessionError.should.equal(error);
+    should(sessionError).equal(error);
     should.not.exist(session);
     should.not.exist(tokens);
   });
@@ -467,6 +476,6 @@ describe('Mobile session service error branches', function () {
       return index[0].refreshExpiresAt === 1;
     });
 
-    ttlIndex[1].expireAfterSeconds.should.equal(0);
+    should(ttlIndex?.[1].expireAfterSeconds).equal(0);
   });
 });

@@ -1,45 +1,52 @@
-const EventEmitter = require('events');
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
+import EventEmitter from 'events';
+import mongoose from 'mongoose';
+import should from 'should';
+import sinon from 'sinon';
 
-const mobileAuthenticationThrottle = require('../../server/middleware/mobile-authentication-throttle.server.middleware.cjs');
+import mobileAuthenticationThrottle from '../../server/middleware/mobile-authentication-throttle.server.middleware.cjs';
 
 const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
 
 function response() {
-  const res = new EventEmitter();
-  res.headers = {};
-  res.set = sinon.stub().callsFake(function (name, value) {
+  const res = Object.assign(new EventEmitter(), {
+    headers: {} as Record<string, string>,
+    statusCode: 200,
+    body: {} as { code?: string },
+    set: sinon.stub(),
+    status: sinon.stub(),
+    send: sinon.stub(),
+  });
+  res.set = sinon.stub().callsFake(function (name: string, value: string) {
     res.headers[name] = value;
     return res;
   });
-  res.status = sinon.stub().callsFake(function (statusCode) {
+  res.status = sinon.stub().callsFake(function (statusCode: number) {
     res.statusCode = statusCode;
     return res;
   });
-  res.send = sinon.stub().callsFake(function (body) {
+  res.send = sinon.stub().callsFake(function (body: { code?: string }) {
     res.body = body;
     return res;
   });
   return res;
 }
 
-function queryResult(err, value) {
+function queryResult(err: Error | null, value?: object | null) {
   const pending = err ? Promise.reject(err) : Promise.resolve(value);
-  pending.exec = sinon.stub().returns(pending);
-  return pending;
+  return Object.assign(pending, {
+    exec: sinon.stub().returns(pending),
+  }) as never;
 }
 
 function request(
-  username = 'example_member',
-  passengerAddress,
+  username: string | null = 'example_member',
+  passengerAddress?: string,
   directAddress = '203.0.113.9',
 ) {
   return {
-    body: { username },
+    body: { username, refreshToken: undefined as string | undefined },
     connection: { remoteAddress: directAddress },
     get: sinon.stub().returns(passengerAddress),
     ip: directAddress,
@@ -102,8 +109,9 @@ describe('Mobile authentication throttle', function () {
   });
 
   it('retries an upsert race without allowing an attempt through twice', async function () {
-    const duplicate = new Error('Duplicate key');
-    duplicate.code = 11000;
+    const duplicate = Object.assign(new Error('Duplicate key'), {
+      code: 11000,
+    });
     const next = sinon.stub();
     allowExpiredDeletion();
     const increment = sinon.stub(
@@ -118,7 +126,7 @@ describe('Mobile authentication throttle', function () {
     await new Promise(resolve => setImmediate(resolve));
 
     sinon.assert.calledThrice(increment);
-    increment.secondCall.args[2].upsert.should.equal(false);
+    should(increment.secondCall.args[2]?.upsert).equal(false);
     sinon.assert.calledOnceWithExactly(next);
   });
 
@@ -152,7 +160,7 @@ describe('Mobile authentication throttle', function () {
     await new Promise(resolve => setImmediate(resolve));
 
     res.statusCode.should.equal(429);
-    res.body.code.should.equal('rate_limited');
+    should(res.body.code).equal('rate_limited');
     res.headers['Retry-After'].should.equal(
       String(mobileAuthenticationThrottle.attemptWindowMs / 1000),
     );
@@ -262,8 +270,8 @@ describe('Mobile authentication throttle', function () {
     });
 
     should.exist(keyIndex);
-    keyIndex[1].unique.should.equal(true);
+    should(keyIndex?.[1].unique).equal(true);
     should.exist(ttlIndex);
-    ttlIndex[1].expireAfterSeconds.should.equal(0);
+    should(ttlIndex?.[1].expireAfterSeconds).equal(0);
   });
 });

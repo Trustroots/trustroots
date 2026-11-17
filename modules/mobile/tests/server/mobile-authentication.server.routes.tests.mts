@@ -1,21 +1,22 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import should from 'should';
+import sinon from 'sinon';
+import express from '../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const User = mongoose.model('User');
 const MobileSession = mongoose.model('MobileSession');
+type SessionHashes = { accessTokenHash: string; refreshTokenHash: string };
 const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 
-let app;
-let member;
-let credentials;
+let app: Awaited<ReturnType<typeof express.init>>;
+let member: InstanceType<typeof User>;
+let credentials: { username: string; password: string };
 
 function createMember() {
   credentials = {
@@ -113,8 +114,10 @@ describe('Mobile authentication API', function () {
 
     response.body.code.should.equal('rate_limited');
     response.headers['retry-after'].should.equal('900');
-    const storedAttempt = await MobileAuthenticationAttempt.findOne({}).lean();
-    storedAttempt.count.should.equal(11);
+    const storedAttempt = await MobileAuthenticationAttempt.findOne({}).lean<{
+      count: number;
+    }>();
+    storedAttempt!.count.should.equal(11);
   });
 
   it('atomically rate limits parallel rejected sign-in attempts', async function () {
@@ -240,7 +243,10 @@ describe('Mobile authentication API', function () {
       response.body.code.should.equal('authentication_required');
     }
 
-    const protectedWrites = [
+    const protectedWrites: {
+      method: 'put' | 'post' | 'delete';
+      path: string;
+    }[] = [
       { method: 'put', path: '/api/mobile/v0/blocked-users/traveller' },
       { method: 'delete', path: '/api/mobile/v0/blocked-users/traveller' },
       { method: 'post', path: '/api/mobile/v0/messages-read' },
@@ -331,7 +337,7 @@ describe('Mobile authentication API', function () {
       Authorization: `Bearer ${signin.body.accessToken}`,
       'X-Trustroots-Request': '1',
     };
-    const denied = [
+    const denied: ['get' | 'post' | 'put' | 'delete', string][] = [
       ['get', '/api/mobile/v0/offers'],
       ['get', `/api/mobile/v0/offers/${member.id}`],
       ['get', `/api/mobile/v0/contacts/${member.id}`],
@@ -407,13 +413,17 @@ describe('Mobile authentication API', function () {
       .set(authenticated)
       .expect(200);
     search.body
-      .some(result => result.username === other.username)
+      .some(
+        (result: { username: string }) => result.username === other.username,
+      )
       .should.equal(true);
     const hosting = await request(app)
       .get(`/api/mobile/v0/offers-by/${other.id}?types=host`)
       .set(authenticated)
       .expect(200);
-    hosting.body.map(result => result._id).should.deepEqual([offer.id]);
+    hosting.body
+      .map((result: { _id: string }) => result._id)
+      .should.deepEqual([offer.id]);
     await request(app)
       .get(`/api/mobile/v0/members/${other.id}/avatar?size=128`)
       .set(authenticated)
@@ -426,7 +436,9 @@ describe('Mobile authentication API', function () {
       .get('/api/mobile/v0/blocked-users')
       .set(authenticated)
       .expect(200);
-    blocked.body.map(user => user.username).should.deepEqual([other.username]);
+    blocked.body
+      .map((user: { username: string }) => user.username)
+      .should.deepEqual([other.username]);
     const hidden = await request(app)
       .get('/api/mobile/v0/members?search=Search')
       .set(authenticated)
@@ -602,13 +614,15 @@ describe('Mobile authentication API', function () {
       .expect(200);
     const refreshExpiresAt = new Date(Date.now() + 60_000);
     await MobileSession.updateOne({ user: member._id }, { refreshExpiresAt });
-    const before = await MobileSession.findOne({ user: member._id }).lean();
+    const before = await MobileSession.findOne({
+      user: member._id,
+    }).lean<SessionHashes>();
 
     const clock = sinon.useFakeTimers({
       now: refreshExpiresAt.getTime() + 1,
       toFake: ['Date'],
     });
-    let rejected;
+    let rejected: request.Response;
     try {
       rejected = await request(app)
         .post('/api/mobile/v0/auth/refresh')
@@ -618,10 +632,12 @@ describe('Mobile authentication API', function () {
       clock.restore();
     }
 
-    const after = await MobileSession.findOne({ user: member._id }).lean();
+    const after = await MobileSession.findOne({
+      user: member._id,
+    }).lean<SessionHashes>();
     rejected.body.code.should.equal('authentication_required');
-    after.accessTokenHash.should.equal(before.accessTokenHash);
-    after.refreshTokenHash.should.equal(before.refreshTokenHash);
+    after!.accessTokenHash.should.equal(before!.accessTokenHash);
+    after!.refreshTokenHash.should.equal(before!.refreshTokenHash);
   });
 
   it('rejects a suspended member before changing refresh tokens', async function () {
@@ -629,7 +645,9 @@ describe('Mobile authentication API', function () {
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
       .expect(200);
-    const before = await MobileSession.findOne({ user: member._id }).lean();
+    const before = await MobileSession.findOne({
+      user: member._id,
+    }).lean<SessionHashes>();
     await User.updateOne({ _id: member._id }, { roles: ['suspended'] });
 
     const rejected = await request(app)
@@ -637,10 +655,12 @@ describe('Mobile authentication API', function () {
       .send({ refreshToken: signin.body.refreshToken })
       .expect(401);
 
-    const after = await MobileSession.findOne({ user: member._id }).lean();
+    const after = await MobileSession.findOne({
+      user: member._id,
+    }).lean<SessionHashes>();
     rejected.body.code.should.equal('authentication_required');
-    after.accessTokenHash.should.equal(before.accessTokenHash);
-    after.refreshTokenHash.should.equal(before.refreshTokenHash);
+    after!.accessTokenHash.should.equal(before!.accessTokenHash);
+    after!.refreshTokenHash.should.equal(before!.refreshTokenHash);
   });
 
   it('rejects a suspended member at sign-in', async function () {

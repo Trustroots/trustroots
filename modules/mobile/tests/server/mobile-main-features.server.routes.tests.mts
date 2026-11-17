@@ -1,17 +1,17 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const should = require('should');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import should from 'should';
+import express from '../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
 const Contact = mongoose.model('Contact');
 const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
 
-let app;
-let users;
-let accessToken;
-let password;
+let app: Awaited<ReturnType<typeof express.init>>;
+let users: Awaited<ReturnType<typeof utils.saveUsers>>;
+let accessToken: string;
+let password: string;
 
 async function signIn() {
   const response = await request(app)
@@ -21,7 +21,10 @@ async function signIn() {
   accessToken = response.body.accessToken;
 }
 
-function mobileRequest(method, path) {
+function mobileRequest(
+  method: 'get' | 'post' | 'put' | 'delete',
+  path: string,
+) {
   return request(app)
     [method](path)
     .set('Authorization', `Bearer ${accessToken}`)
