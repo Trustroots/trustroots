@@ -1,9 +1,9 @@
+import sinon from 'sinon';
+import 'should';
 let policyModule: typeof import('../../server/policies/tribes.server.policy.mts');
 before(async function () {
   policyModule = await import('../../server/policies/tribes.server.policy.mts');
 });
-const sinon: typeof import('sinon') = require('sinon');
-require('should');
 interface PolicyResponseDouble {
   statusCode: number;
   body: { message: string } | null;

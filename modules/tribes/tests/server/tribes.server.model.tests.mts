@@ -1,5 +1,4 @@
 import type {
-  TestConfigModule,
   TribeDocument,
   TribeModel,
   TribeRecord,
@@ -7,14 +6,11 @@ import type {
 /**
  * Module dependencies.
  */
-const should: typeof import('should') = require('should');
-const sinon: typeof import('sinon') = require('sinon');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const validator: {
-  isHexadecimal(value: string): boolean;
-} = require('validator');
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import should from 'should';
+import sinon from 'sinon';
+import mongoose from 'mongoose';
+import config from './../../../../config/config.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 /**
  * Globals
@@ -142,7 +138,7 @@ describe('Tribe Model Unit Tests:', function () {
           _tribe.count!.should.eql(0);
           should.exist(_tribe.color);
           _tribe.color!.should.not.containEql('#');
-          validator.isHexadecimal(_tribe.color!).should.equal(true);
+          _tribe.color!.should.match(/^[0-9a-f]+$/i);
           should.exist(_tribe.created);
           done();
         })

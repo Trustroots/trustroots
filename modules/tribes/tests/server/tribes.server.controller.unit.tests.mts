@@ -1,19 +1,19 @@
+import assert from 'node:assert/strict';
 import type {
   ContactModel,
   ContactRecord,
   TribeModel,
   TribeRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-import type { Types } from 'mongoose';
 /**
  * Unit tests for tribes controller list and middleware branches.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
+import mongoose, { type Types } from 'mongoose';
+import sinon from 'sinon';
 
-const tribesController: typeof import('./../../server/controllers/tribes.server.controller.mjs') = require('./../../server/controllers/tribes.server.controller.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-require('should');
+import tribesController from './../../server/controllers/tribes.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import 'should';
 
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
@@ -561,7 +561,6 @@ describe('Tribes controller unit tests', () => {
   });
 
   it('uses viewer-scoped connection queries and classifies exact activity boundaries', async () => {
-    const assert: typeof import('node:assert/strict') = require('node:assert/strict');
     const User = mongoose.model('User');
     const Experience = mongoose.model('Experience');
     const day = 86_400_000;

@@ -1,9 +1,7 @@
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const {
-  findDiscoveryHostingLocations,
-}: typeof import('../../../../users/server/services/discovery-hosting.server.service.mts') = require('../../../../users/server/services/discovery-hosting.server.service.mts');
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import assert from 'node:assert/strict';
+import { findDiscoveryHostingLocations } from '../../../../users/server/services/discovery-hosting.server.service.mts';
 
 describe('Discovery hosting locations', () => {
   it('avoids a query when there are no eligible owners', async () => {
