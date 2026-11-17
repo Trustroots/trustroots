@@ -1,10 +1,10 @@
 # Shared UI primitives
 
-Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge`,
-`Spinner`, `Tabs`, `ToggleGroup`, `Modal`, `Tooltip` or `Textarea`. They accept caller-supplied
-text and do not depend on translations or feature modules. `Button` is non-submitting by default; set `type="submit"` when
-needed. `Alert` takes a status intent (`danger`, `warning`, `info` or `success`) and a
-required `role`; `Spinner` requires a translated `label` supplied by its caller.
+Import components directly from `@trustroots/ui/<Component>`. They accept
+caller-supplied text and do not depend on translations or feature modules.
+`Button` is non-submitting by default; set `type="submit"` when needed. `Alert`
+takes a status intent (`danger`, `warning`, `info` or `success`) and a required
+`role`; `Spinner` requires a translated `label` supplied by its caller.
 
 Components live in `src/components/` and are styled with `tw:`-prefixed
 Tailwind utilities. `src/globals.css` (exported as `@trustroots/ui/globals.css`)
@@ -115,6 +115,12 @@ explains a disabled button, use a focusable wrapper as the trigger.
 `Textarea` accepts native textarea props and works with controlled or
 uncontrolled values. Associate a label with its `id` and use
 `aria-describedby` to associate any help or validation text.
+
+## Input
+
+`Input` accepts native input props and applies the Trustroots form-control
+appearance without depending on Bootstrap classes. Associate a label with its
+`id` and use `aria-describedby` to associate help or validation text.
 
 ## shadcn
 

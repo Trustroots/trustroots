@@ -1,6 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 import {
   Modal,
   ModalBody,
@@ -104,8 +105,8 @@ export default function LanguageSwitch({
         </ModalHeader>
         <ModalBody>
           {locales.length >= 8 && (
-            <input
-              className="form-control tw:mb-4 tw:w-full"
+            <Input
+              className="tw:mb-4"
               type="search"
               value={search}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
