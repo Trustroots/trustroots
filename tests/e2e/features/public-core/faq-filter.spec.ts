@@ -45,3 +45,54 @@ test('visitors can filter FAQ questions', async ({ page }, testInfo) => {
     page.locator('#is-trustroots-exclusively-for-hitchhikers'),
   ).toBeVisible();
 });
+
+test('visitors can find getting-started guidance in the FAQ', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.faq-get-started', [
+    'Visitors can open Get Started and find all four wiki guides.',
+    'FAQ search can find a Get Started answer from another category.',
+  ]);
+
+  await page.goto('/faq');
+  const filter = page.getByRole('searchbox', {
+    name: 'Search all frequently asked questions',
+  });
+  const gettingStarted = page.getByRole('region', { name: 'Get Started' });
+
+  await filter.fill('organised ways to host travellers');
+  await expect(
+    gettingStarted.getByRole('heading', { name: 'What is Hospex?' }),
+  ).toBeVisible();
+  await expect(
+    gettingStarted.getByRole('heading', { name: 'How does Trustroots work?' }),
+  ).toBeHidden();
+  await filter.clear();
+  await expect(gettingStarted).toBeHidden();
+
+  await page.getByRole('link', { name: 'Get Started', exact: true }).click();
+  await expect(page).toHaveURL(/\/faq\/get-started$/);
+  await expect(page).toHaveTitle(/FAQ - Get Started/);
+
+  const wikiLinks = [
+    ['Read the Trustroots starter guide', 'Start_Rooting'],
+    ['Read how to create a good profile', 'How_To_Create_A_Good_Profile'],
+    ['Read the safety guide', 'Safety'],
+    [
+      'Read a brief history of hospitality exchange networks',
+      'A_brief_history_of_hospitality_exchange_networks',
+    ],
+  ];
+  for (const [name, article] of wikiLinks) {
+    const link = gettingStarted.getByRole('link', { name, exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute(
+      'href',
+      `https://wiki.trustroots.org/en/${article}`,
+    );
+  }
+
+  await page.getByRole('link', { name: 'How can I stay safe?' }).click();
+  await expect(page).toHaveURL(/\/faq\/get-started#how-can-i-stay-safe$/);
+  await expect(gettingStarted.locator('#how-can-i-stay-safe')).toBeInViewport();
+});

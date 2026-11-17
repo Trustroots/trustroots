@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeatures.component';
 import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.component';
+import FaqGetStarted from '@/modules/pages/client/components/FaqGetStarted.component';
 import FaqGeneral from '@/modules/pages/client/components/FaqGeneral.component';
 import FaqTechnology from '@/modules/pages/client/components/FaqTechnology.component';
 import FaqTribes from '@/modules/pages/client/components/FaqTribes.component';
@@ -68,6 +69,21 @@ describe('FAQ page sections', () => {
     expect(
       screen.queryByRole('link', { name: 'Facebook' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders the Get Started questions and sidebar anchors', () => {
+    render(<FaqGetStarted />);
+
+    const region = screen.getByRole('region', { name: 'Get Started' });
+    expect(within(region).getAllByRole('heading', { level: 3 })).toHaveLength(
+      4,
+    );
+    expect(
+      screen.getByRole('link', { name: 'What do I write on my profile?' }),
+    ).toHaveAttribute('href', '/faq/get-started#what-do-i-write-on-my-profile');
+    expect(
+      within(region).getByRole('link', { name: 'Read the safety guide' }),
+    ).toHaveAttribute('href', 'https://wiki.trustroots.org/en/Safety');
   });
 
   it('renders foundation FAQ text', () => {

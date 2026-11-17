@@ -379,6 +379,31 @@ const features = [
     ],
   },
   {
+    id: 'public.faq-get-started',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description: 'Get Started FAQ guidance is available to visitors.',
+    roles: ['visitor'],
+    references: {
+      clientRoutes: [
+        clientRoute('faq.get-started', '/faq/get-started', source.pagesClient, {
+          parentState: 'faq',
+        }),
+      ],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Visitors can open Get Started and find all four wiki guides.',
+      'FAQ search can find a Get Started answer from another category.',
+    ],
+    relatedSpecs: [
+      spec(
+        'faq-filter.spec.js',
+        'visitors can find getting-started guidance in the FAQ',
+      ),
+    ],
+  },
+  {
     id: 'public.faq-circles',
     area: AREA.publicCore,
     status: STATUS.active,

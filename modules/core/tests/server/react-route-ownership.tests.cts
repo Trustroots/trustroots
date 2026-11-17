@@ -46,6 +46,7 @@ describe('React route ownership', function () {
     REACT_OWNED_PATHS.should.containEql('/support');
     REACT_OWNED_PATHS.should.containEql('/statistics');
     REACT_OWNED_PATHS.should.containEql('/safety');
+    REACT_OWNED_PATHS.should.containEql('/faq/get-started');
     REACT_OWNED_PATHS.should.containEql('/faq/technology');
     REACT_OWNED_PATHS.should.containEql('/');
     REACT_OWNED_PATHS.should.containEql('/messages/:username');
