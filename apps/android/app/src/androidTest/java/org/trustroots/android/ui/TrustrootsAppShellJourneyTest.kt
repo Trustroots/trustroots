@@ -246,12 +246,12 @@ class TrustrootsAppShellJourneyTest {
         signInAs("steady-heron", requests)
 
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
+            compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isNotEmpty() &&
                 requests.count { it.startsWith("GET /api/users/steady-heron ") } == 2 &&
-                requests.count { it.startsWith("GET /api/tribes?limit=150") } == 2
+                requests.count { it.startsWith("GET /api/tribes?limit=150") } == 1
         }
         assertEquals(2, requests.count { it.startsWith("GET /api/users/steady-heron ") })
-        assertEquals(2, requests.count { it.startsWith("GET /api/tribes?limit=150") })
+        assertEquals(1, requests.count { it.startsWith("GET /api/tribes?limit=150") })
     }
 
     @Test fun accountSignOutClearsTheSessionAndANewAccountGetsAFreshShellOwner() {
@@ -314,7 +314,7 @@ class TrustrootsAppShellJourneyTest {
 
         signInAs("quiet-fox", requests)
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
+            compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isNotEmpty() &&
                 requests.any { it.startsWith("GET /api/users/quiet-fox ") }
         }
         assertEquals(1, requests.count { it.startsWith("GET /api/users/quiet-fox ") })
@@ -394,7 +394,7 @@ class TrustrootsAppShellJourneyTest {
         compose.onNodeWithTag("signin-password").performTextReplacement("fictional-renewal-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isNotEmpty()
         }
         assertEquals(1, requests.count { it.startsWith("POST /api/mobile/v0/auth/signin ") })
         assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
