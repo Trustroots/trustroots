@@ -17,6 +17,45 @@ const SCREENSHOT_SELECTOR_ANNOTATION = 'screenshot-selector';
 const sectionPages = new WeakSet<Page>();
 const FIXED_BARS = '#tr-header, [class*="navbar-fixed-"]';
 
+async function screenshotBackgroundStyle(page: Page): Promise<string> {
+  // The workflow uses this helper on both revisions. Match the app's mobile
+  // breakpoint and preload the pinned photo before applying the screenshot CSS.
+  return page.evaluate(async () => {
+    const { pathname, searchParams } = new URL(window.location.href);
+    const circle = searchParams.get('circle') || searchParams.get('tribe');
+    const suffix = matchMedia('(max-width: 480px)').matches ? '--mobile' : '';
+    const boards = [
+      {
+        selector: '.home-intro',
+        file: ['hitchhikers', 'dumpster-divers', 'punks'].includes(circle ?? '')
+          ? 'ab-hitchroad-toned.jpg'
+          : `ak-sahara${suffix}.jpg`,
+        enabled: circle !== 'cyclists',
+      },
+      {
+        selector: '.faq-header',
+        file: `af-happyhippies${suffix}.jpg`,
+        enabled: true,
+      },
+      {
+        selector: '.board.container-fullscreen',
+        file: `nordic-lights${suffix}.jpg`,
+        enabled: /^\/signin\/?$/.test(pathname),
+      },
+    ];
+    const board = boards.find(
+      ({ selector, enabled }) => enabled && document.querySelector(selector),
+    );
+    if (!board) return '';
+
+    const url = `/img/board/${board.file}`;
+    const photo = new Image();
+    photo.src = url;
+    await photo.decode();
+    return `${board.selector} { background-image: url("${url}") !important; }`;
+  });
+}
+
 export function sanitizeFileName(value: unknown): string {
   return String(value)
     .replace(/[^a-zA-Z0-9._-]+/g, '_')
@@ -54,11 +93,12 @@ export async function captureSection(
     FIXED_BARS,
   );
   fs.mkdirSync(screenshotsDir, { recursive: true });
+  const backgroundStyle = await screenshotBackgroundStyle(page);
   await locator.screenshot({
     path: path.join(screenshotsDir, `${fileName}.png`),
     style: inFixedBar
-      ? undefined
-      : `${FIXED_BARS} { visibility: hidden !important; }`,
+      ? backgroundStyle
+      : `${backgroundStyle}\n${FIXED_BARS} { visibility: hidden !important; }`,
   });
   fs.writeFileSync(path.join(screenshotsDir, `${fileName}.url`), page.url());
 }
@@ -114,15 +154,17 @@ async function captureEndOfTestScreenshot(
       .join('-');
     const screenshotPath = path.join(screenshotsDir, `${fileName}.png`);
     const selector = getScreenshotSelector(testInfo);
+    const style = await screenshotBackgroundStyle(page);
 
     if (selector) {
-      await page.locator(selector).screenshot({ path: screenshotPath });
+      await page.locator(selector).screenshot({ path: screenshotPath, style });
     } else {
       // Leave the fixed header as the app renders it. Full-page shots stitch
       // scrolled slices, so the header can appear part-way down the image.
       await page.screenshot({
         path: screenshotPath,
         fullPage: shouldCaptureFullPage(testInfo),
+        style,
       });
     }
     fs.writeFileSync(path.join(screenshotsDir, `${fileName}.url`), page.url());

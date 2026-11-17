@@ -41,6 +41,11 @@ jobs:
               -- 'tests/e2e/**/*.spec.js' 'tests/e2e/**/*.spec.ts'
           )
 
+          if [ "${#changed_specs[@]}" -eq 0 ] && ! git diff --quiet \
+            "origin/${GITHUB_BASE_REF}...HEAD" -- tests/e2e/support/screenshot-capture.mts; then
+            changed_specs=(tests/e2e/features/auth-account/auth-smoke.spec.ts)
+          fi
+
           if [ "${#changed_specs[@]}" -eq 0 ]; then
             echo "has_specs=false" >> "$GITHUB_OUTPUT"
             exit 0
