@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
@@ -328,6 +334,18 @@ describe('ProfileEditAccount', () => {
     expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
       section: 'account',
     });
+  });
+
+  it('ignores an email frequency that is absent from the available options', async () => {
+    await act(async () => {
+      renderPage();
+    });
+    const frequency = screen.getByLabelText('Unread-message emails');
+
+    fireEvent.change(frequency, { target: { value: '' } });
+
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(frequency).toHaveValue('immediate');
   });
 
   it('sets the digest frequency and hosting reminders independently', async () => {
