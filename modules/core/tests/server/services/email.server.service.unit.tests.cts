@@ -30,6 +30,9 @@ type EmailService = Record<string, (...args: never[]) => unknown> & {
 };
 
 const emailService: EmailService = require('./../../../server/services/email.server.service.mjs');
+const {
+  notificationEmail,
+}: typeof import('../../../../users/server/services/notification-email.server.service.mts') = require('../../../../users/server/services/notification-email.server.service.mts');
 
 const site = 'http://' + config.domain;
 const defaultFrom = 'Trustroots <' + config.mailer.from + '>';
@@ -147,6 +150,7 @@ describe('Service: email (sent content)', function () {
         ...frame('messages-unread'),
         tracked('/profile/bo', 'messages-unread', 'profile'),
         tracked('/messages/bo', 'messages-unread', 'reply-to'),
+        notificationEmail(member, 'messages', 'immediate').unsubscribeUrl!,
       ],
     },
     {
@@ -373,6 +377,7 @@ describe('Service: email (sent content)', function () {
       [
         ...frame('reactivate-hosts'),
         tracked('/offer', 'reactivate-hosts'),
+        notificationEmail(member, 'hosting').unsubscribeUrl!,
       ].sort(),
     );
     assert.ok(!email.text.includes('survey'), email.text);
