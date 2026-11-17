@@ -76,6 +76,7 @@ describe('Admin Mongo diagnostics', () => {
       { name: 'sample' },
       { name: 'sample', failedAt: null, lastFinishedAt: null },
       { lastFinishedAt: earlier },
+      { name: 'larger fixture', data: { text: 'x'.repeat(2048) } },
     ]);
     await archived.insertOne({ name: 'archived' });
 
@@ -94,8 +95,12 @@ describe('Admin Mongo diagnostics', () => {
       .map(collection => collection.status)
       .should.deepEqual(['available', 'available']);
     const jobs = body.jobs!;
-    const sample = jobs[0]!;
-    assert.equal(sample.name, 'sample');
+    const sample = jobs.find(job => job.name === 'sample');
+    const largerFixture = jobs.find(job => job.name === 'larger fixture');
+    assert.ok(sample);
+    assert.ok(largerFixture);
+    assert.ok(largerFixture.bsonBytes > sample.bsonBytes);
+    assert.ok(jobs.indexOf(largerFixture) < jobs.indexOf(sample));
     assert.equal(sample.total, 8);
     assert.equal(sample.oldestCompletedAt, later.toISOString());
     assert.equal(
@@ -106,16 +111,14 @@ describe('Admin Mongo diagnostics', () => {
       ),
     );
     assert.deepEqual(body.history, []);
-    jobs
-      .find(job => job.name === 'sample')!
-      .counts.should.deepEqual({
-        queued: 1,
-        disabled: 1,
-        locked: 1,
-        failed: 2,
-        completed: 1,
-        unscheduled: 2,
-      });
+    sample.counts.should.deepEqual({
+      queued: 1,
+      disabled: 1,
+      locked: 1,
+      failed: 2,
+      completed: 1,
+      unscheduled: 2,
+    });
     jobs
       .find(job => job.name === '(Unnamed job)')!
       .counts.should.deepEqual({
