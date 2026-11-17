@@ -21,7 +21,7 @@ type NostrUserRecord = {
   email?: string;
   roles: string[];
 };
-const defaultExport = function (app: Application) {
+export default function (app: Application) {
   const redirect = function (src: string, dst: string) {
     app.route(src).get(function (req, res) {
       res.redirect(301, dst);
@@ -201,6 +201,4 @@ const defaultExport = function (app: Application) {
 
   // Finish by binding the tribes middleware
   app.param('tribe', tribes.tribeBySlug);
-};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+}

@@ -60,4 +60,3 @@ ReferenceThreadSchema.index({
 });
 mongoose.model('ReferenceThread', ReferenceThreadSchema);
 export default service;
-export { service as 'module.exports' };

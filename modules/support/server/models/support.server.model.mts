@@ -109,6 +109,4 @@ SupportRequestSchema.index(
   { unique: true, sparse: true },
 );
 mongoose.model('SupportRequest', SupportRequestSchema);
-const defaultInterop = {};
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default {};

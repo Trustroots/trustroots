@@ -43,4 +43,3 @@ function register(app: Express) {
 }
 export { register };
 export default register;
-export { register as 'module.exports' };

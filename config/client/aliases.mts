@@ -50,5 +50,3 @@ const aliasesConfig = {
 };
 
 export default aliasesConfig;
-/** @commonjs */
-export { aliasesConfig as 'module.exports' };

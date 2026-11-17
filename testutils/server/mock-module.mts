@@ -1,8 +1,4 @@
-import {
-  createRequire,
-  registerHooks,
-  stripTypeScriptTypes,
-} from 'node:module';
+import { registerHooks, stripTypeScriptTypes } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -21,7 +17,6 @@ type LoadHook = NonNullable<Parameters<typeof registerHooks>[0]['load']>;
 const mocks = new Map<string, MockModule>();
 const values = new Map<string, unknown>();
 const registryKey = Symbol.for('trustroots.test.moduleMocks');
-const require = createRequire(import.meta.url);
 Reflect.set(globalThis, registryKey, values);
 let sequence = 0;
 
@@ -113,14 +108,6 @@ async function mockModule<T = unknown>(
 ): Promise<T> {
   const filename = typeof target === 'string' ? target : fileURLToPath(target);
   return (await import(register(filename, stubs).url)) as T;
-}
-
-// TODO(#3494): remove with mock-module.js once no CommonJS test loads it.
-export function mockModuleSync<T = unknown>(
-  filename: string,
-  stubs: MockStubs,
-): T {
-  return require(fileURLToPath(register(filename, stubs).url)) as T;
 }
 
 export default mockModule;

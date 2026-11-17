@@ -134,4 +134,3 @@ function getBuildMetadata(callback: (metadata: BuildMetadata | false) => void) {
   );
 }
 export default service;
-export { service as 'module.exports' };

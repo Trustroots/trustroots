@@ -209,8 +209,6 @@ const service = {
   invokeRolesPolicies,
   isAllowed,
 };
-const defaultExport = service;
-export default defaultExport;
+export default service;
 export { invokeRolesPolicies, isAllowed };
 export { acl as _acl };
-export { defaultExport as 'module.exports' };

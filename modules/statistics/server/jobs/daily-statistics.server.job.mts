@@ -24,7 +24,7 @@ type InfluxDeliveryError = Error & {
 
 const statisticsService: StatisticsService = statistics;
 
-const defaultInterop = function (_job: unknown, agendaDone: JobDone): void {
+const run = function (_job: unknown, agendaDone: JobDone): void {
   async function collect(): Promise<void> {
     let totalUserCount: number | undefined;
     try {
@@ -194,7 +194,7 @@ function collectLastSeen(
     );
   });
 }
-export default defaultInterop;
+export default run;
 
 function logFailure(message: string, error: unknown): void {
   // The legacy logger accepts arbitrary metadata; its inferred JS signature

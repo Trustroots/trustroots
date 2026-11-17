@@ -93,8 +93,6 @@ const service: UnifiedPushController = {
   test,
 };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };
 
 const nativeExportconfiguration = service.configuration;
 /** @esmNamed */

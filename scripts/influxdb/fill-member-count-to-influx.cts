@@ -7,11 +7,12 @@ import type {
 } from '../legacy-cli-contracts.d.cts';
 const _ = require('lodash') as typeof import('lodash');
 const moment = require('moment') as typeof import('moment');
-const mongooseService =
-  require('./../../config/lib/mongoose.mjs') as ConnectionHelper;
+const mongooseService = require('./../../config/lib/mongoose.mjs')
+  .default as ConnectionHelper;
 const mongoose = require('mongoose') as LegacyMongoose;
 const statsService =
-  require('./../../modules/stats/server/services/stats.server.service.mts') as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
+  require('./../../modules/stats/server/services/stats.server.service.mts')
+    .default as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
 
 require('./../../modules/users/server/models/user.server.model.mjs');
 const User = mongoose.model<CountUsers>('User');

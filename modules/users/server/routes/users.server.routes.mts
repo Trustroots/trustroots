@@ -30,7 +30,7 @@ interface RouteApplication {
   param(name: string, handler: RouteHandler): void;
 }
 
-const defaultExport = function (app: RouteApplication) {
+export default function (app: RouteApplication) {
   app
     .route(unsubscribePath + '/:token')
     .get(showUnsubscribe)
@@ -125,6 +125,4 @@ const defaultExport = function (app: RouteApplication) {
   app.param('userId', userProfile.userMiniByID);
   app.param('username', userProfile.userByUsername);
   app.param('avatarUserId', userAvatar.userForAvatarByUserId);
-};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+}

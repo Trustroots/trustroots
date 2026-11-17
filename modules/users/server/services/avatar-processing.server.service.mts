@@ -291,7 +291,6 @@ const service: AvatarProcessingService = {
   validateVersion,
 };
 export default service;
-export { service as 'module.exports' };
 
 const nativeExportavatarSizes = service.avatarSizes;
 export { nativeExportavatarSizes as avatarSizes };

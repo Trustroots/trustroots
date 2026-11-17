@@ -76,44 +76,6 @@ The project SHALL start its server and worker and run server tests through npm s
 - **WHEN** a developer invokes the server test command or its watch variant
 - **THEN** database preparation, index creation, test execution, and cleanup occur without loading Gulp
 
-### Requirement: Incremental server ESM interoperability
-
-Server modules migrated to native ESM SHALL remain available to existing
-CommonJS server consumers until those consumers are migrated.
-
-#### Scenario: Existing consumer loads a migrated service
-
-- **WHEN** a CommonJS server module loads a migrated service through its existing path
-- **THEN** it receives the same callable exports and configuration values
-
-#### Scenario: ESM consumer loads a migrated service
-
-- **WHEN** an ESM server module imports the migrated service
-- **THEN** it can use named exports without a CommonJS namespace adapter
-
-Migration constraints: shims that expose ESM namespace objects provide read-only
-exports, so tests must replace those dependencies at the import boundary instead
-of stubbing named exports. Services that retain mutable object APIs can return a
-shared default object through their CommonJS adapter. Migrated modules must avoid top-level await while
-CommonJS consumers still use `require()`. Keep per-file `.mjs` modules and their
-`.js` shims during the incremental migration; switch to package-wide ESM and
-remove the shims only after the remaining CommonJS consumers have moved.
-
-### Requirement: Incremental server ESM services preserve CommonJS consumers
-
-Each server service migrated to ESM SHALL retain its current CommonJS import
-path as an adapter until all consumers have migrated.
-
-#### Scenario: CommonJS server code imports a migrated service
-
-- **WHEN** a CommonJS consumer requires an existing core or user service path
-- **THEN** it receives the same callable or object export shape and behaviour
-
-#### Scenario: ESM server code imports a migrated service
-
-- **WHEN** an ESM consumer imports the implementation
-- **THEN** it can access the service functions through named ESM exports
-
 ### Requirement: Redact sensitive diagnostic metadata
 
 The application logger SHALL redact credential, recovery-token, and private
@@ -159,11 +121,11 @@ The users, offers, messages, contacts, tribes and reference-thread callback-base
 
 ### Requirement: Migrated service objects preserve shared method replacements
 
-Migrated upload, statistics and Influx services SHALL expose named ESM functions and retain synchronous CommonJS adapters with the existing API. Where consumers replace service methods, the adapter SHALL return the same mutable object used by ESM consumers and internal dispatch.
+Migrated upload, statistics and Influx services SHALL expose named ESM functions and a default service object. Where consumers replace service methods, they SHALL replace them on that default object, which internal dispatch also uses.
 
 #### Scenario: A consumer replaces an Influx method
 
-- **WHEN** a CommonJS consumer replaces the Influx client hook or statistics submission method
+- **WHEN** a consumer replaces the Influx client hook or statistics submission method on the default service object
 - **THEN** measurement writing or statistics dispatch uses the replacement through the shared service object
 
 #### Scenario: Existing service behaviour is exercised
@@ -171,14 +133,9 @@ Migrated upload, statistics and Influx services SHALL expose named ESM functions
 - **WHEN** migrated services validate uploads or record statistics
 - **THEN** error responses, temporary-file cleanup and measurement payloads remain unchanged
 
-#### Scenario: Both module systems load a service
-
-- **WHEN** a CommonJS consumer requires the existing path and an ESM consumer imports the implementation
-- **THEN** their default service objects are identical and the implementation provides named function exports without top-level await
-
 ### Requirement: Member interactions server ESM preserves registration and consumers
 
-Server implementations in messages, contacts, experiences, offers, references-thread, tribes SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+Server implementations in messages, contacts, experiences, offers, references-thread, tribes SHALL use native ESM with ordinary ESM exports while preserving their export shapes and registration behaviour.
 
 #### Scenario: Existing bootstrap loads migrated modules
 
@@ -187,7 +144,7 @@ Server implementations in messages, contacts, experiences, offers, references-th
 
 #### Scenario: Existing consumers invoke migrated handlers
 
-- **WHEN** controllers, services or tests load these domains through existing CommonJS paths
+- **WHEN** controllers, services or tests import these domains through ESM
 - **THEN** handlers retain their behaviour, function context and shared mutable replacement semantics
 
 #### Scenario: Migration regression checks run
@@ -197,7 +154,7 @@ Server implementations in messages, contacts, experiences, offers, references-th
 
 ### Requirement: Identity platform server ESM preserves registration and consumers
 
-Server implementations in users, core, sparkpost SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+Server implementations in users, core, sparkpost SHALL use native ESM with ordinary ESM exports while preserving their export shapes and registration behaviour.
 
 #### Scenario: Existing bootstrap loads migrated modules
 
@@ -206,7 +163,7 @@ Server implementations in users, core, sparkpost SHALL use native ESM while reta
 
 #### Scenario: Existing consumers invoke migrated handlers
 
-- **WHEN** controllers, services or tests load these domains through existing CommonJS paths
+- **WHEN** controllers, services or tests import these domains through ESM
 - **THEN** handlers retain their behaviour, function context and shared mutable replacement semantics
 
 #### Scenario: Migration regression checks run
@@ -216,7 +173,7 @@ Server implementations in users, core, sparkpost SHALL use native ESM while reta
 
 ### Requirement: Administration server ESM preserves registration and consumers
 
-Server implementations in admin, statistics, support, pages SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+Server implementations in admin, statistics, support, pages SHALL use native ESM with ordinary ESM exports while preserving their export shapes and registration behaviour.
 
 #### Scenario: Existing bootstrap loads migrated modules
 
@@ -225,7 +182,7 @@ Server implementations in admin, statistics, support, pages SHALL use native ESM
 
 #### Scenario: Existing consumers invoke migrated handlers
 
-- **WHEN** controllers, services or tests load these domains through existing CommonJS paths
+- **WHEN** controllers, services or tests import these domains through ESM
 - **THEN** handlers retain their behaviour, function context and shared mutable replacement semantics
 
 #### Scenario: Migration regression checks run
@@ -235,12 +192,12 @@ Server implementations in admin, statistics, support, pages SHALL use native ESM
 
 ### Requirement: Server production implementations use native ESM
 
-Production implementations under `modules/*/server` SHALL use native `.mjs` modules while existing synchronous CommonJS entry paths remain available for consumers that have not migrated.
+Production implementations under `modules/*/server` SHALL use native ES modules. The mobile module's `.cjs` sources remain CommonJS until they are migrated.
 
-#### Scenario: Offer expiry is loaded through both module systems
+#### Scenario: Offer expiry is imported
 
-- **WHEN** an ESM consumer imports the offer expiry implementation and a CommonJS consumer requires its existing `.js` path
-- **THEN** both receive the same callable function and expiry behaviour
+- **WHEN** an ESM consumer imports the offer expiry implementation
+- **THEN** it receives the callable function and its expiry behaviour
 
 #### Scenario: A native server module introduces CommonJS syntax
 
@@ -371,21 +328,21 @@ The text sanitisation service SHALL expose its named functions and shared defaul
 - **WHEN** the text unit suite or message preview tests load the text service
 - **THEN** they use ESM imports and exercise the same named functions and default service object used in production
 
-### Requirement: Pages server code uses native ESM
+### Requirement: No CommonJS compatibility exports
 
-The pages controllers and routes SHALL use ordinary ESM exports without a `module.exports` export. Their server tests SHALL load them through ESM imports, and lint SHALL reject a `module.exports` export in modules whose CommonJS consumers have migrated.
-
-#### Scenario: The server registers pages routes
-
-- **WHEN** Express loads the pages route file
-- **THEN** it calls the default export, which registers the volunteers and greeters routes with the controllers' existing behaviour
-
-#### Scenario: Server tests exercise the pages module
-
-- **WHEN** the pages controller and route suites run
-- **THEN** they are `.mts` files that import the controllers, models and test utilities through ESM
+Modules SHALL NOT export a binding named `module.exports`. Server tests SHALL load application modules and test utilities through ESM imports or the ESM `mockModule` helper, and SHALL NOT test CommonJS interoperability. CommonJS files that remain, such as the mobile module's `.cjs` sources and tool scripts or configuration files, SHALL read an ES module's `default` export. Lint SHALL reject a `module.exports` export in any file.
 
 #### Scenario: A compatibility export returns
 
-- **WHEN** a pages server file or the text service adds an `export { … as 'module.exports' }`
+- **WHEN** any file adds an `export { … as 'module.exports' }` or re-exports that name
 - **THEN** lint fails
+
+#### Scenario: Server tests exercise a module
+
+- **WHEN** the server test suite runs
+- **THEN** its test files are `.mts` files that import application modules through ESM, or import a mocked copy through `mockModule`
+
+#### Scenario: A remaining CommonJS file loads an ES module
+
+- **WHEN** a mobile `.cjs` source, script or configuration file requires an ES module
+- **THEN** it uses the module's `default` export, which is the same object ESM consumers import

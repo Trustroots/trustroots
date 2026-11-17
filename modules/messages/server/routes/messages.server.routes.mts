@@ -38,4 +38,3 @@ function register(app: Application): void {
 
 export { register };
 export default register;
-export { register as 'module.exports' };

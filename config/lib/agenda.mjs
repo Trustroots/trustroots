@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './agenda.mts';
+export { default } from './agenda.mts';

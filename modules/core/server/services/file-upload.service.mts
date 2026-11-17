@@ -173,9 +173,6 @@ export const uploadFile = (
     });
   });
 };
-const defaultInterop = {
+export default {
   uploadFile,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

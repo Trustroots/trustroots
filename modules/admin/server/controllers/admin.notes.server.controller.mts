@@ -123,10 +123,7 @@ export const getNotes = async (
     return errorService.sendBadRequest(res, err);
   }
 };
-const defaultInterop = {
+export default {
   addNote,
   getNotes,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

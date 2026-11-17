@@ -32,7 +32,7 @@ function getClientIpAddress(req: Request): string | undefined {
 /**
  * When user is logged in, update her last seen to Now in database
  */
-const defaultExport = function (
+const updateLastSeen = function (
   req: LastSeenRequest,
   _res: Response,
   next: NextFunction,
@@ -69,9 +69,7 @@ const defaultExport = function (
     return next();
   }
 };
-defaultExport.getClientIpAddress = getClientIpAddress;
-export default defaultExport;
+updateLastSeen.getClientIpAddress = getClientIpAddress;
+export default updateLastSeen;
 /** @esmNamed */
 export { getClientIpAddress };
-/** @commonjs */
-export { defaultExport as 'module.exports' };

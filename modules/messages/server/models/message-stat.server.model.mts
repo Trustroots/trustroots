@@ -75,4 +75,3 @@ messageStatSchema.index(
 );
 mongoose.model<MessageStatRecord>('MessageStat', messageStatSchema);
 export default service;
-export { service as 'module.exports' };

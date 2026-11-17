@@ -32,7 +32,7 @@ async function findSessionUser(id: string): Promise<UserServerDocument | null> {
   return await findOne.call(User, { _id: id }, '-salt -password');
 }
 
-const defaultExport = async function (app: UsersApplication): Promise<void> {
+export default async function (app: UsersApplication): Promise<void> {
   // Serialize sessions
   passport.serializeUser<UserServerDocument>(function (user, done) {
     done(null, {
@@ -97,6 +97,4 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
-};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+}

@@ -81,5 +81,3 @@ const service = {
   setLinkHeader,
 };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

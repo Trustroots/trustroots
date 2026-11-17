@@ -816,7 +816,7 @@ service.resendConfirmation = function (req, res) {
   );
 };
 
-const defaultExport = service;
+export default service;
 /** @esmNamed */
 export const signup = service.signup;
 /** @esmNamed */
@@ -839,6 +839,3 @@ export const confirmEmail = service.confirmEmail;
 export const resendConfirmation = service.resendConfirmation;
 /** @esmNamed */
 export const session = service.session;
-export default defaultExport;
-/** @commonjs */
-export { defaultExport as 'module.exports' };

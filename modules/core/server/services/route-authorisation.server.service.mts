@@ -40,5 +40,3 @@ export const createRouteAuthorisation = function (
 
 const service = { createRouteAuthorisation };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './logger.mts';
+export { default } from './logger.mts';

@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './express.mts';
+export { default } from './express.mts';

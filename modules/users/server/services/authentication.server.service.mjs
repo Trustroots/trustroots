@@ -13,5 +13,3 @@ export const isUsernameFormatValid = service.isUsernameFormatValid;
 export const isLegacyUsernameLookupValid = service.isLegacyUsernameLookupValid;
 /** @esmNamed */
 export const usernameFormatMessage = service.usernameFormatMessage;
-/** @commonjs */
-export { service as 'module.exports' };

@@ -47,4 +47,3 @@ ContactSchema.index({
 });
 mongoose.model('Contact', ContactSchema);
 export default service;
-export { service as 'module.exports' };

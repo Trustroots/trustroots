@@ -24,4 +24,3 @@ const registerRoutes = function (app: Express) {
 };
 export { registerRoutes };
 export default registerRoutes;
-export { registerRoutes as 'module.exports' };

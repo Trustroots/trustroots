@@ -5,7 +5,7 @@ const { once } = require('node:events') as typeof import('node:events');
 const { chromium } =
   require('@playwright/test') as typeof import('@playwright/test');
 const express = require('express') as typeof import('express');
-const expressConfig = require('../../config/lib/express.mjs') as {
+const expressConfig = require('../../config/lib/express.mjs').default as {
   initLocalVariables(app: import('express').Express): void;
   initViewEngine(app: import('express').Express): void;
 };

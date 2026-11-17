@@ -45,4 +45,3 @@ const AuditLogSchema = new Schema<AuditLogRecord>({
 mongoose.model<AuditLogRecord>('AuditLog', AuditLogSchema);
 const api = {};
 export default api;
-export { api as 'module.exports' };

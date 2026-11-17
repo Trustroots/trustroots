@@ -95,6 +95,4 @@ SupportStatusImportPreviewSchema.index(
   { expireAfterSeconds: 0 },
 );
 mongoose.model('SupportStatusImportPreview', SupportStatusImportPreviewSchema);
-const defaultInterop = {};
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default {};

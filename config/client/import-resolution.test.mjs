@@ -5,14 +5,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { before, test } from 'node:test';
 import { ESLint } from 'eslint';
+import aliasesConfig from './aliases.mts';
 
 const require = createRequire(import.meta.url);
 const { resolve: resolveImport } = require('eslint-import-resolver-typescript');
-const {
-  commonJsAliases,
-  jsExtensionAlias,
-  resolverAliases,
-} = require('./aliases.mts');
+const { commonJsAliases, jsExtensionAlias, resolverAliases } = aliasesConfig;
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const eslint = new ESLint({ cwd: root });

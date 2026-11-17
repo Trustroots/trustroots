@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './mongoose.mts';
+export { default } from './mongoose.mts';

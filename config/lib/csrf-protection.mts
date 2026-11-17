@@ -93,5 +93,3 @@ const service = function csrfProtection(config: OriginConfiguration) {
   };
 };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

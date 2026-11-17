@@ -376,4 +376,3 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
 /** @esmNamed */
 export { run };
 export default run;
-export { run as 'module.exports' };

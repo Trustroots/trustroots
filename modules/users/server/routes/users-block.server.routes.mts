@@ -16,7 +16,7 @@ interface RouteApplication {
   route(path: string): RouteChain;
 }
 
-const defaultExport = function (app: RouteApplication) {
+export default function (app: RouteApplication) {
   // Setting up the users profile api
   app
     .route('/api/blocked-users')
@@ -27,6 +27,4 @@ const defaultExport = function (app: RouteApplication) {
     .all(usersPolicy.isAllowed)
     .put(userBlock.blockUser)
     .delete(userBlock.unblockUser);
-};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+}

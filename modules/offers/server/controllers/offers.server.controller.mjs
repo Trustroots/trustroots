@@ -15,5 +15,3 @@ export const {
 /** @esmNamed */
 export { deleteOffer as delete };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

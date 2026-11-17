@@ -575,4 +575,3 @@ async function init(
   return app;
 }
 export default service;
-export { service as 'module.exports' };

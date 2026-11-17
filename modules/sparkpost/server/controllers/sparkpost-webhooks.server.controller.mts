@@ -265,15 +265,12 @@ service.basicAuthenticate = function (req, res, next) {
   // Access granted
   return next();
 };
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
-export const basicAuthenticate = defaultExport.basicAuthenticate;
+export const basicAuthenticate = service.basicAuthenticate;
 /** @esmNamed */
-export const processAndSendMetrics = defaultExport.processAndSendMetrics;
+export const processAndSendMetrics = service.processAndSendMetrics;
 /** @esmNamed */
-export const receiveBatch = defaultExport.receiveBatch;
+export const receiveBatch = service.receiveBatch;
 /** @esmNamed */
-export const processUnsubscribe = defaultExport.processUnsubscribe;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export const processUnsubscribe = service.processUnsubscribe;

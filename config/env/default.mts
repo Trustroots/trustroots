@@ -299,5 +299,3 @@ const service = {
   },
 } satisfies DefaultConfig;
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

@@ -392,7 +392,4 @@ export const resendConfirmation = async (
   }
 };
 
-const defaultInterop = { list, resendConfirmation };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };
+export default { list, resendConfirmation };

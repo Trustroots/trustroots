@@ -23,8 +23,8 @@ export function matchSignupProfile<T extends SignupProfileText>(
     .toLowerCase();
   return KEYWORDS.filter(keyword => identifyingText.includes(keyword));
 }
-const defaultInterop = {
+const service = {
   KEYWORDS,
   matchSignupProfile,
 };
-export default defaultInterop;
+export default service;

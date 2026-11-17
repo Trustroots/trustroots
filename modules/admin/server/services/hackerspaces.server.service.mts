@@ -174,4 +174,3 @@ export async function fetchSpaceApiCollector(
 
 const api = { normaliseCollectorEntry, fetchSpaceApiCollector };
 export default api;
-export { api as 'module.exports' };

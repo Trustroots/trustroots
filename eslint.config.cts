@@ -6,10 +6,8 @@ const path = require('path');
 const { defineConfig } = require('eslint/config');
 const semver = require('semver');
 const { defaultExtensionAlias } = require('eslint-import-resolver-typescript');
-const {
-  jsExtensionAlias,
-  resolverAliases,
-} = require('./config/client/aliases.mts');
+const { jsExtensionAlias, resolverAliases } =
+  require('./config/client/aliases.mts').default;
 
 // Passing extensionAlias replaces the resolver default. Keep every other
 // mapping, and only prefer the shared `.js` order ahead of leftovers such as
@@ -73,6 +71,8 @@ const rules = {
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
   'import/first': 2,
+  // CommonJS compatibility exports are gone (#3494); use ordinary ESM exports.
+  'no-restricted-exports': [2, { restrictedNamedExports: ['module.exports'] }],
   'prettier/prettier': 2,
 };
 
@@ -225,24 +225,6 @@ const legacyConfig = {
       rules: {
         'import/no-commonjs': 2,
         'import/no-dynamic-require': 2,
-      },
-    },
-
-    /** Modules whose CommonJS consumers have migrated stay plain ESM (#3494). */
-    {
-      files: [
-        'modules/core/server/services/text.server.service.mts',
-        'modules/pages/server/**/*.mts',
-      ],
-      rules: {
-        'no-restricted-syntax': [
-          2,
-          {
-            selector: "ExportSpecifier[exported.value='module.exports']",
-            message:
-              'Use ordinary ESM exports; CommonJS consumers of this module have migrated.',
-          },
-        ],
       },
     },
 

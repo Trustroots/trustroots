@@ -169,9 +169,6 @@ export const getThreads = async (
       (err: Error) => errorService.sendBadRequest(res, err),
     );
 };
-const defaultInterop = {
+export default {
   getThreads,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

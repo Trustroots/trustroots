@@ -153,5 +153,3 @@ const initGlobalConfig = function () {
 const { service, mailMode } = initGlobalConfig();
 export { mailMode };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

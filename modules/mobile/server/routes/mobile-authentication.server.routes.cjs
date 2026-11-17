@@ -1,23 +1,40 @@
 const mobileAuthentication = require('../controllers/mobile-authentication.server.controller.cjs');
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
-const offers = require('../../../offers/server/controllers/offers.server.controller.mjs');
-const tribes = require('../../../tribes/server/controllers/tribes.server.controller.mjs');
-const userProfile = require('../../../users/server/controllers/users.profile.server.controller.mjs');
-const contacts = require('../../../contacts/server/controllers/contacts.server.controller.mjs');
-const experiences = require('../../../experiences/server/controllers/experiences.server.controller.mjs');
-const messages = require('../../../messages/server/controllers/messages.server.controller.mjs');
-const support = require('../../../support/server/controllers/support.server.controller.mjs');
-const userPassword = require('../../../users/server/controllers/users.password.server.controller.mjs');
+const offers =
+  require('../../../offers/server/controllers/offers.server.controller.mjs').default;
+const tribes =
+  require('../../../tribes/server/controllers/tribes.server.controller.mjs').default;
+const userProfile =
+  require('../../../users/server/controllers/users.profile.server.controller.mjs').default;
+const contacts =
+  require('../../../contacts/server/controllers/contacts.server.controller.mjs').default;
+const experiences =
+  require('../../../experiences/server/controllers/experiences.server.controller.mjs').default;
+const messages =
+  require('../../../messages/server/controllers/messages.server.controller.mjs').default;
+const support =
+  require('../../../support/server/controllers/support.server.controller.mjs').default;
+const userPassword =
+  require('../../../users/server/controllers/users.password.server.controller.mjs').default;
 const resourcePolicy = require('../middleware/mobile-resource-policy.server.middleware.cjs');
-const offersPolicy = require('../../../offers/server/policies/offers.server.policy.mts');
-const tribesPolicy = require('../../../tribes/server/policies/tribes.server.policy.mts');
-const usersPolicy = require('../../../users/server/policies/users.server.policy.mts');
-const contactsPolicy = require('../../../contacts/server/policies/contacts.server.policy.mts');
-const experiencesPolicy = require('../../../experiences/server/policies/experiences.server.policy.mts');
-const messagesPolicy = require('../../../messages/server/policies/messages.server.policy.mts');
-const userBlock = require('../../../users/server/controllers/users.block.server.controller.mjs');
-const userAvatar = require('../../../users/server/controllers/users.avatar.server.controller.mjs');
-const unifiedPush = require('../../../users/server/controllers/users.unified-push.server.controller.mjs');
+const offersPolicy =
+  require('../../../offers/server/policies/offers.server.policy.mts').default;
+const tribesPolicy =
+  require('../../../tribes/server/policies/tribes.server.policy.mts').default;
+const usersPolicy =
+  require('../../../users/server/policies/users.server.policy.mts').default;
+const contactsPolicy =
+  require('../../../contacts/server/policies/contacts.server.policy.mts').default;
+const experiencesPolicy =
+  require('../../../experiences/server/policies/experiences.server.policy.mts').default;
+const messagesPolicy =
+  require('../../../messages/server/policies/messages.server.policy.mts').default;
+const userBlock =
+  require('../../../users/server/controllers/users.block.server.controller.mjs').default;
+const userAvatar =
+  require('../../../users/server/controllers/users.avatar.server.controller.mjs').default;
+const unifiedPush =
+  require('../../../users/server/controllers/users.unified-push.server.controller.mjs').default;
 
 module.exports = function (app) {
   app

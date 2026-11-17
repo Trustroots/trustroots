@@ -62,7 +62,6 @@ export const list = (
     );
 };
 
-const defaultInterop = {
+export default {
   list,
 };
-export default defaultInterop;

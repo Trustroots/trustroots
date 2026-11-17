@@ -114,4 +114,3 @@ ExperienceSchema.index(
 );
 mongoose.model('Experience', ExperienceSchema);
 export default service;
-export { service as 'module.exports' };

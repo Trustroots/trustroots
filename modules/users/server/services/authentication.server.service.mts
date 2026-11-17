@@ -58,18 +58,16 @@ const service: AuthenticationService = {
   },
 };
 
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
-export const generateEmailToken = defaultExport.generateEmailToken;
+export const generateEmailToken = service.generateEmailToken;
 /** @esmNamed */
-export const isUsernameReserved = defaultExport.isUsernameReserved;
+export const isUsernameReserved = service.isUsernameReserved;
 /** @esmNamed */
-export const validateUsername = defaultExport.validateUsername;
+export const validateUsername = service.validateUsername;
 /** @esmNamed */
-export const isUsernameFormatValid = defaultExport.isUsernameFormatValid;
+export const isUsernameFormatValid = service.isUsernameFormatValid;
 /** @esmNamed */
-export const isLegacyUsernameLookupValid =
-  defaultExport.isLegacyUsernameLookupValid;
+export const isLegacyUsernameLookupValid = service.isLegacyUsernameLookupValid;
 /** @esmNamed */
-export const usernameFormatMessage = defaultExport.usernameFormatMessage;
+export const usernameFormatMessage = service.usernameFormatMessage;

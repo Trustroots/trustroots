@@ -257,4 +257,3 @@ Object.assign(influxService, {
   _writeMeasurement,
 });
 export default influxService;
-export { influxService as 'module.exports' };

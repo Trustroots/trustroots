@@ -55,6 +55,4 @@ export async function signerIdentity(
   }
 }
 
-const defaultInterop = { preview, signerIdentity };
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default { preview, signerIdentity };

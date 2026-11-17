@@ -496,4 +496,3 @@ export const processImageUpload = (
 
 const service = { list, get, create, update, processImageUpload };
 export default service;
-export { service as 'module.exports' };

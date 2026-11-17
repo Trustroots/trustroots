@@ -10,5 +10,3 @@ export const {
   hashPassword,
   verifyPassword,
 } = service;
-/** @commonjs */
-export { service as 'module.exports' };

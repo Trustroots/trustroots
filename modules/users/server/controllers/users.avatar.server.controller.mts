@@ -382,7 +382,6 @@ Object.assign(service, {
   userForAvatarByUserId,
 });
 export default service;
-export { service as 'module.exports' };
 const nativeExportavatarUpload = service.avatarUpload;
 export { nativeExportavatarUpload as avatarUpload };
 

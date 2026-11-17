@@ -155,4 +155,3 @@ const service = {
   },
 } satisfies ConfigOverrides;
 export default service;
-export { service as 'module.exports' };

@@ -39,7 +39,7 @@ async function findUser(
   return User.findOne(filter);
 }
 
-const defaultExport = function (): void {
+const configureLocalStrategy = function (): void {
   // Use local strategy
   passport.use(
     new passportLocal.Strategy(
@@ -89,5 +89,4 @@ const defaultExport = function (): void {
   );
 };
 
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+export default configureLocalStrategy;

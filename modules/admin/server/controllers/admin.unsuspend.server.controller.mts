@@ -114,4 +114,3 @@ export async function unsuspendMember(
 
 const service = { unsuspendMember };
 export default service;
-export { service as 'module.exports' };

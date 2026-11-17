@@ -11,11 +11,9 @@ export function hasAnyRole(user: RoleUser, roles: string[]): boolean {
 export function hasRestrictedMessagingRole(user: RoleUser): boolean {
   return hasAnyRole(user, restrictedMessagingRoles);
 }
-const defaultInterop = {
+export default {
   restrictedMessagingRoles,
   hasRole,
   hasAnyRole,
   hasRestrictedMessagingRole,
 };
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };

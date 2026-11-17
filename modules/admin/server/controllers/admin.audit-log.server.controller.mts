@@ -149,11 +149,8 @@ export const actors = async (
   }
 };
 
-const defaultInterop = {
+export default {
   record,
   list,
   actors,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

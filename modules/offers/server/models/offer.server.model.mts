@@ -186,4 +186,3 @@ OfferSchema.index({
 });
 mongoose.model<OfferServerRecord>('Offer', OfferSchema);
 export default service;
-export { service as 'module.exports' };

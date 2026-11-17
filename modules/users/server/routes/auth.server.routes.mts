@@ -17,7 +17,7 @@ interface RouteApplication {
   route(path: string): RouteChain;
 }
 
-const defaultExport = function (app: RouteApplication) {
+export default function (app: RouteApplication) {
   // Confirm users email
   app
     .route('/api/auth/cancel-email-change')
@@ -67,6 +67,4 @@ const defaultExport = function (app: RouteApplication) {
     .post(userAuthentication.signout);
 
   // Validate username
-};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+}

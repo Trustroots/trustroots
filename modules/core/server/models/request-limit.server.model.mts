@@ -21,6 +21,4 @@ RequestLimitSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 mongoose.model('RequestLimit', RequestLimitSchema);
 
-const defaultExport = {};
-export default defaultExport;
-export { defaultExport as 'module.exports' };
+export default {};

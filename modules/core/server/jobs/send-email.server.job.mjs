@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './send-email.server.job.mts';
+export { default } from './send-email.server.job.mts';
