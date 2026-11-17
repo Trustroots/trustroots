@@ -1,6 +1,11 @@
 import sharp from 'sharp';
 
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 
 import {
   SEEDED_ADMIN,
@@ -141,11 +146,7 @@ test.describe('admin circles feature coverage', () => {
     );
     await expect(section.getByRole('link')).toHaveClass(/member-search-card/);
     await expect(section.getByText(`@${organiser.username}`)).toBeVisible();
-    if (process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true') {
-      await page.locator('.tribe-header-info').screenshot({
-        path: 'tmp/screenshots/circle-organiser-cards.png',
-      });
-    }
+    await captureSection(section, 'circle-organiser-cards');
     await page.context().clearCookies();
     await page.goto(circlePath);
     await expect(

@@ -373,6 +373,9 @@ importers:
       supercluster:
         specifier: 9.1.0
         version: 9.1.0
+      ts-pattern:
+        specifier: 5.9.2
+        version: 5.9.2
       use-local-storage-state:
         specifier: 20.0.0
         version: 20.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -8055,6 +8058,9 @@ packages:
   ts-dedent@2.3.0:
     resolution: {integrity: sha512-JfJeIHke7y2egdGGgRAvpCwYFUsHlM2gPcrVOxFkznt/4uzQ7HFmvE63iFHVLBJNDuyDOQgijDK/tXH/f6Msjg==}
     engines: {node: '>=6.10'}
+
+  ts-pattern@5.9.2:
+    resolution: {integrity: sha512-qAf+7M7Jjk7uebZeIo9uEzyintfuRtgHdzM9dqxRKcMi2dt76Ec+FH2wW3bnU9TuGLkZIJLoLs7cCQnU7Tu8ig==}
 
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
@@ -16560,6 +16566,8 @@ snapshots:
       typescript: 6.0.3
 
   ts-dedent@2.3.0: {}
+
+  ts-pattern@5.9.2: {}
 
   tsconfig-paths@3.15.0:
     dependencies:
