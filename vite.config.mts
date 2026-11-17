@@ -199,8 +199,9 @@ export default defineConfig({
       },
     },
   },
-  // Start prerenders the SPA shell through the preview server.
-  preview: { proxy: {} },
+  // Start prerenders the SPA shell through the preview server. Bind the
+  // address it fetches, which in containers can differ from "localhost".
+  preview: { host: '127.0.0.1', proxy: {} },
   environments: {
     client: {
       build: {

@@ -393,6 +393,49 @@ describe('Service: email (sent content)', function () {
     assert.match(email.text, /https:\/\/survey\.example\.test\/reactivate\b/);
   });
 
+  it('tags unread notifications with their immediate message preference', async function () {
+    const email = await send('sendMessagesUnread', other, member, {
+      notificationCount: 0,
+      messages: [{ content: 'hi' }],
+    });
+    assert.deepEqual(
+      (email as SentEmail & { notificationEmail?: unknown }).notificationEmail,
+      { userId: 'member-id', category: 'messages', frequency: 'immediate' },
+    );
+  });
+
+  it('sends a message digest linking each conversation', async function () {
+    const { sendMessageDigest } =
+      await import('../../../server/services/email.server.service.mts');
+    await new Promise<void>((resolve, reject) =>
+      sendMessageDigest(
+        member,
+        'weekly',
+        [{ username: 'bo/b', displayName: 'Bo Example', count: 2 }],
+        error => (error ? reject(error) : resolve()),
+      ),
+    );
+    assert.equal(sent.length, 1);
+    const [email] = sent;
+    assert.equal(email.subject, 'Unread messages on Trustroots');
+    assert.deepEqual(campaignHeader(email), {
+      options: { transactional: true },
+      campaign_id: 'messages-digest',
+    });
+    assert.deepEqual(
+      (email as SentEmail & { notificationEmail?: unknown }).notificationEmail,
+      { userId: 'member-id', category: 'messages', frequency: 'weekly' },
+    );
+    assert.deepEqual(
+      links(email),
+      [
+        ...frame('messages-digest'),
+        site + '/messages/bo%2Fb',
+        notificationEmail(member, 'messages', 'weekly').unsubscribeUrl!,
+      ].sort(),
+    );
+  });
+
   it('sends unread notifications from members without roles under their own name', async function () {
     const withoutRoles = { ...other, roles: undefined };
     const email = await send('sendMessagesUnread', withoutRoles, member, {

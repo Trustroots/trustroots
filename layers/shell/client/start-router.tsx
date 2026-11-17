@@ -26,7 +26,7 @@ export async function createStartRouter(server: boolean) {
   }
   const { createAppRouter } = await import('./router');
   const router = createAppRouter();
-  router.routeTree.update({ shellComponent: ShellDocument });
+  Object.assign(router.routeTree.options, { shellComponent: ShellDocument });
   return router;
 }
 

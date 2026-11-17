@@ -28,6 +28,7 @@ describe('TanStack Start router entry', () => {
     const html = renderToString(<RouterProvider router={router} />);
 
     expect(html).toMatch(/^<html lang="en"><head>.*<\/head><body>/);
+    expect(html).toContain('<div id="tr-react-root">');
     expect(html).toMatch(/<\/body><\/html>$/);
   });
 

@@ -13,7 +13,7 @@ export default function ShellDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <div id="tr-react-root">{children}</div>
         <Scripts />
       </body>
     </html>

@@ -8,4 +8,8 @@ describe('Bootstrap JSON formatting', () => {
     encoded.should.not.match(/[<>&\u2028\u2029]/);
     JSON.parse(encoded).should.deepEqual(value);
   });
+
+  it('writes a missing template value as null', () => {
+    jsonForScript(undefined).should.equal('null');
+  });
 });
