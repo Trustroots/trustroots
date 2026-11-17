@@ -130,6 +130,8 @@ jobs:
         run: |
           rm -rf ../../tmp/screenshots ../../tmp/screenshots-before ../../tmp/screenshots-diff
           mkdir -p ../../tmp/screenshots ../../tmp/screenshots-before ../../tmp/screenshots-diff
+          rm -rf "$RUNNER_TEMP/trustroots-base-e2e"
+          mkdir -p "$RUNNER_TEMP/trustroots-base-e2e"
 
           mapfile -t specs <<< "$CHANGED_SPECS"
           run_specs() {
@@ -150,15 +152,69 @@ jobs:
           set +e
           run_specs
           test_status="$?"
+          set -e
           echo "test_status=$test_status" >> "$GITHUB_OUTPUT"
 
-          # Before shots: the base app with this PR's e2e specs. Failures only leave gaps.
-          git -C ../.. restore --source="origin/${GITHUB_BASE_REF}" --worktree -- . ':!tests/e2e'
-          run_specs -e TRUSTROOTS_E2E_SCREENSHOTS_DIR=/home/app/trustroots/tmp/screenshots-before
-          git -C ../.. restore --source=HEAD --worktree -- .
+          # Use the base commit's Dockerfile, Compose setup, and dependency lockfile.
+          base_root="$RUNNER_TEMP/trustroots-base-e2e"
+          git -C ../.. archive "origin/${GITHUB_BASE_REF}" | tar -x -C "$base_root"
+          mkdir -p "$base_root/tests" "$base_root/scripts"
+          rm -rf "$base_root/tests/e2e"
+          cp -R ../../tests/e2e "$base_root/tests/"
+          mapfile -t changed_runner_files < <(
+            git -C ../.. diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" -- \
+              'scripts/e2e/**' 'playwright.config.cjs'
+          )
+          for file in "${changed_runner_files[@]}"; do
+            if [ -f "../../$file" ]; then
+              mkdir -p "$base_root/$(dirname "$file")"
+              cp "../../$file" "$base_root/$file"
+            else
+              rm -f "$base_root/$file"
+            fi
+          done
+          mkdir -p "$base_root/tmp/screenshots-before"
+          rm -f "$base_root/tmp/screenshots-before-status.json"
+          node "$base_root/scripts/ci/ensure-compose-local.cts"
+          cat > "$RUNNER_TEMP/base-compose-image.yml" <<'YAML'
+          services:
+            dev:
+              image: trustroots-dev:ci-base
+          YAML
+
+          base_compose=(
+            docker compose -p trustroots-base-e2e
+            -f "$base_root/deploy/docker/docker-compose.yml"
+            -f "$base_root/deploy/docker/docker-compose.ci.yml"
+            -f "$RUNNER_TEMP/base-compose-image.yml"
+          )
+          "${base_compose[@]}" build dev
+          "${base_compose[@]}" up -d mongodb
+
+          set +e
+          "${base_compose[@]}" run --rm --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_SCREENSHOTS=true \
+            -e TRUSTROOTS_E2E_SCREENSHOTS_DIR=/home/app/trustroots/tmp/screenshots-before \
+            -e TRUSTROOTS_E2E_STATUS_PATH=/home/app/trustroots/tmp/screenshots-before-status.json \
+            -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
+            -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
+            dev bash ./scripts/e2e/test-e2e.sh "${specs[@]}"
+          base_test_status="$?"
+          set -e
+          echo "Base E2E command exit status: $base_test_status"
+          node ../../scripts/e2e/screenshot-base-status.mts "$base_root/tmp/screenshots-before-status.json"
+          cp -R "$base_root/tmp/screenshots-before/." ../../tmp/screenshots-before/
+
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             dev node scripts/e2e/screenshot-diff.mts tmp/screenshots-before tmp/screenshots tmp/screenshots-diff
-          set -e
 
       - name: Collect screenshots
         if: steps.changed.outputs.has_specs == 'true'
