@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,6 +42,7 @@ class HostMapViewportSizeJourneyTest {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val repository = RecordingHostMapRepository()
+    private val mapReference = AtomicReference<MapView?>()
     private val model = HostMapViewModel(
         repository = repository,
         notesClientFactory = { _, _ -> HostMapNotesConnection {} },
@@ -61,7 +63,7 @@ class HostMapViewportSizeJourneyTest {
                         session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
                         onSessionInvalidated = {},
                         viewModel = model,
-                        mapViewFactory = { context -> MapView(context).apply { setUseDataConnection(false) } },
+                        mapViewFactory = { context -> MapView(context).apply { setUseDataConnection(false); mapReference.set(this) } },
                     )
                 }
             }
@@ -69,10 +71,12 @@ class HostMapViewportSizeJourneyTest {
 
         compose.waitUntil(5_000) { model.state.value.mapVisible }
         compose.waitForIdle()
+        assertEquals("The native viewport must actually have zero height", 0, requireNotNull(mapReference.get()).height)
         assertNullViewport("A zero-height map must not publish bounds")
 
         compose.runOnIdle { dimensions.value = 0.dp to 360.dp }
         compose.waitForIdle()
+        assertEquals("The native viewport must actually have zero width", 0, requireNotNull(mapReference.get()).width)
         assertNullViewport("A zero-width map must not publish bounds")
 
         compose.runOnIdle { dimensions.value = 420.dp to 360.dp }

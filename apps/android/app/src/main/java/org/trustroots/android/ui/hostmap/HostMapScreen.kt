@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
@@ -169,6 +168,7 @@ internal fun HostMapScreen(
     var showSuggestions by remember { mutableStateOf(false) }
     val suggestions = mapState.suggestions
     var mapRevision by remember { mutableIntStateOf(0) }
+    var mapHasSize by remember { mutableStateOf(false) }
     BackHandler(
         enabled = showResults || showFilters || showSuggestions || selectedNotes.isNotEmpty(),
     ) {
@@ -315,11 +315,19 @@ internal fun HostMapScreen(
                 view.invalidate()
             },
             modifier = Modifier.fillMaxSize().testTag("hostMapView")
-                .onSizeChanged { map.post { dispatchViewport() } },
+                .onSizeChanged { size ->
+                    mapHasSize = size.width > 0 && size.height > 0
+                    map.post { dispatchViewport() }
+                },
         )
-        Column(Modifier.fillMaxSize()) {
+        // Wrapping filter controls cannot lay out meaningfully in a zero-sized viewport.
+        // Keep the native map mounted so its first valid measurement can publish bounds.
+        if (!mapHasSize) return@Box
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+            // Expanded filters scroll within the space left after essential footer actions.
             Column(
                 modifier = Modifier.fillMaxWidth()
+                    .then(if (showFilters) Modifier.weight(1f, fill = false) else Modifier)
                     .testTag("map-controls").background(MaterialTheme.colorScheme.surface)
                     .padding(top = contentPadding.calculateTopPadding()),
             ) {
@@ -485,7 +493,7 @@ internal fun HostMapScreen(
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(contentPadding.horizontalInset()),
                 )
-            } else Spacer(Modifier.weight(1f))
+            }
             Column(
                 Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
             ) {

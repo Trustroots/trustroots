@@ -113,9 +113,10 @@ class HostMapResultsJourneyTest {
     @Test fun narrowShortResultsWithLargerTextKeepOffersAndReturnNavigationUsable() {
         val local = apiFixture()
         showMap(local, compactLargeText = true)
-        compose.waitUntil(15_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
+        waitForText("1 offer · 0 Nostroots notes in this area")
         compose.onNodeWithText("Hosting").assertIsDisplayed()
-        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithTag("mapResultsToggle").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Back to map").assertIsDisplayed()
         waitForText("Quiet Fox")
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
@@ -130,12 +131,12 @@ class HostMapResultsJourneyTest {
         waitForTag("hostDetailRoute")
         compose.onNodeWithContentDescription("Close host result").assertIsDisplayed().performClick()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
-        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithTag("mapResultsToggle").assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").assertIsDisplayed()
         // A deliberately collapsed map also stays collapsed after inspecting Results.
         compose.onNodeWithTag("openFilters").performClick()
-        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithTag("mapResultsToggle").assertIsDisplayed().performClick()
         waitForText("Quiet Fox")
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithContentDescription("Show filters").assertIsDisplayed()
