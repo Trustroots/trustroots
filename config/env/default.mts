@@ -4,8 +4,8 @@ import type { DefaultConfig } from '../types.mts';
  * Copy local.sample.js to local.js and make your changes there. Thanks.
  *
  * Load order:
- * - default.js
- * - {development|production|test}.js
+ * - default.mts
+ * - {development|production|test}.mts
  * - local.js
  *
  * NOTE: Configs are shallow copied (like `_.extend()`), not deeply copied.
@@ -276,31 +276,10 @@ const service = {
   },
   // Mapbox is publicly exposed to the frontend
   mapbox: {
-    maps: {
-      streets: {
-        map: 'streets-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-      satellite: {
-        map: 'satellite-streets-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-      outdoors: {
-        map: 'outdoors-v9',
-        user: 'mapbox',
-        legacy: false,
-      },
-    },
-    user: '',
     publicKey: '',
   },
   twitter: {
     username: '',
-  },
-  google: {
-    page: '',
   },
   webPush: {
     publicKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY || '',

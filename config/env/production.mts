@@ -4,8 +4,8 @@ import type { ConfigOverrides } from '../types.mts';
  * Copy local.sample.js to local.js and make your changes there. Thanks.
  *
  * Load order:
- * - default.js
- * - {development|production|test}.js
+ * - default.mts
+ * - {development|production|test}.mts
  * - local.js
  */
 

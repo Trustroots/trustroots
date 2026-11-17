@@ -72,7 +72,6 @@ function initLocalVariables(app: Express) {
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
   app.locals.twitterUsername = config.twitter.username;
-  app.locals.googlePage = config.google.page;
   app.locals.umami = config.umami;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(

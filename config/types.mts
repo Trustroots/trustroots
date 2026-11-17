@@ -112,13 +112,9 @@ export interface Config {
     };
   };
   mapbox: {
-    maps?: Record<string, { map: string; user: string; legacy: boolean }>;
-    map?: Record<string, boolean | number>;
-    user: string;
     publicKey: string;
   };
   twitter: { username: string };
-  google: { page: string };
   webPush: {
     publicKey: string;
     privateKey: string;
