@@ -4,8 +4,8 @@
  * Use it for your API keys, passwords, etc.
  *
  * Load order:
- * - default.js
- * - {development|production|test}.js
+ * - default.mts
+ * - {development|production|test}.mts
  * - local.js
  */
 
@@ -36,23 +36,6 @@ module.exports = {
     },
   },
   */
-  /*
-  featureFlags: {
-    ...require('development').featureFlags
-    // List your fature flag modifications here
-  }
-  */
-  /*
-  // Appears on top of every page for authenticated users.
-  // There's no way turning them off permanently,
-  // so remember to keep them visible only limited times.
-  siteAnnouncement: {
-    enabled: true,
-    // Can contain HTML
-    // You can access user object like this: `{{app.user.displayName}}`
-    message: 'Hey {{app.user.displayName}}!'
-  },
-  */
   // Uncomment if you have installed InfluxDB and would like to store collected statistics
   /*
   influxdb: {
@@ -67,7 +50,6 @@ module.exports = {
     }
   },
   */
-  // Future push: restore FCM (or another transport) credentials here.
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {

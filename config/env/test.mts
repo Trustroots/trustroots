@@ -17,8 +17,8 @@ if (
  * Copy local.sample.js to local.js and make your changes there. Thanks.
  *
  * Load order:
- * - default.js
- * - {development|production|test}.js
+ * - default.mts
+ * - {development|production|test}.mts
  * - local.js
  */
 
@@ -77,7 +77,7 @@ const service = {
     debug: false,
     // Autoindex indexes
     // Mongoose calls createIndex on each Model's index when staring the app
-    // Indexes are built once per test run in scripts/test-server.js.
+    // Indexes are built once per test run in scripts/test-server.cts.
     autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false,
@@ -95,8 +95,8 @@ const service = {
       process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
     }`,
   ],
-  // Subset of `default.js` illegalStrings for route tests. The full production
-  // list lives in default.js; extend this when adding reserved names that need
+  // Subset of `default.mts` illegalStrings for route tests. The full production
+  // list lives in default.mts; extend this when adding reserved names that need
   // explicit signup/profile test coverage.
   illegalStrings: [
     'trustroots',

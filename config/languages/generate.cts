@@ -3,7 +3,7 @@
  *
  * Run script from the same folder (./config/languages):
  *
- * node generate.js
+ * node generate.cts
  */
 const fs = require('fs');
 
