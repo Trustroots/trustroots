@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
@@ -27,6 +28,7 @@ internal fun MemberIdentity(
     nameFontWeight: FontWeight = FontWeight.Bold,
     onClick: (() -> Unit)? = null,
     avatarSize: androidx.compose.ui.unit.Dp = 48.dp,
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     val name = nonBlankMemberText(member.displayName.trim())
     val username = nonBlankMemberText(member.username?.trim())
@@ -51,9 +53,16 @@ internal fun MemberIdentity(
             Text(
                 name ?: handle ?: stringResource(R.string.profile_photo_default_member_label),
                 fontWeight = nameFontWeight,
+                maxLines = maxLines,
+                overflow = TextOverflow.Ellipsis,
             )
             if (name != null && handle != null) {
-                Text(handle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    handle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = maxLines,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

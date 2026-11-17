@@ -34,7 +34,9 @@ export default function MemberIdentity({
       <span className="tw:flex tw:min-w-0 tw:flex-col tw:leading-[1.3]">
         <span
           className={
-            heading ? 'profile-name tw:font-semibold' : 'tw:font-semibold'
+            heading
+              ? 'profile-name tw:m-0! tw:p-0! tw:font-semibold'
+              : 'tw:font-semibold'
           }
           role={heading ? 'heading' : undefined}
           aria-level={heading ? 2 : undefined}
@@ -43,7 +45,11 @@ export default function MemberIdentity({
         </span>
         {displayName && handle && (
           <span
-            className={heading ? 'text-muted profile-username' : 'text-muted'}
+            className={
+              heading
+                ? 'text-muted profile-username tw:m-0! tw:p-0!'
+                : 'text-muted'
+            }
           >
             {format(handle)}
           </span>

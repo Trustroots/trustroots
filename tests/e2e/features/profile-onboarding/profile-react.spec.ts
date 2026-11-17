@@ -390,6 +390,9 @@ for (const width of [390, 480, 481, 600, 767]) {
         page.locator('.profile-view .profile-overview'),
       ).toBeVisible();
       if (width === 390 && member === SEEDED_MEMBERS[1]) {
+        await expect(
+          page.locator('.profile-view .visible-xs-block .profile-name'),
+        ).toHaveCSS('margin-top', '0px');
         await captureSection(
           page.locator('.profile-view .visible-xs-block').filter({
             has: page.locator('.profile-name'),

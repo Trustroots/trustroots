@@ -124,6 +124,7 @@ internal fun MessageConversationEntryScreen(
                             session = session,
                             member = MessageMember(participant.id, participant.username, participant.displayName),
                             avatarSize = 36.dp,
+                            maxLines = 1,
                         )
                     }
                 },
