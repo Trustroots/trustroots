@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { readOutreachSource } from '@trustroots/analytics/client';
 
@@ -92,45 +92,71 @@ describe('<SearchSidebarResults />', () => {
     );
   });
 
-  it.each(['yes', 'maybe'] as const)(
-    'shows a non-host %s meeting result without advertising hosting',
-    meetingStatus => {
-      const meeting: SearchResultOffer = {
+  it.each([
+    ['yes', 'yes', 'Can host', 'Can meet'],
+    ['yes', 'maybe', 'Can host', 'Might meet'],
+    ['yes', 'no', 'Can host', undefined],
+    ['yes', 'not-set', 'Can host', undefined],
+    ['maybe', 'yes', 'Might be able to host', 'Can meet'],
+    ['maybe', 'maybe', 'Might be able to host', 'Might meet'],
+    ['maybe', 'no', 'Might be able to host', undefined],
+    ['maybe', 'not-set', 'Might be able to host', undefined],
+    ['no', 'yes', undefined, 'Can meet'],
+    ['no', 'maybe', undefined, 'Might meet'],
+    ['no', 'no', 'Cannot host currently', undefined],
+    ['no', 'not-set', 'Cannot host currently', undefined],
+  ] as const)(
+    'shows the right availability for hosting %s and meeting %s',
+    (status, meetingStatus, hostingLabel, meetingLabel) => {
+      const offer: SearchResultOffer = {
         _id: 'ongoing-meeting',
         description: 'An old hosting description.',
         noOfferDescription: 'Available for a walk only.',
         type: 'host',
-        status: 'no',
+        status,
         meetingStatus,
         user: { username: 'fictional-member' },
       };
+      const expectedBadges = [hostingLabel, meetingLabel].filter(Boolean);
+      const expectBadges = (element: HTMLElement) => {
+        const badges = [...element.querySelectorAll('[data-slot="badge"]')];
+        expect(badges.map(badge => badge.textContent)).toEqual(expectedBadges);
+        if (meetingLabel) {
+          expect(within(element).getByText(meetingLabel)).toHaveAttribute(
+            'data-intent',
+            'info',
+          );
+        }
+      };
+
       const { rerender } = render(
-        <SearchSidebarResults offers={[meeting]} onCloseSidebar={jest.fn()} />,
+        <SearchSidebarResults offers={[offer]} onCloseSidebar={jest.fn()} />,
       );
-      expect(
-        screen.getByRole('button', {
-          name: 'Open meet offer from fictional-member · Cannot host currently',
-        }),
-      ).toHaveTextContent(
-        meetingStatus === 'yes'
-          ? 'Cannot host currently · Happy to meet'
-          : 'Cannot host currently · Maybe up for meeting',
-      );
+      const offerKind = hostingLabel ? 'hosting' : 'meet';
+      const name = [
+        `Open ${offerKind} offer from fictional-member`,
+        ...expectedBadges,
+      ].join(' · ');
+      expectBadges(screen.getByRole('button', { name }));
+
       rerender(
-        <SearchSidebarResults offer={meeting} onCloseSidebar={jest.fn()} />,
+        <SearchSidebarResults offer={offer} onCloseSidebar={jest.fn()} />,
       );
-      expect(
-        screen.getByText(
-          meetingStatus === 'yes' ? 'Happy to meet' : 'Maybe up for meeting',
-        ),
-      ).toBeVisible();
-      expect(
-        screen.getByLabelText('Hosting offer: Cannot host currently'),
-      ).toBeVisible();
-      expect(screen.getByText('Available for a walk only.')).toBeVisible();
-      expect(
-        screen.queryByText('An old hosting description.'),
-      ).not.toBeInTheDocument();
+      expectBadges(screen.getByRole('link', { name: /fictional-member/ }));
+      if (!hostingLabel) {
+        expect(
+          screen.queryByText('Hosting', { exact: true }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByLabelText(/^Hosting offer:/),
+        ).not.toBeInTheDocument();
+      }
+      if (status === 'no') {
+        expect(screen.getByText('Available for a walk only.')).toBeVisible();
+        expect(
+          screen.queryByText('An old hosting description.'),
+        ).not.toBeInTheDocument();
+      }
     },
   );
 

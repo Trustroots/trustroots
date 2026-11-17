@@ -2,6 +2,7 @@ import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { match, P } from 'ts-pattern';
 import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
@@ -9,7 +10,11 @@ import { rememberOutreachSource } from '@trustroots/analytics/client';
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
-import type { OfferStatus, OfferType } from '@/modules/offers/shared/offer';
+import type {
+  MeetingStatus,
+  OfferStatus,
+  OfferType,
+} from '@/modules/offers/shared/offer';
 import { hostStatusIntent } from '@/modules/offers/client/components/hostStatusIntent';
 import { hostStatusLabel } from '@/modules/offers/client/components/hostStatusLabel';
 
@@ -29,10 +34,28 @@ export interface SearchResultOffer {
   user: SearchOfferUser;
   type: OfferType;
   noOfferDescription?: string;
-  meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
+  meetingStatus?: MeetingStatus;
   status?: OfferStatus;
   description?: string;
   updated?: string;
+}
+
+function getAvailability(
+  { type, status, meetingStatus }: SearchResultOffer,
+  t: (key: string) => string,
+) {
+  const meetingLabel = match(meetingStatus)
+    .with('yes', () => t('Can meet'))
+    .with('maybe', () => t('Might meet'))
+    .with(P.union('no', 'not-set', undefined), () => undefined)
+    .exhaustive();
+  const showHosting = type === 'host' && !(status === 'no' && meetingLabel);
+  const hosting =
+    showHosting && status
+      ? { label: hostStatusLabel(status, t), intent: hostStatusIntent[status] }
+      : undefined;
+
+  return { hosting, meetingLabel, showHosting };
 }
 
 export interface CommunityNoteSummary {
@@ -124,6 +147,8 @@ export default function SearchSidebarResults({
     data?: Record<string, string>;
   };
   const languageNames = languageQuery.data || {};
+  const translateStatus = (key: string) => String(t(key));
+  const selectedAvailability = offer && getAvailability(offer, translateStatus);
   const selectedResultId = useRef<string | undefined>(undefined);
   const showList = !offer && !isLoadingOffer && !communityNote;
 
@@ -175,40 +200,45 @@ export default function SearchSidebarResults({
 
       {showList && offers.length > 0 && (
         <ul aria-label="Visible search results" className="search-result-list">
-          {offers.map(item =>
-            renderResultButton(
+          {offers.map(item => {
+            const { hosting, meetingLabel, showHosting } = getAvailability(
+              item,
+              translateStatus,
+            );
+            const displayName = item.user.displayName || item.user.username;
+            const offerKind = showHosting ? 'hosting' : 'meet';
+            const resultName = [
+              `Open ${offerKind} offer from ${displayName}`,
+              hosting?.label,
+              meetingLabel,
+            ]
+              .filter(Boolean)
+              .join(' · ');
+
+            return renderResultButton(
               item._id!,
-              `Open ${item.type === 'host' && item.status !== 'no' ? 'hosting' : 'meet'} offer from ${
-                item.user.displayName || item.user.username
-              }${
-                item.type === 'host' && item.status
-                  ? ` · ${hostStatusLabel(item.status, key => String(t(key)))}`
-                  : ''
-              }`,
+              resultName,
               () => onOfferSelect(item),
-              <>
-                <span>
-                  <MemberIdentity size={32} user={item.user} />
-                  {item.type === 'host' && item.status !== 'no' && 'Hosting'}
+              <span>
+                <MemberIdentity size={32} user={item.user} />
+                <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-1">
+                  {showHosting && !hosting && 'Hosting'}
                   {item.type === 'meet' && 'Meet'}
-                  {item.type === 'host' && item.status && (
-                    <>
-                      {item.status !== 'no' && ' · '}
-                      <Badge
-                        variant="solid"
-                        intent={hostStatusIntent[item.status]}
-                      >
-                        {hostStatusLabel(item.status, key => String(t(key)))}
-                      </Badge>
-                    </>
+                  {hosting && (
+                    <Badge variant="solid" intent={hosting.intent}>
+                      {hosting.label}
+                    </Badge>
                   )}
-                  {item.meetingStatus === 'yes' && ' · Happy to meet'}
-                  {item.meetingStatus === 'maybe' && ' · Maybe up for meeting'}
+                  {meetingLabel && (
+                    <Badge variant="solid" intent="info">
+                      {meetingLabel}
+                    </Badge>
+                  )}
                 </span>
-              </>,
+              </span>,
               true,
-            ),
-          )}
+            );
+          })}
         </ul>
       )}
 
@@ -269,7 +299,7 @@ export default function SearchSidebarResults({
         </div>
       )}
 
-      {offer && !isLoadingOffer && (
+      {offer && selectedAvailability && !isLoadingOffer && (
         <div
           aria-live="polite"
           aria-relevant="additions removals"
@@ -302,24 +332,24 @@ export default function SearchSidebarResults({
               <div className="search-result-tagline">{offer.user.tagline}</div>
             )}
             <div className="search-result-hosting">
-              {offer.type === 'host' && (
+              {selectedAvailability.showHosting && (
                 <div
                   aria-label={
-                    offer.status
-                      ? `Hosting offer: ${hostStatusLabel(offer.status, key => String(t(key)))}`
+                    selectedAvailability.hosting
+                      ? `Hosting offer: ${selectedAvailability.hosting.label}`
                       : undefined
                   }
                   className="search-result-label"
                 >
                   Hosting
-                  {offer.status && (
+                  {selectedAvailability.hosting && (
                     <>
                       :{' '}
                       <Badge
                         variant="solid"
-                        intent={hostStatusIntent[offer.status]}
+                        intent={selectedAvailability.hosting.intent}
                       >
-                        {hostStatusLabel(offer.status, key => String(t(key)))}
+                        {selectedAvailability.hosting.label}
                       </Badge>
                     </>
                   )}
@@ -332,13 +362,12 @@ export default function SearchSidebarResults({
                   </Badge>
                 </div>
               )}
-              {offer.meetingStatus === 'yes' && (
-                <span className="label btn-offer-meet">Happy to meet</span>
-              )}
-              {offer.meetingStatus === 'maybe' && (
-                <span className="label btn-offer-meet">
-                  Maybe up for meeting
-                </span>
+              {selectedAvailability.meetingLabel && (
+                <div className="search-result-label">
+                  <Badge variant="solid" intent="info">
+                    {selectedAvailability.meetingLabel}
+                  </Badge>
+                </div>
               )}
               <OfferDescription
                 description={

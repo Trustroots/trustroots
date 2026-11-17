@@ -1,5 +1,6 @@
 import {
   annotateFeature,
+  captureSection,
   expectPresent,
   expect,
   test as base,
@@ -14,7 +15,6 @@ import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 import {
   blockUnexpectedMapNetwork,
   disableWebGL,
-  fixturePath,
   prepareRasterSearchMap,
   routeRasterMapTiles,
   seedMapState,
@@ -1216,9 +1216,18 @@ test.describe('rendered search map feature coverage', () => {
 
     await context.route('**/api/offers/665100000000000000000002', route =>
       route.fulfill({
-        contentType: 'application/json',
-        path: fixturePath('offers', 'selected-meet-offer.json'),
-        status: 200,
+        json: {
+          _id: '665100000000000000000002',
+          type: 'host',
+          status: 'no',
+          meetingStatus: 'maybe',
+          noOfferDescription: 'Available for a walk by the river.',
+          location: [52.51, 13.42],
+          user: {
+            displayName: 'Sample Guest',
+            username: 'e2e-sample-guest',
+          },
+        },
       }),
     );
     await page.goto('/search');
@@ -1256,6 +1265,33 @@ test.describe('rendered search map feature coverage', () => {
     await page.keyboard.press('Enter');
     await expect(visibleHost).toBeVisible();
     await expect(visibleHost).toBeFocused();
+
+    const meetingResult = resultList.getByRole('button', {
+      name: 'Open meet offer from Sample Guest · Might meet',
+    });
+    await expect(meetingResult.locator('[data-slot="badge"]')).toHaveText([
+      'Might meet',
+    ]);
+    await meetingResult.click();
+
+    const card = sidebar.locator('.search-result');
+    const badges = card.locator('[data-slot="badge"]');
+    await expect(badges).toHaveText(['Might meet']);
+    await expect(badges).toHaveAttribute('data-intent', 'info');
+    await expect(card.getByText('Hosting', { exact: true })).toHaveCount(0);
+    await expect(
+      card.getByText('Available for a walk by the river.'),
+    ).toBeVisible();
+    await captureSection(card, 'map-meeting-only-desktop');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(badges).toBeVisible();
+    await expect
+      .poll(() =>
+        card.evaluate(element => element.scrollWidth - element.clientWidth),
+      )
+      .toBeLessThanOrEqual(0);
+    await captureSection(card, 'map-meeting-only-mobile');
   });
 
   test('offer deep-link uses fixture offer data in the sidebar', async ({
