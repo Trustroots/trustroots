@@ -1,3 +1,4 @@
+import 'should';
 import type { Express } from 'express';
 import mongoose from 'mongoose';
 import request, { type Agent } from 'supertest';

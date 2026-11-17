@@ -90,7 +90,7 @@
         // The root Jest and Vitest configs run these, but Knip attributes a
         // plugin's entries to the workspace that holds the config.
         "tests/client/**/*.tests.{js,jsx,ts,tsx}",
-        "tests/server/**/*.{js,cts,mts}",
+        "tests/server/**/*.mts",
         // Type-level contract checks that only `tsc -p` compiles (see
         // tooling/tsconfig/contracts.json,
         // tooling/tsconfig/contract-diagnostics.json and tooling/tsconfig/tests.json).

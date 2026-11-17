@@ -27,12 +27,12 @@ function serverTestFile(jsPath: string): string {
 }
 
 const files = [
-  serverTestFile('modules/users/tests/server/user.server.model.tests.js'),
+  serverTestFile('modules/users/tests/server/user.server.model.tests.mts'),
   serverTestFile(
-    'modules/contacts/tests/server/contact-moderation.server.routes.tests.js',
+    'modules/contacts/tests/server/contact-moderation.server.routes.tests.mts',
   ),
   serverTestFile(
-    'modules/experiences/tests/server/experience-suggestion.server.routes.tests.js',
+    'modules/experiences/tests/server/experience-suggestion.server.routes.tests.mts',
   ),
 ];
 const token = '012345abcdef';

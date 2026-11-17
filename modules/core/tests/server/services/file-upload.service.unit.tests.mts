@@ -203,6 +203,10 @@ describe('file-upload.service unit tests', () => {
     const photo = Buffer.alloc(11 * 1024 * 1024);
     Buffer.from([0xff, 0xd8, 0xff]).copy(photo);
     config.maxUploadSize = 10 * 1024 * 1024;
+    config.uploadTmpDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'trustroots-upload-test-'),
+    );
+    temporaryUploadDirectories.push(config.uploadTmpDir);
     app.post('/photo', ((
       req: { file: UploadedFile },
       res: import('express').Response,
@@ -213,9 +217,7 @@ describe('file-upload.service unit tests', () => {
         req,
         res,
         () => {
-          const size = req.file.size!;
-          fs.unlinkSync(req.file.path);
-          res.send({ size });
+          res.send({ size: req.file.size });
         },
         20 * 1024 * 1024,
       );

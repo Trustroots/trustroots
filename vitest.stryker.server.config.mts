@@ -30,7 +30,7 @@ process.env.TRUSTROOTS_SERVER_TEST_DATABASE = `trustroots-test-worker-5772796b65
 // instrumented copy (with `// @ts-nocheck` and mutant switches) fails them,
 // and they can't kill a runtime mutant, so leave them out of mutation runs.
 const sourceChecks = [
-  'modules/*/tests/server/**/*.server.types.tests.cts',
+  'modules/*/tests/server/**/*.server.types.tests.mts',
   'modules/core/tests/server/scripts/server-native-coverage.unit.tests.mts',
 ];
 

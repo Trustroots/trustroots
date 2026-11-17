@@ -104,7 +104,7 @@ const weeklyShardTests: Record<string, string[]> = {
   ],
   'package-logger': [
     'modules/core/tests/server/log-redaction.unit.tests.mts',
-    'modules/users/tests/server/user-block.server.routes.tests.cts',
+    'modules/users/tests/server/user-block.server.routes.tests.mts',
   ],
 };
 

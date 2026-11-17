@@ -1,3 +1,4 @@
+import 'should';
 import jsonForScript from './../../../server/services/json-for-script.server.service.mts';
 
 describe('Bootstrap JSON formatting', () => {

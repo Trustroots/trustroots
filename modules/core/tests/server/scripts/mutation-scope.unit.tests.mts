@@ -26,15 +26,15 @@ const files = [
   'modules/core/server/controllers/core.server.controller.mts',
   'modules/core/server/services/file-removal.server.service.mts',
   'modules/core/server/jobs/send-push-message.server.job.mjs',
-  'modules/core/tests/server/core.server.routes.tests.cts',
+  'modules/core/tests/server/core.server.routes.tests.mts',
   'modules/offers/server/controllers/offers.server.controller.mts',
   'modules/offers/server/models/offer.server.model.mts',
   'modules/offers/server/offer.server.model.mts',
-  'modules/offers/tests/server/offer.server.routes.tests.cts',
+  'modules/offers/tests/server/offer.server.routes.tests.mts',
   'modules/offers/tests/server/helpers/offer-fixtures.cts',
   'modules/users/server/jobs/user-welcome-sequence-first.server.job.mts',
   'modules/users/server/services/user-mini.server.service.mts',
-  'modules/users/tests/server/user-mini.server.service.unit.tests.cts',
+  'modules/users/tests/server/user-mini.server.service.unit.tests.mts',
   'modules/mobile/server/mobile.server.routes.cjs',
   'packages/logger/logger.mts',
   'packages/logger/node_modules/dep/index.mts',
@@ -156,7 +156,7 @@ describe('mutation scope', () => {
       const shards = plan([
         {
           status,
-          path: 'modules/offers/tests/server/offer.server.routes.tests.cts',
+          path: 'modules/offers/tests/server/offer.server.routes.tests.mts',
         },
       ]);
       assert.deepStrictEqual(shards, [
@@ -166,7 +166,7 @@ describe('mutation scope', () => {
             'modules/offers/server/controllers/offers.server.controller.mts',
           ],
           reasons: [
-            'server test changed: modules/offers/tests/server/offer.server.routes.tests.cts',
+            'server test changed: modules/offers/tests/server/offer.server.routes.tests.mts',
           ],
         },
       ]);
@@ -194,7 +194,7 @@ describe('mutation scope', () => {
           {
             status: 'R',
             oldPath:
-              'modules/offers/tests/server/offer.server.routes.tests.cts',
+              'modules/offers/tests/server/offer.server.routes.tests.mts',
             path: 'modules/users/tests/server/offer.server.routes.tests.cts',
           },
         ]),
@@ -205,7 +205,7 @@ describe('mutation scope', () => {
 
   it('adds source in other modules that a test imports, old or new', () => {
     const test =
-      'modules/users/tests/server/user-mini.server.service.unit.tests.cts';
+      'modules/users/tests/server/user-mini.server.service.unit.tests.mts';
     const shards = plan([{ status: 'M', path: test }], {
       base: {
         [test]:
@@ -240,7 +240,7 @@ describe('mutation scope', () => {
 
   it('reads the deleted version of a test for its imports', () => {
     const test =
-      'modules/users/tests/server/user-mini.server.service.unit.tests.cts';
+      'modules/users/tests/server/user-mini.server.service.unit.tests.mts';
     const shards = plan([{ status: 'D', path: test }], {
       base: {
         [test]:

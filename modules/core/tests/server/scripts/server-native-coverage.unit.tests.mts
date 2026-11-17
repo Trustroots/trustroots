@@ -45,8 +45,8 @@ describe('Native server coverage', () => {
               NODE_OPTIONS: '',
               SERVER_TEST_SKIP_DATABASE: 'true',
               SERVER_TEST_FILES: [
-                'modules/users/tests/server/services/user-roles.server.service.tests.cts',
-                'modules/admin/tests/server/admin.circles.server.controller.unit.tests.cts',
+                'modules/users/tests/server/services/user-roles.server.service.tests.mts',
+                'modules/admin/tests/server/admin.circles.server.controller.unit.tests.mts',
               ].join(','),
               SERVER_TEST_BLOB_OUTPUT: '',
               SERVER_TEST_TIMINGS_OUTPUT: '',
