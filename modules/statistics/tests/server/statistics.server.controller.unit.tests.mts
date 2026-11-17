@@ -6,6 +6,24 @@ import type {
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
 
+/**
+ * Unit tests for statistics controller helpers and write endpoints.
+ */
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+
+import './../../../offers/server/models/offer.server.model.mts';
+import './../../../users/server/models/user.server.model.mts';
+import './../../../experiences/server/models/experiences.server.model.mts';
+import './../../../messages/server/models/message-stat.server.model.mts';
+import './../../../messages/server/models/message.server.model.mts';
+import './../../../references-thread/server/models/reference-thread.server.model.mts';
+import statisticsController from './../../server/controllers/statistics.server.controller.mts';
+import parseStatisticsCount from '../../server/controllers/parse-statistics-count.mts';
+import statServiceModule from './../../../stats/server/services/stats.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import should from 'should';
+
 type Callback<T> = (error: Error | null, result?: T) => void;
 type CountResult = {
   total: number;
@@ -94,12 +112,6 @@ function required<T>(value: T | null | undefined): NonNullable<T> {
   return value as NonNullable<T>;
 }
 
-/**
- * Unit tests for statistics controller helpers and write endpoints.
- */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-
 function typedStub<TArgs extends readonly unknown[]>(
   target: object,
   method: string,
@@ -111,20 +123,8 @@ function typedStub<TArgs extends readonly unknown[]>(
   >;
 }
 
-require('./../../../offers/server/models/offer.server.model.mjs');
-require('./../../../users/server/models/user.server.model.mjs');
-require('./../../../experiences/server/models/experiences.server.model.mjs');
-require('./../../../messages/server/models/message-stat.server.model.mjs');
-require('./../../../messages/server/models/message.server.model.mjs');
-require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
-const statistics =
-  require('./../../server/controllers/statistics.server.controller.mjs') as StatisticsController;
-const parseStatisticsCount: typeof import('../../server/controllers/parse-statistics-count.mts').default =
-  require('../../server/controllers/parse-statistics-count.mts').default;
-const statService =
-  require('./../../../stats/server/services/stats.server.service.mts') as StatsService;
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should: typeof import('should') = require('should');
+const statistics = statisticsController as unknown as StatisticsController;
+const statService = statServiceModule as unknown as StatsService;
 
 type StatisticsUser = Omit<UserRecord, 'additionalProvidersData'> & {
   additionalProvidersData?: Record<

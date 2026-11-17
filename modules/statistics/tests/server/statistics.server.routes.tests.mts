@@ -1,9 +1,9 @@
-const request: typeof import('supertest') = require('supertest');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const statistics = require('./../../server/controllers/statistics.server.controller.mjs');
-require('should');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import express from './../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import statistics from './../../server/controllers/statistics.server.controller.mts';
+import 'should';
 const Offer = mongoose.model('Offer');
 const Experience = mongoose.model('Experience');
 const MessageStat = mongoose.model('MessageStat');
@@ -115,9 +115,9 @@ describe('Statistics CRUD tests', () => {
           username: 'username',
         },
       },
-    });
-    _usersPublic2[0].nostrNpub = validNpub;
-    _usersPublic2[1].nostrNpub = differentNpub;
+    } as never);
+    Object.assign(_usersPublic2[0], { nostrNpub: validNpub });
+    Object.assign(_usersPublic2[1], { nostrNpub: differentNpub });
     const _usersPrivate = utils.generateUsers(1, {
       public: false,
       newsletter: true,
@@ -135,10 +135,10 @@ describe('Statistics CRUD tests', () => {
           username: 'username',
         },
       },
-    });
+    } as never);
     const _users = [..._usersPublic1, ..._usersPublic2, ..._usersPrivate];
     _users.forEach(user => {
-      user.created = new Date();
+      Object.assign(user, { created: new Date() });
     });
 
     // Save database contents just once because we're not modifying anything between tests

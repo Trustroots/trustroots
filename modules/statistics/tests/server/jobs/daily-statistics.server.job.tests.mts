@@ -1,24 +1,22 @@
+import statisticsController from './../../../server/controllers/statistics.server.controller.mts';
 // test whether the daily statistics job reaches influxdb via Stats api
 
-const should: typeof import('should') = require('should');
-const influx: typeof import('influx') = require('influx');
-const sinon = require('sinon');
-const winston: typeof import('winston') = require('winston');
+import should from 'should';
+import influx from 'influx';
+import sinon from 'sinon';
+import winston from 'winston';
 
-const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
-require('./../../../../offers/server/models/offer.server.model.mjs');
-require('./../../../../users/server/models/user.server.model.mjs');
+import config from './../../../../../config/config.mts';
+import './../../../../offers/server/models/offer.server.model.mts';
+import './../../../../users/server/models/user.server.model.mts';
+import statsServiceModule from './../../../../stats/server/services/stats.server.service.mts';
+import statsJob from './../../../server/jobs/daily-statistics.server.job.mts';
 type StatObject =
   import('../../../../stats/server/services/stats.server.service.mts').StatObject;
 type StatService = {
   deliver(statObject: StatObject, callback: (error?: unknown) => void): void;
 };
-const statsService: StatService = require('./../../../../stats/server/services/stats.server.service.mts');
-type JobCallback = (error?: Error | null) => void;
-const statsJob: (
-  job: unknown,
-  callback: JobCallback,
-) => void = require('./../../../server/jobs/daily-statistics.server.job.mjs');
+const statsService = statsServiceModule as unknown as StatService;
 type StatisticsController = {
   getUsersCount(callback: (error: Error | null, count?: number) => void): void;
   getHostOffersCount(
@@ -77,7 +75,7 @@ describe('Daily Statistics Job - Unit Test', function () {
   });
 
   context('influxdb configured', function () {
-    const statistics: Pick<
+    const statistics = statisticsController as unknown as Pick<
       StatisticsController,
       | 'getUsersCount'
       | 'getHostOffersCount'
@@ -85,7 +83,7 @@ describe('Daily Statistics Job - Unit Test', function () {
       | 'getUserLanguagesCount'
       | 'getLastSeenStatistic'
       | 'getExternalSiteCount'
-    > = require('./../../../server/controllers/statistics.server.controller.mjs');
+    >;
 
     beforeEach(function () {
       // stub enable influx in config
@@ -288,10 +286,10 @@ describe('Daily Statistics Job - Unit Test', function () {
       values: Record<string, number>;
       tags: Record<string, string>;
     };
-    const statistics: Record<
+    const statistics = statisticsController as unknown as Record<
       string,
       unknown
-    > = require('./../../../server/controllers/statistics.server.controller.mjs');
+    >;
     let delivered: Delivered[];
     let logStub: import('sinon').SinonStub;
     let lastSeenSince: unknown[];
