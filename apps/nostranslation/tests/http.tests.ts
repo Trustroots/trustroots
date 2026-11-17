@@ -34,13 +34,12 @@ function sign(body: string) {
 
 function waitForSignalOrRequestFailure<T>(
   signal: Promise<T>,
-  request: Promise<unknown>,
+  request: Promise<{ status: number }>,
 ) {
-  const requestFailure = request.then(
-    () => new Promise<never>(() => {}),
-    error => Promise.reject(error),
-  );
-  return Promise.race([signal, requestFailure]);
+  const settledEarly = request.then<never>(({ status }) => {
+    throw new Error(`Request finished with ${status} before the signal`);
+  });
+  return Promise.race([signal, settledEarly]);
 }
 
 describe('review API', () => {
