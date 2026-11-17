@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
@@ -336,31 +330,26 @@ describe('ProfileEditAccount', () => {
     });
   });
 
-  it('ignores an email frequency that is absent from the available options', async () => {
-    await act(async () => {
-      renderPage();
-    });
-    const frequency = screen.getByLabelText('Unread-message emails');
-
-    fireEvent.change(frequency, { target: { value: '' } });
-
-    expect(updateUser).not.toHaveBeenCalled();
-    expect(frequency).toHaveValue('immediate');
-  });
-
   it('sets the digest frequency and hosting reminders independently', async () => {
     renderPage();
-    const frequency = screen.getByLabelText('Unread-message emails');
     const hosting = screen.getByLabelText('Hosting reminder emails');
-    expect(frequency).toHaveValue('immediate');
+    expect(
+      screen.getByRole('radio', {
+        name: 'Individual emails for unread messages',
+      }),
+    ).toBeChecked();
     expect(hosting).toBeChecked();
+    expect(hosting).toHaveAccessibleDescription(
+      expect.stringContaining('We recommend keeping these on.'),
+    );
 
+    const daily = screen.getByRole('radio', { name: 'One email per day' });
     updateUser.mockResolvedValueOnce({
       ...user,
       messageEmailFrequency: 'daily',
     });
-    fireEvent.change(frequency, { target: { value: 'daily' } });
-    await waitFor(() => expect(frequency).toHaveValue('daily'));
+    fireEvent.click(daily);
+    await waitFor(() => expect(daily).toBeChecked());
     expect(updateUser).toHaveBeenLastCalledWith({
       messageEmailFrequency: 'daily',
     });

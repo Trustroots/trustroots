@@ -532,23 +532,43 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Account - Trustroots/);
   });
 
-  test('member can set email subscriptions independently', async ({ page }) => {
+  test('member can set email subscriptions independently', async ({
+    page,
+    request,
+  }) => {
+    const member = createUser();
+    await registerViaApi(request, member);
+    await signInViaApi(page, request, member);
+
     await page.goto('/profile/edit/account');
-    const frequency = page.getByLabel('Unread-message emails');
+    const frequency = page.getByRole('group', {
+      name: 'Emails when other members message you',
+    });
+    const immediate = frequency.getByRole('radio', {
+      name: 'Individual emails for unread messages',
+    });
+    const daily = frequency.getByRole('radio', { name: 'One email per day' });
+    const weekly = frequency.getByRole('radio', { name: 'One email per week' });
+    const off = frequency.getByRole('radio', {
+      name: 'No emails about messages',
+    });
     const hosting = page.getByLabel('Hosting reminder emails');
-    await expect(frequency).toHaveValue('immediate');
+    await expect(immediate).toBeChecked();
+    await expect(daily).toBeVisible();
+    await expect(weekly).toBeVisible();
+    await expect(off).toBeVisible();
     await expect(hosting).toBeChecked();
 
-    await frequency.selectOption('weekly');
-    await expect(frequency).toHaveValue('weekly');
+    await weekly.click();
+    await expect(weekly).toBeChecked();
     await hosting.click();
     await expect(hosting).not.toBeChecked();
     await page.reload();
 
-    await expect(frequency).toHaveValue('weekly');
+    await expect(weekly).toBeChecked();
     await expect(hosting).not.toBeChecked();
-    await frequency.selectOption('off');
-    await expect(frequency).toHaveValue('off');
+    await off.click();
+    await expect(off).toBeChecked();
   });
 
   test('member can view their own profile', async ({

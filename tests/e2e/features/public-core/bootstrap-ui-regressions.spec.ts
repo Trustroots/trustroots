@@ -126,10 +126,14 @@ test('place borders and account checkbox spacing survive Bootstrap 5', async ({
   expectPresent(firstIcon);
   expectPresent(lastIcon);
   expect(lastIcon.x).toBeGreaterThan(firstIcon.x);
-  const newsletter = page.locator('.profile-newsletter label');
+  const newsletter = page.getByRole('checkbox', {
+    name: 'Community newsletter',
+  });
   await expect(newsletter).toBeVisible();
-  const checkbox = await newsletter.locator('input').boundingBox();
-  const text = await newsletter.locator('span').boundingBox();
+  const checkbox = await newsletter.boundingBox();
+  const text = await page
+    .getByText('Community newsletter', { exact: true })
+    .boundingBox();
   expect(checkbox).not.toBeNull();
   expectPresent(checkbox);
   expect(text).not.toBeNull();
