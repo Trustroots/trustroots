@@ -230,10 +230,6 @@ declare module 'morgan' {
   export default morgan;
 }
 
-declare module 'cookie-parser' {
-  export default function cookieParser(): import('express').RequestHandler;
-}
-
 declare module 'compression' {
   export default function compression(options: {
     filter(
