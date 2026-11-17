@@ -18,7 +18,6 @@ class StartupScreenTest {
         compose.setContent { StartupScreen("River") }
         compose.onNodeWithContentDescription("Trustroots").assertIsDisplayed()
         compose.onNodeWithText("Hi River").assertIsDisplayed()
-        captureUsabilityScreenshot(compose, "android_returning_member_greeting")
         compose.onNodeWithText("Build:", substring = true).assertIsDisplayed()
     }
 

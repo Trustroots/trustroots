@@ -31,7 +31,9 @@ class AppSessionViewModelTest {
         val store = ViewModelStore()
         val owner = object : ViewModelStoreOwner { override val viewModelStore = store }
         try {
-            val model = ViewModelProvider(owner, AppSessionViewModel.Factory(FakeOperations()))
+            val pendingRestore = CompletableDeferred<MemberSession?>()
+            val operations = FakeOperations().apply { loadAction = { pendingRestore.await() } }
+            val model = ViewModelProvider(owner, AppSessionViewModel.Factory(operations))
                 .get(AppSessionViewModel::class.java)
 
             assertTrue(model.state.value.isStarting)
@@ -43,51 +45,32 @@ class AppSessionViewModelTest {
     }
 
     @Test
-    fun restoreRunsOnceAndPreservesTheMinimumStartupDurationAndWelcomeName() = withScope { scope ->
-        var now = 1_000L
+    fun storedSessionFinishesStartupImmediatelyAndLoadsOnlyOnce() = withScope { scope ->
         val operations = FakeOperations().apply { restoredSession = session() }
-        val waits = mutableListOf<Long>()
-        val model = AppSessionViewModel(
-            operations = operations,
-            scope = scope,
-            ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { now },
-            wait = { millis -> waits += millis; now += millis },
-        )
-
+        val model = settledModel(scope, operations)
         assertFalse(model.state.value.isStarting)
         assertEquals(session(), model.state.value.session)
-        assertEquals("Quiet", model.state.value.startupFirstName)
         assertEquals(1, operations.loadCalls)
-        assertEquals(listOf(2_000L), waits)
     }
 
     @Test
-    fun restoredNameIsAvailableOnStartupWhileTheMinimumDelayIsStillRunning() = withScope { scope ->
-        val finishMinimumDelay = CompletableDeferred<Unit>()
-        val operations = FakeOperations().apply { restoredSession = session() }
-        val model = AppSessionViewModel(
-            operations = operations,
-            scope = scope,
-            ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { 0L },
-            wait = { finishMinimumDelay.await() },
-        )
-
+    fun startupRemainsPendingUntilTheSessionLoadCompletes() = withScope { scope ->
+        val restored = CompletableDeferred<MemberSession?>()
+        val operations = FakeOperations().apply { loadAction = { restored.await() } }
+        val model = settledModel(scope, operations)
         assertTrue(model.state.value.isStarting)
-        assertEquals("Quiet", model.state.value.startupFirstName)
-
-        finishMinimumDelay.complete(Unit)
-
+        assertNull(model.state.value.session)
+        assertNull(model.state.value.startupFirstName)
+        restored.complete(session())
         assertFalse(model.state.value.isStarting)
         assertEquals(session(), model.state.value.session)
+        assertEquals(1, operations.loadCalls)
     }
 
     @Test
-    fun anEmptyStoreFinishesStartupInTheSignedOutState() = withScope { scope ->
+    fun anEmptyStoreFinishesStartupImmediatelyInTheSignedOutState() = withScope { scope ->
         val operations = FakeOperations()
         val model = settledModel(scope, operations)
-
         assertFalse(model.state.value.isStarting)
         assertNull(model.state.value.session)
         assertNull(model.state.value.signedOutMessage)
@@ -95,64 +78,13 @@ class AppSessionViewModelTest {
     }
 
     @Test
-    fun slowSessionRestoreStillShowsThePersonalisedGreetingForTwoSeconds() = withScope { scope ->
-        var now = 2_000L
-        val operations = FakeOperations().apply {
-            loadAction = { now = 2_900L; session() }
-        }
-        val waits = mutableListOf<Long>()
-        val model = AppSessionViewModel(
-            operations = operations,
-            scope = scope,
-            ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { now },
-            wait = { waits += it },
-        )
-
-        assertFalse(model.state.value.isStarting)
-        assertEquals(listOf(2_000L), waits)
-        assertEquals(session(), model.state.value.session)
-    }
-
-    @Test
-    fun slowSignedOutRestoreDoesNotAddAnotherDelay() = withScope { scope ->
-        var now = 0L
-        val waits = mutableListOf<Long>()
-        val operations = FakeOperations().apply { loadAction = { now = 900L; null } }
-        val model = AppSessionViewModel(
-            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { now }, wait = { waits += it },
-        )
-        assertFalse(model.state.value.isStarting)
-        assertNull(model.state.value.session)
-        assertTrue(waits.isEmpty())
-    }
-
-    @Test
-    fun fastSignedOutRestoreRetainsTheExistingMinimum() = withScope { scope ->
-        var now = 0L
-        val waits = mutableListOf<Long>()
-        val operations = FakeOperations().apply { loadAction = { now = 100L; null } }
-        val model = AppSessionViewModel(
-            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { now }, wait = { waits += it },
-        )
-        assertFalse(model.state.value.isStarting)
-        assertNull(model.state.value.session)
-        assertEquals(listOf(600L), waits)
-    }
-
-    @Test
-    fun signOutDuringGreetingCannotBeUndoneByTheOldTimer() = withScope { scope ->
-        val finishGreeting = CompletableDeferred<Unit>()
-        val operations = FakeOperations().apply { restoredSession = session() }
-        val model = AppSessionViewModel(
-            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { 0L }, wait = { withContext(NonCancellable) { finishGreeting.await() } },
-        )
+    fun aPendingEmptyStoreStaysOnStartupUntilLoadingCompletes() = withScope { scope ->
+        val restored = CompletableDeferred<MemberSession?>()
+        val operations = FakeOperations().apply { loadAction = { restored.await() } }
+        val model = settledModel(scope, operations)
         assertTrue(model.state.value.isStarting)
-        model.onEvent(AppSessionEvent.SignedOut(AppSessionSource.from(session(), "")))
-        finishGreeting.complete(Unit)
+        assertNull(model.state.value.session)
+        restored.complete(null)
         assertFalse(model.state.value.isStarting)
         assertNull(model.state.value.session)
     }
@@ -334,8 +266,6 @@ class AppSessionViewModelTest {
             operations = operations,
             scope = scope,
             ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { 0L },
-            wait = {},
         )
         assertTrue(model.state.value.isStarting)
 
@@ -411,8 +341,6 @@ class AppSessionViewModelTest {
                 operations = operations,
                 scope = scope,
                 ioDispatcher = Dispatchers.Unconfined,
-                elapsedRealtime = { 700L },
-                wait = {},
             ),
         )[AppSessionViewModel::class.java]
         model.onEvent(AppSessionEvent.SignedIn(session(), ""))
@@ -450,8 +378,6 @@ class AppSessionViewModelTest {
                 initialBackendURL = backendURL,
                 scope = scope,
                 ioDispatcher = Dispatchers.Unconfined,
-                elapsedRealtime = { 700L },
-                wait = {},
             ),
         )[AppSessionViewModel::class.java]
         model.onEvent(AppSessionEvent.SessionInvalidated(AppSessionSource.from(oldSession, backendURL)))
@@ -475,8 +401,6 @@ class AppSessionViewModelTest {
             operations,
             scope = scope,
             ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { 0L },
-            wait = {},
         )
         val signedIn = session("connect.sid=fresh-session", "steady-heron")
         model.onEvent(AppSessionEvent.SignedIn(signedIn, ""))
@@ -499,8 +423,6 @@ class AppSessionViewModelTest {
                 operations = operations,
                 scope = scope,
                 ioDispatcher = Dispatchers.Unconfined,
-                elapsedRealtime = { 0L },
-                wait = {},
             ),
         )[AppSessionViewModel::class.java]
         assertTrue(model.state.value.isStarting)
@@ -538,8 +460,6 @@ class AppSessionViewModelTest {
             initialBackendURL = backendURL,
             scope = scope,
             ioDispatcher = Dispatchers.Unconfined,
-            elapsedRealtime = { 700L },
-            wait = {},
         )
 
     private fun withScope(test: (CoroutineScope) -> Unit) {

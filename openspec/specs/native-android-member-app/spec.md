@@ -521,8 +521,8 @@ remain runtime-only outside the existing encrypted `SecureMobileSessionStore`.
   result
 - **THEN** it reads `SecureMobileSessionStore` once on an IO dispatcher
 - **AND** an absent or unreadable stored session resolves to signed out
-- **AND** signed-out Startup retains its minimum of 700 ms measured from the start of restoration
-- **AND** a restored signed-in member sees the personalised greeting for at least two seconds after their session is loaded
+- **AND** Startup is shown only while restoration is pending, without an artificial minimum duration
+- **AND** the restored session and completed startup state are published together as soon as loading finishes
 - **AND** a valid stored session is used without an additional remote
   validation request before the authenticated shell is shown
 
@@ -532,8 +532,7 @@ remain runtime-only outside the existing encrypted `SecureMobileSessionStore`.
   a session is loaded
 - **THEN** the Activity-scoped owner retains the in-flight operation or current
   in-memory state
-- **AND** Compose recreation does not restart restoration or the minimum-delay
-  timer
+- **AND** Compose recreation does not restart restoration
 - **AND** the session cookie is not copied to Android saved state
 
 #### Scenario: Sign in and member update
@@ -2111,3 +2110,23 @@ The Android app SHALL open Messages after a successful fresh sign-in. It SHALL p
 
 - **WHEN** a member creates an account
 - **THEN** the existing sign-up onboarding remains available
+
+### Requirement: Non-blocking Android startup fade
+
+The Android app SHALL render the resolved destination immediately when session restoration completes and fade the startup overlay out over 180 ms. The fade SHALL use Compose animation scaling, SHALL NOT impose a minimum startup duration and SHALL NOT block the ready destination's interaction.
+
+#### Scenario: Restoration completes
+
+- **WHEN** the session load completes
+- **THEN** the resolved destination renders immediately beneath the fading overlay
+- **AND** the destination is interactive while the overlay fades out
+
+#### Scenario: Restoration is already complete
+
+- **WHEN** the app is composed after restoration has completed
+- **THEN** the destination is shown without replaying startup or its fade
+
+#### Scenario: System animations are disabled
+
+- **WHEN** the system disables animations
+- **THEN** Compose's animation scaling removes the fade without delaying navigation

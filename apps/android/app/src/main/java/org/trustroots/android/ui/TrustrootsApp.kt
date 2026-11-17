@@ -83,7 +83,7 @@ import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 import org.trustroots.android.ui.signin.SignInNavigation
 import org.trustroots.android.ui.signin.SignUpOnboarding
-import org.trustroots.android.ui.startup.StartupScreen
+import org.trustroots.android.ui.startup.StartupTransition
 
 @Composable
 internal fun TrustrootsApp(
@@ -144,94 +144,92 @@ internal fun TrustrootsApp(
         }
         shellGraphStore
     }
-    if (starting) {
-        StartupScreen(sessionState.startupFirstName)
-        return
-    }
-    if (showSharedMemberPilot(activity, apiBaseUrl, sessionStore, responseCache, sessionViewModel, sessionState)) {
-        return
-    }
-    if (session == null) {
-        key(signInGraphGeneration, apiBaseUrl.trim().trimEnd('/')) {
-            SignInNavigation(
-                analytics = analytics,
-                storeHolder = signInStoreHolder,
-                apiBaseUrl = apiBaseUrl,
-                initialMessage = sessionState.signedOutMessage,
-                browserContent = browserContent,
-                onSignedUp = {
-                    initialMemberDestination = Destination.Circles
-                    onboardingUsername = it.member.username
-                    sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
-                },
-                onSignedIn = {
-                    initialMemberDestination = Destination.Messages
-                    onboardingUsername = null
-                    sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
-                },
-            )
+    StartupTransition(starting) {
+        if (showSharedMemberPilot(activity, apiBaseUrl, sessionStore, responseCache, sessionViewModel, sessionState)) {
+            return@StartupTransition
         }
-    } else {
-        CompositionLocalProvider(
-            LocalViewModelStoreOwner provides shellGraphOwner,
-        ) {
-          key(session.member.username) {
-            val activeSession = session
-            val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
-            val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
-            val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator(),
-            )
-            NavDisplay(
-                backStack = rootBackStack,
-                entryDecorators = rootDecorators,
-                entryProvider = entryProvider {
-                    entry<MemberShellVisit> {
-                        if (onboardingUsername == activeSession.member.username) {
-                            val api = remember(apiBaseUrl, activeSession.member.username) {
-                                MobileApiClient(apiBaseUrl, responseCache, activeSession.member.username, sessionStore)
-                            }
-                            SignUpOnboarding(
-                                api = api,
-                                session = activeSession,
-                                onComplete = { profile ->
-                                    if (profile != null) {
-                                        val member = MobileMember(profile.username, profile.displayName)
+        if (session == null) {
+            key(signInGraphGeneration, apiBaseUrl.trim().trimEnd('/')) {
+                SignInNavigation(
+                    analytics = analytics,
+                    storeHolder = signInStoreHolder,
+                    apiBaseUrl = apiBaseUrl,
+                    initialMessage = sessionState.signedOutMessage,
+                    browserContent = browserContent,
+                    onSignedUp = {
+                        initialMemberDestination = Destination.Circles
+                        onboardingUsername = it.member.username
+                        sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
+                    },
+                    onSignedIn = {
+                        initialMemberDestination = Destination.Messages
+                        onboardingUsername = null
+                        sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
+                    },
+                )
+            }
+        } else {
+            CompositionLocalProvider(
+                LocalViewModelStoreOwner provides shellGraphOwner,
+            ) {
+              key(session.member.username) {
+                val activeSession = session
+                val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
+                val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
+                val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                )
+                NavDisplay(
+                    backStack = rootBackStack,
+                    entryDecorators = rootDecorators,
+                    entryProvider = entryProvider {
+                        entry<MemberShellVisit> {
+                            if (onboardingUsername == activeSession.member.username) {
+                                val api = remember(apiBaseUrl, activeSession.member.username) {
+                                    MobileApiClient(apiBaseUrl, responseCache, activeSession.member.username, sessionStore)
+                                }
+                                SignUpOnboarding(
+                                    api = api,
+                                    session = activeSession,
+                                    onComplete = { profile ->
+                                        if (profile != null) {
+                                            val member = MobileMember(profile.username, profile.displayName)
+                                            sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
+                                        }
+                                        onboardingUsername = null
+                                    },
+                                    onSessionInvalidated = {
+                                        onboardingUsername = null
+                                        sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
+                                    },
+                                )
+                            } else {
+                                MemberShell(
+                                    initialDestination = initialMemberDestination,
+                                    analytics = analytics,
+                                    session = activeSession,
+                                    sessionStore = sessionStore,
+                                    responseCache = responseCache,
+                                    apiBaseUrl = apiBaseUrl,
+                                    reconcileAlerts = reconcileAlerts,
+                                    browserContent = browserContent,
+                                    onMemberUpdated = { member ->
                                         sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
-                                    }
-                                    onboardingUsername = null
-                                },
-                                onSessionInvalidated = {
-                                    onboardingUsername = null
-                                    sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
-                                },
-                            )
-                        } else {
-                            MemberShell(
-                                initialDestination = initialMemberDestination,
-                                analytics = analytics,
-                                session = activeSession,
-                                sessionStore = sessionStore,
-                                responseCache = responseCache,
-                                apiBaseUrl = apiBaseUrl,
-                                reconcileAlerts = reconcileAlerts,
-                                browserContent = browserContent,
-                                onMemberUpdated = { member ->
-                                    sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
-                                },
-                                onSignedOut = {
-                                    sessionViewModel.onEvent(AppSessionEvent.SignedOut(activeSessionSource))
-                                },
-                                onSessionInvalidated = {
-                                    sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
-                                },
-                            )
+                                    },
+                                    onSignedOut = {
+                                        sessionViewModel.onEvent(AppSessionEvent.SignedOut(activeSessionSource))
+                                    },
+                                    onSessionInvalidated = {
+                                        sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
+                                    },
+                                )
+                            }
                         }
-                    }
-                },
-            )
-          }
+                    },
+                )
+              }
+            }
         }
     }
 }
