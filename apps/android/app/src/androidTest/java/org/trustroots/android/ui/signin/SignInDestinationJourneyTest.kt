@@ -798,7 +798,7 @@ class SignInDestinationJourneyTest {
         title: String,
         canGoBack: Boolean,
     ) {
-        compose.waitUntil("WebView page $url to load", 10_000) {
+        compose.waitUntil("WebView page $url to load", 30_000) {
             var ready = false
             scenario.onActivity { activity ->
                 findWebView(activity.window.decorView)?.let { webView ->

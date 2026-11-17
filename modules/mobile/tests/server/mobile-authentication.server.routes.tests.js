@@ -1,6 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const should = require('should');
+const sinon = require('sinon');
 const express = require('../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
@@ -599,16 +600,23 @@ describe('Mobile authentication API', function () {
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
       .expect(200);
-    await MobileSession.updateOne(
-      { user: member._id },
-      { refreshExpiresAt: new Date(Date.now() - 1000) },
-    );
+    const refreshExpiresAt = new Date(Date.now() + 60_000);
+    await MobileSession.updateOne({ user: member._id }, { refreshExpiresAt });
     const before = await MobileSession.findOne({ user: member._id }).lean();
 
-    const rejected = await request(app)
-      .post('/api/mobile/v0/auth/refresh')
-      .send({ refreshToken: signin.body.refreshToken })
-      .expect(401);
+    const clock = sinon.useFakeTimers({
+      now: refreshExpiresAt.getTime() + 1,
+      toFake: ['Date'],
+    });
+    let rejected;
+    try {
+      rejected = await request(app)
+        .post('/api/mobile/v0/auth/refresh')
+        .send({ refreshToken: signin.body.refreshToken })
+        .expect(401);
+    } finally {
+      clock.restore();
+    }
 
     const after = await MobileSession.findOne({ user: member._id }).lean();
     rejected.body.code.should.equal('authentication_required');

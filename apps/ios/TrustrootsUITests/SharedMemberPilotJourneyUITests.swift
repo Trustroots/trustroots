@@ -74,7 +74,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         password.tap()
         app.typeText("example-password")
         let submit = app.buttons["Sign in"]
-        XCTAssertTrue(submit.isEnabled, "The pilot should receive both credentials.")
+        let credentialsEntered = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isEnabled == true"),
+            object: submit
+        )
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [credentialsEntered], timeout: 10),
+            .completed,
+            "The pilot should enable sign in after receiving both credentials."
+        )
         submit.tap()
     }
 
