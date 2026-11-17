@@ -14,6 +14,12 @@ type UserRecord =
 const User = mongoose.model<UserRecord>('User');
 
 describe('Optional email unsubscribe route', function () {
+  afterEach(async function () {
+    await User.deleteMany({
+      username: { $in: ['sampleemailmember', 'examplemember'] },
+    });
+  });
+
   it('uses HTTPS links when the site uses HTTPS', function () {
     const https = sinon.stub(config, 'https').value(true);
     try {
