@@ -7,6 +7,10 @@ import org.trustroots.android.ui.common.requireActivity
 
 import android.Manifest
 import android.app.Activity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,7 +26,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -270,7 +273,8 @@ private fun InboxContent(
                 Column(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 20.dp)
-                        .padding(contentPadding.horizontalInset()),
+                        .padding(contentPadding.horizontalInset())
+                        .padding(bottom = 12.dp),
                 ) {
                     LiveFilterField(
                         value = filter,
@@ -321,6 +325,7 @@ private fun InboxContent(
                 }
             }
             items(filteredThreads, key = { it.id }) { thread ->
+                val contentColor = if (thread.read) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimaryContainer
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -328,7 +333,11 @@ private fun InboxContent(
                         .testTag("message-thread-${thread.id}")
                         .padding(horizontal = 20.dp)
                         .padding(vertical = 8.dp)
-                        .padding(contentPadding.horizontalInset()),
+                        .padding(contentPadding.horizontalInset())
+                        .clip(RoundedCornerShape(20.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp))
+                        .background(if (thread.read) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer)
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(Modifier.weight(1f)) {
@@ -340,13 +349,21 @@ private fun InboxContent(
                             size = 44.dp,
                         )
                         Column(Modifier.padding(start = 10.dp)) {
-                            Text(memberLabels[thread.id].orEmpty(), fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
-                            Text(thread.excerpt, maxLines = 2)
+                            Text(memberLabels[thread.id].orEmpty(), color = contentColor, fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
+                            if (!thread.read) {
+                                Text(
+                                    stringResource(R.string.inbox_conversation_unread),
+                                    color = contentColor,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            }
+                            Text(thread.excerpt, color = contentColor, maxLines = 2, fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
                             thread.updatedAt?.let { updated ->
                                 Text(
                                     messageTime(LocalContext.current.resources, updated),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (thread.read) MaterialTheme.colorScheme.onSurfaceVariant else contentColor,
                                 )
                             }
                         }
@@ -357,7 +374,6 @@ private fun InboxContent(
                         }
                     }
                 }
-                HorizontalDivider()
             }
         }
     }
