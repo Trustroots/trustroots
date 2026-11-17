@@ -1,11 +1,11 @@
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 
-const request: typeof import('supertest') = require('supertest');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const should: typeof import('should') = require('should');
-const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
-const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import should from 'should';
+import express from '../../../../config/lib/express.mts';
+import config from '../../../../config/config.mts';
 const User = mongoose.model<UserServerRecord>('User');
 
 describe('SparkPost newsletter unsubscribe HTTP integration', () => {

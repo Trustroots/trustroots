@@ -1,13 +1,12 @@
 // test whether the daily statistics job reaches influxdb via Stats api
 
 import type { NextFunction, Request, Response } from 'express';
-import type { SinonStub } from 'sinon';
 
-const should: typeof import('should') = require('should');
-const influx: typeof import('influx') = require('influx');
-const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
-const sparkpostWebhooks: typeof import('../../server/controllers/sparkpost-webhooks.server.controller.mts').default = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
+import should from 'should';
+import influx from 'influx';
+import sinon, { type SinonStub } from 'sinon';
+import config from './../../../../config/config.mts';
+import sparkpostWebhooks from './../../server/controllers/sparkpost-webhooks.server.controller.mts';
 
 interface SparkpostEvent {
   msys?: Record<string, Record<string, unknown>>;
