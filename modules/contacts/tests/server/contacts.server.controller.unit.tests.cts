@@ -159,6 +159,8 @@ describe('Contacts controller unit tests', () => {
         ];
         await blockedBy.save();
         const email = sinon.spy(emailService, 'sendConfirmContact');
+        const contactLookup = sinon.spy(Contact, 'findOne');
+        const saveContact = sinon.spy(Contact.prototype, 'save');
         const { res } = await runHandler(res =>
           contactsController.add(
             {
@@ -171,6 +173,10 @@ describe('Contacts controller unit tests', () => {
         res.statusCode.should.equal(403);
         (await Contact.countDocuments()).should.equal(0);
         email.called.should.be.false();
+        if (blocker === 'sender') {
+          contactLookup.called.should.be.false();
+        }
+        saveContact.called.should.be.false();
       });
     }
     it('removes the new request if the sender session predates a block', async () => {
