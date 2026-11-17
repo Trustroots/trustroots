@@ -1,11 +1,11 @@
 /**
  * Offers controller behaviour when the underlying Mongoose calls reject.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
+import mongoose from 'mongoose';
+import sinon from 'sinon';
 
-const offersController = require('./../../server/controllers/offers.server.controller.mjs');
-const should: typeof import('should') = require('should');
+import offersController from './../../server/controllers/offers.server.controller.mts';
+import should from 'should';
 
 const Offer =
   mongoose.model<

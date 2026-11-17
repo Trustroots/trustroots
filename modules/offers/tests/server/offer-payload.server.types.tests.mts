@@ -1,12 +1,12 @@
-const assert: typeof import('assert/strict') = require('assert/strict');
-const { execFileSync } = require('child_process');
-const path: typeof import('path') = require('path');
+import assert from 'assert/strict';
+import { execFileSync } from 'child_process';
+import path from 'path';
 
 describe(
   'Offer API contract compiler regressions',
   { timeout: 30000 },
   function () {
-    const root = path.resolve(__dirname, '../../../..');
+    const root = path.resolve(import.meta.dirname, '../../../..');
     const implementation =
       'modules/offers/server/services/offer-payload.server.service.mts';
 

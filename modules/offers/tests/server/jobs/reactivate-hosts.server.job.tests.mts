@@ -2,7 +2,6 @@ import type {
   OfferDocument,
   OfferModel,
   OfferRecord,
-  TestConfigModule,
   UserModelDocument,
   UserModel,
   UserRecord,
@@ -10,11 +9,12 @@ import type {
 /**
  * Module dependencies.
  */
-const should: typeof import('should') = require('should');
-const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
-const config: TestConfigModule = require('./../../../../../config/config.mts');
-const moment: typeof import('moment') = require('moment');
-const mongoose: typeof import('mongoose') = require('mongoose');
+import should from 'should';
+import * as testutils from '../../../../../testutils/server/server.testutil.mts';
+import config from './../../../../../config/config.mts';
+import moment from 'moment';
+import mongoose from 'mongoose';
+import reactivateHostsJobHandler from '../../../server/jobs/reactivate-hosts.server.job.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
@@ -25,17 +25,12 @@ let user: UserModelDocument;
 let _user: UserRecord;
 let offerHost: OfferDocument;
 let _offerHost: OfferRecord;
-let reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').run;
 
 describe('Job: reactivate members with hosting offer status set to "no"', function () {
   const jobs = testutils.catchJobs<{
     subject: string;
     to: { address: string };
   }>();
-
-  before(function () {
-    reactivateHostsJobHandler = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
-  });
 
   // Create user
   beforeEach(function (done) {

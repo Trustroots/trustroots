@@ -1,9 +1,10 @@
+import mockModule from '../../../../testutils/server/mock-module.mts';
+import sinon from 'sinon';
+import 'should';
 let policyModule: typeof import('../../server/policies/offers.server.policy.mts');
 before(async function () {
   policyModule = await import('../../server/policies/offers.server.policy.mts');
 });
-const sinon: typeof import('sinon') = require('sinon');
-require('should');
 interface PolicyResponseDouble {
   statusCode: number;
   body: { message: string } | null;
@@ -74,10 +75,15 @@ describe('Offers policy unit tests', () => {
     ]);
   });
 
-  it('answers 500 when the ACL check fails', () => {
+  it('answers 500 when the ACL check fails', async () => {
     // A fresh copy of the policy, so its route authorisation is built in this test.
-    const policy = require('../../../../testutils/server/mock-module')(
-      require.resolve('../../server/policies/offers.server.policy.mts'),
+    const { default: policy } = await mockModule<
+      typeof import('../../server/policies/offers.server.policy.mts')
+    >(
+      new URL(
+        '../../server/policies/offers.server.policy.mts',
+        import.meta.url,
+      ),
       {
         './../../../core/server/services/memory-policy.server.service.mts':
           () => ({
@@ -85,7 +91,7 @@ describe('Offers policy unit tests', () => {
             areAnyRolesAllowed: sinon.stub().yields(new Error('acl down')),
           }),
       },
-    ) as typeof policyModule.default;
+    );
     const res = mockResponse();
     const next = sinon.stub();
 

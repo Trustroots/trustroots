@@ -1,7 +1,7 @@
-const moment: typeof import('moment') = require('moment');
-require('should');
+import moment from 'moment';
+import 'should';
 
-const normaliseOfferExpiry: typeof import('../../server/services/offer-expiry.server.service.mts').default = require('./../../server/services/offer-expiry.server.service.mjs');
+import normaliseOfferExpiry from './../../server/services/offer-expiry.server.service.mts';
 
 describe('Offer expiry service', () => {
   const now = new Date('2026-04-10T12:00:00.000Z');

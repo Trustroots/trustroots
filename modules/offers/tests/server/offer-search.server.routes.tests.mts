@@ -1,9 +1,7 @@
-import type { HydratedDocument } from 'mongoose';
 import type {
   Credentials,
   TestAgent,
   TestExpressApp,
-  TestExpressModule,
   TribeDocument,
   TribeModel,
   TribeRecord,
@@ -12,13 +10,13 @@ import type {
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
 import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
-const _: typeof import('lodash') = require('lodash');
-const should: typeof import('should') = require('should');
-const request: typeof import('supertest') = require('supertest');
-const moment: typeof import('moment') = require('moment');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import _ from 'lodash';
+import should from 'should';
+import request from 'supertest';
+import moment from 'moment';
+import mongoose, { type HydratedDocument } from 'mongoose';
+import express from './../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferServerRecord>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');

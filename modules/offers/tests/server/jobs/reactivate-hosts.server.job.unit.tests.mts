@@ -2,7 +2,6 @@ import type {
   OfferDocument,
   OfferModel,
   OfferRecord,
-  TestConfigModule,
   UserModelDocument,
   UserModel,
   UserRecord,
@@ -10,16 +9,16 @@ import type {
 /**
  * Unit tests for uncovered reactivate-hosts job error paths.
  */
-const sinon: typeof import('sinon') = require('sinon');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const winston: typeof import('winston') = require('winston');
+import sinon from 'sinon';
+import mongoose from 'mongoose';
+import winston from 'winston';
 
-const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
-const reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').default = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
-const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
-const config: TestConfigModule = require('./../../../../../config/config.mts');
-const moment: typeof import('moment') = require('moment');
-const should: typeof import('should') = require('should');
+import emailService from './../../../../core/server/services/email.server.service.mts';
+import reactivateHostsJobHandler from './../../../server/jobs/reactivate-hosts.server.job.mts';
+import * as testutils from '../../../../../testutils/server/server.testutil.mts';
+import config from './../../../../../config/config.mts';
+import moment from 'moment';
+import should from 'should';
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');

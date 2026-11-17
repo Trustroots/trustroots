@@ -1,12 +1,13 @@
-const assert: typeof import('assert/strict') = require('assert/strict');
-const { ObjectId } = require('mongoose').Types;
-const {
+import assert from 'assert/strict';
+import { Types } from 'mongoose';
+import {
   prepareNewOffer,
   prepareOfferMutationResponse,
   prepareOfferPayload,
   prepareOfferSearchResults,
   prepareOfferUpdate,
-} = require('../../server/services/offer-payload.server.service.mts');
+} from '../../server/services/offer-payload.server.service.mts';
+const { ObjectId } = Types;
 
 describe('Offer API payload construction', () => {
   it('projects only the public offer fields', () => {
@@ -28,7 +29,7 @@ describe('Offer API payload construction', () => {
       privateField: 'Internal data',
     };
 
-    assert.deepEqual(prepareOfferPayload(offer), {
+    assert.deepEqual(prepareOfferPayload(offer as never), {
       _id: offer._id,
       type: offer.type,
       status: offer.status,
@@ -51,7 +52,7 @@ describe('Offer API payload construction', () => {
       user: 'fictional-member',
       location: [5, 7],
     };
-    assert.deepEqual(prepareOfferPayload(minimalOffer), minimalOffer);
+    assert.deepEqual(prepareOfferPayload(minimalOffer as never), minimalOffer);
 
     const offer = {
       _id: 'offer-2',
@@ -65,7 +66,7 @@ describe('Offer API payload construction', () => {
       updated: '2026-01-03T12:00:00.000Z',
       showOnlyInMyCircles: false,
     };
-    assert.deepEqual(prepareOfferPayload(offer), offer);
+    assert.deepEqual(prepareOfferPayload(offer as never), offer);
   });
 
   it('selects only writable fields and includes type only on create', () => {
@@ -81,7 +82,7 @@ describe('Offer API payload construction', () => {
       user: 'ignored-member-id',
       locationFuzzy: [12.1, 34.1],
     };
-    assert.deepEqual(prepareNewOffer(request), {
+    assert.deepEqual(prepareNewOffer(request as never), {
       type: 'meet',
       status: 'maybe',
       description: 'A fictional offer.',
@@ -91,7 +92,7 @@ describe('Offer API payload construction', () => {
       validUntil: '2026-02-01T12:00:00.000Z',
       showOnlyInMyCircles: true,
     });
-    assert.deepEqual(prepareOfferUpdate(request), {
+    assert.deepEqual(prepareOfferUpdate(request as never), {
       status: 'maybe',
       description: 'A fictional offer.',
       noOfferDescription: 'A fictional availability note.',
@@ -116,8 +117,14 @@ describe('Offer API payload construction', () => {
         location: [12, 34] as [number, number],
         meetingStatus,
       };
-      assert.equal(prepareNewOffer(request).meetingStatus, meetingStatus);
-      assert.equal(prepareOfferUpdate(request).meetingStatus, meetingStatus);
+      assert.equal(
+        prepareNewOffer(request as never).meetingStatus,
+        meetingStatus,
+      );
+      assert.equal(
+        prepareOfferUpdate(request as never).meetingStatus,
+        meetingStatus,
+      );
       assert.equal(
         prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
           .meetingStatus,

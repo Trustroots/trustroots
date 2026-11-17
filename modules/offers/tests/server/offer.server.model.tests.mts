@@ -1,4 +1,3 @@
-import type { HydratedDocument } from 'mongoose';
 import type {
   UserModel,
   UserModelDocument,
@@ -8,9 +7,9 @@ import type { OfferServerRecord } from '../../server/models/offer.server.types.m
 /**
  * Module dependencies.
  */
-const should: typeof import('should') = require('should');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+import should from 'should';
+import mongoose, { type HydratedDocument } from 'mongoose';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferServerRecord>('Offer');
 /**

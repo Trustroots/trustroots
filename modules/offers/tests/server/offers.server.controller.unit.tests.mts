@@ -1,8 +1,8 @@
+import moment from 'moment';
 import type {
   OfferDocument,
   OfferModel,
   OfferRecord,
-  TestConfigModule,
   UserDocument,
   UserModel,
   UserRecord,
@@ -13,16 +13,16 @@ import type { OfferPayload } from '../../shared/offer.js';
  * branches that the route tests do not exercise. Handlers are invoked directly
  * with mock req/res/next against the test database.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
+import mongoose from 'mongoose';
 
-const sinon: typeof import('sinon') = require('sinon');
-const winston: typeof import('winston') = require('winston');
+import sinon from 'sinon';
+import winston from 'winston';
 
-const config: TestConfigModule = require('./../../../../config/config.mts');
-const offersController: typeof import('./../../server/controllers/offers.server.controller.mjs') = require('./../../server/controllers/offers.server.controller.mjs');
-const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const should: typeof import('should') = require('should');
+import config from './../../../../config/config.mts';
+import offersController from './../../server/controllers/offers.server.controller.mts';
+import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import should from 'should';
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
@@ -397,7 +397,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('updates the optional offer fields accepted by the endpoint', async () => {
-      const validUntil = require('moment')().add(5, 'days').toISOString();
+      const validUntil = moment().add(5, 'days').toISOString();
       const { res } = await runHandler(res =>
         offersController.update(
           {
@@ -465,7 +465,7 @@ describe('Offers controller unit tests', () => {
       const offerReq = populatedOffer(
         await Offer.findById(hostOffer._id).populate('user', '_id'),
       );
-      const validUntil = require('moment')().add(10, 'days').toISOString();
+      const validUntil = moment().add(10, 'days').toISOString();
 
       const { res } = await runHandler(res =>
         offersController.update(
