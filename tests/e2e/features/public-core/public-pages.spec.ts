@@ -1,5 +1,6 @@
 import {
   annotateFeature,
+  captureSection,
   expectPresent,
   test,
   expect,
@@ -8,6 +9,21 @@ import {
 import { createUser, waitForTribesList } from '../../support/helpers.mts';
 
 test.describe('public pages and unauthenticated flows', () => {
+  test('visitors can filter the language picker by typing', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'English', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Select a language' });
+    const search = dialog.getByRole('searchbox', { name: 'Search languages…' });
+
+    await search.pressSequentially('English');
+    await expect(search).toHaveValue('English');
+    await expect(dialog.getByText('English', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('Français', { exact: true })).toHaveCount(0);
+    await captureSection(dialog, 'language-picker-filtered');
+  });
+
   test('team page links to a public greeter roster and recruitment form', async ({
     page,
   }, testInfo) => {

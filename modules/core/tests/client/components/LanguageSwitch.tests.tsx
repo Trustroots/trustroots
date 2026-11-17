@@ -35,6 +35,7 @@ describe('default presentation', () => {
       'placeholder',
       'Search languages…',
     );
+    expect(screen.getByRole('searchbox')).not.toHaveClass('form-control');
     expect(
       screen.getByRole('searchbox', { name: 'Search languages…' }),
     ).toBeInTheDocument();
