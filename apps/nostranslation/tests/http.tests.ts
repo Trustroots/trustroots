@@ -32,6 +32,17 @@ function sign(body: string) {
   return 'Nostr ' + Buffer.from(JSON.stringify(event)).toString('base64');
 }
 
+function waitForSignalOrRequestFailure<T>(
+  signal: Promise<T>,
+  request: Promise<unknown>,
+) {
+  const requestFailure = request.then(
+    () => new Promise<never>(() => {}),
+    error => Promise.reject(error),
+  );
+  return Promise.race([signal, requestFailure]);
+}
+
 describe('review API', () => {
   let store: Store;
   let server: Server | undefined;
@@ -102,12 +113,12 @@ describe('review API', () => {
     const first = request(server)
       .get('/api/languages')
       .then(result => result);
-    const finish = await started;
+    const finish = await waitForSignalOrRequestFailure(started, first);
     const arrived = once(server, 'request');
     const second = request(server)
       .get('/api/languages')
       .then(result => result);
-    await arrived;
+    await waitForSignalOrRequestFailure(arrived, second);
     finish(snapshot().languages);
     expect((await first).status).toBe(200);
     expect((await second).status).toBe(200);
