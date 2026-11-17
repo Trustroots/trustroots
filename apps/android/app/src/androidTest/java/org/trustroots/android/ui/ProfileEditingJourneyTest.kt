@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -176,7 +177,7 @@ class ProfileEditingJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Availability").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithContentDescription("Cancel").performClick()
         compose.onNodeWithText("Edit your profile").assertIsDisplayed().performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
         assertEquals("The hosting editor loads its own profile; profile editing uses the retained snapshot", 2, profileLoads.get())
