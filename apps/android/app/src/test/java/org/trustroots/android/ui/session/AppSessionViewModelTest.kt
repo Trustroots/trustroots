@@ -59,7 +59,7 @@ class AppSessionViewModelTest {
         assertEquals(session(), model.state.value.session)
         assertEquals("Quiet", model.state.value.startupFirstName)
         assertEquals(1, operations.loadCalls)
-        assertEquals(listOf(700L), waits)
+        assertEquals(listOf(2_000L), waits)
     }
 
     @Test
@@ -95,7 +95,7 @@ class AppSessionViewModelTest {
     }
 
     @Test
-    fun restoreThatTakesLongerThanTheMinimumDoesNotAddAnotherDelay() = withScope { scope ->
+    fun slowSessionRestoreStillShowsThePersonalisedGreetingForTwoSeconds() = withScope { scope ->
         var now = 2_000L
         val operations = FakeOperations().apply {
             loadAction = { now = 2_900L; session() }
@@ -110,8 +110,51 @@ class AppSessionViewModelTest {
         )
 
         assertFalse(model.state.value.isStarting)
-        assertTrue(waits.isEmpty())
+        assertEquals(listOf(2_000L), waits)
         assertEquals(session(), model.state.value.session)
+    }
+
+    @Test
+    fun slowSignedOutRestoreDoesNotAddAnotherDelay() = withScope { scope ->
+        var now = 0L
+        val waits = mutableListOf<Long>()
+        val operations = FakeOperations().apply { loadAction = { now = 900L; null } }
+        val model = AppSessionViewModel(
+            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
+            elapsedRealtime = { now }, wait = { waits += it },
+        )
+        assertFalse(model.state.value.isStarting)
+        assertNull(model.state.value.session)
+        assertTrue(waits.isEmpty())
+    }
+
+    @Test
+    fun fastSignedOutRestoreRetainsTheExistingMinimum() = withScope { scope ->
+        var now = 0L
+        val waits = mutableListOf<Long>()
+        val operations = FakeOperations().apply { loadAction = { now = 100L; null } }
+        val model = AppSessionViewModel(
+            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
+            elapsedRealtime = { now }, wait = { waits += it },
+        )
+        assertFalse(model.state.value.isStarting)
+        assertNull(model.state.value.session)
+        assertEquals(listOf(600L), waits)
+    }
+
+    @Test
+    fun signOutDuringGreetingCannotBeUndoneByTheOldTimer() = withScope { scope ->
+        val finishGreeting = CompletableDeferred<Unit>()
+        val operations = FakeOperations().apply { restoredSession = session() }
+        val model = AppSessionViewModel(
+            operations = operations, scope = scope, ioDispatcher = Dispatchers.Unconfined,
+            elapsedRealtime = { 0L }, wait = { withContext(NonCancellable) { finishGreeting.await() } },
+        )
+        assertTrue(model.state.value.isStarting)
+        model.onEvent(AppSessionEvent.SignedOut(AppSessionSource.from(session(), "")))
+        finishGreeting.complete(Unit)
+        assertFalse(model.state.value.isStarting)
+        assertNull(model.state.value.session)
     }
 
     @Test

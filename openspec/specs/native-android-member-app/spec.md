@@ -521,8 +521,8 @@ remain runtime-only outside the existing encrypted `SecureMobileSessionStore`.
   result
 - **THEN** it reads `SecureMobileSessionStore` once on an IO dispatcher
 - **AND** an absent or unreadable stored session resolves to signed out
-- **AND** Startup is displayed for at least 700 ms measured from the start of
-  restoration, unless restoration itself takes longer
+- **AND** signed-out Startup retains its minimum of 700 ms measured from the start of restoration
+- **AND** a restored signed-in member sees the personalised greeting for at least two seconds after their session is loaded
 - **AND** a valid stored session is used without an additional remote
   validation request before the authenticated shell is shown
 
@@ -2092,3 +2092,22 @@ Android profile experiences SHALL separate original feedback from its response u
 
 - **WHEN** an experience lacks role or recommendation data
 - **THEN** no hosting role is inferred and recommendation styling remains neutral
+
+### Requirement: Android fresh sign-in destination
+
+The Android app SHALL open Messages after a successful fresh sign-in. It SHALL preserve restored navigation and explicit message destinations, and SHALL retain sign-up onboarding.
+
+#### Scenario: Member signs in
+
+- **WHEN** a member successfully signs in
+- **THEN** Messages opens without an additional navigation action
+
+#### Scenario: Member already has a destination
+
+- **WHEN** an authenticated navigation stack is restored or a message alert supplies a conversation destination
+- **THEN** that destination takes precedence over the initial destination
+
+#### Scenario: Member signs up
+
+- **WHEN** a member creates an account
+- **THEN** the existing sign-up onboarding remains available

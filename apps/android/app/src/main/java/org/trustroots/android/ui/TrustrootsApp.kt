@@ -131,6 +131,7 @@ internal fun TrustrootsApp(
     }
     val sessionState by sessionViewModel.state.collectAsState()
     var onboardingUsername by rememberSaveable(apiBaseUrl) { mutableStateOf<String?>(null) }
+    var initialMemberDestination by rememberSaveable(apiBaseUrl) { mutableStateOf(Destination.Circles) }
     val session = sessionState.session
     val starting = sessionState.isStarting
     val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
@@ -159,10 +160,12 @@ internal fun TrustrootsApp(
                 initialMessage = sessionState.signedOutMessage,
                 browserContent = browserContent,
                 onSignedUp = {
+                    initialMemberDestination = Destination.Circles
                     onboardingUsername = it.member.username
                     sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
                 },
                 onSignedIn = {
+                    initialMemberDestination = Destination.Messages
                     onboardingUsername = null
                     sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
                 },
@@ -206,6 +209,7 @@ internal fun TrustrootsApp(
                             )
                         } else {
                             MemberShell(
+                                initialDestination = initialMemberDestination,
                                 analytics = analytics,
                                 session = activeSession,
                                 sessionStore = sessionStore,
@@ -258,6 +262,7 @@ internal fun currentMemberTab(backStack: List<NavKey>): MemberTabVisit =
 
 @Composable
 private fun MemberShell(
+    initialDestination: Destination,
     analytics: UsageAnalytics,
     session: MemberSession,
     sessionStore: SecureMobileSessionStore,
@@ -272,7 +277,8 @@ private fun MemberShell(
     val context = LocalContext.current
     val nostrootsTitle = stringResource(R.string.screen_nostroots)
     val resetPasswordTitle = stringResource(R.string.screen_reset_password)
-    val tabBackStack = rememberNavBackStack(MemberTabVisit(Destination.Circles, 0))
+    // Seed only a new shell; saved visits and explicit alert destinations keep precedence.
+    val tabBackStack = rememberNavBackStack(MemberTabVisit(initialDestination, 0))
     val activeTab = currentMemberTab(tabBackStack)
     val destination = activeTab.destination
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }

@@ -157,7 +157,10 @@ internal class AppSessionViewModel(
             val restored = withContext(ioDispatcher) { operations.loadSession() }
             currentCoroutineContext().ensureActive()
             mutableState.value = mutableState.value.copy(session = restored)
-            val remaining = STARTUP_MINIMUM_MS - (elapsedRealtime() - startedAt)
+            // Measure the personalised greeting after restoration, so slow storage or
+            // token refresh cannot consume the time in which the name is visible.
+            val remaining = if (restored != null) RETURNING_MEMBER_GREETING_MS
+                else STARTUP_MINIMUM_MS - (elapsedRealtime() - startedAt)
             if (remaining > 0) wait(remaining)
             currentCoroutineContext().ensureActive()
             mutableState.value = mutableState.value.copy(isStarting = false)
@@ -240,6 +243,7 @@ internal class AppSessionViewModel(
 
     private companion object {
         const val STARTUP_MINIMUM_MS = 700L
+        const val RETURNING_MEMBER_GREETING_MS = 2_000L
     }
 }
 
