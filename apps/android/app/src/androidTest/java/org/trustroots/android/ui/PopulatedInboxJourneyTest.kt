@@ -260,7 +260,7 @@ class PopulatedInboxJourneyTest {
         compose.runOnIdle {
             MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_registration_failed)
         }
-        compose.onNodeWithText("Could not register this distributor endpoint with Trustroots.")
+        compose.onNodeWithText("Then turn alerts off and back on in Account → Message alerts.", substring = true)
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("inboxMessageAlertsStatus").performScrollTo().assertIsDisplayed()
     }

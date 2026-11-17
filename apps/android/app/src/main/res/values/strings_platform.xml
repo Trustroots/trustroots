@@ -2,7 +2,7 @@
 <resources>
     <string name="browser_external_website_title">Open external website?</string>
     <string name="browser_open_external">Open</string>
-    <string name="message_alerts_registration_failed">Could not register this distributor endpoint with Trustroots.</string>
+    <string name="message_alerts_registration_failed">Trustroots could not register your push distributor. Check that your distributor app is connected, or try ntfy with its default server. Then turn alerts off and back on in Account → Message alerts.</string>
     <string name="message_alerts_ready">Message alerts are ready.</string>
     <string name="message_alerts_not_configured">Message alerts are not configured on this server.</string>
     <string name="message_alerts_install_distributor">To get alerts on this device, install a UnifiedPush distributor such as ntfy. Email reminders are still available.</string>

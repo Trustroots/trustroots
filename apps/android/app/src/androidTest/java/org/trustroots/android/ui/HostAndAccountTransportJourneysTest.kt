@@ -350,8 +350,8 @@ class HostAndAccountTransportJourneysTest {
             "Account", "Email", "Email address", "Community newsletter", "Save email settings",
             "Change password", "Current password", "New password", "Verify new password",
             "Change password", "Forgot your password?", "Message alerts",
-            "Receive an alert when a new message arrives. Trustroots can deliver alerts through Google Play Services or an installed UnifiedPush distributor.",
-            "Turn on message alerts", "Sign out", "Usage analytics", "Check account", "Saving…", "Account saved.",
+            "To get new message alerts, install and open a UnifiedPush app such as ntfy. Then come back here and turn on message alerts.",
+            "Install and set up ntfy", "Turn on message alerts", "Sign out", "Usage analytics", "Check account", "Saving…", "Account saved.",
         )
     }
 }

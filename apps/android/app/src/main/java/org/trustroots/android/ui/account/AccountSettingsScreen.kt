@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -86,6 +87,7 @@ internal fun AccountSettingsScreen(
     },
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val owner = requireNavigationViewModelStoreOwner("Account must be hosted by its decorated Menu Navigation 3 entry.")
     val platform = remember(context.applicationContext, previewUpdateAlerts, isUpdateAlertsEnabled, setUpdateAlertsEnabled, checkPreviewUpdates, disableMessageAlerts) {
         AndroidAccountPlatformSettings(
@@ -276,6 +278,12 @@ internal fun AccountSettingsScreen(
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
                 Text(messageAlertsTitle, style = MaterialTheme.typography.titleMedium)
                 Text(messageAlertsDescription)
+                TextButton(
+                    onClick = { uriHandler.openUri("https://unifiedpush.org/users/distributors/ntfy/#ntfy-quickstart-guide") },
+                    contentPadding = PaddingValues(horizontal = 0.dp),
+                ) {
+                    Text(stringResource(R.string.screen_ntfy_setup_guide))
+                }
                 Button(onClick = { viewModel.onEvent(AccountEvent.ToggleMessageAlerts(context.canPostNotifications())) }) {
                     Text(if (state.messageAlertsEnabled) turnOffMessageAlerts else turnOnMessageAlerts)
                 }
