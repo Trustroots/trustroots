@@ -1,14 +1,16 @@
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import referenceController from './../../server/controllers/reference-thread.server.controller.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import should from 'should';
+import {
+  deferredResponse,
+  type DeferredResponse,
+} from '../../../../testutils/server/response.server.testutil.mts';
 /**
  * Reference thread controller behaviour when the underlying Mongoose calls
  * reject.
  */
-import type { DeferredResponse } from '../../../../testutils/server/response.server.testutil.mts';
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-
-const referenceController = require('./../../server/controllers/reference-thread.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should: typeof import('should') = require('should');
 
 const Thread =
   mongoose.model<
@@ -18,10 +20,6 @@ const Message =
   mongoose.model<
     import('../../../../testutils/server/model-contracts.mts').MessageRecord
   >('Message');
-
-const {
-  deferredResponse,
-}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 describe('Reference thread controller mongoose error handling', () => {
   let author: import('../../../../testutils/server/model-contracts.mts').UserDocument;

@@ -1,11 +1,12 @@
+import sinon from 'sinon';
+import 'should';
+import mockModule from '../../../../testutils/server/mock-module.mts';
 let policyModule: typeof import('../../server/policies/reference-thread.server.policy.mts');
 before(async function () {
   policyModule =
     await import('../../server/policies/reference-thread.server.policy.mts');
 });
-const sinon: typeof import('sinon') = require('sinon');
-const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
-require('should');
+
 interface PolicyResponseDouble {
   statusCode: number;
   body: { message: string } | null;
@@ -226,10 +227,13 @@ describe('Reference thread policy unit tests', () => {
     });
   });
 
-  it('sends the unexpected authorization error as a 500 message', () => {
+  it('sends the unexpected authorization error as a 500 message', async () => {
     // A fresh copy of the policy, so its route authorisation is built in this test.
-    const freshPolicy = proxyquire<typeof policyModule.default>(
-      require.resolve('../../server/policies/reference-thread.server.policy.mts'),
+    const { default: freshPolicy } = await mockModule<typeof policyModule>(
+      new URL(
+        '../../server/policies/reference-thread.server.policy.mts',
+        import.meta.url,
+      ),
       {
         './../../../core/server/services/memory-policy.server.service.mts':
           () => ({

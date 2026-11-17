@@ -1,3 +1,9 @@
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import referenceController from './../../server/controllers/reference-thread.server.controller.mts';
+import statService from './../../../stats/server/services/stats.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import mockModule from '../../../../testutils/server/mock-module.mts';
 import type {
   MessageDocument,
   MessageModel,
@@ -14,14 +20,8 @@ import type {
 /**
  * Unit tests for reference-thread controller guard and validation branches.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
 
-const referenceController: typeof import('./../../server/controllers/reference-thread.server.controller.mjs') = require('./../../server/controllers/reference-thread.server.controller.mjs');
-const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
-const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
-require('should');
+import 'should';
 
 const ReferenceThread = mongoose.model<
   ReferenceThreadRecord,
@@ -110,9 +110,16 @@ function deferredResponse(): DeferredResponse {
 }
 
 type LogEntry = { level: string; message: string; detail?: unknown };
-function loadControllerWithLog(logged: LogEntry[]): ReferenceController {
-  return proxyquire<ReferenceController>(
-    require.resolve('./../../server/controllers/reference-thread.server.controller.mts'),
+async function loadControllerWithLog(
+  logged: LogEntry[],
+): Promise<ReferenceController> {
+  const { default: controller } = await mockModule<{
+    default: ReferenceController;
+  }>(
+    new URL(
+      './../../server/controllers/reference-thread.server.controller.mts',
+      import.meta.url,
+    ),
     {
       './../../../../config/lib/logger.mjs': (
         level: string,
@@ -123,6 +130,7 @@ function loadControllerWithLog(logged: LogEntry[]): ReferenceController {
       },
     },
   );
+  return controller;
 }
 
 async function createThreadWithMessage(
@@ -417,7 +425,7 @@ describe('Reference thread controller unit tests', () => {
 
       const logged: LogEntry[] = [];
       const res = deferredResponse();
-      loadControllerWithLog(logged).createReferenceThread(
+      (await loadControllerWithLog(logged)).createReferenceThread(
         {
           user: author,
           body: { userTo: other._id.toString(), feedback: 'Great guest' },
@@ -452,7 +460,7 @@ describe('Reference thread controller unit tests', () => {
 
       const logged: LogEntry[] = [];
       const res = deferredResponse();
-      loadControllerWithLog(logged).createReferenceThread(
+      (await loadControllerWithLog(logged)).createReferenceThread(
         {
           user: author,
           body: { userTo: other._id.toString(), reference: 'yes' },
