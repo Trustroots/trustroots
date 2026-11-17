@@ -68,6 +68,7 @@ class MemberProfileActionRoutesJourneyTest {
         compose.setContent { showProfile() }
 
         waitForEnabledText("Send a message")
+        compose.onNodeWithText("Edit hosting").assertDoesNotExist()
         compose.onNodeWithText("Send a message").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.path == "/api/messages/member-two?limit=100" } &&

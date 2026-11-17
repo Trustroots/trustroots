@@ -35,3 +35,6 @@ internal data class ProfileBrowserVisit(
     val memberID: String,
     val visitID: Long,
 ) : NavKey
+
+@Serializable
+internal data class MemberProfileHostingVisit(val parentVisitID: Long, val visitID: Long) : NavKey

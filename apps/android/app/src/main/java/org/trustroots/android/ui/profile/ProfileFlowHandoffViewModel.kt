@@ -19,6 +19,7 @@ internal sealed interface ProfileFlowCompletion {
     val deliveryID: Long
 
     data class ProfileSaved(override val deliveryID: Long, val profile: MemberProfile) : ProfileFlowCompletion
+    data class HostingClosed(override val deliveryID: Long) : ProfileFlowCompletion
     data class ExperienceCreated(override val deliveryID: Long) : ProfileFlowCompletion
 }
 
@@ -30,6 +31,7 @@ internal fun deliverProfileFlowCompletion(
     val deliveryID = completion?.deliveryID ?: return
     when (val pending = consume(deliveryID) ?: return) {
         is ProfileFlowCompletion.ProfileSaved -> onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
+        is ProfileFlowCompletion.HostingClosed -> onEvent(MemberProfileEvent.RefreshHosting)
         is ProfileFlowCompletion.ExperienceCreated -> onEvent(MemberProfileEvent.RefreshReferences)
     }
 }
@@ -92,6 +94,12 @@ internal class ProfileFlowHandoffViewModel : ViewModel() {
     fun completeExperienceCreated(parentVisitID: Long, expectedEnvironment: ProfileFlowEnvironment) {
         if (cleared || environment != expectedEnvironment) return
         val completion = ProfileFlowCompletion.ExperienceCreated(++nextCompletionID)
+        update(parentVisitID) { it.copy(completion = completion) }
+    }
+
+    fun completeHostingClosed(parentVisitID: Long, expectedEnvironment: ProfileFlowEnvironment) {
+        if (cleared || environment != expectedEnvironment) return
+        val completion = ProfileFlowCompletion.HostingClosed(++nextCompletionID)
         update(parentVisitID) { it.copy(completion = completion) }
     }
 

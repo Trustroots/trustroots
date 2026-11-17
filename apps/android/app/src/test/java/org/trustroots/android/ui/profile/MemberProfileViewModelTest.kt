@@ -1133,6 +1133,40 @@ class MemberProfileViewModelTest {
         assertFalse(model.state.value.isRemovingContact)
     }
 
+    @Test
+    fun hostingRefreshUpdatesOnlyHostingAndPreservesItOnTransientFailure() {
+        val repository = FakeMemberProfileRepository()
+        val model = newModel("quiet-fox", repository)
+        val updated = AccommodationOffer("offer-fox", "no", null, "Away for now", 2)
+        repository.hostingResult = Result.success(updated)
+        model.onEvent(MemberProfileEvent.RefreshHosting)
+        assertEquals(updated, model.state.value.hosting)
+        assertEquals(2, repository.hostingCalls)
+        assertEquals(1, repository.profileCalls)
+        assertEquals(1, repository.contactsCalls)
+        assertEquals(1, repository.referenceCalls)
+        repository.hostingResult = Result.failure(IOException("Temporary hosting lookup failure"))
+        model.onEvent(MemberProfileEvent.RefreshHosting)
+        assertEquals(updated, model.state.value.hosting)
+        assertTrue(model.state.value.hostingLoaded)
+        repository.hostingResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+        model.onEvent(MemberProfileEvent.RefreshHosting)
+        assertTrue(model.state.value.pendingSessionInvalidation != null)
+        val requests = repository.hostingCalls
+        model.onEvent(MemberProfileEvent.RefreshHosting)
+        assertEquals(requests, repository.hostingCalls)
+    }
+
+    @Test
+    fun hostingRefreshWithoutMemberIDDoesNotRequestHosting() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
+        }
+        val model = newModel("quiet-fox", repository)
+        model.onEvent(MemberProfileEvent.RefreshHosting)
+        assertEquals(0, repository.hostingCalls)
+    }
+
     private fun newModel(
         username: String,
         repository: FakeMemberProfileRepository,

@@ -83,6 +83,7 @@ import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.common.memberLastActiveLabel
 import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 import org.trustroots.android.ui.circles.CircleDetailVisit
 import org.trustroots.android.ui.circledetail.CircleDetailEntry
@@ -109,6 +110,9 @@ internal fun MemberProfileScreen(
     val popProfile: () -> Unit = {
         if (backStack.size > 1) {
             val removed = backStack.lastOrNull()
+            if (removed is MemberProfileHostingVisit) {
+                handoffViewModel.completeHostingClosed(removed.parentVisitID, handoffEnvironment)
+            }
             if (removed is MemberProfileVisit) {
                 handoffViewModel.removeProfileVisit(removed.visitID)
             }
@@ -150,6 +154,7 @@ internal fun MemberProfileScreen(
                     onOpenContactBrowser = pushContactBrowser,
                     onOpenCircle = { slug -> backStack.add(CircleDetailVisit(slug, nextVisitID++)) },
                     isActiveProfileRoute = isActiveRoute.value,
+                    onOpenEditHosting = { backStack.add(MemberProfileHostingVisit(route.visitID, nextVisitID++)) },
                     onOpenEditProfile = { backStack.add(MemberProfileEditVisit(route.username, route.visitID, nextVisitID++)) },
                     onOpenExperience = { memberID -> backStack.add(MemberProfileExperienceVisit(route.username, memberID, route.visitID, nextVisitID++)) },
                     onDisplayNameChanged = { handoffViewModel.retainDisplayName(route.visitID, it, handoffEnvironment) },
@@ -165,6 +170,15 @@ internal fun MemberProfileScreen(
                     contentPadding = contentPadding, onBack = popProfile,
                     onMembershipChanged = { _, _ -> },
                     onOpenProfile = { related -> backStack.add(MemberProfileVisit(related, nextVisitID++)) },
+                )
+            }
+            entry<MemberProfileHostingVisit> {
+                HostOfferScreen(
+                    api = api,
+                    session = session,
+                    onSessionInvalidated = onSessionInvalidated,
+                    onBack = popProfile,
+                    contentPadding = contentPadding,
                 )
             }
             entry<MemberProfileEditVisit> { route ->
@@ -238,6 +252,7 @@ private fun MemberProfileContent(
     onOpenCircle: (String) -> Unit,
     isActiveProfileRoute: Boolean,
     onOpenEditProfile: () -> Unit,
+    onOpenEditHosting: () -> Unit,
     onOpenExperience: (String) -> Unit,
     onDisplayNameChanged: (String) -> Unit,
     onProfileChanged: (MemberProfile) -> Unit,
@@ -475,6 +490,7 @@ private fun MemberProfileContent(
                                     isSelf = isSelf,
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
+                                    onEditHosting = onOpenEditHosting,
                                     onMessage = { member.id?.let(onOpenConversation) },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactAction = contactAction,

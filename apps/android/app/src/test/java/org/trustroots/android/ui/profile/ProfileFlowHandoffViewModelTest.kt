@@ -86,6 +86,23 @@ class ProfileFlowHandoffViewModelTest {
     }
 
     @Test
+    fun closingHostingRefreshesOnlyItsParentAndIsConsumedOnce() {
+        val model = ProfileFlowHandoffViewModel()
+        val api = MobileApiClient("https://api.example.invalid")
+        val session = MemberSession("fictional-cookie", MobileMember("member-self", "Member Self"))
+        val environment = ProfileFlowEnvironment(api.backendURL, session.member.username, session.cookieHeader)
+        model.updateEnvironment(api, session)
+        model.completeHostingClosed(12L, environment)
+        val completion = requireNotNull(model.handoffs.value[12L]?.completion)
+        val events = mutableListOf<MemberProfileEvent>()
+        assertNull(model.consumeCompletion(13L, completion.deliveryID))
+        repeat(2) {
+            deliverProfileFlowCompletion(completion, { model.consumeCompletion(12L, it) }, events::add)
+        }
+        assertEquals(listOf(MemberProfileEvent.RefreshHosting), events)
+    }
+
+    @Test
     fun profileSnapshotAndDisplayNameStayWithVisitAndClearWhenRuntimeEnvironmentChanges() {
         val model = ProfileFlowHandoffViewModel()
         val api = MobileApiClient("https://api.example.invalid")
@@ -180,6 +197,7 @@ class ProfileFlowHandoffViewModelTest {
         model.retainDisplayName(10L, "Stale Name", staleEnvironment)
         model.completeProfileSaved(10L, profile("member-one", "Stale Profile"), staleEnvironment)
         model.completeExperienceCreated(10L, staleEnvironment)
+        model.completeHostingClosed(10L, staleEnvironment)
 
         assertTrue(model.handoffs.value.isEmpty())
     }
@@ -256,6 +274,7 @@ class ProfileFlowHandoffViewModelTest {
 
         // Simulate callbacks retaining the cleared ViewModel after the enclosing route is removed.
         model.completeExperienceCreated(11L, environment)
+        model.completeHostingClosed(11L, environment)
         model.completeProfileSaved(11L, profile("member-two", "Steady Owl"), environment)
         model.retainProfile(11L, profile("member-two", "Steady Owl"), environment)
         model.retainDisplayName(12L, "Calm Badger", environment)

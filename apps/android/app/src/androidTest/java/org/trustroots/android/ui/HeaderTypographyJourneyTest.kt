@@ -92,6 +92,7 @@ class HeaderTypographyJourneyTest {
                             isSelf = true,
                             onBack = {},
                             onEditProfile = {},
+                            onEditHosting = {},
                             onMessage = {},
                             onShareExperience = {},
                             contactAction = null,

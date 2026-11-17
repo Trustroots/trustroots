@@ -117,6 +117,7 @@ internal sealed interface MemberProfileEvent {
     data object ConfirmRemoveContact : MemberProfileEvent
     data object DismissRemoveContact : MemberProfileEvent
     data class ProfileSaved(val profile: MemberProfile) : MemberProfileEvent
+    data object RefreshHosting : MemberProfileEvent
     data object RefreshReferences : MemberProfileEvent
     data object RetryBlockStatus : MemberProfileEvent
     data class SetBlocked(val blocked: Boolean) : MemberProfileEvent
@@ -140,6 +141,7 @@ internal class MemberProfileViewModel(
     private var invalidationEmitted = false
     private val loadRequest = LatestRequest(requestScope)
     private val removalRequest = LatestRequest(requestScope)
+    private val hostingRequest = LatestRequest(requestScope)
     private val referencesRequest = LatestRequest(requestScope)
     private val blockStatusRequest = LatestRequest(requestScope)
     private val blockUpdateRequest = LatestRequest(requestScope)
@@ -150,6 +152,7 @@ internal class MemberProfileViewModel(
     fun onEvent(event: MemberProfileEvent) {
         when (event) {
             MemberProfileEvent.ConfirmRemoveContact -> removeContact()
+            MemberProfileEvent.RefreshHosting -> refreshHosting()
             MemberProfileEvent.RefreshReferences -> refreshReferences()
             MemberProfileEvent.RetryBlockStatus -> loadBlockStatus()
             is MemberProfileEvent.SetBlocked -> setBlocked(event.blocked)
@@ -199,16 +202,7 @@ internal class MemberProfileViewModel(
             currentCoroutineContext().ensureActive()
             if (!isOwnMember(member.username)) loadBlockStatus()
             val id = member.id ?: return@launch
-            launch {
-                val value = requestResult { repository.hosting(id) }
-                value.fold(
-                    onSuccess = { hosting -> mutableState.update { it.copy(hosting = hosting, hostingLoaded = true) } },
-                    onFailure = { failure ->
-                        mutableState.update { it.copy(hostingLoaded = true) }
-                        if (failure.isAuthenticationFailure()) invalidateSession()
-                    },
-                )
-            }
+            refreshHosting()
             launch {
                 val value = requestResult { repository.contacts(id) }
                 value.onSuccess { contacts -> mutableState.update { it.copy(contacts = contacts.toList()) } }
@@ -324,6 +318,19 @@ internal class MemberProfileViewModel(
         }
     }
 
+    private fun refreshHosting() {
+        if (invalidationEmitted) return
+        val memberID = mutableState.value.profile?.id ?: return
+        hostingRequest.launch {
+            val result = requestResult { repository.hosting(memberID) }
+            result.onSuccess { hosting -> mutableState.update { it.copy(hosting = hosting, hostingLoaded = true) } }
+                .onFailure {
+                    mutableState.update { current -> current.copy(hostingLoaded = true) }
+                    if (it.isAuthenticationFailure()) invalidateSession()
+                }
+        }
+    }
+
     private fun refreshReferences() {
         if (invalidationEmitted) return
         val memberID = mutableState.value.profile?.id ?: return
@@ -360,6 +367,7 @@ internal class MemberProfileViewModel(
     private fun cancelRequests() {
         loadRequest.cancel()
         removalRequest.cancel()
+        hostingRequest.cancel()
         referencesRequest.cancel()
         blockStatusRequest.cancel()
         blockUpdateRequest.cancel()
