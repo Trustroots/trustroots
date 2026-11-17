@@ -1,8 +1,9 @@
-const mongoose: typeof import('mongoose') = require('mongoose');
-require('./../../../users/server/models/user.server.model.mjs');
-const sinon: typeof import('sinon') = require('sinon');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-require('should');
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import sinon, { type SinonStub } from 'sinon';
+import 'should';
+import '../../../users/server/models/user.server.model.mjs';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
 type Greeter = {
   _id: string;
@@ -13,10 +14,10 @@ type Greeter = {
 type QueryCallback = (error: Error | null, users?: Greeter[]) => void;
 type ExecHandler = (callback: QueryCallback) => void;
 type FakeQuery = {
-  select: import('sinon').SinonStub<[field: string], FakeQuery>;
-  sort: import('sinon').SinonStub<[field: string], FakeQuery>;
-  limit: import('sinon').SinonStub<[count: number], FakeQuery>;
-  exec: import('sinon').SinonStub<[callback: QueryCallback], void>;
+  select: SinonStub<[field: string], FakeQuery>;
+  sort: SinonStub<[field: string], FakeQuery>;
+  limit: SinonStub<[count: number], FakeQuery>;
+  exec: SinonStub<[callback: QueryCallback], void>;
   then: Promise<Greeter[] | undefined>['then'];
 };
 type MockResponse = {
@@ -53,10 +54,7 @@ async function loadController(execHandler: ExecHandler) {
   const exec: FakeQuery['exec'] = sinon
     .stub<[callback: QueryCallback], void>()
     .callsFake(execHandler);
-  const User =
-    mongoose.model<
-      import('../../../../testutils/server/model-contracts.mts').UserRecord
-    >('User');
+  const User = mongoose.model<UserRecord>('User');
   const select = sinon.stub<[field: string], FakeQuery>();
   const sort = sinon.stub<[field: string], FakeQuery>();
   const limit = sinon.stub<[count: number], FakeQuery>();
@@ -74,7 +72,7 @@ async function loadController(execHandler: ExecHandler) {
   select.withArgs('username displayName').returns(query);
   sort.withArgs('displayName username').returns(query);
   limit.withArgs(500).returns(query);
-  const find = sinon.stub(User, 'find') as unknown as import('sinon').SinonStub<
+  const find = sinon.stub(User, 'find') as unknown as SinonStub<
     [filter: Record<string, unknown>],
     FakeQuery
   >;

@@ -115,6 +115,13 @@ function assertPolicy(
   assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
 }
 
+// require() of an ES module without a 'module.exports' export returns its namespace.
+function defaultExport<T>(loaded: T | { default: T }): T {
+  return Object.prototype.toString.call(loaded) === '[object Module]'
+    ? (loaded as { default: T }).default
+    : (loaded as T);
+}
+
 function register(
   modulePath: string,
   stubs: Record<string, DependencyReplacements>,
@@ -146,8 +153,9 @@ function register(
         if (!dependencyPath) {
           throw new Error(`Could not resolve route dependency: ${specifier}`);
         }
-        const dependency: DependencyReplacements =
-          dependencyRequire(dependencyPath);
+        const dependency: DependencyReplacements = defaultExport(
+          dependencyRequire(dependencyPath),
+        );
         for (const [name, value] of Object.entries(replacements)) {
           if (typeof value === 'function') {
             const replacement = sandbox
@@ -160,7 +168,7 @@ function register(
           }
         }
       }
-      const registerRoutes: RouteRegistrar = require(file);
+      const registerRoutes: RouteRegistrar = defaultExport(require(file));
       registerRoutes(app);
     } finally {
       sandbox.restore();

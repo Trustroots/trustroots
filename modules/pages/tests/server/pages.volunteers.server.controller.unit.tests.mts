@@ -1,25 +1,26 @@
 /**
  * Unit tests for the volunteers controller.
  */
-const mongoose: typeof import('mongoose') = require('mongoose');
-const lodash: typeof import('lodash') = require('lodash');
-require('./../../../users/server/models/user.server.model.mjs');
-const sinon: typeof import('sinon') = require('sinon');
-const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const should: typeof import('should') = require('should');
-void should;
+import assert from 'node:assert/strict';
+import lodash from 'lodash';
+import mongoose from 'mongoose';
+import sinon, { type SinonStub } from 'sinon';
+import 'should';
+import '../../../users/server/models/user.server.model.mjs';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
-type Volunteer = Pick<
-  import('../../../../testutils/server/model-contracts.mts').UserRecord,
-  'firstName' | 'username' | 'roles'
-> & { _id: string; lastName?: string; email?: string };
+type Volunteer = Pick<UserRecord, 'firstName' | 'username' | 'roles'> & {
+  _id: string;
+  lastName?: string;
+  email?: string;
+};
 type QueryCallback = (error: Error | null, users?: Volunteer[]) => void;
 type ExecHandler = (callback: QueryCallback) => void;
 type FakeQuery = {
-  select: import('sinon').SinonStub<[field: string], FakeQuery>;
-  sort: import('sinon').SinonStub<[field: string], FakeQuery>;
-  limit: import('sinon').SinonStub<[count: number], FakeQuery>;
-  exec: import('sinon').SinonStub<[callback: QueryCallback], void>;
+  select: SinonStub<[field: string], FakeQuery>;
+  sort: SinonStub<[field: string], FakeQuery>;
+  limit: SinonStub<[count: number], FakeQuery>;
+  exec: SinonStub<[callback: QueryCallback], void>;
   then: Promise<Volunteer[] | undefined>['then'];
 };
 type MockResponse = {
@@ -57,10 +58,7 @@ async function loadController(execHandler: ExecHandler) {
     .stub<[callback: QueryCallback], void>()
     .callsFake(execHandler);
   const User = mongoose.model<
-    Pick<
-      import('../../../../testutils/server/model-contracts.mts').UserRecord,
-      'firstName' | 'username' | 'roles'
-    > & { _id: string }
+    Pick<UserRecord, 'firstName' | 'username' | 'roles'> & { _id: string }
   >('User');
   const select = sinon.stub<[field: string], FakeQuery>();
   const sort = sinon.stub<[field: string], FakeQuery>();
@@ -79,7 +77,7 @@ async function loadController(execHandler: ExecHandler) {
   select.withArgs('username firstName roles').returns(query);
   sort.withArgs('firstName username').returns(query);
   limit.withArgs(500).returns(query);
-  const find = sinon.stub(User, 'find') as unknown as import('sinon').SinonStub<
+  const find = sinon.stub(User, 'find') as unknown as SinonStub<
     [filter: Record<string, unknown>],
     FakeQuery
   >;

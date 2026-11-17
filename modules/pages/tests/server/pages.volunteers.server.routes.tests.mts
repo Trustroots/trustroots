@@ -1,19 +1,19 @@
-const request: typeof import('supertest') = require('supertest');
-const mongoose: typeof import('mongoose') = require('mongoose');
-const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
-const User =
-  mongoose.model<
-    import('../../../../testutils/server/model-contracts.mts').UserRecord
-  >('User');
+import type { Express } from 'express';
+import mongoose from 'mongoose';
+import request, { type Agent } from 'supertest';
+import express from '../../../../config/lib/express.mjs';
+import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const User = mongoose.model<UserRecord>('User');
 describe('Volunteers page route tests', function () {
-  let app: import('express').Express;
-  let agent: import('supertest').Agent;
+  let app: Express;
+  let agent: Agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  afterEach(utils.clearDatabase);
+  afterEach(clearDatabase);
   it('returns only public current greeters with public fields in name order', async function () {
     await User.create([
       {

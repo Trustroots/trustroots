@@ -66,5 +66,3 @@ const defaultInterop = {
   list,
 };
 export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

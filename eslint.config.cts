@@ -228,6 +228,24 @@ const legacyConfig = {
       },
     },
 
+    /** Modules whose CommonJS consumers have migrated stay plain ESM (#3494). */
+    {
+      files: [
+        'modules/core/server/services/text.server.service.mts',
+        'modules/pages/server/**/*.mts',
+      ],
+      rules: {
+        'no-restricted-syntax': [
+          2,
+          {
+            selector: "ExportSpecifier[exported.value='module.exports']",
+            message:
+              'Use ordinary ESM exports; CommonJS consumers of this module have migrated.',
+          },
+        ],
+      },
+    },
+
     /**
      * Overrides for client-React code
      */

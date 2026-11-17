@@ -25,8 +25,6 @@ const modules = [
   'modules/support/server/controllers/support.server.controller.mjs',
   'modules/support/server/models/support.server.model.mjs',
   'modules/support/server/routes/support.server.routes.mts',
-  'modules/pages/server/controllers/pages.volunteers.server.controller.mts',
-  'modules/pages/server/routes/pages.server.routes.mts',
 ];
 
 describe('ESM interoperability: administration', () => {

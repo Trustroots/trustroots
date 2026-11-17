@@ -18,6 +18,4 @@ const registerRoutes = (app: Express) => {
   app.route('/api/volunteers').get(routeHandler(volunteers.list));
   app.route('/api/greeters').get(routeHandler(greeters.list));
 };
-export { registerRoutes };
 export default registerRoutes;
-export { registerRoutes as 'module.exports' };
