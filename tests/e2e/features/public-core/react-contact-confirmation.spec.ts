@@ -1,9 +1,10 @@
-import { expectPresent, expect, test } from '../../support/fixtures.mts';
+import { expect, test } from '../../support/fixtures.mts';
 import {
+  SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   signInViaApi,
 } from '../../support/helpers.mts';
-import { findContactByUsers, withE2eDb } from '../../support/db.mts';
+import { insertContact, withE2eDb } from '../../support/db.mts';
 
 test('contact confirmation retains guest and missing-request behaviour', async ({
   page,
@@ -19,13 +20,11 @@ test('contact confirmation retains guest and missing-request behaviour', async (
 test('recipient can confirm a pending contact and reopen the result', async ({
   page,
 }) => {
-  const { alice, bob } = SEEDED_RELATIONSHIP_MEMBERS;
-  const contact = await findContactByUsers(bob.id, alice.id);
-  expect(contact).toBeTruthy();
-  expectPresent(contact);
+  const { alice } = SEEDED_RELATIONSHIP_MEMBERS;
+  const contactId = await insertContact(SEEDED_MEMBERS[0].id, alice.id, false);
   try {
     await signInViaApi(page, undefined, alice);
-    await page.goto(`/contact-confirm/${contact._id}`);
+    await page.goto(`/contact-confirm/${contactId}`);
     await expect(page.locator('#tr-react-root')).toBeVisible();
     await page.getByRole('button', { name: 'Confirm contact' }).click();
     await expect(page.getByText('You two are now connected!')).toBeVisible();
@@ -35,9 +34,7 @@ test('recipient can confirm a pending contact and reopen the result', async ({
     ).toBeVisible();
   } finally {
     await withE2eDb(db =>
-      db
-        .collection('contacts')
-        .replaceOne({ _id: contact._id as never }, contact),
+      db.collection('contacts').deleteOne({ _id: contactId }),
     );
   }
 });

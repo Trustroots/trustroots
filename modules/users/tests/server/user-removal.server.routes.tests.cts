@@ -796,6 +796,32 @@ describe('User removal CRUD tests', function () {
         return step3;
       })().then(() => done(), done);
     });
+    it('removes a pending request sent by the deleted member', async () => {
+      const contact = await Contact.create({
+        userFrom: userA._id,
+        userTo: userB._id,
+        confirmed: false,
+      });
+      const recipient = request.agent(app);
+      await recipient.post('/api/auth/signin').send(credentialsB).expect(200);
+      const listPath = '/api/contacts/' + userB._id;
+      const contactPath = '/api/contact/' + contact._id;
+      const before = await recipient.get(listPath).expect(200);
+      should(before.body.map((entry: { _id: string }) => entry._id)).containEql(
+        contact.id,
+      );
+
+      await promisify(sendDeleteRequest)();
+
+      should.not.exist(await Contact.findById(contact._id));
+      await recipient.get(listPath).expect(200, []);
+      await recipient.get(contactPath).expect(404);
+      await recipient
+        .put(contactPath)
+        .set('X-Trustroots-Request', '1')
+        .expect(404);
+    });
+
     it('should remove contacts of the user', function (done: DoneCallback) {
       let userC: UserModelDocument;
       (async () => {

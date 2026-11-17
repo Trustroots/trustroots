@@ -173,6 +173,21 @@ describe('Contacts controller unit tests', () => {
         email.called.should.be.false();
       });
     }
+    it('removes the new request if the sender session predates a block', async () => {
+      await user1.updateOne({ $addToSet: { blocked: user2._id } });
+      const email = sinon.spy(emailService, 'sendConfirmContact');
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2.id } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(403);
+      (await Contact.countDocuments()).should.equal(0);
+      email.called.should.be.false();
+    });
+
     it('rejects an invalid friend user id', async () => {
       const { res } = await runHandler(res =>
         contactsController.add(
@@ -336,6 +351,8 @@ describe('Contacts controller unit tests', () => {
       sinon.stub(emailService, 'sendConfirmContact').callsArgWith(5, null);
       sinon
         .stub(mongoose.model('User'), 'findOne')
+        .callThrough()
+        .withArgs(sinon.match.has('roles'))
         .resolves({ _id: user2._id, email: user2.email, roles: ['user'] });
       const { res } = await runHandler(res =>
         contactsController.add(
@@ -443,6 +460,26 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('confirm', () => {
+    for (const blocker of ['sender', 'recipient']) {
+      it(`rejects an existing pending request when the ${blocker} blocked the other member`, async () => {
+        const contact = await Contact.create({
+          userFrom: user1._id,
+          userTo: user2._id,
+          confirmed: false,
+        });
+        const [member, other] =
+          blocker === 'sender' ? [user1, user2] : [user2, user1];
+        await member.updateOne({ $addToSet: { blocked: other._id } });
+
+        const { res } = await runHandler(res =>
+          contactsController.confirm({ user: user2, contact }, res),
+        );
+
+        res.statusCode.should.equal(403);
+        (await Contact.findById(contact._id))!.confirmed.should.be.false();
+      });
+    }
+
     it('responds with 403 when no contact was loaded', async () => {
       const { res } = await runHandler(res =>
         contactsController.confirm({ user: user2 }, res),
@@ -546,6 +583,21 @@ describe('Contacts controller unit tests', () => {
       const { res } = await runHandler(res =>
         contactsController.confirm({ user: user2, contact }, res),
       );
+      res.statusCode.should.equal(200);
+      res.body.confirmed!.should.be.true();
+    });
+
+    it('accepts a repeated confirmation for an already confirmed contact', async () => {
+      const contact = await Contact.create({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: true,
+      });
+
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2, contact }, res),
+      );
+
       res.statusCode.should.equal(200);
       res.body.confirmed!.should.be.true();
     });

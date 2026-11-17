@@ -1,6 +1,7 @@
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose, { type Types } from 'mongoose';
 import log from './../../../../config/lib/logger.mjs';
+import { removePendingBetweenUsers } from '../../../contacts/server/controllers/contacts.server.controller.mts';
 import type {
   UserServerDocument,
   UserServerModel,
@@ -96,6 +97,7 @@ service.blockUser = async function (req, res) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
+    await removePendingBetweenUsers(req.user._id, idToBeBlocked);
     res.send(`${req.profile.username} added to block list.`);
   } catch (err) {
     logCaughtError(err);

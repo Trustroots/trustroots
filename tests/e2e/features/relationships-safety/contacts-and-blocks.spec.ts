@@ -18,7 +18,9 @@ import {
 import {
   findContactByUsers,
   findOffersByUser,
+  insertContact,
   updateUserByUsername,
+  withE2eDb,
 } from '../../support/db.mts';
 
 test.describe.serial('contacts and safety feature coverage', () => {
@@ -322,34 +324,45 @@ test.describe.serial('contacts and safety feature coverage', () => {
       'Invalid or unauthorized contact confirmation is denied.',
     ]);
 
-    const bob = SEEDED_RELATIONSHIP_MEMBERS.bob;
     const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
-    const contact = await findContactByUsers(bob.id, alice.id);
-    expect(contact).toBeTruthy();
-    expectPresent(contact);
-
-    const unauthorized = await page.request.put(`/api/contact/${contact._id}`, {
-      headers: { 'X-Trustroots-Request': '1' },
-    });
-    expect(unauthorized.status()).toBe(404);
-
+    const contactId = await insertContact(
+      SEEDED_MEMBERS[2].id,
+      alice.id,
+      false,
+    );
+    const headers = { 'X-Trustroots-Request': '1' };
     const context = await createIsolatedContext(browser, baseURL);
     const alicePage = await context.newPage();
     try {
+      const contactPath = `/api/contact/${contactId}`;
+      const unauthorised = await page.request.put(contactPath, { headers });
+      expect(unauthorised.status()).toBe(404);
+
       await signInViaApi(alicePage, context.request, alice);
-      await alicePage.goto(`/contact-confirm/${contact._id}`);
+      const stale = await findContactByUsers(
+        SEEDED_RELATIONSHIP_MEMBERS.bob.id,
+        alice.id,
+      );
+      expectPresent(stale);
+      const blockedConfirmation = await alicePage.request.put(
+        `/api/contact/${stale._id}`,
+        { headers },
+      );
+      expect(blockedConfirmation.status()).toBe(403);
+
+      await alicePage.goto(`/contact-confirm/${contactId}`);
       await expect(
         alicePage.getByRole('heading', { name: /confirm contact/i }),
       ).toBeVisible();
 
-      const confirm = await alicePage.request.put(
-        `/api/contact/${contact._id}`,
-        { headers: { 'X-Trustroots-Request': '1' } },
-      );
+      const confirm = await alicePage.request.put(contactPath, { headers });
       expect(confirm.ok()).toBeTruthy();
       expect((await confirm.json()).confirmed).toBe(true);
     } finally {
       await context.close();
+      await withE2eDb(db =>
+        db.collection('contacts').deleteOne({ _id: contactId }),
+      );
     }
   });
 
@@ -371,6 +384,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const bob = SEEDED_RELATIONSHIP_MEMBERS.bob;
     const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
+    const contactId = await insertContact(SEEDED_MEMBERS[2].id, alice.id, true);
 
     try {
       await signInViaApi(page, context.request, alice);
@@ -383,17 +397,19 @@ test.describe.serial('contacts and safety feature coverage', () => {
       expect(common.ok()).toBeTruthy();
       expect(Array.isArray(await common.json())).toBeTruthy();
 
-      const contact = await findContactByUsers(bob.id, alice.id);
-      expectPresent(contact);
-      const remove = await page.request.delete(`/api/contact/${contact._id}`, {
+      const contactPath = `/api/contact/${contactId}`;
+      const remove = await page.request.delete(contactPath, {
         headers: { 'X-Trustroots-Request': '1' },
       });
       expect(remove.ok()).toBeTruthy();
 
-      const removed = await page.request.get(`/api/contact/${contact._id}`);
+      const removed = await page.request.get(contactPath);
       expect(removed.status()).toBe(404);
     } finally {
       await context.close();
+      await withE2eDb(db =>
+        db.collection('contacts').deleteOne({ _id: contactId }),
+      );
     }
   });
 
@@ -438,6 +454,88 @@ test.describe.serial('contacts and safety feature coverage', () => {
       await context.close();
     }
   });
+
+  for (const blocker of ['sender', 'recipient']) {
+    test(`blocking cancels a pending contact when the ${blocker} blocks`, async ({
+      browser,
+      baseURL,
+    }) => {
+      const member = createUser();
+      const other = SEEDED_RELATIONSHIP_MEMBERS.alice;
+      const memberContext = await createIsolatedContext(browser, baseURL);
+      const otherContext = await createIsolatedContext(browser, baseURL);
+      const headers = { 'X-Trustroots-Request': '1' };
+
+      try {
+        const memberPage = await memberContext.newPage();
+        const otherPage = await otherContext.newPage();
+        await registerViaApi(memberContext.request, member);
+        await updateUserByUsername(member.username, {
+          $set: { public: true, description: 'E2E public contact member.' },
+          $unset: { emailTemporary: 1, emailToken: 1 },
+        });
+        await signInViaApi(memberPage, memberContext.request, member);
+        await signInViaApi(otherPage, otherContext.request, other);
+        const memberId = await fetchUserIdByUsername(
+          memberContext.request,
+          member.username,
+        );
+        const otherId = await fetchUserIdByUsername(
+          otherContext.request,
+          other.username,
+        );
+        const [sender, recipient] =
+          blocker === 'sender'
+            ? [memberPage.request, otherPage.request]
+            : [otherPage.request, memberPage.request];
+        const [senderId, recipientId] =
+          blocker === 'sender' ? [memberId, otherId] : [otherId, memberId];
+
+        const add = await sender.post('/api/contact', {
+          data: { friendUserId: recipientId },
+          headers,
+        });
+        expect(add.ok()).toBeTruthy();
+        const contact = await findContactByUsers(senderId, recipientId);
+        expectPresent(contact);
+        const contactPath = `/api/contact/${contact._id}`;
+
+        const recipientList = await recipient.get(
+          `/api/contacts/${recipientId}`,
+        );
+        expect(await recipientList.json()).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ _id: String(contact._id) }),
+          ]),
+        );
+
+        const blockPath = `/api/blocked-users/${other.username}`;
+        const block = await memberPage.request.put(blockPath, { headers });
+        expect(block.ok()).toBeTruthy();
+        for (const [memberRequest, id] of [
+          [sender, senderId],
+          [recipient, recipientId],
+        ] as const) {
+          const list = await memberRequest.get(`/api/contacts/${id}`);
+          expect(list.ok()).toBeTruthy();
+          expect(await list.json()).not.toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ _id: String(contact._id) }),
+            ]),
+          );
+        }
+        expect((await recipient.put(contactPath, { headers })).status()).toBe(
+          404,
+        );
+
+        const unblock = await memberPage.request.delete(blockPath, { headers });
+        expect(unblock.ok()).toBeTruthy();
+        expect((await recipient.get(contactPath)).status()).toBe(404);
+      } finally {
+        await Promise.all([memberContext.close(), otherContext.close()]);
+      }
+    });
+  }
 
   test('blocking hides protected profile and relationship actions', async ({
     browser,

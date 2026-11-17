@@ -156,6 +156,22 @@ export async function findContactByUsers(
   );
 }
 
+export async function insertContact(
+  senderId: string,
+  recipientId: string,
+  confirmed: boolean,
+) {
+  return withE2eDb(async db => {
+    const result = await db.collection<ContactDocument>('contacts').insertOne({
+      userFrom: objectId(senderId),
+      userTo: objectId(recipientId),
+      confirmed,
+      created: new Date(),
+    });
+    return result.insertedId;
+  });
+}
+
 export async function findOffersByUser(
   userId: string | ObjectId,
   query: Filter<OfferDocument> = {},
