@@ -18,6 +18,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.trustroots.android.R
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,7 +81,7 @@ class MessageAlertPayloadLifecycleTest {
 
         assertNull(MessageAlerts.endpoint(context))
         assertEquals(
-            "This distributor did not provide Web Push encryption keys.",
+            "Your notification app could not set up secure message alerts. Update it or choose another notification app, then turn alerts off and back on in Account → Message alerts.",
             MessageAlerts.status.value,
         )
     }
@@ -97,7 +98,7 @@ class MessageAlertPayloadLifecycleTest {
     }
 
     @Test
-    fun failedDistributorRegistrationShowsItsReason() {
+    fun failedDistributorRegistrationShowsRecoveryInstructions() {
         val service = MessagePushService()
         // Framework-created services have an attached base Context for resource access.
         ContextWrapper::class.java.getDeclaredMethod("attachBaseContext", Context::class.java).apply {
@@ -106,6 +107,10 @@ class MessageAlertPayloadLifecycleTest {
         service.onRegistrationFailed(FailedReason.NETWORK, "anonymous-instance")
 
         assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
+        assertEquals(
+            MessageAlertStatusMetadata(R.string.message_alerts_registration_error),
+            MessageAlerts.statusMetadata.value,
+        )
     }
 
     @Test

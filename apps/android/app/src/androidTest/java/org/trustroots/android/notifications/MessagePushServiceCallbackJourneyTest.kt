@@ -42,10 +42,10 @@ class MessagePushServiceCallbackJourneyTest {
         val binder = serviceRule.bindService(Intent(context, MessagePushService::class.java)) as PushService.PushBinder
         val service = binder.getService() as MessagePushService
         service.onNewEndpoint(PushEndpoint("https://push.invalid/topic", null, temporary = false), "fixture-instance")
-        assertEquals("This distributor did not provide Web Push encryption keys.", MessageAlerts.status.value)
+        assertEquals("Your notification app could not set up secure message alerts. Update it or choose another notification app, then turn alerts off and back on in Account → Message alerts.", MessageAlerts.status.value)
 
         service.onMessage(PushMessage("not JSON".toByteArray(), decrypted = false), "fixture-instance")
-        assertEquals("This distributor did not provide Web Push encryption keys.", MessageAlerts.status.value)
+        assertEquals("Your notification app could not set up secure message alerts. Update it or choose another notification app, then turn alerts off and back on in Account → Message alerts.", MessageAlerts.status.value)
         service.onRegistrationFailed(FailedReason.NETWORK, "fixture-instance")
         assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
 

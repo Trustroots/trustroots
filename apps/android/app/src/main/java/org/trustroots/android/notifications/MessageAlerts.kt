@@ -358,10 +358,9 @@ class MessagePushService : PushService() {
     override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) = MessageAlerts.onEndpoint(this, endpoint)
     override fun onMessage(message: PushMessage, instance: String) = MessageAlerts.show(this, message)
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
-        MessageAlerts.status.value = getString(R.string.message_alerts_registration_error, reason.name)
+        MessageAlerts.status.value = getString(R.string.message_alerts_registration_error)
         MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(
             R.string.message_alerts_registration_error,
-            listOf(reason.name),
         )
     }
     override fun onUnregistered(instance: String) = MessageAlerts.onDistributorUnregistered(this)
