@@ -34,6 +34,7 @@ import org.trustroots.android.api.MapOffer
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.hostmap.HostMapResults
@@ -264,7 +265,8 @@ class HostMapResultsJourneyTest {
         compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/tribes?") } }
         compose.onNodeWithText("All circles").performClick()
         waitForText("Quiet Circle")
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        pressBackFromNonActivityRoot(compose.activity)
+        compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=second-fictional-session", MobileMember("gentle-hare", "Gentle Hare"))
         }
@@ -282,7 +284,7 @@ class HostMapResultsJourneyTest {
         geocoderLookup: (Context, String, Int) -> List<Address>? = { _, _, _ -> emptyList() },
     ) {
         compose.setContent {
-            TrustrootsTheme {
+            NativeTestAppFrame(Destination.Search) {
                 SearchHubScreen(
                     api = MobileApiClient(local.baseURL),
                     session = session,
