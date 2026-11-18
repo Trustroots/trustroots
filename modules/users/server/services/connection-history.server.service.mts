@@ -12,17 +12,17 @@ import type {
   UserServerRecord,
 } from '../models/user.server.types.mts';
 
-const connectionPaths: Record<Network, string[]> = {
-  email: ['email'],
-  couchers: ['extSitesCouchers'],
-  bewelcome: ['extSitesBW'],
-  couchsurfing: ['extSitesCS'],
-  warmshowers: ['extSitesWS'],
-  servas: ['extSitesServas'],
-  nostr: ['nostrNpub'],
-  facebook: ['additionalProvidersData'],
-  twitter: ['additionalProvidersData'],
-  github: ['additionalProvidersData'],
+const connectionPaths: Record<Network, string> = {
+  email: 'email',
+  couchers: 'extSitesCouchers',
+  bewelcome: 'extSitesBW',
+  couchsurfing: 'extSitesCS',
+  warmshowers: 'extSitesWS',
+  servas: 'extSitesServas',
+  nostr: 'nostrNpub',
+  facebook: 'additionalProvidersData',
+  twitter: 'additionalProvidersData',
+  github: 'additionalProvidersData',
 };
 
 type ConnectionSnapshot = Partial<Record<Network, string>>;
@@ -86,7 +86,7 @@ function hasChangedConnectionPath(
   user: UserServerDocument,
   network: Network,
 ): boolean {
-  return connectionPaths[network].some(path => user.isModified(path));
+  return user.isModified(connectionPaths[network]);
 }
 
 function allHistoryKeys(
@@ -159,8 +159,6 @@ export async function trackConnectionHistoryBeforeSave(
     user.connectionSearchKeys = allHistoryKeys(user.connectionHistory, user);
     user.connectionHistoryInitialised = true;
     user.connectionHistoryRevision = 1;
-    user.markModified('connectionHistory');
-    user.markModified('connectionSearchKeys');
     return;
   }
 

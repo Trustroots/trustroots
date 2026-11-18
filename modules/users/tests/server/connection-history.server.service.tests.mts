@@ -94,7 +94,7 @@ describe('connection history service', function () {
       snapshot: { couchers: 'member' },
       modifiedPaths: ['extSitesCouchers'],
     });
-    stubPersisted({
+    const query = stubPersisted({
       _id: user._id,
       extSitesCouchers: 'member',
       connectionHistoryInitialised: true,
@@ -104,6 +104,11 @@ describe('connection history service', function () {
 
     await service.trackConnectionHistoryBeforeSave(user);
 
+    sinon.assert.calledOnceWithExactly(
+      query.select,
+      '+connectionHistory +connectionSearchKeys +connectionHistoryInitialised +connectionHistoryRevision ' +
+        'email extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData',
+    );
     user.connectionHistory?.should.have.length(0);
     should(user.connectionHistoryRevision).equal(4);
     user.$where.should.deepEqual({ connectionHistoryRevision: 3 });
@@ -146,9 +151,11 @@ describe('connection history service', function () {
       connectionHistoryInitialised: true,
     } as UserRecord);
 
-    await service
+    const error = await service
       .trackConnectionHistoryBeforeSave(user)
-      .should.be.rejectedWith(service.ConnectionHistoryConflictError);
+      .catch((rejection: unknown) => rejection);
+    should(error).be.instanceOf(service.ConnectionHistoryConflictError);
+    should(error).have.property('name', 'ConnectionHistoryConflictError');
   });
 
   it('fails if the account was deleted before the changed connection could be saved', async function () {
