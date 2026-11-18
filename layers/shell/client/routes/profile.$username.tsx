@@ -6,14 +6,13 @@ import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/profile/$username')({
   ...routeOptions('/profile/:username', withUser(ProfilePage)),
-  loader: ({ context, location, params }) =>
-    context.queryClient.prefetchQuery(
+  // Fetch early without blocking navigation; the page shows its own loading.
+  loader: ({ context, params }) => {
+    void context.queryClient.prefetchQuery(
       profileQuery((params as { username: string }).username, {
         canLoadReply: Boolean(getBootstrapData().settings.referencesEnabled),
-        isCreatingExperience: location.pathname.endsWith('/experiences/new'),
         viewerId: context.user?._id,
       }),
-    ),
-  // Switching profile tabs keeps the loaded profile.
-  staleTime: Infinity,
+    );
+  },
 });

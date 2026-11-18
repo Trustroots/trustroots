@@ -513,10 +513,11 @@ describe('ProfilePage', () => {
 
     window.history.pushState({}, '', '/profile/bob/experiences/new');
     fireEvent.popState(window);
-    await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('New experience form')).toBeVisible();
+    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
     window.history.pushState({}, '', '/profile/bob');
     fireEvent.popState(window);
-    await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledTimes(2));
 
     expect(
       analytics.track.mock.calls.filter(([name]) => name === 'profile_viewed'),

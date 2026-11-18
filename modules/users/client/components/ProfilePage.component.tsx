@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
@@ -303,13 +303,18 @@ export default function ProfilePage({
   const activePathName = getProfileViewTabStateName(currentPath, username);
   const canLoadReply = referencesEnabled && !embedded;
   const isCreatingExperience = tab === 'experiences-new';
+  const queryClient = useQueryClient();
   const { data, isPending } = useQuery(
-    profileQuery(username, {
-      canLoadReply,
-      isCreatingExperience,
-      viewerId: authUser?._id,
-    }),
+    profileQuery(username, { canLoadReply, viewerId: authUser?._id }),
   );
+  const wasCreatingExperience = useRef(isCreatingExperience);
+  useEffect(() => {
+    // Leaving the experience form may have saved one, so read the profile again.
+    if (wasCreatingExperience.current && !isCreatingExperience) {
+      void queryClient.invalidateQueries({ queryKey: ['profile', username] });
+    }
+    wasCreatingExperience.current = isCreatingExperience;
+  }, [isCreatingExperience, queryClient, username]);
   const experienceOnly = Boolean(data?.experienceOnly);
   const ownExperience = data?.ownExperience;
   const profile = useMemo<ResolvedUserProfile | null>(() => {
@@ -382,8 +387,7 @@ export default function ProfilePage({
 
     let isMounted = true;
     const viewingOwnProfile = profileId === authUser?._id;
-    // The contacts reload when the experience form opens or closes; count
-    // each profile once while this page stays mounted.
+    // Count each profile once while this page stays mounted.
     if (viewedProfileId.current !== profileId) {
       viewedProfileId.current = profileId;
       track('profile_viewed', { own: viewingOwnProfile ? 'yes' : 'no' });
@@ -406,7 +410,7 @@ export default function ProfilePage({
       isMounted = false;
       contactsRequestVersion.current++;
     };
-  }, [profile?._id, experienceOnly, authUser?._id, isCreatingExperience]);
+  }, [profile?._id, experienceOnly, authUser?._id]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {

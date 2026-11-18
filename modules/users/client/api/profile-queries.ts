@@ -6,13 +6,13 @@ import { fetch as fetchProfile } from './users.api';
 
 type ProfileQuery = {
   canLoadReply: boolean;
-  isCreatingExperience: boolean;
   viewerId?: string;
 };
 
 /**
  * A member's profile, or, for a member who can only be replied to, the
- * experience recipient. The route loader fetches it on every navigation.
+ * experience recipient. The route loader starts it and the page reads it,
+ * so switching profile tabs reuses it while it is fresh.
  */
 export function profileQuery(username: string, options: ProfileQuery) {
   return queryOptions({
@@ -33,7 +33,7 @@ export function profileQuery(username: string, options: ProfileQuery) {
         };
       }
     },
-    refetchOnMount: false,
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
