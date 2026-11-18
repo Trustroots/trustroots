@@ -5,9 +5,9 @@ import { SupportMemberPage } from '@/modules/admin/client/components/Support.com
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { routeOptions } from '../route-options';
 
-export function AdminUserRoute() {
+function AdminUserRoute() {
   const { hasRole, user } = useAuth();
-  const { username } = useParams({ strict: false });
+  const { username } = useParams({ from: '/admin/user/$username' });
   return hasRole('admin') ? (
     <AdminUser username={username} viewer={user} />
   ) : (

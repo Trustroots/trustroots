@@ -224,10 +224,6 @@ vi.mock('@/modules/search/client/components/SearchPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Search {user?.username}</main>,
 }));
-vi.mock(
-  '@/modules/offers/client/components/OfferRedirectPage.component',
-  () => ({ default: () => <main>Offer redirect</main> }),
-);
 vi.mock('@/modules/offers/client/components/OfferHostPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
@@ -431,6 +427,8 @@ function renderRoute(
 }
 
 describe('React route ownership', () => {
+  afterEach(() => window.history.replaceState({}, '', '/'));
+
   it('renders the staff network connection search page', () => {
     renderRoute(
       routes.find(route => route.path === '/admin/network-connections'),
@@ -660,6 +658,9 @@ describe('React route ownership', () => {
 
     expect(getReactRouteAccessRedirect(route, null)).toBe('/signin');
     expect(getReactRoutePolicy('/about')).toMatchObject({ redirectTo: '/' });
+    expect(getReactRoutePolicy('/offer')).toMatchObject({
+      redirectTo: '/offer/host',
+    });
     expect(getReactRouteAccessRedirect(route, { roles: ['user'] })).toBe(
       '/volunteering',
     );
@@ -728,13 +729,15 @@ describe('React route ownership', () => {
     expect(findRoute('/profile-edit/about')).toBe(undefined);
   });
 
-  it('renders every React-owned route', () => {
-    routes.forEach(route => {
-      const { container, unmount } = renderRoute(route);
+  it('renders every React-owned route that does not redirect', () => {
+    routes
+      .filter(route => !route.redirectTo)
+      .forEach(route => {
+        const { container, unmount } = renderRoute(route);
 
-      expect(container.firstChild).toBeTruthy();
-      unmount();
-    });
+        expect(container.firstChild).toBeTruthy();
+        unmount();
+      });
   });
 
   it('renders no message thread when the route has no authenticated user', () => {

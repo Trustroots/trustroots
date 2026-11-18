@@ -241,7 +241,6 @@ function renderPage(
     profileMinimumLength: 140,
     referencesEnabled: false,
   },
-  routedPath?: string,
   options: { embedded?: boolean; profileUsername?: string } = {},
 ) {
   window.history.pushState({}, '', path);
@@ -258,7 +257,6 @@ function renderPage(
       }}
     >
       <ProfilePage
-        currentPath={routedPath}
         embedded={options.embedded}
         profileUsername={options.profileUsername}
         user={user}
@@ -423,7 +421,6 @@ describe('ProfilePage', () => {
       authUser,
       '/admin/user/alice',
       { profileMinimumLength: 140, referencesEnabled: false },
-      '/profile/alice',
       { embedded: true, profileUsername: 'alice' },
     );
 
@@ -464,28 +461,13 @@ describe('ProfilePage', () => {
   });
 
   it('changes tabs without reloading the profile', async () => {
-    const { rerender } = renderPage(
-      authUser,
-      '/profile/bob',
-      { profileMinimumLength: 140, referencesEnabled: false },
-      '/profile/bob',
-    );
+    renderPage(authUser, '/profile/bob');
     expect(await screen.findByText('About Bob Example')).toBeVisible();
 
-    rerender(
-      <AppProviders
-        analyticsTracker={analytics.tracker}
-        bootstrapData={{
-          env: 'test',
-          isNativeMobileApp: false,
-          settings: { profileMinimumLength: 140, referencesEnabled: false },
-          title: 'Trustroots',
-          user: authUser,
-        }}
-      >
-        <ProfilePage currentPath="/profile/bob/contacts" user={authUser} />
-      </AppProviders>,
-    );
+    act(() => {
+      window.history.pushState({}, '', '/profile/bob/contacts');
+      fireEvent.popState(window);
+    });
 
     expect(screen.getByText('Contact list')).toBeVisible();
     expect(screen.queryByText('Wait a moment…')).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { useNavigate, useParams } from '@tanstack/react-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
@@ -57,13 +58,9 @@ function imageUrl(circle: AdminCircle) {
   }`;
 }
 
-export default function AdminCircles({
-  circleSlug,
-  onNavigate,
-}: {
-  circleSlug?: string;
-  onNavigate?: (path: string) => void;
-}) {
+export default function AdminCircles() {
+  const { circle: circleSlug } = useParams({ strict: false });
+  const navigate = useNavigate();
   const [sort, setSort] = useState<{
     key: 'label' | 'description' | 'count';
     descending: boolean;
@@ -123,11 +120,11 @@ export default function AdminCircles({
     clearSelectedImage();
     setMessage(null);
     setError(null);
-    onNavigate?.(
-      selected.slug
+    void navigate({
+      to: selected.slug
         ? `/admin/circles/${encodeURIComponent(selected.slug)}`
         : '/admin/circles',
-    );
+    });
   }
 
   async function addOrganiser() {
@@ -186,7 +183,9 @@ export default function AdminCircles({
       clearSelectedImage();
       setMessage('Circle saved.');
       if (saved.slug && saved.slug !== circleSlug) {
-        onNavigate?.(`/admin/circles/${encodeURIComponent(saved.slug)}`);
+        void navigate({
+          to: `/admin/circles/${encodeURIComponent(saved.slug)}`,
+        });
       }
       try {
         await loadCircles();
