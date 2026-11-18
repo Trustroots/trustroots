@@ -397,6 +397,9 @@ describe('Admin acquisition stories controller unit tests', () => {
 
     it('keeps the first ten identifier matches in source order', async () => {
       const users = generateStoryUsers(12);
+      users.forEach((user, index) => {
+        user.email = `story-member-${index.toString().padStart(2, '0')}@example.test`;
+      });
       users[0].username = 'abcdefghijklmn';
       users[0].acquisitionStory = 'An active member story.';
       users.slice(1).forEach((user, index) => {
