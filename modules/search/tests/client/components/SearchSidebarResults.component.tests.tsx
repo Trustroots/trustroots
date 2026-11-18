@@ -52,14 +52,12 @@ describe('<SearchSidebarResults />', () => {
         volunteering,
       };
       const { rerender } = render(
-        <SearchSidebarResults offers={[offer]} onCloseSidebar={jest.fn()} />,
+        <SearchSidebarResults offers={[offer]} onCloseSidebar={vi.fn()} />,
       );
       expect(
         screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
       ).toBe(volunteering === true ? 'badge' : undefined);
-      rerender(
-        <SearchSidebarResults offer={offer} onCloseSidebar={jest.fn()} />,
-      );
+      rerender(<SearchSidebarResults offer={offer} onCloseSidebar={vi.fn()} />);
       expect(
         screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
       ).toBe(volunteering === true ? 'badge' : undefined);

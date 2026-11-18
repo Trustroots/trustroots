@@ -1,6 +1,5 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import L from 'leaflet';
 import CircleLocationMap from '@/modules/tribes/client/components/CircleLocationMap';
 import { AuthProvider } from '@/modules/core/client/react-app/auth';
@@ -70,8 +69,9 @@ it('preserves a panned view when restoring a popup, but pans on an explicit reop
 });
 
 it('opens a custom member heading from the keyboard and clears it when closed', () => {
-  jest.replaceProperty(L.Browser, 'svg', true);
-  const markerSpy = jest.spyOn(L, 'circleMarker');
+  const svg = L.Browser.svg;
+  Reflect.set(L.Browser, 'svg', true);
+  const markerSpy = vi.spyOn(L, 'circleMarker');
   const { unmount } = render(
     <CircleLocationMap
       title="Hosting"
@@ -118,13 +118,15 @@ it('opens a custom member heading from the keyboard and clears it when closed', 
     expect(screen.queryByText('@sample-host')).not.toBeInTheDocument();
   } finally {
     unmount();
-    jest.restoreAllMocks();
+    Reflect.set(L.Browser, 'svg', svg);
+    vi.restoreAllMocks();
   }
 });
 
 it('focuses the hosting offer from a pin that is already open', () => {
-  jest.replaceProperty(L.Browser, 'svg', true);
-  const markerSpy = jest.spyOn(L, 'circleMarker');
+  const svg = L.Browser.svg;
+  Reflect.set(L.Browser, 'svg', true);
+  const markerSpy = vi.spyOn(L, 'circleMarker');
   const { unmount } = render(
     <CircleLocationMap
       title="Hosting"
@@ -167,6 +169,7 @@ it('focuses the hosting offer from a pin that is already open', () => {
     expect(offer).toHaveFocus();
   } finally {
     unmount();
-    jest.restoreAllMocks();
+    Reflect.set(L.Browser, 'svg', svg);
+    vi.restoreAllMocks();
   }
 });

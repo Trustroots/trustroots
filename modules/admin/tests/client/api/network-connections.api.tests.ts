@@ -4,20 +4,21 @@ import {
   searchNetworkConnections,
 } from '@/modules/admin/client/api/network-connections.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const axiosMock = jest.mocked(axios);
+const axiosMock = vi.mocked(axios);
+const { AxiosHeaders: ActualAxiosHeaders } =
+  await vi.importActual<typeof import('axios')>('axios');
 
 function response<T>(data: T): AxiosResponse<T> {
-  const { AxiosHeaders: ActualAxiosHeaders } =
-    jest.requireActual<typeof import('axios')>('axios');
   const headers = new ActualAxiosHeaders();
   return { data, status: 200, statusText: 'OK', headers, config: { headers } };
 }
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 test('loads a member connection history page', async () => {
   const data = { current: [], history: [], page: 2, hasNextPage: true };
