@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
@@ -9,24 +8,24 @@ import { mockSignOut } from '@/testutils/client/auth.testutil';
 type AvatarProps = React.ComponentProps<typeof Avatar>;
 type NavigationProps = React.ComponentProps<typeof Navigation>;
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
 }));
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/Avatar.component.js', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar({ user }: AvatarProps) {
     return <div data-testid="avatar">{user.username}</div>;
   }
 
-  return MockAvatar;
+  return { default: MockAvatar };
 });
 
 describe('<Navigation />', () => {

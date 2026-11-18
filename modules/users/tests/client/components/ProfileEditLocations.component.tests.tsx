@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditLocations from '@/modules/users/client/components/ProfileEditLocations.component';
@@ -11,39 +10,39 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
 
-jest.mock('@/modules/users/client/api/users.api');
-const updateUser = jest.mocked(usersApi.update);
-jest.mock(
-  '@/modules/users/client/components/ProfileEditPage.component',
-  () => ({
-    __esModule: true,
-    default: ({ children }: { children?: React.ReactNode }) => (
-      <section>{children}</section>
-    ),
-  }),
+vi.mock('@/modules/users/client/api/users.api');
+const updateUser = vi.mocked(usersApi.update);
+vi.mock('@/modules/users/client/components/ProfileEditPage.component', () => ({
+  __esModule: true,
+  default: ({ children }: { children?: React.ReactNode }) => (
+    <section>{children}</section>
+  ),
+}));
+vi.mock(
+  '@/modules/core/client/components/LocationInput.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
+
+    function MockLocationInput({
+      id,
+      onChange,
+      placeholder,
+      value,
+    }: React.ComponentProps<typeof LocationInput>) {
+      return (
+        <input
+          aria-label={placeholder}
+          id={id}
+          onChange={event => onChange(event.target.value)}
+          value={value || ''}
+        />
+      );
+    }
+
+    return { default: MockLocationInput };
+  },
 );
-jest.mock('@/modules/core/client/components/LocationInput.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  function MockLocationInput({
-    id,
-    onChange,
-    placeholder,
-    value,
-  }: React.ComponentProps<typeof LocationInput>) {
-    return (
-      <input
-        aria-label={placeholder}
-        id={id}
-        onChange={event => onChange(event.target.value)}
-        value={value || ''}
-      />
-    );
-  }
-
-  return MockLocationInput;
-});
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/HostingAndMeetPanel.component',
   () => ({
     __esModule: true,
@@ -80,7 +79,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 
 describe('ProfileEditLocations', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders location fields and the hosting panel', () => {

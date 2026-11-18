@@ -1,18 +1,17 @@
 import React, { type ChangeEvent, type KeyboardEvent } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminNotes from '@/modules/admin/client/components/AdminNotes';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-jest.mock('@/modules/admin/client/api/admin-notes.api');
-const mockedNotesApi = jest.mocked(notesApi);
-jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/api/admin-notes.api');
+const mockedNotesApi = vi.mocked(notesApi);
+vi.mock('@/modules/core/client/components/TrEditor', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockTrEditor({
     onChange,
@@ -41,13 +40,13 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
     );
   }
 
-  return MockTrEditor;
+  return { default: MockTrEditor };
 });
 
 const originalAlert = window.alert;
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.alert = originalAlert;
 });
 
@@ -121,7 +120,7 @@ describe('<AdminNotes />', () => {
   });
 
   it('reports write failures and still refreshes notes', async () => {
-    window.alert = jest.fn();
+    window.alert = vi.fn();
     mockedNotesApi.listNotes.mockResolvedValue([]);
     mockedNotesApi.addNote.mockRejectedValueOnce(new Error('write failed'));
 
@@ -144,7 +143,7 @@ describe('<AdminNotes />', () => {
   });
 
   it('logs failed note loads and leaves the editor usable', async () => {
-    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     mockedNotesApi.listNotes.mockRejectedValueOnce(new Error('load failed'));
 
     render(<AdminNotes id={userId} />);

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import {
   act,
@@ -17,13 +18,13 @@ import {
 } from '../client/signers.ts';
 import type { Catalogue } from '../shared.ts';
 
-jest.mock('../client/signers.ts', () => ({
-  authorisation: jest.fn(),
-  browserSigner: jest.fn(),
-  bunkerSigner: jest.fn(),
-  remoteConnection: jest.fn(),
+vi.mock('../client/signers.ts', () => ({
+  authorisation: vi.fn(),
+  browserSigner: vi.fn(),
+  bunkerSigner: vi.fn(),
+  remoteConnection: vi.fn(),
 }));
-jest.mock('qrcode', () => ({ toDataURL: jest.fn() }));
+vi.mock('qrcode', () => ({ default: { toDataURL: vi.fn() } }));
 
 function data(): Catalogue {
   return {
@@ -63,21 +64,21 @@ function data(): Catalogue {
   };
 }
 let current: Catalogue;
-let fetchMock: jest.Mock;
-let signer: { getPublicKey: jest.Mock; signEvent: jest.Mock; close: jest.Mock };
+let fetchMock: Mock;
+let signer: { getPublicKey: Mock; signEvent: Mock; close: Mock };
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   localStorage.clear();
   current = data();
   signer = {
-    getPublicKey: jest.fn(async () => 'a'.repeat(64)),
-    signEvent: jest.fn(),
-    close: jest.fn(async () => {}),
+    getPublicKey: vi.fn(async () => 'a'.repeat(64)),
+    signEvent: vi.fn(),
+    close: vi.fn(async () => {}),
   };
-  jest.mocked(browserSigner).mockReturnValue(signer);
-  jest.mocked(bunkerSigner).mockResolvedValue(signer);
-  jest.mocked(authorisation).mockResolvedValue('Nostr signed');
-  fetchMock = jest.fn(async (input: string) => ({
+  vi.mocked(browserSigner).mockReturnValue(signer);
+  vi.mocked(bunkerSigner).mockResolvedValue(signer);
+  vi.mocked(authorisation).mockResolvedValue('Nostr signed');
+  fetchMock = vi.fn(async (input: string) => ({
     ok: true,
     json: async () =>
       input.endsWith('/api/languages')
@@ -93,7 +94,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 async function ready() {
@@ -313,14 +314,14 @@ describe('signing and submission', () => {
       screen.getByRole('button', { name: 'Submit reviewed translations' }),
     );
     await screen.findByText(/signer changed its key/);
-    jest
-      .mocked(authorisation)
-      .mockRejectedValueOnce(new Error('Signature denied'));
+    vi.mocked(authorisation).mockRejectedValueOnce(
+      new Error('Signature denied'),
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Submit reviewed translations' }),
     );
     await screen.findByText('Signature denied');
-    jest.mocked(authorisation).mockRejectedValueOnce('cancelled');
+    vi.mocked(authorisation).mockRejectedValueOnce('cancelled');
     fireEvent.click(
       screen.getByRole('button', { name: 'Submit reviewed translations' }),
     );
@@ -356,26 +357,26 @@ describe('signing and submission', () => {
     );
     await screen.findByText(/Connected key:/);
     const next = {
-      getPublicKey: jest.fn(async () => 'b'.repeat(64)),
-      signEvent: jest.fn(),
+      getPublicKey: vi.fn(async () => 'b'.repeat(64)),
+      signEvent: vi.fn(),
     };
-    jest.mocked(browserSigner).mockReturnValueOnce(next);
+    vi.mocked(browserSigner).mockReturnValueOnce(next);
     await connect();
     expect(signer.close).toHaveBeenCalledTimes(1);
     const rejected = {
-      getPublicKey: jest.fn(async () => {
+      getPublicKey: vi.fn(async () => {
         throw new Error('denied');
       }),
-      signEvent: jest.fn(),
-      close: jest.fn(async () => {}),
+      signEvent: vi.fn(),
+      close: vi.fn(async () => {}),
     };
-    jest.mocked(browserSigner).mockReturnValueOnce(rejected);
+    vi.mocked(browserSigner).mockReturnValueOnce(rejected);
     fireEvent.click(
       screen.getByRole('button', { name: 'Connect browser signer' }),
     );
     await screen.findByText(/Could not connect/);
     expect(rejected.close).toHaveBeenCalledTimes(1);
-    jest.mocked(browserSigner).mockImplementationOnce(() => {
+    vi.mocked(browserSigner).mockImplementationOnce(() => {
       throw new Error('unavailable');
     });
     fireEvent.click(
@@ -387,11 +388,11 @@ describe('signing and submission', () => {
   it('offers a QR/deep link, supports cancellation and reports preparation failures', async () => {
     await ready();
     await review();
-    jest
-      .mocked(QRCode.toDataURL)
-      .mockResolvedValue('data:image/png;base64,fictional' as never);
+    vi.mocked(QRCode.toDataURL).mockResolvedValue(
+      'data:image/png;base64,fictional' as never,
+    );
     let reject: (error: Error) => void = () => {};
-    jest.mocked(remoteConnection).mockImplementation(signal => ({
+    vi.mocked(remoteConnection).mockImplementation(signal => ({
       uri: 'nostrconnect://fictional',
       connect: () =>
         new Promise((_resolve, fail) => {
@@ -411,14 +412,14 @@ describe('signing and submission', () => {
     expect(
       screen.queryByAltText('Remote signer connection QR code'),
     ).not.toBeInTheDocument();
-    jest
-      .mocked(QRCode.toDataURL)
-      .mockRejectedValueOnce(new Error('QR unavailable') as never);
+    vi.mocked(QRCode.toDataURL).mockRejectedValueOnce(
+      new Error('QR unavailable') as never,
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Connect with QR code' }),
     );
     await screen.findByText(/Could not prepare/);
-    jest.mocked(remoteConnection).mockReturnValue({
+    vi.mocked(remoteConnection).mockReturnValue({
       uri: 'nostrconnect://fictional',
       connect: async () =>
         signer as unknown as Awaited<
@@ -458,7 +459,7 @@ describe('loading and browser storage failures', () => {
     await screen.findByText('Catalogue offline');
   });
   it('warns when drafts cannot be saved while allowing editing', async () => {
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full');
     });
     await ready();

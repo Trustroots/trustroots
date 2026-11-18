@@ -1,21 +1,20 @@
 import { ready } from '@/modules/core/client/utils/dom';
 import { watch } from '@/modules/messages/client/services/unread-message-count.client.service';
 import { enable } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
-import '@testing-library/jest-dom';
 
-jest.mock('@/modules/core/client/utils/dom', () => ({
-  ready: jest.fn(),
+vi.mock('@/modules/core/client/utils/dom', () => ({
+  ready: vi.fn(),
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
   () => ({
-    watch: jest.fn(),
+    watch: vi.fn(),
   }),
 );
 
-const readyMock = jest.mocked(ready);
-const watchMock = jest.mocked(watch);
+const readyMock = vi.mocked(ready);
+const watchMock = vi.mocked(watch);
 let unreadCountWatcher!: (count: number) => void;
 
 describe('messages count favicon updater', () => {
@@ -33,7 +32,7 @@ describe('messages count favicon updater', () => {
 
   afterEach(() => {
     document.head.innerHTML = '';
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('starts watching unread counts when the DOM is ready', () => {

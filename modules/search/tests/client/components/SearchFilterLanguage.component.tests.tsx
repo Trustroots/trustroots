@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchFilterLanguage from '@/modules/search/client/components/SearchFilterLanguage.component';
@@ -10,7 +9,7 @@ type ChangeHandler = React.ComponentProps<
   typeof SearchFilterLanguage
 >['onChangeLanguages'];
 
-jest.mock('@/modules/core/client/components/LanguageSelect', () => {
+vi.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(
     props: React.ComponentProps<typeof LanguageSelect> & {
       'aria-labelledby'?: string;
@@ -30,15 +29,15 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
     );
   }
 
-  return MockLanguageSelect;
+  return { default: MockLanguageSelect };
 });
 
 describe('<SearchFilterLanguage />', () => {
   it('connects the language picker to the search filter heading and callback', () => {
-    const onChangeLanguages = jest.fn<
-      ReturnType<ChangeHandler>,
-      Parameters<ChangeHandler>
-    >();
+    const onChangeLanguages =
+      vi.fn<
+        (...args: Parameters<ChangeHandler>) => ReturnType<ChangeHandler>
+      >();
 
     render(
       <SearchFilterLanguage

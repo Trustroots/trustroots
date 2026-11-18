@@ -1,17 +1,16 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 import AboutMe from '@/modules/users/client/components/AboutMe.component';
 import type { UserProfile } from '@/modules/users/client/types';
 
-jest.mock('@/modules/tribes/client/api/tribes.api', () => ({
-  read: jest.fn(),
+vi.mock('@/modules/tribes/client/api/tribes.api', () => ({
+  read: vi.fn(),
 }));
 
-const readCirclesMock = jest.mocked(readCircles);
+const readCirclesMock = vi.mocked(readCircles);
 
 type AboutMeProfile = Pick<UserProfile, 'description'>;
 const describedProfile: AboutMeProfile = {

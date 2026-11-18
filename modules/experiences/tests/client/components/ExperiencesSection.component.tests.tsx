@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ExperiencesSection from '@/modules/experiences/client/components/read-experiences/ExperiencesSection';
 import type { Experience } from '@/modules/experiences/shared/experience';
@@ -9,20 +8,22 @@ type ExperienceItemProps = React.ComponentProps<
   typeof ExperiencesSection
 >['experiences'][number];
 
-const mockExperience = jest.fn(
+const mockExperience = vi.fn(
   ({ experience }: { experience: ExperienceItemProps }) => (
     <div data-testid="experience-item">{experience._id}</div>
   ),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/experiences/client/components/read-experiences/Experience',
   () => {
-    return function ExperienceMock(props: {
-      experience: ExperienceItemProps;
-      onReceiverProfile: boolean;
-    }) {
-      return mockExperience(props);
+    return {
+      default: function ExperienceMock(props: {
+        experience: ExperienceItemProps;
+        onReceiverProfile: boolean;
+      }) {
+        return mockExperience(props);
+      },
     };
   },
 );

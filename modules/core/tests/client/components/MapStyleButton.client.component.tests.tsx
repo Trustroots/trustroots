@@ -1,30 +1,31 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import MapStyleButton from '@/modules/core/client/components/Map/MapStyleButton';
 
 type MapIconProps = { mapboxStyle?: string };
-const mockMapIcon = jest.fn<void, [props: MapIconProps]>();
-jest.mock('@/modules/core/client/components/Map/MapIcon', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+const mockMapIcon = vi.fn<(...args: [props: MapIconProps]) => void>();
+vi.mock('@/modules/core/client/components/Map/MapIcon', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-  return function MockMapIcon(props: MapIconProps) {
-    mockMapIcon(props);
-    return <div data-testid="map-icon" />;
+  return {
+    default: function MockMapIcon(props: MapIconProps) {
+      mockMapIcon(props);
+      return <div data-testid="map-icon" />;
+    },
   };
 });
 
 describe('<MapStyleButton />', () => {
   const defaultProps: React.ComponentProps<typeof MapStyleButton> = {
     label: 'Streets',
-    onClick: jest.fn(),
+    onClick: vi.fn(),
     selectedStyle: 'mapbox://styles/mapbox/outdoors-v11',
     styleName: 'mapbox://styles/mapbox/outdoors-v11',
   };
 
   it('highlights active style and propagates click events', () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
 
     render(
       <MapStyleButton
@@ -49,7 +50,7 @@ describe('<MapStyleButton />', () => {
   });
 
   it('does not activate click behavior while disabled', () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
 
     render(
       <MapStyleButton

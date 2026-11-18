@@ -65,7 +65,7 @@ export default function AdminNostr() {
     setStatus('');
     let acknowledgedRelays = publication?.acknowledgedRelays;
     try {
-      const signed = publication?.event ?? (await signNostrTextNote(draft));
+      const signed = await (publication?.event ?? signNostrTextNote(draft));
       if (!acknowledgedRelays) {
         setPublication({ event: signed });
         acknowledgedRelays = await publishNostrTextNote(signed);

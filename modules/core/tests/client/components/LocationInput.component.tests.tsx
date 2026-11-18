@@ -1,6 +1,5 @@
 import React, { type ComponentProps } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import axios from 'axios';
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
@@ -10,24 +9,25 @@ type LocationInputProps = ComponentProps<typeof LocationInput>;
 type LocationChange = LocationInputProps['onChange'];
 type GeocodingFeature = NonNullable<Parameters<LocationChange>[1]>;
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-jest.mock('@/modules/core/client/react-app/app-context', () => ({
-  useSettings: jest.fn(() => ({
+vi.mock('@/modules/core/client/react-app/app-context', () => ({
+  useSettings: vi.fn(() => ({
     mapbox: { publicKey: 'pk.test-mapbox-token' },
   })),
 }));
 
-const axiosGetMock = jest.mocked(axios.get);
-const useSettingsMock = jest.mocked(useSettings);
+const axiosGetMock = vi.mocked(axios.get);
+const useSettingsMock = vi.mocked(useSettings);
 
 describe('<LocationInput />', () => {
-  const onChange = jest.fn<void, Parameters<LocationChange>>();
+  const onChange = vi.fn<(...args: Parameters<LocationChange>) => void>();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     useSettingsMock.mockReturnValue({
       mapbox: { publicKey: 'pk.test-mapbox-token' },
     });

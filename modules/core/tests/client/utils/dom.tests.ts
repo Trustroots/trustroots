@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest';
 import { ready } from '@/modules/core/client/utils/dom';
 
 type DetectWebP = typeof import('@/modules/core/client/utils/dom').canUseWebP;
@@ -35,13 +36,13 @@ function withReadyState(state: DocumentReadyState, fn: () => void): void {
 
 describe('ready', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('calls callback immediately when document is ready', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     withReadyState('complete', () => {
-      const addEventListener = jest.spyOn(document, 'addEventListener');
+      const addEventListener = vi.spyOn(document, 'addEventListener');
       ready(cb);
       expect(cb).toHaveBeenCalledTimes(1);
       expect(addEventListener).not.toHaveBeenCalled();
@@ -49,9 +50,9 @@ describe('ready', () => {
   });
 
   it('registers callback for DOMContentLoaded while loading', () => {
-    const cb = jest.fn();
+    const cb = vi.fn();
     withReadyState('loading', () => {
-      const addEventListener = jest.spyOn(document, 'addEventListener');
+      const addEventListener = vi.spyOn(document, 'addEventListener');
       ready(cb);
       expect(cb).not.toHaveBeenCalled();
       expect(addEventListener).toHaveBeenCalledWith(
@@ -70,17 +71,11 @@ describe('ready', () => {
 describe('canUseWebP', () => {
   let detectWebP: DetectWebP;
   let image: ImageProbe;
-  let imageConstructor: jest.SpyInstance<
-    HTMLImageElement,
-    ConstructorParameters<typeof Image>
-  >;
+  let imageConstructor: MockInstance<typeof Image>;
 
-  beforeEach(() => {
-    jest.isolateModules(() => {
-      detectWebP = jest.requireActual<
-        typeof import('@/modules/core/client/utils/dom')
-      >('@/modules/core/client/utils/dom').canUseWebP;
-    });
+  beforeEach(async () => {
+    vi.resetModules();
+    detectWebP = (await import('@/modules/core/client/utils/dom')).canUseWebP;
     image = {
       naturalWidth: 0,
       naturalHeight: 0,
@@ -88,20 +83,22 @@ describe('canUseWebP', () => {
       onload: null,
       onerror: null,
     };
-    imageConstructor = jest
+    imageConstructor = vi
       .spyOn(window, 'Image')
       // This deliberately implements only the image fields the probe reads.
-      .mockImplementation(() => image as HTMLImageElement);
+      .mockImplementation(function () {
+        return image as HTMLImageElement;
+      });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('uses JPEG while decoding a single cached image probe without canvas access', () => {
-    const createElement = jest.spyOn(document, 'createElement');
-    const getContext = jest.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    const toDataURL = jest.spyOn(HTMLCanvasElement.prototype, 'toDataURL');
+    const createElement = vi.spyOn(document, 'createElement');
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    const toDataURL = vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL');
 
     expect(detectWebP()).toBe(false);
     expect(detectWebP()).toBe(false);

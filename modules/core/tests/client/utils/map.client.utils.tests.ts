@@ -1,3 +1,4 @@
+import type { MockInstance } from 'vitest';
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   addRasterMapTiles,
@@ -17,13 +18,12 @@ function canvasElement(
 }
 
 describe('map utilities', () => {
-  let createElement: jest.SpyInstance<
-    HTMLElement,
-    Parameters<Document['createElement']>
+  let createElement: MockInstance<
+    (...args: Parameters<Document['createElement']>) => HTMLElement
   >;
 
   beforeEach(() => {
-    createElement = jest.spyOn(document, 'createElement');
+    createElement = vi.spyOn(document, 'createElement');
   });
 
   afterEach(() => {
@@ -31,9 +31,7 @@ describe('map utilities', () => {
   });
 
   it('detects an available WebGL context', () => {
-    const getContext = jest.fn((type: string) =>
-      type === 'webgl2' ? {} : null,
-    );
+    const getContext = vi.fn((type: string) => (type === 'webgl2' ? {} : null));
     createElement.mockReturnValue(canvasElement(getContext));
 
     expect(isWebGLSupported()).toBe(true);
@@ -42,7 +40,7 @@ describe('map utilities', () => {
   });
 
   it('uses raster rendering when only WebGL1 is available', () => {
-    const getContext = jest.fn(type =>
+    const getContext = vi.fn(type =>
       type === 'webgl' || type === 'experimental-webgl' ? {} : null,
     );
     createElement.mockReturnValue(canvasElement(getContext));
@@ -82,15 +80,15 @@ describe('map utilities', () => {
   it('replaces a failed Mapbox raster layer with OpenStreetMap once', () => {
     const map = {};
     const mapboxLayer = {
-      addTo: jest.fn(),
-      once: jest.fn((event: string, handler: () => void) => {
+      addTo: vi.fn(),
+      once: vi.fn((event: string, handler: () => void) => {
         expect(event).toBe('tileerror');
         expect(handler).toEqual(expect.any(Function));
       }),
-      remove: jest.fn(),
+      remove: vi.fn(),
     };
-    const osmLayer = { addTo: jest.fn() };
-    const tileLayer = jest
+    const osmLayer = { addTo: vi.fn() };
+    const tileLayer = vi
       .fn()
       .mockReturnValueOnce(mapboxLayer)
       .mockReturnValueOnce(osmLayer);
@@ -116,8 +114,8 @@ describe('map utilities', () => {
 
   it('adds OpenStreetMap directly without a Mapbox token', () => {
     const map = {};
-    const layer = { addTo: jest.fn(), once: jest.fn(), remove: jest.fn() };
-    const tileLayer = jest.fn(() => layer);
+    const layer = { addTo: vi.fn(), once: vi.fn(), remove: vi.fn() };
+    const tileLayer = vi.fn(() => layer);
 
     addRasterMapTiles({ map, mapboxToken: false, tileLayer });
 

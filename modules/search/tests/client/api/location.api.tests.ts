@@ -1,3 +1,4 @@
+import type { Mocked, MockedFunction } from 'vitest';
 import axios from 'axios';
 
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
@@ -12,31 +13,32 @@ import {
   type MapPoint,
 } from '@/modules/search/client/utils/location';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
-jest.mock('@/modules/core/client/utils/map', () => ({
-  getMapBoxToken: jest.fn(),
+vi.mock('@/modules/core/client/utils/map', () => ({
+  getMapBoxToken: vi.fn(),
 }));
-jest.mock('@/modules/search/client/utils/location', () => ({
-  getBounds: jest.fn(),
-  getCenter: jest.fn(),
-  shortTitle: jest.fn(
+vi.mock('@/modules/search/client/utils/location', () => ({
+  getBounds: vi.fn(),
+  getCenter: vi.fn(),
+  shortTitle: vi.fn(
     (feature: { text?: string; place_name?: string }) =>
       feature.text || feature.place_name || '',
   ),
 }));
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const getMapBoxTokenMock = getMapBoxToken as jest.MockedFunction<
+const mockedAxios = axios as Mocked<typeof axios>;
+const getMapBoxTokenMock = getMapBoxToken as MockedFunction<
   typeof getMapBoxToken
 >;
-const getBoundsMock = getBounds as jest.MockedFunction<typeof getBounds>;
-const getCenterMock = getCenter as jest.MockedFunction<typeof getCenter>;
+const getBoundsMock = getBounds as MockedFunction<typeof getBounds>;
+const getCenterMock = getCenter as MockedFunction<typeof getCenter>;
 
 describe('location api', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns an empty list when the token or query is missing', async () => {

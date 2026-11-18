@@ -16,7 +16,7 @@ const draft: ExperienceDraft = {
 };
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -57,7 +57,7 @@ it('handles invalid JSON without preventing editing', () => {
 
 it('handles storage being denied or full', () => {
   for (const method of ['getItem', 'setItem', 'removeItem'] as const) {
-    jest.spyOn(Storage.prototype, method).mockImplementation(() => {
+    vi.spyOn(Storage.prototype, method).mockImplementation(() => {
       throw new Error('Storage denied');
     });
   }

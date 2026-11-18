@@ -1,13 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedOut from '@/layers/shell/client/components/NavigationLoggedOut';
 import type LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 
-jest.mock('@/modules/core/client/components/LanguageSwitch', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/LanguageSwitch', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockLanguageSwitch(
     _props: React.ComponentProps<typeof LanguageSwitch>,
@@ -16,7 +15,7 @@ jest.mock('@/modules/core/client/components/LanguageSwitch', () => {
     return <span>language-switch</span>;
   }
 
-  return MockLanguageSwitch;
+  return { default: MockLanguageSwitch };
 });
 
 describe('<NavigationLoggedOut />', () => {

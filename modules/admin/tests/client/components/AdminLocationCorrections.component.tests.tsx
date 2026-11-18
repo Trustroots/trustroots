@@ -6,7 +6,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import * as api from '@/modules/admin/client/api/location-corrections.api';
 import type {
@@ -14,16 +13,14 @@ import type {
   LocationCorrectionSendResult,
 } from '@/modules/admin/client/api/location-corrections.api';
 
-jest.mock('@/modules/admin/client/api/location-corrections.api');
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () =>
-    function MockAdminHeader() {
-      return <nav>Welcome team</nav>;
-    },
-);
+vi.mock('@/modules/admin/client/api/location-corrections.api');
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: function MockAdminHeader() {
+    return <nav>Welcome team</nav>;
+  },
+}));
 
-const apiMock = jest.mocked(api);
+const apiMock = vi.mocked(api);
 
 const candidates: LocationCorrectionCandidate[] = [
   {
@@ -52,7 +49,7 @@ const candidates: LocationCorrectionCandidate[] = [
 
 describe('AdminLocationCorrections', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     apiMock.getLocationCorrections.mockResolvedValue(candidates);
     apiMock.sendLocationCorrection.mockResolvedValue({ sent: true });
   });

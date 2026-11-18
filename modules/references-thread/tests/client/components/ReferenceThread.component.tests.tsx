@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
@@ -10,10 +9,10 @@ import {
   type ReferenceThreadData,
 } from '@/modules/references-thread/client/api/reference-thread.api';
 
-jest.mock('@/modules/references-thread/client/api/reference-thread.api');
+vi.mock('@/modules/references-thread/client/api/reference-thread.api');
 
-const mockedGet = jest.mocked(get);
-const mockedSend = jest.mocked(send);
+const mockedGet = vi.mocked(get);
+const mockedSend = vi.mocked(send);
 
 function answerWithoutTimestamp(): ReferenceThreadData {
   // Preserve the malformed API response regression for a missing `created` value.
@@ -21,7 +20,7 @@ function answerWithoutTimestamp(): ReferenceThreadData {
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<ReferenceThread />', () => {

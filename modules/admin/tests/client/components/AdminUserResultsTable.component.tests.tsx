@@ -1,12 +1,11 @@
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
 type UserResult = React.ComponentProps<
@@ -56,7 +55,7 @@ describe('<AdminUserResultsTable />', () => {
   });
 
   it('requests server sorting for every column', () => {
-    const onSortChange = jest.fn();
+    const onSortChange = vi.fn();
     render(
       <AdminUserResultsTable
         onSortChange={onSortChange}
@@ -112,7 +111,7 @@ describe('<AdminUserResultsTable />', () => {
   });
 
   it('shows page metadata and requests adjacent pages', () => {
-    const onPageChange = jest.fn();
+    const onPageChange = vi.fn();
     const { rerender } = render(
       <AdminUserResultsTable
         onPageChange={onPageChange}

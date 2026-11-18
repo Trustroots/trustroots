@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
@@ -9,11 +8,13 @@ import type {
   MessageUser,
 } from '@/modules/messages/client/api/messages.api';
 
-jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/TimeAgo', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-  return function MockTimeAgo() {
-    return <time>recently</time>;
+  return {
+    default: function MockTimeAgo() {
+      return <time>recently</time>;
+    },
   };
 });
 

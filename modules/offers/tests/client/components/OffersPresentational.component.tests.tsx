@@ -1,31 +1,35 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import OffersPresentational from '@/modules/offers/client/components/OffersPresentational';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
 import type OfferLocation from '@/modules/offers/client/components/OfferLocation.component';
 
-jest.mock('@/modules/offers/client/components/OfferLocation.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  return function MockOfferLocation({
-    location,
-    height,
-    offerStatus,
-    offerType,
-  }: React.ComponentProps<typeof OfferLocation>) {
-    return location ? (
-      <div
-        data-testid="hosting-map"
-        data-location={JSON.stringify(location)}
-        data-height={height}
-        data-status={offerStatus}
-        data-type={offerType}
-      />
-    ) : null;
-  };
-});
+vi.mock(
+  '@/modules/offers/client/components/OfferLocation.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
+    return {
+      default: function MockOfferLocation({
+        location,
+        height,
+        offerStatus,
+        offerType,
+      }: React.ComponentProps<typeof OfferLocation>) {
+        return location ? (
+          <div
+            data-testid="hosting-map"
+            data-location={JSON.stringify(location)}
+            data-height={height}
+            data-status={offerStatus}
+            data-type={offerType}
+          />
+        ) : null;
+      },
+    };
+  },
+);
 
 const hostingOffer: Offer = {
   status: 'yes',
@@ -157,7 +161,7 @@ describe('<OffersPresentational />', () => {
     },
   );
 
-  it.each([undefined, [51]])(
+  it.each([[undefined], [[51]]])(
     'omits a meeting map without valid coordinates: %s',
     location => {
       const offer: Offer = {

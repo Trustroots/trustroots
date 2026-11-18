@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import {
   finalizeEvent,
   generateSecretKey,
@@ -28,11 +29,11 @@ import {
   tag,
 } from '@/modules/tribes/client/services/radio.client.service';
 
-jest.mock('@/modules/core/client/api/http-client.js', () => ({
+vi.mock('@/modules/core/client/api/http-client.js', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: vi.fn() },
 }));
-jest.mock('nostr-tools/relay', () => ({ Relay: jest.fn() }));
+vi.mock('nostr-tools/relay', () => ({ Relay: vi.fn() }));
 const secret = generateSecretKey();
 const publicKey = getPublicKey(secret);
 const station = stations[0];
@@ -41,7 +42,7 @@ const now = Math.floor(Date.now() / 1000);
 const signed = (template: EventTemplate) => finalizeEvent(template, secret);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   localStorage.clear();
   delete window.nostr;
 });
@@ -51,8 +52,7 @@ it('resolves profiles in batches of up to 100 public keys', async () => {
     index.toString(16).padStart(64, '0'),
   );
   const { signal } = new AbortController();
-  jest
-    .mocked(http.get)
+  vi.mocked(http.get)
     .mockResolvedValueOnce({
       data: { usernames: { [keys[0]]: 'fictional-member' } },
     })
@@ -61,7 +61,7 @@ it('resolves profiles in batches of up to 100 public keys', async () => {
     [keys[0]]: 'fictional-member',
   });
   expect(
-    jest.mocked(http.get).mock.calls.map(([path, config]) => {
+    vi.mocked(http.get).mock.calls.map(([path, config]) => {
       const url = new URL(path, 'https://example.test');
       expect(url.pathname).toBe('/api/nostr/author-visibility');
       expect(url.searchParams.get('profiles')).toBe('1');
@@ -199,25 +199,23 @@ it('handles corrupt, blocked and unavailable browser storage', () => {
   expect(readFavourites()).toEqual([]);
   localStorage.setItem(FAVOURITES_KEY, '{');
   expect(readFavourites()).toEqual([]);
-  const fail = jest
-    .spyOn(Storage.prototype, 'setItem')
-    .mockImplementation(() => {
-      throw new Error('blocked');
-    });
+  const fail = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('blocked');
+  });
   expect(() => saveFavourites([], 'custom')).not.toThrow();
   fail.mockRestore();
 });
 
 function provider() {
   window.nostr = {
-    getPublicKey: jest.fn(async () => publicKey),
-    signEvent: jest.fn(async template => ({
+    getPublicKey: vi.fn(async () => publicKey),
+    signEvent: vi.fn(async template => ({
       ...signed(template as unknown as EventTemplate),
     })),
   };
-  jest
-    .mocked(http.get)
-    .mockResolvedValue({ data: { names: { 'fictional-member': publicKey } } });
+  vi.mocked(http.get).mockResolvedValue({
+    data: { names: { 'fictional-member': publicKey } },
+  });
   return window.nostr;
 }
 const user = {
@@ -243,7 +241,7 @@ it('requires a matching linked NIP-05 identity and verifies signed contents', as
   await expect(connectRadioSigner({ username: user.username })).rejects.toThrow(
     'profile settings',
   );
-  jest.mocked(http.get).mockResolvedValueOnce({ data: { names: {} } });
+  vi.mocked(http.get).mockResolvedValueOnce({ data: { names: {} } });
   await expect(connectRadioSigner(user)).rejects.toThrow('must match');
   await expect(
     connectRadioSigner({ ...user, nostrNpub: nip19.noteEncode(publicKey) }),
@@ -276,21 +274,21 @@ it.each(['pubkey', 'kind', 'content', 'created_at', 'tags', 'sig'])(
 
 function relayFixture(fail = false) {
   const relays: Array<{
-    connect: jest.Mock;
-    close: jest.Mock;
-    subscribe: jest.Mock;
-    publish: jest.Mock;
+    connect: Mock;
+    close: Mock;
+    subscribe: Mock;
+    publish: Mock;
     onclose?: () => void;
     onauth?: (template: EventTemplate) => Promise<Event>;
   }> = [];
-  jest.mocked(Relay).mockImplementation(() => {
+  vi.mocked(Relay).mockImplementation(function () {
     const relay = {
-      connect: jest.fn(async () => {
+      connect: vi.fn(async () => {
         if (fail) throw new Error('offline');
       }),
-      close: jest.fn(),
-      subscribe: jest.fn(() => ({ close: jest.fn() })),
-      publish: jest.fn(async () => 'ok'),
+      close: vi.fn(),
+      subscribe: vi.fn(() => ({ close: vi.fn() })),
+      publish: vi.fn(async () => 'ok'),
     };
     relays.push(relay);
     return relay as unknown as Relay;
@@ -299,8 +297,8 @@ function relayFixture(fail = false) {
 }
 it('subscribes visitors only to presence and filters unrelated or expired events', async () => {
   const relays = relayFixture();
-  const receive = jest.fn();
-  const error = jest.fn();
+  const receive = vi.fn();
+  const error = vi.fn();
   const room = new RadioRoom(receive, error);
   await room.open(false);
   const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
@@ -332,8 +330,8 @@ it('subscribes visitors only to presence and filters unrelated or expired events
 });
 it('publishes verified events, restores favourites and tolerates a failed relay', async () => {
   const relays = relayFixture();
-  const receive = jest.fn();
-  const error = jest.fn();
+  const receive = vi.fn();
+  const error = vi.fn();
   const room = new RadioRoom(receive, error);
   await expect(
     room.publish(roomTemplate('chat', station, 'Hi')),
@@ -387,15 +385,15 @@ it('publishes verified events, restores favourites and tolerates a failed relay'
 });
 it('closes pending connections and fails publications after unmount', async () => {
   const relays = relayFixture();
-  const error = jest.fn();
-  const room = new RadioRoom(jest.fn(), error);
+  const error = vi.fn();
+  const room = new RadioRoom(vi.fn(), error);
   const opening = room.open(false);
   room.close();
   await opening;
   expect(relays[0].close).toHaveBeenCalled();
   expect(error).not.toHaveBeenCalled();
   const nextRelays = relayFixture();
-  const next = new RadioRoom(jest.fn(), error);
+  const next = new RadioRoom(vi.fn(), error);
   const connecting = next.open(false);
   nextRelays.forEach(relay =>
     relay.connect.mockRejectedValue(new Error('offline')),
@@ -404,7 +402,7 @@ it('closes pending connections and fails publications after unmount', async () =
   next.close();
   provider();
   const signer = await connectRadioSigner(user);
-  const last = new RadioRoom(jest.fn(), error);
+  const last = new RadioRoom(vi.fn(), error);
   await last.open(true);
   last.setSigner({
     ...signer,
@@ -420,8 +418,8 @@ it('closes pending connections and fails publications after unmount', async () =
 
 it('reports an unavailable room when both connections fail', async () => {
   const relays = relayFixture(true);
-  const error = jest.fn();
-  const room = new RadioRoom(jest.fn(), error);
+  const error = vi.fn();
+  const room = new RadioRoom(vi.fn(), error);
   await room.open(false);
   expect(error).toHaveBeenCalled();
   expect(relays.every(relay => relay.close.mock.calls.length > 0)).toBe(true);
@@ -430,9 +428,9 @@ it('reports an unavailable room when both connections fail', async () => {
 
 it('accepts only its chat topic and drops publish callbacks after closing', async () => {
   const relays = relayFixture();
-  const receive = jest.fn();
+  const receive = vi.fn();
   const topic = 'trustroots-circle-hackers';
-  const room = new RadioRoom(receive, jest.fn(), topic);
+  const room = new RadioRoom(receive, vi.fn(), topic);
   await room.open(true);
   const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
   expect(filters[0]['#t']).toEqual([topic]);

@@ -1,11 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import MemberFlag from '../../../client/components/MemberFlag.component';
 import * as api from '../../../client/api/support.api';
-jest.mock('../../../client/api/support.api');
-const setFlag = jest.mocked(api.setMemberFlag);
-afterEach(() => jest.resetAllMocks());
+vi.mock('../../../client/api/support.api');
+const setFlag = vi.mocked(api.setMemberFlag);
+afterEach(() => vi.resetAllMocks());
 it('waits for persistence and preserves all other roles when removing a flag', async () => {
   let resolve!: () => void;
   setFlag.mockReturnValue(
@@ -13,7 +12,7 @@ it('waits for persistence and preserves all other roles when removing a flag', a
       resolve = yes;
     }),
   );
-  const changed = jest.fn();
+  const changed = vi.fn();
   render(
     <MemberFlag
       member={{ _id: 'member-1', roles: ['user', 'flagged', 'support-team'] }}
@@ -29,7 +28,7 @@ it('waits for persistence and preserves all other roles when removing a flag', a
 });
 it('adds a follow-up flag', async () => {
   setFlag.mockResolvedValue(undefined);
-  const changed = jest.fn();
+  const changed = vi.fn();
   render(
     <MemberFlag
       member={{ _id: 'member-1', roles: ['user'] }}
@@ -45,7 +44,7 @@ it('keeps the prior state on failure and permits retry', async () => {
   setFlag
     .mockRejectedValueOnce(new Error('offline'))
     .mockResolvedValueOnce(undefined);
-  const changed = jest.fn();
+  const changed = vi.fn();
   render(
     <MemberFlag
       member={{ _id: 'member-1', roles: ['user'] }}

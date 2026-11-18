@@ -7,21 +7,18 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import { getOffers, updateOffer } from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
-jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock(
-  '@/modules/offers/client/components/OfferLocation.component',
-  () =>
-    function MockOfferLocation() {
-      return <div data-testid="location-map" />;
-    },
-);
-const getOffersMock = jest.mocked(getOffers);
-const updateOfferMock = jest.mocked(updateOffer);
+vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock('@/modules/offers/client/components/OfferLocation.component', () => ({
+  default: function MockOfferLocation() {
+    return <div data-testid="location-map" />;
+  },
+}));
+const getOffersMock = vi.mocked(getOffers);
+const updateOfferMock = vi.mocked(updateOffer);
 const offer: OfferPayload = {
   _id: 'offer-1',
   type: 'host',
@@ -32,7 +29,7 @@ const offer: OfferPayload = {
 const owner = { _id: 'member-1', public: true, username: 'ada' };
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   getOffersMock.mockResolvedValue([offer]);
   updateOfferMock.mockResolvedValue({ message: 'Offer saved.' });
 });

@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
@@ -12,7 +11,7 @@ import type SearchFilterLanguage from '@/modules/search/client/components/Search
 
 type SidebarProps = React.ComponentProps<typeof SearchSidebarFilters>;
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchTypesToggle.component',
   () => ({
     __esModule: true,
@@ -29,7 +28,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -43,7 +42,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchMyCirclesToggle.component',
   () => ({
     __esModule: true,
@@ -57,7 +56,7 @@ jest.mock(
   }),
 );
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/SearchFilterLanguage.component',
   () => ({
     __esModule: true,
@@ -84,16 +83,16 @@ const defaultProps: SidebarProps = {
     seen: { months: 6 },
     communityNotes: true,
   },
-  onCloseSidebar: jest.fn(),
-  onCommunityNotesToggle: jest.fn(),
-  onFiltersChange: jest.fn(),
+  onCloseSidebar: vi.fn(),
+  onCommunityNotesToggle: vi.fn(),
+  onFiltersChange: vi.fn(),
   onlineInPast6Months: true,
-  onOnlineInPast6MonthsChange: jest.fn(),
+  onOnlineInPast6MonthsChange: vi.fn(),
 };
 
 describe('<SearchSidebarFilters />', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders map content and circle filter controls', () => {
@@ -120,10 +119,12 @@ describe('<SearchSidebarFilters />', () => {
   });
 
   it('forwards filter changes from child controls', () => {
-    const onFiltersChange = jest.fn<
-      ReturnType<SidebarProps['onFiltersChange']>,
-      Parameters<SidebarProps['onFiltersChange']>
-    >();
+    const onFiltersChange =
+      vi.fn<
+        (
+          ...args: Parameters<SidebarProps['onFiltersChange']>
+        ) => ReturnType<SidebarProps['onFiltersChange']>
+      >();
 
     render(
       <SearchSidebarFilters
@@ -216,22 +217,30 @@ describe('<SearchSidebarFilters />', () => {
   });
 
   it('clears selected circles and toggles sidebar switches', () => {
-    const onFiltersChange = jest.fn<
-      ReturnType<SidebarProps['onFiltersChange']>,
-      Parameters<SidebarProps['onFiltersChange']>
-    >();
-    const onCommunityNotesToggle = jest.fn<
-      ReturnType<SidebarProps['onCommunityNotesToggle']>,
-      Parameters<SidebarProps['onCommunityNotesToggle']>
-    >();
-    const onOnlineInPast6MonthsChange = jest.fn<
-      ReturnType<SidebarProps['onOnlineInPast6MonthsChange']>,
-      Parameters<SidebarProps['onOnlineInPast6MonthsChange']>
-    >();
-    const onCloseSidebar = jest.fn<
-      ReturnType<SidebarProps['onCloseSidebar']>,
-      Parameters<SidebarProps['onCloseSidebar']>
-    >();
+    const onFiltersChange =
+      vi.fn<
+        (
+          ...args: Parameters<SidebarProps['onFiltersChange']>
+        ) => ReturnType<SidebarProps['onFiltersChange']>
+      >();
+    const onCommunityNotesToggle =
+      vi.fn<
+        (
+          ...args: Parameters<SidebarProps['onCommunityNotesToggle']>
+        ) => ReturnType<SidebarProps['onCommunityNotesToggle']>
+      >();
+    const onOnlineInPast6MonthsChange =
+      vi.fn<
+        (
+          ...args: Parameters<SidebarProps['onOnlineInPast6MonthsChange']>
+        ) => ReturnType<SidebarProps['onOnlineInPast6MonthsChange']>
+      >();
+    const onCloseSidebar =
+      vi.fn<
+        (
+          ...args: Parameters<SidebarProps['onCloseSidebar']>
+        ) => ReturnType<SidebarProps['onCloseSidebar']>
+      >();
 
     render(
       <SearchSidebarFilters

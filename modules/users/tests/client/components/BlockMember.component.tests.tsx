@@ -1,22 +1,21 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
 import * as blockApi from '@/modules/users/client/api/block.api';
 
-const blockMock = jest.mocked(blockApi.block);
-const unblockMock = jest.mocked(blockApi.unblock);
+const blockMock = vi.mocked(blockApi.block);
+const unblockMock = vi.mocked(blockApi.unblock);
 
-jest.mock('@/modules/users/client/api/block.api', () => ({
-  block: jest.fn(),
-  unblock: jest.fn(),
+vi.mock('@/modules/users/client/api/block.api', () => ({
+  block: vi.fn(),
+  unblock: vi.fn(),
 }));
 
 describe('<BlockMember />', () => {
-  const confirmMock = jest.spyOn(window, 'confirm');
-  const alertMock = jest.spyOn(window, 'alert');
+  const confirmMock = vi.spyOn(window, 'confirm');
+  const alertMock = vi.spyOn(window, 'alert');
   const originalGlobalAlert = global.alert;
 
   beforeEach(() => {

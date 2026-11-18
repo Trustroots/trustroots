@@ -1,3 +1,4 @@
+import type { Mock, MockInstance } from 'vitest';
 import React from 'react';
 import {
   act,
@@ -7,7 +8,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import {
   finalizeEvent,
@@ -27,13 +27,15 @@ import {
 } from '@/modules/tribes/client/services/radio.client.service';
 import type { UserProfile } from '@/modules/users/client/types';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
-  const original = jest.requireActual(
-    '@/modules/tribes/client/services/radio.client.service',
-  );
+vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
+  const original = await vi.importActual<
+    typeof import('@/modules/tribes/client/services/radio.client.service')
+  >('@/modules/tribes/client/services/radio.client.service');
   return {
     ...original,
     // Service tests cover the complete catalogue; player tests use three stations.
@@ -52,9 +54,9 @@ jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
         ),
       },
     ],
-    connectRadioSigner: jest.fn(),
-    fetchRadioAuthorUsernames: jest.fn(),
-    RadioRoom: jest.fn(),
+    connectRadioSigner: vi.fn(),
+    fetchRadioAuthorUsernames: vi.fn(),
+    RadioRoom: vi.fn(),
   };
 });
 const user: UserProfile = {
@@ -68,50 +70,50 @@ const station = stations[0];
 let receive: (event: Event) => void;
 let relayFailure: () => void;
 let room: {
-  open: jest.Mock;
-  close: jest.Mock;
-  publish: jest.Mock;
-  setSigner: jest.Mock;
-  loadFavourites: jest.Mock;
+  open: Mock;
+  close: Mock;
+  publish: Mock;
+  setSigner: Mock;
+  loadFavourites: Mock;
 };
-let play: jest.SpyInstance;
-let pause: jest.SpyInstance;
-let load: jest.SpyInstance;
+let play: MockInstance;
+let pause: MockInstance;
+let load: MockInstance;
 beforeEach(() => {
-  jest.clearAllMocks();
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValue({});
+  vi.clearAllMocks();
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValue({});
   localStorage.clear();
   window.history.replaceState(null, '', '/circles/radio');
-  play = jest
+  play = vi
     .spyOn(HTMLMediaElement.prototype, 'play')
     .mockResolvedValue(undefined);
-  pause = jest
+  pause = vi
     .spyOn(HTMLMediaElement.prototype, 'pause')
     .mockImplementation(() => {});
-  load = jest
+  load = vi
     .spyOn(HTMLMediaElement.prototype, 'load')
     .mockImplementation(() => {});
   room = {
-    open: jest.fn(async () => {}),
-    close: jest.fn(),
-    publish: jest.fn(async () => {}),
-    setSigner: jest.fn(),
-    loadFavourites: jest.fn(),
+    open: vi.fn(async () => {}),
+    close: vi.fn(),
+    publish: vi.fn(async () => {}),
+    setSigner: vi.fn(),
+    loadFavourites: vi.fn(),
   };
-  jest.mocked(RadioRoom).mockImplementation((onEvent, onError) => {
+  vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
     receive = onEvent;
     relayFailure = onError;
     return room as unknown as RadioRoom;
   });
-  jest.mocked(connectRadioSigner).mockResolvedValue({
+  vi.mocked(connectRadioSigner).mockResolvedValue({
     publicKey: event(roomTemplate('chat', station, '')).pubkey,
     sign: async template => event(template),
   });
 });
 afterEach(() => {
   delete window.nostr;
-  jest.restoreAllMocks();
-  jest.useRealTimers();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 function emit(...events: Event[]) {
   act(() => events.forEach(item => receive(item)));
@@ -210,7 +212,7 @@ it('counts local playback before a shared event and deduplicates a linked key', 
 });
 
 it('automatically connects once when a linked signer is injected late', async () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
   const pubkey = event(roomTemplate('chat', station, '')).pubkey;
   render(
     <RadioCircle user={{ ...user, nostrNpub: nip19.npubEncode(pubkey) }} />,
@@ -220,9 +222,9 @@ it('automatically connects once when a linked signer is injected late', async ()
     getPublicKey: async () => pubkey,
     signEvent: async template => template,
   };
-  await act(async () => jest.advanceTimersByTime(250));
+  await act(async () => vi.advanceTimersByTime(250));
   expect(screen.getByText(/Connected as fictional-member/)).toBeVisible();
-  await act(async () => jest.advanceTimersByTime(5000));
+  await act(async () => vi.advanceTimersByTime(5000));
   expect(connectRadioSigner).toHaveBeenCalledTimes(1);
 });
 it('plays, pauses, persists local favourites, follows station hashes and cleans up', async () => {
@@ -313,7 +315,7 @@ it('allows logged-in members to read chat and listeners without a signer', async
       1785751500,
     ),
   );
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValue({
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValue({
     [message.pubkey]: user.username,
   });
   emit(
@@ -352,7 +354,7 @@ it('allows logged-in members to read chat and listeners without a signer', async
 it('resolves a known listener identity without any chat from that key', async () => {
   const listening = event(roomTemplate('listening', station, 'Music'));
   const npub = nip19.npubEncode(listening.pubkey);
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [listening.pubkey]: user.username,
   });
   render(<RadioCircle user={user} />);
@@ -373,7 +375,7 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
   render(<RadioCircle user={user} />);
   const message = event(roomTemplate('chat', station, 'Fictional message'));
   const npub = nip19.npubEncode(message.pubkey);
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [message.pubkey]: user.username,
   });
   emit(message);
@@ -382,9 +384,9 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
   });
   expect(verifiedAuthor).toHaveAttribute('title', npub);
 
-  jest
-    .mocked(fetchRadioAuthorUsernames)
-    .mockRejectedValueOnce(new Error('offline'));
+  vi.mocked(fetchRadioAuthorUsernames).mockRejectedValueOnce(
+    new Error('offline'),
+  );
   emit(
     finalizeEvent(
       roomTemplate('chat', station, 'Another message'),
@@ -401,7 +403,7 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
 });
 
 it('uses a full plain npub for an unknown chat author and radio listener', async () => {
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({});
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({});
   render(<RadioCircle user={user} />);
   const listening = event(roomTemplate('listening', station, 'Music'));
   const message = event(
@@ -435,17 +437,15 @@ it('does not look up public room identities for a guest', () => {
 });
 
 it.each([false, true])(
-  'aborts pending author lookups on unmount (rejected: %p)',
+  'aborts pending author lookups on unmount (rejected: %o)',
   async reject => {
     let finish!: () => void;
-    const lookup = jest
-      .mocked(fetchRadioAuthorUsernames)
-      .mockImplementationOnce(
-        () =>
-          new Promise((resolve, fail) => {
-            finish = () => (reject ? fail(new Error('offline')) : resolve({}));
-          }),
-      );
+    const lookup = vi.mocked(fetchRadioAuthorUsernames).mockImplementationOnce(
+      () =>
+        new Promise((resolve, fail) => {
+          finish = () => (reject ? fail(new Error('offline')) : resolve({}));
+        }),
+    );
     const { unmount } = render(<RadioCircle user={user} />);
     emit(event(roomTemplate('chat', station, 'Pending author')));
     const [, signal] = lookup.mock.calls[0];
@@ -565,7 +565,7 @@ it('preserves the circle URL when the document has a root base URL', async () =>
 it.each([new Error('Fictional mismatch'), 'failure'])(
   'explains signer connection failures',
   async cause => {
-    jest.mocked(connectRadioSigner).mockRejectedValue(cause);
+    vi.mocked(connectRadioSigner).mockRejectedValue(cause);
     render(<RadioCircle user={user} />);
     fireEvent.click(
       screen.getByRole('button', { name: 'Connect Nostr identity' }),
@@ -575,14 +575,14 @@ it.each([new Error('Fictional mismatch'), 'failure'])(
   },
 );
 it('shares after ten seconds, heartbeats while playing and expires stale listeners', async () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
   render(<RadioCircle user={user} />);
   await connect();
   fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
   await act(async () => {});
   expect(room.publish).not.toHaveBeenCalled();
   await act(async () => {
-    jest.advanceTimersByTime(10000);
+    vi.advanceTimersByTime(10000);
   });
   expect(room.publish).toHaveBeenCalledTimes(1);
   expect(room.publish).toHaveBeenCalledWith(
@@ -591,18 +591,18 @@ it('shares after ten seconds, heartbeats while playing and expires stale listene
     }),
   );
   await act(async () => {
-    jest.advanceTimersByTime(300000);
+    vi.advanceTimersByTime(300000);
   });
   expect(room.publish).toHaveBeenCalledTimes(2);
   emit(event(roomTemplate('listening', station, 'Music')));
   room.publish.mockRejectedValue(new Error('offline'));
   await act(async () => {
-    jest.advanceTimersByTime(300000);
+    vi.advanceTimersByTime(300000);
   });
   expect(screen.getByRole('alert')).toHaveTextContent('Could not share');
   fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
   await act(async () => {
-    jest.advanceTimersByTime(800000);
+    vi.advanceTimersByTime(800000);
   });
   expect(room.publish).toHaveBeenCalledTimes(3);
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
@@ -677,10 +677,10 @@ it('sorts chat, omits unknown station links and expires messages', () => {
 });
 
 it.each([false, true])(
-  'ignores connection completion after unmount (rejected: %p)',
+  'ignores connection completion after unmount (rejected: %o)',
   async reject => {
     let finish!: () => void;
-    jest.mocked(connectRadioSigner).mockImplementationOnce(
+    vi.mocked(connectRadioSigner).mockImplementationOnce(
       () =>
         new Promise((resolve, fail) => {
           finish = () =>
@@ -717,7 +717,7 @@ it('ignores playback rejection after unmount', async () => {
 });
 
 it.each([false, true])(
-  'cleans up pending chat and favourite publications (rejected: %p)',
+  'cleans up pending chat and favourite publications (rejected: %o)',
   async reject => {
     const { unmount } = render(<RadioCircle user={user} />);
     await connect();
@@ -746,9 +746,9 @@ it.each([false, true])(
 );
 
 it.each([false, true])(
-  'does not schedule another heartbeat after unmount (rejected: %p)',
+  'does not schedule another heartbeat after unmount (rejected: %o)',
   async reject => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const { unmount } = render(<RadioCircle user={user} />);
     await connect();
     let finish!: () => void;
@@ -763,12 +763,12 @@ it.each([false, true])(
     );
     await act(async () => {});
     await act(async () => {
-      jest.advanceTimersByTime(10000);
+      vi.advanceTimersByTime(10000);
     });
     unmount();
     await act(async () => finish());
     await act(async () => {
-      jest.advanceTimersByTime(5 * 60 * 1000);
+      vi.advanceTimersByTime(5 * 60 * 1000);
     });
     expect(room.publish).toHaveBeenCalledTimes(1);
   },

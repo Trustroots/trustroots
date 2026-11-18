@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import {
   formatAdminDate,
   getReferenceUserId,
@@ -11,9 +12,8 @@ import {
 type SearchUser = Parameters<typeof isExactUserMatch>[1] & { _id: string };
 type SearchUsers = Parameters<typeof resolveExactMemberId>[1];
 
-const searchUsers = (
-  ...users: SearchUser[]
-): jest.MockedFunction<SearchUsers> => jest.fn().mockResolvedValue(users);
+const searchUsers = (...users: SearchUser[]): MockedFunction<SearchUsers> =>
+  vi.fn().mockResolvedValue(users);
 
 const candidate = (overrides: Partial<SearchUser> = {}): SearchUser => ({
   _id: '111111111111111111111111',

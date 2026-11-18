@@ -1,7 +1,6 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import {
   AuthProvider,
   useAuth,
@@ -9,9 +8,9 @@ import {
   type AuthUser,
 } from '@/modules/core/client/react-app/auth';
 
-const mockNavigate = jest.fn();
-jest.mock('@tanstack/react-router', () => ({
-  ...jest.requireActual('@tanstack/react-router'),
+const mockNavigate = vi.fn();
+vi.mock('@tanstack/react-router', async () => ({
+  ...(await vi.importActual('@tanstack/react-router')),
   useRouter: () => ({ navigate: mockNavigate }),
 }));
 
@@ -74,8 +73,8 @@ describe('React AuthProvider', () => {
   });
 
   describe('signOut', () => {
-    const fetchMock = jest.fn();
-    const alertMock = jest.fn();
+    const fetchMock = vi.fn();
+    const alertMock = vi.fn();
 
     beforeEach(() => {
       mockNavigate.mockReset().mockResolvedValue(undefined);
@@ -146,7 +145,7 @@ describe('React AuthProvider', () => {
   });
 
   it('throws when useAuth is used outside AuthProvider', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 

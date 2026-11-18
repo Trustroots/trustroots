@@ -1,17 +1,16 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/pages/client/components/Home.component', () => ({
-  __esModule: true,
-  default: (props: Record<string, unknown>) => {
-    const React = jest.requireActual<typeof import('react')>('react');
-    return React.createElement('output', null, JSON.stringify(props));
-  },
-}));
+vi.mock('@/modules/pages/client/components/Home.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+  return {
+    default: (props: Record<string, unknown>) =>
+      React.createElement('output', null, JSON.stringify(props)),
+  };
+});
 
 it('passes bootstrap data and tracks all displayed photos', () => {
   const { unmount } = render(

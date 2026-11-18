@@ -48,7 +48,7 @@ describe('analytics event catalogue', () => {
   });
 
   it('types event data so call sites cannot send unknown events or props', () => {
-    const tracker: AnalyticsTracker = { track: jest.fn() };
+    const tracker: AnalyticsTracker = { track: vi.fn() };
 
     tracker.track('signin_succeeded');
     tracker.track('offer_saved', { type: 'host', action: 'create' });

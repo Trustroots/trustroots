@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import {
   fireEvent,
@@ -6,51 +7,48 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
 import { fetchSigningIdentity } from '@/modules/admin/client/services/hackerspaces-signer.client.service';
 
-jest.mock(
+vi.mock(
   '@/modules/admin/client/services/hackerspaces-signer.client.service',
   () => ({
     displayNostrKey: (key: string) => `npub:${key}`,
-    fetchSigningIdentity: jest.fn(),
+    fetchSigningIdentity: vi.fn(),
   }),
 );
 
-jest.mock(
-  '@/modules/admin/client/components/AdminHeader.component',
-  () =>
-    function MockAdminHeader() {
-      return <header />;
-    },
-);
-jest.mock('@/modules/core/client/api/http-client.js', () => ({
-  ...jest.requireActual('@/modules/core/client/api/http-client.js'),
-  __esModule: true,
-  default: { get: jest.fn() },
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+  default: function MockAdminHeader() {
+    return <header />;
+  },
 }));
-jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/core/client/api/http-client.js', async () => ({
+  ...(await vi.importActual('@/modules/core/client/api/http-client.js')),
+  __esModule: true,
+  default: { get: vi.fn() },
+}));
+vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
   HACKER_PLACE_RELAY_URLS: [
     'wss://relay.trustroots.org',
     'wss://relay.nomadwiki.org',
   ],
   nostrService: {
-    fetchHackerPlaceEvents: jest.fn(),
-    connectHackerPlaceRelays: jest.fn(),
+    fetchHackerPlaceEvents: vi.fn(),
+    connectHackerPlaceRelays: vi.fn(),
   },
 }));
 
-const http = jest.requireMock('@/modules/core/client/api/http-client.js')
+const http = (await vi.importMock('@/modules/core/client/api/http-client.js'))
   .default as {
-  get: jest.Mock;
+  get: Mock;
 };
-const service = jest.requireMock(
-  '@/modules/search/client/services/nostr.client.service',
+const service = (
+  await vi.importMock('@/modules/search/client/services/nostr.client.service')
 ).nostrService as {
-  fetchHackerPlaceEvents: jest.Mock;
-  connectHackerPlaceRelays: jest.Mock;
+  fetchHackerPlaceEvents: Mock;
+  connectHackerPlaceRelays: Mock;
 };
 const space = (endpoint = 'https://workshop.example.test/api') => ({
   endpoint,
@@ -91,19 +89,19 @@ const publishChanges = async () => {
 };
 
 describe('administrator place import', () => {
-  const publish = jest.fn();
-  const publishNomadwiki = jest.fn();
-  const closeTrustroots = jest.fn();
-  const closeNomadwiki = jest.fn();
-  const signEvent = jest.fn(async (unsigned: Record<string, unknown>) => ({
+  const publish = vi.fn();
+  const publishNomadwiki = vi.fn();
+  const closeTrustroots = vi.fn();
+  const closeNomadwiki = vi.fn();
+  const signEvent = vi.fn(async (unsigned: Record<string, unknown>) => ({
     ...unsigned,
     id: 'signed-event',
     pubkey: 'fictional-key',
     sig: 'fictional-signature',
   }));
-  const getPublicKey = jest.fn();
+  const getPublicKey = vi.fn();
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     http.get.mockResolvedValue({ data: [space()] });
     service.fetchHackerPlaceEvents.mockResolvedValue([]);
     service.connectHackerPlaceRelays.mockResolvedValue([
@@ -125,7 +123,7 @@ describe('administrator place import', () => {
       sig: 'fictional-signature',
     }));
     getPublicKey.mockResolvedValue('fictional-key');
-    jest.mocked(fetchSigningIdentity).mockImplementation(async publicKey => ({
+    vi.mocked(fetchSigningIdentity).mockImplementation(async publicKey => ({
       publicKey,
       npub: `npub:${publicKey}`,
     }));
@@ -497,8 +495,8 @@ describe('administrator place import', () => {
     ).toBeEnabled();
   });
 
-  it.each([undefined, {}, { getPublicKey: jest.fn() }])(
-    'requires a complete NIP-07 signer: %p',
+  it.each([undefined, {}, { getPublicKey: vi.fn() }])(
+    'requires a complete NIP-07 signer: %o',
     async signer => {
       window.nostr = signer;
       render(<AdminHackerspaces />);
@@ -513,7 +511,7 @@ describe('administrator place import', () => {
   );
 
   it('shows the matching Trustroots NIP-05 identity before signing', async () => {
-    jest.mocked(fetchSigningIdentity).mockResolvedValue({
+    vi.mocked(fetchSigningIdentity).mockResolvedValue({
       publicKey: 'fictional-key',
       npub: 'npub:fictional-key',
       nip05: 'workshop@trustroots.org',
@@ -536,7 +534,7 @@ describe('administrator place import', () => {
   });
 
   it('distinguishes a failed identity lookup', async () => {
-    jest.mocked(fetchSigningIdentity).mockResolvedValue({
+    vi.mocked(fetchSigningIdentity).mockResolvedValue({
       publicKey: 'fictional-key',
       npub: 'npub:fictional-key',
       lookupFailed: true,
@@ -628,9 +626,9 @@ describe('administrator place import', () => {
       }),
     );
     let finishSigning!: (value: Record<string, unknown>) => void;
-    window.nostr!.signEvent = jest.fn(
+    window.nostr!.signEvent = vi.fn(
       () =>
-        new Promise(resolve => {
+        new Promise<Record<string, unknown>>(resolve => {
           finishSigning = resolve;
         }),
     );

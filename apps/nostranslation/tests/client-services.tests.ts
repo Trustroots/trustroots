@@ -9,36 +9,36 @@ import {
 import { loadDrafts, rebaseDrafts, saveDrafts } from '../client/drafts.ts';
 import type { Entry } from '../shared.ts';
 
-jest.mock('nostr-tools', () => ({
+vi.mock('nostr-tools', () => ({
   generateSecretKey: () => new Uint8Array(32),
   getPublicKey: () => 'a'.repeat(64),
 }));
-jest.mock('nostr-tools/nip46', () => ({
-  BunkerSigner: { fromBunker: jest.fn(), fromURI: jest.fn() },
-  createNostrConnectURI: jest.fn(() => 'nostrconnect://fictional'),
+vi.mock('nostr-tools/nip46', () => ({
+  BunkerSigner: { fromBunker: vi.fn(), fromURI: vi.fn() },
+  createNostrConnectURI: vi.fn(() => 'nostrconnect://fictional'),
 }));
 
 describe('Nostr signers', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     delete (window as Window & { nostr?: unknown }).nostr;
   });
   it('requires a complete browser signer', () => {
     expect(() => browserSigner()).toThrow('signer');
-    Object.assign(window, { nostr: { getPublicKey: jest.fn() } });
+    Object.assign(window, { nostr: { getPublicKey: vi.fn() } });
     expect(() => browserSigner()).toThrow();
-    const signer = { getPublicKey: jest.fn(), signEvent: jest.fn() };
+    const signer = { getPublicKey: vi.fn(), signEvent: vi.fn() };
     Object.assign(window, { nostr: signer });
     expect(browserSigner()).toBe(signer);
   });
   it('connects secure bunker URLs and cleans up failed connections', async () => {
     const signer = {
-      connect: jest.fn(async () => {}),
-      close: jest.fn(async () => {}),
+      connect: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
     };
-    jest
-      .mocked(BunkerSigner.fromBunker)
-      .mockReturnValue(signer as unknown as BunkerSigner);
+    vi.mocked(BunkerSigner.fromBunker).mockReturnValue(
+      signer as unknown as BunkerSigner,
+    );
     const key = 'a'.repeat(64);
     await expect(
       bunkerSigner(
@@ -89,8 +89,8 @@ describe('Nostr signers', () => {
       value: webcrypto.subtle,
     });
     const signer = {
-      getPublicKey: jest.fn(),
-      signEvent: jest.fn(async event => ({
+      getPublicKey: vi.fn(),
+      signEvent: vi.fn(async event => ({
         ...event,
         pubkey: 'fictional',
         sig: 'signature',
@@ -121,7 +121,7 @@ describe('Nostr signers', () => {
 
 describe('browser draft recovery', () => {
   beforeEach(() => localStorage.clear());
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
   it('loads only well-formed drafts and tolerates broken or unavailable storage', () => {
     expect(loadDrafts('de')).toEqual({});
     for (const raw of ['{broken', 'null', '[]', '"text"']) {
@@ -151,11 +151,11 @@ describe('browser draft recovery', () => {
       }),
     );
     expect(loadDrafts('de')).toEqual({ good: draft });
-    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
     expect(loadDrafts('de')).toEqual({});
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full');
     });
     expect(saveDrafts('de', {})).toBe(false);

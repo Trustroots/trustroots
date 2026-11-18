@@ -1,3 +1,4 @@
+import type { Mocked } from 'vitest';
 import axios from 'axios';
 
 import {
@@ -15,14 +16,15 @@ import {
   generateThread,
 } from '@/testutils/client/data.client.testutil';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('messages api', () => {

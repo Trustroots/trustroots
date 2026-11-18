@@ -1,4 +1,4 @@
-/** @jest-environment node */
+/** @vitest-environment node */
 
 import { canUseWebP } from '@/modules/core/client/utils/dom';
 

@@ -1,18 +1,17 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import { getContactsCommon } from '@/modules/contacts/client/api/contacts.api';
 import type { ContactListEntry } from '@/modules/contacts/client/types';
 import type Contact from '@/modules/contacts/client/components/Contact';
 
-const getContactsCommonMock = jest.mocked(getContactsCommon);
+const getContactsCommonMock = vi.mocked(getContactsCommon);
 
-jest.mock('@/modules/contacts/client/api/contacts.api');
+vi.mock('@/modules/contacts/client/api/contacts.api');
 
-jest.mock('@/modules/contacts/client/components/Contact', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/contacts/client/components/Contact', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockContact({
     avatarSize,
@@ -33,11 +32,11 @@ jest.mock('@/modules/contacts/client/components/Contact', () => {
     );
   }
 
-  return MockContact;
+  return { default: MockContact };
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<ContactsCommon />', () => {

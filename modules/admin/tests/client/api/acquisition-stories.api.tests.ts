@@ -5,9 +5,9 @@ import {
   resendAcquisitionStoryConfirmation,
 } from '@/modules/admin/client/api/acquisition-stories.api';
 
-const axiosMock = jest.mocked(axios);
-const AxiosHeaders =
-  jest.requireActual<typeof import('axios')>('axios').AxiosHeaders;
+const axiosMock = vi.mocked(axios);
+const AxiosHeaders = (await vi.importActual<typeof import('axios')>('axios'))
+  .AxiosHeaders;
 
 function response<T>(data: T): AxiosResponse<T> {
   const headers = new AxiosHeaders();
@@ -16,12 +16,13 @@ function response<T>(data: T): AxiosResponse<T> {
 
 type AcquisitionStory = { _id: string };
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('admin acquisition-stories api', () => {

@@ -7,21 +7,22 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminUsernameChanges from '@/modules/admin/client/components/AdminUsernameChanges.component';
 import * as api from '@/modules/admin/client/api/username-changes.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/username-changes.api');
+vi.mock('@/modules/admin/client/api/username-changes.api');
 
-const mockedApi = jest.mocked(api);
+const mockedApi = vi.mocked(api);
 
 function pageResult(
   changes: api.AdminUsernameChange[],
@@ -42,7 +43,7 @@ const recordedChange: api.AdminUsernameChange = {
 };
 
 afterEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   window.history.pushState({}, '', '/');
 });
 

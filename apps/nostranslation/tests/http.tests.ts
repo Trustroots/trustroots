@@ -1,4 +1,4 @@
-/** @jest-environment node */
+/** @vitest-environment node */
 import { once } from 'node:events';
 import type { Server } from 'node:http';
 import request from 'supertest';
@@ -85,10 +85,10 @@ describe('review API', () => {
   });
   function setup() {
     const repository = {
-      languages: jest.fn(async () => snapshot().languages),
-      load: jest.fn(async () => snapshot()),
+      languages: vi.fn(async () => snapshot().languages),
+      load: vi.fn(async () => snapshot()),
     };
-    const submit = jest.fn(
+    const submit = vi.fn(
       async () => 'https://github.com/Trustroots/trustroots/pull/99999',
     );
     const app = createApp(config, repository as unknown as Repository, store, {
@@ -151,7 +151,7 @@ describe('review API', () => {
     expect((await first).status).toBe(200);
     expect((await second).status).toBe(200);
     expect(repository.languages).toHaveBeenCalledTimes(1);
-    const time = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 61000);
+    const time = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 61000);
     await request(app).get('/api/languages').expect(200);
     expect(repository.languages).toHaveBeenCalledTimes(2);
     time.mockRestore();

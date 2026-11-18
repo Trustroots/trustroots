@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
@@ -12,19 +11,21 @@ const analytics = fakeAnalytics();
 
 type BoardProps = { children?: React.ReactNode };
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
 
-const resetPassword = jest.mocked(authApi.resetPassword);
+const resetPassword = vi.mocked(authApi.resetPassword);
 
 function SignedInUsername() {
   return <output aria-label="Signed in as">{useAuth().user?.username}</output>;
@@ -33,7 +34,7 @@ function SignedInUsername() {
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/password/reset/reset-token');
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function renderPage() {
@@ -87,7 +88,7 @@ describe('ResetPasswordPage', () => {
 
   it('focuses the primary field on desktop', () => {
     const originalMatchMedia = window.matchMedia;
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     try {
       renderPage();
       expect(screen.getByLabelText('New Password')).toHaveFocus();

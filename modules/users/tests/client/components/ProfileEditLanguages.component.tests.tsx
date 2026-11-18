@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
@@ -16,10 +15,10 @@ type LanguageSelectProps = Pick<
   preSelectedLanguages: string[];
 };
 
-jest.mock('@/modules/core/client/api/languages.api', () => ({
+vi.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { eng: 'English' } }),
 }));
-jest.mock('@/modules/core/client/components/LanguageSelect', () => {
+vi.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(props: LanguageSelectProps) {
     return (
       <button
@@ -35,16 +34,16 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
     );
   }
 
-  return MockLanguageSelect;
+  return { default: MockLanguageSelect };
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<ProfileEditLanguages />', () => {
   it('prefills languages and broadcasts profile language changes', () => {
-    const onChangeLanguages = jest.fn();
+    const onChangeLanguages = vi.fn();
 
     render(
       <ProfileEditLanguages
@@ -117,12 +116,12 @@ describe('<ProfileEditLanguages />', () => {
 });
 
 it('sets, clears and removes optional levels', () => {
-  const onChangeLevels = jest.fn();
+  const onChangeLevels = vi.fn();
   const { rerender } = render(
     <ProfileEditLanguages
       profileLanguages={['eng', 'zzz']}
       languageLevels={{ eng: 'native', zzz: 'basic' }}
-      onChangeLanguages={jest.fn()}
+      onChangeLanguages={vi.fn()}
       onChangeLevels={onChangeLevels}
     />,
   );
@@ -154,7 +153,7 @@ it('sets, clears and removes optional levels', () => {
   rerender(
     <ProfileEditLanguages
       profileLanguages={['eng']}
-      onChangeLanguages={jest.fn()}
+      onChangeLanguages={vi.fn()}
       onChangeLevels={onChangeLevels}
     />,
   );

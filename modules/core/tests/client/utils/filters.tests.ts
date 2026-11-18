@@ -48,6 +48,6 @@ describe('client filter utilities', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 });

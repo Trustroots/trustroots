@@ -8,7 +8,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
@@ -23,279 +22,294 @@ import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 
-const mockedUsersApi = jest.mocked(usersApi);
-const mockedMessagesApi = jest.mocked(messagesApi);
-const mockedOffersApi = jest.mocked(offersApi);
+const mockedUsersApi = vi.mocked(usersApi);
+const mockedMessagesApi = vi.mocked(messagesApi);
+const mockedOffersApi = vi.mocked(offersApi);
 
-jest.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', async () => ({
   __esModule: true,
-  ...jest.requireActual<typeof import('@tanstack/react-router')>(
+  ...(await vi.importActual<typeof import('@tanstack/react-router')>(
     '@tanstack/react-router',
-  ),
+  )),
 }));
 
-jest.mock('@/modules/admin/client/components/Admin.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/components/Admin.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAdmin() {
     return <main>Admin route</main>;
   }
 
-  return MockAdmin;
+  return { default: MockAdmin };
 });
 
-jest.mock('@/modules/admin/client/components/AdminAuditLog.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/admin/client/components/AdminAuditLog.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockAdminAuditLog() {
-    return <main>Admin audit route</main>;
-  }
+    function MockAdminAuditLog() {
+      return <main>Admin audit route</main>;
+    }
 
-  return MockAdminAuditLog;
-});
+    return { default: MockAdminAuditLog };
+  },
+);
 
-jest.mock(
+vi.mock(
   '@/modules/admin/client/components/AdminAcquisitionStories.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockAdminAcquisitionStories() {
       return <main>Admin acquisition stories route</main>;
     }
 
-    return MockAdminAcquisitionStories;
+    return { default: MockAdminAcquisitionStories };
   },
 );
 
-jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/admin/client/components/AdminCircles.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockAdminCircles({
-    circleSlug,
-    onNavigate,
-  }: {
-    circleSlug?: string;
-    onNavigate: (path: string) => void;
-  }) {
-    return (
-      <main>
-        Admin circles route <span>{circleSlug}</span>
-        <button onClick={() => onNavigate('/admin/circles/walkers')}>
-          Select Walkers
-        </button>
-      </main>
-    );
-  }
+    function MockAdminCircles({
+      circleSlug,
+      onNavigate,
+    }: {
+      circleSlug?: string;
+      onNavigate: (path: string) => void;
+    }) {
+      return (
+        <main>
+          Admin circles route <span>{circleSlug}</span>
+          <button onClick={() => onNavigate('/admin/circles/walkers')}>
+            Select Walkers
+          </button>
+        </main>
+      );
+    }
 
-  return MockAdminCircles;
-});
+    return { default: MockAdminCircles };
+  },
+);
 
-jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/admin/client/components/AdminMessages.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockAdminMessages() {
-    return <main>Admin messages route</main>;
-  }
+    function MockAdminMessages() {
+      return <main>Admin messages route</main>;
+    }
 
-  return MockAdminMessages;
-});
+    return { default: MockAdminMessages };
+  },
+);
 
-jest.mock('@/modules/admin/client/components/AdminNewsletter.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/admin/client/components/AdminNewsletter.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockAdminNewsletter() {
-    return <main>Admin newsletter route</main>;
-  }
+    function MockAdminNewsletter() {
+      return <main>Admin newsletter route</main>;
+    }
 
-  return MockAdminNewsletter;
-});
+    return { default: MockAdminNewsletter };
+  },
+);
 
-jest.mock(
+vi.mock(
   '@/modules/admin/client/components/AdminReferenceThreads.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockAdminReferenceThreads() {
       return <main>Admin reference threads route</main>;
     }
 
-    return MockAdminReferenceThreads;
+    return { default: MockAdminReferenceThreads };
   },
 );
 
-jest.mock(
+vi.mock(
   '@/modules/admin/client/components/AdminSearchUsers.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockAdminSearchUsers() {
       return <main>Admin search users route</main>;
     }
 
-    return MockAdminSearchUsers;
+    return { default: MockAdminSearchUsers };
   },
 );
 
-jest.mock('@/modules/admin/client/components/AdminThreads.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/admin/client/components/AdminThreads.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockAdminThreads() {
-    return <main>Admin threads route</main>;
-  }
+    function MockAdminThreads() {
+      return <main>Admin threads route</main>;
+    }
 
-  return MockAdminThreads;
-});
+    return { default: MockAdminThreads };
+  },
+);
 
-jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/components/AdminUser.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAdminUser() {
     return <main>Admin user route</main>;
   }
 
-  return MockAdminUser;
+  return { default: MockAdminUser };
 });
 
-jest.mock('@/modules/pages/client/components/Rules.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/pages/client/components/Rules.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockRules() {
     return <main>Rules route</main>;
   }
 
-  return MockRules;
+  return { default: MockRules };
 });
 
-jest.mock('@/modules/support/client/components/SupportPage.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/support/client/components/SupportPage.component',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockSupportPage({ user }: { user?: AuthUser | null }) {
-    return (
-      <main>
-        <span>Support route {user?.username}</span>
-        <span>Query {global.location.search}</span>
-      </main>
-    );
-  }
+    function MockSupportPage({ user }: { user?: AuthUser | null }) {
+      return (
+        <main>
+          <span>Support route {user?.username}</span>
+          <span>Query {global.location.search}</span>
+        </main>
+      );
+    }
 
-  return MockSupportPage;
-});
+    return { default: MockSupportPage };
+  },
+);
 
-jest.mock('@/layers/shell/client/components/AppHeader.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/layers/shell/client/components/AppHeader.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAppHeader({ user }: { user?: AuthUser | null }) {
     return <header>Header {user?.username || 'guest'}</header>;
   }
 
-  return MockAppHeader;
+  return { default: MockAppHeader };
 });
 
-jest.mock('@/layers/shell/client/ReactFooter', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/layers/shell/client/ReactFooter', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockReactFooter() {
     return <footer>Footer</footer>;
   }
 
-  return MockReactFooter;
+  return { default: MockReactFooter };
 });
 
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/modules/messages/client/api/messages.api');
-jest.mock('@/modules/core/client/hooks/use-media-query', () => ({
-  ...jest.requireActual<object>('@/modules/core/client/hooks/use-media-query'),
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('@/modules/messages/client/api/messages.api');
+vi.mock('@/modules/core/client/hooks/use-media-query', async () => ({
+  ...(await vi.importActual<object>(
+    '@/modules/core/client/hooks/use-media-query',
+  )),
   __esModule: true,
   default: () => true,
 }));
-jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
-  getByUserId: jest.fn(async () => null),
-  list: jest.fn(async () => []),
+vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock('@/modules/contacts/client/api/contacts.api', () => ({
+  getByUserId: vi.fn(async () => null),
+  list: vi.fn(async () => []),
 }));
 
 /* eslint-disable react/display-name -- unrelated presentation is stubbed; page state and routing are real. */
-jest.mock(
-  '@/modules/messages/client/components/ThreadReply',
-  () =>
-    ({ onSend }: { onSend: (content: string) => void }) => (
-      <button type="button" onClick={() => onSend('A fictional message')}>
-        Send message
-      </button>
-    ),
-);
-jest.mock(
-  '@/modules/messages/client/components/ThreadMessages',
-  () =>
-    ({ otherUser }: { otherUser: { username: string } }) => (
-      <div>Conversation with {otherUser.username}</div>
-    ),
-);
-jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
-jest.mock(
+vi.mock('@/modules/messages/client/components/ThreadReply', () => ({
+  default: ({ onSend }: { onSend: (content: string) => void }) => (
+    <button type="button" onClick={() => onSend('A fictional message')}>
+      Send message
+    </button>
+  ),
+}));
+vi.mock('@/modules/messages/client/components/ThreadMessages', () => ({
+  default: ({ otherUser }: { otherUser: { username: string } }) => (
+    <div>Conversation with {otherUser.username}</div>
+  ),
+}));
+vi.mock('@/modules/users/client/components/Monkeybox', () => ({
+  default: () => null,
+}));
+vi.mock(
   '@/modules/references-thread/client/components/ReferenceThread',
-  () => () => null,
+  () => ({ default: () => null }),
 );
-jest.mock(
-  '@/modules/users/client/components/ProfileOverview.component',
-  () => () => null,
-);
-jest.mock(
-  '@/modules/users/client/components/AboutMe.component',
-  () =>
-    ({ profile }: { profile: { description?: string } }) => (
-      <p>{profile.description}</p>
-    ),
-);
-jest.mock(
+vi.mock('@/modules/users/client/components/ProfileOverview.component', () => ({
+  default: () => null,
+}));
+vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
+  default: ({ profile }: { profile: { description?: string } }) => (
+    <p>{profile.description}</p>
+  ),
+}));
+vi.mock(
   '@/modules/search/client/components/SearchPlaceInput.component',
-  () => () => null,
+  () => ({ default: () => null }),
 );
-jest.mock(
-  '@/modules/search/client/components/SearchSidebar.component',
-  () =>
-    ({
-      offer,
-      onCloseSidebar,
-    }: {
-      offer?: Offer | null;
-      onCloseSidebar: () => void;
-    }) => (
-      <aside>
-        {offer && <span>Selected offer {offer._id}</span>}
-        <button type="button" onClick={onCloseSidebar}>
-          Close search sidebar
-        </button>
-      </aside>
-    ),
-);
-const mockMapMount = jest.fn();
+vi.mock('@/modules/search/client/components/SearchSidebar.component', () => ({
+  default: ({
+    offer,
+    onCloseSidebar,
+  }: {
+    offer?: Offer | null;
+    onCloseSidebar: () => void;
+  }) => (
+    <aside>
+      {offer && <span>Selected offer {offer._id}</span>}
+      <button type="button" onClick={onCloseSidebar}>
+        Close search sidebar
+      </button>
+    </aside>
+  ),
+}));
+const mockMapMount = vi.fn();
 const mockOffer: OfferReadPayload = {
   _id: '665100000000000000000001',
   type: 'meet',
   user: { _id: 'member-1', username: 'member' },
   location: [10, 20],
 };
-jest.mock('@/modules/search/client/components/SearchMap.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  return ({
-    onOfferOpen,
-    location,
-  }: {
-    onOfferOpen: (offer: Offer) => void;
-    location: { zoom?: number };
-  }) => {
-    React.useEffect(() => {
-      mockMapMount();
-    }, []);
-    return (
-      <div>
-        <button type="button" onClick={() => onOfferOpen(mockOffer)}>
-          Open map pin
-        </button>
-        <span>Requested zoom {location.zoom || 'unchanged'}</span>
-      </div>
-    );
+vi.mock('@/modules/search/client/components/SearchMap.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+  return {
+    default: ({
+      onOfferOpen,
+      location,
+    }: {
+      onOfferOpen: (offer: Offer) => void;
+      location: { zoom?: number };
+    }) => {
+      React.useEffect(() => {
+        mockMapMount();
+      }, []);
+      return (
+        <div>
+          <button type="button" onClick={() => onOfferOpen(mockOffer)}>
+            Open map pin
+          </button>
+          <span>Requested zoom {location.zoom || 'unchanged'}</span>
+        </div>
+      );
+    },
   };
 });
 /* eslint-enable react/display-name */
@@ -316,8 +330,8 @@ describe('<ReactApp />', () => {
   const originalScrollTo = window.scrollTo;
 
   beforeEach(() => {
-    window.scrollTo = jest.fn();
-    jest.clearAllMocks();
+    window.scrollTo = vi.fn();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -359,7 +373,7 @@ describe('<ReactApp />', () => {
   });
 
   it('scrolls to the element named by the URL fragment after the route renders', async () => {
-    const animationFrame = jest
+    const animationFrame = vi
       .spyOn(window, 'requestAnimationFrame')
       .mockImplementation(callback => {
         callback(0);
@@ -367,7 +381,7 @@ describe('<ReactApp />', () => {
       });
     const target = document.createElement('div');
     target.id = 'rules-anchor';
-    target.scrollIntoView = jest.fn();
+    target.scrollIntoView = vi.fn();
     document.body.appendChild(target);
 
     try {
@@ -382,7 +396,7 @@ describe('<ReactApp />', () => {
   });
 
   it('renders normally when the URL fragment matches no element', async () => {
-    const animationFrame = jest
+    const animationFrame = vi
       .spyOn(window, 'requestAnimationFrame')
       .mockImplementation(callback => {
         callback(0);
@@ -401,7 +415,7 @@ describe('<ReactApp />', () => {
 
   it('renders normally when the URL fragment is empty', async () => {
     const useRouterState = reactRouter.useRouterState;
-    const routerState = jest
+    const routerState = vi
       .spyOn(reactRouter, 'useRouterState')
       .mockImplementation(options => {
         const state = useRouterState();
@@ -489,7 +503,7 @@ describe('<ReactApp />', () => {
   });
 
   it('defensively redirects guests away from protected routes', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
 
     renderApp('/admin', {}, { navigate });
 
@@ -502,7 +516,7 @@ describe('<ReactApp />', () => {
   });
 
   it('preserves the removal fragment when guests need to sign in', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
     renderApp('/profile/edit/account#remove', {}, { navigate });
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith(
@@ -512,7 +526,7 @@ describe('<ReactApp />', () => {
   });
 
   it('defensively redirects non-admin users away from admin routes', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
 
     renderApp(
       '/admin',
@@ -530,7 +544,7 @@ describe('<ReactApp />', () => {
   });
 
   it('redirects legacy routes to their replacement', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
 
     renderApp('/about', {}, { navigate });
 
@@ -538,7 +552,7 @@ describe('<ReactApp />', () => {
   });
 
   it('routes ordinary React-owned links through client navigation', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
     renderApp('/rules', {}, { navigate });
     await screen.findByText('Rules route');
     const link = document.createElement('a');
@@ -581,7 +595,7 @@ describe('<ReactApp />', () => {
   });
 
   it('leaves links outside React route ownership to the browser', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
     renderApp('/rules', {}, { navigate });
     await screen.findByText('Rules route');
     const link = document.createElement('a');
@@ -598,7 +612,7 @@ describe('<ReactApp />', () => {
   });
 
   it('redirects unmatched paths to the not-found route', async () => {
-    const navigate = jest.fn();
+    const navigate = vi.fn();
 
     renderApp('/missing-react-route', {}, { navigate });
 

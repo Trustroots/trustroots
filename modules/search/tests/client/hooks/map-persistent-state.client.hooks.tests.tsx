@@ -1,6 +1,6 @@
+import type { Mock } from 'vitest';
 import React, { useEffect } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 interface MapLocation {
   latitude: number;
@@ -8,11 +8,11 @@ interface MapLocation {
   zoom: number;
 }
 
-const mockMapStateHook = jest.fn();
+const mockMapStateHook = vi.fn();
 const mockReact = React;
 
-jest.mock('use-local-storage-state', () => {
-  const ReactActual = jest.requireActual<typeof import('react')>('react');
+vi.mock('use-local-storage-state', async () => {
+  const ReactActual = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: <Value,>(key: string, options: { defaultValue: Value }) => {
@@ -35,16 +35,20 @@ type MapStyle =
   | typeof import('@/modules/core/client/components/Map/constants').MAP_STYLE_OSM;
 let usePersistentMapLocation: UsePersistentMapLocation;
 let usePersistentMapStyle: UsePersistentMapStyle;
-let onMapLocationChange: jest.Mock<void, [location: MapLocation]>;
-let onMapStyleChange: jest.Mock<void, [style: MapStyle]>;
+let onMapLocationChange: Mock<(...args: [location: MapLocation]) => void>;
+let onMapStyleChange: Mock<(...args: [style: MapStyle]) => void>;
 
-const loadHooks = () => {
-  usePersistentMapLocation = jest.requireActual<
-    typeof import('@/modules/search/client/hooks/use-persistent-map-location')
-  >('@/modules/search/client/hooks/use-persistent-map-location').default;
-  usePersistentMapStyle = jest.requireActual<
-    typeof import('@/modules/search/client/hooks/use-persistent-map-style')
-  >('@/modules/search/client/hooks/use-persistent-map-style').default;
+const loadHooks = async () => {
+  usePersistentMapLocation = (
+    await vi.importActual<
+      typeof import('@/modules/search/client/hooks/use-persistent-map-location')
+    >('@/modules/search/client/hooks/use-persistent-map-location')
+  ).default;
+  usePersistentMapStyle = (
+    await vi.importActual<
+      typeof import('@/modules/search/client/hooks/use-persistent-map-style')
+    >('@/modules/search/client/hooks/use-persistent-map-style')
+  ).default;
 };
 
 function MapLocationTester({ initialValue }: { initialValue: MapLocation }) {
@@ -76,12 +80,12 @@ function MapStyleTester({ initialValue }: { initialValue: MapStyle }) {
 }
 
 describe('search map persistent-state hooks', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockMapStateHook.mockClear();
-    loadHooks();
+    await loadHooks();
 
-    onMapLocationChange = jest.fn<void, [location: MapLocation]>();
-    onMapStyleChange = jest.fn<void, [style: MapStyle]>();
+    onMapLocationChange = vi.fn<(...args: [location: MapLocation]) => void>();
+    onMapStyleChange = vi.fn<(...args: [style: MapStyle]) => void>();
   });
 
   it('persists map location state and updates on setter call', () => {

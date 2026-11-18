@@ -1,19 +1,18 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import axios from '@/modules/core/client/api/http-client';
 import AdminEmailReplies from '@/modules/admin/client/components/AdminEmailReplies.component';
 
-jest.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: vi.fn() },
 }));
-jest.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
+vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
   __esModule: true,
   default: () => null,
 }));
 
-const get = jest.mocked(axios.get);
+const get = vi.mocked(axios.get);
 const checkedAt = '2026-10-31T12:00:00Z';
 
 function checkMailbox() {

@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom';
 import {
   UMAMI_BEFORE_SEND,
   installUmamiBeforeSend,
@@ -177,7 +176,7 @@ describe('installUmamiBeforeSend', () => {
     template.innerHTML =
       '<script async src="https://analytics.example.org/script.js" data-before-send="trUmamiBeforeSend" nonce="test-nonce"></script>';
     document.head.append(template);
-    const replaceWith = jest.spyOn(template, 'replaceWith');
+    const replaceWith = vi.spyOn(template, 'replaceWith');
     replaceWith.mockImplementationOnce((...nodes) => {
       expect(
         (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND],

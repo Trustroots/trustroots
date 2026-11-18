@@ -6,7 +6,6 @@ import {
   screen,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedIn from '@/layers/shell/client/components/NavigationLoggedIn';
@@ -23,14 +22,14 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-jest.mock('@/modules/tribes/client/api/tribes.api', () => ({
-  listMemberships: jest.fn(),
+vi.mock('@/modules/tribes/client/api/tribes.api', () => ({
+  listMemberships: vi.fn(),
 }));
-const mockListMemberships = jest.mocked(listMemberships);
+const mockListMemberships = vi.mocked(listMemberships);
 
 type AuthUser = ComponentProps<typeof NavigationLoggedIn>['user'];
 
@@ -39,14 +38,14 @@ function requireElement<T extends HTMLElement>(element: T | null): T {
   return element;
 }
 
-jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/Avatar.component.js', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar() {
     return <span>avatar</span>;
   }
 
-  return MockAvatar;
+  return { default: MockAvatar };
 });
 
 describe('<NavigationLoggedIn />', () => {
@@ -180,7 +179,7 @@ describe('<NavigationLoggedIn />', () => {
     ).not.toHaveClass('active');
   });
 
-  it.each([undefined, [], ['user']])(
+  it.each([[undefined], [[]], [['user']]])(
     'omits the administrator shortcut for non-admin roles %j',
     (roles: string[] | undefined) => {
       render(
@@ -338,7 +337,7 @@ describe('<NavigationLoggedIn />', () => {
     expect(member[0].tribe._id).toBe('circle-0');
   });
 
-  it.each([undefined, []])('omits an empty circles menu for %j', member => {
+  it.each([[undefined], [[]]])('omits an empty circles menu for %j', member => {
     render(
       <NavigationLoggedIn currentPath="/search" user={{ ...user, member }} />,
     );

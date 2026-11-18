@@ -2,13 +2,13 @@ import { nip19 } from 'nostr-tools';
 import http from '@/modules/core/client/api/http-client.js';
 import { fetchSigningIdentity } from '@/modules/admin/client/services/hackerspaces-signer.client.service';
 
-jest.mock('@/modules/core/client/api/http-client.js', () => ({
+vi.mock('@/modules/core/client/api/http-client.js', () => ({
   __esModule: true,
-  default: { get: jest.fn() },
+  default: { get: vi.fn() },
 }));
 const publicKey = 'a'.repeat(64);
-const get = jest.mocked(http.get);
-beforeEach(() => jest.resetAllMocks());
+const get = vi.mocked(http.get);
+beforeEach(() => vi.resetAllMocks());
 
 it('looks up the matching Trustroots identity with the connected public key', async () => {
   get.mockResolvedValue({ data: { nip05: 'workshop@trustroots.org' } });

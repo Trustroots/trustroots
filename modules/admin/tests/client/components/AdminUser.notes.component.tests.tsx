@@ -6,31 +6,32 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/users.api');
-jest.mock('@/modules/admin/client/api/admin-notes.api');
-const mockedUsersApi = jest.mocked(usersApi);
-const mockedNotesApi = jest.mocked(notesApi);
+vi.mock('@/modules/admin/client/api/users.api');
+vi.mock('@/modules/admin/client/api/admin-notes.api');
+const mockedUsersApi = vi.mocked(usersApi);
+const mockedNotesApi = vi.mocked(notesApi);
 
 type MockEditorProps = {
   onChange: (value: string) => void;
   text: string;
 };
 
-jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/TrEditor', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function Editor({ onChange, text }: MockEditorProps) {
     return (
       <textarea
@@ -40,13 +41,13 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-  return Editor;
+  return { default: Editor };
 });
 
 const userId = '111111111111111111111111';
 
 afterEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   window.history.pushState({}, '', '/');
 });
 

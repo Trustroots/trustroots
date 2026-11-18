@@ -1,5 +1,4 @@
 import React from 'react';
-import '@testing-library/jest-dom';
 import {
   act,
   fireEvent,
@@ -16,46 +15,44 @@ import * as api from '../../../client/api/support.api';
 import type { SupportRequest } from '../../../client/api/support.api';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('../../../client/api/support.api', () => ({
-  load: jest.fn(),
-  setStatus: jest.fn(),
-  listRequests: jest.fn(),
-  loadConversation: jest.fn(),
-  sendReply: jest.fn(),
-  retryReply: jest.fn(),
-  setMemberFlag: jest.fn(),
+vi.mock('../../../client/api/support.api', () => ({
+  load: vi.fn(),
+  setStatus: vi.fn(),
+  listRequests: vi.fn(),
+  loadConversation: vi.fn(),
+  sendReply: vi.fn(),
+  retryReply: vi.fn(),
+  setMemberFlag: vi.fn(),
 }));
-jest.mock(
-  '../../../client/components/AdminHeader.component',
-  () =>
-    function Header() {
-      return <nav>Staff navigation</nav>;
-    },
-);
-jest.mock(
-  '../../../client/components/AdminNotes',
-  () =>
-    function Notes({ id }: { id: string }) {
-      return <div>Notes for {id}</div>;
-    },
-);
-jest.mock('../../../client/components/NetworkConnections.component', () => ({
+vi.mock('../../../client/components/AdminHeader.component', () => ({
+  default: function Header() {
+    return <nav>Staff navigation</nav>;
+  },
+}));
+vi.mock('../../../client/components/AdminNotes', () => ({
+  default: function Notes({ id }: { id: string }) {
+    return <div>Notes for {id}</div>;
+  },
+}));
+vi.mock('../../../client/components/NetworkConnections.component', () => ({
   NetworkConnectionsPanel: () => <div>External connection history</div>,
 }));
 
-const load = jest.mocked(api.load);
-const setStatus = jest.mocked(api.setStatus);
-const listRequests = jest.mocked(api.listRequests);
-const loadConversation = jest.mocked(api.loadConversation);
-const sendReply = jest.mocked(api.sendReply);
-const retryReply = jest.mocked(api.retryReply);
+const load = vi.mocked(api.load);
+const setStatus = vi.mocked(api.setStatus);
+const listRequests = vi.mocked(api.listRequests);
+const loadConversation = vi.mocked(api.loadConversation);
+const sendReply = vi.mocked(api.sendReply);
+const retryReply = vi.mocked(api.retryReply);
 const report = {
   _id: 'report-1',
   category: 'reportMember',
@@ -84,7 +81,7 @@ const member = {
 };
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   setStatus.mockResolvedValue(undefined);
   listRequests.mockImplementation(async filters => {
     const query = new URLSearchParams({
@@ -863,7 +860,7 @@ test('requires explicit confirmation before retrying uncertain delivery', async 
       },
     ],
   });
-  const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
   render(<SupportInbox />);
   fireEvent.click(
     await screen.findByRole('button', {
@@ -1453,7 +1450,7 @@ test('filters from every status count while preserving search and category and r
 
 test('updates the support profile status after flagging and unflagging', async () => {
   load.mockResolvedValue({ ...member, roles: ['user'] });
-  jest.mocked(api.setMemberFlag).mockResolvedValue(undefined);
+  vi.mocked(api.setMemberFlag).mockResolvedValue(undefined);
   render(<SupportMemberPage id="target-1" />);
   fireEvent.click(
     await screen.findByRole('button', { name: 'Flag for follow-up' }),

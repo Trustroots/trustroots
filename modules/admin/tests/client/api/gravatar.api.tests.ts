@@ -4,7 +4,7 @@ import {
   getGravatarUsage,
   startGravatarPhotoCheck,
 } from '@/modules/admin/client/api/gravatar.api';
-jest.mock('@/modules/core/client/api/http-client.js');
+vi.mock('@/modules/core/client/api/http-client.js');
 it('requests the selected page of Gravatar members', async () => {
   const data = {
     accounts: 0,
@@ -13,7 +13,7 @@ it('requests the selected page of Gravatar members', async () => {
     hasNextPage: false,
     measuredAt: '2026-11-06T12:00:00Z',
   };
-  jest.mocked(axios.get).mockResolvedValue({ data });
+  vi.mocked(axios.get).mockResolvedValue({ data });
   await expect(getGravatarUsage(2)).resolves.toEqual(data);
   expect(axios.get).toHaveBeenCalledWith('/api/admin/gravatar', {
     params: { page: 2 },
@@ -33,8 +33,8 @@ it('reads and starts the Gravatar photo check', async () => {
     startedAt: '2026-11-06T12:00:00Z',
     counts: { available: 0, unavailable: 0, inconclusive: 0 },
   };
-  jest.mocked(axios.get).mockResolvedValue({ data: null });
-  jest.mocked(axios.post).mockResolvedValue({ data });
+  vi.mocked(axios.get).mockResolvedValue({ data: null });
+  vi.mocked(axios.post).mockResolvedValue({ data });
   await expect(getGravatarPhotoCheck()).resolves.toBeNull();
   expect(axios.get).toHaveBeenLastCalledWith(url);
   await expect(startGravatarPhotoCheck()).resolves.toEqual(data);

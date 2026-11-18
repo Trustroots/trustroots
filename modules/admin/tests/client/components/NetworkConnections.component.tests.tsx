@@ -1,5 +1,4 @@
 import React from 'react';
-import '@testing-library/jest-dom';
 import {
   act,
   fireEvent,
@@ -15,19 +14,17 @@ import * as api from '@/modules/admin/client/api/network-connections.api';
 import type { Network } from '@/modules/users/shared/network-connections';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-jest.mock('@/modules/admin/client/api/network-connections.api', () => ({
-  getMemberNetworkConnections: jest.fn(),
-  searchNetworkConnections: jest.fn(),
+vi.mock('@/modules/admin/client/api/network-connections.api', () => ({
+  getMemberNetworkConnections: vi.fn(),
+  searchNetworkConnections: vi.fn(),
 }));
 
-const getMemberNetworkConnections = jest.mocked(
-  api.getMemberNetworkConnections,
-);
-const searchNetworkConnections = jest.mocked(api.searchNetworkConnections);
+const getMemberNetworkConnections = vi.mocked(api.getMemberNetworkConnections);
+const searchNetworkConnections = vi.mocked(api.searchNetworkConnections);
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -78,7 +75,7 @@ const memberPage = {
   hasNextPage: true,
 };
 
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 beforeEach(() => {
   setViewer({ roles: ['support-team'] });
 });

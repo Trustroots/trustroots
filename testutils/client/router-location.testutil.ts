@@ -2,15 +2,18 @@
  * Component tests render pages without a router. Use this module as the
  * `@tanstack/react-router` mock so route hooks read the jsdom URL instead:
  *
- *   jest.mock('@tanstack/react-router', () =>
- *     jest.requireActual('@/testutils/client/router-location.testutil'),
+ *   vi.mock('@tanstack/react-router', async () =>
+ *     (await import('@/testutils/client/router-location.testutil')).mockRouterModule(),
  *   );
  *
  * Like the router, the hooks re-render on browser history (popstate) changes,
  * and `useNavigate`/`<Navigate>` write the jsdom URL.
  */
-const { useEffect, useSyncExternalStore } =
-  jest.requireActual<typeof import('react')>('react');
+import { useEffect, useSyncExternalStore } from 'react';
+
+const { matchReactRoute } = await vi.importActual<
+  typeof import('@/modules/core/shared/react-route-ownership.mts')
+>('@/modules/core/shared/react-route-ownership.mts');
 
 type Select<T> = { select?: (value: T) => unknown };
 type Search = Record<string, unknown>;
@@ -74,33 +77,31 @@ function navigate({
   return Promise.resolve();
 }
 
-module.exports = {
-  ...jest.requireActual('@tanstack/react-router'),
-  useLocation: (options?: Select<Record<string, string>>) => {
-    const url = useUrl();
-    return read(
-      {
-        hash: url.hash.slice(1),
-        href: `${url.pathname}${url.search}${url.hash}`,
-        pathname: url.pathname,
-        searchStr: url.search,
-      },
-      options,
-    );
-  },
-  Navigate: (options: NavigateOptions) => {
-    useEffect(() => {
-      void navigate(options);
-    }, []);
-    return null;
-  },
-  useNavigate: () => navigate,
-  useParams: (options?: Select<Record<string, string>>) => {
-    const { matchReactRoute } = jest.requireActual(
-      '@/modules/core/shared/react-route-ownership.mts',
-    );
-    return read(matchReactRoute(useUrl().pathname)?.params || {}, options);
-  },
-  useSearch: (options?: Select<Record<string, string>>) =>
-    read(Object.fromEntries(useUrl().searchParams), options),
-};
+export async function mockRouterModule() {
+  return {
+    ...(await vi.importActual('@tanstack/react-router')),
+    useLocation: (options?: Select<Record<string, string>>) => {
+      const url = useUrl();
+      return read(
+        {
+          hash: url.hash.slice(1),
+          href: `${url.pathname}${url.search}${url.hash}`,
+          pathname: url.pathname,
+          searchStr: url.search,
+        },
+        options,
+      );
+    },
+    Navigate: (options: NavigateOptions) => {
+      useEffect(() => {
+        void navigate(options);
+      }, []);
+      return null;
+    },
+    useNavigate: () => navigate,
+    useParams: (options?: Select<Record<string, string>>) =>
+      read(matchReactRoute(useUrl().pathname)?.params || {}, options),
+    useSearch: (options?: Select<Record<string, string>>) =>
+      read(Object.fromEntries(useUrl().searchParams), options),
+  };
+}

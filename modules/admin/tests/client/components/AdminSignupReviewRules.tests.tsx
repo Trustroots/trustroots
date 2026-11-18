@@ -6,25 +6,22 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminSignupReviewRules from '../../../client/components/AdminSignupReviewRules';
 import http from '../../../../core/client/api/http-client';
 
-jest.mock(
-  '../../../client/components/AdminHeader.component',
-  () =>
-    function Header() {
-      return <nav>Admin</nav>;
-    },
-);
-jest.mock('../../../../core/client/api/http-client', () => ({
+vi.mock('../../../client/components/AdminHeader.component', () => ({
+  default: function Header() {
+    return <nav>Admin</nav>;
+  },
+}));
+vi.mock('../../../../core/client/api/http-client', () => ({
   __esModule: true,
-  default: { get: jest.fn(), put: jest.fn() },
+  default: { get: vi.fn(), put: vi.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
 }));
 
-const get = jest.mocked(http.get);
-const put = jest.mocked(http.put);
+const get = vi.mocked(http.get);
+const put = vi.mocked(http.put);
 const defaults = {
   revision: 3,
   rules: [
@@ -34,7 +31,7 @@ const defaults = {
   ],
 };
 
-beforeEach(() => jest.resetAllMocks());
+beforeEach(() => vi.resetAllMocks());
 
 test('loads, edits, adds, removes, and saves the complete watchlist', async () => {
   get.mockResolvedValueOnce({ data: defaults });

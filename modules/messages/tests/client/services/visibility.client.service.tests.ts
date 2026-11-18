@@ -1,5 +1,3 @@
-import '@testing-library/jest-dom';
-
 import * as visibilityService from '@/modules/messages/client/services/visibility.client.service';
 
 type VisibilityProperty = 'hidden' | 'msHidden' | 'webkitHidden';
@@ -31,14 +29,14 @@ describe('visibility service', () => {
     restoreProperty('hidden', originalHiddenDescriptor);
     restoreProperty('msHidden', originalMsHiddenDescriptor);
     restoreProperty('webkitHidden', originalWebkitHiddenDescriptor);
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('subscribes to visibilitychange and notifies watchers on updates', async () => {
     defineDocumentProperty('hidden', false);
-    const addListener = jest.spyOn(document, 'addEventListener');
-    const removeListener = jest.spyOn(document, 'removeEventListener');
-    const watcher = jest.fn<void, [visible: boolean]>();
+    const addListener = vi.spyOn(document, 'addEventListener');
+    const removeListener = vi.spyOn(document, 'removeEventListener');
+    const watcher = vi.fn<(...args: [visible: boolean]) => void>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -62,12 +60,12 @@ describe('visibility service', () => {
     );
   });
 
-  it('does not notify new watchers before visibility is known', () => {
-    jest.resetModules();
-    const freshVisibilityService = jest.requireActual<VisibilityService>(
+  it('does not notify new watchers before visibility is known', async () => {
+    vi.resetModules();
+    const freshVisibilityService = await vi.importActual<VisibilityService>(
       '@/modules/messages/client/services/visibility.client.service',
     );
-    const watcher = jest.fn<void, [visible: boolean]>();
+    const watcher = vi.fn<(...args: [visible: boolean]) => void>();
 
     freshVisibilityService.watch(watcher);
 
@@ -76,7 +74,7 @@ describe('visibility service', () => {
 
   it('is idempotent for repeated enable calls', () => {
     defineDocumentProperty('hidden', false);
-    const addListener = jest.spyOn(document, 'addEventListener');
+    const addListener = vi.spyOn(document, 'addEventListener');
 
     visibilityService.enable();
     visibilityService.enable();
@@ -89,8 +87,8 @@ describe('visibility service', () => {
     defineDocumentProperty('msHidden', undefined);
     defineDocumentProperty('webkitHidden', undefined);
 
-    const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn<void, [visible: boolean]>();
+    const addListener = vi.spyOn(document, 'addEventListener');
+    const watcher = vi.fn<(...args: [visible: boolean]) => void>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -104,8 +102,8 @@ describe('visibility service', () => {
     defineDocumentProperty('msHidden', false);
     defineDocumentProperty('webkitHidden', undefined);
 
-    const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn<void, [visible: boolean]>();
+    const addListener = vi.spyOn(document, 'addEventListener');
+    const watcher = vi.fn<(...args: [visible: boolean]) => void>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -128,8 +126,8 @@ describe('visibility service', () => {
     defineDocumentProperty('msHidden', undefined);
     defineDocumentProperty('webkitHidden', false);
 
-    const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn<void, [visible: boolean]>();
+    const addListener = vi.spyOn(document, 'addEventListener');
+    const watcher = vi.fn<(...args: [visible: boolean]) => void>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);

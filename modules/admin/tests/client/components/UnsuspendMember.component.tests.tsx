@@ -7,13 +7,12 @@ import {
   within,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import UnsuspendMember from '../../../client/components/UnsuspendMember.component';
 import * as api from '../../../client/api/users.api';
-jest.mock('../../../client/api/users.api');
-const unsuspend = jest.mocked(api.unsuspendMember);
+vi.mock('../../../client/api/users.api');
+const unsuspend = vi.mocked(api.unsuspendMember);
 const member = { _id: 'member-1', username: 'fictional-member' };
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 function openDialog() {
   fireEvent.click(screen.getByRole('button', { name: 'Unsuspend' }));
   return screen.getByRole('dialog');
@@ -29,7 +28,7 @@ it('requires a reason and confirms before restoring access and refreshing', asyn
     changed: true,
     message: 'Member unsuspended.',
   });
-  const refresh = jest.fn().mockResolvedValue(undefined);
+  const refresh = vi.fn().mockResolvedValue(undefined);
   render(<UnsuspendMember member={member} onRefresh={refresh} />);
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   const dialog = openDialog();
@@ -68,7 +67,7 @@ it('keeps controls disabled until the action completes', async () => {
       resolve = yes;
     }),
   );
-  const refresh = jest.fn().mockResolvedValue(undefined);
+  const refresh = vi.fn().mockResolvedValue(undefined);
   render(<UnsuspendMember member={member} onRefresh={refresh} />);
   openDialog();
   fireEvent.change(screen.getByLabelText('Administrator reason'), {
@@ -85,7 +84,7 @@ it('keeps controls disabled until the action completes', async () => {
 });
 it('requires report refresh and a new confirmation after an operation error', async () => {
   unsuspend.mockRejectedValue(new Error('conflict'));
-  const refresh = jest.fn().mockResolvedValue(undefined);
+  const refresh = vi.fn().mockResolvedValue(undefined);
   render(<UnsuspendMember member={member} onRefresh={refresh} />);
   openDialog();
   fireEvent.change(screen.getByLabelText('Administrator reason'), {
@@ -114,7 +113,7 @@ it('requires report refresh and a new confirmation after an operation error', as
 });
 it('keeps the mutation locked when the required report refresh fails', async () => {
   unsuspend.mockRejectedValue(new Error('uncertain failure'));
-  const refresh = jest.fn().mockRejectedValue(new Error('offline'));
+  const refresh = vi.fn().mockRejectedValue(new Error('offline'));
   render(<UnsuspendMember member={member} onRefresh={refresh} />);
   openDialog();
   fireEvent.change(screen.getByLabelText('Administrator reason'), {
@@ -134,7 +133,7 @@ it('keeps the mutation locked when the required report refresh fails', async () 
 });
 it('retries only refreshing after a successful unsuspension', async () => {
   unsuspend.mockResolvedValue({ changed: true, message: 'Done' });
-  const refresh = jest
+  const refresh = vi
     .fn()
     .mockRejectedValueOnce(new Error('offline'))
     .mockResolvedValueOnce(undefined);
@@ -155,9 +154,7 @@ it('retries only refreshing after a successful unsuspension', async () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 it('uses the member ID when there is no username and supports dismissal', async () => {
-  render(
-    <UnsuspendMember member={{ _id: 'member-1' }} onRefresh={jest.fn()} />,
-  );
+  render(<UnsuspendMember member={{ _id: 'member-1' }} onRefresh={vi.fn()} />);
   expect(openDialog()).toHaveAccessibleName('Unsuspend member-1?');
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   await waitFor(() =>

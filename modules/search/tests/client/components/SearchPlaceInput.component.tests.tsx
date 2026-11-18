@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
@@ -10,11 +9,11 @@ type InputProps = React.ComponentProps<typeof SearchPlaceInput>;
 type PlaceSuggestion = Awaited<
   ReturnType<typeof locationApi.fetchLocationSuggestions>
 >[number];
-const locationApiMock = jest.mocked(locationApi);
+const locationApiMock = vi.mocked(locationApi);
 
-jest.mock('@/modules/search/client/api/location.api');
-jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/search/client/api/location.api');
+vi.mock('@/modules/search/client/hooks/use-debounced-callback', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   return {
     __esModule: true,
@@ -36,17 +35,21 @@ jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
 
 describe('SearchPlaceInput', () => {
   const analytics = fakeAnalytics();
-  const onPlaceSearch = jest.fn<
-    ReturnType<InputProps['onPlaceSearch']>,
-    Parameters<InputProps['onPlaceSearch']>
-  >();
-  const setSearchQuery = jest.fn<
-    ReturnType<InputProps['setSearchQuery']>,
-    Parameters<InputProps['setSearchQuery']>
-  >();
+  const onPlaceSearch =
+    vi.fn<
+      (
+        ...args: Parameters<InputProps['onPlaceSearch']>
+      ) => ReturnType<InputProps['onPlaceSearch']>
+    >();
+  const setSearchQuery =
+    vi.fn<
+      (
+        ...args: Parameters<InputProps['setSearchQuery']>
+      ) => ReturnType<InputProps['setSearchQuery']>
+    >();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     locationApiMock.fetchLocationSuggestions.mockResolvedValue([]);
     locationApiMock.locatePlace.mockReturnValue(null);
   });

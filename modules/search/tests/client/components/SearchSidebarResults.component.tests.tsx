@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { readOutreachSource } from '@trustroots/analytics/client';
 
 import SearchSidebarResults, {
@@ -15,16 +14,16 @@ let mockLanguagesData: Record<string, string> | undefined = {
   fi: 'Finnish',
 };
 
-jest.mock('@/modules/core/client/api/languages.api', () => ({
+vi.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: mockLanguagesData }),
 }));
 
-jest.mock('@/modules/users/client/components/Avatar.component', () => ({
+vi.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
   default: () => <span data-testid="avatar" />,
 }));
 
-jest.mock(
+vi.mock(
   '@/modules/search/client/components/CommunityNotesSidebar.component',
   () => ({
     __esModule: true,
@@ -53,14 +52,12 @@ describe('<SearchSidebarResults />', () => {
         volunteering,
       };
       const { rerender } = render(
-        <SearchSidebarResults offers={[offer]} onCloseSidebar={jest.fn()} />,
+        <SearchSidebarResults offers={[offer]} onCloseSidebar={vi.fn()} />,
       );
       expect(
         screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
       ).toBe(volunteering === true ? 'badge' : undefined);
-      rerender(
-        <SearchSidebarResults offer={offer} onCloseSidebar={jest.fn()} />,
-      );
+      rerender(<SearchSidebarResults offer={offer} onCloseSidebar={vi.fn()} />);
       expect(
         screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
       ).toBe(volunteering === true ? 'badge' : undefined);
@@ -106,7 +103,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('shows the empty state when nothing is selected', () => {
-    render(<SearchSidebarResults onCloseSidebar={jest.fn()} />);
+    render(<SearchSidebarResults onCloseSidebar={vi.fn()} />);
 
     expect(screen.getByText(/no results are visible/i)).toBeInTheDocument();
     expect(
@@ -155,7 +152,7 @@ describe('<SearchSidebarResults />', () => {
       };
 
       const { rerender } = render(
-        <SearchSidebarResults offers={[offer]} onCloseSidebar={jest.fn()} />,
+        <SearchSidebarResults offers={[offer]} onCloseSidebar={vi.fn()} />,
       );
       const offerKind = hostingLabel ? 'hosting' : 'meet';
       const name = [
@@ -164,9 +161,7 @@ describe('<SearchSidebarResults />', () => {
       ].join(' · ');
       expectBadges(screen.getByRole('button', { name }));
 
-      rerender(
-        <SearchSidebarResults offer={offer} onCloseSidebar={jest.fn()} />,
-      );
+      rerender(<SearchSidebarResults offer={offer} onCloseSidebar={vi.fn()} />);
       expectBadges(screen.getByRole('link', { name: /fictional-member/ }));
       if (!hostingLabel) {
         expect(
@@ -186,7 +181,7 @@ describe('<SearchSidebarResults />', () => {
   );
 
   it('lists visible offers and opens the selected offer details', () => {
-    const onOfferSelect = jest.fn();
+    const onOfferSelect = vi.fn();
     const visibleOffer: SearchResultOffer = {
       _id: 'offer-1',
       type: 'host',
@@ -198,7 +193,7 @@ describe('<SearchSidebarResults />', () => {
       <SearchSidebarResults
         offers={[visibleOffer]}
         onOfferSelect={onOfferSelect}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -217,7 +212,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('lists visible community note threads and opens the selected thread', () => {
-    const onCommunityNoteSelect = jest.fn();
+    const onCommunityNoteSelect = vi.fn();
     const thread: CommunityNoteSummary = {
       plusCode: '9F2X+XX',
       notes: [noteEvent({ id: 'note-1', content: 'A useful local note' })],
@@ -227,7 +222,7 @@ describe('<SearchSidebarResults />', () => {
       <SearchSidebarResults
         communityNoteThreads={[thread]}
         onCommunityNoteSelect={onCommunityNoteSelect}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -242,7 +237,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('labels a meet result by username when the profile has no display name', () => {
-    const onOfferSelect = jest.fn();
+    const onOfferSelect = vi.fn();
 
     render(
       <SearchSidebarResults
@@ -254,7 +249,7 @@ describe('<SearchSidebarResults />', () => {
           },
         ]}
         onOfferSelect={onOfferSelect}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -267,7 +262,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('keeps a community note result usable when its location or text is missing', () => {
-    const onCommunityNoteSelect = jest.fn();
+    const onCommunityNoteSelect = vi.fn();
     const thread: CommunityNoteSummary = {
       plusCode: null,
       notes: [noteEvent({ id: 'unlocated-note' })],
@@ -277,7 +272,7 @@ describe('<SearchSidebarResults />', () => {
       <SearchSidebarResults
         communityNoteThreads={[thread]}
         onCommunityNoteSelect={onCommunityNoteSelect}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -291,7 +286,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('still lists a community note thread when it has no plus code or note id', () => {
-    const onCommunityNoteSelect = jest.fn();
+    const onCommunityNoteSelect = vi.fn();
     const thread = {
       plusCode: null,
       notes: [{}],
@@ -301,7 +296,7 @@ describe('<SearchSidebarResults />', () => {
       <SearchSidebarResults
         communityNoteThreads={[thread]}
         onCommunityNoteSelect={onCommunityNoteSelect}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -325,7 +320,7 @@ describe('<SearchSidebarResults />', () => {
     };
 
     const offerList = render(
-      <SearchSidebarResults offers={[result]} onCloseSidebar={jest.fn()} />,
+      <SearchSidebarResults offers={[result]} onCloseSidebar={vi.fn()} />,
     );
     fireEvent.click(
       screen.getByRole('button', { name: /open hosting offer from/i }),
@@ -335,7 +330,7 @@ describe('<SearchSidebarResults />', () => {
     const noteList = render(
       <SearchSidebarResults
         communityNoteThreads={[noteThread]}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
     fireEvent.click(
@@ -347,14 +342,14 @@ describe('<SearchSidebarResults />', () => {
       <SearchSidebarResults
         offer={result}
         offers={[result]}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
   });
 
   it('shows a loading placeholder while an offer is loading', () => {
-    render(<SearchSidebarResults isLoadingOffer onCloseSidebar={jest.fn()} />);
+    render(<SearchSidebarResults isLoadingOffer onCloseSidebar={vi.fn()} />);
 
     expect(document.querySelector('.panel-loading')).toBeInTheDocument();
   });
@@ -376,7 +371,7 @@ describe('<SearchSidebarResults />', () => {
             languages: ['en', 'fi'],
           },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -409,7 +404,7 @@ describe('<SearchSidebarResults />', () => {
             displayName: 'Morgan Meet',
           },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -418,7 +413,7 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('renders community notes and closes from the mobile button', () => {
-    const onCloseSidebar = jest.fn();
+    const onCloseSidebar = vi.fn();
 
     render(
       <SearchSidebarResults
@@ -453,7 +448,7 @@ describe('<SearchSidebarResults />', () => {
             gender: 'female',
           },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -477,7 +472,7 @@ describe('<SearchSidebarResults />', () => {
             birthdate: '2099-12-31T00:00:00.000Z',
           },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -496,7 +491,7 @@ describe('<SearchSidebarResults />', () => {
           type: 'host',
           user: { username: 'status-unknown', displayName: 'Status Unknown' },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -519,7 +514,7 @@ describe('<SearchSidebarResults />', () => {
             languages: ['zz'],
           },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 
@@ -539,7 +534,7 @@ describe('<SearchSidebarResults />', () => {
           type: 'meet',
           user: { username: 'language-wait', languages: ['en'] },
         }}
-        onCloseSidebar={jest.fn()}
+        onCloseSidebar={vi.fn()}
       />,
     );
 

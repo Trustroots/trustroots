@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import RemoveProfilePage from '@/modules/users/client/components/RemoveProfilePage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
@@ -14,28 +13,30 @@ const render = (
 
 type BoardProps = { children?: React.ReactNode };
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
-jest.mock('@/modules/core/client/components/LoadingIndicator', () => ({
+vi.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-indicator" />,
 }));
 
-const removeProfile = jest.mocked(authApi.removeProfile);
+const removeProfile = vi.mocked(authApi.removeProfile);
 
 describe('RemoveProfilePage', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/remove/remove-token');
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('shows success after the profile is removed', async () => {
@@ -112,7 +113,7 @@ describe('RemoveProfilePage', () => {
 });
 
 it('requires explicit confirmation before removing an account', () => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   render(<RemoveProfilePage />);
   expect(screen.getByText('Delete your account?')).toBeVisible();
   expect(removeProfile).not.toHaveBeenCalled();

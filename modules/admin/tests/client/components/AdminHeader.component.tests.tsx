@@ -1,17 +1,18 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
 type AdminUserFixture = AuthUser;
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
 afterEach(() => {

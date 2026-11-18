@@ -1,5 +1,4 @@
 import React from 'react';
-import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Button } from '../../../../../packages/ui/src/components/Button';
 import { ButtonGroup } from '../../../../../packages/ui/src/components/ButtonGroup';
@@ -12,7 +11,7 @@ import {
 } from '../../../../../packages/ui/src/lib/intent';
 
 test('buttons default to a solid, inverse, non-submitting button', () => {
-  const onClick = jest.fn();
+  const onClick = vi.fn();
   const { rerender } = render(<Button onClick={onClick}>Continue</Button>);
   const button = screen.getByRole('button', { name: 'Continue' });
   expect(button).toHaveAttribute('type', 'button');

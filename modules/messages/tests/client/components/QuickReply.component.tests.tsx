@@ -1,18 +1,18 @@
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 
 type QuickReplyProps = React.ComponentProps<typeof QuickReply>;
 
-function createSendHandler(): jest.MockedFunction<QuickReplyProps['onSend']> {
-  return jest.fn();
+function createSendHandler(): MockedFunction<QuickReplyProps['onSend']> {
+  return vi.fn();
 }
 
-function createFocusHandler(): jest.MockedFunction<QuickReplyProps['onFocus']> {
-  return jest.fn();
+function createFocusHandler(): MockedFunction<QuickReplyProps['onFocus']> {
+  return vi.fn();
 }
 
 describe('<QuickReply />', () => {

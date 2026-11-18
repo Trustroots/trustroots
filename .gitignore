@@ -81,7 +81,6 @@ docs/Gemfile.lock
 trustroots.tar.gz*
 
 # Test coverage output
-/.jest-cache/
 /coverage/
 /coverage-report/
 

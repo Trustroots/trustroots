@@ -7,7 +7,12 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "esModuleInterop": true,
-    "types": ["node", "vite/client", "jest"]
+    "types": [
+      "node",
+      "vite/client",
+      "vitest/globals",
+      "@testing-library/jest-dom/vitest"
+    ]
   },
   "include": ["**/*.ts", "**/*.mts", "**/*.tsx"]
 }

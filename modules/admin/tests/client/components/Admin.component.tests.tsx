@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import Admin from '@/modules/admin/client/components/Admin.component';
 import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
@@ -8,17 +7,19 @@ import * as usersApi from '@/modules/admin/client/api/users.api';
 import type { AdminDashboard } from '@/modules/admin/client/api/admin-dashboard.api';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/admin-dashboard.api');
-jest.mock('@/modules/admin/client/api/users.api');
-const mockedDashboardApi = jest.mocked(dashboardApi);
-const mockedUsersApi = jest.mocked(usersApi);
+vi.mock('@/modules/admin/client/api/admin-dashboard.api');
+vi.mock('@/modules/admin/client/api/users.api');
+const mockedDashboardApi = vi.mocked(dashboardApi);
+const mockedUsersApi = vi.mocked(usersApi);
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -61,7 +62,7 @@ function malformedDashboardResponse(
 
 afterEach(() => {
   setViewer(null);
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 

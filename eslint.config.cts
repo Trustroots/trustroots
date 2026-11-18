@@ -31,6 +31,21 @@ const reactVersion = coercedReactVersion.version;
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
+// Vitest runs the client and Nostranslation suites with `globals: true`.
+const vitestGlobals = Object.fromEntries(
+  [
+    'afterAll',
+    'afterEach',
+    'beforeAll',
+    'beforeEach',
+    'describe',
+    'expect',
+    'it',
+    'test',
+    'vi',
+  ].map(name => [name, 'readonly']),
+);
+
 const rules = {
   'comma-dangle': [2, 'always-multiline'],
   'comma-spacing': [2, { before: false, after: true }],
@@ -109,7 +124,8 @@ const legacyConfig = {
       files: ['apps/nostranslation/**/*.{ts,tsx,mts}'],
       parser: '@typescript-eslint/parser',
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
-      env: { browser: true, node: true, jest: true },
+      env: { browser: true, node: true },
+      globals: vitestGlobals,
       rules: {
         'react/prop-types': 0,
         'no-use-before-define': 0,
@@ -297,10 +313,9 @@ const legacyConfig = {
       },
       env: {
         browser: true,
-        jest: true,
-        jasmine: true,
       },
       globals: {
+        ...vitestGlobals,
         L: true,
       },
     },
@@ -314,7 +329,6 @@ const legacyConfig = {
         'config/**/*.{cts,mts,ts,tsx}',
         'config/vite/**/*.{ts,tsx,mts}',
         'worker.mts',
-        'jest/**/*.cts',
         'bin/**/*.mts',
         'scripts/**/*.{mts,cts}',
         'tests/e2e/**/*.{ts,mts}',
@@ -420,10 +434,6 @@ module.exports = defineConfig([
       'modules/*/tests/server/**/*.cts',
       'scripts/**/*.cts',
     ],
-    rules: { '@typescript-eslint/no-require-imports': 'off' },
-  },
-  {
-    files: ['jest/**/*.cts'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {

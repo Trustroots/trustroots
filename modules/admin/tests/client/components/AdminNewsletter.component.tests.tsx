@@ -6,25 +6,26 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import * as newsletterApi from '@/modules/admin/client/api/newsletter.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/newsletter.api');
-jest.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/admin/client/api/newsletter.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
 
-const mockedNewsletterApi = jest.mocked(newsletterApi);
-const mockedTribesApi = jest.mocked(tribesApi);
+const mockedNewsletterApi = vi.mocked(newsletterApi);
+const mockedTribesApi = vi.mocked(tribesApi);
 const clickedAnchors: HTMLAnchorElement[] = [];
 
 type AudiencePreview = { count: number };
@@ -35,21 +36,19 @@ function circleSummary(_id: string, label: string): TribeSummary {
 
 describe('<AdminNewsletter />', () => {
   beforeEach(() => {
-    URL.createObjectURL = jest.fn(() => 'blob:newsletter');
-    URL.revokeObjectURL = jest.fn();
+    URL.createObjectURL = vi.fn(() => 'blob:newsletter');
+    URL.revokeObjectURL = vi.fn();
     clickedAnchors.length = 0;
-    jest
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(function captureClickedAnchor(
-        this: HTMLAnchorElement,
-      ) {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      function captureClickedAnchor(this: HTMLAnchorElement) {
         clickedAnchors.push(this);
-      });
+      },
+    );
     mockedTribesApi.read.mockReturnValue(new Promise<TribeSummary[]>(() => {}));
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders the newsletter split form', () => {

@@ -1,6 +1,6 @@
+import type { MockedFunction } from 'vitest';
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -11,7 +11,7 @@ describe('<TrEditor /> with MediumEditor', () => {
   it('offers formatting without a link tool or clickable link preview', () => {
     const content = '<p><a href="https://example.org/">Fictional notes</a></p>';
     const { container } = render(
-      <TrEditor id="editor" text={content} onChange={jest.fn()} />,
+      <TrEditor id="editor" text={content} onChange={vi.fn()} />,
     );
     expect(document.querySelector('[data-action="createLink"]')).toBeNull();
     expect(document.querySelector('.medium-editor-anchor-preview')).toBeNull();
@@ -19,7 +19,7 @@ describe('<TrEditor /> with MediumEditor', () => {
     expect(container.querySelector('.tr-editor')?.innerHTML).toBe(content);
   });
   it('applies the formatting policy to initial and externally replaced content', () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const { container, rerender } = render(
       <TrEditor
         id="formatted-editor"
@@ -46,10 +46,9 @@ describe('<TrEditor /> with MediumEditor', () => {
     ['initial', 'initial'],
     ['initial', '<p>Replacement note</p>'],
   ] as Array<[string, string]>)(
-    'applies external text after typing (%p → %p)',
+    'applies external text after typing (%o → %o)',
     (initial, replacement) => {
-      const onChange: jest.MockedFunction<TrEditorProps['onChange']> =
-        jest.fn();
+      const onChange: MockedFunction<TrEditorProps['onChange']> = vi.fn();
       const { container, rerender } = render(
         <TrEditor id="editor" text={initial} onChange={onChange} />,
       );
@@ -67,8 +66,7 @@ describe('<TrEditor /> with MediumEditor', () => {
       expect(onChange).toHaveBeenCalledTimes(1);
 
       // Input and further external updates must still work after the reset.
-      const nextOnChange: jest.MockedFunction<TrEditorProps['onChange']> =
-        jest.fn();
+      const nextOnChange: MockedFunction<TrEditorProps['onChange']> = vi.fn();
       rerender(
         <TrEditor id="editor" text={replacement} onChange={nextOnChange} />,
       );

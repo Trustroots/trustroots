@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Interaction from '@/modules/experiences/client/components/create-experience/Interaction';
@@ -19,7 +18,7 @@ describe('<Interaction />', () => {
     render(
       <Interaction
         interactions={{ met: true, host: false, guest: true }}
-        onChange={jest.fn()}
+        onChange={vi.fn()}
       />,
     );
 
@@ -29,7 +28,7 @@ describe('<Interaction />', () => {
   });
 
   it.each(interactionCases)('calls onChange with %s option', (label, value) => {
-    const onChange = jest.fn((interaction: InteractionKind) => interaction);
+    const onChange = vi.fn((interaction: InteractionKind) => interaction);
     render(
       <Interaction
         interactions={{ met: false, host: false, guest: false }}

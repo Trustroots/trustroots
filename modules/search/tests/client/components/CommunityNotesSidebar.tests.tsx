@@ -6,7 +6,6 @@ import {
   fireEvent,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import CommunityNotesSidebar from '@/modules/search/client/components/CommunityNotesSidebar.component';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 
@@ -20,12 +19,12 @@ type NostrNoteFixture = Pick<
   Partial<CommunityNoteEvent>;
 type SidebarProps = React.ComponentProps<typeof CommunityNotesSidebar>;
 
-jest.mock('@/modules/search/client/services/nostr.client.service', () => {
+vi.mock('@/modules/search/client/services/nostr.client.service', () => {
   return {
     __esModule: true,
     default: class NostrService {},
     nostrService: {
-      resolveNpubToUsername: jest.fn((pubkey: string) => {
+      resolveNpubToUsername: vi.fn((pubkey: string) => {
         if (pubkey.startsWith('pubkey1111')) {
           return Promise.resolve('alice');
         }
@@ -35,7 +34,7 @@ jest.mock('@/modules/search/client/services/nostr.client.service', () => {
   };
 });
 
-jest.mock(
+vi.mock(
   '@/modules/core/client/components/NostrootsActionModal.component',
   () => {
     function MockNostrootsActionModal({
@@ -58,7 +57,7 @@ jest.mock(
   },
 );
 
-const resolveNpubToUsername = jest.mocked(nostrService.resolveNpubToUsername);
+const resolveNpubToUsername = vi.mocked(nostrService.resolveNpubToUsername);
 
 const NOTES: NostrNoteFixture[] = [
   {

@@ -1,6 +1,6 @@
+import type { MockedFunction } from 'vitest';
 import React, { type PropsWithChildren } from 'react';
 import { render as rtlRender, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Home, {
@@ -16,19 +16,21 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock(
+vi.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock(
   '@/modules/pages/client/components/HomeFeaturedNostrNotes.component',
-  () => () => null,
+  () => ({ default: () => null }),
 );
 
-const mockReadCircles = jest.mocked(circlesAPI.read);
-const mockGetConnections = jest.mocked(circlesAPI.getConnections);
+const mockReadCircles = vi.mocked(circlesAPI.read);
+const mockGetConnections = vi.mocked(circlesAPI.getConnections);
 // The null response intentionally exercises the unresolved-route-circle case.
-const mockGetCircle = jest.mocked(circlesAPI.get) as jest.MockedFunction<
+const mockGetCircle = vi.mocked(circlesAPI.get) as MockedFunction<
   (slug: string) => Promise<TribeSummary | null>
 >;
 const circle = (id: string, slug: string, label: string): TribeSummary => ({
@@ -38,8 +40,8 @@ const circle = (id: string, slug: string, label: string): TribeSummary => ({
   count: 3,
 });
 
-jest.mock('@/modules/core/client/components/Board.js', () => {
-  const actualReact = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board.js', async () => {
+  const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({
     children,
     style,
@@ -50,23 +52,23 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
       children,
     );
   }
-  return MockBoard;
+  return { default: MockBoard };
 });
 
-jest.mock('@/modules/core/client/components/Screenshot.js', () => {
-  const actualReact = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Screenshot.js', async () => {
+  const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockScreenshot() {
     return actualReact.createElement('div', null, 'screenshot');
   }
-  return MockScreenshot;
+  return { default: MockScreenshot };
 });
 
-jest.mock('@/modules/core/client/components/BoardCredits.js', () => {
-  const actualReact = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/BoardCredits.js', async () => {
+  const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoardCredits() {
     return actualReact.createElement('div', null, 'board-credits');
   }
-  return MockBoardCredits;
+  return { default: MockBoardCredits };
 });
 
 beforeEach(() => {
@@ -74,7 +76,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('getSignupUrl', () => {

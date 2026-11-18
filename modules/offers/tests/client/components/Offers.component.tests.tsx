@@ -1,12 +1,11 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import Offers from '@/modules/offers/client/components/Offers.component';
 import { getOffers } from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
-const getOffersMock = jest.mocked(getOffers);
+const getOffersMock = vi.mocked(getOffers);
 
 type MockOffersPresentationalProps = {
   isOwnOffer: boolean;
@@ -15,11 +14,11 @@ type MockOffersPresentationalProps = {
   username?: string;
 };
 
-jest.mock('@/modules/offers/client/api/offers.api', () => ({
-  getOffers: jest.fn(),
+vi.mock('@/modules/offers/client/api/offers.api', () => ({
+  getOffers: vi.fn(),
 }));
 
-jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
+vi.mock('@/modules/offers/client/components/OffersPresentational', () => {
   function MockOffersPresentational({
     isOwnOffer,
     isUserPublic,
@@ -35,7 +34,7 @@ jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
       </div>
     );
   }
-  return MockOffersPresentational;
+  return { default: MockOffersPresentational };
 });
 
 describe('<Offers />', () => {
@@ -54,7 +53,7 @@ describe('<Offers />', () => {
 
   afterEach(() => {
     window.isNativeMobileApp = false;
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('loads host offers and marks the authenticated owner', async () => {
@@ -155,9 +154,9 @@ describe('<Offers />', () => {
   });
 
   it('detects mobile user agents during construction', () => {
-    jest
-      .spyOn(window.navigator, 'userAgent', 'get')
-      .mockReturnValue('Mozilla/5.0 Mobile Safari');
+    vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 Mobile Safari',
+    );
 
     const offers = new Offers({
       authUser: {},

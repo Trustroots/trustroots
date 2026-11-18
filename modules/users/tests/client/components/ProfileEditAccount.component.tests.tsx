@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditAccount from '@/modules/users/client/components/ProfileEditAccount.component';
@@ -11,34 +10,33 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/config/client/i18n', () => ({
+vi.mock('@/modules/users/client/api/users.api');
+vi.mock('@/config/client/i18n', () => ({
   __esModule: true,
   default: {
     language: 'en',
-    changeLanguage: jest.fn(),
+    changeLanguage: vi.fn(),
     dir: () => 'ltr',
   },
 }));
-const updateUser = jest.mocked(usersApi.update);
-const changePassword = jest.mocked(usersApi.changePassword);
-const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
-const removeProfile = jest.mocked(usersApi.removeProfile);
-const getProfileRemovalStatus = jest.mocked(usersApi.getProfileRemovalStatus);
-const cancelProfileRemoval = jest.mocked(usersApi.cancelProfileRemoval);
-jest.mock(
-  '@/modules/users/client/components/ProfileEditPage.component',
-  () => ({
-    __esModule: true,
-    default: ({ children }: { children: React.ReactNode }) => (
-      <section>{children}</section>
-    ),
-  }),
-);
-jest.mock('react-i18next', () => {
+const updateUser = vi.mocked(usersApi.update);
+const changePassword = vi.mocked(usersApi.changePassword);
+const resendConfirmation = vi.mocked(usersApi.resendEmailConfirmation);
+const removeProfile = vi.mocked(usersApi.removeProfile);
+const getProfileRemovalStatus = vi.mocked(usersApi.getProfileRemovalStatus);
+const cancelProfileRemoval = vi.mocked(usersApi.cancelProfileRemoval);
+vi.mock('@/modules/users/client/components/ProfileEditPage.component', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => (
+    <section>{children}</section>
+  ),
+}));
+vi.mock('react-i18next', () => {
   const translation = {
     t: (key: string, values?: Record<string, unknown>) => {
       if (values?.email) {
@@ -113,9 +111,9 @@ describe('ProfileEditAccount', () => {
     ).not.toBeInTheDocument();
   });
   it('cancels a pending change and removes the pending actions', async () => {
-    jest
-      .mocked(usersApi.cancelEmailChange)
-      .mockResolvedValue({ currentEmail: user.email! });
+    vi.mocked(usersApi.cancelEmailChange).mockResolvedValue({
+      currentEmail: user.email!,
+    });
     renderPage({ public: true, emailTemporary: 'pending@example.org' });
     fireEvent.click(
       screen.getByRole('button', { name: 'Cancel email change' }),
@@ -138,9 +136,9 @@ describe('ProfileEditAccount', () => {
   it.each(['request failed', undefined])(
     'keeps the pending change if cancellation fails (%s)',
     async message => {
-      jest
-        .mocked(usersApi.cancelEmailChange)
-        .mockRejectedValue({ response: { data: { message } } });
+      vi.mocked(usersApi.cancelEmailChange).mockRejectedValue({
+        response: { data: { message } },
+      });
       renderPage({ public: true, emailTemporary: 'pending@example.org' });
       fireEvent.click(
         screen.getByRole('button', { name: 'Cancel email change' }),
@@ -157,7 +155,7 @@ describe('ProfileEditAccount', () => {
   );
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getProfileRemovalStatus.mockResolvedValue({ pending: false });
   });
 
@@ -209,7 +207,7 @@ describe('ProfileEditAccount', () => {
 
   it('focuses and scrolls to removal when opened with its fragment', async () => {
     window.history.replaceState({}, '', '/profile/edit/account#remove');
-    const scrollIntoView = jest.fn();
+    const scrollIntoView = vi.fn();
     const previous = HTMLElement.prototype.scrollIntoView;
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
     try {
@@ -605,11 +603,7 @@ describe('ProfileEditAccount', () => {
     const button = screen.getByRole('button', { name: 'Remove profile' });
     button.removeAttribute('disabled');
     button.dispatchEvent(
-      new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-      }),
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
     );
 
     expect(usersApi.removeProfile).not.toHaveBeenCalled();
@@ -634,7 +628,7 @@ it.each([true, false])(
 
 describe('pending account deletion', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getProfileRemovalStatus.mockResolvedValue({ pending: true });
   });
 

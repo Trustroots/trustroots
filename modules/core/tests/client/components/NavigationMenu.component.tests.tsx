@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import NavigationMenuItem from '@/layers/shell/client/components/NavigationMenuItem';
 import NavigationSubMenuList from '@/layers/shell/client/components/NavigationSubMenuList';
@@ -13,7 +12,7 @@ describe('navigation menu helpers', () => {
   it.each(['Search', 'Find member'])(
     'releases pointer focus from %s in a dropdown',
     name => {
-      const onClick = jest.fn();
+      const onClick = vi.fn();
       render(
         <NavigationMenuItem
           currentPath="/"

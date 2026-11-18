@@ -1,7 +1,6 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AppHeader from '@/layers/shell/client/components/AppHeader.component';
@@ -11,11 +10,13 @@ import type NavigationLoggedOut from '@/layers/shell/client/components/Navigatio
 type LoggedInProps = React.ComponentProps<typeof NavigationLoggedIn>;
 type LoggedOutProps = React.ComponentProps<typeof NavigationLoggedOut>;
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/layers/shell/client/components/NavigationLoggedIn', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/layers/shell/client/components/NavigationLoggedIn', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockNavigationLoggedIn({ currentPath, user }: LoggedInProps) {
     return (
@@ -25,21 +26,21 @@ jest.mock('@/layers/shell/client/components/NavigationLoggedIn', () => {
     );
   }
 
-  return MockNavigationLoggedIn;
+  return { default: MockNavigationLoggedIn };
 });
 
-jest.mock('@/layers/shell/client/components/NavigationLoggedOut', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/layers/shell/client/components/NavigationLoggedOut', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockNavigationLoggedOut({ currentPath }: LoggedOutProps) {
     return <div data-testid="logged-out-navigation">{currentPath}</div>;
   }
 
-  return MockNavigationLoggedOut;
+  return { default: MockNavigationLoggedOut };
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<AppHeader />', () => {
@@ -123,7 +124,7 @@ describe('<AppHeader />', () => {
   it('tracks the rendered header height as navigation changes size', () => {
     let resizeHeader!: ResizeObserverCallback;
     const originalResizeObserver = global.ResizeObserver;
-    const bounds = jest
+    const bounds = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockReturnValue(DOMRect.fromRect({ height: 54 }));
     global.ResizeObserver = class implements ResizeObserver {

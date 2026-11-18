@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
@@ -8,20 +7,22 @@ import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 
-const offersApiMock = jest.mocked(offersApi);
+const offersApiMock = vi.mocked(offersApi);
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock(
+vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock(
   '@/modules/offers/client/components/MeetsExplanation.component',
   () => ({
     __esModule: true,
     default: () => <div>Meets explanation</div>,
   }),
 );
-jest.mock(
+vi.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
   () => ({
     __esModule: true,
@@ -45,7 +46,7 @@ const analytics = fakeAnalytics();
 
 describe('OfferMeetEditPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.pushState({}, '', '/offer/meet/add');
   });
 

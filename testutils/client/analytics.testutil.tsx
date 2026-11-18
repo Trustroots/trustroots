@@ -6,7 +6,7 @@ import { AnalyticsProvider } from '@trustroots/analytics/client';
  * tests assert on recorded events without touching the Umami script.
  */
 export function fakeAnalytics() {
-  const tracker = { track: jest.fn() };
+  const tracker = { track: vi.fn() };
 
   function wrapper({ children }: { children: ReactNode }) {
     return <AnalyticsProvider tracker={tracker}>{children}</AnalyticsProvider>;

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import BlockedMemberBanner from '@/modules/users/client/components/BlockedMemberBanner.component';
 import type BlockMember from '@/modules/users/client/components/BlockMember.component';
@@ -11,10 +10,10 @@ type BlockMemberProps = React.ComponentProps<typeof BlockMember>;
 const mockReportMemberCalls: ReportMemberProps[] = [];
 const mockBlockMemberCalls: BlockMemberProps[] = [];
 
-jest.mock(
+vi.mock(
   '@/modules/support/client/components/ReportMember.component.js',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockReportMember(props: ReportMemberProps) {
       mockReportMemberCalls.push(props);
@@ -29,28 +28,31 @@ jest.mock(
       );
     }
 
-    return MockReportMember;
+    return { default: MockReportMember };
   },
 );
 
-jest.mock('@/modules/users/client/components/BlockMember.component.js', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock(
+  '@/modules/users/client/components/BlockMember.component.js',
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
-  function MockBlockMember(props: BlockMemberProps) {
-    mockBlockMemberCalls.push(props);
+    function MockBlockMember(props: BlockMemberProps) {
+      mockBlockMemberCalls.push(props);
 
-    return React.createElement(
-      'button',
-      {
-        'data-testid': 'block-member-button',
-        'data-username': props.username,
-      },
-      'Block/Unblock',
-    );
-  }
+      return React.createElement(
+        'button',
+        {
+          'data-testid': 'block-member-button',
+          'data-username': props.username,
+        },
+        'Block/Unblock',
+      );
+    }
 
-  return MockBlockMember;
-});
+    return { default: MockBlockMember };
+  },
+);
 
 describe('<BlockedMemberBanner />', function () {
   beforeEach(function () {

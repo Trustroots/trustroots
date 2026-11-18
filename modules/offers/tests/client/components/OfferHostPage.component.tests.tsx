@@ -6,7 +6,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
@@ -14,7 +13,7 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
-const offersApiMock = jest.mocked(offersApi);
+const offersApiMock = vi.mocked(offersApi);
 type BlockerOptions = {
   shouldBlockFn: (args: {
     current: { pathname: string; search: Record<string, unknown> };
@@ -22,19 +21,21 @@ type BlockerOptions = {
   }) => boolean;
   enableBeforeUnload: () => boolean;
 };
-const mockUseBlocker = jest.fn<void, [BlockerOptions]>();
+const mockUseBlocker = vi.fn<(...args: [BlockerOptions]) => void>();
 const getLatestBlockerOptions = () => {
   const calls = mockUseBlocker.mock.calls;
   return calls[calls.length - 1]![0];
 };
 const hasUnsavedChanges = () => getLatestBlockerOptions().enableBeforeUnload();
 
-jest.mock('@tanstack/react-router', () => ({
-  ...jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () => ({
+  ...(await (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule()),
   useBlocker: (options: BlockerOptions) => mockUseBlocker(options),
 }));
-jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock(
+vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
   () => ({
     __esModule: true,
@@ -106,11 +107,11 @@ describe('OfferHostPage', () => {
   );
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
       configurable: true,
-      value: jest.fn(),
+      value: vi.fn(),
     });
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
   });
@@ -144,7 +145,7 @@ describe('OfferHostPage', () => {
         HTMLElement.prototype,
         'scrollIntoView',
       );
-      const scrollIntoView = jest.fn();
+      const scrollIntoView = vi.fn();
       Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
         configurable: true,
         value: scrollIntoView,
@@ -181,7 +182,7 @@ describe('OfferHostPage', () => {
   });
 
   it('blocks leaving unsaved changes and allows same-location navigation', async () => {
-    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     await screen.findByRole('radiogroup', { name: 'Can you host?' });
 
@@ -246,7 +247,7 @@ describe('OfferHostPage', () => {
   });
 
   it('resets the unsaved-change guard after saving', async () => {
-    const update = jest
+    const update = vi
       .spyOn(offersApi, 'updateOffer')
       .mockResolvedValue({ message: 'Offer updated.' });
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
@@ -266,7 +267,7 @@ describe('OfferHostPage', () => {
   });
 
   it('keeps the unsaved-change guard after a failed save', async () => {
-    const update = jest
+    const update = vi
       .spyOn(offersApi, 'updateOffer')
       .mockRejectedValue(new Error('offline'));
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
@@ -8,30 +7,30 @@ import { read as readExperiences } from '@/modules/experiences/client/api/experi
 import type { Experience } from '@/modules/experiences/shared/experience';
 import type ExperiencesSection from '@/modules/experiences/client/components/read-experiences/ExperiencesSection';
 
-jest.mock('@/modules/experiences/client/api/experiences.api');
-const readExperiencesMock = jest.mocked(readExperiences);
+vi.mock('@/modules/experiences/client/api/experiences.api');
+const readExperiencesMock = vi.mocked(readExperiences);
 
-jest.mock(
+vi.mock(
   '@/modules/experiences/client/components/read-experiences/ExperienceCounts',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
     function MockExperienceCounts() {
       return <div>experience-counts</div>;
     }
-    return MockExperienceCounts;
+    return { default: MockExperienceCounts };
   },
 );
 
-jest.mock(
+vi.mock(
   '@/modules/experiences/client/components/read-experiences/ExperiencesSection',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
     function MockExperiencesSection({
       experiences,
     }: React.ComponentProps<typeof ExperiencesSection>) {
       return <div>{`experiences-section-${experiences.length}`}</div>;
     }
-    return MockExperiencesSection;
+    return { default: MockExperiencesSection };
   },
 );
 
@@ -54,7 +53,7 @@ const makeExperience = (id: string, isPublic: boolean): Experience => ({
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('<ListExperiences />', () => {

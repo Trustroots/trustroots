@@ -7,7 +7,6 @@ import {
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
@@ -19,8 +18,8 @@ import type {
   ExperienceUser,
 } from '@/modules/experiences/shared/experience';
 
-const mockedExperiencesApi = jest.mocked(experiencesApi);
-const mockedSupportApi = jest.mocked(supportApi);
+const mockedExperiencesApi = vi.mocked(experiencesApi);
+const mockedSupportApi = vi.mocked(supportApi);
 type ExperienceMineFixture = Omit<Partial<ExperienceMine>, 'response'> & {
   response?:
     | ExperienceMine['response']
@@ -28,8 +27,8 @@ type ExperienceMineFixture = Omit<Partial<ExperienceMine>, 'response'> & {
     | Partial<NonNullable<ExperienceMine['response']>>;
 };
 
-jest.mock('@/modules/experiences/client/api/experiences.api');
-jest.mock('@/modules/support/client/api/support.api');
+vi.mock('@/modules/experiences/client/api/experiences.api');
+vi.mock('@/modules/support/client/api/support.api');
 
 const render = (component: React.ReactNode) =>
   renderComponent(<AppProviders>{component}</AppProviders>);
@@ -62,8 +61,8 @@ function mockCreateOnce(isPublic: boolean | null) {
 }
 
 afterEach(() => {
-  jest.restoreAllMocks();
-  jest.clearAllMocks();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
   localStorage.clear();
   delete window.settings;
 });
@@ -665,7 +664,7 @@ describe('<CreateExperience />', () => {
   });
 
   it('shows recovery is unavailable when device storage fails', async () => {
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('Storage full');
     });
     await fillExperience();

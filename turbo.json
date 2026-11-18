@@ -9,8 +9,8 @@
     "tsconfig.json",
     "tooling/tsconfig/**",
     "babel.config.cts",
-    "jest.config.cjs",
-    "jest/**",
+    "vite.config.mts",
+    "vitest.client.config.mts",
     "config/**",
     "testutils/**"
   ],

@@ -1,6 +1,6 @@
+import type { Mocked } from 'vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
@@ -8,21 +8,25 @@ import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import type { ContactConfirmation } from '@/modules/contacts/client/types';
 import type { UserProfile } from '@/modules/users/client/types';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/contacts/client/api/contacts.api');
-jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  return function MockAvatar({
-    user,
-  }: {
-    user: { displayName?: string | null };
-  }) {
-    return <div>{user.displayName}</div>;
+vi.mock('@/modules/contacts/client/api/contacts.api');
+vi.mock('@/modules/users/client/components/Avatar.component', () => {
+  return {
+    default: function MockAvatar({
+      user,
+    }: {
+      user: { displayName?: string | null };
+    }) {
+      return <div>{user.displayName}</div>;
+    },
   };
 });
 
-const contactsApiMock = contactsApi as jest.Mocked<typeof contactsApi>;
+const contactsApiMock = contactsApi as Mocked<typeof contactsApi>;
 
 const user = {
   _id: 'user-1',
@@ -48,7 +52,7 @@ const pendingContact = {
 
 describe('ContactConfirmPage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.pushState({}, '', '/contact-confirm/contact-1');
     contactsApiMock.getByContactId.mockResolvedValue(pendingContact);
   });

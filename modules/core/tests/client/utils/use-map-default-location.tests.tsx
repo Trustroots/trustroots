@@ -3,13 +3,13 @@ import useMapDefaultLocation, {
   useRequestMapDefaultLocation,
 } from '@/modules/core/client/utils/use-map-default-location';
 
-const mockGet = jest.fn();
+const mockGet = vi.fn();
 let mockUser: { _id: string } | null;
-jest.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },
 }));
-jest.mock('@/modules/core/client/react-app/auth', () => ({
+vi.mock('@/modules/core/client/react-app/auth', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 

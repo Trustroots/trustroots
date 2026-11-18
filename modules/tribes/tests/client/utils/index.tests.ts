@@ -8,7 +8,7 @@ type CircleFixture = Parameters<typeof getCircleBackgroundStyle>[0];
 
 describe('tribes utils', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('builds circle background URLs with explicit format', () => {
@@ -27,7 +27,7 @@ describe('tribes utils', () => {
   });
 
   it('builds style with image and color using webp when supported', () => {
-    jest.spyOn(domUtils, 'canUseWebP').mockReturnValue(true);
+    vi.spyOn(domUtils, 'canUseWebP').mockReturnValue(true);
 
     const style = getCircleBackgroundStyle(
       { slug: 'circle-2', image: 'circle-2.jpg', color: 'aa00ff' },
@@ -41,7 +41,7 @@ describe('tribes utils', () => {
   });
 
   it('builds style with image and color using jpg when webp is not supported', () => {
-    jest.spyOn(domUtils, 'canUseWebP').mockReturnValue(false);
+    vi.spyOn(domUtils, 'canUseWebP').mockReturnValue(false);
 
     const style = getCircleBackgroundStyle(
       { slug: 'circle-3', image: 'circle-3.jpg', color: '00aa55' },
@@ -55,7 +55,7 @@ describe('tribes utils', () => {
   });
 
   it('returns color-only style when no image URL is available', () => {
-    jest.spyOn(domUtils, 'canUseWebP').mockReturnValue(true);
+    vi.spyOn(domUtils, 'canUseWebP').mockReturnValue(true);
 
     const style = getCircleBackgroundStyle(
       { slug: 'circle-4', color: 'ff5500' },
@@ -66,7 +66,7 @@ describe('tribes utils', () => {
   });
 
   it('returns empty style when no image or color is provided', () => {
-    jest.spyOn(domUtils, 'canUseWebP').mockReturnValue(false);
+    vi.spyOn(domUtils, 'canUseWebP').mockReturnValue(false);
 
     const noBackground: CircleFixture = { slug: 'circle-5' };
     const style = getCircleBackgroundStyle(noBackground, '320x200');

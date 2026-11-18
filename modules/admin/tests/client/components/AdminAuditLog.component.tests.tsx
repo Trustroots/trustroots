@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import * as api from '@/modules/admin/client/api/audit-log.api';
 import type {
@@ -14,18 +13,20 @@ import type {
   AuditActor,
 } from '@/modules/admin/client/api/audit-log.api';
 
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
 
-jest.mock('@/modules/admin/client/api/audit-log.api');
+vi.mock('@/modules/admin/client/api/audit-log.api');
 
 const mockedApi = {
-  getAuditLog: jest.mocked(api.getAuditLog),
-  getAuditLogActors: jest.mocked(api.getAuditLogActors),
+  getAuditLog: vi.mocked(api.getAuditLog),
+  getAuditLogActors: vi.mocked(api.getAuditLogActors),
 };
 
 beforeEach(() => {
@@ -33,7 +34,7 @@ beforeEach(() => {
     { _id: 'staff-1', username: 'river', roles: ['admin'] },
   ]);
 });
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 function pending<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;

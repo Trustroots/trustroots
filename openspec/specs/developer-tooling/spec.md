@@ -89,7 +89,7 @@ The project SHALL implement administration, offers and search client modules in 
 #### Scenario: JavaScript callers use explicit `.js` imports for migrated modules
 
 - **WHEN** an existing JavaScript client module imports an administration, offer or search module with an explicit `.js` suffix
-- **THEN** Jest and Vite resolve the corresponding TypeScript or TSX source
+- **THEN** Vitest and Vite resolve the corresponding TypeScript or TSX source
 - **AND** no JavaScript compatibility shim is required
 
 ### Requirement: Public pages and statistics client code use TypeScript
@@ -267,7 +267,7 @@ The project SHALL check shared support constants, route policies and common/serv
 
 #### Scenario: Native and browser consumers load the migrated modules
 
-- **WHEN** Jest, the production bundle or the native server runner loads a migrated module
+- **WHEN** Vitest, the production bundle or the native server runner loads a migrated module
 - **THEN** the existing exported values and functions remain available
 - **AND** route access rules, support text and fixture defaults retain their behaviour
 - **AND** existing coverage thresholds and end-to-end scenarios remain satisfied

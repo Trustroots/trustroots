@@ -1,6 +1,5 @@
 import React, { type ComponentProps } from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 
@@ -180,7 +179,7 @@ describe('Step Navigation through 3 steps', () => {
       testTrigger,
     }) => {
       it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
-        const handler = jest.fn<void, []>();
+        const handler = vi.fn<(...args: []) => void>();
         const actionHandlers = { ...handlers, [testTrigger]: handler };
         const { getAllByRole } = render(
           <StepNavigation
@@ -227,7 +226,7 @@ describe('Step Navigation through 3 steps', () => {
   });
 
   it('keeps next actions enabled when disabled prop is omitted', () => {
-    const onNext = jest.fn();
+    const onNext = vi.fn();
     const { getAllByRole } = render(
       <StepNavigation
         currentStep={0}

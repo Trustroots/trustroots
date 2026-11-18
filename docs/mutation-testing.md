@@ -71,7 +71,7 @@ mutants whose source or covering tests changed. The HTML report is written to
 `reports/stryker/server.html`.
 
 `pnpm run test:mutation:client` and `pnpm run test:mutation:nostranslation`
-configure the client and Nostranslation Jest suites. They have no floor yet.
+configure the client and Nostranslation Vitest suites. They have no floor yet.
 
 ## Configuration
 

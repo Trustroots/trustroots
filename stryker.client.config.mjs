@@ -1,25 +1,22 @@
-// Mutation testing for the client Jest suite. See docs/mutation-testing.md.
-import { createRequire } from 'node:module';
+// Mutation testing for the client Vitest suite. See docs/mutation-testing.md.
+import vitestConfig from './vitest.client.config.mts';
 
-const require = createRequire(import.meta.url);
-const jestConfig = require('./jest.config.cjs');
+const { coverage } = vitestConfig.test;
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
-  testRunner: 'jest',
+  testRunner: 'vitest',
   plugins: [
-    '@stryker-mutator/jest-runner',
+    '@stryker-mutator/vitest-runner',
     './tooling/stryker/ignore-export-names.mjs',
   ],
   ignorers: ['export-names'],
-  jest: {
-    configFile: 'jest.config.cjs',
-    enableFindRelatedTests: true,
+  vitest: {
+    configFile: 'vitest.client.config.mts',
+    related: true,
   },
   // Mutate exactly what the client coverage report measures.
-  mutate: jestConfig.collectCoverageFrom.map(glob =>
-    glob.replace('<rootDir>/', ''),
-  ),
+  mutate: [...coverage.include, ...coverage.exclude.map(glob => `!${glob}`)],
   ignorePatterns: [
     '/.stryker-tmp',
     '/.prune-tmp',

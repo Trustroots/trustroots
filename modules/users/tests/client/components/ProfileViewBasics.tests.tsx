@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileViewBasics from '@/modules/users/client/components/ProfileViewBasics';
@@ -9,8 +8,8 @@ import type LanguageList from '@/modules/users/client/components/LanguageList';
 import type ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
-jest.mock('@/modules/users/client/components/LanguageList', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/LanguageList', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockLanguageList({
     className,
@@ -25,13 +24,13 @@ jest.mock('@/modules/users/client/components/LanguageList', () => {
     );
   }
 
-  return MockLanguageList;
+  return { default: MockLanguageList };
 });
 
-jest.mock(
+vi.mock(
   '@/modules/users/client/components/ProfileNostrBadge.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockProfileNostrBadge({
       npubHex,
@@ -41,7 +40,7 @@ jest.mock(
       );
     }
 
-    return MockProfileNostrBadge;
+    return { default: MockProfileNostrBadge };
   },
 );
 

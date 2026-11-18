@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import {
   act,
@@ -6,7 +7,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
 import {
@@ -19,15 +19,15 @@ import type { UserProfile } from '@/modules/users/client/types';
 import type { Event } from 'nostr-tools';
 import { npubEncode } from 'nostr-tools/nip19';
 
-jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
-  const actual = jest.requireActual(
+vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
+  const actual = await vi.importActual(
     '@/modules/tribes/client/services/radio.client.service',
   );
   return {
     ...actual,
-    connectRadioSigner: jest.fn(),
-    fetchRadioAuthorUsernames: jest.fn().mockResolvedValue({}),
-    RadioRoom: jest.fn(),
+    connectRadioSigner: vi.fn(),
+    fetchRadioAuthorUsernames: vi.fn().mockResolvedValue({}),
+    RadioRoom: vi.fn(),
   };
 });
 
@@ -39,33 +39,33 @@ const user: UserProfile = {
 const publicKey = 'ab'.repeat(32);
 const signer = {
   publicKey,
-  sign: jest.fn(async () => {
+  sign: vi.fn(async () => {
     throw new Error('This fixture publishes through the mocked room.');
   }),
 };
 let receive: (event: Event) => void;
 let relayFailure: () => void;
 let room: {
-  open: jest.Mock;
-  close: jest.Mock;
-  publish: jest.Mock;
-  setSigner: jest.Mock;
+  open: Mock;
+  close: Mock;
+  publish: Mock;
+  setSigner: Mock;
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   room = {
-    open: jest.fn(async () => {}),
-    close: jest.fn(),
-    publish: jest.fn(async () => {}),
-    setSigner: jest.fn(),
+    open: vi.fn(async () => {}),
+    close: vi.fn(),
+    publish: vi.fn(async () => {}),
+    setSigner: vi.fn(),
   };
-  jest.mocked(RadioRoom).mockImplementation((onEvent, onError) => {
+  vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
     receive = onEvent;
     relayFailure = onError;
     return room as unknown as RadioRoom;
   });
-  jest.mocked(connectRadioSigner).mockResolvedValue(signer);
+  vi.mocked(connectRadioSigner).mockResolvedValue(signer);
 });
 
 it('does not create a room for a guest', () => {
@@ -81,7 +81,7 @@ it('does not create a room for a guest', () => {
 });
 
 it('deduplicates received events and displays their content as text', async () => {
-  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [publicKey]: user.username,
   });
   render(<TopicChat roomName="hackers" user={user} />);
@@ -206,9 +206,9 @@ it.each([
 );
 
 it('orders different messages and shows signer connection errors', async () => {
-  jest
-    .mocked(connectRadioSigner)
-    .mockRejectedValueOnce(new Error('Signer denied access.'));
+  vi.mocked(connectRadioSigner).mockRejectedValueOnce(
+    new Error('Signer denied access.'),
+  );
   render(<TopicChat roomName="hackers" user={user} />);
   const sample: Event = {
     id: 'new',

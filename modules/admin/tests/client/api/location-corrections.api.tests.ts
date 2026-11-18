@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import axios from 'axios';
 import {
   getLocationCorrections,
@@ -6,14 +7,15 @@ import {
   type LocationCorrectionSendResult,
 } from '@/modules/admin/client/api/location-corrections.api';
 
-jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+vi.mock(
+  'axios',
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-const getMock = axios.get as jest.MockedFunction<
+const getMock = axios.get as MockedFunction<
   (url: string) => Promise<{ data: LocationCorrectionCandidate[] }>
 >;
-const postMock = axios.post as jest.MockedFunction<
+const postMock = axios.post as MockedFunction<
   (
     url: string,
     payload: { userId: string; key: string; content: string },

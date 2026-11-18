@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 
 import ProfileOverview from '@/modules/users/client/components/ProfileOverview.component';
@@ -8,7 +7,7 @@ import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type ProfileViewBasics from '@/modules/users/client/components/ProfileViewBasics';
 import type { UserProfile } from '@/modules/users/client/types';
 
-jest.mock('@/modules/users/client/components/Avatar.component', () => {
+vi.mock('@/modules/users/client/components/Avatar.component', () => {
   function MockAvatar({
     onClick,
     size,
@@ -21,10 +20,10 @@ jest.mock('@/modules/users/client/components/Avatar.component', () => {
     );
   }
 
-  return MockAvatar;
+  return { default: MockAvatar };
 });
 
-jest.mock('@/modules/users/client/components/ProfileViewBasics', () => {
+vi.mock('@/modules/users/client/components/ProfileViewBasics', () => {
   function MockProfileViewBasics({
     profile,
   }: React.ComponentProps<typeof ProfileViewBasics>) {
@@ -33,7 +32,7 @@ jest.mock('@/modules/users/client/components/ProfileViewBasics', () => {
     );
   }
 
-  return MockProfileViewBasics;
+  return { default: MockProfileViewBasics };
 });
 
 describe('<ProfileOverview />', () => {

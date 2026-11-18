@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom';
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import type { Event } from 'nostr-tools';
@@ -9,8 +8,8 @@ import {
   HITCHHIKING_KIND,
   HITCHWIKI_RELAY,
 } from '@/modules/tribes/client/services/hitchhiking.client.service';
-jest.mock('@/modules/tribes/client/hooks/useCircleMapEvents');
-jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
+vi.mock('@/modules/tribes/client/hooks/useCircleMapEvents');
+vi.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
   __esModule: true,
   default: (props: { locations: unknown[]; attribution: React.ReactNode }) => (
     <div>
@@ -20,7 +19,7 @@ jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
 }));
 
 it('requests recent rides and deletions, and expires locations as the window advances', () => {
-  jest.useFakeTimers().setSystemTime(new Date('2026-10-12T12:00:00Z'));
+  vi.useFakeTimers().setSystemTime(new Date('2026-10-12T12:00:00Z'));
   const content = {
     source: 'maps.hitchwiki.org',
     stops: [
@@ -30,7 +29,7 @@ it('requests recent rides and deletions, and expires locations as the window adv
       },
     ],
   };
-  jest.mocked(useCircleMapEvents).mockReturnValue({
+  vi.mocked(useCircleMapEvents).mockReturnValue({
     state: 'ready',
     events: [
       {
@@ -61,9 +60,9 @@ it('requests recent rides and deletions, and expires locations as the window adv
     ],
     true,
   );
-  act(() => jest.advanceTimersByTime(60_000));
+  act(() => vi.advanceTimersByTime(60_000));
   expect(screen.getByText(/^0 origins/)).toBeInTheDocument();
   unmount();
-  expect(jest.getTimerCount()).toBe(0);
-  jest.useRealTimers();
+  expect(vi.getTimerCount()).toBe(0);
+  vi.useRealTimers();
 });

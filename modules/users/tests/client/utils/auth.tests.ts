@@ -5,11 +5,11 @@ import {
   redirectAfterSignin,
 } from '@/modules/users/client/utils/auth';
 
-const mockedNavigate = jest.fn();
+const mockedNavigate = vi.fn();
 
 describe('auth utils', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('extracts email from long confirm tokens', () => {

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportPage from '@/modules/support/client/components/SupportPage.component';
@@ -10,20 +9,20 @@ import type SupportForm from '@/modules/support/client/components/SupportForm';
 type BoardProps = React.ComponentProps<typeof Board>;
 type SupportFormProps = React.ComponentProps<typeof SupportForm>;
 
-jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/Board.js', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children, names }: BoardProps) {
     return <div data-board={names}>{children}</div>;
   }
-  return MockBoard;
+  return { default: MockBoard };
 });
 
-jest.mock('@/modules/support/client/components/SupportForm', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/support/client/components/SupportForm', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   function MockSupportForm({ user }: SupportFormProps) {
     return <div>{user ? `support:${user.username}` : 'support:anonymous'}</div>;
   }
-  return MockSupportForm;
+  return { default: MockSupportForm };
 });
 
 describe('<SupportPage />', () => {

@@ -1,10 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import Daily from '@/modules/admin/client/components/SparkpostDaily.component';
 import * as api from '@/modules/admin/client/api/sparkpost.api';
-jest.mock('@/modules/admin/client/api/sparkpost.api');
-const mocked = jest.mocked(api);
+vi.mock('@/modules/admin/client/api/sparkpost.api');
+const mocked = vi.mocked(api);
 const candidate = {
   key: 'signup:sample',
   kind: 'signup' as const,
@@ -24,7 +23,7 @@ beforeEach(() => {
     candidates: [candidate],
   });
 });
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 it('groups message events across pages and links the recipient account', async () => {
   const event = {
     messageId: 'mail-1',

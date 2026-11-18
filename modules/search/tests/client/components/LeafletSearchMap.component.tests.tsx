@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
@@ -15,33 +16,33 @@ type TestEvent = { originalEvent?: object };
 type TestHandler = (event?: TestEvent) => void;
 type MockMarker = {
   location: unknown;
-  on: jest.Mock<MockMarker, [name: string, handler: TestHandler]>;
+  on: Mock<(...args: [name: string, handler: TestHandler]) => MockMarker>;
   handlers: Record<string, TestHandler>;
   options: Record<string, unknown>;
 };
 type MockLayerGroup = {
-  addLayer: jest.Mock;
-  addTo: jest.Mock<MockLayerGroup, []>;
-  clearLayers: jest.Mock;
+  addLayer: Mock;
+  addTo: Mock<(...args: []) => MockLayerGroup>;
+  clearLayers: Mock;
 };
 type MockCluster = {
-  getClusterExpansionZoom: jest.Mock<number, [clusterId: number]>;
-  getClusters: jest.Mock<TestPoint[], []>;
-  load: jest.Mock<MockCluster, [features: TestPoint[]]>;
+  getClusterExpansionZoom: Mock<(...args: [clusterId: number]) => number>;
+  getClusters: Mock<(...args: []) => TestPoint[]>;
+  load: Mock<(...args: [features: TestPoint[]]) => MockCluster>;
 };
 
 const mockMapHandlers: Record<string, TestHandler> = {};
 const mockMap = {
-  getBounds: jest.fn(),
-  getCenter: jest.fn(),
-  getZoom: jest.fn(),
-  fitBounds: jest.fn(),
-  invalidateSize: jest.fn(),
-  on: jest.fn((name: string, handler: TestHandler) => {
+  getBounds: vi.fn(),
+  getCenter: vi.fn(),
+  getZoom: vi.fn(),
+  fitBounds: vi.fn(),
+  invalidateSize: vi.fn(),
+  on: vi.fn((name: string, handler: TestHandler) => {
     mockMapHandlers[name] = handler;
   }),
-  remove: jest.fn(),
-  setView: jest.fn(),
+  remove: vi.fn(),
+  setView: vi.fn(),
 };
 mockMap.setView.mockImplementation(() => mockMap);
 const mockLayerGroups: MockLayerGroup[] = [];
@@ -50,13 +51,44 @@ const mockCircleMarkers: MockMarker[] = [];
 const mockClusterResults: TestPoint[][] = [];
 const mockClusterInstances: MockCluster[] = [];
 
-jest.mock('leaflet', () => ({
-  DomEvent: { stopPropagation: jest.fn() },
-  circleMarker: jest.fn(
-    (location: unknown, options: Record<string, unknown>) => {
+vi.mock('leaflet', () => ({
+  default: {
+    DomEvent: { stopPropagation: vi.fn() },
+    circleMarker: vi.fn(
+      (location: unknown, options: Record<string, unknown>) => {
+        const marker: MockMarker = {
+          location,
+          on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
+          handlers: {},
+          options,
+        };
+        marker.on.mockImplementation((name, handler) => {
+          marker.handlers[name] = handler;
+          return marker;
+        });
+        mockCircleMarkers.push(marker);
+        return marker;
+      },
+    ),
+    control: {
+      zoom: vi.fn(() => ({ addTo: vi.fn() })),
+    },
+    divIcon: vi.fn(options => options),
+    layerGroup: vi.fn(() => {
+      const group: MockLayerGroup = {
+        addLayer: vi.fn(),
+        addTo: vi.fn<(...args: []) => MockLayerGroup>(),
+        clearLayers: vi.fn(),
+      };
+      group.addTo.mockReturnValue(group);
+      mockLayerGroups.push(group);
+      return group;
+    }),
+    map: vi.fn(() => mockMap),
+    marker: vi.fn((location: unknown, options: Record<string, unknown>) => {
       const marker: MockMarker = {
         location,
-        on: jest.fn<MockMarker, [string, TestHandler]>(),
+        on: vi.fn<(...args: [string, TestHandler]) => MockMarker>(),
         handlers: {},
         options,
       };
@@ -64,55 +96,26 @@ jest.mock('leaflet', () => ({
         marker.handlers[name] = handler;
         return marker;
       });
-      mockCircleMarkers.push(marker);
+      mockMarkers.push(marker);
       return marker;
-    },
-  ),
-  control: {
-    zoom: jest.fn(() => ({ addTo: jest.fn() })),
+    }),
+    tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
   },
-  divIcon: jest.fn(options => options),
-  layerGroup: jest.fn(() => {
-    const group: MockLayerGroup = {
-      addLayer: jest.fn(),
-      addTo: jest.fn<MockLayerGroup, []>(),
-      clearLayers: jest.fn(),
-    };
-    group.addTo.mockReturnValue(group);
-    mockLayerGroups.push(group);
-    return group;
-  }),
-  map: jest.fn(() => mockMap),
-  marker: jest.fn((location: unknown, options: Record<string, unknown>) => {
-    const marker: MockMarker = {
-      location,
-      on: jest.fn<MockMarker, [string, TestHandler]>(),
-      handlers: {},
-      options,
-    };
-    marker.on.mockImplementation((name, handler) => {
-      marker.handlers[name] = handler;
-      return marker;
-    });
-    mockMarkers.push(marker);
-    return marker;
-  }),
-  tileLayer: jest.fn(() => ({ addTo: jest.fn() })),
 }));
 
-jest.mock('supercluster', () =>
-  jest.fn().mockImplementation(() => {
+vi.mock('supercluster', () => ({
+  default: vi.fn().mockImplementation(function () {
     const result = mockClusterResults[mockClusterInstances.length] || [];
     const instance: MockCluster = {
-      getClusterExpansionZoom: jest.fn<number, [number]>(() => 10),
-      getClusters: jest.fn<TestPoint[], []>(() => result),
-      load: jest.fn<MockCluster, [TestPoint[]]>(),
+      getClusterExpansionZoom: vi.fn<(...args: [number]) => number>(() => 10),
+      getClusters: vi.fn<(...args: []) => TestPoint[]>(() => result),
+      load: vi.fn<(...args: [TestPoint[]]) => MockCluster>(),
     };
     instance.load.mockReturnValue(instance);
     mockClusterInstances.push(instance);
     return instance;
   }),
-);
+}));
 
 const bounds = {
   getEast: () => 14,
@@ -166,10 +169,10 @@ function renderMap(props: Partial<LeafletSearchMapProps> = {}) {
     <LeafletSearchMap
       communityNotes={{ features: [] }}
       offers={{ features: [] }}
-      onCommunityNoteClick={jest.fn()}
-      onMapChange={jest.fn()}
-      onMapClick={jest.fn()}
-      onOfferClick={jest.fn()}
+      onCommunityNoteClick={vi.fn()}
+      onMapChange={vi.fn()}
+      onMapClick={vi.fn()}
+      onOfferClick={vi.fn()}
       viewport={viewport}
       {...props}
     />,
@@ -191,18 +194,18 @@ beforeEach(() => {
   mockMap.setView.mockClear();
   mockMap.remove.mockClear();
   mockMap.on.mockClear();
-  jest.mocked(L.DomEvent.stopPropagation).mockClear();
-  jest.mocked(L.tileLayer).mockClear();
-  jest.mocked(L.map).mockClear();
-  jest.mocked(L.control.zoom).mockClear();
+  vi.mocked(L.DomEvent.stopPropagation).mockClear();
+  vi.mocked(L.tileLayer).mockClear();
+  vi.mocked(L.map).mockClear();
+  vi.mocked(L.control.zoom).mockClear();
 });
 
 describe('<LeafletSearchMap />', () => {
   it('renders clustered offers and Community Notes with their actions', () => {
-    const onMapChange = jest.fn();
-    const onMapClick = jest.fn();
-    const onOfferClick = jest.fn();
-    const onCommunityNoteClick = jest.fn();
+    const onMapChange = vi.fn();
+    const onMapClick = vi.fn();
+    const onOfferClick = vi.fn();
+    const onCommunityNoteClick = vi.fn();
     mockClusterResults.push(
       [cluster(), point(undefined, { id: 'offer-1', offer: 'host-yes' })],
       [point('note-1', { verified: true })],
@@ -275,10 +278,10 @@ describe('<LeafletSearchMap />', () => {
       <LeafletSearchMap
         communityNotes={{ features: [] }}
         offers={{ features: [] }}
-        onCommunityNoteClick={jest.fn()}
-        onMapChange={jest.fn()}
-        onMapClick={jest.fn()}
-        onOfferClick={jest.fn()}
+        onCommunityNoteClick={vi.fn()}
+        onMapChange={vi.fn()}
+        onMapClick={vi.fn()}
+        onOfferClick={vi.fn()}
         viewport={{ latitude: 53, longitude: 14, zoom: 7 }}
       />,
     );
@@ -294,7 +297,7 @@ describe('<LeafletSearchMap />', () => {
   });
 
   it('marks explicit place fits separately from initialisation and later resizing', () => {
-    const onMapChange = jest.fn();
+    const onMapChange = vi.fn();
     renderMap({
       bounds: {
         northEast: { lat: 53, lng: 14 },
@@ -310,7 +313,7 @@ describe('<LeafletSearchMap />', () => {
   });
 
   it('refits selected bounds after mobile layout settles', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const selectedBounds = {
       northEast: { lat: 52.6755, lng: 13.7611 },
       southWest: { lat: 52.3383, lng: 13.0884 },
@@ -333,24 +336,24 @@ describe('<LeafletSearchMap />', () => {
         bounds={selectedBounds}
         communityNotes={{ features: [] }}
         offers={{ features: [] }}
-        onCommunityNoteClick={jest.fn()}
-        onMapChange={jest.fn()}
-        onMapClick={jest.fn()}
-        onOfferClick={jest.fn()}
+        onCommunityNoteClick={vi.fn()}
+        onMapChange={vi.fn()}
+        onMapClick={vi.fn()}
+        onOfferClick={vi.fn()}
         viewport={{ latitude: 40, longitude: -74, zoom: 4 }}
       />,
     );
     expect(mockMap.setView).not.toHaveBeenCalledWith([40, -74], 4);
 
-    act(() => jest.runOnlyPendingTimers());
+    act(() => vi.runOnlyPendingTimers());
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(3);
 
     unmount();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('does not refit selected bounds after map interaction starts', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const selectedBounds = {
       northEast: { lat: 52.6755, lng: 13.7611 },
       southWest: { lat: 52.3383, lng: 13.0884 },
@@ -360,11 +363,11 @@ describe('<LeafletSearchMap />', () => {
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
 
     fireEvent.pointerDown(getByTestId('leaflet-search-map'));
-    act(() => jest.runOnlyPendingTimers());
+    act(() => vi.runOnlyPendingTimers());
 
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
     unmount();
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('does not render markers while the map is zoomed out', () => {

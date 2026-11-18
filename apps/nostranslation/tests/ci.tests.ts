@@ -1,4 +1,4 @@
-/** @jest-environment node */
+/** @vitest-environment node */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { checkChanges, validateReviews } from '../server/ci.mts';
@@ -6,8 +6,8 @@ import { catalogue } from '../server/catalogue.mts';
 import { snapshot } from './fixtures.ts';
 import type { Review } from '../server/catalogue.mts';
 
-jest.mock('node:child_process', () => ({ execFileSync: jest.fn() }));
-jest.mock('node:fs', () => ({ readFileSync: jest.fn() }));
+vi.mock('node:child_process', () => ({ execFileSync: vi.fn() }));
+vi.mock('node:fs', () => ({ readFileSync: vi.fn() }));
 
 describe('changed-translation CI validation', () => {
   it('rejects stale review metadata on the merged PR revision, including changed target values', () => {
@@ -63,12 +63,12 @@ describe('changed-translation CI validation', () => {
     };
     let records = { [entry.id]: review, 'legacy:entry': review };
     let existed = true;
-    jest.mocked(execFileSync).mockImplementation((_file, args) => {
+    vi.mocked(execFileSync).mockImplementation((_file, args) => {
       if (args?.[0] === 'diff') return 'apps/nostranslation/reviews/de.json';
       if (args?.[0] === 'ls-tree') return existed ? '100644 blob hash' : '';
       return JSON.stringify({ 'legacy:entry': review });
     });
-    jest.mocked(readFileSync).mockImplementation(path => {
+    vi.mocked(readFileSync).mockImplementation(path => {
       if (path === 'config/shared/locales.json')
         return JSON.stringify(state.languages);
       if (path === 'apps/nostranslation/reviews/de.json')
@@ -87,7 +87,7 @@ describe('changed-translation CI validation', () => {
     );
   });
   it('validates changed locale values against English and ignores unrelated paths', () => {
-    jest.mocked(execFileSync).mockImplementation((_file, args) => {
+    vi.mocked(execFileSync).mockImplementation((_file, args) => {
       if (args?.[0] === 'diff')
         return 'public/locales/de/users.json\npublic/locales/en/users.json\npublic/locales/de/pages.json\nother/path\n';
       if (args?.[0] === 'ls-tree')
@@ -96,7 +96,7 @@ describe('changed-translation CI validation', () => {
           : '';
       return JSON.stringify({ Hello: 'Hallo', 'Welcome {{name}}': '' });
     });
-    jest.mocked(readFileSync).mockImplementation(path => {
+    vi.mocked(readFileSync).mockImplementation(path => {
       if (path === 'config/shared/locales.json')
         return JSON.stringify([
           { code: 'de', label: 'Deutsch', english: 'German' },

@@ -5,7 +5,6 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
@@ -19,24 +18,26 @@ const render = (
 
 type BoardProps = { children?: React.ReactNode };
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/core/client/components/Board', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/api/auth.api');
+vi.mock('@/modules/core/client/components/Board', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
   return {
     __esModule: true,
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
 
-const forgotPassword = jest.mocked(authApi.forgotPassword);
+const forgotPassword = vi.mocked(authApi.forgotPassword);
 
 describe('ForgotPasswordPage', () => {
   it('focuses the primary field on desktop', () => {
     const originalMatchMedia = window.matchMedia;
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     try {
       render(<ForgotPasswordPage />);
       expect(screen.getByLabelText('Email or username')).toHaveFocus();
@@ -46,7 +47,7 @@ describe('ForgotPasswordPage', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     window.history.pushState({}, '', '/password/forgot?userhandle=member-one');
   });
 

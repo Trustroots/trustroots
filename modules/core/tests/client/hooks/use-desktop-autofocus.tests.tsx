@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 
 function Form({ enabled = true }: { enabled?: boolean }) {
@@ -18,7 +17,7 @@ describe('useDesktopAutofocus', () => {
   it.each([true, false])(
     'focuses only when the desktop query matches: %s',
     matches => {
-      window.matchMedia = jest.fn().mockReturnValue({ matches });
+      window.matchMedia = vi.fn().mockReturnValue({ matches });
       render(<Form />);
       expect(window.matchMedia).toHaveBeenCalledWith(
         '(min-width: 768px) and (hover: hover) and (pointer: fine)',
@@ -29,7 +28,7 @@ describe('useDesktopAutofocus', () => {
   );
 
   it('does not steal existing focus', () => {
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     const button = document.createElement('button');
     document.body.appendChild(button);
     button.focus();
@@ -42,7 +41,7 @@ describe('useDesktopAutofocus', () => {
   });
 
   it('does not focus when disabled', () => {
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     render(<Form enabled={false} />);
     expect(screen.getByLabelText('First field')).not.toHaveFocus();
   });

@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
@@ -11,15 +10,17 @@ import {
 } from '@/testutils/client/data.client.testutil';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/messages/client/api/messages.api');
-jest.mock('@/modules/core/client/services/client-runtime');
-const api = { fetchThreads: jest.mocked(messagesApi.fetchThreads) };
+vi.mock('@/modules/messages/client/api/messages.api');
+vi.mock('@/modules/core/client/services/client-runtime');
+const api = { fetchThreads: vi.mocked(messagesApi.fetchThreads) };
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.history.replaceState(null, '', '/messages');
 });
 

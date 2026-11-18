@@ -1,6 +1,5 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TribeDetailPage, {
@@ -15,15 +14,15 @@ import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type CircleMemberDiscovery from '@/modules/tribes/client/components/CircleMemberDiscovery';
 import type { UserProfile } from '@/modules/users/client/types';
 
-const getMock = jest.mocked(get);
+const getMock = vi.mocked(get);
 const user: UserProfile = {
   _id: 'user-1',
   username: 'circle-member',
   displayName: 'Circle Member',
 };
 
-jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock('@/modules/tribes/client/components/RadioCircle', () => ({
+vi.mock('@/modules/tribes/client/api/tribes.api');
+vi.mock('@/modules/tribes/client/components/RadioCircle', () => ({
   __esModule: true,
   default: ({ user }: { user?: UserProfile }) => (
     <section aria-label="Radio player">{user?.username || 'visitor'}</section>
@@ -31,7 +30,7 @@ jest.mock('@/modules/tribes/client/components/RadioCircle', () => ({
 }));
 
 it.each([undefined, user])(
-  'renders radio only on the Radio circle for viewer %p',
+  'renders radio only on the Radio circle for viewer %o',
   async viewer => {
     getMock.mockResolvedValue({
       _id: 'fictional-radio',
@@ -43,7 +42,7 @@ it.each([undefined, user])(
       <TribeDetailPage
         circle="radio"
         user={viewer}
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
       />,
     );
     expect(
@@ -51,27 +50,23 @@ it.each([undefined, user])(
     ).toHaveTextContent(viewer?.username || 'visitor');
   },
 );
-jest.mock(
-  '@/modules/tribes/client/components/HitchhikingMap',
-  () =>
-    function MockHitchhikingMap() {
-      return <div>Recent Hitchwiki locations</div>;
-    },
-);
-jest.mock(
-  '@/modules/tribes/client/components/HackerspaceMap',
-  () =>
-    function MockHackerspaceMap() {
-      return <div data-testid="hackerspace-map">Reported hackerspaces</div>;
-    },
-);
+vi.mock('@/modules/tribes/client/components/HitchhikingMap', () => ({
+  default: function MockHitchhikingMap() {
+    return <div>Recent Hitchwiki locations</div>;
+  },
+}));
+vi.mock('@/modules/tribes/client/components/HackerspaceMap', () => ({
+  default: function MockHackerspaceMap() {
+    return <div data-testid="hackerspace-map">Reported hackerspaces</div>;
+  },
+}));
 
-jest.mock('@/modules/core/client/components/LoadingIndicator', () => ({
+vi.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-indicator" />,
 }));
 
-jest.mock('@/modules/tribes/client/components/JoinButton', () => ({
+vi.mock('@/modules/tribes/client/components/JoinButton', () => ({
   __esModule: true,
   default: ({ onUpdated, user }: React.ComponentProps<typeof JoinButton>) => (
     <>
@@ -113,7 +108,7 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => ({
   ),
 }));
 
-jest.mock('@/modules/tribes/client/components/CircleMemberDiscovery', () => ({
+vi.mock('@/modules/tribes/client/components/CircleMemberDiscovery', () => ({
   __esModule: true,
   default: ({
     circle,
@@ -137,7 +132,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     getMock.mockResolvedValue(tribe);
   });
 
@@ -153,7 +148,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       <TribeDetailPage
         circle="hitchhikers"
         user={user}
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
       />,
     );
     const link = await screen.findByRole('link', {
@@ -178,7 +173,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     ).toBeVisible();
   });
 
-  it.each([undefined, ['user'], ['support-team'], ['admin']])(
+  it.each([[undefined], [['user']], [['support-team']], [['admin']]])(
     'shows the editor only to circle administrators (%j)',
     async roles => {
       render(
@@ -194,7 +189,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
                 }
               : undefined
           }
-          onMembershipUpdated={jest.fn()}
+          onMembershipUpdated={vi.fn()}
         />,
       );
       await screen.findByText('Hitchhikers');
@@ -214,7 +209,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
         '<p>Read the <a href="https://example.org/">circle guide</a> <a href="javascript:alert(1)">unsafe link</a>.</p>',
     });
     render(
-      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={jest.fn()} />,
+      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={vi.fn()} />,
     );
     const link = await screen.findByRole('link', { name: 'circle guide' });
     expect(link).toHaveAttribute('href', 'https://example.org/');
@@ -230,7 +225,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   ])('selects the appropriate prominent map for %s', async (slug, mapText) => {
     getMock.mockResolvedValue({ ...tribe, slug });
     const { container } = render(
-      <TribeDetailPage circle={slug!} onMembershipUpdated={jest.fn()} />,
+      <TribeDetailPage circle={slug!} onMembershipUpdated={vi.fn()} />,
     );
     await screen.findByRole('heading', { name: 'Hitchhikers' });
     if (mapText) {
@@ -242,7 +237,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   });
 
   it.each([undefined, user, { ...user, memberIds: ['tribe-1'] }])(
-    'renders the Hackers map and attributed resources for viewer %p',
+    'renders the Hackers map and attributed resources for viewer %o',
     async viewer => {
       getMock.mockResolvedValue({
         ...tribe,
@@ -253,7 +248,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
         <TribeDetailPage
           circle="hackers"
           user={viewer}
-          onMembershipUpdated={jest.fn()}
+          onMembershipUpdated={vi.fn()}
         />,
       );
       await screen.findByRole('heading', { name: 'Hackers' });
@@ -283,7 +278,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -298,7 +293,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -317,7 +312,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -352,7 +347,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -377,7 +372,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={undefined}
       />,
     );
@@ -391,7 +386,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   });
 
   it('forwards membership updates to the parent callback', async () => {
-    const onMembershipUpdated = jest.fn<void, [MembershipUpdate]>();
+    const onMembershipUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
 
     render(
       <TribeDetailPage
@@ -415,7 +410,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     const { rerender } = render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={{ ...user, _id: 'member-1', memberIds: ['tribe-1'] }}
       />,
     );
@@ -426,7 +421,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     rerender(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={{ ...user, _id: 'member-2' }}
       />,
     );
@@ -445,7 +440,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -459,7 +454,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -478,7 +473,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   it('uses the singular member label', async () => {
     getMock.mockResolvedValue({ ...tribe, count: 1 });
     render(
-      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={jest.fn()} />,
+      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={vi.fn()} />,
     );
     expect(await screen.findByText('One member')).toBeInTheDocument();
   });
@@ -488,7 +483,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       ...tribe,
       attribution_url: undefined,
     });
-    const onMembershipUpdated = jest.fn<void, [MembershipUpdate]>();
+    const onMembershipUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
 
     render(
       <TribeDetailPage
@@ -523,7 +518,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     const firstRender = render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );
@@ -540,7 +535,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     const secondRender = render(
       <TribeDetailPage
         circle="hitchhikers"
-        onMembershipUpdated={jest.fn()}
+        onMembershipUpdated={vi.fn()}
         user={user}
       />,
     );

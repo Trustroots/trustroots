@@ -1,6 +1,5 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import type { Event } from 'nostr-tools';
 import HackerspaceMap, {
   decodeGeohash,
@@ -8,23 +7,23 @@ import HackerspaceMap, {
 } from '@/modules/tribes/client/components/HackerspaceMap';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 
-jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
   nostrService: {
-    subscribeHackerPlaces: jest.fn(),
-    unsubscribeHackerPlaces: jest.fn(),
+    subscribeHackerPlaces: vi.fn(),
+    unsubscribeHackerPlaces: vi.fn(),
   },
 }));
-jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
+vi.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
   __esModule: true,
   default: (props: unknown) => <pre>{JSON.stringify(props)}</pre>,
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 function latestSubscription() {
-  const calls = jest.mocked(nostrService.subscribeHackerPlaces).mock.calls;
+  const calls = vi.mocked(nostrService.subscribeHackerPlaces).mock.calls;
   const call = calls[calls.length - 1];
   return { onEvent: call[0], callbacks: call[1] ?? {} };
 }
@@ -178,8 +177,8 @@ describe('hackerspace place event parsing', () => {
 });
 
 it('adapts hackerspace metadata into the shared map and excludes inactive/invalid events', () => {
-  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
-    close: jest.fn(),
+  vi.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: vi.fn(),
   });
   const event = {
     id: 'event',
@@ -282,8 +281,8 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
 });
 
 it('reports relay closure and ignores updates after unmount', async () => {
-  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
-    close: jest.fn(),
+  vi.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: vi.fn(),
   });
   const { unmount } = render(<HackerspaceMap />);
   const { onEvent, callbacks } = latestSubscription();
@@ -301,9 +300,9 @@ it('reports relay closure and ignores updates after unmount', async () => {
 });
 
 it('shows an error when the relay subscription fails', async () => {
-  jest
-    .mocked(nostrService.subscribeHackerPlaces)
-    .mockRejectedValue(new Error('offline'));
+  vi.mocked(nostrService.subscribeHackerPlaces).mockRejectedValue(
+    new Error('offline'),
+  );
   render(<HackerspaceMap />);
   await act(async () => {
     await Promise.resolve();
@@ -315,7 +314,7 @@ it('shows an error when the relay subscription fails', async () => {
 
 it('ignores a connection rejection after unmount', async () => {
   let reject!: (error: Error) => void;
-  jest.mocked(nostrService.subscribeHackerPlaces).mockReturnValue(
+  vi.mocked(nostrService.subscribeHackerPlaces).mockReturnValue(
     new Promise((_resolve, fail) => {
       reject = fail;
     }),

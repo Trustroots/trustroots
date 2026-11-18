@@ -8,7 +8,6 @@ import {
   within,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom';
 
 import { useNavigate } from '@tanstack/react-router';
 import AdminUser, {
@@ -18,9 +17,9 @@ import AdminUser, {
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
-jest.mock('@/modules/admin/client/api/support.api');
-jest.mock('@/modules/core/client/react-app/auth', () =>
-  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+vi.mock('@/modules/admin/client/api/support.api');
+vi.mock('@/modules/core/client/react-app/auth', async () =>
+  (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
 type AdminUserRecord = Exclude<AdminUserContent['state']['user'], false>;
@@ -67,14 +66,16 @@ type ReportCardOverrides = Omit<ReportCardFixture, 'profile'> & {
   profile?: ReportCardFixture['profile'];
 };
 
-const mockedUsersApi = jest.mocked(usersApi);
+const mockedUsersApi = vi.mocked(usersApi);
 
-jest.mock('@tanstack/react-router', () =>
-  jest.requireActual('@/testutils/client/router-location.testutil'),
+vi.mock('@tanstack/react-router', async () =>
+  (
+    await import('@/testutils/client/router-location.testutil')
+  ).mockRouterModule(),
 );
-jest.mock('@/modules/admin/client/api/users.api');
-jest.mock('@/modules/users/client/components/ProfilePage.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/api/users.api');
+vi.mock('@/modules/users/client/components/ProfilePage.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockProfilePage({
     embedded,
@@ -95,34 +96,34 @@ jest.mock('@/modules/users/client/components/ProfilePage.component', () => {
 
   return { __esModule: true, default: MockProfilePage };
 });
-jest.mock('@/modules/admin/client/components/AdminNotes', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/components/AdminNotes', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAdminNotes({ id }: { id: string }) {
     return <section>Notes for {id}</section>;
   }
 
-  return MockAdminNotes;
+  return { default: MockAdminNotes };
 });
-jest.mock(
+vi.mock(
   '@/modules/admin/client/components/NetworkConnections.component',
   () => ({
     NetworkConnectionsPanel: () => <div>External connection history</div>,
   }),
 );
-jest.mock('@/modules/admin/client/components/Json.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/components/Json.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockJson({ content }: { content: unknown }) {
     return <pre>{JSON.stringify(content)}</pre>;
   }
 
-  return MockJson;
+  return { default: MockJson };
 });
-jest.mock(
+vi.mock(
   '@/modules/admin/client/components/UserEmailConfirmLink.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
+  async () => {
+    const React = await vi.importActual<typeof import('react')>('react');
 
     function MockUserEmailConfirmLink({
       user,
@@ -134,24 +135,24 @@ jest.mock(
       );
     }
 
-    return MockUserEmailConfirmLink;
+    return { default: MockUserEmailConfirmLink };
   },
 );
-jest.mock('@/modules/admin/client/components/UserState.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('@/modules/admin/client/components/UserState.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   function MockUserState({ user }: { user: { username?: string } }) {
     return <div>State for {user.username}</div>;
   }
 
-  return MockUserState;
+  return { default: MockUserState };
 });
 
 const userId = '111111111111111111111111';
 const otherUserId = '222222222222222222222222';
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
@@ -2023,7 +2024,7 @@ it('shows Unsuspend only for suspended members and refreshes after success', asy
 
 it('updates the admin profile flag and links to the role list', async () => {
   mockedUsersApi.getUserByUsername.mockResolvedValueOnce(makeReportCard());
-  jest.mocked(supportApi.setMemberFlag).mockResolvedValue(undefined);
+  vi.mocked(supportApi.setMemberFlag).mockResolvedValue(undefined);
   window.history.pushState({}, '', '/admin/user/alice');
   render(<AdminUser username="alice" />);
   fireEvent.click(

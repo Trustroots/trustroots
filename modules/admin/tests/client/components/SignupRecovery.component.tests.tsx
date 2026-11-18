@@ -1,11 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import SignupRecovery from '@/modules/admin/client/components/SignupRecovery.component';
 import * as api from '@/modules/admin/client/api/sparkpost.api';
-jest.mock('@/modules/admin/client/api/sparkpost.api');
-const mocked = jest.mocked(api);
-afterEach(() => jest.resetAllMocks());
+vi.mock('@/modules/admin/client/api/sparkpost.api');
+const mocked = vi.mocked(api);
+afterEach(() => vi.resetAllMocks());
 it('shows accounts behind the count and queues reviewed confirmations by their sign-up day', async () => {
   mocked.getRecoveryAccounts.mockResolvedValue({
     page: 1,
