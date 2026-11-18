@@ -13,6 +13,7 @@ import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserProfile, UserSummary } from '@/modules/users/client/types';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import { hoverTooltip } from '@/testutils/client/tooltip.testutil';
 
 const analytics = fakeAnalytics();
 
@@ -545,15 +546,11 @@ describe('ProfilePage', () => {
     });
     renderPage();
 
-    expect(
-      await screen.findByRole('button', { name: 'Remove contact' }),
-    ).toBeVisible();
-    fireEvent.mouseEnter(
-      screen.getByRole('button', { name: 'Remove contact' }),
-    );
-    expect(
-      await screen.findByText('Contacts since January 1, 2024'),
-    ).toBeVisible();
+    const removeContact = await screen.findByRole('button', {
+      name: 'Remove contact',
+    });
+    expect(removeContact).toBeVisible();
+    await hoverTooltip(removeContact, 'Contacts since January 1, 2024');
   });
 
   it('shows incoming contact request actions', async () => {
@@ -584,8 +581,7 @@ describe('ProfilePage', () => {
     const confirmedContact = await screen.findByRole('button', {
       name: 'Remove contact',
     });
-    fireEvent.mouseEnter(confirmedContact);
-    expect(await screen.findByText(/Contacts since/)).toBeVisible();
+    await hoverTooltip(confirmedContact, /Contacts since/);
   });
 
   it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
@@ -601,8 +597,7 @@ describe('ProfilePage', () => {
     const deleteRequest = await screen.findByRole('button', {
       name: 'Delete contact request',
     });
-    fireEvent.mouseEnter(deleteRequest);
-    expect(await screen.findByText(/Request sent/)).toBeVisible();
+    await hoverTooltip(deleteRequest, /Request sent/);
   });
 
   it('opens the remove contact modal and clears contact state on success', async () => {
@@ -745,15 +740,11 @@ describe('ProfilePage', () => {
     });
     renderPage();
 
-    expect(
-      await screen.findByRole('button', { name: 'Delete contact request' }),
-    ).toBeVisible();
-    fireEvent.mouseEnter(
-      screen.getByRole('button', { name: 'Delete contact request' }),
-    );
-    expect(
-      await screen.findByText('Request sent January 1, 2024'),
-    ).toBeVisible();
+    const deleteRequest = await screen.findByRole('button', {
+      name: 'Delete contact request',
+    });
+    expect(deleteRequest).toBeVisible();
+    await hoverTooltip(deleteRequest, 'Request sent January 1, 2024');
   });
 
   it('shows a blocked member banner', async () => {
