@@ -351,10 +351,8 @@ service.changePassword = function (req, res) {
   );
 };
 
-const defaultExport = service;
+export default service;
 export const forgot = service.forgot;
 export const validateResetToken = service.validateResetToken;
 export const reset = service.reset;
 export const changePassword = service.changePassword;
-export default defaultExport;
-export { defaultExport as 'module.exports' };

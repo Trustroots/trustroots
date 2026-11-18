@@ -5,21 +5,13 @@
 // playwright.windows-wheel.config.cjs (named in a workflow), which throws
 // without it.
 //
-// Knip can't see two kinds of export use, so they carry a JSDoc tag that
-// excludes them from the report:
-//
-// - @commonjs: CommonJS code reads it. `require()` of an ES module returns
-//   its 'module.exports' export when there is one, and Knip doesn't follow
-//   member access on a whole `require()` result
-//   (`const utils = require('./x.mts'); utils.foo()`), the usual style of
-//   the .cts server tests.
-// - @esmNamed: a named export that mirrors a member of the module's default
-//   object. The runtime-platform spec keeps these for ES module consumers
-//   and the esm-*.server.tests.cts files check them, but nothing imports
-//   them by name yet.
+// @esmNamed marks a named export that mirrors a member of the module's
+// default object. The runtime-platform spec keeps these for ES module
+// consumers, but nothing imports them by name yet, so Knip leaves them out
+// of the report.
 {
   "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
-  "tags": ["-commonjs", "-esmNamed"],
+  "tags": ["-esmNamed"],
   "workspaces": {
     ".": {
       "entry": [
@@ -98,15 +90,12 @@
         // The root Jest and Vitest configs run these, but Knip attributes a
         // plugin's entries to the workspace that holds the config.
         "tests/client/**/*.tests.{js,jsx,ts,tsx}",
-        "tests/server/**/*.{js,cts,mts}",
+        "tests/server/**/*.mts",
         // Type-level contract checks that only `tsc -p` compiles (see
         // tooling/tsconfig/contracts.json,
         // tooling/tsconfig/contract-diagnostics.json and tooling/tsconfig/tests.json).
         "tests/fixtures/*contract*.mts",
         "tests/client/**/*contract*.{ts,mts}",
-        // CommonJS adapters that api-payload-native-imports.server.tests.cts
-        // requires by path in a child process.
-        "server/services/*.server.service.cjs",
       ],
       "project": ["**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts}"],
       // scripts/ci/check-module-packages.mts writes these from

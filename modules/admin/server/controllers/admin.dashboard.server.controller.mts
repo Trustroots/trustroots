@@ -164,7 +164,4 @@ export const getDashboard = async (
   }
 };
 
-const defaultInterop = { getDashboard };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };
+export default { getDashboard };

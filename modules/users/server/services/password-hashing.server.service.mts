@@ -308,7 +308,7 @@ function getKdfState(): { active: number; queued: number } {
   return kdfScheduler.getState();
 }
 
-const defaultExport = {
+const service = {
   KdfOverloadedError,
   createKdfScheduler,
   dummyVerifyPassword,
@@ -317,7 +317,7 @@ const defaultExport = {
   verifyPassword,
 };
 
-export default defaultExport;
+export default service;
 /** @esmNamed */
 export {
   KdfOverloadedError,

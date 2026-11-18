@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 const mobileMember = require('../presenters/mobile-member.server.presenter.cjs');
 const mobileSession = require('../services/mobile-session.server.service.cjs');
-const userProfile = require('../../../users/server/controllers/users.profile.server.controller.mjs');
-const passwordHashing = require('../../../users/server/services/password-hashing.server.service.mjs');
-const lastSeen = require('../../../users/server/controllers/users.lastseen.server.controller.mjs');
+const userProfile =
+  require('../../../users/server/controllers/users.profile.server.controller.mjs').default;
+const passwordHashing =
+  require('../../../users/server/services/password-hashing.server.service.mjs').default;
+const lastSeen =
+  require('../../../users/server/controllers/users.lastseen.server.controller.mjs').default;
 
 function isActiveMember(user) {
   return Boolean(user && user.roles && !user.roles.includes('suspended'));

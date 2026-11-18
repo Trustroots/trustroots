@@ -255,10 +255,8 @@ export const isAllowed = (
     },
   );
 };
-const defaultInterop = {
+export default {
   invokeRolesPolicies,
   isAllowed,
 };
-export default defaultInterop; // Expose the ACL instance only to native ESM tests; the CommonJS API stays unchanged.
 export { aclInstance as _acl };
-export { defaultInterop as 'module.exports' };

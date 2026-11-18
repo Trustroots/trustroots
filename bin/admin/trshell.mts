@@ -37,4 +37,3 @@ const timeout = setInterval(function () {
   }
 }, 3000);
 export default service;
-export { service as 'module.exports' };

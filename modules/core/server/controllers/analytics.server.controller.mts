@@ -86,7 +86,4 @@ export function appendUTMParams(
     ? `${parsed.pathname}${parsed.search}${parsed.hash}`
     : parsed.toString();
 }
-const defaultExport = { appendUTMParams };
-export default defaultExport;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export default { appendUTMParams };

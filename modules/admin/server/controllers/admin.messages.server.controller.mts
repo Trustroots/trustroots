@@ -313,11 +313,8 @@ export const getMessages = async (
   }
 };
 
-const defaultInterop = {
+export default {
   getScammerRecipients,
   sendScammerWarning,
   getMessages,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

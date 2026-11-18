@@ -63,7 +63,4 @@ export function createMemoryPolicy(): MemoryPolicy {
     areAnyRolesAllowed,
   };
 }
-const defaultInterop = createMemoryPolicy;
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };
+export default createMemoryPolicy;

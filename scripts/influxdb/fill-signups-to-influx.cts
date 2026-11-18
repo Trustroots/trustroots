@@ -25,10 +25,11 @@ const mongoose = require('mongoose') as LegacyMongoose;
 const argv = require('yargs/yargs')(process.argv.slice(2)).parseSync() as {
   dry?: unknown;
 };
-const mongooseHelper =
-  require('./../../config/lib/mongoose.mjs') as ConnectionHelper;
+const mongooseHelper = require('./../../config/lib/mongoose.mjs')
+  .default as ConnectionHelper;
 const statService =
-  require('./../../modules/stats/server/services/stats.server.service.mts') as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
+  require('./../../modules/stats/server/services/stats.server.service.mts')
+    .default as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
 
 require('./../../modules/users/server/models/user.server.model.mjs');
 

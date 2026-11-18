@@ -167,7 +167,5 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
   };
 }
 
-const defaultExport = createTargetedRequestLimits();
-export default defaultExport;
+export default createTargetedRequestLimits();
 export { createTargetedRequestLimits, getRequestIdentity };
-export { defaultExport as 'module.exports' };

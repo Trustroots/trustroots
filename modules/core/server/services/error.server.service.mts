@@ -152,7 +152,7 @@ export function errorResponse(
     },
   });
 }
-const defaultInterop = {
+export default {
   getErrorMessageByKey,
   getErrorMessage,
   errorResponse,
@@ -161,5 +161,3 @@ const defaultInterop = {
   sendNotFound,
   sendForbidden,
 };
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };

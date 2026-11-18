@@ -35,14 +35,15 @@ const searchMessagesParam = {
   // */
 };
 
-const config = require('./../../config/config.mts');
+const config = require('./../../config/config.mts').default;
 require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;
 require('./../../modules/messages/server/models/message.server.model.mjs');
 require('./../../modules/messages/server/models/message-stat.server.model.mjs');
 const Message = mongoose.model<HistoricalMessage>('Message');
 const messageStatService =
-  require('./../../modules/messages/server/services/message-stat.server.service.mjs') as {
+  require('./../../modules/messages/server/services/message-stat.server.service.mjs')
+    .default as {
     updateMessageStat(
       message: HistoricalMessage,
       callback: (error: unknown, result: unknown) => void,

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "lint": "eslint --ext .mjs,.mts .",
-    "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/log-redaction.unit.tests.cts"
+    "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/log-redaction.unit.tests.mts"
   },
   "peerDependencies": {
     "winston": "3.19.0"

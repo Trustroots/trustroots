@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './request-limit.server.model.mts';
+export { default } from './request-limit.server.model.mts';

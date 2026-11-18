@@ -92,4 +92,3 @@ MessageSchema.index(
 MessageSchema.plugin(mongoosePaginate);
 mongoose.model<MessageRecord>('Message', MessageSchema);
 export default service;
-export { service as 'module.exports' };

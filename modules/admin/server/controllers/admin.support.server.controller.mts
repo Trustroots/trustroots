@@ -732,5 +732,3 @@ const api = {
   member,
 };
 export default api;
-/** @commonjs */
-export { api as 'module.exports' };

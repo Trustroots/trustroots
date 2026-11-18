@@ -37,4 +37,3 @@ AdminNoteSchema.post(/^find$/, (results: unknown) =>
 mongoose.model<AdminNoteRecord>('AdminNote', AdminNoteSchema);
 const api = {};
 export default api;
-export { api as 'module.exports' };

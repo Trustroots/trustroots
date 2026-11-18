@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from '@trustroots/logger';
+export { default } from '@trustroots/logger';

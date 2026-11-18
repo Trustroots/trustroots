@@ -69,5 +69,3 @@ const service = function uniqueValidation<
   schema.post('findOneAndUpdate', handleDuplicate);
 };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

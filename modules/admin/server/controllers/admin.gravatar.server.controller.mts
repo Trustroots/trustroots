@@ -95,4 +95,3 @@ export async function list(
 
 const service = { list };
 export default service;
-export { service as 'module.exports' };

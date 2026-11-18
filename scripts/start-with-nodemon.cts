@@ -24,7 +24,7 @@ const nodemon = require('nodemon') as (
   options: NodemonOptions,
 ) => NodemonProcess;
 const assets = (
-  require('./../config/assets/default.mts') as {
+  require('./../config/assets/default.mts').default as {
     server: ServerAssets;
   }
 ).server;

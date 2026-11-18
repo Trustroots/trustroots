@@ -179,8 +179,8 @@ test('historical signup export limits delivery to five and drains failures befor
       require: name => {
         if (name === 'mongoose') return { model: () => model };
         if (name === 'yargs/yargs') return () => ({ parseSync: () => ({}) });
-        if (name.includes('config/lib/mongoose')) return helper;
-        if (name.includes('stats.server.service')) return stat;
+        if (name.includes('config/lib/mongoose')) return { default: helper };
+        if (name.includes('stats.server.service')) return { default: stat };
         return {};
       },
       console: { log() {}, warn() {}, error() {} },
@@ -225,10 +225,12 @@ test('member count export disconnects and fails when its query rejects', async (
           };
         if (name.includes('config/lib/mongoose'))
           return {
-            connect: done => done(),
-            disconnect: done => {
-              events.push('disconnect');
-              done(new Error('disconnect failed'));
+            default: {
+              connect: done => done(),
+              disconnect: done => {
+                events.push('disconnect');
+                done(new Error('disconnect failed'));
+              },
             },
           };
         return {};
@@ -264,7 +266,7 @@ test('duplicate contact cleanup reports a final count failure as a non-zero exit
       require: name => {
         if (name === 'mongoose')
           return { model: () => model, set() {}, connect: async () => {} };
-        return { db: { uri: 'mongodb://example.invalid/test' } };
+        return { default: { db: { uri: 'mongodb://example.invalid/test' } } };
       },
       console: { log() {}, error() {} },
       process: { exit: code => exits.push(code) },

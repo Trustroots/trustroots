@@ -12,7 +12,7 @@ interface DuplicateContacts {
  * NODE_ENV=development node scripts/db-maintenance/remove-duplicate-contacts.cts
  */
 
-const config = require('./../../config/config.mts');
+const config = require('./../../config/config.mts').default;
 require('./../../config/lib/mongoose.mjs');
 require('./../../config/lib/express.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;

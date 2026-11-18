@@ -183,4 +183,3 @@ mongoose.model<TribeRecord>('Tribe', TribeSchema);
 
 const service = {};
 export default service;
-export { service as 'module.exports' };

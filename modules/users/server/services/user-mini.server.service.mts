@@ -156,5 +156,3 @@ export {
   miniUserPopulate,
   visibleUserLookupStages,
 };
-/** @commonjs */
-export { service as 'module.exports' };

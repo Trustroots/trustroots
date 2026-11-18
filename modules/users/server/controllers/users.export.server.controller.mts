@@ -363,8 +363,7 @@ service.circlesFromProfile = circlesFromProfile;
 service.writtenMessages = writtenMessages;
 service.writtenExperiences = writtenExperiences;
 service.memberOffers = memberOffers;
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
 export {
   buildExportFilename,
@@ -374,6 +373,4 @@ export {
   memberOffers,
 };
 /** @esmNamed */
-export const download = defaultExport.download;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export const download = service.download;

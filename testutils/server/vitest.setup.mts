@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import {
   afterAll,
   afterEach,
@@ -7,9 +6,7 @@ import {
   describe,
   it,
 } from 'vitest';
-import type { Connection } from 'mongoose';
-
-const require = createRequire(import.meta.url);
+import mongoose, { type Connection } from 'mongoose';
 
 interface MongooseService {
   connect(callback: (connection: Connection) => void): void;
@@ -76,8 +73,10 @@ const setup = globalThis as typeof globalThis & {
 // The database is prepared once per process, before the first test file.
 setup.trustrootsServerTestSetup ??= (async () => {
   if (process.env.SERVER_TEST_SKIP_DATABASE) return;
-  const mongooseService =
-    require('../../config/lib/mongoose.mjs') as MongooseService;
+  const { default: mongooseService } =
+    (await import('../../config/lib/mongoose.mts')) as {
+      default: MongooseService;
+    };
   const connection = await new Promise<Connection>(resolve =>
     mongooseService.connect(resolve),
   );
@@ -87,9 +86,7 @@ setup.trustrootsServerTestSetup ??= (async () => {
     ),
   );
   await mongooseService.loadModels(() => {});
-  await mongooseService.ensureIndexes(
-    (require('mongoose') as typeof import('mongoose')).connection.modelNames(),
-  );
+  await mongooseService.ensureIndexes(mongoose.connection.modelNames());
 })();
 
 await setup.trustrootsServerTestSetup;

@@ -1,3 +1,1 @@
-import interop from './mobile-session.server.model.cjs';
-export default interop;
-export { interop as 'module.exports' };
+export { default } from './mobile-session.server.model.cjs';

@@ -279,4 +279,3 @@ const statsService = {
   _validateStat,
 };
 export default statsService;
-export { statsService as 'module.exports' };

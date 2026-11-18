@@ -1,8 +1,8 @@
 // Welcome sequence emails are currently disabled.
-const defaultExport = function (job: unknown, done?: () => void) {
+const service = function (job: unknown, done?: () => void) {
   if (typeof done === 'function') {
     return done();
   }
 };
 
-export default defaultExport;
+export default service;

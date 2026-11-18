@@ -145,6 +145,4 @@ export async function search(req: StaffRequest, res: StaffResponse) {
   }
 }
 
-const api = { history, search };
-export default api;
-export { api as 'module.exports' };
+export default { history, search };

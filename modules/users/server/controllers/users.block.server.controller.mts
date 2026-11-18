@@ -155,13 +155,10 @@ service.unblockUser = async function (req, res) {
     });
   }
 };
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
-export const blockUser = defaultExport.blockUser;
+export const blockUser = service.blockUser;
 /** @esmNamed */
-export const getBlockedUsers = defaultExport.getBlockedUsers;
+export const getBlockedUsers = service.getBlockedUsers;
 /** @esmNamed */
-export const unblockUser = defaultExport.unblockUser;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export const unblockUser = service.unblockUser;

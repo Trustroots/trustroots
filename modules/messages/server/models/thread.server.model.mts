@@ -46,4 +46,3 @@ const ThreadSchema = new Schema<ThreadRecord>({
 ThreadSchema.plugin(mongoosePaginate);
 mongoose.model<ThreadRecord>('Thread', ThreadSchema);
 export default service;
-export { service as 'module.exports' };

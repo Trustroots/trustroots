@@ -1,5 +1,2 @@
-import interop from './report-link.server.service.mts';
 export * from './report-link.server.service.mts';
-export default interop;
-/** @commonjs */
-export { interop as 'module.exports' };
+export { default } from './report-link.server.service.mts';

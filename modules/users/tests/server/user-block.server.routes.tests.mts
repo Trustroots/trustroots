@@ -1,0 +1,359 @@
+import should from 'should';
+import request from 'supertest';
+import mongoose, { type HydratedDocument } from 'mongoose';
+import express from './../../../../config/lib/express.mts';
+import log from './../../../../config/lib/logger.mts';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const User = mongoose.model<UserRecord>('User');
+
+interface Credentials {
+  username: string;
+  password: string;
+}
+type TestUserDocument = HydratedDocument<UserRecord>;
+interface UserFixture {
+  credentials: Credentials;
+  user: TestUserDocument;
+  profile: UserRecord;
+}
+interface ApiProfile {
+  displayName?: string;
+  username?: string;
+}
+interface SearchResult {
+  username: string;
+}
+function requireResponse(
+  response: import('supertest').Response | void,
+): import('supertest').Response {
+  if (!response) throw new Error('expected the request to return a response');
+  return response;
+}
+/**
+ * Globals
+ */
+let app: import('express').Express;
+let agent: ReturnType<typeof request.agent>;
+/* users of the test */
+let alice: UserFixture;
+let bob: UserFixture;
+function checkError(message: string, done: TestDone) {
+  return (err: Error) => {
+    log('error', `Error while >> ${message}`);
+    log('error', err);
+    done(err);
+  };
+}
+const login = (
+  credentials: Credentials,
+): Promise<import('supertest').Response> =>
+  new Promise((resolve, reject) => {
+    agent = request.agent(app);
+    agent
+      .post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `${credentials.username} login`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `${credentials.username} login`);
+        resolve(resp);
+      });
+  });
+/**
+ * Requests reused during tests
+ */
+const block = (username: string): Promise<import('supertest').Response> =>
+  new Promise((resolve, reject) =>
+    agent
+      .put(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `blocking ${username}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `blocked ${username}`);
+        resolve(resp);
+      }),
+  );
+const unblock = (username: string): Promise<import('supertest').Response> =>
+  new Promise((resolve, reject) =>
+    agent
+      .delete(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `unblocking ${username}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `unblocked ${username}`);
+        resolve(resp);
+      }),
+  );
+const getUser = (username: string): Promise<import('supertest').Response> =>
+  new Promise((resolve, reject) =>
+    agent
+      .get(`/api/users/${username}`)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `get ${username}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `got ${username}`);
+        resolve(resp);
+      }),
+  );
+const searchUser = (
+  searchStr: string,
+  expectedStatus = 200,
+): Promise<SearchResult[]> =>
+  new Promise((resolve, reject) =>
+    agent
+      .get(`/api/users/?search=${searchStr}`)
+      .expect(expectedStatus)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `search ${searchStr}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `searched for ${searchStr}`);
+        resolve(resp.body as SearchResult[]);
+      }),
+  );
+/**
+ * User routes tests
+ */
+describe('User block - user', function () {
+  before(function (done) {
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
+  });
+  beforeEach(function (done) {
+    // Alice user
+    const aliceCredentials = {
+      username: 'alicetheblocker',
+      password: 'TR-I$Aw3$0m4',
+    };
+    const aliceProfile = {
+      public: true,
+      firstName: 'Alice',
+      lastName: 'Doe',
+      displayName: 'Alice Doe',
+      email: 'alice@example.org',
+      emailToken: 'initial email token',
+      username: aliceCredentials.username.toLowerCase(),
+      password: aliceCredentials.password,
+      provider: 'local',
+    };
+    const aliceUser = new User(aliceProfile);
+    alice = {
+      credentials: aliceCredentials,
+      user: aliceUser,
+      profile: aliceProfile,
+    };
+    // Bob user
+    const bobCredentials = {
+      username: 'bobtheblocked',
+      password: 'TR-I$Aw3$0m4',
+    };
+    const bobProfile = {
+      public: true,
+      firstName: 'Bob',
+      lastName: 'Doe',
+      displayName: 'bob doe',
+      email: 'bob@example.org',
+      emailToken: 'initial email token',
+      username: bobCredentials.username.toLowerCase(),
+      password: bobCredentials.password,
+      provider: 'local',
+    };
+    const bobUser = new User(bobProfile);
+    bob = {
+      credentials: bobCredentials,
+      user: bobUser,
+      profile: bobProfile,
+    };
+    // Save alice and bob to test db
+    Promise.all([aliceUser.save(), bobUser.save()])
+      .then(() => done())
+      .catch(done);
+  });
+  afterEach(function (done) {
+    User.deleteMany()
+      .exec()
+      .then(() => done())
+      .catch(done);
+  });
+  it('should be able to see a user if not blocked by her', function (done) {
+    /* bob login */
+    login(bob.credentials)
+      .catch(checkError('bob sees alice: bob login', done))
+      .then(() => getUser(alice.credentials.username) /* bob can see alice */)
+      .catch(checkError('bob sees alice: get', done))
+      .then(resp => {
+        const response = requireResponse(resp).body as ApiProfile;
+        log('info', `bob sees ${response.displayName}`);
+        should(response).have.property('displayName');
+        should(response.displayName).equal('Alice Doe');
+        return done();
+      });
+  });
+  it('should get the list of the usernames of her blocked peers', function (done) {
+    /* alice login */
+    login(alice.credentials)
+      .catch(checkError('alice list blocked users: login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice list blocked users: block bob', done))
+      .then(resp => {
+        /* alice see bob in blocked list */
+        log(
+          'info',
+          `block response ${JSON.stringify(requireResponse(resp).body)}`,
+        );
+        agent
+          .get('/api/blocked-users')
+          .expect(200)
+          .end(function (err, resp) {
+            if (err) {
+              return done(err);
+            }
+            const blocked = resp.body;
+            const bobUsername = {
+              username: bob.credentials.username,
+            };
+            log('info', `alice blocked: ${JSON.stringify(bobUsername)}`);
+            should(blocked).matchAny(bobUsername);
+            return done();
+          });
+      });
+  });
+  it('should not see a user if blocked by her', function (done) {
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', url);
+        agent
+          .get(url)
+          .expect(404) // not found!
+          .end(function (err) {
+            if (err) {
+              log('error', err);
+              done(err);
+              return;
+            }
+            log('info', "bob can't see alice");
+            done();
+          });
+      })
+      .catch(checkError('uncatched error - improve the test', done));
+  });
+  it('should not appear in search if has been blocked the searcher', function (done) {
+    const aliceUsername = {
+      username: alice.credentials.username,
+    };
+    login(bob.credentials)
+      .catch(checkError('bob login', done))
+      .then(() => searchUser('Alice'))
+      .then(resultUsers => {
+        /** not blocked yet. should appear in search */
+        should(resultUsers).matchAny(aliceUsername);
+      })
+      .then(() => login(alice.credentials))
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => searchUser('Alice'))
+      .catch(checkError('bob search Alice', done))
+      .then(resultUsers => {
+        /** blocked. should not appear in search */
+        should(resultUsers).not.matchAny(aliceUsername);
+        done();
+      })
+      .catch(checkError('uncatched error', done));
+  });
+  it('should not see a user if blocked her', function (done) {
+    const bobUsername = {
+      username: bob.credentials.username,
+    };
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => searchUser('Bob'))
+      .then(resultUsers => {
+        should(resultUsers).matchAny(bobUsername);
+      })
+      .catch(checkError('alice can see bob', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => searchUser('Bob'))
+      .catch(checkError('search bob', done))
+      .then(resultUsers => {
+        should(resultUsers).not.matchAny(bobUsername);
+        done();
+      })
+      .catch(checkError('uncatched error - improve the test', done));
+  });
+  it('should see a user if unblocked by her', function (done) {
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', 'bob tryies to get alice profile');
+        return agent
+          .get(url)
+          .expect(404) // not found!
+          .then(function () {
+            log('info', "bob can't see alice");
+          })
+          .catch(err => {
+            log('error', err);
+            done(err);
+          });
+      })
+      .then(() => login(alice.credentials))
+      .catch(checkError('alice login', done))
+      .then(() => unblock(bob.credentials.username))
+      .catch(checkError('alice unblocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', 'bob tryies to get alice profile');
+        return agent
+          .get(url)
+          .expect(200) // found now!
+          .then(function () {
+            log('info', 'bob sees alice now');
+            done();
+          })
+          .catch(checkError('geting alice profile', done));
+      })
+      .catch(checkError('uncatched error - improve the test', done));
+  });
+});

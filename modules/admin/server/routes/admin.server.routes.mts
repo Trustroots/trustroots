@@ -319,4 +319,3 @@ const registerRoutes = (app: RouteApp): void => {
 };
 export { registerRoutes };
 export default registerRoutes;
-export { registerRoutes as 'module.exports' };

@@ -158,9 +158,6 @@ function getLanguages(
   // Return language list in object format
   res.json(languagesObject);
 }
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
 export { getLanguages, receiveCSPViolationReport, renderIndex, renderNotFound };
-/** @commonjs */
-export { defaultExport as 'module.exports' };

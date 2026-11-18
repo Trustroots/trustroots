@@ -252,8 +252,6 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     },
   );
 };
-const defaultInterop = {
+export default {
   supportRequest,
 };
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };

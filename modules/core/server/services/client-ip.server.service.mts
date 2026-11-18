@@ -15,7 +15,4 @@ export function getClientIpAddress(req: ClientIpRequest): string | undefined {
   return net.isIP(clientIpAddress ?? '') ? clientIpAddress : undefined;
 }
 
-const defaultExport = { getClientIpAddress };
-export default defaultExport;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export default { getClientIpAddress };

@@ -33,7 +33,6 @@ const mochaHooks = globalThis as typeof globalThis & {
 
 /**
  * Helper for testing Agenda jobs
- * @commonjs
  */
 export function catchJobs<TData = unknown>(): CapturedJob<TData>[] {
   const jobs: CapturedJob<TData>[] = [];
@@ -82,7 +81,6 @@ type CapturedEmail = MailMessage;
 /**
  * Helper for testing sending emails
  * This helper just catches them up without sending them anywhere.
- * @commonjs
  */
 export function catchEmails(): CapturedEmail[] {
   const sentEmails: CapturedEmail[] = [];

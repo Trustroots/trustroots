@@ -246,8 +246,6 @@ service = {
   scheduleTest,
 };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };
 
 const nativeExportpushConfiguration = service.pushConfiguration;
 export { nativeExportpushConfiguration as pushConfiguration };

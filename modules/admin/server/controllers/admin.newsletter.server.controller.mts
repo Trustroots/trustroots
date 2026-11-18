@@ -794,13 +794,10 @@ export const splitSubscribers = async (
       : rowsToCSV(unsubscribed, UNSUBSCRIBED_CSV_COLUMNS),
   });
 };
-const defaultInterop = {
+export default {
   list,
   listCircleMembers,
   audience,
   uploadSubscribersCsv,
   splitSubscribers,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

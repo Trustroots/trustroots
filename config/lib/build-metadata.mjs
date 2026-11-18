@@ -1,2 +1,2 @@
 export * from './build-metadata.mts';
-export { default, 'module.exports' } from './build-metadata.mts';
+export { default } from './build-metadata.mts';

@@ -87,4 +87,3 @@ export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.
 export { acl as _acl };
-export { service as 'module.exports' };

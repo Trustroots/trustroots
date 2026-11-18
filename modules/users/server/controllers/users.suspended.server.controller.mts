@@ -68,10 +68,6 @@ service.invalidateSuspendedSessions = function (req, res, next) {
   // User isn't suspended, just continue
   next();
 };
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
-export const invalidateSuspendedSessions =
-  defaultExport.invalidateSuspendedSessions;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export const invalidateSuspendedSessions = service.invalidateSuspendedSessions;

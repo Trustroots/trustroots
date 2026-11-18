@@ -7,5 +7,3 @@ import service, {
 /** @esmNamed */
 export { process, save, send };
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

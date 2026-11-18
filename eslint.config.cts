@@ -6,10 +6,8 @@ const path = require('path');
 const { defineConfig } = require('eslint/config');
 const semver = require('semver');
 const { defaultExtensionAlias } = require('eslint-import-resolver-typescript');
-const {
-  jsExtensionAlias,
-  resolverAliases,
-} = require('./config/client/aliases.mts');
+const { jsExtensionAlias, resolverAliases } =
+  require('./config/client/aliases.mts').default;
 
 // Passing extensionAlias replaces the resolver default. Keep every other
 // mapping, and only prefer the shared `.js` order ahead of leftovers such as
@@ -73,6 +71,8 @@ const rules = {
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
   'import/first': 2,
+  // CommonJS compatibility exports are gone (#3494); use ordinary ESM exports.
+  'no-restricted-exports': [2, { restrictedNamedExports: ['module.exports'] }],
   'prettier/prettier': 2,
 };
 

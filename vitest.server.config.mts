@@ -53,7 +53,7 @@ class PathSequencer extends BaseSequencer {
 // every file runs in the same process, in order, as it did under Mocha.
 export default defineConfig({
   test: {
-    include: explicitFiles ?? ['modules/*/tests/server/**/*.{js,cts,mts}'],
+    include: explicitFiles ?? ['modules/*/tests/server/**/*.mts'],
     globals: true,
     pool: 'forks',
     maxWorkers: 1,

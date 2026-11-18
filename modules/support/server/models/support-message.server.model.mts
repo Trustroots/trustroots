@@ -106,6 +106,4 @@ SupportMessageSchema.index({ inboundKey: 1 }, { unique: true, sparse: true });
 SupportMessageSchema.index({ messageId: 1 }, { unique: true });
 SupportMessageSchema.index({ deliveryState: 1, createdAt: 1 });
 mongoose.model<SupportMessageRecord>('SupportMessage', SupportMessageSchema);
-const defaultInterop = {};
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default {};

@@ -12,5 +12,3 @@ export const {
   updateCount,
 } = service;
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

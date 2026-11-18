@@ -1,0 +1,98 @@
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import contactsController from './../../server/controllers/contacts.server.controller.mts';
+import emailService from './../../../core/server/services/email.server.service.mts';
+import errorService from './../../../core/server/services/error.server.service.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import should from 'should';
+import { deferredResponse } from '../../../../testutils/server/response.server.testutil.mts';
+/**
+ * Contacts controller behaviour when the underlying Mongoose calls reject.
+ */
+
+const User =
+  mongoose.model<
+    import('../../../../testutils/server/model-contracts.mts').UserRecord
+  >('User');
+const Contact =
+  mongoose.model<
+    import('../../../../testutils/server/model-contracts.mts').ContactRecord
+  >('Contact');
+
+describe('Contacts controller mongoose error handling', () => {
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
+
+  describe('add', () => {
+    it('responds with 400 when loading the friend rejects', async () => {
+      const [user1, user2] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      const findOne = sinon.stub(User, 'findOne').callThrough();
+      findOne.withArgs(sinon.match.has('roles')).rejects(new Error('db down'));
+      const sendBadRequest = sinon.spy(errorService, 'sendBadRequest');
+
+      const res = deferredResponse();
+      contactsController.add(
+        { user: user1, body: { friendUserId: user2._id.toString() } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      (sendBadRequest.firstCall.args[1] as Error).message.should.equal(
+        'db down',
+      );
+    });
+
+    it('still responds with 400 when removing the unsent contact rejects', async () => {
+      const [user1, user2] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      sinon
+        .stub(emailService, 'sendConfirmContact')
+        .callsFake((...args: unknown[]) => {
+          const callback = args[args.length - 1];
+          if (typeof callback !== 'function')
+            throw new Error('Expected an email callback');
+          callback(new Error('smtp down'));
+        });
+      sinon.stub(Contact.prototype, 'deleteOne').rejects(new Error('gone'));
+
+      const res = deferredResponse();
+      contactsController.add(
+        { user: user1, body: { friendUserId: user2._id.toString() } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+    });
+  });
+
+  describe('removeAllByUserId', () => {
+    it('passes the error to the callback when deleteMany rejects', done => {
+      const failure = new Error('delete failed');
+      sinon.stub(Contact, 'deleteMany').rejects(failure);
+
+      contactsController.removeAllByUserId(
+        new mongoose.Types.ObjectId(),
+        (err: unknown) => {
+          should(err).equal(failure);
+          done();
+        },
+      );
+    });
+
+    it('does not throw without a callback when deleteMany rejects', async () => {
+      const stub = sinon.stub(Contact, 'deleteMany').rejects(new Error('fail'));
+
+      contactsController.removeAllByUserId(new mongoose.Types.ObjectId());
+      await new Promise(resolve => setImmediate(resolve));
+
+      stub.calledOnce.should.be.true();
+    });
+  });
+});

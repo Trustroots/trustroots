@@ -1,1 +1,1 @@
-export { default, 'module.exports' } from './api-input.server.middleware.mts';
+export { default } from './api-input.server.middleware.mts';

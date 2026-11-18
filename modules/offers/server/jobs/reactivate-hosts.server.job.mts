@@ -104,4 +104,3 @@ function run(_job: unknown, agendaDone: Done): void {
 /** @esmNamed */
 export { run };
 export default run;
-export { run as 'module.exports' };

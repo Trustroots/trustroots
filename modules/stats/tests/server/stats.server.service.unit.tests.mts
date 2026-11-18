@@ -1,0 +1,314 @@
+import sinon from 'sinon';
+import assert from 'node:assert/strict';
+import 'should';
+import statsService from './../../server/services/stats.server.service.mts';
+import influxService from './../../server/services/influx.server.service.mts';
+
+function loadStatsService() {
+  const stat = sinon.stub(influxService, 'stat').callsArg(1);
+  return { influxService: { stat }, statsService };
+}
+
+describe('Stats service unit tests', () => {
+  afterEach(() => sinon.restore());
+
+  it('acknowledges telemetry when the backend never calls back', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const accepted = sinon.spy();
+    statsService.stat({ namespace: 'outage', counts: { count: 1 } }, accepted);
+    accepted.calledOnce.should.be.true();
+    backend.firstCall.args[1](new Error('unavailable'));
+    accepted.calledOnce.should.be.true();
+  });
+
+  it('caps outstanding writes and resumes after completion', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const accepted = sinon.spy();
+    const point = { namespace: 'outage', counts: { count: 1 } };
+    for (let i = 0; i < 33; i += 1) statsService.stat(point, accepted);
+    backend.callCount.should.equal(32);
+    accepted.callCount.should.equal(33);
+    backend
+      .getCalls()
+      .forEach((call: import('sinon').SinonSpyCall) => call.args[1]());
+    backend.firstCall.args[1]();
+    statsService.stat(point);
+    backend.callCount.should.equal(33);
+    backend.lastCall.args[1]();
+  });
+
+  it('acknowledges telemetry when the backend throws synchronously', () => {
+    sinon.stub(influxService, 'stat').throws(new Error('unavailable'));
+    const accepted = sinon.spy();
+    statsService.stat({ namespace: 'outage', counts: { count: 1 } }, accepted);
+    accepted.calledOnce.should.be.true();
+  });
+
+  it('preserves backend acknowledgement and errors for delivery-aware jobs', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const callback = sinon.spy();
+    statsService.deliver({ namespace: 'job', counts: { count: 1 } }, callback);
+    callback.called.should.be.false();
+    const error = new Error('unavailable');
+    backend.firstCall.args[1](error);
+    callback.calledOnceWithExactly(error).should.be.true();
+    statsService.deliver({} as never, callback);
+    callback.callCount.should.equal(2);
+  });
+
+  it('records a count stat', done => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.count('unitCount', done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: {
+        count: 1,
+      },
+    });
+  });
+
+  it('records a count stat with an explicit count and time', done => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.count('unitCount', 3, time, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: {
+        count: 3,
+      },
+      time,
+    });
+  });
+
+  it('records a count stat when the callback is the third argument', done => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.count('unitCount', 4, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: {
+        count: 4,
+      },
+    });
+  });
+
+  it('records a count stat when no callback is provided', () => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.count('unitCount');
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: {
+        count: 1,
+      },
+    });
+  });
+
+  it('records an explicit count when only the count is given', () => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.count('unitCount', 5);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: { count: 5 },
+    });
+  });
+
+  it('records a count stat with time and no callback', () => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.count('unitCount', 2, time);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: { count: 2 },
+      time,
+    });
+  });
+
+  it('records a value stat with time and no callback', () => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.value('unitValue', 12, time);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitValue',
+      values: { value: 12 },
+      time,
+    });
+  });
+
+  it('keeps accepting telemetry after the backend throws repeatedly', () => {
+    const backend = sinon.stub(influxService, 'stat').throws(new Error('down'));
+    for (let i = 0; i < 40; i += 1) {
+      statsService.stat({ namespace: 'outage', counts: { count: 1 } });
+    }
+    backend.callCount.should.equal(40);
+  });
+
+  it('rejects counts and values when only some are numbers', () => {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'mixed',
+        counts: { a: 1 },
+        values: { b: '2' } as never,
+      });
+    }).should.throw('Each of counts and values should be a number');
+  });
+
+  it('does not treat a function as the shorthand callback unless it is the last of two or three arguments', () => {
+    const { influxService, statsService } = loadStatsService();
+    const fn = sinon.spy();
+    const cb = sinon.spy();
+
+    // function in the count slot with an explicit (undefined) time
+    statsService.count('unitCount', fn, undefined);
+    // function in the time slot with an explicit callback after it
+    statsService.count('unitCount', 2, fn, cb);
+    statsService.value('unitValue', 2, fn, cb);
+
+    influxService.stat.called.should.be.false();
+    cb.callCount.should.equal(2);
+    cb.args.forEach((args: unknown[]) => {
+      assert.ok(args[0] instanceof Error);
+    });
+    fn.called.should.be.false();
+  });
+
+  it('records a value stat', done => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.value('unitValue', 12, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitValue',
+      values: {
+        value: 12,
+      },
+    });
+  });
+
+  it('records a value stat with time', done => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.value('unitValue', 12, time, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitValue',
+      values: {
+        value: 12,
+      },
+      time,
+    });
+  });
+
+  it('records a value stat when no callback is provided', () => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.value('unitValue', 12);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitValue',
+      values: {
+        value: 12,
+      },
+    });
+  });
+
+  it('records a complex stat object', done => {
+    const { influxService, statsService } = loadStatsService();
+    const stat = {
+      namespace: 'messages',
+      counts: { sent: 1 },
+      values: { length: 180 },
+      tags: { type: 'firstMessage' },
+      meta: { threadId: 'thread-1' },
+      time: new Date('2026-06-06T10:00:00.000Z'),
+    };
+
+    statsService.stat(stat, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual(stat);
+  });
+
+  it('rejects an invalid stat object', done => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.stat(
+      { values: { count: 1 } } as never,
+      (err?: Error | null) => {
+        assert.ok(err instanceof Error);
+        influxService.stat.called.should.be.false();
+        done();
+      },
+    );
+  });
+
+  it('rejects stat objects with empty counts and values', function () {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'empty',
+        counts: {},
+        values: {},
+      });
+    }).should.throw('The stat should contain counts or values');
+  });
+
+  it('rejects duplicate keys across counts, values, meta and tags', function () {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'duplicate',
+        counts: { same: 1 },
+        values: { same: 2 },
+      });
+    }).should.throw(
+      'Every key of stat counts, values, meta and tags must be unique',
+    );
+  });
+
+  it('rejects non-number count and value fields', function () {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'invalidValue',
+        counts: { count: '1' } as never,
+      });
+    }).should.throw('Each of counts and values should be a number');
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'invalidValue',
+        values: { value: '1' } as never,
+      });
+    }).should.throw('Each of counts and values should be a number');
+  });
+
+  it('rejects non-Date time fields', function () {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'invalidTime',
+        counts: { count: 1 },
+        time: '2026-06-06' as never,
+      });
+    }).should.throw('Time must be a Date object or not provided');
+  });
+});

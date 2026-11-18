@@ -10,5 +10,3 @@ const service = new Agenda({
   }),
 });
 export default service;
-/** @commonjs */
-export { service as 'module.exports' };

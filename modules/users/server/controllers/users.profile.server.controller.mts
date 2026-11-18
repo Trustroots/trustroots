@@ -1447,50 +1447,47 @@ service.search = async function (req, res, next) {
       },
     );
 };
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
-export const addPushRegistration = defaultExport.addPushRegistration;
+export const addPushRegistration = service.addPushRegistration;
 /** @esmNamed */
-export const getMiniUser = defaultExport.getMiniUser;
+export const getMiniUser = service.getMiniUser;
 /** @esmNamed */
-export const getUser = defaultExport.getUser;
+export const getUser = service.getUser;
 /** @esmNamed */
-export const getUserMemberships = defaultExport.getUserMemberships;
+export const getUserMemberships = service.getUserMemberships;
 /** @esmNamed */
-export const initializeRemoveProfile = defaultExport.initializeRemoveProfile;
+export const initializeRemoveProfile = service.initializeRemoveProfile;
 /** @esmNamed */
-export const joinTribe = defaultExport.joinTribe;
+export const joinTribe = service.joinTribe;
 /** @esmNamed */
-export const leaveTribe = defaultExport.leaveTribe;
+export const leaveTribe = service.leaveTribe;
 /** @esmNamed */
-export const removeProfile = defaultExport.removeProfile;
+export const removeProfile = service.removeProfile;
 /** @esmNamed */
-export const removePushRegistration = defaultExport.removePushRegistration;
+export const removePushRegistration = service.removePushRegistration;
 /** @esmNamed */
-export const sanitizeOwnProfile = defaultExport.sanitizeOwnProfile;
-const __exportedSanitizeProfile = defaultExport.sanitizeProfile;
+export const sanitizeOwnProfile = service.sanitizeOwnProfile;
+const __exportedSanitizeProfile = service.sanitizeProfile;
 /** @esmNamed */
 export { __exportedSanitizeProfile as sanitizeProfile };
 /** @esmNamed */
-export const search = defaultExport.search;
+export const search = service.search;
 /** @esmNamed */
-export const update = defaultExport.update;
+export const update = service.update;
 /** @esmNamed */
-export const userByUsername = defaultExport.userByUsername;
+export const userByUsername = service.userByUsername;
 /** @esmNamed */
-export const userListingProfileFields = defaultExport.userListingProfileFields;
+export const userListingProfileFields = service.userListingProfileFields;
 /** @esmNamed */
-export const userMiniByID = defaultExport.userMiniByID;
+export const userMiniByID = service.userMiniByID;
 /** @esmNamed */
-export const userMiniProfileFields = defaultExport.userMiniProfileFields;
+export const userMiniProfileFields = service.userMiniProfileFields;
 /** @esmNamed */
-export const userProfileFields = defaultExport.userProfileFields;
+export const userProfileFields = service.userProfileFields;
 /** @esmNamed */
-export const userSearchProfileFields = defaultExport.userSearchProfileFields;
+export const userSearchProfileFields = service.userSearchProfileFields;
 /** @esmNamed */
-export const getProfileRemovalStatus = defaultExport.getProfileRemovalStatus;
+export const getProfileRemovalStatus = service.getProfileRemovalStatus;
 /** @esmNamed */
-export const cancelProfileRemoval = defaultExport.cancelProfileRemoval;
-/** @commonjs */
-export { defaultExport as 'module.exports' };
+export const cancelProfileRemoval = service.cancelProfileRemoval;

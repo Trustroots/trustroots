@@ -5,7 +5,6 @@
   },
   "include": [
     "../../config/untyped-modules.d.mts",
-    "../../modules/*/tests/server/**/*.cts",
     "../../modules/*/tests/server/**/*.mts",
     "../../testutils/server/**/*.d.ts",
     "../../testutils/server/**/*.mts"

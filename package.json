@@ -74,7 +74,7 @@
     "start:worker": "NODE_ENV=development node ./scripts/start-with-nodemon.cts worker",
     "start": "TRUSTROOTS_VITE_DEV_SERVER=true concurrently --raw --kill-others --kill-others-on-fail 'pnpm:lint:watch' 'pnpm:start:develop' 'pnpm:vite:server' 'pnpm:start:worker'",
     "test:client:watch": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --watch --no-watchman",
-    "test:boundaries": "SERVER_TEST_SKIP_DATABASE=true SERVER_TEST_FILES=modules/core/tests/server/api-input.server.tests.cts,modules/core/tests/server/csrf-protection.server.tests.cts NODE_ENV=test node ./scripts/test-server.cts",
+    "test:boundaries": "SERVER_TEST_SKIP_DATABASE=true SERVER_TEST_FILES=modules/core/tests/server/api-input.server.tests.mts,modules/core/tests/server/csrf-protection.server.tests.mts NODE_ENV=test node ./scripts/test-server.cts",
     "test:content": "pnpm run test:client --runTestsByPath modules/core/tests/client/components/RichText.tests.tsx modules/core/tests/client/components/TrEditor.integration.tests.tsx modules/core/tests/client/utils/filters.tests.ts",
     "test:client": "BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --no-watchman --silent --maxWorkers=50%",
     "test:coverage:client": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --coverage --runInBand --no-watchman",

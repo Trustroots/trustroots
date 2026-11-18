@@ -121,9 +121,6 @@ export const list = async (
     });
   }
 };
-const defaultInterop = {
+export default {
   list,
 };
-export default defaultInterop;
-/** @commonjs */
-export { defaultInterop as 'module.exports' };

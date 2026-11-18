@@ -41,4 +41,3 @@ function log(...args: unknown[]): winston.Logger {
 }
 const service = log;
 export default service;
-export { service as 'module.exports' };

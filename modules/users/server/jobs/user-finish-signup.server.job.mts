@@ -30,7 +30,7 @@ interface AgendaJob {
  */
 
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
-const defaultExport = function (
+const run = function (
   job: AgendaJob,
   agendaDone: (error?: Error | null) => void,
 ) {
@@ -149,4 +149,4 @@ const defaultExport = function (
   }
   remind().then(() => finish(), finish);
 };
-export default defaultExport;
+export default run;

@@ -2,7 +2,7 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import log from './../../../../config/lib/logger.mjs';
 import config from './../../../../config/config.mts';
-import fileUpload from './../../../core/server/services/file-upload.service.mjs';
+import { uploadFile } from './../../../core/server/services/file-upload.service.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import avatarProcessor from './../services/avatar-processing.server.service.mts';
 import type {
@@ -45,7 +45,7 @@ const avatarUploadField = (
     'image/jpg',
     'image/png',
   ];
-  fileUpload.uploadFile(
+  uploadFile(
     validImageMimeTypes,
     'avatar',
     req,
@@ -382,7 +382,6 @@ Object.assign(service, {
   userForAvatarByUserId,
 });
 export default service;
-export { service as 'module.exports' };
 const nativeExportavatarUpload = service.avatarUpload;
 export { nativeExportavatarUpload as avatarUpload };
 

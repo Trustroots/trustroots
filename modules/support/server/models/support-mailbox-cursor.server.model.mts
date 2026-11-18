@@ -23,6 +23,4 @@ const SupportMailboxCursorSchema =
   );
 
 mongoose.model('SupportMailboxCursor', SupportMailboxCursorSchema);
-const defaultInterop = {};
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default {};

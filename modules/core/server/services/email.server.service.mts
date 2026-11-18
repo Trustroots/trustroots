@@ -886,8 +886,7 @@ function renderEmailAndSend(
   });
 }
 
-const defaultExport = service;
-export default defaultExport;
+export default service;
 /** @esmNamed */
 export {
   addEmailBaseTemplateParams,
@@ -911,5 +910,3 @@ export {
   sendWelcomeSequenceSecond,
   sendWelcomeSequenceThird,
 };
-/** @commonjs */
-export { defaultExport as 'module.exports' };
