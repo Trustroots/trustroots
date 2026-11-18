@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import '@/config/client/i18n';
 
 import ProfileOverview from '@/modules/users/client/components/ProfileOverview.component';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
@@ -14,10 +15,8 @@ jest.mock('@/modules/users/client/components/Avatar.component', () => {
     user,
   }: React.ComponentProps<typeof Avatar>) {
     return (
-      <div onClick={onClick}>
-        <button data-testid={`avatar-${size}`} type="button">
-          {`Avatar ${size} ${user.displayName}`}
-        </button>
+      <div data-testid={`avatar-${size}`} onClick={onClick}>
+        {`Avatar ${size} ${user.displayName}`}
       </div>
     );
   }
@@ -83,6 +82,19 @@ describe('<ProfileOverview />', () => {
     expect(
       screen.getByRole('link', { name: 'Edit profile photo' }),
     ).toHaveAttribute('href', '/profile/edit/photo');
+  });
+
+  it('uses the username to label the photo control when the name is missing', () => {
+    render(
+      <ProfileOverview
+        isSelf={false}
+        profile={{ ...profile, displayName: '' }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Open profile picture of alice' }),
+    ).toBeInTheDocument();
   });
 
   it('links the selected placeholder after a previous upload', () => {

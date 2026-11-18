@@ -1,4 +1,9 @@
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  test,
+  expect,
+} from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 
 declare global {
@@ -19,6 +24,14 @@ for (const viewport of [
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/profile/${SEEDED_MEMBERS[1].username}`);
+    if (viewport.width === 1280) {
+      await captureSection(
+        page.locator('.profile-view .row.hidden-xs').filter({
+          has: page.locator('.profile-name'),
+        }),
+        'member-profile-heading-desktop',
+      );
+    }
     await page.locator('.profile-overview .avatar').click();
 
     // The dialog box itself carries the class.
@@ -376,6 +389,17 @@ for (const width of [390, 480, 481, 600, 767]) {
       await expect(
         page.locator('.profile-view .profile-overview'),
       ).toBeVisible();
+      if (width === 390 && member === SEEDED_MEMBERS[1]) {
+        await expect(
+          page.locator('.profile-view .visible-xs-block .profile-name'),
+        ).toHaveCSS('margin-top', '0px');
+        await captureSection(
+          page.locator('.profile-view .visible-xs-block').filter({
+            has: page.locator('.profile-name'),
+          }),
+          'member-profile-heading-mobile',
+        );
+      }
       await expect(navigation.locator('li.active')).toHaveText('Overview');
 
       await navigation

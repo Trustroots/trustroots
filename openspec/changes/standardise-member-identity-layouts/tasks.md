@@ -9,7 +9,7 @@
 - [x] 2.1 Establish a reusable web identity and use it for discovery cards, contact cards, map offers and inbox rows.
 - [x] 2.2 Use the Android identity row for search, circle discovery, contacts and selected host offers.
 - [x] 2.3 Use the iOS identity row for search, circle discovery, contacts and selected host offers.
-- [ ] 2.4 Extend the treatment to remaining message, profile and Experience surfaces where applicable.
+- [x] 2.4 Extend the treatment to remaining message, profile and Experience surfaces where applicable.
 
 ## 3. Verify
 

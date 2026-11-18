@@ -72,8 +72,7 @@ test('profile actions align and expose admin records only to administrators', as
     await signInViaApi(memberPage, context.request, SEEDED_MEMBERS[1]);
     await memberPage.goto(`/profile/${member.username}`);
     await expect(
-      memberPage.getByRole('heading', {
-        name: `@${member.username}`,
+      memberPage.locator('.member-identity').getByText(`@${member.username}`, {
         exact: true,
       }),
     ).toBeVisible();

@@ -50,7 +50,7 @@ describe('<Experience />', () => {
     );
 
     expect(
-      screen.getByRole('link', { name: 'Alice Example' }),
+      screen.getByRole('link', { name: 'Alice Example @alice' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Lovely person to host.')).toBeInTheDocument();
     expect(screen.getByText('Thanks, was great!')).toBeInTheDocument();

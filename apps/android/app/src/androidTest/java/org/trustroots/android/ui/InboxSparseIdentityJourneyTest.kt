@@ -79,6 +79,7 @@ class InboxSparseIdentityJourneyTest {
         }
         compose.onNodeWithTag("message-thread-thread-sparse").performClick()
         compose.onNodeWithText("A fictional preview without a participant ID.").assertIsDisplayed()
+        compose.onNodeWithText("@quiet-fox").assertIsDisplayed()
         assertEquals(0, local.requests.count { it.path.startsWith("/api/messages/") })
         assertEquals(1, local.requests.count { it.path == "/api/messages?page=1&limit=50" })
 

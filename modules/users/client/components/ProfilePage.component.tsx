@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import AboutMe from './AboutMe.component';
 import AvatarNameMobile from './AvatarNameMobile.component';
+import MemberIdentity from './MemberIdentity';
 import BlockedMemberBanner from './BlockedMemberBanner.component';
 import BlockMember from './BlockMember.component';
 import BottomNavigationSmall from './BottomNavigationSmall.component';
@@ -541,7 +542,7 @@ export default function ProfilePage({
   if (experienceOnly && !isLoading && profile && canLoadReply) {
     return (
       <section className="container container-spacer">
-        <h2>{profile.displayName}</h2>
+        <MemberIdentity user={profile} size={64} heading />
         <ReportMemberButton username={profile.username} />
         {isCreatingExperience ? (
           <CreateExperience userFrom={authUser} userTo={profile} />
@@ -683,19 +684,22 @@ export default function ProfilePage({
                   <div className="col-sm-9">
                     <div className="row hidden-xs">
                       <div className="col-xs-12">
-                        <h2 className="profile-name">{profile.displayName}</h2>
-                        <h4 className="text-muted profile-username">
-                          @{profile.username}
-                        </h4>
-                        {isSelf && (
-                          <Button
-                            intent="primary"
-                            className="pull-right"
-                            render={<a href="/profile/edit" />}
-                          >
-                            {t('Edit your profile') as string}
-                          </Button>
-                        )}
+                        <div className="tw:mb-2 tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
+                          <MemberIdentity
+                            user={profile}
+                            size={64}
+                            className="tw:text-xl"
+                            heading
+                          />
+                          {isSelf && (
+                            <Button
+                              intent="primary"
+                              render={<a href="/profile/edit" />}
+                            >
+                              {t('Edit your profile') as string}
+                            </Button>
+                          )}
+                        </div>
                         {profile.tagline && (
                           <div className="profile-tagline">
                             {profile.tagline}

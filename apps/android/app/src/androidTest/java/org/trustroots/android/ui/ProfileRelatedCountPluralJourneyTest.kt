@@ -106,6 +106,31 @@ class ProfileRelatedCountPluralJourneyTest {
         org.junit.Assert.assertEquals("Entries without usernames have no profile destination", 0, openedProfiles.get())
     }
 
+    @Test
+    fun experienceAuthorUsesSharedIdentityAndOpensItsProfile() {
+        val openedProfiles = mutableListOf<String>()
+        val api = MobileApiClient("https://example.invalid")
+        val session = MemberSession("connect.sid=fictional-profile-count-session", MobileMember("steady-heron", "Steady Heron"))
+        compose.setContent {
+            TrustrootsTheme {
+                ProfileOverviewSection(
+                    references = listOf(reference(1)),
+                    showAllReferences = false,
+                    onToggleReferences = {},
+                    onOpenRelated = openedProfiles::add,
+                    api = api,
+                    session = session,
+                )
+            }
+        }
+
+        compose.onNodeWithText("Fictional Member 1").assertExists()
+        compose.onNodeWithText("@fictional-member-1").assertExists()
+        compose.onNodeWithText("Fictional Member 1").performClick()
+
+        org.junit.Assert.assertEquals(listOf("fictional-member-1"), openedProfiles)
+    }
+
     private fun contact(index: Int) = ProfileContact(
         id = "fictional-contact-$index",
         user = MessageMember(id = null, username = "fictional-member-$index", displayName = "Fictional Member $index"),

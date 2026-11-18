@@ -57,8 +57,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.PinnedTopAppBar
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.localizedLabel
@@ -115,14 +117,14 @@ internal fun MessageConversationEntryScreen(
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
                 onBack = onBack,
-                leadingContent = member?.let {
+                titleContent = member?.let { participant ->
                     {
-                        RemoteArtwork(
-                            url = api.avatarURL(it.id, 64, session),
-                            sessionCookie = session.cookieHeader,
-                            accessToken = session.accessToken,
-                            label = it.localizedLabel(),
-                            size = 36.dp,
+                        MemberIdentity(
+                            api = api,
+                            session = session,
+                            member = MessageMember(participant.id, participant.username, participant.displayName),
+                            avatarSize = 36.dp,
+                            maxLines = 1,
                         )
                     }
                 },

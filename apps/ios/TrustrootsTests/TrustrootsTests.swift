@@ -3,6 +3,33 @@ import MapKit
 @testable import Trustroots
 
 final class TrustrootsTests: XCTestCase {
+    func testMemberIdentityPrefersDisplayNameAndShowsHandleBelow() {
+        let identity = MemberIdentityText(
+            member: MiniMember(id: "member-1", username: "traveller", displayName: "A Traveller")
+        )
+
+        XCTAssertEqual(identity.primary, "A Traveller")
+        XCTAssertEqual(identity.secondary, "@traveller")
+    }
+
+    func testMemberIdentityUsesHandleAsPrimaryWhenDisplayNameIsMissing() {
+        let identity = MemberIdentityText(
+            member: MiniMember(id: "member-2", username: "traveller", displayName: "  ")
+        )
+
+        XCTAssertEqual(identity.primary, "@traveller")
+        XCTAssertNil(identity.secondary)
+    }
+
+    func testMemberIdentityHasAccessibleFallbackWhenNameAndHandleAreMissing() {
+        let identity = MemberIdentityText(
+            member: MiniMember(id: nil, username: nil, displayName: nil)
+        )
+
+        XCTAssertEqual(identity.primary, "Unknown member")
+        XCTAssertNil(identity.secondary)
+    }
+
     func testAuthenticationFailureHasClearSignInAgainMessage() {
         XCTAssertEqual(
             TrustrootsAPIError.authenticationRequired.errorDescription,

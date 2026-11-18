@@ -175,6 +175,7 @@ class MessageHeaderCollapseJourneyTest {
             historyLoaded,
         )
         val titleBefore = compose.onNodeWithText("Quiet Fox").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithText("@quiet-fox").assertIsDisplayed()
         val backBefore = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
         rootWidthPx = compose.onRoot().fetchSemanticsNode().boundsInRoot.width
         assertTrue(
@@ -199,6 +200,7 @@ class MessageHeaderCollapseJourneyTest {
         history.performTouchInput { swipeDown() }
         compose.waitForIdle()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onNodeWithText("@quiet-fox").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         compose.onNodeWithText("View profile").assertIsDisplayed()
         compose.onNodeWithText("Fictional conversation note 30").assertIsDisplayed()

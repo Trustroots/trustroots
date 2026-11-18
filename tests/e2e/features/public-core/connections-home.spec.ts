@@ -1,4 +1,9 @@
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 import {
   SEEDED_RELATIONSHIP_MEMBERS,
   signInViaApi,
@@ -78,9 +83,21 @@ test('signed-in homepage lays out recent connections and opens hosting offers', 
   await expect(pins).toHaveCount(2);
   await pins.first().click();
   const popup = hostingMap.locator('.leaflet-popup-content');
+  await expect(popup.getByText('Older Host', { exact: true })).toBeVisible();
+  await captureSection(popup, 'homepage-hosting-member-popup');
+  await hostingMap.getByRole('button', { name: 'Close popup' }).press('Enter');
+
+  const firstHostingPin = hostingMap.getByRole('button', {
+    name: 'Older Host',
+  });
+  await firstHostingPin.focus();
+  await page.keyboard.press('Enter');
   const hostName = popup.getByText('Older Host', { exact: true });
   const offer = popup.getByRole('link', { name: 'View hosting offer' });
   await expect(hostName).toBeVisible();
+  await expect(popup.getByText('@olderhost')).toBeVisible();
+  await expect(popup.locator('.member-avatar-fallback')).toHaveText('OH');
+  await expect(offer).toBeFocused();
   await expect(offer).toHaveAttribute(
     'href',
     '/profile/olderhost/accommodation',

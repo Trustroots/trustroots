@@ -4,20 +4,13 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@trustroots/ui/Button';
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import type { ContactConfirmation } from '../types';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import type { UserProfile } from '@/modules/users/client/types';
 import { Alert } from '@trustroots/ui/Alert';
-
-const AvatarWithLegacyClass = Avatar as unknown as React.ComponentType<{
-  className?: string;
-  size?: number;
-  user: UserProfile;
-  link?: boolean;
-}>;
 
 export default function ContactConfirmPage({ user }: { user: UserProfile }) {
   const { t } = useTranslation('contacts') as {
@@ -128,29 +121,13 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
                 <div className="panel-body">
                   <div className="row">
                     <div className="col-xs-12 col-sm-5 contacts-connection-profile">
-                      <AvatarWithLegacyClass
-                        className="center-block"
-                        size={128}
-                        user={contact.userFrom}
-                        link={false}
-                      />
-                      <h4 className="contacts-connection-name">
-                        {contact.userFrom.displayName}
-                      </h4>
+                      <MemberIdentity user={contact.userFrom} size={64} />
                     </div>
                     <div className="hidden-xs col-sm-2">
                       <i className="icon-exchange icon-3x text-muted contacts-connection-divider" />
                     </div>
                     <div className="col-xs-12 col-sm-5 contacts-connection-profile">
-                      <AvatarWithLegacyClass
-                        className="center-block"
-                        size={128}
-                        user={contact.userTo}
-                        link={false}
-                      />
-                      <h4 className="contacts-connection-name">
-                        {contact.userTo.displayName}
-                      </h4>
+                      <MemberIdentity user={contact.userTo} size={64} />
                     </div>
                   </div>
                 </div>

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import MessageBubble from './MessageBubble';
 import RichText from '@/modules/core/client/components/RichText';
 
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import type { Message, MessageUser } from '../api/messages.api';
 
@@ -34,8 +34,6 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
   const sender = message.userFrom ?? { _id: '' };
   const sentByMe = sender._id === user._id;
 
-  const deletedUser = !sender.username;
-
   return (
     <MessageBubble
       {...getHostingData(message.content)}
@@ -45,10 +43,12 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
         <div className="message-meta">
           {sentByMe ? (
             <span>{t('You')}</span>
-          ) : !deletedUser ? (
-            <a href={`/profile/${sender.username}`}>{sender.displayName}</a>
           ) : (
-            <span>{t('Unknown member')}</span>
+            <MemberIdentity
+              user={sender.username ? sender : {}}
+              size={32}
+              profileLink
+            />
           )}
           <span aria-hidden="true">·</span>
           <TimeAgo date={new Date(message.created)} />
@@ -60,9 +60,6 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
             allowTrustrootsLinks
           />
         </div>
-      </div>
-      <div className="message-author">
-        <Avatar user={sender} size={32} link={!deletedUser} />
       </div>
     </MessageBubble>
   );

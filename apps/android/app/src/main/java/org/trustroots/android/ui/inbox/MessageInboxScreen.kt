@@ -69,10 +69,9 @@ import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.PinnedTopAppBar
-import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.canPostNotifications
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.ui.common.messageTime
 import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
@@ -251,7 +250,6 @@ private fun InboxContent(
     }
     val threads = state.threads
     val filter = state.filter
-    val memberLabels = threads.associate { thread -> thread.id to thread.otherMember.localizedLabel() }
     val filteredThreads = state.visibleThreads
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -340,16 +338,14 @@ private fun InboxContent(
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(Modifier.weight(1f)) {
-                        RemoteArtwork(
-                            url = thread.otherMember.id?.let { api.avatarURL(it, 64, session) },
-                            sessionCookie = session.cookieHeader,
-                            accessToken = session.accessToken,
-                            label = memberLabels[thread.id].orEmpty(),
-                            size = 44.dp,
+                    Column(Modifier.weight(1f)) {
+                        MemberIdentity(
+                            api = api,
+                            session = session,
+                            member = thread.otherMember,
+                            nameFontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold,
                         )
-                        Column(Modifier.padding(start = 10.dp)) {
-                            Text(memberLabels[thread.id].orEmpty(), color = contentColor, fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
+                        Column(Modifier.padding(start = 58.dp)) {
                             if (!thread.read) {
                                 Text(
                                     stringResource(R.string.inbox_conversation_unread),

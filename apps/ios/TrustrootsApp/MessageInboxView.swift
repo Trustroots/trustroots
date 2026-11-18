@@ -184,20 +184,20 @@ private struct MessageThreadRow: View {
     var body: some View {
         let member = thread.otherMember(excluding: currentUsername)
         HStack(spacing: 9) {
-            MemberAvatarView(
-                memberID: member.id,
-                displayName: member.displayName ?? member.username ?? "Trustroots member",
-                serverURLString: serverURLString,
-                size: 40
-            )
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 5) {
-                    Text(member.displayName ?? member.username ?? "Unknown member")
-                        .fontWeight(thread.read ? .regular : .semibold)
+                HStack(spacing: 6) {
+                    MemberIdentityView(
+                        member: member,
+                        serverURLString: serverURLString,
+                        avatarSize: 40,
+                        primaryFont: .subheadline.weight(thread.read ? .regular : .semibold),
+                        secondaryFont: .caption
+                    )
                     if !thread.read {
                         Circle()
                             .fill(TrustrootsPalette.green)
                             .frame(width: 7, height: 7)
+                            .accessibilityLabel("Unread")
                     }
                 }
                 Text(thread.message.excerpt?.plainText ?? "…")
@@ -417,17 +417,16 @@ struct ConversationView: View {
     }
 
     private var conversationMemberHeader: some View {
-        HStack(spacing: 7) {
-            MemberAvatarView(
-                memberID: otherMember.id,
-                displayName: otherMember.displayName ?? otherMember.username ?? "Trustroots member",
-                serverURLString: session.serverURLString,
-                size: 28
-            )
-            Text(otherMember.displayName ?? otherMember.username ?? "Messages")
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-        }
+        MemberIdentityView(
+            member: otherMember,
+            serverURLString: session.serverURLString,
+            avatarSize: 28,
+            primaryFont: .caption.weight(.semibold),
+            secondaryFont: .caption2,
+            secondaryForeground: .secondary,
+            lineLimit: 1
+        )
+        .frame(maxWidth: 220)
     }
 
     private func sendMessage() async {

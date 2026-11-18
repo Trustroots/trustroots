@@ -8,10 +8,9 @@ import React from 'react';
 import { DAYS_TO_REPLY } from '../../utils/constants';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { getGender } from '@/modules/core/client/utils/user_info';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
-import UserLink from '@/modules/users/client/components/UserLink';
 import type { Experience as ExperienceModel } from '../../../shared/experience';
 
 export default function Experience({
@@ -51,10 +50,9 @@ export default function Experience({
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body">
-        <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:leading-[1.3em] tw:[&_.avatar]:me-2.5">
-          <Avatar user={userFrom} size={36} />
-          <div className="tw:flex tw:flex-col">
-            <UserLink user={userFrom} className="tw:me-[5px] tw:font-bold" />
+        <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:gap-2.5 tw:leading-[1.3em]">
+          <div className="tw:min-w-0">
+            <MemberIdentity user={userFrom} size={36} profileLink />
             <span className="muted">
               {userFrom?.gender && `${getGender(userFrom.gender)}. `}
               {userFrom?.created &&
@@ -109,10 +107,11 @@ export default function Experience({
         )}
         {response && (
           <div className="tw:ms-5 tw:mt-5 tw:[border-top:1px_solid_#ccc] tw:pt-5 tw:[@media(max-width:480px)]:ms-2.5">
-            <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:leading-[1.3em] tw:[&_.avatar]:me-2.5">
-              <Avatar user={userTo} size={24} />
-              <UserLink user={userTo} className="tw:me-[5px] tw:font-bold" />
-              (<TimeAgo date={new Date(response.created)} />)
+            <div className="tw:flex tw:flex-wrap tw:items-center tw:gap-2.5 tw:leading-[1.3em]">
+              <MemberIdentity user={userTo} size={24} profileLink />
+              <span>
+                (<TimeAgo date={new Date(response.created)} />)
+              </span>
             </div>
             <Meta
               interactions={response.interactions}

@@ -2,6 +2,14 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -40,5 +48,29 @@ class MemberIdentityJourneyTest {
         compose.onAllNodesWithText("@handle-only").assertCountEquals(1)
         compose.onNodeWithText("Name Only").assertIsDisplayed()
         compose.onNodeWithText("Trustroots member").assertIsDisplayed()
+    }
+
+    @Test fun compactIdentityEllipsisesLongNamesAndHandles() {
+        val api = MobileApiClient("http://127.0.0.1:1")
+        val session = MemberSession("connect.sid=fictional", MobileMember("quiet-fox", "Quiet Fox"))
+        val name = "A Fictional Member With A Very Long Display Name"
+        val username = "fictional-member-with-a-very-long-username"
+        compose.setContent {
+            TrustrootsTheme {
+                MemberIdentity(
+                    api, session, MessageMember(null, username, name),
+                    modifier = Modifier.width(180.dp),
+                    avatarSize = 36.dp,
+                    maxLines = 1,
+                )
+            }
+        }
+        for (label in listOf(name, "@$username")) {
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(label).assertIsDisplayed()
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals(1, layouts.single().lineCount)
+            assertTrue(layouts.single().isLineEllipsized(0))
+        }
     }
 }

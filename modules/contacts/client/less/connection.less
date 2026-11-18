@@ -5,23 +5,13 @@
  */
 .contacts-connection {
   .contacts-connection-profile {
-    text-align: center;
     @media (max-width: @screen-xs-max) {
-      text-align: left;
-      .avatar {
-        float: left;
-        margin: 0 10px 0 0;
-        width: 64px;
-        height: 64px;
-      }
-      .contacts-connection-name {
-        line-height: 64px;
-        padding: 0;
-        margin: 0;
+      & + .hidden-xs + .contacts-connection-profile {
+        margin-top: 10px;
       }
     }
   }
   .contacts-connection-divider {
-    line-height: 128px;
+    line-height: 64px;
   }
 }

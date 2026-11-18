@@ -9,6 +9,7 @@ import Avatar from './Avatar.component';
 import ProfileViewBasics from './ProfileViewBasics';
 import { Modal } from '@trustroots/ui/Modal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { UserProfile } from '../types';
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ export default function ProfileOverview({
   isSelf: boolean;
 }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const { t } = useTranslation('users');
   const showPhotoEditLink =
     isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
@@ -31,19 +33,26 @@ export default function ProfileOverview({
       {/* panel with avatar and basic info */}
       <div className="panel panel-default profile-overview">
         {/* avatar */}
-        <a
-          className={`hidden-xs${
-            showPhotoEditLink ? ' profile-photo-edit-link' : ''
-          }`}
-          href={showPhotoEditLink ? '/profile/edit/photo' : undefined}
-          aria-label={showPhotoEditLink ? 'Edit profile photo' : undefined}
-          aria-hidden={showPhotoEditLink ? undefined : true}
-          onClick={
-            showPhotoEditLink ? undefined : () => setIsAvatarModalOpen(true)
-          }
-        >
-          <Avatar user={profile} size={256} link={false} />
-        </a>
+        {showPhotoEditLink ? (
+          <a
+            className="hidden-xs profile-photo-edit-link"
+            href="/profile/edit/photo"
+            aria-label="Edit profile photo"
+          >
+            <Avatar user={profile} size={256} link={false} />
+          </a>
+        ) : (
+          <button
+            className="hidden-xs tw:block tw:w-full tw:border-0 tw:bg-transparent tw:p-0"
+            type="button"
+            aria-label={t('Open profile picture of {{name}}', {
+              name: profile.displayName || profile.username,
+            })}
+            onClick={() => setIsAvatarModalOpen(true)}
+          >
+            <Avatar user={profile} size={256} link={false} />
+          </button>
+        )}
 
         {/* basic info panel */}
         <div className="panel-body">
