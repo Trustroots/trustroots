@@ -606,6 +606,45 @@ remain runtime-only outside the existing encrypted `SecureMobileSessionStore`.
 - **AND** the route graph remains responsible only for navigation identifiers
   and non-secret UI state
 
+### Requirement: Android fresh sign-in destination
+
+The Android app SHALL open Messages after a successful fresh sign-in. It SHALL preserve restored navigation and explicit message destinations, and SHALL retain sign-up onboarding.
+
+#### Scenario: Member signs in
+
+- **WHEN** a member successfully signs in
+- **THEN** Messages opens without an additional navigation action
+
+#### Scenario: Member already has a destination
+
+- **WHEN** an authenticated navigation stack is restored or a message alert supplies a conversation destination
+- **THEN** that destination takes precedence over the initial destination
+
+#### Scenario: Member signs up
+
+- **WHEN** a member creates an account
+- **THEN** the existing sign-up onboarding remains available
+
+### Requirement: Non-blocking Android startup fade
+
+The Android app SHALL render the resolved destination immediately when session restoration completes and fade the startup overlay out over 180 ms. The fade SHALL use Compose animation scaling, SHALL NOT impose a minimum startup duration and SHALL NOT block the ready destination's interaction.
+
+#### Scenario: Restoration completes
+
+- **WHEN** the session load completes
+- **THEN** the resolved destination renders immediately beneath the fading overlay
+- **AND** the destination is interactive while the overlay fades out
+
+#### Scenario: Restoration is already complete
+
+- **WHEN** the app is composed after restoration has completed
+- **THEN** the destination is shown without replaying startup or its fade
+
+#### Scenario: System animations are disabled
+
+- **WHEN** the system disables animations
+- **THEN** Compose's animation scaling removes the fade without delaying navigation
+
 ### Requirement: Formatted Android circle descriptions
 
 Android circle details SHALL render the supported rich-text structure from the
@@ -2091,42 +2130,3 @@ Android profile experiences SHALL separate original feedback from its response u
 
 - **WHEN** an experience lacks role or recommendation data
 - **THEN** no hosting role is inferred and recommendation styling remains neutral
-
-### Requirement: Android fresh sign-in destination
-
-The Android app SHALL open Messages after a successful fresh sign-in. It SHALL preserve restored navigation and explicit message destinations, and SHALL retain sign-up onboarding.
-
-#### Scenario: Member signs in
-
-- **WHEN** a member successfully signs in
-- **THEN** Messages opens without an additional navigation action
-
-#### Scenario: Member already has a destination
-
-- **WHEN** an authenticated navigation stack is restored or a message alert supplies a conversation destination
-- **THEN** that destination takes precedence over the initial destination
-
-#### Scenario: Member signs up
-
-- **WHEN** a member creates an account
-- **THEN** the existing sign-up onboarding remains available
-
-### Requirement: Non-blocking Android startup fade
-
-The Android app SHALL render the resolved destination immediately when session restoration completes and fade the startup overlay out over 180 ms. The fade SHALL use Compose animation scaling, SHALL NOT impose a minimum startup duration and SHALL NOT block the ready destination's interaction.
-
-#### Scenario: Restoration completes
-
-- **WHEN** the session load completes
-- **THEN** the resolved destination renders immediately beneath the fading overlay
-- **AND** the destination is interactive while the overlay fades out
-
-#### Scenario: Restoration is already complete
-
-- **WHEN** the app is composed after restoration has completed
-- **THEN** the destination is shown without replaying startup or its fade
-
-#### Scenario: System animations are disabled
-
-- **WHEN** the system disables animations
-- **THEN** Compose's animation scaling removes the fade without delaying navigation
