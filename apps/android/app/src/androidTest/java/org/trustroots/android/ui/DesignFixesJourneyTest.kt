@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.assertIsDisplayed
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -113,7 +114,7 @@ class DesignFixesJourneyTest {
             assertTrue(field.left >= 24.dp.toPx())
             assertTrue(statistics.bottom <= root.bottom - 96.dp.toPx())
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithTag("mapStatistics").assertIsDisplayed()

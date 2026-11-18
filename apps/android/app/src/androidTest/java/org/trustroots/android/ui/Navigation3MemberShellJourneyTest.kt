@@ -472,6 +472,10 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithText("Discard changes").performClick()
         waitForText("Search places")
         compose.onNodeWithTag("navigation-search").assertIsSelected()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        pressSystemBack()
+        compose.onNodeWithText("Hosting").assertDoesNotExist()
+        compose.onNodeWithTag("navigation-search").assertIsSelected()
         pressSystemBack()
         waitForText("View your profile")
         compose.onNodeWithText("A new anonymous line").assertDoesNotExist()
@@ -604,6 +608,9 @@ class Navigation3MemberShellJourneyTest {
         assertMemberSearchText("")
         pressBack()
         waitForText("Search places")
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        pressBack()
+        compose.onNodeWithText("Hosting").assertDoesNotExist()
         pressBack()
         waitForText("Discover circles")
         pressBack()
@@ -640,7 +647,7 @@ class Navigation3MemberShellJourneyTest {
             map.controller.setZoom(8.0)
         }
         compose.waitUntil(10_000) { fixture.requests.count { it.path.startsWith("/api/offers?") } >= 2 }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         val queriesBeforeFilter = fixture.requests.count { it.path.startsWith("/api/offers?") }
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Last active: any time").assertIsDisplayed()
@@ -660,7 +667,7 @@ class Navigation3MemberShellJourneyTest {
         val completedQueries = fixture.requests.count { it.path.startsWith("/api/offers?") }
         requireNotNull(scenario).recreate()
         waitForText("Search places")
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: any time").assertIsDisplayed()
         requireNotNull(scenario).onActivity { activity ->
             val map = requireNotNull(findMapView(activity.window.decorView))
@@ -876,7 +883,7 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(10_000) {
             fixture.requests.count { it.path.startsWith("/api/offers?") && it.cookie == "connect.sid=fictional-session" } >= 2
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").assertIsDisplayed()
         val requestsBeforeExpiredFilter = fixture.requests.count {
             it.path.startsWith("/api/offers?") && it.cookie == "connect.sid=fictional-session"
@@ -898,7 +905,7 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(10_000) {
             fixture.requests.any { it.path.startsWith("/api/offers?") && it.cookie == "connect.sid=second-fictional-session" }
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").assertIsDisplayed()
         requireNotNull(scenario).onActivity { activity ->
             val map = requireNotNull(findMapView(activity.window.decorView))

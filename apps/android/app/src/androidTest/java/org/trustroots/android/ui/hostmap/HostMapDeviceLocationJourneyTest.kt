@@ -62,7 +62,7 @@ class HostMapDeviceLocationJourneyTest {
             assertEquals(false, precise)
             fix.await()
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         assertEquals(0, permission.requests)
         compose.onNodeWithContentDescription("Use my location").performClick()

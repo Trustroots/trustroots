@@ -95,7 +95,7 @@ class HostMapFilterOptionsJourneyTest {
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Hosting").performClick()
         compose.onNodeWithText("0 offers · 0 Nostroots notes in this area").assertIsDisplayed()
 
