@@ -35,7 +35,7 @@ const hostingOffer: Offer = {
 
 describe('<OffersPresentational />', () => {
   it.each([undefined, false, true])(
-    'labels volunteering only when enabled: %s',
+    'shows a volunteering badge only when enabled: %s',
     volunteering => {
       render(
         <OffersPresentational
@@ -44,9 +44,9 @@ describe('<OffersPresentational />', () => {
           offer={{ ...hostingOffer, volunteering }}
         />,
       );
-      expect(screen.queryByText('Offers volunteering') !== null).toBe(
-        volunteering === true,
-      );
+      expect(
+        screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
+      ).toBe(volunteering === true ? 'badge' : undefined);
     },
   );
 

@@ -5,6 +5,7 @@ import type { Offer } from '../api/offers.api';
 
 // Internal dependencies
 import '@/config/client/i18n';
+import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
 import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import type { MeetingStatus } from '../../shared/offer';
@@ -47,7 +48,13 @@ export function OffersPresentational(props: OffersPresentationalProps) {
             <span className="icon-edit"></span>
           </Button>
         )}
-        {offer.volunteering === true && <p>{t('Offers volunteering')}</p>}
+        {offer.volunteering === true && (
+          <p>
+            <Badge variant="outline" intent="info">
+              {t('Offers volunteering')}
+            </Badge>
+          </p>
+        )}
         <ReadMorePanel
           content={offer.description ?? ''}
           id="offer-yes-description"

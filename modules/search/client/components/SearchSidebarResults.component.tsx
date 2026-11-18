@@ -228,12 +228,14 @@ export default function SearchSidebarResults({
                 <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-1">
                   {showHosting && !hosting && 'Hosting'}
                   {item.type === 'meet' && 'Meet'}
-                  {item.type === 'host' && item.volunteering === true && (
-                    <span>Offers volunteering</span>
-                  )}
                   {hosting && (
                     <Badge variant="solid" intent={hosting.intent}>
                       {hosting.label}
+                    </Badge>
+                  )}
+                  {item.type === 'host' && item.volunteering === true && (
+                    <Badge variant="outline" intent="info">
+                      Offers volunteering
                     </Badge>
                   )}
                   {meetingLabel && (
@@ -370,7 +372,11 @@ export default function SearchSidebarResults({
                 </div>
               )}
               {offer.type === 'host' && offer.volunteering === true && (
-                <div className="search-result-label">Offers volunteering</div>
+                <div className="search-result-label">
+                  <Badge variant="outline" intent="info">
+                    Offers volunteering
+                  </Badge>
+                </div>
               )}
               {selectedAvailability.meetingLabel && (
                 <div className="search-result-label">
