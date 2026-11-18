@@ -91,14 +91,24 @@ function shellRoute(path: string, render: ShellRoute['render']): ShellRoute {
   return { ...policy, render };
 }
 
+function policyOptions(path: string, render: ShellRoute['render']) {
+  const route = shellRoute(path, render);
+  return {
+    head: () => ({ meta: [{ title: `${route.title} - Trustroots` }] }),
+    staticData: route,
+  };
+}
+
 // Options for a route, with the policy for its path.
 export function routeOptions(path: string, render: ShellRoute['render']) {
-  const route = shellRoute(path, render);
-  return { component: createClientRouteComponent(route), staticData: route };
+  const options = policyOptions(path, render);
+  return {
+    ...options,
+    component: createClientRouteComponent(options.staticData),
+  };
 }
 
 // Options for a route that the parent's component renders, such as a profile tab.
 export function childRouteOptions(path: string, parent: AnyRoute) {
-  const { render } = parent.options.staticData as ShellRoute;
-  return { staticData: shellRoute(path, render) };
+  return policyOptions(path, (parent.options.staticData as ShellRoute).render);
 }

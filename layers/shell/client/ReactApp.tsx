@@ -1,20 +1,23 @@
 import { RouterProvider } from '@tanstack/react-router';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
+import { useAuth } from '@/modules/core/client/react-app/auth';
 import useUnreadMessageCountPolling from '@/modules/messages/client/services/use-unread-message-count-polling';
 import { createAppRouter } from './router';
 
 export default function ReactApp({
-  navigate,
   router: startRouter,
 }: {
-  navigate?: (target: string) => void;
   router?: ReturnType<typeof createAppRouter>;
 }) {
   const router = useMemo(() => startRouter ?? createAppRouter(), [startRouter]);
+  const { user } = useAuth();
   useUnreadMessageCountPolling();
 
-  return (
-    <RouterProvider context={{ navigateOverride: navigate }} router={router} />
-  );
+  // Route guards run in beforeLoad, so check them again when the member changes.
+  useEffect(() => {
+    void router.invalidate();
+  }, [router, user]);
+
+  return <RouterProvider context={{ user }} router={router} />;
 }

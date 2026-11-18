@@ -1,5 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 
+import { getBootstrapData } from './bootstrap';
 import { routeTree } from './routeTree.gen';
 
 export function parseLegacySearch(search: string): Record<string, string> {
@@ -27,13 +28,11 @@ export function stringifyLegacySearch(
 
 export function createAppRouter() {
   return createRouter({
-    context: {
-      navigateOverride: undefined,
-    },
+    context: { user: getBootstrapData().user },
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
-    scrollRestoration: () => false,
+    scrollRestoration: true,
     stringifySearch: stringifyLegacySearch,
   });
 }

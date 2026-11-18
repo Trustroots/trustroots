@@ -1,137 +1,56 @@
-import {
-  Outlet,
-  useRouteContext,
-  useRouter,
-  useRouterState,
-} from '@tanstack/react-router';
+import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 
 import AppHeader from '@/layers/shell/client/components/AppHeader.component';
-import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
-import {
-  getReactRouteAccessRedirect,
-  getReactRoutePolicy,
-  isReactOwnedPath,
-} from '@/modules/core/shared/react-route-ownership.mts';
+import { getReactRoutePolicy } from '@/modules/core/shared/react-route-ownership.mts';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import {
-  useAppConfig,
-  useSettings,
-} from '@/modules/core/client/react-app/app-context';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
 import type { RoutePolicy } from './route-options';
 import { getClientNavigationTarget } from './shell-helpers';
 
 export default function ReactAppShell() {
-  const { title } = useAppConfig();
   const { build } = useSettings();
-  const { navigateOverride } = useRouteContext({ from: '__root__' });
   const { user } = useAuth();
-  const locationHref = useRouterState({
-    select: state => state.location.href,
-  });
-  const locationHash = useRouterState({
-    select: state => state.location.hash,
-  });
   const router = useRouter();
-  const location = new URL(locationHref, window.location.origin);
-  const currentPath = `${location.pathname}${location.search}`;
-  const route = getReactRoutePolicy(currentPath) as RoutePolicy | null;
-  const accessRedirect = getReactRouteAccessRedirect(
-    route,
-    user,
-    `${currentPath}${location.hash}`,
-  );
-  const redirect =
-    route?.redirectTo || accessRedirect || (!route && '/not-found');
-  const navigate = (target: string) => {
-    if (navigateOverride) {
-      navigateOverride(target);
-      return;
-    }
-
-    const destination = new URL(target, window.location.origin);
-    const search = Object.fromEntries(destination.searchParams);
-    router.navigate({
-      hash: destination.hash.slice(1),
-      search,
-      to: destination.pathname,
-    });
-  };
-
-  useEffect(() => {
-    if (route?.title) {
-      document.title = `${route.title} - Trustroots`;
-    } else {
-      document.title = title;
-    }
-
-    if (!route?.noScrollingTop) {
-      window.scrollTo(0, 0);
-    }
-  }, [route, title]);
-
-  useEffect(() => {
-    const rawHash = locationHash || location.hash;
-    if (!rawHash) {
-      return undefined;
-    }
-
-    const targetId = decodeURIComponent(
-      rawHash.startsWith('#') ? rawHash.slice(1) : rawHash,
-    );
-    if (!targetId) {
-      return undefined;
-    }
-
-    // Wait until the app shell has finished resetting the page scroll position.
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById(targetId)?.scrollIntoView({ block: 'start' });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [locationHash, locationHref, route]);
-
-  useEffect(() => {
-    if (redirect) {
-      navigate(redirect);
-    }
-  }, [redirect]);
+  const match = useMatches({ select: matches => matches[matches.length - 1] });
+  const route = match?.staticData as RoutePolicy | undefined;
 
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       const target = getClientNavigationTarget(event);
+      const targetRoute = target && getReactRoutePolicy(target);
 
-      if (!target || !isReactOwnedPath(target)) {
+      if (!targetRoute) {
         return;
       }
 
       event.preventDefault();
-      navigate(target);
+      void router.navigate({
+        href: target,
+        resetScroll: !targetRoute.noScrollingTop,
+      });
     };
 
     document.addEventListener('click', handleDocumentClick);
 
     return () => document.removeEventListener('click', handleDocumentClick);
-  }, [navigateOverride, router]);
+  }, [router]);
 
   return (
     <>
       <div id="tr-wrap">
         {!route?.headerHidden && (
-          <AppHeader currentPath={location.pathname} user={user} />
+          <AppHeader currentPath={match?.pathname} user={user} />
         )}
         <article className="content" id="tr-main" role="main" tabIndex={-1}>
-          {redirect || route?.path === '/not-found' ? (
-            <NotFoundPage />
-          ) : (
-            <Outlet />
-          )}
+          <Outlet />
         </article>
       </div>
       {!route?.footerHidden && (
         <ReactFooter
           build={build as React.ComponentProps<typeof ReactFooter>['build']}
-          variant={route?.footerVariant || (!route ? 'account' : 'standard')}
+          variant={route?.footerVariant}
         />
       )}
     </>
