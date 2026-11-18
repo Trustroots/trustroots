@@ -1,3 +1,8 @@
-{% extends 'react-layout.server.view.html' %} {% block content %}
-<div id="tr-react-root"></div>
-{% endblock content %}
+{% include 'react-head.server.view.html' %}
+<script nonce="{{ nonce }}">
+  var title = "{{title}}",
+      settings = {{ appSettings | jsonForScript | safe }},
+      env = "{{ env }}",
+      isNativeMobileApp = {{ isNativeMobileApp }},
+      user = {{ user | jsonForScript | safe }};
+</script>

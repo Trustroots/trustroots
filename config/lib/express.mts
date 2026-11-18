@@ -96,28 +96,19 @@ function initLocalVariables(app: Express) {
     enabled: false,
   };
 
-  // Assets
+  // Assets for server-rendered error pages. SPA pages use the Start shell.
   if (
     process.env.TRUSTROOTS_VITE_DEV_SERVER === 'true' &&
     process.env.NODE_ENV === 'development'
   ) {
-    app.locals.reactUsesVite = true;
     app.locals.reactJsFiles = [
       'assets/@vite/client',
-      'assets/config/vite/react-main.tsx',
+      'assets/config/vite/load-styles.ts',
     ];
     app.locals.reactCssFiles = [];
-  } else if (
-    process.env.NODE_ENV === 'production' ||
-    process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
-  ) {
-    app.locals.reactUsesVite = false;
-    app.locals.reactJsFiles = ['assets/react-main.js'];
-    app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
-    app.locals.reactUsesVite = false;
-    app.locals.reactJsFiles = ['assets/react-main.js'];
-    app.locals.reactCssFiles = []; // style is bundled with javascript
+    app.locals.reactJsFiles = [];
+    app.locals.reactCssFiles = ['assets/react-main.css'];
   }
 
   // Get latest git commit metadata for asset cache busting and support/debug UI.

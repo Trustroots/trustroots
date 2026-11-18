@@ -11,6 +11,7 @@ import {
 
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
+import { createAppRouter } from '@/layers/shell/client/router';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import type { BootstrapData } from '@/modules/core/client/react-app/app-context';
 import * as usersApi from '@/modules/users/client/api/users.api';
@@ -361,6 +362,14 @@ describe('<ReactApp />', () => {
       </AppProviders>,
     );
   }
+
+  it('renders with the router that TanStack Start hydrated', async () => {
+    const router = createAppRouter();
+    renderApp('/rules', {}, { router });
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/rules');
+  });
 
   it('renders a React-owned route and updates the document title', async () => {
     renderApp('/rules');

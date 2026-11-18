@@ -6,10 +6,12 @@ import { createAppRouter } from './router';
 
 export default function ReactApp({
   navigate,
+  router: startRouter,
 }: {
   navigate?: (target: string) => void;
+  router?: ReturnType<typeof createAppRouter>;
 }) {
-  const router = useMemo(() => createAppRouter(), []);
+  const router = useMemo(() => startRouter ?? createAppRouter(), [startRouter]);
   useUnreadMessageCountPolling();
 
   return (

@@ -49,3 +49,12 @@ test('emits a flipped react-main.rtl.css asset', () => {
 test('refuses to emit RTL CSS without the production stylesheet', () => {
   assert.throws(() => runPlugin({}), /Expected one react-main\.css asset/);
 });
+
+test('runs only for the client build, not the Start server bundle', () => {
+  const plugin = rtlStylesheetPlugin() as unknown as {
+    applyToEnvironment(environment: { name: string }): boolean;
+  };
+
+  assert.equal(plugin.applyToEnvironment({ name: 'client' }), true);
+  assert.equal(plugin.applyToEnvironment({ name: 'ssr' }), false);
+});
