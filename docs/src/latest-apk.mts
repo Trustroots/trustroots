@@ -23,7 +23,9 @@ import {
   if (zapstoreVersion) {
     zapstoreRelease()
       .then(release => {
-        zapstoreVersion.textContent = ` — version ${release.version}`;
+        zapstoreVersion.textContent = release
+          ? ` — version ${release.version}`
+          : ' — beta unavailable';
       })
       .catch(() => {});
   }

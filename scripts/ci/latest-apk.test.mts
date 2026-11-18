@@ -38,6 +38,7 @@ async function load(
   page: 'apps' | 'download',
   releases: unknown = [release()],
   failure?: 'http' | 'network',
+  zapstoreVersion: string | null = '0.1-20261005-2310',
 ) {
   const elements = new Map<
     string,
@@ -58,7 +59,9 @@ async function load(
       href: page === 'apps' ? '/apps/latest-apk/' : releasesUrl,
       hidden: id !== 'android-preview-updated',
       textContent:
-        id === 'android-preview-version' ? ' — version 0.1-20261001-1200' : '',
+        id === 'android-preview-version' || id === 'android-zapstore-version'
+          ? ' — version 0.1-20261001-1200'
+          : '',
       dateTime: '',
     });
   }
@@ -66,7 +69,8 @@ async function load(
   runInNewContext(source, {
     releasesApi,
     selectPreview,
-    zapstoreRelease: async () => ({ version: '0.1-20261005-2310' }),
+    zapstoreRelease: async () =>
+      zapstoreVersion ? { version: zapstoreVersion } : null,
     document: { getElementById: (id: string) => elements.get(id) ?? null },
     window: { location: { replace: (url: string) => (redirected = url) } },
     fetch: async () => {
@@ -246,12 +250,26 @@ test('Zapstore reports only the newest beta from the Trustroots publisher', asyn
   assert.equal(socket.closed, true);
 });
 
-for (const failure of ['empty', 'error', 'close'] as const) {
-  test(`Zapstore ${failure} leaves the verified site snapshot available`, async () => {
+test('an empty Zapstore result replaces the cached beta version', async () => {
+  const result = zapstoreRelease(RelaySocket as unknown as typeof WebSocket);
+  const socket = RelaySocket.instance;
+  socket.message(['EOSE', 'android-version']);
+  assert.equal(await result, null);
+  assert.equal(socket.closed, true);
+
+  const { elements } = await load('apps', [release()], undefined, null);
+  assert.equal(
+    elements.get('android-zapstore-version')?.textContent,
+    ' — beta unavailable',
+  );
+});
+
+for (const failure of ['refusal', 'error', 'close'] as const) {
+  test(`Zapstore ${failure} rejects the lookup`, async () => {
     const result = zapstoreRelease(RelaySocket as unknown as typeof WebSocket);
     const rejected = assert.rejects(result);
     const socket = RelaySocket.instance;
-    if (failure === 'empty') socket.message(['EOSE', 'android-version']);
+    if (failure === 'refusal') socket.message(['CLOSED', 'android-version']);
     if (failure === 'error') socket.onerror?.();
     if (failure === 'close') socket.onclose?.();
     await rejected;

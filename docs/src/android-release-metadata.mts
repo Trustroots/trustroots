@@ -71,20 +71,22 @@ export function selectPreview(releases: unknown): PreviewRelease {
 
 export function zapstoreRelease(
   Socket: typeof WebSocket = WebSocket,
-): Promise<ZapstoreVersion> {
+): Promise<ZapstoreVersion | null> {
   return new Promise((resolve, reject) => {
     const socket = new Socket('wss://relay.zapstore.dev');
     let newest: ZapstoreVersion | undefined;
-    const timer = setTimeout(() => finish(), 10000);
+    const timer = setTimeout(
+      () => finish(new Error('Zapstore beta lookup timed out. Please retry.')),
+      10000,
+    );
     function finish(error?: Error) {
       clearTimeout(timer);
       socket.onclose = null;
       socket.onerror = null;
       socket.onmessage = null;
       socket.close();
-      if (error || !newest)
-        reject(error || new Error('No Zapstore beta release found'));
-      else resolve(newest);
+      if (error) reject(error);
+      else resolve(newest ?? null);
     }
     socket.onopen = () =>
       socket.send(
@@ -109,6 +111,10 @@ export function zapstoreRelease(
         const [type, subscription, value] = message as unknown[];
         if (subscription !== 'android-version') return;
         if (type === 'EOSE') return finish();
+        if (type === 'CLOSED')
+          return finish(
+            new Error('Zapstore refused the beta lookup. Please retry.'),
+          );
         if (type !== 'EVENT' || !value || typeof value !== 'object') return;
         const event = value as {
           kind?: number;
