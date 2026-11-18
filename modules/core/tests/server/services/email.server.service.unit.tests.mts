@@ -3,7 +3,9 @@ import sinon from 'sinon';
 import winston from 'winston';
 import config from './../../../../../config/config.mts';
 import agenda from './../../../../../config/lib/agenda.mts';
-import emailService from './../../../server/services/email.server.service.mts';
+import emailService, {
+  sendMessageDigest,
+} from './../../../server/services/email.server.service.mts';
 import { notificationEmail } from './../../../../users/server/services/notification-email.server.service.mts';
 /**
  * What each transactional email sends: sender, subject, SparkPost campaign
@@ -19,6 +21,7 @@ type SentEmail = {
   html?: string;
   replyTo?: Address;
   headers: Record<string, string>;
+  notificationEmail?: Record<string, unknown>;
 };
 
 const site = 'http://' + config.domain;
@@ -397,6 +400,42 @@ describe('Service: email (sent content)', function () {
       messages: [{ content: 'hi' }],
     });
     assert.equal(email.from, defaultFrom);
+  });
+
+  it('sends unread notifications from administrators as Trustroots Support', async function () {
+    const admin = { ...other, roles: ['user', 'admin'] };
+    const email = await send('sendMessagesUnread', admin, member, {
+      notificationCount: 0,
+      messages: [{ content: 'hi' }],
+    });
+    assert.equal(email.from, supportFrom);
+  });
+
+  it('sends a message digest linking each conversation', async function () {
+    await new Promise<void>((resolve, reject) =>
+      sendMessageDigest(
+        member,
+        'weekly',
+        [{ username: 'bo example', displayName: 'Bo Example', count: 2 }],
+        error => (error ? reject(error) : resolve()),
+      ),
+    );
+    assert.equal(sent.length, 1);
+    const email = sent[0];
+    assert.equal(email.subject, 'Unread messages on Trustroots');
+    assert.deepEqual(campaignHeader(email), {
+      options: { transactional: true },
+      campaign_id: 'messages-digest',
+    });
+    assert.deepEqual(email.notificationEmail, {
+      userId: 'member-id',
+      category: 'messages',
+      frequency: 'weekly',
+    });
+    assert.ok(
+      links(email).includes(site + '/messages/bo%20example'),
+      links(email).join('\n'),
+    );
   });
 
   it('defangs external links in unread message previews', async function () {

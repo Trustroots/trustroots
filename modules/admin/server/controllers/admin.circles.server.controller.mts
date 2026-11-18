@@ -9,7 +9,7 @@ import log from '../../../../config/lib/logger.mjs';
 import errorService, {
   type ValidationFailure,
 } from '../../../core/server/services/error.server.service.mts';
-import fileUpload from '../../../core/server/services/file-upload.service.mts';
+import { uploadFile } from '../../../core/server/services/file-upload.service.mts';
 
 import type { TribeRecord } from '../../../tribes/server/models/tribe.server.model.mts';
 
@@ -485,7 +485,7 @@ export const processImageUpload = (
   next: () => void,
 ) => {
   if (!req.is('multipart/form-data')) return next();
-  return fileUpload.uploadFile(
+  return uploadFile(
     ['image/gif', 'image/jpeg', 'image/jpg', 'image/png'],
     'image',
     req,

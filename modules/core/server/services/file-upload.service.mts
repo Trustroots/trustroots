@@ -173,6 +173,3 @@ export const uploadFile = (
     });
   });
 };
-export default {
-  uploadFile,
-};

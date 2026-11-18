@@ -4,7 +4,7 @@ import path from 'node:path';
 import sinon, { type SinonStub } from 'sinon';
 import multerImport from 'multer';
 import config from './../../../../../config/config.mts';
-import uploadService from './../../../server/services/file-upload.service.mts';
+import * as uploadService from './../../../server/services/file-upload.service.mts';
 import errorService from './../../../server/services/error.server.service.mts';
 import 'should';
 import express from 'express';
