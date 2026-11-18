@@ -13,6 +13,7 @@ type DeviceLocationButtonProps = {
   onLocation: (location: DeviceLocation) => void;
   onApproximateLocation?: (location: MapDefaultLocation) => void;
   onRequest?: () => void;
+  showFeedback?: boolean;
 };
 
 const errorMessages: Record<DeviceLocationError, string> = {
@@ -30,6 +31,7 @@ export default function DeviceLocationButton({
   onLocation,
   onApproximateLocation,
   onRequest,
+  showFeedback = true,
 }: DeviceLocationButtonProps) {
   const { t } = useTranslation('core');
   const { status, error, isApproximate, requestLocation } = useDeviceLocation(
@@ -96,14 +98,18 @@ export default function DeviceLocationButton({
             : undefined
         }
       >
-        {statusMessage}
-        {error && onApproximateLocation && (
-          <> {t('Approximate location unavailable.')}</>
-        )}
-        {isApproximate && (
+        {showFeedback && (
           <>
-            {' '}
-            <MapDefaultAttribution />
+            {statusMessage}
+            {error && onApproximateLocation && (
+              <> {t('Approximate location unavailable.')}</>
+            )}
+            {isApproximate && (
+              <>
+                {' '}
+                <MapDefaultAttribution />
+              </>
+            )}
           </>
         )}
       </span>

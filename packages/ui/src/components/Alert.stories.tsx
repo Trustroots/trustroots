@@ -17,7 +17,7 @@ const meta = {
     intent: { control: 'inline-radio', options: alertIntents },
     role: {
       control: 'inline-radio',
-      options: ['alert', 'status', 'note', 'dialog'],
+      options: ['alert', 'status', 'note'],
     },
   },
 } satisfies Meta<typeof Alert>;

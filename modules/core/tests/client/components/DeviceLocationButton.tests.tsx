@@ -312,7 +312,7 @@ it('uses and attributes the approximate location after a device error', async ()
   mockRequestMapDefaultLocation.mockResolvedValue(approximate);
   const onLocation = vi.fn();
   const onApproximateLocation = vi.fn();
-  render(
+  const { rerender } = render(
     <DeviceLocationButton
       onLocation={onLocation}
       onApproximateLocation={onApproximateLocation}
@@ -336,6 +336,18 @@ it('uses and attributes the approximate location after a device error', async ()
     'href',
     '/credits',
   );
+
+  rerender(
+    <DeviceLocationButton
+      onLocation={onLocation}
+      onApproximateLocation={onApproximateLocation}
+      showFeedback={false}
+    />,
+  );
+  expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  expect(
+    screen.queryByRole('link', { name: 'Data credits' }),
+  ).not.toBeInTheDocument();
 });
 
 it('stays pending while the approximate location is loading', async () => {

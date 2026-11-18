@@ -305,9 +305,15 @@ test.describe('approximate initial map locations', () => {
     await expect(map).toHaveAttribute('data-map-latitude', '-12');
     await expect(map).toHaveAttribute('data-map-zoom', '5');
     await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
-    await expect(
-      page.getByRole('button', { name: 'Finish editing and save' }),
-    ).toBeDisabled();
+    const save = page.getByRole('button', { name: 'Finish editing and save' });
+    await expect(save).toBeDisabled();
+    const feedback = page
+      .locator('.device-location-control')
+      .getByRole('status');
+    await expect(feedback).toContainText('Showing an approximate location');
+    await map.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(feedback).toBeEmpty();
+    await expect(save).toBeDisabled();
   });
 
   test('approximate meeting viewport does not choose a location', async ({
@@ -341,11 +347,11 @@ test.describe('approximate initial map locations', () => {
     const map = page.getByTestId('leaflet-map');
     await expect(map).toHaveAttribute('data-map-latitude', '34');
     await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
-    await page
-      .getByRole('button', {
-        name: 'Close information dialog about hosting location map',
-      })
-      .click();
+    const guide = page.getByRole('note').filter({
+      hasText: 'Set your hosting location on the map.',
+    });
+    await expect(guide).toBeVisible();
+    await expect(guide).toContainText('Your exact location stays private.');
     await expect(
       page.getByRole('region', { name: 'Availability' }),
     ).toBeVisible();
@@ -364,8 +370,17 @@ test.describe('approximate initial map locations', () => {
     const save = page.getByRole('button', { name: 'Save and Exit' }).last();
     await expect(save).toBeDisabled();
     await map.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(guide).toHaveCount(0);
     await expect(save).toBeDisabled();
+    const zoomedTile = map
+      .locator('img[src*="tile.openstreetmap.org/7/"]')
+      .first();
+    await expect(zoomedTile).toBeVisible();
     await map.click({ position: { x: 100, y: 100 } });
     await expect(save).toBeEnabled();
+    await expect(zoomedTile).toBeVisible();
+    await expect(
+      map.locator('img[src*="tile.openstreetmap.org/13/"]'),
+    ).toHaveCount(0);
   });
 });

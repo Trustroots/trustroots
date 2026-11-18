@@ -7,6 +7,12 @@
   flex-direction: column-reverse;
   align-items: flex-end;
   max-width: min(320px, calc(100% - 20px));
+  pointer-events: none;
+
+  button,
+  a {
+    pointer-events: auto;
+  }
 
   .device-location-button {
     display: flex;

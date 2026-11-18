@@ -36,10 +36,9 @@ type AlertProps = Omit<ComponentProps<'div'>, 'role'> & {
   /**
    * Required so each caller decides how assistive technology hears it:
    * `alert` for errors that need attention now, `status` for outcomes
-   * announced politely, `note` for static advice. `dialog` is for the one
-   * alert that acts as an overlay guide.
+   * announced politely, `note` for static advice.
    */
-  role: 'alert' | 'status' | 'note' | 'dialog';
+  role: 'alert' | 'status' | 'note';
 };
 
 export function Alert({ intent, className, ...props }: AlertProps) {

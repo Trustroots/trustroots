@@ -22,7 +22,7 @@ test.each(['danger', 'info', 'success', 'warning'] as const)(
   },
 );
 
-test.each(['status', 'note', 'dialog'] as const)(
+test.each(['status', 'note'] as const)(
   'renders the caller-chosen %s role and other attributes',
   role => {
     render(

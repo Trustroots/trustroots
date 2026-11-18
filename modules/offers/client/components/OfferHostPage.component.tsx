@@ -57,7 +57,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
   const savedOffer = useRef(offer);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [firstTimeAround, setFirstTimeAround] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   function hasUnsavedChanges() {
@@ -97,7 +96,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
         if (isMounted) {
           savedOffer.current = nextOffer;
           setOffer(nextOffer);
-          setFirstTimeAround(!offers?.length);
         }
       } catch {
         if (isMounted) {
@@ -450,55 +448,20 @@ export default function OfferHostPage({ user }: HostPageProps) {
             </div>
           </section>
           <section id="location" aria-label="Location">
-            <div className="offer-host-map">
-              {!hasLocation && (
-                <Alert intent="info" role="status">
-                  Search for a place or move the map to set your hosting
-                  location.
-                </Alert>
-              )}
-              {firstTimeAround && (
-                <Alert
-                  aria-describedby="firstTimeAroundDescription"
-                  aria-labelledby="firstTimeAroundLabel"
-                  intent="info"
-                  className="offer-map-guide"
-                  role="dialog"
-                >
-                  <p className="lead" role="document">
-                    <strong id="firstTimeAroundLabel">
-                      Set your hosting location on the map.
-                    </strong>
-                    <br />
-                    <br />
-                    <span id="firstTimeAroundDescription">
-                      Your exact location will not be revealed to others; the
-                      location is publicly randomised by a couple of hundred
-                      metres.
-                    </span>
-                    <br />
-                    <br />
-                    <Button
-                      aria-label="Close information dialog about hosting location map"
-                      intent="info"
-                      size="lg"
-                      onClick={() => setFirstTimeAround(false)}
-                      type="button"
-                    >
-                      Got it!
-                    </Button>
-                  </p>
-                </Alert>
-              )}
-              <OfferLocationEditor
-                location={offer.location}
-                offerStatus={offer.status}
-                offerType="host"
-                onLocationChange={location =>
-                  setOffer(current => ({ ...current, location }))
-                }
-              />
-            </div>
+            <OfferLocationEditor
+              location={offer.location}
+              offerStatus={offer.status}
+              offerType="host"
+              showHostingGuide={!offer._id}
+              onLocationChange={location =>
+                setOffer(current => ({ ...current, location }))
+              }
+            />
+            {!hasLocation && (
+              <Alert intent="info" role="status">
+                Search for a place or move the map to set your hosting location.
+              </Alert>
+            )}
           </section>
           <div className="offer-host-save">{saveButton}</div>
         </div>

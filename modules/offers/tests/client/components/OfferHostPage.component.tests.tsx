@@ -41,8 +41,9 @@ vi.mock(
     __esModule: true,
     default: ({
       onLocationChange,
+      showHostingGuide,
     }: React.ComponentProps<typeof OfferLocationEditor>) => (
-      <div data-testid="location-editor">
+      <div data-testid="location-editor" data-show-guide={showHostingGuide}>
         <button type="button" onClick={() => onLocationChange([52, 4])}>
           Change location
         </button>
@@ -503,9 +504,10 @@ describe('OfferHostPage', () => {
       target: { value: 'Welcome travellers here.' },
     });
 
-    expect(
-      await screen.findByText('Set your hosting location on the map.'),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('location-editor')).toHaveAttribute(
+      'data-show-guide',
+      'true',
+    );
     expect(
       screen.getByText(/Search for a place or move the map/),
     ).toBeInTheDocument();
@@ -693,7 +695,7 @@ describe('OfferHostPage', () => {
     });
   });
 
-  it('closes first-time location guidance and updates the location', async () => {
+  it('allows a new host to choose a location and enable saving immediately', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
@@ -701,7 +703,11 @@ describe('OfferHostPage', () => {
     fireEvent.change(screen.getByPlaceholderText('Write here...'), {
       target: { value: 'A welcoming place to stay.' },
     });
-    fireEvent.click(document.querySelector('.offer-map-guide button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
+    for (const save of screen.getAllByRole('button', {
+      name: 'Save and Exit',
+    })) {
+      expect(save).toBeEnabled();
+    }
   });
 });
