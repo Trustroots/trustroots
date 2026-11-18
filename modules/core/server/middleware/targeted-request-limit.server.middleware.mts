@@ -1,6 +1,6 @@
 import config from '../../../../config/config.mts';
 import { getClientIpAddress as defaultGetClientIpAddress } from '../services/client-ip.server.service.mts';
-import defaultRequestLimitService from '../services/targeted-request-limits.server.service.mts';
+import { consume as defaultConsume } from '../services/targeted-request-limits.server.service.mts';
 type Operation =
   | 'signup'
   | 'support'
@@ -73,8 +73,7 @@ function createLimiter(
     getClientIpAddress = defaultGetClientIpAddress as (
       request: LimitRequest,
     ) => string | undefined,
-    consume = (options: LimitConsumeOptions) =>
-      defaultRequestLimitService.consume(options),
+    consume = defaultConsume,
   }: LimitDependencies = {},
 ) {
   return async function targetedRequestLimit(
