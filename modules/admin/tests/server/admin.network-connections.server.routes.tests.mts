@@ -2,14 +2,12 @@ import type {
   TestExpressApp,
   TestAgent,
 } from '../../../../testutils/server/model-contracts.mts';
-
-const mongoose: typeof import('mongoose') = require('mongoose');
-const request: typeof import('supertest') = require('supertest');
-const assert: typeof import('node:assert').strict =
-  require('node:assert').strict;
-const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-require('should');
+import mongoose from 'mongoose';
+import request from 'supertest';
+import assert from 'node:assert/strict';
+import express from '../../../../config/lib/express.mts';
+import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import 'should';
 
 describe('Admin network connections routes', () => {
   let app: TestExpressApp;

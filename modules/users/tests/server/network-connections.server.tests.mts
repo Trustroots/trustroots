@@ -1,13 +1,12 @@
-const should: typeof import('should') = require('should');
-const {
+import should from 'should';
+import {
   NETWORKS,
   connectionSearchKey,
   connectionUrl,
   currentConnections,
   normaliseIdentifier,
   parseConnectionSearch,
-} =
-  require('../../shared/network-connections.ts') as typeof import('../../shared/network-connections.ts');
+} from '../../shared/network-connections.ts';
 
 describe('network connections shared helpers', function () {
   it('defines the supported network identifiers and labels', function () {

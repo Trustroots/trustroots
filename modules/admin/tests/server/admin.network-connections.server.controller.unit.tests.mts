@@ -1,17 +1,11 @@
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const assert: typeof import('node:assert').strict =
-  require('node:assert').strict;
-require('should');
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import assert from 'node:assert/strict';
+import 'should';
+import '../../../users/server/models/user.server.model.mts';
+import '../../server/models/audit-log.server.model.mts';
+import networkConnections from '../../server/controllers/admin.network-connections.server.controller.mts';
 
-if (!mongoose.models.User) {
-  require('../../../users/server/models/user.server.model.mjs');
-}
-if (!mongoose.models.AuditLog) {
-  require('../../server/models/audit-log.server.model.mts');
-}
-
-const networkConnections: typeof import('../../server/controllers/admin.network-connections.server.controller.mts').default = require('../../server/controllers/admin.network-connections.server.controller.mts');
 const User = mongoose.model('User');
 const AuditLog = mongoose.model('AuditLog');
 

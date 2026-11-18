@@ -1,10 +1,10 @@
-const mongoose: typeof import('mongoose') = require('mongoose');
-const sinon: typeof import('sinon') = require('sinon');
-const should: typeof import('should') = require('should');
-require('../../server/models/user.server.model.mjs');
+import mongoose from 'mongoose';
+import sinon from 'sinon';
+import should from 'should';
+import '../../server/models/user.server.model.mts';
+import * as service from '../../server/services/connection-history.server.service.mts';
 
 const User = mongoose.model('User');
-const service: typeof import('../../server/services/connection-history.server.service.mts') = require('../../server/services/connection-history.server.service.mts');
 type UserDocument =
   import('../../server/models/user.server.types.mts').UserServerDocument;
 type UserRecord =
