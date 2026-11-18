@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from 'express';
 
-import volunteers from './../controllers/pages.volunteers.server.controller.mts';
-import greeters from './../controllers/pages.greeters.server.controller.mts';
+import { list as listVolunteers } from './../controllers/pages.volunteers.server.controller.mts';
+import { list as listGreeters } from './../controllers/pages.greeters.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 
@@ -15,7 +15,7 @@ const routeHandler = <T extends MiddlewareCallback>(
  */
 
 const registerRoutes = (app: Express) => {
-  app.route('/api/volunteers').get(routeHandler(volunteers.list));
-  app.route('/api/greeters').get(routeHandler(greeters.list));
+  app.route('/api/volunteers').get(routeHandler(listVolunteers));
+  app.route('/api/greeters').get(routeHandler(listGreeters));
 };
 export default registerRoutes;

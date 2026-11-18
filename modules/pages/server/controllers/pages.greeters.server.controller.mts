@@ -41,5 +41,3 @@ export const list = (
         }),
     );
 };
-
-export default { list };
