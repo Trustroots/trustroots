@@ -15,7 +15,7 @@ when you open this page. Versions are listed separately for each download channe
 Find travellers, discover circles and share hospitality.
 
 - <a id="android-preview-link" href="{{ site.data.android_releases.download.url }}">Download the latest Android build</a><span id="android-preview-version"> — version {{ site.data.android_releases.download.version }}</span><span id="android-preview-updated"> — updated <time id="android-preview-time" datetime="{{ site.data.android_releases.download.published }}">{{ site.data.android_releases.download.published | date: "%Y-%m-%d %H:%M" }}</time></span>
-- <a href="https://zapstore.dev/apps/org.trustroots.android">Get Android preview updates with Zapstore</a><span id="android-zapstore-version"> — version {{ site.data.android_releases.zapstore.version }}</span>
+- <a href="https://zapstore.dev/apps/org.trustroots.android">Get Android preview updates with Zapstore</a><span id="android-zapstore-version">{% if site.data.android_releases.zapstore.version %} — version {{ site.data.android_releases.zapstore.version }}{% else %} — beta unavailable{% endif %}</span>
 - [Read the iOS build guide](https://github.com/Trustroots/trustroots/blob/main/apps/ios/README.md)
 
 The Android download is a signed preview build, updated from the main branch.
@@ -31,6 +31,7 @@ In Zapstore, select the beta channel for Android preview releases.
   <p>Publication is subject to the <a href="https://zapstore.dev/terms">Zapstore catalogue terms</a>.</p>
   <button id="zapstore-publish" type="button" disabled>Publish preview to Zapstore</button>
   <p id="zapstore-publish-status" role="status" aria-live="polite">Loading the prepared preview…</p>
+  <p><a href="https://zapstore.dev/help/publish#troubleshooting">Troubleshoot a missing listing with zsp</a></p>
 </details>
 
 <script src="/assets/js/apps.mjs" type="module"></script>

@@ -22,6 +22,8 @@ type Options = {
   failUpload?: boolean;
   rejectRelay?: boolean;
   alreadyPublished?: boolean;
+  missingBeta?: boolean;
+  lookupTimeout?: boolean;
   missingReadback?: boolean;
   invalidHash?: boolean;
 };
@@ -47,6 +49,7 @@ async function setup(page: Page, options: Options = {}) {
   const accepted: Event[] = [];
   let uploaded = false;
   let uploads = 0;
+  let lookupRequested = false;
   let readbackRequested = false;
   await page.exposeFunction('testSignEvent', (event: Event) => {
     if (options.rejectSigning) throw new Error('Signing declined');
@@ -92,6 +95,11 @@ async function setup(page: Page, options: Options = {}) {
     socket.onMessage(raw => {
       const message = JSON.parse(String(raw));
       if (message[0] === 'REQ' && message[1] === 'android-version') {
+        lookupRequested = true;
+        if (options.missingBeta) {
+          socket.send(JSON.stringify(['EOSE', 'android-version']));
+          return;
+        }
         socket.send(
           JSON.stringify([
             'EVENT',
@@ -113,7 +121,8 @@ async function setup(page: Page, options: Options = {}) {
             },
           ]),
         );
-        socket.send(JSON.stringify(['EOSE', 'android-version']));
+        if (!options.lookupTimeout)
+          socket.send(JSON.stringify(['EOSE', 'android-version']));
       } else if (message[0] === 'EVENT') {
         const event = message[1] as Event;
         accepted.push(event);
@@ -189,6 +198,7 @@ async function setup(page: Page, options: Options = {}) {
     signed,
     accepted,
     uploads: () => uploads,
+    lookupRequested: () => lookupRequested,
     readbackRequested: () => readbackRequested,
   };
 }
@@ -259,6 +269,40 @@ test('already published preview requests no event signatures', async ({
   await expect(page.getByRole('status')).toHaveText(
     `Version ${candidate.version} is already available in Zapstore.`,
   );
+  expect(result.signed).toHaveLength(0);
+  expect(result.uploads()).toBe(0);
+});
+
+test('missing beta guides the maintainer to zsp without signing or uploading', async ({
+  page,
+}) => {
+  const result = await setup(page, { missingBeta: true });
+  const button = page.getByRole('button', {
+    name: 'Publish preview to Zapstore',
+  });
+  await button.click();
+  await expect(page.getByRole('status')).toContainText('Run zsp check');
+  await expect(
+    page.getByRole('link', { name: 'Troubleshoot a missing listing with zsp' }),
+  ).toBeVisible();
+  await expect(button).toBeEnabled();
+  expect(result.signed).toHaveLength(0);
+  expect(result.uploads()).toBe(0);
+});
+
+test('an incomplete lookup requests a retry even if it received a release', async ({
+  page,
+}) => {
+  await page.clock.install();
+  const result = await setup(page, { lookupTimeout: true });
+  const button = page.getByRole('button', {
+    name: 'Publish preview to Zapstore',
+  });
+  await button.click();
+  await expect.poll(result.lookupRequested).toBe(true);
+  await page.clock.fastForward(11000);
+  await expect(page.getByRole('status')).toContainText('lookup timed out');
+  await expect(button).toBeEnabled();
   expect(result.signed).toHaveLength(0);
   expect(result.uploads()).toBe(0);
 });

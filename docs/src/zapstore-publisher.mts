@@ -223,6 +223,10 @@ export async function publishPreview(
     );
   status('Checking the version already available in Zapstore…');
   const current = await zapstoreRelease(Socket);
+  if (!current)
+    throw new Error(
+      'Zapstore has no Trustroots beta release. Run zsp check to diagnose the listing and publish a beta with zsp before retrying here.',
+    );
   if (current.version === candidate.version) return { alreadyPublished: true };
   if (!/^0\.1-\d{8}-\d{4}$/.test(current.version))
     throw new Error(

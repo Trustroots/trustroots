@@ -1,6 +1,12 @@
 import React from 'react';
 import { readOutreachSource } from '@trustroots/analytics/client';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 
 import '@/config/client/i18n';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
@@ -545,15 +551,14 @@ describe('ProfilePage', () => {
     });
     renderPage();
 
-    expect(
-      await screen.findByRole('button', { name: 'Remove contact' }),
-    ).toBeVisible();
-    fireEvent.mouseEnter(
-      screen.getByRole('button', { name: 'Remove contact' }),
+    const removeContact = await screen.findByRole('button', {
+      name: 'Remove contact',
+    });
+    expect(removeContact).toBeVisible();
+    act(() => removeContact.focus());
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Contacts since January 1, 2024',
     );
-    expect(
-      await screen.findByText('Contacts since January 1, 2024'),
-    ).toBeVisible();
   });
 
   it('shows incoming contact request actions', async () => {
@@ -584,8 +589,10 @@ describe('ProfilePage', () => {
     const confirmedContact = await screen.findByRole('button', {
       name: 'Remove contact',
     });
-    fireEvent.mouseEnter(confirmedContact);
-    expect(await screen.findByText(/Contacts since/)).toBeVisible();
+    act(() => confirmedContact.focus());
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /Contacts since/,
+    );
   });
 
   it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
@@ -601,8 +608,10 @@ describe('ProfilePage', () => {
     const deleteRequest = await screen.findByRole('button', {
       name: 'Delete contact request',
     });
-    fireEvent.mouseEnter(deleteRequest);
-    expect(await screen.findByText(/Request sent/)).toBeVisible();
+    act(() => deleteRequest.focus());
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      /Request sent/,
+    );
   });
 
   it('opens the remove contact modal and clears contact state on success', async () => {
