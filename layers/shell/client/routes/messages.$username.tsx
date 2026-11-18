@@ -2,17 +2,15 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
-import {
-  routeOptions,
-  renderWithUser,
-  type RouteContext,
-} from '../route-options';
+import { useAuth } from '@/modules/core/client/react-app/auth';
+import { routeOptions } from '../route-options';
 
-function ThreadRoute({ user }: RouteContext) {
-  if (!user) return null;
-
+function ThreadRoute() {
+  const { user } = useAuth();
   /* istanbul ignore next -- app settings always provide this default in production. */
   const { profileMinimumLength = 140 } = useSettings();
+
+  if (!user) return null;
 
   return (
     <Thread
@@ -23,5 +21,5 @@ function ThreadRoute({ user }: RouteContext) {
 }
 
 export const Route = createFileRoute('/messages/$username')(
-  routeOptions('/messages/:username', renderWithUser(ThreadRoute)),
+  routeOptions('/messages/:username', ThreadRoute),
 );

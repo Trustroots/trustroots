@@ -32,4 +32,6 @@ export const Route = createRootRouteWithContext<{ user: AuthUser | null }>()({
   ),
   head: () => ({ meta: [{ title: getBootstrapData().title }] }),
   notFoundComponent: NotFoundPage,
+  // Pass every query parameter on, so a query change remounts the page.
+  validateSearch: (search: Record<string, unknown>) => search,
 });

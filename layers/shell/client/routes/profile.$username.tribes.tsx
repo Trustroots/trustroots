@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { childRouteOptions } from '../route-options';
-import { Route as ProfileUsernameRoute } from './profile.$username';
+import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/profile/$username/tribes')(
-  childRouteOptions('/profile/:username/tribes', ProfileUsernameRoute),
+  routeOptions('/profile/:username/tribes'),
 );

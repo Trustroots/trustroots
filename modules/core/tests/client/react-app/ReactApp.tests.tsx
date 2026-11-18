@@ -637,6 +637,15 @@ describe('<ReactApp />', () => {
     }
   });
 
+  it('wraps offer pages in the offer layout', async () => {
+    renderApp('/offer/host', { user: { username: 'member', public: false } });
+
+    expect(await screen.findByText('Do not panic!')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(document.title).toBe('Host travellers - Trustroots'),
+    );
+  });
+
   it('redirects unmatched paths to the not-found route', async () => {
     renderApp('/missing-react-route');
 
