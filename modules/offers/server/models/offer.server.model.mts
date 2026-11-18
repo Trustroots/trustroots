@@ -167,6 +167,10 @@ const OfferSchema = new Schema<OfferServerRecord>({
     enum: ['yes', 'maybe', 'no', 'not-set'],
     default: 'not-set',
   },
+  volunteering: {
+    type: Boolean,
+    default: false,
+  },
   showOnlyInMyCircles: {
     type: Boolean,
     default: false,

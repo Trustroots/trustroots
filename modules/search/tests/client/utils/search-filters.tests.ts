@@ -21,6 +21,8 @@ describe('search-filters utils', () => {
       }),
     ).toBe(4);
     expect(countNarrowingFilters({ types: [{ id: 'host' }] })).toBe(0);
+    expect(countNarrowingFilters({ volunteering: true })).toBe(1);
+    expect(countNarrowingFilters({ volunteering: false })).toBe(0);
   });
 
   beforeEach(() => {
@@ -46,6 +48,14 @@ describe('search-filters utils', () => {
     setSearchFilter('user-1', 'languages', ['en', 'fi']);
 
     expect(getSearchFilters('user-1').languages).toEqual(['en', 'fi']);
+  });
+
+  it('defaults volunteering off and persists enabling and disabling it', () => {
+    expect(getSearchFilters('user-1').volunteering).toBe(false);
+    setSearchFilters('user-1', { volunteering: true });
+    expect(getSearchFilters('user-1').volunteering).toBe(true);
+    setSearchFilter('user-1', 'volunteering', false);
+    expect(getSearchFilters('user-1').volunteering).toBe(false);
   });
 
   it('merges partial filter updates', () => {

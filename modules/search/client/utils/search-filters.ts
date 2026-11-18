@@ -7,6 +7,7 @@ export interface SearchFilters {
   seen: { months: number };
   communityNotes: boolean;
   connectionsOnly?: boolean;
+  volunteering?: boolean;
   [key: string]: unknown;
 }
 
@@ -18,6 +19,7 @@ const DEFAULT_FILTERS: SearchFilters = {
     months: 6,
   },
   communityNotes: true,
+  volunteering: false,
 };
 
 function normalizeTypes(types: SearchType[] = []): string[] {
@@ -30,7 +32,7 @@ function normalizeTypes(types: SearchType[] = []): string[] {
 
 /**
  * How many filters narrow the search beyond the defaults: circles, languages,
- * connections, and leaving out hosts. Used for analytics, which may count filters but not
+ * connections, volunteering, and leaving out hosts. Used for analytics, which may count filters but not
  * know which circles or languages.
  */
 export function countNarrowingFilters(filters: Partial<SearchFilters>): number {
@@ -38,6 +40,7 @@ export function countNarrowingFilters(filters: Partial<SearchFilters>): number {
     Boolean(filters.tribes?.length),
     Boolean(filters.languages?.length),
     filters.connectionsOnly === true,
+    filters.volunteering === true,
     Boolean(filters.types) && !normalizeTypes(filters.types).includes('host'),
   ].filter(Boolean).length;
 }

@@ -28,6 +28,7 @@ interface HostOffer {
   maxGuests: number;
   meetingStatus: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles: boolean;
+  volunteering: boolean;
 }
 
 interface HostPageProps {
@@ -44,6 +45,7 @@ function defaultHostOffer(): HostOffer {
     maxGuests: 1,
     meetingStatus: 'not-set',
     showOnlyInMyCircles: false,
+    volunteering: false,
   };
 }
 
@@ -176,6 +178,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         maxGuests: offer.maxGuests,
         meetingStatus: offer.meetingStatus,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
+        volunteering: offer.volunteering,
         location: offer.location!,
       };
 
@@ -322,8 +325,28 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 </h4>
               </div>
               <div className="panel-body">
+                <label className="tw:mb-3 tw:block">
+                  <input
+                    checked={offer.volunteering}
+                    disabled={isSaving}
+                    onChange={({ target: { checked } }) =>
+                      setOffer(current => ({
+                        ...current,
+                        volunteering: checked,
+                      }))
+                    }
+                    type="checkbox"
+                  />{' '}
+                  Volunteering: can your guests help you with something?
+                </label>
+                <p id="volunteering-description-help">
+                  If you welcome volunteering help, explain in your description
+                  what help you need, whether it is optional or expected, and
+                  what you offer your guests.
+                </p>
                 <textarea
                   aria-labelledby="offerDescriptionLabel"
+                  aria-describedby="volunteering-description-help"
                   aria-required={offer.status !== 'no'}
                   className="form-control offer-description"
                   onChange={({ target: { value } }) =>

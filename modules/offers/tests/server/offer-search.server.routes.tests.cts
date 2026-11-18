@@ -240,6 +240,148 @@ describe('Offer search tests', function () {
     offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
+  it('saves volunteering on hosting offers and preserves it when updates omit it', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    const payload = { type: 'host', status: 'yes', location: [51, 12] };
+    await requestResult(
+      agent
+        .post('/api/offers')
+        .send({ ...payload, volunteering: true })
+        .expect(200),
+    );
+    const own = await requestResult(
+      agent.get(`/api/offers-by/${user1._id}?types=host`).expect(200),
+    );
+    const saved = own.body[0];
+    saved.volunteering.should.equal(true);
+    await requestResult(
+      agent.put(`/api/offers/${saved._id}`).send(payload).expect(200),
+    );
+    const retained = await requestResult(
+      agent.get(`/api/offers/${saved._id}`).expect(200),
+    );
+    retained.body.volunteering.should.equal(true);
+    await requestResult(
+      agent
+        .put(`/api/offers/${saved._id}`)
+        .send({ ...payload, volunteering: false })
+        .expect(200),
+    );
+    const disabled = await requestResult(
+      agent.get(`/api/offers/${saved._id}`).expect(200),
+    );
+    disabled.body.volunteering.should.equal(false);
+
+    for (const volunteering of ['true', 'false', 1, 0, null, [], {}]) {
+      for (const operation of [
+        agent.post('/api/offers'),
+        agent.put(`/api/offers/${saved._id}`),
+      ]) {
+        const invalid = await requestResult(
+          operation.send({ ...payload, volunteering }).expect(400),
+        );
+        invalid.body.message.should.equal('Invalid volunteering option.');
+      }
+    }
+    await requestResult(
+      agent
+        .post('/api/offers')
+        .send({ ...payload, type: 'meet', volunteering: false })
+        .expect(200),
+    );
+    const meetings = await requestResult(
+      agent.get(`/api/offers-by/${user1._id}?types=meet`).expect(200),
+    );
+    for (const operation of [
+      agent.post('/api/offers'),
+      agent.put(`/api/offers/${meetings.body[0]._id}`),
+    ]) {
+      const invalid = await requestResult(
+        operation
+          .send({ ...payload, type: 'meet', volunteering: true })
+          .expect(400),
+      );
+      invalid.body.message.should.equal('Invalid volunteering option.');
+    }
+  });
+
+  it('narrows volunteering search to active eligible hosts and retains ordinary search', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    offer2.volunteering = true;
+    await offer2.save();
+    // A malformed historical meeting record must never match the host filter.
+    offerMeet.volunteering = true;
+    await offerMeet.save();
+    const search = async (filters: Record<string, unknown>) => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify(filters) })
+          .expect(200),
+      );
+      return (response.body.features as OfferFeature[]).map(
+        feature => feature.properties.id,
+      );
+    };
+    (await search({ volunteering: true })).should.eql([offer2._id.toString()]);
+    (await search({ volunteering: true, types: ['meet'] })).should.eql([]);
+    for (const volunteering of [false, 'true', 1]) {
+      (await search({ volunteering })).should.containEql(offer3._id.toString());
+    }
+    await Offer.collection.updateOne(
+      { _id: offer3._id },
+      { $unset: { volunteering: '' } },
+    );
+    (await search({ volunteering: true })).should.eql([offer2._id.toString()]);
+    (await search({})).should.containEql(offer3._id.toString());
+    offer2.status = 'no';
+    offer2.meetingStatus = 'yes';
+    await offer2.save();
+    (await search({ volunteering: true })).should.eql([]);
+    offer2.status = 'maybe';
+    await offer2.save();
+    (await search({ volunteering: true })).should.eql([offer2._id.toString()]);
+    offer2.volunteering = false;
+    await offer2.save();
+    (await search({ volunteering: true })).should.eql([]);
+    (await search({ types: ['host'] })).should.containEql(
+      offer2._id.toString(),
+    );
+  });
+
+  it('keeps volunteering hosts subject to circle and member visibility restrictions', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    offer2.volunteering = true;
+    await offer2.save();
+    const visible = async () => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify({ volunteering: true }) })
+          .expect(200),
+      );
+      return response.body.features.some(
+        (feature: OfferFeature) =>
+          feature.properties.id === offer2._id.toString(),
+      );
+    };
+    (await visible()).should.equal(true);
+    offer2.showOnlyInMyCircles = true;
+    await offer2.save();
+    (await visible()).should.equal(false);
+    offer2.showOnlyInMyCircles = false;
+    await offer2.save();
+    user2.public = false;
+    await user2.save();
+    (await visible()).should.equal(false);
+  });
+
   it('saves non-host meeting availability, shares fuzzy location and filters each state independently', async function () {
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),

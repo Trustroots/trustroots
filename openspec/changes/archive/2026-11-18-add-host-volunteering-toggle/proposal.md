@@ -10,7 +10,7 @@ to add a toggle and search filter while keeping the details in the description.
 Some hosts welcome help from their guests, particularly during longer stays.
 Members currently have to discover these arrangements by reading descriptions.
 
-## Proposed approach
+## What Changes
 
 Keep this close to ordinary hosting:
 
@@ -23,19 +23,18 @@ availability and visibility rules keep their current behaviour. There is no
 separate volunteering offer or additional description. Seasonal dates and
 structured exchange details are outside this initial proposal.
 
-The offers and search modules would need an optional boolean in the hosting API,
-editor support, a visible label on offers and a persisted search filter. Missing
-values mean false; updates omitting the value preserve the saved setting. No
-database backfill is expected. Start with the web and API; native controls can
-follow separately.
+The offers and search modules use an optional `volunteering` boolean in the
+hosting API, editor support, a visible label on offers and a persisted search
+filter. Missing values mean false; updates omitting the value preserve the saved
+setting. No database backfill is required. The web and API are included; native
+controls can follow separately.
 
-## Open questions
+## Initial decisions
 
-- Is the suggested toggle wording clear, and does it distinguish this from
-  volunteering for Trustroots itself?
-- What brief guidance would help hosts explain whether help is optional or
-  expected, especially for longer stays?
-- Is a visible label enough, or should these hosts also have a distinct map colour?
-- Is web and API support a useful first release before native app controls?
-
-This is a discussion proposal only; it does not implement the feature.
+- Use the suggested toggle wording and show an "Offers volunteering" label.
+- Ask hosts to explain whether help is optional or expected and what they offer
+  in their existing description.
+- Keep existing map colours; the label distinguishes volunteering offers.
+- Limit the first release to the web and API.
+- Enabling the search filter includes hosts and narrows results to volunteering
+  hosting offers, while retaining other search and privacy restrictions.

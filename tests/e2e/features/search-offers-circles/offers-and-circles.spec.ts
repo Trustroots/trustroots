@@ -968,6 +968,141 @@ test.describe.serial('search offers and circles feature coverage', () => {
     ).toBeVisible();
   });
 
+  test('hosts can offer volunteering and members can find them with a saved filter', async ({
+    baseURL,
+    browser,
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'offers.host', [
+      'A host can save and remove the volunteering option without changing their description.',
+    ]);
+    annotateFeature(testInfo, 'search.map', [
+      'The volunteering filter persists and finds only eligible volunteering hosts.',
+    ]);
+    const host = createUser({ firstName: 'Rowan', lastName: 'Meadow' });
+    const hostContext = await createIsolatedContext(browser, baseURL);
+    const { _id: hostId } = await registerViaApi(hostContext.request, host);
+    const description =
+      'Short visits are welcome. For longer stays, we can arrange help in the garden.';
+
+    try {
+      await updateUserByUsername(host.username, {
+        $set: { public: true, seen: new Date() },
+      });
+      const hostPage = await hostContext.newPage();
+      await routeRasterMapTiles(hostContext, { includeMapbox: true });
+      await signInViaApi(hostPage, hostContext.request, host);
+      const created = await hostContext.request.post('/api/offers', {
+        data: {
+          type: 'host',
+          status: 'yes',
+          description,
+          location: [52.52, 13.405],
+        },
+      });
+      expect(created.ok()).toBeTruthy();
+      const [offer] = await findOffersByUser(hostId, { type: 'host' });
+      expectPresent(offer);
+      const volunteering = hostPage.getByRole('checkbox', {
+        name: 'Volunteering: can your guests help you with something?',
+      });
+      const saveOffer = async () => {
+        const saved = hostPage.waitForResponse(
+          response =>
+            response.url().endsWith(`/api/offers/${offer._id}`) &&
+            response.request().method() === 'PUT',
+        );
+        await hostPage
+          .getByRole('button', { name: 'Save and Exit' })
+          .last()
+          .click();
+        expect((await saved).ok()).toBeTruthy();
+        await expect(hostPage).toHaveURL(
+          new RegExp(`/profile/${host.username}(?:/overview)?$`),
+        );
+      };
+
+      await hostPage.goto('/offer/host');
+      await expect(volunteering).not.toBeChecked();
+      await volunteering.check();
+      await saveOffer();
+      await hostPage.goto(`/profile/${host.username}/accommodation`);
+      await expect(
+        hostPage.getByText('Offers volunteering', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        hostPage.getByText(description, { exact: true }),
+      ).toBeVisible();
+      await hostPage.goto('/offer/host');
+      await expect(volunteering).toBeChecked();
+
+      await prepareRasterSearchMap(page, context);
+      await seedMapState(page);
+      await page.goto('/search');
+      const filter = page.getByRole('checkbox', {
+        name: 'Offers volunteering',
+      });
+      const volunteeringSearch = () =>
+        page.waitForResponse(response => {
+          const url = new URL(response.url());
+          return (
+            url.pathname === '/api/offers' &&
+            JSON.parse(url.searchParams.get('filters') || '{}').volunteering ===
+              true
+          );
+        });
+      const filtered = volunteeringSearch();
+      await filter.check();
+      const filteredResponse = await filtered;
+      expect(filteredResponse.ok()).toBeTruthy();
+      const filteredIds = (await filteredResponse.json()).features.map(
+        (feature: { properties: { id: string } }) => feature.properties.id,
+      );
+      const [ordinaryHostOffer] = await findOffersByUser(berlin.id, {
+        type: 'host',
+      });
+      expectPresent(ordinaryHostOffer);
+      expect(filteredIds).toContain(offer._id.toString());
+      expect(filteredIds).not.toContain(ordinaryHostOffer._id.toString());
+      await page.getByRole('tab', { name: 'Results' }).click();
+      const hostResult = page
+        .getByRole('list', { name: 'Visible search results' })
+        .getByRole('button', { name: /Rowan Meadow/ });
+      await expect(hostResult).toBeVisible();
+      await hostResult.click();
+      await expect(
+        page.locator('.search-result').getByText('Offers volunteering', {
+          exact: true,
+        }),
+      ).toBeVisible();
+
+      await page.goto('/search');
+      await expect(filter).toBeChecked();
+      await volunteering.uncheck();
+      await saveOffer();
+      const afterRemoval = volunteeringSearch();
+      await page.reload();
+      const afterRemovalResponse = await afterRemoval;
+      expect(afterRemovalResponse.ok()).toBeTruthy();
+      expect(
+        (await afterRemovalResponse.json()).features.map(
+          (feature: { properties: { id: string } }) => feature.properties.id,
+        ),
+      ).not.toContain(offer._id.toString());
+
+      await filter.uncheck();
+      await page.getByRole('tab', { name: 'Results' }).click();
+      await expect(hostResult).toBeVisible();
+    } finally {
+      await hostContext.close();
+      await withE2eDb(async db => {
+        await db.collection('offers').deleteMany({ user: objectId(hostId) });
+        await db.collection('users').deleteOne({ _id: objectId(hostId) });
+      });
+    }
+  });
+
   test('host offers can be created, updated, listed, and removed', async ({
     page,
     request,

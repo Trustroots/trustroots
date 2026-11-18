@@ -34,6 +34,22 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
+  it.each([undefined, false, true])(
+    'labels volunteering only when enabled: %s',
+    volunteering => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ ...hostingOffer, volunteering }}
+        />,
+      );
+      expect(screen.queryByText('Offers volunteering') !== null).toBe(
+        volunteering === true,
+      );
+    },
+  );
+
   it('shows meeting availability separately from the unavailable hosting state', () => {
     render(
       <OffersPresentational

@@ -63,6 +63,16 @@ describe('Offer Model Unit Tests:', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+  it('defaults volunteering to false and persists both hosting choices', async () => {
+    should(offerHost.volunteering).equal(false);
+    should(offerMeet.volunteering).equal(false);
+    for (const volunteering of [true, false]) {
+      offerHost.volunteering = volunteering;
+      await offerHost.save();
+      const saved = await Offer.findById(offerHost._id);
+      should(saved?.volunteering).equal(volunteering);
+    }
+  });
   it('defaults meeting availability to not-set and accepts only explicit choices', async () => {
     should(offerHost.meetingStatus).equal('not-set');
     for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set'] as const) {

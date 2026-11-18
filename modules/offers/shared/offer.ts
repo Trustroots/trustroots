@@ -13,6 +13,7 @@ export interface OfferEditableFields {
   location?: OfferLocation;
   validUntil?: string | number | Date;
   meetingStatus?: MeetingStatus;
+  volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
 }
 
@@ -60,6 +61,7 @@ export interface OfferPayload<Id = string, Timestamp = string> {
   updated?: Timestamp;
   validUntil?: Timestamp;
   meetingStatus?: MeetingStatus;
+  volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
 }
 

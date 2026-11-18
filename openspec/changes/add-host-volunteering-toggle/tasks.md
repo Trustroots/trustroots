@@ -1,7 +1,0 @@
-- [ ] Resolve wording, guidance, map presentation and initial platform scope.
-- [ ] Add the optional hosting toggle to the offer API, editor and displayed offers.
-- [ ] Add a persisted volunteering filter while retaining existing search filters.
-- [ ] Cover defaults, updates, filtering and existing visibility rules in client and server tests.
-- [ ] Add an end-to-end journey from saving the toggle to discovering the host.
-- [ ] Run checks and retain full coverage and existing end-to-end scenarios.
-- [ ] Update the living specification and archive the proposal after implementation.
