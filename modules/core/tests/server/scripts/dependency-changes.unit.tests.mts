@@ -121,8 +121,7 @@ describe('PR dependency summaries', () => {
     );
     assert.match(text, /\+1/);
     assert.match(text, /\*\*🔵 \+1\*\*/);
-    assert.doesNotMatch(text, /<script>/);
-    assert.match(text, /&#124;/);
+    assert.ok(text.includes('&#60;script&#62;&#124;&#96;&#10;'));
     assert.throws(
       () => collectDependencyChanges('invalid', 'head'),
       /commit SHAs/,

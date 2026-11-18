@@ -17,7 +17,7 @@ type Controller = {
   send(req: unknown, res: unknown): Promise<unknown>;
   _test: {
     classifyLocation(location: unknown): 'exact' | 'nearby' | null;
-    candidateKey(userId: unknown, offers: unknown[]): string;
+    candidateKey(userId: string, offers: unknown[]): string;
     compareCandidates(
       a: { match: string; username: string },
       b: { match: string; username: string },
@@ -117,7 +117,7 @@ describe('Location corrections controller', () => {
   describe('classification helpers', () => {
     const classifyLocation = (location: unknown) =>
       controller._test.classifyLocation(location);
-    const candidateKey = (userId: unknown, offers: unknown[]) =>
+    const candidateKey = (userId: string, offers: unknown[]) =>
       controller._test.candidateKey(userId, offers);
     const compareCandidates = (
       a: { match: string; username: string },

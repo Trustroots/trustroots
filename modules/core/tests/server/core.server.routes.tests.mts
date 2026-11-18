@@ -59,20 +59,32 @@ describe('Core CRUD tests', function () {
     const response = await request(app).get('/favicon.ico').expect(200);
     response.headers['content-type'].should.match(/^image\//);
     response.headers['cache-control'].should.equal('public, max-age=31536000');
+    response.body.length.should.be.greaterThan(0);
+
+    await request(app)
+      .get('/favicon.ico')
+      .set('If-Modified-Since', response.headers['last-modified'])
+      .expect(304);
+    await request(app)
+      .get('/favicon.ico')
+      .set('If-None-Match', response.headers.etag)
+      .expect(304);
   });
 
   describe('Content Security Policy Tests:', function () {
-    it('Responses should load Umami analytics', function (done) {
-      agent
+    it('Responses should load Umami analytics', async function () {
+      const response = await agent
         .get('/')
         .expect('Content-Type', /html/)
-        .expect(/https:\/\/1p\.trustroots\.org\/script\.js/)
-        .expect(new RegExp(`data-website-id="${config.umami.websiteId}"`))
-        .expect(/data-do-not-track="true"/)
-        .expect(/data-performance="true"/)
-        .end(function (err) {
-          return done(err);
-        });
+        .expect(200);
+      response.text.should.containEql(
+        'src="https://1p.trustroots.org/script.js"',
+      );
+      response.text.should.containEql(
+        `data-website-id="${config.umami.websiteId}"`,
+      );
+      response.text.should.containEql('data-do-not-track="true"');
+      response.text.should.containEql('data-performance="true"');
     });
   });
   describe('Member-only circle routes', function () {

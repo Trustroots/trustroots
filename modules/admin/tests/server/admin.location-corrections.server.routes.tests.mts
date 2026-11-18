@@ -112,8 +112,9 @@ describe('Welcome team location corrections', () => {
       { _id: 'a', location: exact },
       { _id: 'b', location: nearby },
     ] as never[];
-    candidateKey(member._id, first).should.equal(
-      candidateKey(member._id, first.slice().reverse()),
+    const candidateUserId = new mongoose.Types.ObjectId().toHexString();
+    candidateKey(candidateUserId, first).should.equal(
+      candidateKey(candidateUserId, first.slice().reverse()),
     );
     should(isEligibleRecipient(null, team._id)).not.be.true();
     isEligibleRecipient(
