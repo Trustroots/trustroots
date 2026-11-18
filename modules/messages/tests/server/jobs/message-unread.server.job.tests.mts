@@ -198,6 +198,13 @@ describe('Job: message unread', function () {
     await Message.create({ ..._message, created });
     await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
     jobs.length.should.equal(3);
+    const weekly = required(await User.findById(userToId).lean().exec());
+    required(weekly.weeklyMessageDigestPeriod)
+      .toISOString()
+      .should.equal('2026-01-05T00:00:00.000Z');
+    required(weekly.dailyMessageDigestPeriod)
+      .toISOString()
+      .should.equal('2026-01-06T00:00:00.000Z');
     await Message.create({ ..._message, created });
     await queueMessageDigests(new Date('2026-01-11T12:00:00.000Z'));
     jobs.length.should.equal(3);

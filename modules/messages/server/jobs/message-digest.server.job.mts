@@ -11,16 +11,12 @@ interface UnreadConversation {
   messages: Types.ObjectId[];
 }
 
-const day = 24 * 60 * 60 * 1000;
-
 export async function queueMessageDigests(now = new Date()) {
   const memberFields = 'displayName username roles';
   const User = mongoose.model<UserServerRecord>('User');
   const Message = mongoose.model<MessageRecord>('Message');
-  const today = new Date(Math.floor(now.getTime() / day) * day);
-  const monday = new Date(
-    today.getTime() - ((today.getUTCDay() + 6) % 7) * day,
-  );
+  const today = moment.utc(now).startOf('day').toDate();
+  const monday = moment.utc(now).startOf('isoWeek').toDate();
   const recipients = User.find(
     {
       $or: [
