@@ -259,7 +259,6 @@ internal fun rememberArtworkBitmapState(
             artworkCache.get(cacheKey)?.let(ArtworkBitmapState::Loaded) ?: ArtworkBitmapState.Loading
         }
         produceState<ArtworkBitmapState>(initialState, currentAccessToken) {
-            if (initialState is ArtworkBitmapState.Loaded) return@produceState
             val cached = if (url == null) null else artworkCache.get(cacheKey)
             val bitmap = if (url == null) {
                 null

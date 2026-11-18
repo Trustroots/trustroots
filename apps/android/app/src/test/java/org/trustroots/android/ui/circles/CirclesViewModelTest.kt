@@ -188,6 +188,26 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun slowerVisitCannotReplaceTheSnapshotFromANewerVisit() = withScope { scope ->
+        val earlier = circle("circle-one", "Harbour", 3)
+        val current = earlier.copy(count = 4)
+        val cache = CirclesCache()
+        val earlierMemberships = CompletableDeferred<Result<Set<String>>>()
+        val earlierRepository = FakeCircleRepository(circles = listOf(earlier)).apply {
+            membershipsHandler = { earlierMemberships.await() }
+        }
+        val earlierVisit = CirclesViewModel(earlierRepository, scope, cache)
+        assertTrue(earlierVisit.state.value.isLoading)
+
+        CirclesViewModel(FakeCircleRepository(listOf(current), setOf(current.id)), scope, cache)
+        earlierMemberships.complete(Result.success(emptySet()))
+
+        assertFalse(earlierVisit.state.value.isLoading)
+        assertEquals(listOf(current), cache.circles)
+        assertEquals(setOf(current.id), cache.memberships)
+    }
+
+    @Test
     fun membershipToggleWinsOverAnOlderMembershipSnapshotStillLoading() = withScope { scope ->
         val circle = circle("circle-one", "Harbour", 3)
         val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
