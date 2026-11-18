@@ -8,7 +8,6 @@
     "pnpm-lock.yaml",
     "tsconfig.json",
     "tooling/tsconfig/**",
-    "babel.config.cts",
     "vite.config.mts",
     "vitest.client.config.mts",
     "config/**",
