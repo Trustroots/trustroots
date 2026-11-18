@@ -409,6 +409,11 @@ describe('Service: email (sent content)', function () {
       messages: [{ content: 'hi' }],
     });
     assert.equal(email.from, supportFrom);
+    assert.deepEqual(email.notificationEmail, {
+      userId: 'member-id',
+      category: 'messages',
+      frequency: 'immediate',
+    });
   });
 
   it('sends a message digest linking each conversation', async function () {
