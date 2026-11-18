@@ -130,6 +130,7 @@ describe('Start shell service', function () {
       process.env.NODE_ENV = 'development';
       process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
       delete process.env.TRUSTROOTS_VITE_URL;
+      delete process.env.PORT;
       const fetch = sinon
         .stub(globalThis, 'fetch')
         .resolves(new Response('<html>default</html>'));
@@ -143,6 +144,34 @@ describe('Start shell service', function () {
       } finally {
         fetch.restore();
       }
+    });
+
+    it('expects the Vite development server on the port Vite reads from PORT', async function () {
+      const address = server.address() as { port: number };
+      process.env.NODE_ENV = 'development';
+      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
+      delete process.env.TRUSTROOTS_VITE_URL;
+      process.env.PORT = String(address.port);
+
+      assert.equal(await getStartShell(), '<html>vite shell</html>');
+      assert.deepEqual(requestedPaths, ['/assets/_shell']);
+    });
+
+    it('rejects an error response from the Vite development server', async function () {
+      const address = server.address() as { port: number };
+      process.env.NODE_ENV = 'development';
+      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
+      process.env.TRUSTROOTS_VITE_URL = `http://127.0.0.1:${address.port}`;
+      server.removeAllListeners('request');
+      server.on('request', (_req, res) => {
+        res.statusCode = 500;
+        res.end('Internal Server Error');
+      });
+
+      await assert.rejects(getStartShell(), {
+        message:
+          'The Vite development server answered the shell request with 500',
+      });
     });
 
     it('reads the built shell once outside the Vite development server', async function () {

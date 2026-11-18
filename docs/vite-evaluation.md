@@ -34,8 +34,8 @@ For client-rendered pages Express reads the shell once and adds the page head
 (`react-index.server.view.html`: title, description, social preview tags,
 Umami template and bootstrap data) and the request's CSP nonce on every
 script. In development it fetches the shell from the Vite server on each
-request instead; set `TRUSTROOTS_VITE_URL` when Vite does not run on
-<http://localhost:3000>. Express error pages keep the nunjucks layout and load
+request instead, on the port Vite takes from `PORT` (3000 by default); set
+`TRUSTROOTS_VITE_URL` when Vite runs on another host. Express error pages keep the nunjucks layout and load
 only the stylesheet.
 
 After building Vite, run `pnpm test:vite:production`. This browser smoke test

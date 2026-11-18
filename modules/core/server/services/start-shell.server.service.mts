@@ -29,10 +29,17 @@ function getStartShell(): Promise<string> {
     process.env.TRUSTROOTS_VITE_DEV_SERVER === 'true' &&
     process.env.NODE_ENV === 'development'
   ) {
-    const viteURL = process.env.TRUSTROOTS_VITE_URL || 'http://localhost:3000';
-    return fetch(new URL('/assets/_shell', viteURL)).then(response =>
-      response.text(),
-    );
+    const viteURL =
+      process.env.TRUSTROOTS_VITE_URL ||
+      `http://localhost:${Number(process.env.PORT) || 3000}`;
+    return fetch(new URL('/assets/_shell', viteURL)).then(response => {
+      if (!response.ok) {
+        throw new Error(
+          `The Vite development server answered the shell request with ${response.status}`,
+        );
+      }
+      return response.text();
+    });
   }
   builtShell ??= readBuiltShell();
   return builtShell;
