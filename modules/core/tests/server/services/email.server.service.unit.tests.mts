@@ -152,7 +152,7 @@ describe('Service: email (sent content)', function () {
     },
     {
       name: 'sendConfirmContact',
-      args: [member, other, { _id: 'contact-id' }, '<p>hello</p>', 'hello'],
+      args: [member, other, { _id: 'contact-id' }, '<p>hello</p>'],
       to: { name: 'Bo Example', address: 'bo@example.test' },
       subject: 'Confirm contact',
       campaign: 'confirm-contact',
@@ -529,7 +529,7 @@ describe('Service: email (sent content)', function () {
     }
   });
 
-  it('preserves Trustroots destinations in both versions of an unread message email', async function () {
+  it('preserves Trustroots destinations in the HTML and text of an unread message email', async function () {
     const email = await send('sendMessagesUnread', other, member, {
       notificationCount: 0,
       messages: [
@@ -559,7 +559,7 @@ describe('Service: email (sent content)', function () {
       site + '/safety',
     ]) {
       assert.ok(links(email).includes(destination), destination);
-      assert.ok(email.text.includes(`<${destination}>`), destination);
+      assert.ok(email.text.includes(destination), destination);
     }
   });
 
@@ -627,7 +627,6 @@ describe('Service: email (sent content)', function () {
         {
           username: 'ann',
           urlSupportPlainText: secure + '/support',
-          footerUrlPlainText: secure,
           headerUrl: track(secure + '/', 'email-header'),
           footerUrl: track(secure + '/', 'email-footer'),
           supportUrl: track(secure + '/support', 'email-support'),
@@ -655,7 +654,6 @@ describe('Service: email (sent content)', function () {
         name: 'Ann',
         email: 'ann@example.test',
         subject: 'Fictional subject',
-        skipHtmlTemplate: true,
         request: {
           categoryLabel: 'Other',
           message: 'Call +1 555 666 7777 or visit https://example.test/page',

@@ -1,0 +1,10 @@
+A member reached the messaging recipient limit.
+
+Member: @ada_l
+Admin profile: <http://localhost:3000/admin/user?id=5f0c1a2b3c4d5e6f7a8b9c0d>
+Time (UTC): 2026-11-18T10:00:00.000Z
+Distinct recipients in the current window: 12
+Configured recipient limit: 10
+Configured window (minutes): 60
+
+Sending remains subject to the existing rolling window. Please review the member's profile if needed.

@@ -1,0 +1,14 @@
+Hi Ad'a,
+
+you haven't been hosting for a while, would you like to host again?
+Change your status here http://localhost:3000/offer?utm_source=transactional-email&utm_medium=email&utm_campaign=reactivate-hosts.
+
+Thanks for being part of the Trustroots community!
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=reactivate-hosts&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=reactivate-hosts&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

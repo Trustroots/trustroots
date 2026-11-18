@@ -1,0 +1,21 @@
+Ada & "Bea" <Lov\elace>,
+
+Thank you very much for signing up with us.
+
+Confirm your email address (ada.new@example.test) to complete your Trustroots account.
+
+It's easy — just click on the button below.
+
+Confirm now http://localhost:3000/confirm-email/email-token?signup=true&utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/confirm-email/email-token?signup=true
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH
