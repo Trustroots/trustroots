@@ -1,5 +1,5 @@
 import { RouterProvider } from '@tanstack/react-router';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import useUnreadMessageCountPolling from '@/modules/messages/client/services/use-unread-message-count-polling';
@@ -14,10 +14,15 @@ export default function ReactApp({
   const { user } = useAuth();
   useUnreadMessageCountPolling();
 
-  // Route guards run in beforeLoad, so check them again when the member changes.
+  // Guards and loaders depend on who the member is, so rerun them when that changes.
+  const identity = user && `${user._id}:${user.roles?.join(',')}`;
+  const loadedIdentity = useRef(identity);
   useEffect(() => {
-    void router.invalidate();
-  }, [router, user]);
+    if (identity !== loadedIdentity.current) {
+      loadedIdentity.current = identity;
+      void router.invalidate();
+    }
+  }, [identity, router]);
 
   return <RouterProvider context={{ user }} router={router} />;
 }

@@ -338,12 +338,20 @@ vi.mock('@/modules/search/client/components/SearchMap.component', async () => {
 function UpdateUser() {
   const { user, setUser } = useAuth();
   return (
-    <button
-      type="button"
-      onClick={() => setUser({ ...user, username: 'member-after' })}
-    >
-      Save user changes
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setUser({ ...user, username: 'member-after' })}
+      >
+        Save user changes
+      </button>
+      <button
+        type="button"
+        onClick={() => setUser({ ...user, roles: ['user'] })}
+      >
+        Drop admin role
+      </button>
+    </>
   );
 }
 
@@ -383,6 +391,14 @@ describe('<ReactApp />', () => {
     );
   }
 
+  function recordScrolls() {
+    const paths: string[] = [];
+    vi.mocked(window.scrollTo).mockImplementation(() => {
+      paths.push(window.location.pathname);
+    });
+    return paths;
+  }
+
   it('renders with the router that TanStack Start hydrated', async () => {
     const router = createAppRouter();
     renderApp('/rules', {}, { router });
@@ -417,6 +433,24 @@ describe('<ReactApp />', () => {
     } finally {
       target.remove();
     }
+  });
+
+  it('renders normally when the URL fragment matches no element', async () => {
+    renderApp('/rules#missing-anchor');
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    expect(currentUrl()).toBe('/rules#missing-anchor');
+  });
+
+  it('scrolls to the top when the URL fragment is empty', async () => {
+    renderApp('/rules#');
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({ left: 0, top: 0 }),
+      ),
+    );
   });
 
   it('passes bootstrap user data to route and shell components', async () => {
@@ -476,24 +510,38 @@ describe('<ReactApp />', () => {
     const staticData = RulesRoute.options.staticData as ReactRoutePolicy;
     staticData.headerHidden = true;
     policy.noScrollingTop = true;
-    const link = document.createElement('a');
-    link.href = '/rules';
-    document.body.appendChild(link);
+    const router = createAppRouter();
 
     try {
-      renderApp('/support');
+      renderApp('/support', {}, { router });
       await screen.findByText(/Support route/);
-      vi.mocked(window.scrollTo).mockClear();
-      fireEvent.click(link);
+      const scrolledOn = recordScrolls();
+      await act(() => router.navigate({ to: '/rules' }));
 
       expect(await screen.findByText('Rules route')).toBeInTheDocument();
       expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
-      expect(window.scrollTo).not.toHaveBeenCalled();
+
+      await act(() => router.navigate({ to: '/faq' }));
+      await waitFor(() => expect(scrolledOn).toEqual(['/faq']));
     } finally {
-      link.remove();
       delete staticData.headerHidden;
       delete policy.noScrollingTop;
     }
+  });
+
+  it('keeps the scroll position when only the query changes', async () => {
+    const router = createAppRouter();
+    renderApp('/support', {}, { router });
+    await screen.findByText(/Support route/);
+    const scrolledOn = recordScrolls();
+
+    await act(() =>
+      router.navigate({ to: '/support', search: { report: 'alice' } }),
+    );
+    await act(() => router.navigate({ to: '/rules' }));
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    await waitFor(() => expect(scrolledOn).toEqual(['/rules']));
   });
 
   it('defensively redirects guests away from protected routes', async () => {
@@ -786,5 +834,32 @@ describe('<ReactApp />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save user changes' }));
     await screen.findByText('Support route member-after');
     expect(screen.getByText('Header member-after')).toBeInTheDocument();
+  });
+
+  it('reruns route guards only when the member identity or roles change', async () => {
+    const router = createAppRouter();
+    const invalidate = vi.spyOn(router, 'invalidate');
+    renderApp(
+      '/admin/audit-log',
+      { user: { _id: 'staff-1', roles: ['user', 'admin'], username: 'staff' } },
+      { router },
+    );
+    await screen.findByText('Admin audit route');
+    fireEvent.click(screen.getByRole('button', { name: 'Save user changes' }));
+    await screen.findByText('Header member-after');
+    expect(invalidate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drop admin role' }));
+    await waitFor(() => expect(currentUrl()).toBe('/volunteering'));
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the not-found page for an invalid circle address', async () => {
+    renderApp('/circles/Sample_circle');
+
+    expect(
+      await screen.findByText(/this page cannot be found/i),
+    ).toBeInTheDocument();
+    expect(currentUrl()).toBe('/not-found');
   });
 });

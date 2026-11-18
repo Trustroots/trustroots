@@ -2,7 +2,7 @@ import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 
 import AppHeader from '@/layers/shell/client/components/AppHeader.component';
-import { getReactRoutePolicy } from '@/modules/core/shared/react-route-ownership.mts';
+import { isReactOwnedPath } from '@/modules/core/shared/react-route-ownership.mts';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
@@ -19,17 +19,12 @@ export default function ReactAppShell() {
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       const target = getClientNavigationTarget(event);
-      const targetRoute = target && getReactRoutePolicy(target);
-
-      if (!targetRoute) {
+      if (!target || !isReactOwnedPath(target)) {
         return;
       }
 
       event.preventDefault();
-      void router.navigate({
-        href: target,
-        resetScroll: !targetRoute.noScrollingTop,
-      });
+      void router.navigate({ href: target });
     };
 
     document.addEventListener('click', handleDocumentClick);
