@@ -117,17 +117,12 @@ const legacyCssImports = {
   },
 };
 
-export default defineConfig({
-  base: '/assets/',
-  root,
-  // Express owns public files; copying public/ into public/assets would nest it.
-  publicDir: false,
-  plugins: [
-    legacyJsx,
-    legacyCssImports,
-    tailwindcss(),
-    rtlStylesheetPlugin(),
-    ...tanstackStart({
+function startPlugins() {
+  // Unit tests import the route source without Start's browser HMR code.
+  if (process.env.VITEST === 'true') return [];
+
+  return (
+    tanstackStart({
       srcDirectory: 'layers/shell/client',
       router: {
         entry: 'start-router.tsx',
@@ -151,7 +146,21 @@ export default defineConfig({
             'name' in plugin &&
             plugin.name === 'tanstack-start-core:dev-base-rewrite'
           ),
-      ),
+      )
+  );
+}
+
+export default defineConfig({
+  base: '/assets/',
+  root,
+  // Express owns public files; copying public/ into public/assets would nest it.
+  publicDir: false,
+  plugins: [
+    legacyJsx,
+    legacyCssImports,
+    tailwindcss(),
+    rtlStylesheetPlugin(),
+    ...startPlugins(),
     react(),
   ],
   resolve: {

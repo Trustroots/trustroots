@@ -3,6 +3,8 @@ import { RouterProvider } from '@tanstack/react-router';
 import { renderToString } from 'react-dom/server';
 
 import ShellDocument from '@/layers/shell/client/ShellDocument';
+// Load the real route tree during module setup, before the test timer starts.
+import '@/layers/shell/client/router';
 import {
   createStartRouter,
   getRouter,
