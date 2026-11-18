@@ -174,7 +174,7 @@ describe('Start shell service', function () {
       });
     });
 
-    it('reads the built shell once outside the Vite development server', async function () {
+    it('caches the built shell unless the development server is enabled in development', async function () {
       const address = server.address() as { port: number };
       process.env.NODE_ENV = 'test';
       process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
@@ -183,6 +183,10 @@ describe('Start shell service', function () {
       const shell = getStartShell();
       assert.equal(getStartShell(), shell);
       assert.match(await shell, /^<!DOCTYPE html><html lang="en"><head>/);
+
+      process.env.NODE_ENV = 'development';
+      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'false';
+      assert.equal(await getStartShell(), await shell);
       assert.deepEqual(requestedPaths, []);
     });
   });

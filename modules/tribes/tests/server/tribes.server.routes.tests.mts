@@ -285,8 +285,18 @@ describe('Tribe CRUD tests', function () {
     await agent.get('/api/tribes/discovery/connections').expect(403);
     user.member!.push({ tribe: tribe._id });
     await user.save();
-    const connection = (username: string, fields: Partial<UserRecord>) => ({
-      ..._user,
+    const connectionFixture = (
+      username: string,
+      fields: Partial<
+        Pick<UserRecord, 'seen' | 'member' | 'public' | 'blocked'>
+      >,
+    ) => ({
+      firstName: _user.firstName,
+      lastName: _user.lastName,
+      displayName: _user.displayName,
+      provider: _user.provider,
+      public: true,
+      password: credentials.password,
       username,
       email: `${username}@example.com`,
       ...fields,
@@ -302,17 +312,20 @@ describe('Tribe CRUD tests', function () {
       expired,
       ...otherContacts
     ] = await utils.saveUsersWithCachedPasswords([
-      connection('recentcontact', { seen: daysAgo(2) }),
-      connection('olderhost', {
+      connectionFixture('recentcontact', { seen: daysAgo(2) }),
+      connectionFixture('olderhost', {
         seen: daysAgo(40),
         member: [{ tribe: tribe._id }],
       }),
-      connection('restrictedhost', { seen: daysAgo(12) }),
-      connection('hiddenhost', { public: false, seen: daysAgo(1) }),
-      connection('blockedhost', { blocked: [user._id], seen: daysAgo(1) }),
-      connection('expiredhost', { seen: daysAgo(40) }),
+      connectionFixture('restrictedhost', { seen: daysAgo(12) }),
+      connectionFixture('hiddenhost', { public: false, seen: daysAgo(1) }),
+      connectionFixture('blockedhost', {
+        blocked: [user._id],
+        seen: daysAgo(1),
+      }),
+      connectionFixture('expiredhost', { seen: daysAgo(40) }),
       ...Array.from({ length: 8 }, (_, index) =>
-        connection(`contact${index}`, { seen: daysAgo(13 + index) }),
+        connectionFixture(`contact${index}`, { seen: daysAgo(13 + index) }),
       ),
     ]);
     await Contact.create(
