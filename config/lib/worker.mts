@@ -174,7 +174,7 @@ async function start(options: WorkerOptions, callback?: Done) {
     .then(function () {
       return Promise.all([
         agenda.every('5 minutes', 'check unread messages'),
-        agenda.every('5 minutes', messageDigestJobName),
+        agenda.every('5 minutes', 'queue unread message digests'),
         agenda.every('24 hours', 'daily statistics'),
         agenda.every('0 3 * * *', captureAgendaStorageJob, undefined, {
           timezone: 'UTC',
