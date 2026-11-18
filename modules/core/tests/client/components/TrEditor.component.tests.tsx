@@ -1,11 +1,11 @@
 import type { Mock, MockedFunction } from 'vitest';
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 
-type EditorEventName = 'editableInput' | 'editableKeydownEnter';
+type EditorEventName = 'editableInput';
 type EditorHandler = (...args: unknown[]) => void;
 type EditorFixture = {
   subscribe: Mock<(...args: [EditorEventName, EditorHandler]) => void>;
@@ -85,9 +85,9 @@ describe('<TrEditor />', () => {
     expect(onChange).toHaveBeenCalledWith('<p>hello</p>');
   });
 
-  it('subscribes to ctrl+enter events', () => {
+  it('handles only Ctrl+Enter outside composition, even without a legacy key code', () => {
     const onCtrlEnter = onCtrlEnterMock();
-    const { unmount } = render(
+    const { container, unmount } = render(
       <TrEditor
         id="bio"
         onChange={onChangeMock()}
@@ -96,27 +96,28 @@ describe('<TrEditor />', () => {
       />,
     );
 
-    const editor = mediumEditors[0];
-    editor.trigger('editableKeydownEnter', { ctrlKey: false });
-    editor.trigger('editableKeydownEnter', {
+    const editable = container.querySelector('.tr-editor')!;
+    fireEvent.keyDown(editable, { key: 'Enter' });
+    fireEvent.keyDown(editable, { key: 'm', ctrlKey: true, keyCode: 77 });
+    fireEvent.keyDown(editable, {
+      key: 'Enter',
       ctrlKey: true,
-      preventDefault: vi.fn(),
+      isComposing: true,
     });
+    expect(onCtrlEnter).not.toHaveBeenCalled();
+
+    const shortcut = {
+      key: 'Enter',
+      ctrlKey: true,
+      keyCode: 0,
+    };
+    fireEvent.keyDown(editable, shortcut);
 
     expect(onCtrlEnter).toHaveBeenCalledTimes(1);
-    expect(editor.subscribe).toHaveBeenCalledWith(
-      'editableKeydownEnter',
-      expect.any(Function),
-    );
-    const handler = editor.subscribe.mock.calls.find(
-      ([eventName]) => eventName === 'editableKeydownEnter',
-    )![1];
     unmount();
-    expect(editor.unsubscribe).toHaveBeenCalledWith(
-      'editableKeydownEnter',
-      handler,
-    );
-    expect(editor.destroy).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(editable, shortcut);
+    expect(onCtrlEnter).toHaveBeenCalledTimes(1);
+    expect(mediumEditors[0].destroy).toHaveBeenCalledTimes(1);
   });
 
   it('forwards non-normalized content unchanged', () => {
@@ -200,7 +201,10 @@ describe('<TrEditor />', () => {
       />,
     );
     editor.onChange('<p>Edited text</p>');
-    editor.trigger('editableKeydownEnter', { ctrlKey: true });
+    fireEvent.keyDown(container.querySelector('.tr-editor')!, {
+      key: 'Enter',
+      ctrlKey: true,
+    });
     expect(mediumEditors).toHaveLength(1);
     expect(firstChange).not.toHaveBeenCalled();
     expect(firstEnter).not.toHaveBeenCalled();
@@ -263,14 +267,15 @@ describe('<TrEditor />', () => {
   });
 
   it('uses a no-op ctrl+enter handler by default', () => {
-    render(<TrEditor id="bio" onChange={onChangeMock()} text="initial" />);
+    const { container } = render(
+      <TrEditor id="bio" onChange={onChangeMock()} text="initial" />,
+    );
 
-    const editor = mediumEditors[0];
-    expect(() =>
-      editor.trigger('editableKeydownEnter', {
+    expect(
+      fireEvent.keyDown(container.querySelector('.tr-editor')!, {
+        key: 'Enter',
         ctrlKey: true,
-        preventDefault: vi.fn(),
       }),
-    ).not.toThrow();
+    ).toBe(true);
   });
 });

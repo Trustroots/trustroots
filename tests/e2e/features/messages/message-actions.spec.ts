@@ -291,7 +291,7 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
-  test('desktop reply editor is focused on opening and after sending', async ({
+  test('desktop reply editor keeps focus after sending with Ctrl+Enter', async ({
     page,
     request,
   }, testInfo) => {
@@ -314,10 +314,53 @@ test.describe.serial('message action feature coverage', () => {
         response.request().method() === 'POST' &&
         response.ok(),
     );
-    await page.locator('#messageReplySubmit').click();
+    // Exercise the browser's key value independently of the legacy key code.
+    await editor.dispatchEvent('keydown', { key: 'Enter', ctrlKey: true });
     await sent;
     await expect(page.getByText(replyText)).toBeVisible();
     await expect(editor).toBeFocused();
+  });
+
+  test('message threads stay within the viewport when scrolling', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Messages remain visible while the conversation scrolls vertically.',
+    ]);
+    await page.setViewportSize({ width: 1158, height: 500 });
+    await page.goto(`/messages/${portland.username}`);
+
+    const messages = page.locator('.thread-messages');
+    const bubble = messages.locator('.message-bubble .panel-body').last();
+    await expect(bubble).toBeVisible();
+    await bubble.evaluate(element => {
+      const text = document.createElement('p');
+      text.textContent = 'longunbrokentext'.repeat(250);
+      element.append(text);
+    });
+
+    await expect
+      .poll(() =>
+        messages.evaluate(element => ({
+          vertical: element.scrollHeight > element.clientHeight,
+          horizontal: element.scrollWidth > element.clientWidth,
+        })),
+      )
+      .toEqual({ vertical: true, horizontal: false });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect
+      .poll(() =>
+        messages.evaluate(element => {
+          const { left, right } = element.getBoundingClientRect();
+          return {
+            left,
+            right,
+            horizontal: element.scrollWidth > element.clientWidth,
+          };
+        }),
+      )
+      .toEqual({ left: 0, right: 390, horizontal: false });
   });
 
   test('external message links are plain text while Trustroots links stay clickable', async ({

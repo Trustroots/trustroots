@@ -14,7 +14,7 @@ function MessagesContainer(
   return (
     <div
       {...props}
-      className="thread-messages tw:min-h-0 tw:flex-[1_1_auto] tw:overflow-y-auto tw:pt-[30px] tw:pe-[30px] tw:sm:pe-0"
+      className="thread-messages tw:min-h-0 tw:flex-[1_1_auto] tw:overflow-x-hidden tw:overflow-y-auto tw:overscroll-x-none tw:px-[15px] tw:pt-[30px] tw:sm:px-0"
     />
   );
 }

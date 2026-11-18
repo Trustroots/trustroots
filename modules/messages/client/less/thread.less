@@ -37,11 +37,6 @@
 // Single message in the thread
 .message {
   word-wrap: break-word;
-  @media (min-width: @screen-sm-min) {
-    .panel {
-      .panel-triangle-right();
-    }
-  }
   &.message-sender-other.message-unread {
     .panel {
       border-left-color: @brand-primary;
@@ -59,9 +54,6 @@
     }
     .panel {
       border-color: @offer-hosting-yes;
-      &:before {
-        border-left-color: @offer-hosting-yes;
-      }
     }
   }
 
@@ -72,9 +64,6 @@
     }
     .panel {
       border-color: @offer-hosting-no;
-      &:before {
-        border-left-color: @offer-hosting-no;
-      }
     }
   }
 
@@ -277,6 +266,10 @@
   }
   @media (max-width: @screen-xs-max) {
     max-height: ~'max(100px, 25vh)';
+
+    .message-reply-editor-row {
+      margin-inline: 0;
+    }
   }
 
   // The thread container follows the virtual keyboard inset. Clamp manually

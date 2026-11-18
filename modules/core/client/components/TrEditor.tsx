@@ -191,7 +191,8 @@ export default function TrEditor({
   });
 
   useLayoutEffect(() => {
-    const medium = new MediumEditor(ref.current as HTMLDivElement, {
+    const editable = ref.current!;
+    const medium = new MediumEditor(editable, {
       ...baseOptions,
       placeholder: { hideOnClick: true },
     });
@@ -203,13 +204,16 @@ export default function TrEditor({
       latestEditorText.current = value;
       onChangeRef.current(value);
     };
-    const onEnter = (event: KeyboardEvent) =>
-      event.ctrlKey && onCtrlEnterRef.current(event);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && event.ctrlKey && !event.isComposing) {
+        onCtrlEnterRef.current(event);
+      }
+    };
     medium.subscribe('editableInput', onInput);
-    medium.subscribe('editableKeydownEnter', onEnter);
+    editable.addEventListener('keydown', onKeyDown);
     return () => {
       medium.unsubscribe('editableInput', onInput);
-      medium.unsubscribe('editableKeydownEnter', onEnter);
+      editable.removeEventListener('keydown', onKeyDown);
       medium.destroy();
     };
   }, []);
