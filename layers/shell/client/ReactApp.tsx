@@ -1,3 +1,4 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef } from 'react';
 
@@ -24,5 +25,9 @@ export default function ReactApp({
     }
   }, [identity, router]);
 
-  return <RouterProvider context={{ user }} router={router} />;
+  return (
+    <QueryClientProvider client={router.options.context.queryClient}>
+      <RouterProvider context={{ user }} router={router} />
+    </QueryClientProvider>
+  );
 }

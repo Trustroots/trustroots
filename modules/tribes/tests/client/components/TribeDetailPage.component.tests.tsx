@@ -1,5 +1,6 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithQueries as render } from '@/testutils/client/query.testutil';
 
 import '@/config/client/i18n';
 import TribeDetailPage, {
@@ -512,41 +513,5 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       screen.getByRole('button', { name: 'Ignore circle update' }),
     );
     expect(onMembershipUpdated).toHaveBeenCalledWith({});
-  });
-
-  it('ignores circle results and failures after unmounting', async () => {
-    let resolveCircle!: (circle: TribeSummary) => void;
-    getMock.mockReturnValue(
-      new Promise(resolve => {
-        resolveCircle = resolve;
-      }),
-    );
-    const firstRender = render(
-      <TribeDetailPage
-        circle="hitchhikers"
-        onMembershipUpdated={vi.fn()}
-        user={user}
-      />,
-    );
-    firstRender.unmount();
-    resolveCircle(tribe);
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    let rejectCircle!: (error: Error) => void;
-    getMock.mockReturnValue(
-      new Promise((resolve, reject) => {
-        rejectCircle = reject;
-      }),
-    );
-    const secondRender = render(
-      <TribeDetailPage
-        circle="hitchhikers"
-        onMembershipUpdated={vi.fn()}
-        user={user}
-      />,
-    );
-    secondRender.unmount();
-    rejectCircle(new Error('late failure'));
-    await new Promise(resolve => setTimeout(resolve, 0));
   });
 });

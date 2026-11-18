@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 
 import TribesHeader from './TribesHeader';
 import TribesList from './TribesList';
 import TribesJoinTrustroots from './TribesJoinTrustroots';
 
-import * as api from '../api/tribes.api';
-import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
+import { circlesQuery } from '../api/circle-queries';
+import type { MembershipUpdate } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
 export default function TribesPage({
@@ -15,7 +16,8 @@ export default function TribesPage({
   user?: UserProfile;
   onMembershipUpdated: (data: MembershipUpdate) => void;
 }) {
-  const [tribes, setTribes] = useState<TribeSummary[]>([]);
+  const queryClient = useQueryClient();
+  const { data: tribes = [] } = useQuery(circlesQuery);
 
   const handleMembershipUpdated = (data: MembershipUpdate) => {
     // update the tribes in state
@@ -27,23 +29,14 @@ export default function TribesPage({
      * @TODO extract the mapReplace method to be reusable
      * https://github.com/Trustroots/trustroots/pull/1145#discussion_r368321566
      */
-    setTribes(tribes =>
-      tribes.map(tribe =>
+    queryClient.setQueryData(circlesQuery.queryKey, tribes =>
+      tribes?.map(tribe =>
         data.tribe && tribe._id === data.tribe._id ? data.tribe : tribe,
       ),
     );
 
     onMembershipUpdated(data);
   };
-
-  const fetchData = async () => {
-    const tribes = await api.read();
-    setTribes(tribes);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   return (
     <>

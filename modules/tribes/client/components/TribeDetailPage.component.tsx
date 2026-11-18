@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { Button } from '@trustroots/ui/Button';
-import React, { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -12,7 +13,7 @@ import HitchhikingMap from './HitchhikingMap';
 import RadioCircle from './RadioCircle';
 import TopicChat from './TopicChat';
 import { getCircleBackgroundStyle } from '../utils';
-import * as api from '../api/tribes.api';
+import { circleQuery } from '../api/circle-queries';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
@@ -49,55 +50,30 @@ export default function TribeDetailPage({
   const { t } = useTranslation('circles') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const [tribe, setTribe] = useState<TribeSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMember, setIsMember] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchTribe() {
-      setIsLoading(true);
-
-      try {
-        const data = await api.get(circle);
-
-        if (isMounted) {
-          setTribe(data);
-          setIsMember(Boolean(user?.memberIds?.includes(data._id)));
-        }
-      } catch {
-        if (isMounted) {
-          setTribe(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    fetchTribe();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [circle, user]);
+  const queryClient = useQueryClient();
+  const query = circleQuery(circle);
+  const { data: tribe, isPending } = useQuery(query);
+  const [memberIds, setMemberIds] = useState<string[]>();
+  const isMember = Boolean(
+    tribe && (memberIds ?? user?.memberIds)?.includes(tribe._id),
+  );
 
   const handleMembershipUpdated = (data: MembershipUpdate) => {
     const updatedTribe = data?.tribe;
     if (updatedTribe) {
-      setTribe(current => ({ ...current, ...updatedTribe }));
+      queryClient.setQueryData(query.queryKey, current => ({
+        ...current,
+        ...updatedTribe,
+      }));
     }
-    const updatedTribeId = data?.tribe?._id || tribe?._id;
-    if (data?.user?.memberIds && updatedTribeId) {
-      setIsMember(data.user.memberIds.includes(updatedTribeId));
+    if (data?.user?.memberIds) {
+      setMemberIds(data.user.memberIds);
     }
 
     onMembershipUpdated(data);
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="container container-spacer text-muted text-center">
         <LoadingIndicator />

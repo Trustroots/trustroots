@@ -1,6 +1,7 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import React from 'react';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
+import { circleQuery } from '@/modules/tribes/client/api/circle-queries';
 import useMembershipUpdated from '@/modules/tribes/client/hooks/useMembershipUpdated';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { routeOptions } from '../route-options';
@@ -18,6 +19,10 @@ function TribeDetailPageRoute() {
   );
 }
 
-export const Route = createFileRoute('/circles/$circle')(
-  routeOptions('/circles/:circle', TribeDetailPageRoute),
-);
+export const Route = createFileRoute('/circles/$circle')({
+  ...routeOptions('/circles/:circle', TribeDetailPageRoute),
+  loader: ({ context, params }) =>
+    context.queryClient.prefetchQuery(
+      circleQuery((params as { circle: string }).circle),
+    ),
+});
