@@ -38,8 +38,12 @@ describe('Social preview images', () => {
       const twitterImage = html.match(
         /name="twitter:image"\s+content="([^"]+)"/,
       );
-      assert.equal(twitterImage?.[1], `https://example.test${image}`);
-      assert.equal(html.includes('ucarecdn.com'), false);
+      const openGraphImage = html.match(
+        /property="og:image"\s+content="([^"]+)"/,
+      );
+      const expectedImage = `https://example.test${image}`;
+      assert.equal(twitterImage?.[1], expectedImage);
+      assert.equal(openGraphImage?.[1], expectedImage);
     });
   }
 });

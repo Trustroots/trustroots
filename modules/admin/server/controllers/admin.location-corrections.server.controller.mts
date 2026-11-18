@@ -135,13 +135,13 @@ function classifyLocation(location: unknown): LocationMatch | null {
     : 'nearby';
 }
 
-function candidateKey(userId: unknown, offers: LocationOffer[]): string {
+function candidateKey(userId: string, offers: LocationOffer[]): string {
   const snapshot = offers
     .map(offer => [String(offer._id), ...offer.location].join(':'))
     .sort();
   return crypto
     .createHash('sha256')
-    .update(JSON.stringify([String(userId), snapshot]))
+    .update(JSON.stringify([userId, snapshot]))
     .digest('hex');
 }
 

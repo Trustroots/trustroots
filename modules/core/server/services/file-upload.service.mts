@@ -2,6 +2,7 @@
 import multer from 'multer';
 import os from 'node:os';
 import fs from 'node:fs';
+import path from 'node:path';
 
 // Internal dependencies
 import config from './../../../../config/config.mts';
@@ -79,8 +80,9 @@ export const uploadFile = (
   // - Destination filename will default to 16 bytes of
   //   random data as a hex-string (e.g. a087fda2cf19f341ddaeacacab285acc)
   //   without file-extension.
+  const uploadDirectory = path.resolve(config.uploadTmpDir || os.tmpdir());
   const upload = multer({
-    dest: config.uploadTmpDir || os.tmpdir(),
+    dest: uploadDirectory,
     limits: {
       fileSize: maxUploadSize,
       // max file size in bytes
@@ -144,21 +146,31 @@ export const uploadFile = (
       });
     }
 
-    // `req.file` is placed there by Multer
-    // See `users.server.routes.js` for more details.
+    // Multer places the uploaded file in the configured temporary directory.
     if (!req.file || !req.file.path) {
       return res.status(422).send({
         message: errorService.getErrorMessageByKey('unprocessable-entity'),
       });
     }
 
+    const uploadPath = path.resolve(req.file.path);
+    if (
+      uploadPath === uploadDirectory ||
+      !uploadPath.startsWith(path.join(uploadDirectory, path.sep))
+    ) {
+      return res.status(422).send({
+        message: errorService.getErrorMessageByKey('unprocessable-entity'),
+      });
+    }
+    req.file.path = uploadPath;
+
     // Validate the uploaded file from its magic bytes.
     // This is stronger and more secure than lightweight mime check that Multer does
     // The check is performed with "magic bytes"
     // @link https://www.npmjs.com/package/file-type
-    detectMimeType(req.file.path, (err, result) => {
+    detectMimeType(uploadPath, (err, result) => {
       if (err || !validMimeTypes.includes(result!)) {
-        return fs.unlink(req.file!.path!, () => {
+        return fs.unlink(uploadPath, () => {
           res.status(415).send({
             message: errorService.getErrorMessageByKey(
               'unsupported-media-type',

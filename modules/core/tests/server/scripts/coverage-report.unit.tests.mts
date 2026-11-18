@@ -1,6 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 import 'should';
 // @ts-expect-error CommonJS script exports are invisible to TypeScript
 import { renderReportShell } from './../../../../../scripts/coverage/generate-report.cts';
@@ -65,13 +65,17 @@ describe('Coverage report HTML', () => {
 
   it('emits parseable inline JavaScript', () => {
     const html = renderReportShell(metadata, {});
-    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    const scripts = Array.from(
+      html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script(?:\s[^>]*)?>/gi),
+      ([, source]) => source.trim(),
+    ).filter(Boolean);
 
     scripts.should.not.be.empty();
-    scripts.forEach(scriptMatch => {
-      const script = new vm.Script(scriptMatch[1]);
-      script.should.be.ok();
-    });
+    for (const script of scripts) {
+      execFileSync(process.execPath, ['--check', '--input-type=commonjs'], {
+        input: script,
+      });
+    }
   });
 
   it('includes the CI timing snapshot in the HTML overview', () => {

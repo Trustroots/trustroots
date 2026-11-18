@@ -1,5 +1,6 @@
 import { FEATURED_NOTE_RELAYS } from '../../modules/core/shared/featured-nostr-notes.mts';
 import type { Connection } from 'mongoose';
+import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import _ from 'lodash';
 import config from './../config.mts';
@@ -168,9 +169,16 @@ function initMiddleware(app: Express) {
   // Set Pagination default values (limit, max limit)
   app.use(paginate.middleware(config.limits.paginationLimit, 50));
 
-  app.get('/favicon.ico', (_req, res) =>
-    res.sendFile('favicon.ico', { root: path.resolve('public'), maxAge: '1y' }),
-  );
+  const faviconPath = new URL('../../public/favicon.ico', import.meta.url);
+  const favicon = readFileSync(faviconPath);
+  const faviconLastModified = statSync(faviconPath).mtime.toUTCString();
+  app.get('/favicon.ico', (_req, res) => {
+    res
+      .type('ico')
+      .set('Cache-Control', 'public, max-age=31536000')
+      .set('Last-Modified', faviconLastModified)
+      .send(favicon);
+  });
 
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {

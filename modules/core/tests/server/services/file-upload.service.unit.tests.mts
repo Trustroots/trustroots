@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import sinon, { type SinonStub } from 'sinon';
 import multerImport from 'multer';
 import config from './../../../../../config/config.mts';
@@ -53,12 +54,19 @@ let singleStub: SinonStub;
 
 const temporaryUploadDirectories: string[] = [];
 
-function writeTempFile(buffer: Buffer): string {
-  const directory = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'trustroots-upload-test-'),
-  );
+function createTempDirectory(
+  prefix = path.join(os.tmpdir(), 'trustroots-upload-test-'),
+): string {
+  const directory = fs.mkdtempSync(prefix);
   temporaryUploadDirectories.push(directory);
-  const filePath = path.join(directory, 'upload');
+  return directory;
+}
+
+function writeTempFile(
+  buffer: Buffer,
+  directory = config.uploadTmpDir,
+): string {
+  const filePath = path.join(directory, randomBytes(16).toString('hex'));
   fs.writeFileSync(filePath, buffer);
   return filePath;
 }
@@ -146,6 +154,7 @@ describe('file-upload.service unit tests', () => {
     originalFallback = process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
     originalConfig = { ...config };
     process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+    config.uploadTmpDir = createTempDirectory();
   });
 
   afterEach(() => {
@@ -203,10 +212,6 @@ describe('file-upload.service unit tests', () => {
     const photo = Buffer.alloc(11 * 1024 * 1024);
     Buffer.from([0xff, 0xd8, 0xff]).copy(photo);
     config.maxUploadSize = 10 * 1024 * 1024;
-    config.uploadTmpDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'trustroots-upload-test-'),
-    );
-    temporaryUploadDirectories.push(config.uploadTmpDir);
     app.post('/photo', ((
       req: { file: UploadedFile },
       res: import('express').Response,
@@ -360,6 +365,39 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
+  it('leaves files outside the upload directory untouched', done => {
+    const sibling = createTempDirectory(`${config.uploadTmpDir}-sibling-`);
+    const filePath = writeTempFile(
+      Buffer.from('Sample text document'),
+      sibling,
+    );
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(422);
+      fs.existsSync(filePath).should.equal(true);
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted file')),
+    );
+  });
+
+  it('rejects the configured directory itself as an upload', done => {
+    config.uploadTmpDir = path.parse(config.uploadTmpDir).root;
+    const uploadFile = loadUploadFileWithStubbedMulter({
+      path: config.uploadTmpDir,
+    });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(422);
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted directory')),
+    );
+  });
+
   it('accepts or rejects files by their detected content', async () => {
     const cases: Array<[string, Buffer, boolean, number]> = [
       // [label, bytes, use the fallback detector, expected status]
@@ -392,7 +430,7 @@ describe('file-upload.service unit tests', () => {
 
   it('rejects files when fallback detection cannot read the file', done => {
     const uploadFile = loadUploadFileWithStubbedMulter({
-      path: '/tmp/trustroots-missing-upload-file',
+      path: path.join(config.uploadTmpDir, 'missing-upload-file'),
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
