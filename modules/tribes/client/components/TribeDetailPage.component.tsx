@@ -1,7 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { Button } from '@trustroots/ui/Button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -13,7 +13,7 @@ import HitchhikingMap from './HitchhikingMap';
 import RadioCircle from './RadioCircle';
 import TopicChat from './TopicChat';
 import { getCircleBackgroundStyle } from '../utils';
-import { circleQuery } from '../api/circle-queries';
+import { circleQuery, setCachedCircle } from '../api/circle-queries';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
@@ -51,25 +51,13 @@ export default function TribeDetailPage({
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const queryClient = useQueryClient();
-  const query = circleQuery(circle);
-  const { data: tribe, isPending } = useQuery(query);
-  const [memberIds, setMemberIds] = useState<string[]>();
-  const isMember = Boolean(
-    tribe && (memberIds ?? user?.memberIds)?.includes(tribe._id),
-  );
+  const { data: tribe, isPending } = useQuery(circleQuery(circle, user?._id));
+  const isMember = Boolean(tribe && user?.memberIds?.includes(tribe._id));
 
   const handleMembershipUpdated = (data: MembershipUpdate) => {
-    const updatedTribe = data?.tribe;
-    if (updatedTribe) {
-      queryClient.setQueryData(query.queryKey, current => ({
-        ...current,
-        ...updatedTribe,
-      }));
+    if (data?.tribe) {
+      setCachedCircle(queryClient, data.tribe);
     }
-    if (data?.user?.memberIds) {
-      setMemberIds(data.user.memberIds);
-    }
-
     onMembershipUpdated(data);
   };
 

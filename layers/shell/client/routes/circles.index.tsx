@@ -19,5 +19,7 @@ function TribesPageRoute() {
 
 export const Route = createFileRoute('/circles/')({
   ...routeOptions('/circles', TribesPageRoute),
-  loader: ({ context }) => context.queryClient.prefetchQuery(circlesQuery),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(circlesQuery(context.user?._id));
+  },
 });

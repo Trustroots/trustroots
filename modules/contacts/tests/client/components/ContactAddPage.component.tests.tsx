@@ -1,6 +1,6 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { renderWithQueries } from '@/testutils/client/query.testutil';
 
 import '@/config/client/i18n';
 import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.component';
@@ -71,16 +71,9 @@ const friend: Friend = {
 let analytics = fakeAnalytics();
 
 function renderContactAddPage(pageUser: PageUser = user) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+  return renderWithQueries(<ContactAddPage user={pageUser} />, {
+    wrapper: analytics.wrapper,
   });
-
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <ContactAddPage user={pageUser} />
-    </QueryClientProvider>,
-    { wrapper: analytics.wrapper },
-  );
 }
 
 describe('ContactAddPage', () => {

@@ -5,11 +5,12 @@ import React from 'react';
 /** Render with a fresh QueryClient that, like a failed request, does not retry. */
 export function renderWithQueries(
   ui: React.ReactElement,
-  { wrapper: Wrapper = React.Fragment, ...options }: RenderOptions = {},
+  {
+    wrapper: Wrapper = React.Fragment,
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+    ...options
+  }: RenderOptions & { client?: QueryClient } = {},
 ) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
   return render(ui, {
     ...options,
     wrapper: ({ children }) => (

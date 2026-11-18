@@ -99,6 +99,19 @@ describe('CirclesPage', () => {
     vi.clearAllMocks();
   });
 
+  it('keeps the list when a membership change returns no circle', async () => {
+    api.tribes.join.mockResolvedValue({});
+    const page = await renderAndWaitForTribes({ user: fake.users[0] });
+    const tribe = page.getByText(nestedTextMatch('Forest Folk'), {
+      selector: 'li',
+    });
+
+    fireEvent.click(within(tribe).getByText('Join', { selector: 'button' }));
+
+    await waitFor(() => expect(onMembershipUpdated).toHaveBeenCalledWith({}));
+    expect(tribe).toHaveTextContent('4');
+  });
+
   describe('not signed in', () => {
     beforeEach(async () => {
       page = await renderAndWaitForTribes({ user: undefined });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithQueries as render } from '@/testutils/client/query.testutil';
 
@@ -414,7 +415,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   });
 
   it('shows member discovery for current and newly joined members', async () => {
-    const { rerender } = render(
+    const { unmount } = render(
       <TribeDetailPage
         circle="hitchhikers"
         onMembershipUpdated={vi.fn()}
@@ -424,15 +425,24 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     expect(
       await screen.findByTestId('circle-member-discovery'),
     ).toHaveTextContent('hitchhikers:member-1');
+    unmount();
 
-    rerender(
-      <TribeDetailPage
-        circle="hitchhikers"
-        onMembershipUpdated={vi.fn()}
-        user={{ ...user, _id: 'member-2' }}
-      />,
-    );
+    // Like the app, take the updated member from the membership callback.
+    function JoiningMember() {
+      const [member, setMember] = React.useState({ ...user, _id: 'member-2' });
+      return (
+        <TribeDetailPage
+          circle="hitchhikers"
+          onMembershipUpdated={data => data.user && setMember(data.user)}
+          user={member}
+        />
+      );
+    }
+    render(<JoiningMember />);
     await screen.findByRole('heading', { name: 'Hitchhikers' });
+    expect(
+      screen.queryByTestId('circle-member-discovery'),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'Join as circle member' }),
     );
@@ -513,5 +523,17 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       screen.getByRole('button', { name: 'Ignore circle update' }),
     );
     expect(onMembershipUpdated).toHaveBeenCalledWith({});
+  });
+
+  it('shows a missing circle without retrying the request', async () => {
+    getMock.mockRejectedValue(new Error('Not found'));
+    render(<TribeDetailPage circle="missing" onMembershipUpdated={vi.fn()} />, {
+      client: new QueryClient(),
+    });
+
+    expect(
+      await screen.findByText('This circle is not here...'),
+    ).toBeInTheDocument();
+    expect(getMock).toHaveBeenCalledTimes(1);
   });
 });

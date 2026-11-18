@@ -659,6 +659,22 @@ describe('<ReactApp />', () => {
     expect(tribesApi.read).toHaveBeenCalledTimes(1);
   });
 
+  it('loads a circle in its route loader', async () => {
+    vi.mocked(tribesApi.get).mockResolvedValue({
+      _id: 'circle-1',
+      slug: 'walkers',
+      label: 'Walkers',
+      count: 2,
+    });
+    renderApp('/circles/walkers');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Walkers' }),
+    ).toBeInTheDocument();
+    expect(tribesApi.get).toHaveBeenCalledTimes(1);
+    expect(tribesApi.get).toHaveBeenCalledWith('walkers');
+  });
+
   it('redirects unmatched paths to the not-found route', async () => {
     renderApp('/missing-react-route');
 

@@ -21,8 +21,10 @@ function TribeDetailPageRoute() {
 
 export const Route = createFileRoute('/circles/$circle')({
   ...routeOptions('/circles/:circle', TribeDetailPageRoute),
-  loader: ({ context, params }) =>
-    context.queryClient.prefetchQuery(
-      circleQuery((params as { circle: string }).circle),
-    ),
+  // Fetch early without blocking navigation; the page shows its own loading.
+  loader: ({ context, params }) => {
+    void context.queryClient.prefetchQuery(
+      circleQuery((params as { circle: string }).circle, context.user?._id),
+    );
+  },
 });
