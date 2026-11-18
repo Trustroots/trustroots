@@ -35,14 +35,14 @@ describe('Start shell service', function () {
 
     it('keeps existing nonces, including those in the head', function () {
       const html = renderStartShell(
-        '<head></head><script nonce="kept"></script>',
+        '<head></head><script nonce="kept"></script><script type="module" nonce="late"></script>',
         '<script nonce="head">var user = null;</script>',
         'abc',
       );
 
       assert.equal(
         html,
-        '<head><script nonce="head">var user = null;</script></head><script nonce="kept"></script>',
+        '<head><script nonce="head">var user = null;</script></head><script nonce="kept"></script><script type="module" nonce="late"></script>',
       );
     });
 
