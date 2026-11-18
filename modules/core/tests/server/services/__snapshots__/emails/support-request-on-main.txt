@@ -1,0 +1,17 @@
+Category: Other
+
+Help
+
+
+-- 
+From username: 
+Email: 
+Authenticated: 
+Browser: 
+Code version: 2026-11-01 10:00 UTC (abc1234)
+
+Commit: <https://example.test/commit/abc1234>
+
+ID: 
+Signup confirmed: 
+Signup date:

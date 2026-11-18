@@ -1,0 +1,18 @@
+Hello Ada & "Bea" <Lov\elace>!
+
+You have one unread message from Ben Fictional http://localhost:3000/profile/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-unread&utm_content=profile at Trustroots.
+
+Hi there & welcome!
+See https://www.trustroots.org/faq and https[:]//elsewhere[.]example[.]test/x.
+
+Safety note: Trustroots will never ask you for your ID, credit card details, or payment of any kind.
+
+Reply to Ben Fictional http://localhost:3000/messages/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-unread&utm_content=reply-to
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-unread&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-unread&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

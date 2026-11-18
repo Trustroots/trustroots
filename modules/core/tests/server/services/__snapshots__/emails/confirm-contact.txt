@@ -1,0 +1,21 @@
+Hey Ada & "Bea" <Lov\elace>!
+
+Ben Fictional http://localhost:3000/profile/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-contact&utm_content=profile would like to connect with you on Trustroots.
+
+Hello friend
+
+To confirm or discard this connection, please click the link below.
+
+See connection http://localhost:3000/contact-confirm/contact-1?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-contact&utm_content=confirm-contact
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/contact-confirm/contact-1
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-contact&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-contact&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

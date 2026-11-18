@@ -5,8 +5,6 @@ import {
 import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
 import _ from 'lodash';
-import path from 'path';
-import juice from 'juice';
 import moment from 'moment';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
@@ -14,7 +12,7 @@ import sanitizeHtml from 'sanitize-html';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
 import analyticsHandler from './../controllers/analytics.server.controller.mts';
 import textService from './text.server.service.mts';
-import renderModule from './../../../../config/lib/render.mts';
+import { renderEmail as renderTemplate } from '@trustroots/emails';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
 import logModule from '@trustroots/logger';
@@ -52,13 +50,11 @@ export interface EmailTemplateParams extends Record<string, unknown> {
   from?: string | { name?: string; address?: string };
   replyTo?: string | { name?: string; address?: string };
   subject?: string;
-  skipHtmlTemplate?: unknown;
   notificationEmail?: NotificationEmail;
   sparkpostCampaign?: string;
 }
 interface BaseEmailUrls extends Record<string, unknown> {
   urlSupportPlainText: string;
-  footerUrlPlainText: string;
   headerUrl: string;
   footerUrl: string;
   supportUrl: string;
@@ -74,11 +70,6 @@ export interface RenderedEmail {
   headers?: Record<string, string>;
   notificationEmail?: NotificationEmail;
 }
-const render = renderModule as (
-  template: string,
-  params: EmailTemplateParams,
-  callback: (error: Error | null, output: string) => void,
-) => void;
 const agenda = agendaModule as import('agenda').Agenda;
 const log = logModule as (
   level: string,
@@ -148,28 +139,25 @@ function messagePreview(content: string) {
         : _.escape(defangUrl(he.decode(match.getMatchedText())));
     },
   });
-  function format(asHtml: boolean) {
-    // The sanitiser and autolinker above produce anchors with at most one attribute.
-    return linked.replace(
-      /<a(?: href="([^"]*)")?>([\s\S]*?)<\/a>/g,
-      (_anchor, href: string | undefined, label: string) => {
-        if (href === undefined) {
-          return autolinker.link(label, {
-            email: false,
-            phone: false,
-            replaceFn: match =>
-              _.escape(defangUrl(he.decode(match.getMatchedText()))),
-          });
-        }
-        const decoded = he.decode(href);
-        const destination = trustrootsLink(decoded, url);
-        if (!destination) return _.escape(defangUrl(decoded));
-        const escaped = _.escape(destination.href);
-        return asHtml ? `<a href="${escaped}">${label}</a>` : escaped;
-      },
-    );
-  }
-  return { content: format(true), textContent: format(false) };
+  // The sanitiser and autolinker above produce anchors with at most one attribute.
+  const html = linked.replace(
+    /<a(?: href="([^"]*)")?>([\s\S]*?)<\/a>/g,
+    (_anchor, href: string | undefined, label: string) => {
+      if (href === undefined) {
+        return autolinker.link(label, {
+          email: false,
+          phone: false,
+          replaceFn: match =>
+            _.escape(defangUrl(he.decode(match.getMatchedText()))),
+        });
+      }
+      const decoded = he.decode(href);
+      const destination = trustrootsLink(decoded, url);
+      if (!destination) return _.escape(defangUrl(decoded));
+      return `<a href="${_.escape(destination.href)}">${label}</a>`;
+    },
+  );
+  return { content: html };
 }
 function sendMessagesUnread(
   userFrom: MailUser,
@@ -218,14 +206,12 @@ function sendMessagesUnread(
     ),
     userFromName: userFrom.displayName,
     userToName: userTo.displayName,
-    urlReplyPlainText: urlReply,
     urlReply: analyticsHandler.appendUTMParams(urlReply, {
       source: 'transactional-email',
       medium: 'email',
       campaign,
       content: 'reply-to',
     }),
-    urlUserFromProfilePlainText: urlUserFromProfile,
     urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
       source: 'transactional-email',
       medium: 'email',
@@ -269,7 +255,6 @@ function sendConfirmContact(
   friend: MailUser,
   contact: { _id?: unknown },
   messageHTML: string | false,
-  messageText: string | false,
   callback: MailCallback,
 ) {
   if (
@@ -286,9 +271,7 @@ function sendConfirmContact(
     name: friend.displayName,
     email: friend.email,
     messageHTML,
-    messageText,
     meName: user.displayName,
-    meURLPlainText: meURL,
     meURL: analyticsHandler.appendUTMParams(meURL, {
       source: 'transactional-email',
       medium: 'email',
@@ -373,7 +356,6 @@ function sendResetPasswordConfirm(user: MailUser, callback: MailCallback) {
     email: user.email,
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
-    urlResetPasswordPlainText: urlResetPassword,
     urlResetPassword: analyticsHandler.appendUTMParams(urlResetPassword, {
       source: 'transactional-email',
       medium: 'email',
@@ -433,7 +415,6 @@ function sendFlaggedSignupAlert(
     memberName: user.displayName,
     username: user.username,
     adminProfileUrl: url + '/admin/user?id=' + user._id,
-    skipHtmlTemplate: true,
     sparkpostCampaign: 'flagged-signup-alert',
   };
   service.renderEmailAndSend('flagged-signup-alert', params, callback);
@@ -467,8 +448,6 @@ function sendSupportRequest(
       ...supportRequest,
       categoryLabel,
     },
-    skipHtmlTemplate: true,
-    // Don't render html template for this email
     sparkpostCampaign: 'support-request',
   };
   service.renderEmailAndSend('support-request', params, callback);
@@ -529,9 +508,7 @@ function sendReactivateHosts(user: MailUser, callback: MailCallback) {
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
-    urlOfferPlainText: urlOffer,
     urlOffer: analyticsHandler.appendUTMParams(urlOffer, utmParams),
-    urlSurveyPlainText: config.surveyReactivateHosts || false,
     urlSurvey: config.surveyReactivateHosts
       ? analyticsHandler.appendUTMParams(
           config.surveyReactivateHosts,
@@ -667,7 +644,6 @@ function sendExperienceNotificationFirst(
     // data needed for link to profile in footer
     userFrom,
     userTo,
-    userFromProfileUrlPlainText: userFromProfileUrl,
     userFromProfileUrl: analyticsHandler.appendUTMParams(userFromProfileUrl, {
       source: 'transactional-email',
       medium: 'email',
@@ -710,7 +686,6 @@ function sendExperienceNotificationSecond(
     // data needed for link to profile in footer
     userFrom,
     userTo,
-    userFromProfileUrlPlainText: userFromProfileUrl,
     userFromProfileUrl: analyticsHandler.appendUTMParams(userFromProfileUrl, {
       source: 'transactional-email',
       medium: 'email',
@@ -735,7 +710,7 @@ function sendExperienceNotificationSecond(
 /**
  * Add several parameters to be used to render transactional emails
  * These variables are used by email base template:
- * `modules/core/server/views/email-templates/email.server.view.html`
+ * `packages/emails/src/components/layout.tsx`
  *
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
@@ -756,7 +731,6 @@ function addEmailBaseTemplateParams(input: unknown): Record<string, unknown> {
   const params = input as Record<string, unknown>;
   const baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
   params.urlSupportPlainText = baseUrl + '/support';
-  params.footerUrlPlainText = baseUrl;
   const buildAnalyticsUrl = function (url: string, content: string) {
     return analyticsHandler.appendUTMParams(url, {
       source: 'transactional-email',
@@ -784,51 +758,26 @@ function renderEmail(
   params: EmailTemplateParams,
   callback: MailCallback<RenderedEmail>,
 ) {
-  const templatePaths: Record<string, string> = {};
-
-  // `./modules/core/server/views/email-templates-text`
-  templatePaths.text = path.join(
-    'email-templates-text',
-    templateName + '.server.view.html',
-  );
-  if (!params.skipHtmlTemplate) {
-    // `./modules/core/server/views/email-templates`
-    templatePaths.html = path.join(
-      'email-templates',
-      templateName + '.server.view.html',
-    );
-  }
-
-  async function renderTemplates(): Promise<Record<string, string>> {
-    const result: Record<string, string> = {};
-    for (const [key, templatePath] of Object.entries(templatePaths)) {
-      result[key] = await new Promise<string>((resolve, reject) => {
-        render(templatePath, params, (err, rendered) => {
-          if (err) reject(err);
-          else resolve(rendered!);
-        });
-      });
-    }
-    return result;
-  }
-  renderTemplates().then(
+  renderTemplate(templateName, params).then(
     result => {
-      // Clean out html entities (like &gt;) from plain text emails
-      result.text = textService.plainText(result.text);
+      if (!result.html) {
+        // Clean out html entities (like &gt;) from plain text emails
+        result.text = textService.plainText(result.text);
 
-      // Wrap links with `<` and `>` from plain text emails
-      result.text = autolinker.link(result.text, {
-        urls: true,
-        email: false,
-        phone: false,
-        mention: false,
-        hashtag: false,
-        // Stryker disable next-line BooleanLiteral: replaceFn writes the full href, so the anchor text this strips is never used
-        stripPrefix: false,
-        replaceFn(match) {
-          return '<' + match.getAnchorHref() + '>';
-        },
-      });
+        // Wrap links with `<` and `>` from plain text emails
+        result.text = autolinker.link(result.text, {
+          urls: true,
+          email: false,
+          phone: false,
+          mention: false,
+          hashtag: false,
+          // Stryker disable next-line BooleanLiteral: replaceFn writes the full href, so the anchor text this strips is never used
+          stripPrefix: false,
+          replaceFn(match) {
+            return '<' + match.getAnchorHref() + '>';
+          },
+        });
+      }
       const email: RenderedEmail = {
         to: {
           name: params.name,
@@ -840,10 +789,7 @@ function renderEmail(
       };
       if (params.notificationEmail)
         email.notificationEmail = params.notificationEmail;
-      if (result.html) {
-        // Inline CSS with Juice
-        email.html = juice(result.html);
-      }
+      if (result.html) email.html = result.html;
       if (params.replyTo) {
         email.replyTo = params.replyTo;
       }

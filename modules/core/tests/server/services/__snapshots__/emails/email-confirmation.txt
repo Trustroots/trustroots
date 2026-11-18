@@ -1,0 +1,19 @@
+Hey Ada & "Bea" <Lov\elace>!
+
+You initiated an email change at Trustroots. Please click the confirmation link below to confirm your new email address: ada.new@example.test
+
+If you didn't make this request, you can ignore this email.
+
+Confirm http://localhost:3000/confirm-email/email-token?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/confirm-email/email-token
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=confirm-email&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

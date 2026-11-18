@@ -180,8 +180,8 @@ describe('Job: message unread', function () {
     await Promise.all([queueMessageDigests(now), queueMessageDigests(now)]);
     jobs.length.should.equal(1);
     jobs[0].data.to.address.should.equal(_userTo.email);
-    jobs[0].data.text.should.containEql('FullFrom NameFrom (1 unread)');
-    jobs[0].data.text.should.containEql('Other Sender (1 unread)');
+    jobs[0].data.text.should.match(/FullFrom NameFrom \S+ \(1 unread\)/);
+    jobs[0].data.text.should.match(/Other Sender \S+ \(1 unread\)/);
     jobs[0].data.text.should.containEql('/email/unsubscribe/');
 
     await Message.create({ ..._message, created });
