@@ -73,6 +73,7 @@ describe('connection history backfill service', function () {
     should(filter.extSitesBW).equal('FormerMember');
     should(filter.extSitesServas).equal('household/Family');
     should(filter.extSitesCS).deepEqual({ $exists: false });
+    should(filter.nostrNpub).deepEqual({ $exists: false });
     should(filter.additionalProvidersData).deepEqual({
       github: { login: 'OldLogin' },
     });
