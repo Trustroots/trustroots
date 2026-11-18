@@ -50,14 +50,24 @@ test.describe('approximate initial map locations', () => {
       });
       await page.goto('/search');
       const map = page.getByTestId('leaflet-search-map');
-      await expect(map).toHaveAttribute(
-        'data-map-latitude',
-        state === 'recent' ? '12' : '34',
-      );
-      await expect(map).toHaveAttribute(
-        'data-map-longitude',
-        state === 'recent' ? '23' : '-17',
-      );
+      const [latitude, longitude, zoom] =
+        state === 'recent' ? [12, 23, 7] : [34, -17, 6];
+      // A resize can report Leaflet's pixel-rounded centre. Allow one pixel
+      // of movement at the expected zoom while checking which location won.
+      const onePixelInDegrees = 360 / (256 * 2 ** zoom);
+      await expect
+        .poll(async () => {
+          const [mapLatitude, mapLongitude] = await Promise.all([
+            map.getAttribute('data-map-latitude'),
+            map.getAttribute('data-map-longitude'),
+          ]);
+          return Math.max(
+            Math.abs(Number(mapLatitude) - latitude),
+            Math.abs(Number(mapLongitude) - longitude),
+          );
+        })
+        .toBeLessThan(onePixelInDegrees);
+      await expect(map).toHaveAttribute('data-map-zoom', String(zoom));
       expect(lookups).toBe(state === 'recent' ? 0 : 1);
       if (state !== 'recent') {
         expect(
