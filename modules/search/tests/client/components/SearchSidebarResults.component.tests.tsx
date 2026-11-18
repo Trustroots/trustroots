@@ -42,6 +42,31 @@ function noteEvent(partial: {
 }
 
 describe('<SearchSidebarResults />', () => {
+  it.each([undefined, false, true])(
+    'shows a volunteering badge in the result list and selected host: %s',
+    volunteering => {
+      const offer: SearchResultOffer = {
+        _id: 'host-volunteering',
+        type: 'host',
+        status: 'yes',
+        user: { username: 'fictional-host' },
+        volunteering,
+      };
+      const { rerender } = render(
+        <SearchSidebarResults offers={[offer]} onCloseSidebar={jest.fn()} />,
+      );
+      expect(
+        screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
+      ).toBe(volunteering === true ? 'badge' : undefined);
+      rerender(
+        <SearchSidebarResults offer={offer} onCloseSidebar={jest.fn()} />,
+      );
+      expect(
+        screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
+      ).toBe(volunteering === true ? 'badge' : undefined);
+    },
+  );
+
   beforeEach(() => {
     mockLanguagesData = { en: 'English', fi: 'Finnish' };
   });

@@ -70,6 +70,41 @@ const hostOffer: OfferPayload = {
 const analytics = fakeAnalytics();
 
 describe('OfferHostPage', () => {
+  it.each([undefined, false, true])(
+    'loads and saves the volunteering toggle: %s',
+    async volunteering => {
+      offersApiMock.getOffers.mockResolvedValue([
+        { ...hostOffer, volunteering },
+      ]);
+      offersApiMock.updateOffer.mockResolvedValue({
+        message: 'Offer updated.',
+      });
+      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+      const toggle = await screen.findByRole('checkbox', {
+        name: 'Volunteering: can your guests help you with something?',
+      });
+      if (volunteering === true) {
+        expect(toggle).toBeChecked();
+      } else {
+        expect(toggle).not.toBeChecked();
+      }
+      expect(
+        screen.getByText(/whether it is optional or expected/),
+      ).toBeVisible();
+      fireEvent.click(toggle);
+      expect(hasUnsavedChanges()).toBe(true);
+      fireEvent.submit(document.querySelector('form')!);
+
+      await waitFor(() =>
+        expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+          'offer-1',
+          expect.objectContaining({ volunteering: volunteering !== true }),
+        ),
+      );
+    },
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');
@@ -338,6 +373,7 @@ describe('OfferHostPage', () => {
           status: 'no',
           meetingStatus: 'yes',
           location: [52, 4],
+          volunteering: false,
         }),
       ),
     );

@@ -20,5 +20,6 @@ export interface OfferServerRecord {
   user?: Types.ObjectId;
   reactivateReminderSent?: Date;
   meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
+  volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
 }

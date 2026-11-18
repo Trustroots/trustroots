@@ -34,6 +34,22 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
+  it.each([undefined, false, true])(
+    'shows a volunteering badge only when enabled: %s',
+    volunteering => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ ...hostingOffer, volunteering }}
+        />,
+      );
+      expect(
+        screen.queryByText('Offers volunteering')?.getAttribute('data-slot'),
+      ).toBe(volunteering === true ? 'badge' : undefined);
+    },
+  );
+
   it('shows meeting availability separately from the unavailable hosting state', () => {
     render(
       <OffersPresentational

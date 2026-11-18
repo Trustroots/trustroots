@@ -68,6 +68,7 @@ export interface OfferEndpointDocument {
   updated?: Date;
   validUntil?: Date;
   meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
+  volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
   set(path: string, value: unknown): void;
   save(): Promise<unknown>;
@@ -87,6 +88,7 @@ export interface OfferReadDocument {
   updated?: Date;
   validUntil?: Date;
   meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
+  volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
   toObject(): OfferSanitiseRecord;
 }
@@ -106,6 +108,7 @@ interface OfferRequestDocument {
   updated?: unknown;
   validUntil?: unknown;
   showOnlyInMyCircles?: unknown;
+  volunteering?: unknown;
   set?: OfferEndpointDocument['set'];
   save?: OfferEndpointDocument['save'];
   toObject?: () => unknown;

@@ -1,10 +1,11 @@
 // External dependencies
 import { withTranslation } from 'react-i18next';
-import React, { Component } from 'react';
+import React from 'react';
 import type { Offer } from '../api/offers.api';
 
 // Internal dependencies
 import '@/config/client/i18n';
+import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
 import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import type { MeetingStatus } from '../../shared/offer';
@@ -23,36 +24,14 @@ interface OffersPresentationalProps {
   t: (key: string, options?: Record<string, unknown>) => string;
 }
 
-interface OffersPresentationalState {
-  isLoading: boolean;
-  isMobile: boolean;
-}
-
-export class OffersPresentational extends Component<
-  OffersPresentationalProps,
-  OffersPresentationalState
-> {
-  constructor(props: OffersPresentationalProps) {
-    super(props);
-    this.renderOffer = this.renderOffer.bind(this);
-    this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
-    this.state = {
-      isLoading: true,
-      isMobile:
-        window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
-        ((window as Window & { isNativeMobileApp?: boolean })
-          .isNativeMobileApp ??
-          false),
-    };
-  }
-
-  isHosting() {
-    const { offer } = this.props;
+export function OffersPresentational(props: OffersPresentationalProps) {
+  function isHosting() {
+    const { offer } = props;
     return offer?.status === 'yes' || offer?.status === 'maybe';
   }
 
-  renderHostingYesMaybe() {
-    const { offer, isOwnOffer, t } = this.props;
+  function renderHostingYesMaybe() {
+    const { offer, isOwnOffer, t } = props;
     const maxGuests = offer.maxGuests ?? 0;
     return (
       <>
@@ -69,6 +48,13 @@ export class OffersPresentational extends Component<
             <span className="icon-edit"></span>
           </Button>
         )}
+        {offer.volunteering === true && (
+          <p>
+            <Badge variant="outline" intent="info">
+              {t('Offers volunteering')}
+            </Badge>
+          </p>
+        )}
         <ReadMorePanel
           content={offer.description ?? ''}
           id="offer-yes-description"
@@ -83,8 +69,8 @@ export class OffersPresentational extends Component<
     );
   }
 
-  renderHostingNo() {
-    const { isOwnOffer, offer, t } = this.props;
+  function renderHostingNo() {
+    const { isOwnOffer, offer, t } = props;
     return (
       <>
         {/* Edit button */}
@@ -134,7 +120,7 @@ export class OffersPresentational extends Component<
         )}
 
         {/* Start hosting and meet people action buttons */}
-        {isOwnOffer && !this.isHosting() && (
+        {isOwnOffer && !isHosting() && (
           <div className="text-center">
             <br />
             <hr className="hr-gray hr-tight hr-xs" />
@@ -159,9 +145,9 @@ export class OffersPresentational extends Component<
     );
   }
 
-  renderOffer() {
-    const { t } = this.props;
-    const { isOwnOffer, offer, username } = this.props;
+  function renderOffer() {
+    const { t } = props;
+    const { isOwnOffer, offer, username } = props;
     return (
       <>
         {(isOwnOffer ||
@@ -169,11 +155,11 @@ export class OffersPresentational extends Component<
           <div className="panel panel-default offer-meeting-status">
             {isOwnOffer ? (
               <>
-                {this.props.onMeetingStatusChange ? (
+                {props.onMeetingStatusChange ? (
                   <MeetingAvailabilityControl
                     value={offer.meetingStatus ?? 'not-set'}
-                    onChange={this.props.onMeetingStatusChange}
-                    disabled={this.props.isSavingMeeting}
+                    onChange={props.onMeetingStatusChange}
+                    disabled={props.isSavingMeeting}
                   />
                 ) : (
                   <a href="/offer/host#location">
@@ -182,12 +168,12 @@ export class OffersPresentational extends Component<
                     )}
                   </a>
                 )}
-                {this.props.isSavingMeeting && (
+                {props.isSavingMeeting && (
                   <span className="sr-only" role="status">
                     {t('Saving…')}
                   </span>
                 )}
-                {this.props.meetingError && (
+                {props.meetingError && (
                   <span role="alert">
                     {t(
                       'Could not save meeting availability. Please try again.',
@@ -225,19 +211,19 @@ export class OffersPresentational extends Component<
           {/* Show offer */}
           <div className="panel-body">
             {/* Hosting: yes | maybe */}
-            {this.isHosting() && this.renderHostingYesMaybe()}
+            {isHosting() && renderHostingYesMaybe()}
 
             {/* Hosting: no */}
-            {!this.isHosting() && this.renderHostingNo()}
+            {!isHosting() && renderHostingNo()}
           </div>
-          {(this.isHosting() ||
+          {(isHosting() ||
             offer.meetingStatus === 'yes' ||
             offer.meetingStatus === 'maybe') &&
             offer.location?.length === 2 && (
               <div className="offer-location-section">
                 <div className="offer-location-heading">
                   <span>
-                    {this.isHosting()
+                    {isHosting()
                       ? t('Approximate hosting location')
                       : t('Approximate meeting location')}
                   </span>
@@ -248,8 +234,8 @@ export class OffersPresentational extends Component<
                 <OfferLocation
                   height={220}
                   location={offer.location}
-                  offerStatus={this.isHosting() ? offer.status : 'yes'}
-                  offerType={this.isHosting() ? 'host' : 'meet'}
+                  offerStatus={isHosting() ? offer.status : 'yes'}
+                  offerType={isHosting() ? 'host' : 'meet'}
                 />
               </div>
             )}
@@ -258,11 +244,7 @@ export class OffersPresentational extends Component<
     );
   }
 
-  render() {
-    return (
-      (this.props.isOwnOffer || this.props.isUserPublic) && this.renderOffer()
-    );
-  }
+  return (props.isOwnOffer || props.isUserPublic) && renderOffer();
 }
 
 export default withTranslation(['offers'])(OffersPresentational);

@@ -248,6 +248,13 @@ function isValidMeetingStatus(value: unknown): boolean {
   return MEETING_STATUSES.some(status => status === value);
 }
 
+function isValidVolunteering(value: unknown, type: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === 'boolean' && (type === 'host' || value === false))
+  );
+}
+
 /**
  * Create offer
  */
@@ -260,6 +267,9 @@ function create(
   }
 
   const body = req.body!;
+  if (!isValidVolunteering(body.volunteering, body.type)) {
+    return res.status(400).send({ message: 'Invalid volunteering option.' });
+  }
   if (
     body.meetingStatus !== undefined &&
     !isValidMeetingStatus(body.meetingStatus)
@@ -323,6 +333,9 @@ function update(
   const body = req.body!;
   if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
+  }
+  if (!isValidVolunteering(body.volunteering, offer.type)) {
+    return res.status(400).send({ message: 'Invalid volunteering option.' });
   }
   if (
     body.meetingStatus !== undefined &&
@@ -519,6 +532,9 @@ async function list(req: OfferRequest, res: OfferResponse) {
   });
 
   // Types filter
+  if (Reflect.get(filters, 'volunteering') === true) {
+    query.push({ $match: { type: 'host', volunteering: true } });
+  }
   const typesFilter = Reflect.get(filters, 'types');
   // Stryker disable next-line LogicalOperator: the two checks only disagree for an empty array, which leaves no valid types and adds no stage
   if (filters.hasArrayFilter('types') && isUnknownArray(typesFilter)) {

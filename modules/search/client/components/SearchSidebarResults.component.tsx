@@ -37,6 +37,7 @@ export interface SearchResultOffer {
   meetingStatus?: MeetingStatus;
   status?: OfferStatus;
   description?: string;
+  volunteering?: boolean;
   updated?: string;
 }
 
@@ -211,6 +212,9 @@ export default function SearchSidebarResults({
               `Open ${offerKind} offer from ${displayName}`,
               hosting?.label,
               meetingLabel,
+              item.type === 'host' && item.volunteering === true
+                ? 'Offers volunteering'
+                : undefined,
             ]
               .filter(Boolean)
               .join(' · ');
@@ -227,6 +231,11 @@ export default function SearchSidebarResults({
                   {hosting && (
                     <Badge variant="solid" intent={hosting.intent}>
                       {hosting.label}
+                    </Badge>
+                  )}
+                  {item.type === 'host' && item.volunteering === true && (
+                    <Badge variant="outline" intent="info">
+                      Offers volunteering
                     </Badge>
                   )}
                   {meetingLabel && (
@@ -359,6 +368,13 @@ export default function SearchSidebarResults({
                 <div aria-label="Meet offer" className="search-result-label">
                   <Badge variant="solid" intent="info">
                     Meet
+                  </Badge>
+                </div>
+              )}
+              {offer.type === 'host' && offer.volunteering === true && (
+                <div className="search-result-label">
+                  <Badge variant="outline" intent="info">
+                    Offers volunteering
                   </Badge>
                 </div>
               )}

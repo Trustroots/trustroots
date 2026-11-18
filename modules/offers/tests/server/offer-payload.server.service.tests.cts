@@ -138,6 +138,24 @@ describe('Offer API payload construction', () => {
     });
   });
 
+  it('preserves explicit volunteering choices and omits unspecified updates', () => {
+    for (const volunteering of [true, false]) {
+      const request = {
+        type: 'host' as const,
+        location: [12, 34] as [number, number],
+        volunteering,
+      };
+      assert.equal(prepareNewOffer(request).volunteering, volunteering);
+      assert.equal(prepareOfferUpdate(request).volunteering, volunteering);
+      assert.equal(
+        prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
+          .volunteering,
+        volunteering,
+      );
+    }
+    assert.equal(Object.hasOwn(prepareOfferUpdate({}), 'volunteering'), false);
+  });
+
   it('returns search results as GeoJSON with longitude before latitude', () => {
     assert.deepEqual(
       prepareOfferSearchResults([

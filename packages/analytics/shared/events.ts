@@ -37,6 +37,7 @@ export type SearchFilter =
   | 'languages'
   | 'online_recently'
   | 'connections_only'
+  | 'volunteering'
   | 'community_notes';
 
 /**

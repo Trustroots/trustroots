@@ -17,9 +17,14 @@ jest.mock(
   () => ({
     __esModule: true,
     default: ({ onChange }: React.ComponentProps<typeof SearchTypesToggle>) => (
-      <button onClick={() => onChange(['meet'])} type="button">
-        Change types
-      </button>
+      <>
+        <button onClick={() => onChange(['host'])} type="button">
+          Change to hosts
+        </button>
+        <button onClick={() => onChange(['meet'])} type="button">
+          Change types
+        </button>
+      </>
     ),
   }),
 );
@@ -132,7 +137,10 @@ describe('<SearchSidebarFilters />', () => {
     fireEvent.click(screen.getByRole('button', { name: /change my circles/i }));
     fireEvent.click(screen.getByRole('button', { name: /change languages/i }));
 
-    expect(onFiltersChange).toHaveBeenCalledWith({ types: ['meet'] });
+    expect(onFiltersChange).toHaveBeenCalledWith({
+      types: ['meet'],
+      volunteering: false,
+    });
     expect(onFiltersChange).toHaveBeenCalledWith({ tribes: ['cyclists'] });
     expect(onFiltersChange).toHaveBeenCalledWith({ tribes: ['hikers'] });
     expect(onFiltersChange).toHaveBeenCalledWith({ languages: ['en'] });
@@ -168,6 +176,42 @@ describe('<SearchSidebarFilters />', () => {
     fireEvent.click(connectionsOnly);
     expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({
       connectionsOnly: false,
+    });
+  });
+
+  it('enables volunteering with hosts included and can clear it without changing types', () => {
+    const { rerender } = render(
+      <SearchSidebarFilters
+        {...defaultProps}
+        filters={{ ...defaultProps.filters, types: ['meet'] }}
+      />,
+    );
+    const toggle = screen.getByRole('checkbox', {
+      name: 'Offers volunteering',
+    });
+    expect(toggle).not.toBeChecked();
+    fireEvent.click(toggle);
+    expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({
+      volunteering: true,
+      types: ['host', 'meet'],
+    });
+    expect(analytics.track).toHaveBeenLastCalledWith('search_filter_changed', {
+      filter: 'volunteering',
+    });
+    rerender(
+      <SearchSidebarFilters
+        {...defaultProps}
+        filters={{ ...defaultProps.filters, volunteering: true }}
+      />,
+    );
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({
+      volunteering: false,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Change to hosts' }));
+    expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({
+      types: ['host'],
     });
   });
 

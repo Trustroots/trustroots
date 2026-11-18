@@ -6,7 +6,7 @@ import SearchFilterLanguage from './SearchFilterLanguage.component';
 import SearchCirclesToggle from './SearchCirclesToggle.component';
 import SearchMyCirclesToggle from './SearchMyCirclesToggle.component';
 import SearchTypesToggle from './SearchTypesToggle.component';
-import type { SearchFilters } from '../utils/search-filters';
+import { normalizeTypes, type SearchFilters } from '../utils/search-filters';
 
 interface SearchSidebarFiltersProps {
   communityNotesEnabled: boolean;
@@ -29,6 +29,7 @@ export default function SearchSidebarFilters({
 }: SearchSidebarFiltersProps) {
   const { track } = useAnalytics();
   const connectionsOnly = filters.connectionsOnly === true;
+  const volunteering = filters.volunteering === true;
 
   function changeFilters(
     filter: SearchFilter,
@@ -43,9 +44,31 @@ export default function SearchSidebarFilters({
       <div aria-label="Map content" role="group">
         <h4>Map content</h4>
         <SearchTypesToggle
-          onChange={types => changeFilters('types', { types })}
+          onChange={types =>
+            changeFilters('types', {
+              types,
+              ...(!types.includes('host') ? { volunteering: false } : {}),
+            })
+          }
           types={filters.types}
         />
+        <p>
+          <label className="tw:flex tw:items-center tw:gap-2">
+            <input
+              checked={volunteering}
+              onChange={() =>
+                changeFilters('volunteering', {
+                  volunteering: !volunteering,
+                  ...(!volunteering
+                    ? { types: normalizeTypes([...filters.types, 'host']) }
+                    : {}),
+                })
+              }
+              type="checkbox"
+            />
+            Offers volunteering
+          </label>
+        </p>
         <p>
           <label className="tr-switch">
             <input
