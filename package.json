@@ -173,7 +173,6 @@
     "multer": "2.5.0",
     "nodemailer": "10.6.0",
     "nostr-tools": "2.26.1",
-    "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
     "passport": "0.7.0",
     "passport-local": "1.0.0",

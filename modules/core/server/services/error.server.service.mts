@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import log from '@trustroots/logger';
 export type ValidationFailure = {
   message?: string;
@@ -15,7 +16,7 @@ interface NegotiatedErrorResponse {
   status(code: number): {
     format(handlers: Record<string, () => void>): unknown;
   };
-  render(template: string): unknown;
+  sendFile(path: string): unknown;
   json(body: ErrorBody): unknown;
   send(body: string): unknown;
 }
@@ -23,6 +24,11 @@ interface NegotiatedErrorResponse {
 // Default error message when unsure how to respond
 const defaultErrorMessage =
   'Snap! Something went wrong. If this keeps happening, please contact us.';
+
+// Static, so it still renders when the app itself is what failed.
+const serverErrorPage = fileURLToPath(
+  new URL('../views/500.html', import.meta.url),
+);
 
 /**
  * Get the error by key
@@ -142,7 +148,7 @@ export function errorResponse(
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
     'text/html'() {
-      res.render('500.server.view.html');
+      res.sendFile(serverErrorPage);
     },
     'application/json'() {
       res.json(errorResponse);

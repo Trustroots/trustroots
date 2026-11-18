@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 
@@ -11,7 +12,7 @@ interface SuspendedResponse {
   status?(code: number): {
     format(formatters: Record<string, () => void>): unknown;
   };
-  render?(view: string, options: { message: string }): unknown;
+  sendFile?(path: string): unknown;
   json?(body: { message: string }): unknown;
 }
 
@@ -24,6 +25,9 @@ interface SuspendedController {
 }
 
 const service = {} as SuspendedController;
+const suspendedPage = fileURLToPath(
+  new URL('../views/suspended.html', import.meta.url),
+);
 
 /**
  * Module dependencies.
@@ -51,9 +55,7 @@ service.invalidateSuspendedSessions = function (req, res, next) {
         const suspendedMessage = errorService.getErrorMessageByKey('suspended');
         res.status!(403).format({
           'text/html'() {
-            res.render!('suspended.server.view.html', {
-              message: suspendedMessage,
-            });
+            res.sendFile!(suspendedPage);
           },
           'application/json'() {
             res.json!({

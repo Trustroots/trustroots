@@ -1,8 +1,0 @@
-{% include 'react-head.server.view.html' %}
-<script nonce="{{ nonce }}">
-  var title = "{{title}}",
-      settings = {{ appSettings | jsonForScript | safe }},
-      env = "{{ env }}",
-      isNativeMobileApp = {{ isNativeMobileApp }},
-      user = {{ user | jsonForScript | safe }};
-</script>

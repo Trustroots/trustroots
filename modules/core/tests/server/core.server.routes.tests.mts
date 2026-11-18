@@ -55,6 +55,18 @@ describe('Core CRUD tests', function () {
     response.headers['cache-control'].should.equal('private, no-store');
   });
 
+  it('sends the app with its head, also for unknown API paths in a browser', async function () {
+    const index = await request(app).get('/').expect(200);
+    const notFound = await request(app)
+      .get('/api/no-such-endpoint')
+      .set('Accept', 'text/html')
+      .expect(404);
+    for (const { text } of [index, notFound]) {
+      text.should.match(/<title>[^<]+<\/title>/);
+      text.should.match(/<script nonce="[^"]+">var title = /);
+    }
+  });
+
   it('serves the favicon with a one-year cache', async function () {
     const response = await request(app).get('/favicon.ico').expect(200);
     response.headers['content-type'].should.match(/^image\//);

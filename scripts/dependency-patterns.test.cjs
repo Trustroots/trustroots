@@ -5,8 +5,8 @@ const path = require('node:path');
 const test = require('node:test');
 
 const fromVite = createRequire(require.resolve('vite/package.json'));
-const fromNunjucks = createRequire(require.resolve('nunjucks/package.json'));
-const fromChokidar = createRequire(fromNunjucks.resolve('chokidar'));
+const fromNodemon = createRequire(require.resolve('nodemon/package.json'));
+const fromChokidar = createRequire(fromNodemon.resolve('chokidar'));
 const fromAnymatch = createRequire(fromChokidar.resolve('anymatch'));
 const installations = [fromAnymatch, fromVite].map(resolve =>
   path.dirname(resolve.resolve('picomatch')),
