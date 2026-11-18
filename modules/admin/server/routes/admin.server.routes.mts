@@ -19,6 +19,7 @@ import {
   featureNote,
   recordFeaturedNoteDeletion,
   removeFeaturedNote,
+  reviseFeaturedNote,
 } from '../../../core/server/controllers/featured-nostr-notes.server.controller.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mts';
 import adminUsernameChanges from './../controllers/admin.username-changes.server.controller.mts';
@@ -62,7 +63,8 @@ const registerRoutes = (app: RouteApp): void => {
   app
     .route('/api/admin/nostr/featured-notes/:id')
     .all(adminPolicy.isAllowed)
-    .delete(removeFeaturedNote);
+    .delete(removeFeaturedNote)
+    .put(reviseFeaturedNote);
   app
     .route('/api/admin/nostr/featured-notes/:id/deletion')
     .all(adminPolicy.isAllowed)

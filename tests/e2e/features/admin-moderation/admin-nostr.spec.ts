@@ -6,7 +6,10 @@ import {
   type Event,
   type EventTemplate,
 } from 'nostr-tools';
-import { FEATURED_NOTE_RELAYS } from '../../../../modules/core/shared/featured-nostr-notes.mts';
+import {
+  FEATURED_ARTICLE_KIND,
+  FEATURED_NOTE_RELAYS,
+} from '../../../../modules/core/shared/featured-nostr-notes.mts';
 import { withE2eDb } from '../../support/db.mts';
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import {
@@ -24,6 +27,7 @@ test('administrators can feature and remove a published Nostr note', async ({
     'Visitors can read featured notes and regular members cannot change them.',
     'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
     'Administrators can publish a public note with a NIP-07 signer and feature it on the homepage.',
+    'Administrators can insert a link and revise a published note at the same Nostr address.',
   ]);
 
   const author = generateSecretKey();
@@ -73,7 +77,7 @@ test('administrators can feature and remove a published Nostr note', async ({
         const [type, subscription, filter] = JSON.parse(String(message));
         if (type === 'EVENT') {
           const signed = subscription as Event;
-          if (signed.kind === 1) {
+          if (signed.kind === FEATURED_ARTICLE_KIND) {
             publicationRelays.push(relayOrigin);
             publishedNotes.set(signed.id, signed);
           }
@@ -84,7 +88,7 @@ test('administrators can feature and remove a published Nostr note', async ({
         if (type !== 'REQ') return;
         if (
           relayOrigin === 'wss://relay.nomadwiki.org' &&
-          filter.ids.includes(event.id)
+          filter.ids?.includes(event.id)
         ) {
           relay.send(JSON.stringify(['EVENT', subscription, event]));
         }
@@ -202,7 +206,29 @@ test('administrators can feature and remove a published Nostr note', async ({
     await expect(
       page.getByText('Your NIP-07 browser signer', { exact: false }),
     ).toContainText('wss://relay.trustroots.org, wss://relay.nomadwiki.org');
-    await page.getByLabel('Note text').fill(content);
+    await page
+      .getByLabel('Note text')
+      .fill('A fictional update composed in Trustroots.\nGet involved');
+    await page
+      .getByLabel('Note text')
+      .evaluate((element: HTMLTextAreaElement) => {
+        element.setSelectionRange(
+          element.value.lastIndexOf('Get involved'),
+          element.value.length,
+        );
+      });
+    await page.getByRole('button', { name: 'Insert link' }).click();
+    const linkDialog = page.getByRole('dialog', { name: 'Insert link' });
+    await expect(linkDialog.getByLabel('Link text')).toHaveValue(
+      'Get involved',
+    );
+    await linkDialog
+      .getByLabel('Web address')
+      .fill('https://example.test/volunteering');
+    await linkDialog
+      .getByRole('button', { name: 'Insert', exact: true })
+      .click();
+    await expect(page.getByLabel('Note text')).toHaveValue(content);
     await page
       .getByRole('button', { name: 'Publish and feature note' })
       .click();
@@ -216,20 +242,49 @@ test('administrators can feature and remove a published Nostr note', async ({
     ]);
     const [published] = publishedNotes.values();
     expect(verifyEvent(published)).toBe(true);
-    expect(published).toMatchObject({ kind: 1, pubkey: event.pubkey, content });
-    await page.context().clearCookies();
-    await page.goto('/');
+    expect(published).toMatchObject({
+      kind: FEATURED_ARTICLE_KIND,
+      pubkey: event.pubkey,
+      content,
+    });
     const publishedArticle = page
       .getByRole('article')
       .filter({ hasText: 'A fictional update composed in Trustroots.' });
+    await publishedArticle.getByRole('button', { name: 'Edit note' }).click();
+    await expect(page.getByLabel('Note text')).toHaveValue(content);
+    const revised = content + '\nA fictional correction.';
+    await page.getByLabel('Note text').fill(revised);
+    await page.getByRole('button', { name: 'Publish revision' }).click();
+    await expect(page.getByRole('status')).toContainText(
+      'updated on the homepage.',
+    );
+    expect(publishedNotes.size).toBe(2);
+    const [, revision] = publishedNotes.values();
+    expect(verifyEvent(revision)).toBe(true);
+    expect(revision).toMatchObject({
+      kind: published.kind,
+      pubkey: published.pubkey,
+      tags: published.tags,
+      content: revised,
+    });
+    expect(revision.created_at).toBeGreaterThan(published.created_at);
+    await page.context().clearCookies();
+    await page.goto('/');
+    await expect(publishedArticle).toHaveCount(1);
+    await expect(publishedArticle).toContainText('A fictional correction.');
     await expect(
       publishedArticle.getByRole('link', { name: 'Get involved' }),
     ).toHaveAttribute('href', 'https://example.test/volunteering');
   } finally {
     await withE2eDb(async db => {
       await db
-        .collection<{ _id: string }>('featurednostrnotes')
-        .deleteMany({ _id: { $in: [event.id, ...publishedNotes.keys()] } });
+        .collection<{ _id: string; revisionId?: string }>('featurednostrnotes')
+        .deleteMany({
+          $or: [
+            { _id: event.id },
+            { revisionId: { $in: [...publishedNotes.keys()] } },
+          ],
+        });
       await db
         .collection('users')
         .deleteOne({ username: authorUsername, nostrNpub: npub });

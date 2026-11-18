@@ -6,6 +6,7 @@ import { finalizeEvent, generateSecretKey, nip19 } from 'nostr-tools';
 import express from '../../../../config/lib/express.mts';
 import * as users from '../../../../testutils/server/data.server.testutil.mts';
 import { default as FeaturedNote } from '../../../core/server/models/featured-nostr-note.server.model.mts';
+import { FEATURED_ARTICLE_KIND } from '../../../core/shared/featured-nostr-notes.mts';
 import type {
   TestAgent,
   TestExpressApp,
@@ -300,6 +301,202 @@ describe('Admin featured Nostr notes', () => {
     const stored = await FeaturedNote.findById(event.id).lean().orFail();
     assert.equal(stored.content, '');
     assert.equal(stored.deletionId, deletion.id);
+  });
+
+  it('revises a legacy note in place with a verified addressable version', async () => {
+    const publishedAt = new Date(event.created_at * 1000).toISOString();
+    const path = `${featurePath}/${event.id}`;
+    await admin.post(featurePath).send({ event }).expect(200);
+    const { featuredAt } = await FeaturedNote.findById(event.id)
+      .lean()
+      .orFail();
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at + 1,
+      content: 'Corrected fictional announcement.',
+      tags: [
+        ['d', event.id],
+        ['published_at', String(event.created_at)],
+      ],
+    };
+    const first = finalizeEvent({ ...template }, author);
+    const foreign = finalizeEvent({ ...template }, generateSecretKey());
+    await support.put(path).send({ event: first }).expect(403);
+    await admin.put(path).send({ event: foreign }).expect(404);
+    await admin
+      .put(path)
+      .send({
+        event: finalizeEvent(
+          { ...template, tags: [['d', 'unrelated']] },
+          author,
+        ),
+      })
+      .expect(400);
+    // An administrator can feature an acknowledged revision before its author
+    // saves it in the editor. Both paths must resolve to the original row.
+    const featuredArticle = await admin
+      .post(featurePath)
+      .send({ event: first })
+      .expect(200);
+    assert.equal(featuredArticle.body.id, event.id);
+    await admin
+      .put(path)
+      .send({ event: first })
+      .expect(200, {
+        id: event.id,
+        npub: nip19.npubEncode(event.pubkey),
+        content: first.content,
+        publishedAt,
+        article: {
+          identifier: event.id,
+          eventId: first.id,
+          createdAt: first.created_at,
+        },
+      });
+    await admin.put(path).send({ event: first }).expect(200);
+    const next = finalizeEvent(
+      {
+        ...template,
+        created_at: first.created_at + 1,
+        content: 'Final fictional announcement.',
+      },
+      author,
+    );
+    await admin.put(path).send({ event: next }).expect(200);
+    await admin.put(path).send({ event: first }).expect(409);
+    // Featuring through the stable article address resolves to the same row.
+    await admin.post(featurePath).send({ event: next }).expect(200);
+    await admin.post(featurePath).send({ event }).expect(200);
+    const listed = await request(app).get(publicPath).expect(200);
+    assert.equal(listed.body.length, 1);
+    assert.equal(listed.body[0].id, event.id);
+    assert.equal(listed.body[0].publishedAt, publishedAt);
+    assert.equal(listed.body[0].content, next.content);
+    assert.deepEqual(
+      (await FeaturedNote.findById(event.id).lean().orFail()).featuredAt,
+      featuredAt,
+    );
+
+    const deletion = finalizeEvent(
+      {
+        kind: 5,
+        created_at: next.created_at,
+        content: '',
+        tags: [
+          ['a', `${FEATURED_ARTICLE_KIND}:${event.pubkey}:${event.id}`],
+          ['k', String(FEATURED_ARTICLE_KIND)],
+        ],
+      },
+      author,
+    );
+    await admin.post(`${path}/deletion`).send({ event: deletion }).expect(204);
+    await admin.post(featurePath).send({ event: next }).expect(409);
+    await admin.post(featurePath).send({ event }).expect(409);
+    await request(app).get(publicPath).expect(200, []);
+  });
+
+  it('features and restores the latest article at its stable address', async () => {
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at,
+      tags: [['d', 'fictional-update']],
+      content: 'An independent article.',
+    };
+    const variants = ['An independent article.', 'An alternate article.']
+      .map(content => finalizeEvent({ ...template, content }, author))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const [latest, previous] = variants;
+    const { body: original } = await admin
+      .post(featurePath)
+      .send({ event: previous })
+      .expect(200);
+    const path = `${featurePath}/${original.id}`;
+    const { body: revised } = await admin
+      .post(featurePath)
+      .send({ event: latest })
+      .expect(200);
+    assert.equal(revised.id, original.id);
+    assert.equal(revised.article.eventId, latest.id);
+    await admin.delete(path).set('X-Trustroots-Request', '1').expect(204);
+    await admin.post(featurePath).send({ event: previous }).expect(409);
+    await admin.post(featurePath).send({ event: latest }).expect(200, revised);
+    await admin
+      .post(featurePath)
+      .send({
+        event: finalizeEvent({ ...template, tags: [] }, author),
+      })
+      .expect(400);
+    await admin.put(path).send({ event }).expect(400);
+    await request(app).get(publicPath).expect(200, [revised]);
+  });
+
+  it('deduplicates either filing order for an older note and its addressable version', async () => {
+    const first = finalizeEvent(
+      {
+        kind: FEATURED_ARTICLE_KIND,
+        created_at: event.created_at + 1,
+        tags: [
+          ['d', event.id],
+          ['published_at', String(event.created_at)],
+        ],
+        content: 'An existing article version.',
+      },
+      author,
+    );
+    const { body: article } = await admin
+      .post(featurePath)
+      .send({ event: first })
+      .expect(200);
+    await admin.post(featurePath).send({ event }).expect(200, article);
+    await admin
+      .delete(`${featurePath}/${article.id}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(204);
+    await admin.post(featurePath).send({ event }).expect(409);
+    await FeaturedNote.deleteMany({});
+    await admin.post(featurePath).send({ event }).expect(200);
+    const { body: converted } = await admin
+      .put(`${featurePath}/${event.id}`)
+      .send({ event: first })
+      .expect(200);
+    assert.equal(converted.id, event.id);
+    await admin
+      .delete(`${featurePath}/${event.id}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(204);
+    await admin.post(featurePath).send({ event }).expect(409);
+    await admin.post(featurePath).send({ event: first }).expect(200, converted);
+    await request(app).get(publicPath).expect(200, [converted]);
+  });
+
+  it('reports a conflict when another write wins before the revision is saved', async () => {
+    await admin.post(featurePath).send({ event }).expect(200);
+    const revision = finalizeEvent(
+      {
+        kind: FEATURED_ARTICLE_KIND,
+        created_at: event.created_at + 1,
+        tags: [
+          ['d', event.id],
+          ['published_at', String(event.created_at)],
+        ],
+        content: 'A concurrent correction.',
+      },
+      author,
+    );
+    const update = sinon.stub(FeaturedNote, 'findOneAndUpdate').returns({
+      lean: async () => null,
+    } as unknown as ReturnType<typeof FeaturedNote.findOneAndUpdate>);
+    try {
+      await admin
+        .put(`${featurePath}/${event.id}`)
+        .send({ event: revision })
+        .expect(409);
+      await admin.post(featurePath).send({ event: revision }).expect(409);
+    } finally {
+      update.restore();
+    }
+    const response = await request(app).get(publicPath).expect(200);
+    assert.equal(response.body[0].content, event.content);
   });
 
   it('preserves the homepage copy for invalid or mismatched deletion requests', async () => {

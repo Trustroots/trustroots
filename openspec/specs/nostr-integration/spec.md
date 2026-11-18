@@ -4,9 +4,7 @@
 
 Let Trustroots members connect their Nostr identity and discover community
 notes through Nostroots while preserving the privacy of non-public profiles.
-
 ## Requirements
-
 ### Requirement: Nostr public-key association
 
 The system SHALL let a member associate one valid Nostr public key (`npub`) with their profile, canonicalise the stored public-key value, and prevent the same public key from being associated with more than one member. Adding or replacing a non-empty key SHALL require a valid signed, fresh, single-use server challenge bound to the authenticated member and requested key. The editor SHALL support NIP-07, NIP-46 bunker signing and externally signed events without requesting private keys or publishing proofs. Existing unchanged keys and removal SHALL NOT require proof.
@@ -138,13 +136,18 @@ validation-server events.
 
 ### Requirement: Administrator-curated homepage notes
 
-Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. The admin lookup SHALL include the NomadWiki relay. Trustroots SHALL show featured notes under Trustroots updates for signed-in and signed-out visitors, with the publication date and the author's plain-text Trustroots NIP-05 username when available. Trustroots SHALL only show usernames eligible for public NIP-05 lookup. The homepage and admin list SHALL render inline Markdown links with absolute HTTP or HTTPS destinations. All other content SHALL be rendered as text.
+Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes and NIP-23 kind 30023 articles. It SHALL verify each event ID and signature before storing it and SHALL deduplicate short notes by event ID and article revisions by address. Featuring SHALL accept a Nostr note, event or article identifier, a Nostr URI, or a web link containing one of those identifiers. The admin lookup SHALL include the NomadWiki relay. Trustroots SHALL show featured notes under Trustroots updates for signed-in and signed-out visitors, with the publication date and the author's plain-text Trustroots NIP-05 username when available. Trustroots SHALL only show usernames eligible for public NIP-05 lookup. The homepage and admin list SHALL render inline Markdown links with absolute HTTP or HTTPS destinations. All other content SHALL be rendered as text.
 
 #### Scenario: Administrator features a published note
 
 - **WHEN** an administrator supplies a link for a signed kind 1 note available on a supported relay such as NomadWiki
 - **THEN** Trustroots displays the note on the homepage with plain-text attribution when the author has an eligible Trustroots NIP-05 username
 - **AND** featuring the same note again does not duplicate it
+
+#### Scenario: Administrator features an article by address
+
+- **WHEN** an administrator supplies an article address available on a supported relay
+- **THEN** Trustroots features the verified article at that address without duplicating a previously featured revision
 
 #### Scenario: A featured note has no public Trustroots NIP-05 username
 
@@ -164,12 +167,12 @@ Trustroots SHALL let administrators feature and remove existing public Nostr kin
 
 #### Scenario: An unauthorised or invalid request is made
 
-- **WHEN** a non-administrator requests a change, or a feature request contains an invalid signature or non-kind-1 event
+- **WHEN** a non-administrator requests a change, or a feature request contains an invalid signature or an unsupported event kind
 - **THEN** Trustroots rejects the request and leaves the featured notes unchanged
 
 ### Requirement: Publish a featured Nostr note from admin
 
-Trustroots SHALL let administrators compose a public Nostr kind 1 text note on the Nostr admin page and sign it with a NIP-07 browser signer. Trustroots SHALL verify the signature, author and requested contents before publishing it to both `wss://relay.trustroots.org` and `wss://relay.nomadwiki.org`. The page SHALL feature the signed note only after at least one destination acknowledges publication and SHALL report which destinations acknowledged it.
+Trustroots SHALL let administrators compose a public NIP-23 addressable update on the Nostr admin page and sign it with a NIP-07 browser signer. Trustroots SHALL verify the signature, author and requested contents before publishing it to both `wss://relay.trustroots.org` and `wss://relay.nomadwiki.org`. The page SHALL feature the signed note only after at least one destination acknowledges publication and SHALL report which destinations acknowledged it.
 
 #### Scenario: Publish and feature an update
 
@@ -184,7 +187,7 @@ Trustroots SHALL let administrators compose a public Nostr kind 1 text note on t
 
 ### Requirement: Request deletion of a featured Nostr note
 
-Trustroots SHALL let an administrator request deletion of a featured note by signing a NIP-09 kind 5 event with the note's original author key. The deletion request SHALL include the note's event ID and kind. After at least one relay acknowledges publication, Trustroots SHALL verify the signed deletion request against the original author, remove the note content from its featured collection and prevent it from being featured again. The confirmation SHALL explain that relays and clients may retain copies.
+Trustroots SHALL let an administrator request deletion of a featured note by signing a NIP-09 kind 5 event with the note's original author key. The request SHALL target the event ID and kind for a short note and the article address and kind for an addressable update. After at least one relay acknowledges publication, Trustroots SHALL verify the signed deletion request against the original author, remove the note content from its featured collection and prevent it from being featured again. The confirmation SHALL explain that relays and clients may retain copies.
 
 #### Scenario: The note author requests deletion
 
@@ -231,3 +234,22 @@ Before publishing a Nostr note or other user-initiated Nostr event from a Trustr
 
 - **WHEN** a member is presented with a control that publishes Nostr events
 - **THEN** the interface shows the configured relay destinations before the member uses the control
+
+### Requirement: Edit and link featured Nostr updates
+
+The Nostr admin page SHALL let administrators insert absolute HTTP or HTTPS links into drafts and edit featured updates signed by the connected note author. Edits SHALL publish a newer kind 30023 event at a stable address and update the existing homepage entry after at least one relay acknowledges it. Trustroots SHALL retain the original publication date and position, reject edits from a different signer and prevent stale revisions from replacing newer ones. The first edit of an immutable kind 1 note SHALL use a new addressable version tied to its original event ID.
+
+#### Scenario: Insert a link while editing
+
+- **WHEN** an administrator enters link text and a valid URL using Insert link
+- **THEN** the composer inserts clickable link syntax at the selection and retains the rest of the draft
+
+#### Scenario: Publish a revision
+
+- **WHEN** the original author signs a revision and a relay acknowledges it
+- **THEN** the homepage shows the revised content in the same entry with its original publication date
+
+#### Scenario: Edit a short note
+
+- **WHEN** the original author first edits a featured kind 1 note
+- **THEN** the editor creates an addressable update and the homepage entry displays the revised content

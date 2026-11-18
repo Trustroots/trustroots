@@ -1,14 +1,23 @@
 import { finalizeEvent, getPublicKey, type EventTemplate } from 'nostr-tools';
-import { neventEncode, noteEncode, npubEncode } from 'nostr-tools/nip19';
+import {
+  naddrEncode,
+  neventEncode,
+  noteEncode,
+  npubEncode,
+} from 'nostr-tools/nip19';
 import { SimplePool } from 'nostr-tools/pool';
 import http from '@/modules/core/client/api/http-client';
-import { FEATURED_NOTE_RELAYS } from '@/modules/core/shared/featured-nostr-notes.mts';
+import {
+  FEATURED_ARTICLE_KIND,
+  FEATURED_NOTE_RELAYS,
+} from '@/modules/core/shared/featured-nostr-notes.mts';
 import {
   featureNostrNote,
   publishNostrNoteDeletion,
   publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  reviseFeaturedNostrNote,
   signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 
@@ -45,7 +54,7 @@ it.each([
     await expect(featureNostrNote(reference)).resolves.toEqual(featuredNote);
     expect(get).toHaveBeenCalledWith(
       expect.arrayContaining(['wss://relay.nomadwiki.org']),
-      { ids: [id], kinds: [1] },
+      { ids: [id], kinds: [1, FEATURED_ARTICLE_KIND] },
       { maxWait: 5000 },
     );
     expect(post).toHaveBeenCalledWith(
@@ -56,6 +65,22 @@ it.each([
     expect(destroy).toHaveBeenCalledTimes(1);
   },
 );
+
+it('fetches the current article by its stable NIP-19 address', async () => {
+  const ref = naddrEncode({
+    kind: FEATURED_ARTICLE_KIND,
+    pubkey: id,
+    identifier: 'example',
+  });
+  get.mockResolvedValue(event);
+  vi.spyOn(http, 'post').mockResolvedValue({ data: featuredNote });
+  await expect(featureNostrNote(`nostr:${ref}`)).resolves.toEqual(featuredNote);
+  expect(get).toHaveBeenCalledWith(
+    FEATURED_NOTE_RELAYS,
+    { kinds: [FEATURED_ARTICLE_KIND], authors: [id], '#d': ['example'] },
+    { maxWait: 5000 },
+  );
+});
 
 it.each([npubEncode(id), 'note1invalid', 'https://example.test', 'https://'])(
   'rejects invalid references before contacting relays',
@@ -98,16 +123,19 @@ describe('NIP-07 text notes', () => {
   it('signs the requested text and reports the relay that acknowledges it', async () => {
     const signed = await signNostrTextNote(content);
     expect(signed).toMatchObject({
-      kind: 1,
+      kind: FEATURED_ARTICLE_KIND,
       pubkey: publicKey,
       content,
-      tags: [],
+      tags: [
+        ['d', expect.any(String)],
+        ['published_at', String(signed.created_at)],
+      ],
     });
     expect(signEvent).toHaveBeenCalledWith({
-      kind: 1,
+      kind: FEATURED_ARTICLE_KIND,
       created_at: signed.created_at,
       content,
-      tags: [],
+      tags: signed.tags,
     });
     publish
       .mockImplementationOnce(() => [
@@ -130,6 +158,37 @@ describe('NIP-07 text notes', () => {
       { maxWait: 5000 },
     );
     expect(destroy).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains the author, address and publication date for successive revisions', async () => {
+    const publishedAt = '2026-11-01T12:00:00.000Z';
+    const note = { id, npub: npubEncode(publicKey), content, publishedAt };
+    const revision = await signNostrTextNote('First correction.', note);
+    const article = {
+      identifier: id,
+      eventId: revision.id,
+      createdAt: revision.created_at,
+    };
+    const next = await signNostrTextNote('Another correction.', {
+      ...note,
+      article,
+    });
+    expect(next.created_at).toBeGreaterThan(revision.created_at);
+    expect(next.tags).toEqual([
+      ['d', note.id],
+      ['published_at', String(Date.parse(publishedAt) / 1000)],
+    ]);
+    const put = vi.spyOn(http, 'put').mockResolvedValue({ data: note });
+    await expect(reviseFeaturedNostrNote(note.id, next)).resolves.toEqual(note);
+    expect(put).toHaveBeenCalledWith(
+      `/api/admin/nostr/featured-notes/${id}`,
+      { event: next },
+      { expectedStatuses: [400, 404, 409] },
+    );
+    await expect(
+      signNostrTextNote(content, { ...note, npub: npubEncode(id) }),
+    ).rejects.toThrow('key that published');
+    expect(signEvent).toHaveBeenCalledTimes(2);
   });
 
   it('rejects blank and oversized notes before asking for a signature', async () => {
@@ -234,6 +293,21 @@ describe('NIP-09 deletion', () => {
       expect(publish).not.toHaveBeenCalled();
     },
   );
+
+  it('targets the current article address when requesting deletion', async () => {
+    publish.mockReturnValue([Promise.resolve('accepted')]);
+    const article = {
+      identifier: 'article',
+      eventId: 'bc'.repeat(32),
+      createdAt: 1780000000,
+    };
+    const signed = await publishNostrNoteDeletion({ ...note, article });
+    expect(signed.tags).toEqual([
+      ['a', `${FEATURED_ARTICLE_KIND}:${publicKey}:${article.identifier}`],
+      ['e', article.eventId],
+      ['k', String(FEATURED_ARTICLE_KIND)],
+    ]);
+  });
 
   it('rejects a signature for a modified event', async () => {
     window.nostr!.signEvent = async template => ({
