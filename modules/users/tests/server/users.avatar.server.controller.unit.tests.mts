@@ -159,7 +159,7 @@ async function loadAvatarWithStubs(stubs: Record<string, unknown> = {}) {
   ).default;
 }
 
-const loggerPath = './../../../../config/lib/logger.mjs';
+const loggerPath = './../../../../config/lib/logger.mts';
 const forbidden = { message: 'Forbidden.' };
 
 describe('Avatar controller unit tests', () => {
@@ -182,7 +182,7 @@ describe('Avatar controller unit tests', () => {
     it('delegates authenticated uploads to the file upload service', async () => {
       let uploadArgs: unknown[] = [];
       const controller = await loadAvatarWithStubs({
-        './../../../core/server/services/file-upload.service.mjs': {
+        './../../../core/server/services/file-upload.service.mts': {
           uploadFile: (...args: unknown[]) => {
             uploadArgs = args;
           },
@@ -490,7 +490,7 @@ describe('Avatar controller unit tests', () => {
         };
       }
       if (c.saveMessage !== undefined) {
-        stubs['./../../../core/server/services/error.server.service.mjs'] = {
+        stubs['./../../../core/server/services/error.server.service.mts'] = {
           getErrorMessage: () => c.saveMessage,
         };
       }

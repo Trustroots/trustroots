@@ -8,7 +8,7 @@ import type {
   SignupReviewRule,
   SignupReviewRules,
 } from '../models/signup-review-rules.server.model.mts';
-import log from '../../../../config/lib/logger.mjs';
+import log from '../../../../config/lib/logger.mts';
 
 export const RULES_ID = 'signup-review';
 

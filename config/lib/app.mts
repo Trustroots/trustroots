@@ -2,8 +2,8 @@ import type { Express } from 'express';
 import type { Connection } from 'mongoose';
 import type { Server } from 'node:http';
 import config from './../config.mts';
-import mongoose from './mongoose.mjs';
-import express from './express.mjs';
+import mongoose from './mongoose.mts';
+import express from './express.mts';
 type StartupConfiguration = {
   fd?: number | null;
   port: number | string;

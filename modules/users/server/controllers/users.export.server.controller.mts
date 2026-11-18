@@ -6,8 +6,8 @@ import type {
   ProfileResponseBody,
 } from './users.profile.server.contracts.mts';
 import type { UserServerDocument } from '../models/user.server.types.mts';
-import contacts from '../../../contacts/server/controllers/contacts.server.controller.mjs';
-import profiles from './users.profile.server.controller.mjs';
+import contacts from '../../../contacts/server/controllers/contacts.server.controller.mts';
+import profiles from './users.profile.server.controller.mts';
 
 type ExportId = string | Types.ObjectId;
 

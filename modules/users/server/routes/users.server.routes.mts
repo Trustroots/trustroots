@@ -4,14 +4,14 @@ import {
 } from '../controllers/users.notification-email.server.controller.mts';
 import { unsubscribePath } from '../services/notification-email.server.service.mts';
 import usersPolicy from './../policies/users.server.policy.mts';
-import userProfile from './../controllers/users.profile.server.controller.mjs';
-import userAvatar from './../controllers/users.avatar.server.controller.mjs';
-import userPassword from './../controllers/users.password.server.controller.mjs';
-import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
-import userExport from './../controllers/users.export.server.controller.mjs';
-import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
+import userProfile from './../controllers/users.profile.server.controller.mts';
+import userAvatar from './../controllers/users.avatar.server.controller.mts';
+import userPassword from './../controllers/users.password.server.controller.mts';
+import userAuthentication from './../controllers/users.authentication.server.controller.mts';
+import userExport from './../controllers/users.export.server.controller.mts';
+import unifiedPush from './../controllers/users.unified-push.server.controller.mts';
 import { challenge } from '../controllers/users.nostr.server.controller.mts';
-import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
 
 /**
  * Module dependencies.

@@ -1,9 +1,9 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
-import emailService from '../../../core/server/services/email.server.service.mjs';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import sanitizeHtml from 'sanitize-html';
 import * as htmlToText from 'html-to-text';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';

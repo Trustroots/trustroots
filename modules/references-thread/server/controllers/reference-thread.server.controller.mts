@@ -1,7 +1,7 @@
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from './../../../../config/lib/logger.mts';
 import type { ReferenceThreadRecord } from '../models/reference-thread.server.model.mts';
 
 interface ReferenceUser {

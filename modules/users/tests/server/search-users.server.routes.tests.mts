@@ -10,7 +10,7 @@ import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import express from './../../../../config/lib/express.mts';
 
 const userHandler =
-  importedDependency0 as typeof import('../../server/controllers/users.profile.server.controller.mjs').default;
+  importedDependency0 as typeof import('../../server/controllers/users.profile.server.controller.mts').default;
 
 type UserRecord =
   import('../../../../testutils/server/model-contracts.mts').UserRecord;

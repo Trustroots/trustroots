@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import sinon, { type SinonStub } from 'sinon';
 import 'should';
-import '../../../users/server/models/user.server.model.mjs';
+import '../../../users/server/models/user.server.model.mts';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
 type Greeter = {

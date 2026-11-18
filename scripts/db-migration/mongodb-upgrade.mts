@@ -315,14 +315,14 @@ export function discoverModelPaths(repoRoot: string): string[] {
   // models. Importing both registers the same Mongoose model twice and raises
   // OverwriteModelError. Prefer source modules when paired, while retaining
   // JavaScript-only model modules.
-  const candidates = globSync('modules/*/server/models/**/*.{mjs,mts}', {
+  const candidates = globSync('modules/*/server/models/**/*.{cjs,mts}', {
     cwd: repoRoot,
   })
     .filter(modelPath => !modelPath.endsWith('.types.mts'))
     .sort();
   const selected = new Map<string, string>();
   for (const modelPath of candidates) {
-    const moduleBase = modelPath.replace(/\.(?:mjs|mts)$/, '');
+    const moduleBase = modelPath.replace(/\.(?:cjs|mts)$/, '');
     if (modelPath.endsWith('.mts') || !selected.has(moduleBase)) {
       selected.set(moduleBase, modelPath);
     }

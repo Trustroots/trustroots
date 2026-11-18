@@ -2,8 +2,8 @@ import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import config from '../../../../config/config.mts';
 import experiencesPolicy from '../policies/experiences.server.policy.mts';
-import experiences from '../controllers/experiences.server.controller.mjs';
-import changes from '../controllers/experience-changes.server.controller.mjs';
+import experiences from '../controllers/experiences.server.controller.mts';
+import changes from '../controllers/experience-changes.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

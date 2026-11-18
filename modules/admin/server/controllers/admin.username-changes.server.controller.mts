@@ -1,6 +1,7 @@
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import type { ValidationFailure } from '../../../core/server/services/error.server.service.mts';
+import errorService, {
+  type ValidationFailure,
+} from '../../../core/server/services/error.server.service.mts';
 
 interface UsernameChangeHistoryEntry {
   oldUsername: string;

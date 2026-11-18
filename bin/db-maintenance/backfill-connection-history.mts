@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /** Initialise private external connection search history for existing users. */
-import mongooseService from '../../config/lib/mongoose.mjs';
+import mongooseService from '../../config/lib/mongoose.mts';
 import type { Connection } from 'mongoose';
 import type { UserServerRecord } from '../../modules/users/server/models/user.server.types.mts';
 import { backfillConnectionHistory } from '../../modules/users/server/services/connection-history-backfill.server.service.mts';

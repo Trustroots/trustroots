@@ -10,8 +10,8 @@
  */
 import { promisify } from 'node:util';
 import statsService from './../../../stats/server/services/stats.server.service.mts';
-import statistics from './../controllers/statistics.server.controller.mjs';
-import log from './../../../../config/lib/logger.mjs';
+import statistics from './../controllers/statistics.server.controller.mts';
+import log from './../../../../config/lib/logger.mts';
 import type { StatObject } from '../../../stats/server/services/stats.server.service.mts';
 import type moment from 'moment';
 

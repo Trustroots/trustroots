@@ -1,10 +1,10 @@
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import paginationService from '../../../core/server/services/pagination.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import paginationService from '../../../core/server/services/pagination.server.service.mts';
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import moment from 'moment';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import { findDiscoveryOfferLocations } from '../../../users/server/services/discovery-offers.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 
 interface TribeRecord {
   _id?: Types.ObjectId;

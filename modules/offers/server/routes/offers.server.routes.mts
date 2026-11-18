@@ -1,7 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import offersPolicy from './../policies/offers.server.policy.mts';
-import offers from './../controllers/offers.server.controller.mjs';
+import offers from './../controllers/offers.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

@@ -1,4 +1,4 @@
-import { restrictedMessagingRoles } from './user-roles.server.service.mjs';
+import { restrictedMessagingRoles } from './user-roles.server.service.mts';
 import type { PipelineStage } from 'mongoose';
 
 type ProjectionValue = 0 | 1 | string;

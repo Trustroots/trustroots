@@ -3,7 +3,7 @@
  */
 import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import _ from 'lodash';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 import type {
   PolicyNext,
   PolicyRequest,

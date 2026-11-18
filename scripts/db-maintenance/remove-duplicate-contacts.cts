@@ -13,10 +13,10 @@ interface DuplicateContacts {
  */
 
 const config = require('./../../config/config.mts').default;
-require('./../../config/lib/mongoose.mjs');
-require('./../../config/lib/express.mjs');
+require('./../../config/lib/mongoose.mts');
+require('./../../config/lib/express.mts');
 const mongoose = require('mongoose') as LegacyMongoose;
-require('./../../modules/contacts/server/models/contacts.server.model.mjs');
+require('./../../modules/contacts/server/models/contacts.server.model.mts');
 const Contact = mongoose.model<{ users: Types.ObjectId[] }>('Contact');
 
 console.log('--');

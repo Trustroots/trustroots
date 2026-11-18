@@ -1,9 +1,10 @@
 /**
  * Module dependencies.
  */
-import errorService from './../../../core/server/services/error.server.service.mjs';
-import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
+import errorService, {
+  type ValidationFailure,
+} from './../../../core/server/services/error.server.service.mts';
+import log from './../../../../config/lib/logger.mts';
 import mongoose, { type Types } from 'mongoose';
 import _ from 'lodash';
 import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';

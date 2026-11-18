@@ -7,7 +7,7 @@ import mongoose, {
   type HydratedDocument,
   type Types,
 } from 'mongoose';
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import {
   CONVERSATIONS,
   E2E_PASSWORD,
@@ -15,7 +15,7 @@ import {
   SHADOW_MESSAGES,
 } from './data.mts';
 
-import './../../modules/offers/server/models/offer.server.model.mjs';
+import './../../modules/offers/server/models/offer.server.model.mts';
 interface SeedMember {
   id: string;
   username: string;

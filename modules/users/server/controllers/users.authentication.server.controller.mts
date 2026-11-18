@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import emailService from '../../../core/server/services/email.server.service.mjs';
-import userProfile from './users.profile.server.controller.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import userProfile from './users.profile.server.controller.mts';
 import authenticationService from '../services/authentication.server.service.mts';
 import { matchSignupReviewRules } from '../services/signup-review-rules.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
-import log from '../../../../config/lib/logger.mjs';
+import log from '../../../../config/lib/logger.mts';
 import passport from 'passport';
 import crypto from 'crypto';
 import { connectionSearchKey } from '../../shared/network-connections.ts';

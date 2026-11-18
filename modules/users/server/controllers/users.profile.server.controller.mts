@@ -3,25 +3,25 @@ import { validLanguageLevels } from '../../shared/language-levels.ts';
 import {
   hashToken,
   matchToken,
-} from '../services/action-token.server.service.mjs';
-import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mjs';
+} from '../services/action-token.server.service.mts';
+import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';
-import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mjs';
+import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
-import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mjs';
-import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mjs';
+import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mts';
+import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mts';
 import _ from 'lodash';
 import path from 'path';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
-import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mjs';
-import authenticationService from '../services/authentication.server.service.mjs';
-import emailServiceModule from './../../../core/server/services/email.server.service.mjs';
+import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mts';
+import authenticationService from '../services/authentication.server.service.mts';
+import emailServiceModule from './../../../core/server/services/email.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
-import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mjs';
-import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
+import log from './../../../../config/lib/logger.mts';
+import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
+import messageStatService from './../../../messages/server/services/message-stat.server.service.mts';
 import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -53,7 +53,7 @@ import {
   selectProfileResponse,
   selectProfileUpdateFields,
 } from '../services/profile-response.server.service.mts';
-import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
+import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mts';
 import { isSupportProfileRead } from '../policies/users.server.policy.mts';
 import {
   CONNECTION_HISTORY_CONFLICT_MESSAGE,

@@ -1,7 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import tribesPolicy from './../policies/tribes.server.policy.mts';
-import tribes from './../controllers/tribes.server.controller.mjs';
+import tribes from './../controllers/tribes.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

@@ -41,7 +41,7 @@ let _userTo: UserRecord;
 let userToId: UserModelDocument['_id'];
 let _message: MessageRecord;
 let message: MessageDocument;
-let messageUnreadJobHandler: typeof import('./../../../server/jobs/message-unread.server.job.mjs').run;
+let messageUnreadJobHandler: typeof import('./../../../server/jobs/message-unread.server.job.mts').run;
 
 describe('Job: message unread', function () {
   const jobs = testutils.catchJobs<{

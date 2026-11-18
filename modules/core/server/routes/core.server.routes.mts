@@ -1,9 +1,9 @@
 import type { DecodedResult } from 'nostr-tools/nip19';
 import type { Application } from 'express';
 import _ from 'lodash';
-import core from './../controllers/core.server.controller.mjs';
-import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
-import authenticationService from './../../../users/server/services/authentication.server.service.mjs';
+import core from './../controllers/core.server.controller.mts';
+import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
+import authenticationService from './../../../users/server/services/authentication.server.service.mts';
 import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
 import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';

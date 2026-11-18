@@ -44,25 +44,25 @@ function defineJob<Data>(
 async function start(options: WorkerOptions, callback?: Done) {
   // Initialise Agenda inside `start()` so importing worker helpers does not
   // open a database connection.
-  ({ default: agenda } = await import('./agenda.mjs'));
+  ({ default: agenda } = await import('./agenda.mts'));
   const { default: dependency4 } =
-    await import('./../../modules/core/server/jobs/send-email.server.job.mjs');
+    await import('./../../modules/core/server/jobs/send-email.server.job.mts');
   const { default: dependency5 } =
-    await import('./../../modules/messages/server/jobs/message-unread.server.job.mjs');
+    await import('./../../modules/messages/server/jobs/message-unread.server.job.mts');
   const { default: dependency6 } =
-    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mjs');
+    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mts');
   const { default: dependency7 } =
-    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mjs');
+    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mts');
   const { default: dependency8 } =
-    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mjs');
+    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mts');
   const { default: dependency9 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs');
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mts');
   const { default: dependency10 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs');
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mts');
   const { default: dependency11 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs');
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mts');
   const { default: dependency12 } =
-    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mjs');
+    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mts');
   const { sendSupportMessage: supportMessageJob } =
     await import('./../../modules/support/server/jobs/send-support-message.server.job.mts');
   const { pollSupportMailbox: pollSupportMailboxJob } =

@@ -20,10 +20,10 @@ const service = {
       'config/**/*.{js,mjs,mts}',
       'modules/*/server/**/*.{mjs,mts}',
     ],
-    models: 'modules/*/server/models/**/*.{mjs,mts}',
+    models: 'modules/*/server/models/**/*.{cjs,mts}',
     routes: [
-      'modules/!(core)/server/routes/**/*.{mjs,mts}',
-      'modules/core/server/routes/**/*.{mjs,mts}',
+      'modules/!(core)/server/routes/**/*.{cjs,mts}',
+      'modules/core/server/routes/**/*.{cjs,mts}',
     ],
     config: 'modules/*/server/config/*.{mjs,mts}',
     policies: 'modules/*/server/policies/*.{mjs,mts}',

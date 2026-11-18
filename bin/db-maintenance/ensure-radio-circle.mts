@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Run against the target environment after deploying the Radio circle client.
-import mongooseService from '../../config/lib/mongoose.mjs';
+import mongooseService from '../../config/lib/mongoose.mts';
 import type { Connection } from 'mongoose';
 
 mongooseService.connect(async (connection: Connection) => {

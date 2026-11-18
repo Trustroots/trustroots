@@ -301,7 +301,7 @@ describe('Admin audit log controller unit tests', () => {
           import.meta.url,
         ),
         {
-          './../../../../config/lib/logger.mjs': (
+          './../../../../config/lib/logger.mts': (
             level: string,
             message: string,
             detail: unknown,

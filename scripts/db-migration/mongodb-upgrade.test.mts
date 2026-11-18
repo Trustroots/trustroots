@@ -599,11 +599,11 @@ test('discovers only source model modules and registers the models once', async 
   assert.ok(paths.length > 0);
   assert.ok(paths.every(path => !path.endsWith('.types.mts')));
   assert.equal(
-    new Set(paths.map(path => path.replace(/\.(?:mjs|mts)$/, ''))).size,
+    new Set(paths.map(path => path.replace(/\.(?:cjs|mts)$/, ''))).size,
     paths.length,
   );
 
-  // The source tree also contains generated .mjs siblings for many models.
+  // The source tree also contains generated JavaScript siblings for many models.
   // Loading both copies used to throw Mongoose OverwriteModelError.
   const models = await loadModelChecks(mongoose);
   assert.ok(models.length > 0);
@@ -613,13 +613,13 @@ test('prefers TypeScript modules and retains JavaScript-only models', () => {
   const root = mkdtempSync(join(tmpdir(), 'trustroots-model-discovery-'));
   const modelDirectory = join(root, 'modules', 'example', 'server', 'models');
   mkdirSync(modelDirectory, { recursive: true });
-  writeFileSync(join(modelDirectory, 'paired.mjs'), '');
+  writeFileSync(join(modelDirectory, 'paired.cjs'), '');
   writeFileSync(join(modelDirectory, 'paired.mts'), '');
-  writeFileSync(join(modelDirectory, 'javascript-only.mjs'), '');
+  writeFileSync(join(modelDirectory, 'javascript-only.cjs'), '');
   writeFileSync(join(modelDirectory, 'types.types.mts'), '');
   try {
     assert.deepEqual(discoverModelPaths(root), [
-      'modules/example/server/models/javascript-only.mjs',
+      'modules/example/server/models/javascript-only.cjs',
       'modules/example/server/models/paired.mts',
     ]);
   } finally {

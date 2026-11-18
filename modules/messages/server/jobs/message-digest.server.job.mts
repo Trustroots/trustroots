@@ -2,7 +2,7 @@ import mongoose, { type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import moment from 'moment';
 import { sendMessageDigest } from '../../../core/server/services/email.server.service.mts';
-import userRoles from '../../../users/server/services/user-roles.server.service.mjs';
+import userRoles from '../../../users/server/services/user-roles.server.service.mts';
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 import type { MessageRecord } from '../models/message.server.model.mts';
 

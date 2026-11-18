@@ -41,7 +41,7 @@ const invalidId = message('Cannot interpret id.');
 const notFound = message('Not found.');
 const failed = message(
   (
-    importedDependency0 as typeof import('../../../core/server/services/error.server.service.mjs').default
+    importedDependency0 as typeof import('../../../core/server/services/error.server.service.mts').default
   ).getErrorMessageByKey('default'),
 );
 
@@ -54,7 +54,7 @@ async function call(handler: keyof BlockController, req: BlockRequest) {
         import.meta.url,
       ),
       {
-        './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+        './../../../../config/lib/logger.mts': (...args: unknown[]) =>
           logged.push(args),
       },
     )

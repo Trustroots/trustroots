@@ -1,8 +1,8 @@
-import './../models/message.server.model.mjs';
+import './../models/message.server.model.mts';
 import nodeProcess from 'node:process';
 import config from './../../../../config/config.mts';
 import mongoose, { type Types } from 'mongoose';
-import log from './../../../../config/lib/logger.mjs';
+import log from './../../../../config/lib/logger.mts';
 import statService, {
   type StatObject,
 } from './../../../stats/server/services/stats.server.service.mts';

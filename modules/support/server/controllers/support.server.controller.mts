@@ -2,9 +2,9 @@
  * Module dependencies.
  */
 import textService from './../../../core/server/services/text.server.service.mts';
-import emailService from './../../../core/server/services/email.server.service.mjs';
+import emailService from './../../../core/server/services/email.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from './../../../../config/lib/logger.mts';
 import config from './../../../../config/config.mts';
 import mongoose, { type Types } from 'mongoose';
 import validator from 'validator';

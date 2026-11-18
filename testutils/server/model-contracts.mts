@@ -95,7 +95,7 @@ export type ReferenceThreadDocument = HydratedDocument<ReferenceThreadRecord>;
 export type TestExpressApp = import('express').Express;
 export type TestAgent = import('supertest').Agent;
 export type TestExpressModule =
-  typeof import('../../config/lib/express.mjs').default & {
+  typeof import('../../config/lib/express.mts').default & {
     init(connection: Connection): Promise<TestExpressApp>;
   };
 export type TestConfigModule =

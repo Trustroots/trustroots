@@ -1,7 +1,7 @@
 import Influx from 'influx';
 import _ from 'lodash';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from './../../../../config/lib/logger.mts';
 
 type Callback = (error?: Error | null) => void;
 type ClientCallback = (error: Error | null, client?: Influx.InfluxDB) => void;

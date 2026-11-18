@@ -118,7 +118,7 @@ describe('Signup review rules service', () => {
         import.meta.url,
       ),
       {
-        '../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+        '../../../../config/lib/logger.mts': (...args: unknown[]) =>
           logs.push(args),
       },
     );
