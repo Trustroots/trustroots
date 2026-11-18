@@ -474,19 +474,18 @@ internal fun HostMapScreen(
                 }
             }
             if (showResults) {
+                val retryEvent = when (error?.fallback) {
+                    UiFailureFallback.PLACE_SEARCH -> HostMapEvent.SubmitPlace
+                    UiFailureFallback.CIRCLES_LOAD -> HostMapEvent.CirclesRequested
+                    else -> HostMapEvent.RetrySearch
+                }
                 HostMapResults(
                     offers = visibleMapOffers(offers, mapState.measuredBounds),
                     loading = loading,
                     failure = error,
                     api = api,
                     session = session,
-                    onRetrySearch = {
-                        mapViewModel.onEvent(when (error?.fallback) {
-                            UiFailureFallback.PLACE_SEARCH -> HostMapEvent.SubmitPlace
-                            UiFailureFallback.CIRCLES_LOAD -> HostMapEvent.CirclesRequested
-                            else -> HostMapEvent.RetrySearch
-                        })
-                    },
+                    onRetrySearch = { mapViewModel.onEvent(retryEvent) },
                     onOpenOffer = onOpenHostDetail,
                     onSessionInvalidated = onSessionInvalidated,
                     modifier = Modifier.weight(1f).fillMaxWidth()
