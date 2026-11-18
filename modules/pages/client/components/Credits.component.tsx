@@ -44,10 +44,10 @@ export default function Credits() {
             </p>
             <h3>Open source</h3>
             <p>
-              Trustroots is built with open-source software. Explore and
-              contribute to our{' '}
-              <a href="https://github.com/Trustroots/trustroots">source code</a>
-              .
+              Trustroots is an open-source, non-profit hospitality exchange run
+              by volunteers. It’s free to use, and we don’t ask members for
+              money. You can explore the code and contribute on{' '}
+              <a href="https://github.com/Trustroots/trustroots">GitHub</a>.
             </p>
           </div>
         </div>
