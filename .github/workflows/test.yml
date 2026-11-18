@@ -241,6 +241,7 @@ jobs:
             command: process.env.COMMAND,
             durationMs: Number(process.env.DURATION_MS),
           };
+          fs.mkdirSync('coverage/client', { recursive: true });
           fs.writeFileSync('coverage/client/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
           NODE
           exit "$exit_code"
