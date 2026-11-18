@@ -16,6 +16,7 @@ import {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   normalizePath,
+  toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
 
 type UserRouteProps = { user?: AuthUser | null };
@@ -36,7 +37,7 @@ function findRoute(path: string) {
   const [match] = router
     .matchRoutes(url.pathname, Object.fromEntries(url.searchParams))
     .reverse();
-  const route = match.staticData as ShellRoute | undefined;
+  const route = match?.staticData as ShellRoute | undefined;
   return route?.path ? { ...route, params: match.params } : undefined;
 }
 
@@ -459,6 +460,17 @@ describe('React route ownership', () => {
     expect(routes.map(route => route.path).sort()).toEqual(
       [...REACT_OWNED_PATHS].sort(),
     );
+  });
+
+  it('gives each route file the policy for its own path', () => {
+    const mismatched = Object.values(router.routesById)
+      .filter(route => (route.options.staticData as ShellRoute)?.path)
+      .map(route => [
+        route.fullPath.replace(/(.)\/$/, '$1'),
+        toTanStackPath((route.options.staticData as ShellRoute).path),
+      ])
+      .filter(([fullPath, policyPath]) => fullPath !== policyPath);
+    expect(mismatched).toEqual([]);
   });
 
   it('defines a renderer for every React-owned route policy', () => {

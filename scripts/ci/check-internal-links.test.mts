@@ -16,14 +16,15 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
     path.join(routes, 'profile.edit.account.tsx'),
     `
     import Account from '../Account';
-    export const Route = createRoute(routeOptions('/profile/edit/account', () => <Account />));
+    const options = routeOptions('/profile/edit/account', () => <Account />);
+    export const Route = createFileRoute('/profile/edit/account')(options);
   `,
   );
   fs.writeFileSync(
     path.join(routes, 'faq.index.tsx'),
     `
     import Faq from '@/modules/pages/client/Faq';
-    export const Route = createRoute(routeOptions('/faq', () => <Faq />));
+    export const Route = createFileRoute('/faq')(routeOptions('/faq', () => <Faq />));
   `,
   );
   fs.writeFileSync(

@@ -165,8 +165,12 @@ const routeIds = new Map<string, Set<string>>();
 for (const file of clientFiles(path.join(root, 'layers/shell/client/routes'))) {
   const routeFile = readSource(file);
   const findRoute = (node: ts.Node): void => {
-    const [route, ...rest] = ts.isCallExpression(node) ? node.arguments : [];
-    if (route && ts.isStringLiteral(route) && route.text.startsWith('/')) {
+    const isRouteOptions =
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      /^(routeOptions|childRouteOptions)$/.test(node.expression.text);
+    const [route, ...rest] = isRouteOptions ? node.arguments : [];
+    if (route && ts.isStringLiteral(route)) {
       const files = rest.flatMap(arg => [...importedFiles(routeFile, arg)]);
       routeIds.set(route.text, collectIds(files));
     }
