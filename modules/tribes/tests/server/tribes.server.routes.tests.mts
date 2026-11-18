@@ -285,35 +285,36 @@ describe('Tribe CRUD tests', function () {
     await agent.get('/api/tribes/discovery/connections').expect(403);
     user.member!.push({ tribe: tribe._id });
     await user.save();
-    const createConnection = (username: string, fields: Partial<UserRecord>) =>
-      User.create({
-        ..._user,
-        username,
-        email: `${username}@example.com`,
-        ...fields,
-      });
+    const connection = (username: string, fields: Partial<UserRecord>) => ({
+      ..._user,
+      username,
+      email: `${username}@example.com`,
+      ...fields,
+    });
     const daysAgo = (days: number) =>
       new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    const [newer, olderHost, restrictedHost, hidden, blocked, expired] =
-      await Promise.all([
-        createConnection('recentcontact', { seen: daysAgo(2) }),
-        createConnection('olderhost', {
-          seen: daysAgo(40),
-          member: [{ tribe: tribe._id }],
-        }),
-        createConnection('restrictedhost', { seen: daysAgo(12) }),
-        createConnection('hiddenhost', { public: false, seen: daysAgo(1) }),
-        createConnection('blockedhost', {
-          blocked: [user._id],
-          seen: daysAgo(1),
-        }),
-        createConnection('expiredhost', { seen: daysAgo(40) }),
-      ]);
-    const otherContacts = await Promise.all(
-      Array.from({ length: 8 }, (_, index) =>
-        createConnection(`contact${index}`, { seen: daysAgo(13 + index) }),
+    const [
+      newer,
+      olderHost,
+      restrictedHost,
+      hidden,
+      blocked,
+      expired,
+      ...otherContacts
+    ] = await utils.saveUsersWithCachedPasswords([
+      connection('recentcontact', { seen: daysAgo(2) }),
+      connection('olderhost', {
+        seen: daysAgo(40),
+        member: [{ tribe: tribe._id }],
+      }),
+      connection('restrictedhost', { seen: daysAgo(12) }),
+      connection('hiddenhost', { public: false, seen: daysAgo(1) }),
+      connection('blockedhost', { blocked: [user._id], seen: daysAgo(1) }),
+      connection('expiredhost', { seen: daysAgo(40) }),
+      ...Array.from({ length: 8 }, (_, index) =>
+        connection(`contact${index}`, { seen: daysAgo(13 + index) }),
       ),
-    );
+    ]);
     await Contact.create(
       [newer, olderHost, hidden, blocked, expired, ...otherContacts].map(
         connection => ({
