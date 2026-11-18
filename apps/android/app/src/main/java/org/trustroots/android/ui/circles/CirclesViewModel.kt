@@ -79,9 +79,37 @@ internal data class CirclesFailure(
     val apiFailureKind: ApiFailureKind?,
 )
 
+/** Account-scoped data reused by fresh overview visits while they refresh. */
+internal class CirclesCache {
+    private data class MembershipChange(val revision: Long, val isMember: Boolean)
+
+    var circles: List<TrustrootsCircle>? = null
+    var memberships: Set<String>? = null
+    var loadRevision = 0L
+    var membershipRevision = 0L
+        private set
+    private val membershipChanges = mutableMapOf<String, MembershipChange>()
+
+    fun changeMembership(circleID: String, isMember: Boolean) {
+        membershipChanges[circleID] = MembershipChange(++membershipRevision, isMember)
+        memberships = memberships?.let { if (isMember) it + circleID else it - circleID }
+    }
+
+    fun applyChangesSince(snapshot: Set<String>, revision: Long): Set<String> =
+        snapshot.toMutableSet().apply {
+            membershipChanges.forEach { (circleID, change) ->
+                if (change.revision > revision) {
+                    if (change.isMember) add(circleID) else remove(circleID)
+                }
+            }
+        }
+}
+
 internal data class CirclesUiState(
     val circles: List<TrustrootsCircle> = emptyList(),
     val memberships: Set<String> = emptySet(),
+    val hasLoadedCatalogue: Boolean = false,
+    val membershipsLoaded: Boolean = false,
     val filter: String = "",
     val isLoading: Boolean = true,
     val updatingCircleID: String? = null,
@@ -107,14 +135,14 @@ internal sealed interface CirclesEvent {
 internal class CirclesViewModel(
     private val repository: CircleRepository,
     scope: CoroutineScope?,
+    private var cache: CirclesCache = CirclesCache(),
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
-    private val mutableState = MutableStateFlow(CirclesUiState())
+    private val mutableState = MutableStateFlow(cachedState())
     val state = mutableState.asStateFlow()
 
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
-    private var membershipRevision = 0L
     private val loadRequest = LatestRequest(requestScope)
     private val membershipUpdate = LatestRequest(requestScope)
 
@@ -127,13 +155,7 @@ internal class CirclesViewModel(
             is CirclesEvent.FilterChanged -> mutableState.update { it.copy(filter = event.value) }
             is CirclesEvent.MembershipChanged -> {
                 if (!sessionInvalidationEmitted) {
-                    membershipRevision++
-                    mutableState.update { current ->
-                        current.copy(
-                            memberships = if (event.isMember) current.memberships + event.circleID
-                            else current.memberships - event.circleID,
-                        )
-                    }
+                    changeMembership(event.circleID, event.isMember)
                 }
             }
             is CirclesEvent.ToggleMembership -> toggleMembership(event.circle)
@@ -146,23 +168,29 @@ internal class CirclesViewModel(
         }
     }
 
-    fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
+    fun updateEnvironment(api: MobileApiClient, session: MemberSession, cache: CirclesCache? = null) {
         val backendChanged = repository.updateApi(api)
         val sessionChanged = repository.updateSession(session)
         if (!backendChanged && !sessionChanged) return
         loadRequest.cancel()
         membershipUpdate.cancel()
         sessionInvalidationEmitted = false
-        load(resetState = true)
+        this.cache = cache ?: CirclesCache()
+        mutableState.value = cachedState()
+        load()
     }
 
-    private fun load(resetState: Boolean = false) {
+    private fun cachedState() = CirclesUiState(
+        circles = cache.circles.orEmpty(),
+        memberships = cache.memberships.orEmpty(),
+        hasLoadedCatalogue = cache.circles != null,
+        membershipsLoaded = cache.memberships != null,
+    )
+
+    private fun load() {
         loadRequest.launch {
-            val membershipRevisionAtStart = membershipRevision
-            if (resetState) {
-                mutableState.value = CirclesUiState()
-                currentCoroutineContext().ensureActive()
-            }
+            val loadRevision = ++cache.loadRevision
+            val cacheMembershipRevision = cache.membershipRevision
             mutableState.update { current ->
                 current.copy(
                     isLoading = true,
@@ -171,42 +199,51 @@ internal class CirclesViewModel(
                 )
             }
             val circleResult = requestResult { repository.circles() }
-            circleResult.fold(
-                onSuccess = { circles -> mutableState.update { it.copy(circles = circles) } },
-                onFailure = { reportFailure(it, CirclesFailureKind.CIRCLES_LOAD, retryLoad = true) },
-            )
+            circleResult.exceptionOrNull()?.let { reportFailure(it, CirclesFailureKind.CIRCLES_LOAD, retryLoad = true) }
 
             val membershipResult = requestResult { repository.memberships() }
-            membershipResult.fold(
-                onSuccess = { memberships ->
-                    if (membershipRevisionAtStart == membershipRevision) {
-                        mutableState.update { it.copy(memberships = memberships) }
-                    }
-                },
-                onFailure = { reportFailure(it, CirclesFailureKind.MEMBERSHIPS_LOAD, retryLoad = true) },
+            membershipResult.exceptionOrNull()?.let { reportFailure(it, CirclesFailureKind.MEMBERSHIPS_LOAD, retryLoad = true) }
+
+            val circles = circleResult.getOrNull()
+            val memberships = membershipResult.getOrNull()?.let { cache.applyChangesSince(it, cacheMembershipRevision) }
+            if (loadRevision == cache.loadRevision && !sessionInvalidationEmitted) {
+                if (circles != null) cache.circles = circles
+                if (memberships != null) cache.memberships = memberships
+            }
+            mutableState.update { current ->
+                val resolvedMemberships = cache.memberships ?: memberships
+                current.copy(
+                    circles = circles ?: current.circles,
+                    memberships = resolvedMemberships ?: current.memberships,
+                    hasLoadedCatalogue = current.hasLoadedCatalogue || circles != null,
+                    membershipsLoaded = current.membershipsLoaded || resolvedMemberships != null,
+                    isLoading = false,
+                )
+            }
+        }
+    }
+
+    private fun changeMembership(circleID: String, isMember: Boolean) {
+        cache.changeMembership(circleID, isMember)
+        mutableState.update { current ->
+            current.copy(
+                memberships = if (isMember) current.memberships + circleID else current.memberships - circleID,
             )
-            currentCoroutineContext().ensureActive()
-            mutableState.update { it.copy(isLoading = false) }
         }
     }
 
     private fun toggleMembership(circle: TrustrootsCircle) {
-        if (sessionInvalidationEmitted || mutableState.value.updatingCircleID != null) return
-        val joined = circle.id in mutableState.value.memberships
+        val current = mutableState.value
+        if (sessionInvalidationEmitted || !current.membershipsLoaded || current.updatingCircleID != null) return
+        val joined = circle.id in current.memberships
         membershipUpdate.launch {
             mutableState.update { it.copy(updatingCircleID = circle.id, failure = null, canRetryLoad = false) }
             val result = requestResult { repository.setMembership(circle.id, joined) }
             val requestContext = currentCoroutineContext()
             result.fold(
                 onSuccess = {
-                    membershipRevision++
-                    mutableState.update { current ->
-                        current.copy(
-                            memberships = if (joined) current.memberships - circle.id
-                            else current.memberships + circle.id,
-                            updatingCircleID = null,
-                        )
-                    }
+                    changeMembership(circle.id, isMember = !joined)
+                    mutableState.update { it.copy(updatingCircleID = null) }
                 },
                 onFailure = { error ->
                     reportFailure(error, CirclesFailureKind.MEMBERSHIP_UPDATE)
@@ -260,11 +297,12 @@ internal class CirclesViewModel(
     class Factory(
         private val repository: CircleRepository,
         private val scope: CoroutineScope? = null,
+        private val cache: CirclesCache = CirclesCache(),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(CirclesViewModel::class.java))
-            return CirclesViewModel(repository, scope = scope) as T
+            return CirclesViewModel(repository, scope = scope, cache = cache) as T
         }
     }
 }

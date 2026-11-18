@@ -33,7 +33,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -96,23 +95,23 @@ internal fun CirclesNavigationDisplay(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    cache: CirclesCache? = null,
 ) {
+    // The overview is the root of this tab visit and receives detail changes even while off screen.
+    val owner = requireNavigationViewModelStoreOwner("Circles must be hosted by a ViewModelStoreOwner")
+    val factory = remember(owner) {
+        CirclesViewModel.Factory(MobileApiCircleRepository(api, session), cache = cache ?: CirclesCache())
+    }
+    val viewModel = rememberEntryViewModel(owner, CirclesViewModel::class.java, factory)
+    SideEffect { viewModel.updateEnvironment(api, session, cache) }
     val backStack = rememberNavBackStack(CircleOverviewVisit(initialVisitID))
     var nextVisitID by rememberSaveable(initialVisitID) { mutableLongStateOf(1L) }
-    var membershipEventRevision by rememberSaveable(initialVisitID) { mutableLongStateOf(0L) }
-    var pendingMembershipCircleID by rememberSaveable(initialVisitID) { mutableStateOf<String?>(null) }
-    var pendingMembershipValue by rememberSaveable(initialVisitID) { mutableStateOf(false) }
     val popRoute: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
     val pushDetail: (String) -> Unit = { slug ->
         backStack.add(CircleDetailVisit(slug, nextVisitID++))
     }
     val pushProfile: (String) -> Unit = { username ->
         backStack.add(MemberProfileVisit(username, nextVisitID++))
-    }
-    val reportMembershipChange: (String, Boolean) -> Unit = { circleID, isMember ->
-        pendingMembershipCircleID = circleID
-        pendingMembershipValue = isMember
-        membershipEventRevision++
     }
     val decorators: List<NavEntryDecorator<NavKey>> = listOf(
         rememberSaveableStateHolderNavEntryDecorator(),
@@ -126,14 +125,10 @@ internal fun CirclesNavigationDisplay(
             entry<CircleOverviewVisit> { _ ->
                 CircleOverviewEntry(
                     api = api,
-                    session = session,
+                    viewModel = viewModel,
                     onSessionInvalidated = onSessionInvalidated,
                     contentPadding = contentPadding,
                     onSelect = { circle -> pushDetail(circle.slug) },
-                    membershipEventRevision = membershipEventRevision,
-                    pendingMembershipCircleID = pendingMembershipCircleID,
-                    pendingMembershipValue = pendingMembershipValue,
-                    onMembershipEventConsumed = { pendingMembershipCircleID = null },
                 )
             }
             entry<CircleDetailVisit> { route ->
@@ -144,7 +139,9 @@ internal fun CirclesNavigationDisplay(
                     onSessionInvalidated = onSessionInvalidated,
                     contentPadding = contentPadding,
                     onBack = popRoute,
-                    onMembershipChanged = reportMembershipChange,
+                    onMembershipChanged = { circleID, isMember ->
+                        viewModel.onEvent(CirclesEvent.MembershipChanged(circleID, isMember))
+                    },
                     onOpenProfile = pushProfile,
                 )
             }
@@ -165,21 +162,11 @@ internal fun CirclesNavigationDisplay(
 @Composable
 private fun CircleOverviewEntry(
     api: MobileApiClient,
-    session: MemberSession,
+    viewModel: CirclesViewModel,
     onSessionInvalidated: () -> Unit,
     contentPadding: PaddingValues,
     onSelect: (TrustrootsCircle) -> Unit,
-    membershipEventRevision: Long,
-    pendingMembershipCircleID: String?,
-    pendingMembershipValue: Boolean,
-    onMembershipEventConsumed: () -> Unit,
 ) {
-    val owner = requireNavigationViewModelStoreOwner("CirclesScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner")
-    val factory = remember(owner) {
-        CirclesViewModel.Factory(MobileApiCircleRepository(api, session))
-    }
-    val viewModel = rememberEntryViewModel(owner, CirclesViewModel::class.java, factory)
-    SideEffect { viewModel.updateEnvironment(api, session) }
     val state by viewModel.state.collectAsState()
     val failureMessage = state.failure?.let { circlesFailureMessage(it) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -189,11 +176,6 @@ private fun CircleOverviewEntry(
         onSessionInvalidated()
         viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(pending.id))
     }
-    LaunchedEffect(viewModel, membershipEventRevision) {
-        val circleID = pendingMembershipCircleID ?: return@LaunchedEffect
-        viewModel.onEvent(CirclesEvent.MembershipChanged(circleID, pendingMembershipValue))
-        onMembershipEventConsumed()
-    }
     val toggle: (TrustrootsCircle) -> Unit = { circle ->
         viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
     }
@@ -202,9 +184,10 @@ private fun CircleOverviewEntry(
         api = api,
         circles = state.visibleCircles,
         memberships = state.memberships,
+        membershipsLoaded = state.membershipsLoaded,
         filter = state.filter,
         onFilterChange = { viewModel.onEvent(CirclesEvent.FilterChanged(it)) },
-        loading = state.isLoading,
+        loading = state.isLoading && !state.hasLoadedCatalogue,
         updating = state.updatingCircleID,
         error = failureMessage,
         canRetryLoad = state.canRetryLoad,
@@ -236,6 +219,7 @@ private fun CircleOverviewScreen(
     api: MobileApiClient,
     circles: List<TrustrootsCircle>,
     memberships: Set<String>,
+    membershipsLoaded: Boolean,
     filter: String,
     onFilterChange: (String) -> Unit,
     loading: Boolean,
@@ -344,12 +328,12 @@ private fun CircleOverviewScreen(
                         Text(circle.label, fontWeight = FontWeight.Bold)
                         Text(pluralStringResource(R.plurals.screen_circle_member_count, circle.count, circle.count))
                     }
-                    if (circle.id in memberships) {
+                    if (membershipsLoaded && circle.id in memberships) {
                         OutlinedButton(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
                             Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                             Text(stringResource(R.string.screen_joined))
                         }
-                    } else {
+                    } else if (membershipsLoaded) {
                         Button(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
                             Icon(painterResource(R.drawable.ic_material_add), contentDescription = null)
                             Text(stringResource(R.string.screen_join))

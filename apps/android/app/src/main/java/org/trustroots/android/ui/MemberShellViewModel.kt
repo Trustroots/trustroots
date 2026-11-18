@@ -18,6 +18,7 @@ import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.circles.CirclesCache
 import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.requestResult
@@ -90,8 +91,19 @@ internal class MemberShellViewModel(
     private var sessionInvalidationEmitted = false
     private var started = false
     private var activeVisitID: Long? = null
+    private var circlesCacheScope: Triple<String, String, String>? = null
+    private var circlesCache = CirclesCache()
 
     init { loadAvatar() }
+
+    fun circlesCacheFor(api: MobileApiClient, session: MemberSession): CirclesCache {
+        val scope = Triple(api.backendURL, session.member.username, session.credentialKey)
+        if (circlesCacheScope != scope) {
+            circlesCacheScope = scope
+            circlesCache = CirclesCache()
+        }
+        return circlesCache
+    }
 
     fun onEvent(event: MemberShellEvent) {
         when (event) {

@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -254,7 +255,11 @@ internal fun rememberArtworkBitmapState(
     val currentAccessToken = accessToken?.let { LocalArtworkBearerToken.current ?: it }
     val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}|${accessToken.orEmpty()}|$maxDownloadBytes"
     return key(cacheKey) {
-        produceState<ArtworkBitmapState>(ArtworkBitmapState.Loading, currentAccessToken) {
+        val initialState = remember {
+            artworkCache.get(cacheKey)?.let(ArtworkBitmapState::Loaded) ?: ArtworkBitmapState.Loading
+        }
+        produceState<ArtworkBitmapState>(initialState, currentAccessToken) {
+            if (initialState is ArtworkBitmapState.Loaded) return@produceState
             val cached = if (url == null) null else artworkCache.get(cacheKey)
             val bitmap = if (url == null) {
                 null

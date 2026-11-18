@@ -199,7 +199,7 @@ class MapAndCircleTransportJourneysTest {
 
         awaitDynamicError(local, CIRCLE_LABELS) { request -> request.path == "/api/users/memberships" }
         compose.onNodeWithText("Quiet Coast").assertIsDisplayed()
-        compose.onNodeWithText("Join").assertIsDisplayed()
+        compose.onNodeWithText("Join").assertDoesNotExist()
         assertTrue(membershipsLoads.get() > 0)
         val failedMembershipLoadCount = membershipsLoads.get()
         assertMatchingRequests(
