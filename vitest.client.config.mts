@@ -2,7 +2,7 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 
 import viteConfig from './vite.config.mts';
 
-// Client unit tests reuse the app's Vite aliases and legacy JSX transform.
+// Client unit tests reuse the app's Vite config and aliases.
 export default mergeConfig(
   viteConfig,
   defineConfig({
@@ -16,17 +16,16 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         include: [
-          'modules/*/client/**/*.{js,ts,tsx}',
-          'layers/shell/**/*.{js,ts,tsx}',
+          'modules/*/client/**/*.{ts,tsx}',
+          'layers/shell/**/*.{ts,tsx}',
           'packages/analytics/client/**/*.{ts,tsx}',
-          'packages/ui/src/**/*.{js,ts,tsx}',
+          'packages/ui/src/**/*.{ts,tsx}',
         ],
         exclude: [
           'packages/ui/src/**/*.stories.tsx',
           'modules/core/client/types.d.ts',
           'modules/*/tests/**',
           'modules/*/client/**/*.d.ts',
-          'modules/*/client/**/*.module.{js,ts,tsx}',
           'modules/*/client/**/views/**',
           'modules/*/client/**/less/**',
         ],
