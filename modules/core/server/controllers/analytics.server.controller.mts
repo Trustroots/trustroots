@@ -1,4 +1,4 @@
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 interface UTMParameters {
   source?: unknown;
   medium?: unknown;

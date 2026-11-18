@@ -2,7 +2,7 @@ import type { Job } from 'agenda';
 import mongoose, { type Types } from 'mongoose';
 import nodemailer from 'nodemailer';
 import config from '../../../../config/config.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import { applySupportOutboundActivity } from '../services/support-outbound-activity.server.service.mts';
 import type { SupportMessageRecord } from '../models/support-message.server.model.mts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';

@@ -1,6 +1,6 @@
 import errorService from './../../../core/server/services/error.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import { removePendingBetweenUsers } from '../../../contacts/server/controllers/contacts.server.controller.mts';
 import type {
   UserServerDocument,

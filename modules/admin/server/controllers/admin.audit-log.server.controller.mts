@@ -4,7 +4,7 @@
 import errorService, {
   type ValidationFailure,
 } from './../../../core/server/services/error.server.service.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import mongoose, { type Types } from 'mongoose';
 import _ from 'lodash';
 import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';

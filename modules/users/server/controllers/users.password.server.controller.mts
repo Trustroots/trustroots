@@ -7,7 +7,7 @@ import analyticsHandler from '../../../core/server/controllers/analytics.server.
 import emailService from '../../../core/server/services/email.server.service.mts';
 import profileHandler from './users.profile.server.controller.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mts';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';

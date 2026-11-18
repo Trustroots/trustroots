@@ -14,7 +14,7 @@ import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.
 import errorService, {
   type ValidationFailure,
 } from '../../../core/server/services/error.server.service.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mts';
 import {
   type AdminIdentity,

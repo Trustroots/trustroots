@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
 import moment from 'moment';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';

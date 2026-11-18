@@ -1,6 +1,6 @@
 import fs from 'fs';
 import mongoose from 'mongoose';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
 import { uploadFile } from './../../../core/server/services/file-upload.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';

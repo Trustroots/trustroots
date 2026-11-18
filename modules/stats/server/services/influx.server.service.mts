@@ -1,7 +1,7 @@
 import Influx from 'influx';
 import _ from 'lodash';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 
 type Callback = (error?: Error | null) => void;
 type ClientCallback = (error: Error | null, client?: Influx.InfluxDB) => void;

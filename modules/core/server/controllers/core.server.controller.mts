@@ -6,7 +6,7 @@ import {
   getStartShell,
   renderStartShell,
 } from './../services/start-shell.server.service.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
 import reactRouteOwnership, {
   type ReactRouteUser,

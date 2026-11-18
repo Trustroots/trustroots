@@ -118,8 +118,7 @@ describe('Signup review rules service', () => {
         import.meta.url,
       ),
       {
-        '../../../../config/lib/logger.mts': (...args: unknown[]) =>
-          logs.push(args),
+        '@trustroots/logger': (...args: unknown[]) => logs.push(args),
       },
     );
     const profile = { displayName: 'Fictional ordinary member' };

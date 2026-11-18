@@ -4,7 +4,7 @@ import path from 'path';
 import crypto from 'crypto';
 import sharp, { type Metadata, type Sharp } from 'sharp';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import type {
   AvatarProcessingJob,
   AvatarProcessingResult,

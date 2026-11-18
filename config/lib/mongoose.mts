@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import config from './../config.mts';
 import path from 'path';
-import log from './logger.mts';
+import log from '@trustroots/logger';
 import mongoose from 'mongoose';
 import semver from 'semver';
 const dependency6 = JSON.parse(

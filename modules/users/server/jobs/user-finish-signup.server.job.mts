@@ -3,7 +3,7 @@ import { setEmailConfirmationToken } from '../services/email-confirmation.server
 import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import type {

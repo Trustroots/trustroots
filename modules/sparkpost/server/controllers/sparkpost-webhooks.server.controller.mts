@@ -4,7 +4,7 @@ import speakingurl from 'speakingurl';
 import mongoose from 'mongoose';
 import validator from 'validator';
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import config from './../../../../config/config.mts';
 import statService, {

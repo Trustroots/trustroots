@@ -54,8 +54,7 @@ async function call(handler: keyof BlockController, req: BlockRequest) {
         import.meta.url,
       ),
       {
-        './../../../../config/lib/logger.mts': (...args: unknown[]) =>
-          logged.push(args),
+        '@trustroots/logger': (...args: unknown[]) => logged.push(args),
       },
     )
   ).default;

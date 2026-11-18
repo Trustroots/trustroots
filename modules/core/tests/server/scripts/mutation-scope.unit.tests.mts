@@ -25,7 +25,6 @@ interface Shard {
 const files = [
   'modules/core/server/controllers/core.server.controller.mts',
   'modules/core/server/services/file-removal.server.service.mts',
-  'modules/core/server/jobs/send-push-message.server.job.mjs',
   'modules/core/tests/server/core.server.routes.tests.mts',
   'modules/offers/server/controllers/offers.server.controller.mts',
   'modules/offers/server/models/offer.server.model.mts',
@@ -65,7 +64,7 @@ describe('mutation scope', () => {
       'packages/logger/logger.mts',
       'packages/analytics/server/umami.server.service.mts',
     ]);
-    assert.ok(mutatePatterns.includes('modules/*/server/**/*.{mjs,mts}'));
+    assert.ok(mutatePatterns.includes('modules/*/server/**/*.mts'));
     assert.ok(
       mutatePatterns.includes(
         '!modules/core/server/services/file-removal.server.service.mts',
@@ -138,15 +137,12 @@ describe('mutation scope', () => {
     const sources = ['a', 'b', 'c', 'd'].map(
       name => `modules/users/server/services/${name}.server.service.mts`,
     );
-    const shards = planFull(
-      [...sources, `${service}.mjs`, `${service}.mts`],
-      'full run',
-    );
+    const shards = planFull([...sources, `${service}.mts`], 'full run');
     assert.deepStrictEqual(
       shards.map((s: Shard) => [s.name, s.files]),
       [
         ['users', sources],
-        ['users-password-hashing', [`${service}.mjs`, `${service}.mts`]],
+        ['users-password-hashing', [`${service}.mts`]],
       ],
     );
   });
@@ -312,10 +308,8 @@ describe('mutation scope', () => {
       'h.server.service',
       'i.server.service',
     ].map(name => `modules/users/server/services/${name}.mts`);
-    // A CommonJS shim stays in the shard of the source it re-exports.
-    const shim = 'modules/users/server/services/d.server.service.mjs';
     const shards = planFull(
-      [...sources, shim, 'modules/core/server/core.server.routes.mts'],
+      [...sources, 'modules/core/server/core.server.routes.mts'],
       'full run',
     );
 
@@ -325,11 +319,7 @@ describe('mutation scope', () => {
       'users-2',
       'users-3',
     ]);
-    assert.deepStrictEqual(shards[1].files, [
-      ...sources.slice(0, 3),
-      shim,
-      sources[3],
-    ]);
+    assert.deepStrictEqual(shards[1].files, sources.slice(0, 4));
     assert.deepStrictEqual(shards[2].files, sources.slice(4, 8));
     assert.deepStrictEqual(shards[3].files, sources.slice(8));
     for (const shard of shards)

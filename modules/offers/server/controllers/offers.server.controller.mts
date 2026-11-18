@@ -6,7 +6,7 @@ import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, {

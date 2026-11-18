@@ -19,7 +19,7 @@ import tribesHandler from './../../../tribes/server/controllers/tribes.server.co
 import authenticationService from '../services/authentication.server.service.mts';
 import emailServiceModule from './../../../core/server/services/email.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mts';
 import config from './../../../../config/config.mts';

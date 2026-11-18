@@ -159,7 +159,7 @@ async function loadAvatarWithStubs(stubs: Record<string, unknown> = {}) {
   ).default;
 }
 
-const loggerPath = './../../../../config/lib/logger.mts';
+const loggerPath = '@trustroots/logger';
 const forbidden = { message: 'Forbidden.' };
 
 describe('Avatar controller unit tests', () => {

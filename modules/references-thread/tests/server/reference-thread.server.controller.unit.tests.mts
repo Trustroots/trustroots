@@ -121,7 +121,7 @@ async function loadControllerWithLog(
       import.meta.url,
     ),
     {
-      './../../../../config/lib/logger.mts': (
+      '@trustroots/logger': (
         level: string,
         message: string,
         detail?: unknown,

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'node:url';
@@ -19,8 +19,6 @@ import {
   type ServerState,
   verifyModels,
 } from './mongodb-upgrade.mts';
-
-const repoRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 function healthyReplicaState(
   overrides: Partial<ServerState> = {},
@@ -594,33 +592,22 @@ test('sanitises application read and index inspection failures', async t => {
   });
 });
 
-test('discovers only source model modules and registers the models once', async () => {
-  const paths = discoverModelPaths(repoRoot);
-  assert.ok(paths.length > 0);
-  assert.ok(paths.every(path => !path.endsWith('.types.mts')));
-  assert.equal(
-    new Set(paths.map(path => path.replace(/\.(?:cjs|mts)$/, ''))).size,
-    paths.length,
-  );
-
-  // The source tree also contains generated JavaScript siblings for many models.
-  // Loading both copies used to throw Mongoose OverwriteModelError.
+test('loads every application model, including User', async () => {
   const models = await loadModelChecks(mongoose);
-  assert.ok(models.length > 0);
+  assert.ok(models.some(model => model.collectionName === 'users'));
 });
 
-test('prefers TypeScript modules and retains JavaScript-only models', () => {
+test('discovers TypeScript and CommonJS models but not type modules', () => {
   const root = mkdtempSync(join(tmpdir(), 'trustroots-model-discovery-'));
   const modelDirectory = join(root, 'modules', 'example', 'server', 'models');
   mkdirSync(modelDirectory, { recursive: true });
-  writeFileSync(join(modelDirectory, 'paired.cjs'), '');
-  writeFileSync(join(modelDirectory, 'paired.mts'), '');
-  writeFileSync(join(modelDirectory, 'javascript-only.cjs'), '');
+  writeFileSync(join(modelDirectory, 'source.mts'), '');
+  writeFileSync(join(modelDirectory, 'commonjs.cjs'), '');
   writeFileSync(join(modelDirectory, 'types.types.mts'), '');
   try {
     assert.deepEqual(discoverModelPaths(root), [
-      'modules/example/server/models/javascript-only.cjs',
-      'modules/example/server/models/paired.mts',
+      'modules/example/server/models/commonjs.cjs',
+      'modules/example/server/models/source.mts',
     ]);
   } finally {
     rmSync(root, { recursive: true, force: true });

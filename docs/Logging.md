@@ -1,8 +1,7 @@
 # Application logging
 
 The source-only `@trustroots/logger` workspace package owns logging and metadata
-formatting. Existing `config/lib/logger.mts` imports remain a compatible
-re-export; ESM imports and CommonJS requires share one logger.
+formatting; server code imports it directly as `@trustroots/logger`.
 Winston remains supplied by the root application as a peer dependency.
 
 The application logger keeps the existing Winston call shape:

@@ -93,7 +93,7 @@ async function loadWithLogger(logged: LogEntry[]): Promise<UsersController> {
         import.meta.url,
       ),
       {
-        '../../../../config/lib/logger.mts': (
+        '@trustroots/logger': (
           level: string,
           message: string,
           detail: unknown,

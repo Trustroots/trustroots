@@ -214,7 +214,7 @@ describe('Background Gravatar cleanup', () => {
     const { queueProfileGravatarCheck } = await mockModule<Cleanup>(
       servicePath,
       {
-        '../../../../config/lib/logger.mts': log,
+        '@trustroots/logger': log,
         'node:timers/promises': { setTimeout: sinon.stub().resolves() },
       },
     );

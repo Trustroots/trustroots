@@ -3,7 +3,7 @@ import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import messageToStatsService from '../services/message-to-stats.server.service.mts';
 import messageStatService from '../services/message-stat.server.service.mts';
 import { queueMessagePush } from '../jobs/message-push.server.job.mts';

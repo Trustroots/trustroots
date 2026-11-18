@@ -4,7 +4,7 @@ import type { RenderedEmail } from '../services/email.server.service.mts';
 import _ from 'lodash';
 import nodemailer from 'nodemailer';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 export default function (
   job: Pick<Job<RenderedEmail>, 'attrs'>,
   done: (error?: Error | null) => void,

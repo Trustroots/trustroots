@@ -219,8 +219,6 @@ function stubSearch(
 }
 
 const controllerPath =
-  './../../server/controllers/users.profile.server.controller.mts';
-const controllerModulePath =
   '../../server/controllers/users.profile.server.controller.mts';
 
 const emailServicePath =
@@ -297,7 +295,7 @@ describe('Profile controller unit tests', () => {
         sinon.stub(UnifiedPushRegistration, 'deleteMany').rejects(error);
       const controller = (
         await mockModule<{ default: typeof profileController }>(
-          new URL(controllerModulePath, import.meta.url),
+          new URL(controllerPath, import.meta.url),
           {
             './../../../offers/server/controllers/offers.server.controller.mts':
               {
@@ -306,8 +304,7 @@ describe('Profile controller unit tests', () => {
             './../../../contacts/server/controllers/contacts.server.controller.mts':
               { removeAllByUserId: done('contacts') },
             [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
-            './../../../../config/lib/logger.mts': (...args: unknown[]) =>
-              logs.push(args),
+            '@trustroots/logger': (...args: unknown[]) => logs.push(args),
           },
         )
       ).default;
@@ -1317,7 +1314,7 @@ describe('Profile controller unit tests', () => {
       const queued: unknown[] = [];
       const controller = (
         await mockModule<{ default: typeof profileController }>(
-          new URL(controllerModulePath, import.meta.url),
+          new URL(controllerPath, import.meta.url),
           {
             '../services/gravatar-cleanup.server.service.mts': {
               queueProfileGravatarCheck: (profile: unknown) =>

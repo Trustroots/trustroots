@@ -14,7 +14,7 @@ import {
 } from 'imapflow';
 import mongoose, { type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import type { SupportMessageRecord } from '../models/support-message.server.model.mts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';
 import { startSupportMailboxHeartbeat } from '../services/support-mailbox-heartbeat.server.service.mts';

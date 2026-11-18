@@ -5,7 +5,7 @@ import userProfile from './users.profile.server.controller.mts';
 import authenticationService from '../services/authentication.server.service.mts';
 import { matchSignupReviewRules } from '../services/signup-review-rules.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
-import log from '../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import passport from 'passport';
 import crypto from 'crypto';
 import { connectionSearchKey } from '../../shared/network-connections.ts';

@@ -17,7 +17,7 @@ import textService from './text.server.service.mts';
 import renderModule from './../../../../config/lib/render.mts';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
-import logModule from './../../../../config/lib/logger.mts';
+import logModule from '@trustroots/logger';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import categories from '../../../support/shared/categories.ts';
 type MailCallback<Result = import('agenda').Job> = (
