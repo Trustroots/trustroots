@@ -299,13 +299,14 @@ class MessageNavigationJourneyTest {
         compose.onNodeWithTag("signin-username").performTextReplacement("steady-heron")
         compose.onNodeWithTag("signin-password").performTextReplacement("fictional-renewal-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
-        waitForText("Discover circles")
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("messageInboxFilter").fetchSemanticsNodes().isNotEmpty()
+        }
         assertEquals(
             1,
             fixture.requests.count { it.method == "POST" && it.path == "/api/mobile/v0/auth/signin" },
         )
         assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
-        compose.onNodeWithTag("navigation-messages").performClick()
         waitForText("Quiet Fox")
         compose.onNodeWithTag("messageInboxFilter").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")),
@@ -315,8 +316,9 @@ class MessageNavigationJourneyTest {
         waitForText("Fictional route message")
         compose.waitUntil(10_000) { recipientLookups.get() == 2 && conversationReads.get() == 2 }
 
-        // Each session has two shell polls (Circles and Messages) and one Inbox entry load.
-        assertEquals("both account graphs load their own Inbox and shell badge", 6, inboxReadsBeforeFreshConversation)
+        // Restoring starts on Circles then opens Messages; signing in starts directly on Messages.
+        // Both sessions load their Inbox and badge, with one extra poll for the initial tab change.
+        assertEquals("both account graphs load their own Inbox and shell badge", 5, inboxReadsBeforeFreshConversation)
         assertEquals("the new Conversation entry resolves its recipient again", 2, recipientLookups.get())
         assertEquals("the new Conversation entry loads its messages again", 2, conversationReads.get())
         assertEquals(
@@ -328,7 +330,7 @@ class MessageNavigationJourneyTest {
             fixture.requests.filter { it.path == "/api/messages/member-fox?limit=100" }.map { it.cookie },
         )
         assertEquals(
-            List(3) { "connect.sid=fictional-session" } + List(3) { "connect.sid=renewed-fictional-session" },
+            List(3) { "connect.sid=fictional-session" } + List(2) { "connect.sid=renewed-fictional-session" },
             fixture.requests.filter { it.path.startsWith("/api/messages?") }.map { it.cookie },
         )
         assertEquals(

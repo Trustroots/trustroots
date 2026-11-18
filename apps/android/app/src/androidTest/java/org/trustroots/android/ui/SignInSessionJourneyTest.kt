@@ -10,7 +10,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -133,15 +132,11 @@ class SignInSessionJourneyTest {
             runCatching { compose.onNodeWithText("Sign in").assertIsEnabled() }.isSuccess
         }
         compose.onNodeWithText("Sign in").performScrollTo().assertIsEnabled().performClick()
-        compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("Discover circles").assertIsDisplayed()
-        compose.onNodeWithTag("navigation-messages").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_after_signin_messages")
 
         val signInRequests = requests.filter { it.requestLine.startsWith("POST /api/mobile/v0/auth/signin ") }
         assertEquals(2, signInRequests.size)

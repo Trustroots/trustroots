@@ -167,7 +167,7 @@ class SignInDestinationJourneyTest {
 
         requireNotNull(releaseSignIn).countDown()
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isNotEmpty()
         }
         assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
         assertEquals("connect.sid=fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
@@ -313,7 +313,7 @@ class SignInDestinationJourneyTest {
         assertNull("The old backend response must not create a session", SecureMobileSessionStore(context).load())
 
         releaseNewBackendResponse.countDown()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         assertEquals("new-backend-member", SecureMobileSessionStore(context).load()?.member?.username)
         assertEquals("connect.sid=new-backend-session", SecureMobileSessionStore(context).load()?.cookieHeader)
         assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
@@ -622,7 +622,7 @@ class SignInDestinationJourneyTest {
         compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
         compose.onNodeWithTag("signin-password").performTextInput("fictional-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
 
         compose.onNodeWithTag("navigation-menu").performClick()
         compose.onNodeWithText("Account").performScrollTo().performClick()
@@ -721,7 +721,7 @@ class SignInDestinationJourneyTest {
         compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
         compose.onNodeWithTag("signin-password").performTextInput("fictional-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         compose.waitUntil(5_000) { successfulOwnProfileReads.get() >= 1 }
 
         compose.onNodeWithTag("navigation-menu").performClick()

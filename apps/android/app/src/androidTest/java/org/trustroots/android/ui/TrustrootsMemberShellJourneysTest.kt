@@ -388,7 +388,7 @@ class TrustrootsMemberShellJourneysTest {
         compose.onNodeWithTag("signin-username").performTextInput("steady-heron")
         compose.onNodeWithTag("signin-password").performTextInput("fictional-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         assertEquals("steady-heron", SecureMobileSessionStore(context).load()?.member?.username)
         assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
 

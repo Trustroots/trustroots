@@ -1,6 +1,5 @@
 package org.trustroots.android.ui.session
 
-import android.os.SystemClock
 import androidx.annotation.MainThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -9,7 +8,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -114,8 +112,6 @@ internal class AppSessionViewModel(
     initialBackendURL: String = "",
     scope: CoroutineScope?,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
-    private val wait: suspend (Long) -> Unit = { delay(it) },
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(AppSessionUiState())
@@ -151,16 +147,11 @@ internal class AppSessionViewModel(
 
     @MainThread
     private fun restore() {
-        // Restoration runs once. Cancelling its job owns both asynchronous boundaries.
+        // The activity owns restoration once; cancellation prevents stale results.
         restoreJob = requestScope.launch {
-            val startedAt = elapsedRealtime()
             val restored = withContext(ioDispatcher) { operations.loadSession() }
             currentCoroutineContext().ensureActive()
-            mutableState.value = mutableState.value.copy(session = restored)
-            val remaining = STARTUP_MINIMUM_MS - (elapsedRealtime() - startedAt)
-            if (remaining > 0) wait(remaining)
-            currentCoroutineContext().ensureActive()
-            mutableState.value = mutableState.value.copy(isStarting = false)
+            mutableState.value = mutableState.value.copy(session = restored, isStarting = false)
         }
     }
 
@@ -221,8 +212,6 @@ internal class AppSessionViewModel(
         private val initialBackendURL: String = "",
         private val scope: CoroutineScope? = null,
         private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-        private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
-        private val wait: suspend (Long) -> Unit = { delay(it) },
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -232,14 +221,8 @@ internal class AppSessionViewModel(
                 initialBackendURL = initialBackendURL,
                 scope = scope,
                 ioDispatcher = ioDispatcher,
-                elapsedRealtime = elapsedRealtime,
-                wait = wait,
             ) as T
         }
-    }
-
-    private companion object {
-        const val STARTUP_MINIMUM_MS = 700L
     }
 }
 

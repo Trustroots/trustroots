@@ -853,7 +853,7 @@ class Navigation3MemberShellJourneyTest {
         assertEquals(1, fixture.requests.count { it.path.startsWith("/api/users?search=") })
 
         signInAsAmberOwl()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         compose.onNodeWithTag("navigation-search").performClick()
         waitForText("Search places")
         selectMembersMode()
@@ -899,7 +899,7 @@ class Navigation3MemberShellJourneyTest {
 
         expireHostMap = false
         signInAsAmberOwl()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         compose.onNodeWithTag("navigation-search").performClick()
         waitForText("Search places")
         compose.waitUntil(10_000) {
@@ -925,7 +925,7 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithTag("signin-username").performTextReplacement("amber-owl")
         compose.onNodeWithTag("signin-password").performTextReplacement("fictional-renewal-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
-        waitForText("Discover circles")
+        waitForText("No conversations yet.")
         assertEquals(
             "connect.sid=second-fictional-session",
             SecureMobileSessionStore(context).load()?.cookieHeader,
