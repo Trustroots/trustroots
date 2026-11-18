@@ -7,7 +7,7 @@
   padding: 16px;
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.12);
 }
-.circle-location-map-heading h3 {
+.circle-location-map-heading :is(h2, h3) {
   margin: 0 0 4px;
 }
 .circle-location-map-heading p,
@@ -127,7 +127,7 @@
   border-top: 4px solid @brand-primary;
   box-shadow: 0 6px 28px fade(darken(@brand-primary, 30%), 18%);
 
-  h3,
+  :is(h2, h3),
   .leaflet-popup-content strong {
     color: darken(@brand-primary, 18%);
   }

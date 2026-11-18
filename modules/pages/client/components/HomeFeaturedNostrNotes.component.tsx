@@ -5,7 +5,11 @@ import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedN
 import type { FeaturedNostrNote } from '@/modules/core/shared/featured-nostr-notes.mts';
 import type { PageTranslator } from '../types';
 
-export default function HomeFeaturedNostrNotes() {
+export default function HomeFeaturedNostrNotes({
+  memberView = false,
+}: {
+  memberView?: boolean;
+}) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
   const [notes, setNotes] = useState<FeaturedNostrNote[]>([]);
@@ -18,16 +22,25 @@ export default function HomeFeaturedNostrNotes() {
 
   if (!notes.length) return null;
 
+  const content = (
+    <>
+      <h2 id="home-featured-nostr-notes">{t('Trustroots updates')}</h2>
+      {notes.map(note => (
+        <article key={note.id} className={memberView ? undefined : 'well'}>
+          <FeaturedNostrNoteContent note={note} />
+        </article>
+      ))}
+    </>
+  );
+
   return (
-    <section className="home-how" aria-labelledby="home-featured-nostr-notes">
-      <div className="container">
-        <h2 id="home-featured-nostr-notes">{t('Trustroots updates')}</h2>
-        {notes.map(note => (
-          <article key={note.id} className="well">
-            <FeaturedNostrNoteContent note={note} />
-          </article>
-        ))}
-      </div>
+    <section
+      className={
+        memberView ? 'home-member-updates home-member-panel' : 'home-how'
+      }
+      aria-labelledby="home-featured-nostr-notes"
+    >
+      {memberView ? content : <div className="container">{content}</div>}
     </section>
   );
 }

@@ -12,26 +12,84 @@
   padding: 0;
 }
 
-.home-connections {
+.home-member-feed {
   display: grid;
-  gap: 32px;
+  gap: clamp(16px, 3vw, 28px);
   padding-top: calc(var(--tr-header-height, @navbar-height) + 28px);
   padding-bottom: 32px;
+
+  &:empty {
+    display: none;
+  }
 }
-.home-recent-members h2 {
-  font-size: clamp(23px, 3vw, 32px);
-  line-height: 1.2;
-  .font-brand-semibold();
+.home-member-panel {
+  min-width: 0;
+  border: 1px solid fade(@brand-primary, 24%);
+  border-top: 4px solid @brand-primary;
+  border-radius: 14px;
+  padding: clamp(14px, 3vw, 26px);
+  background: #fff;
+  box-shadow: 0 6px 20px fade(darken(@brand-primary, 32%), 8%);
+
+  h2 {
+    margin: 0;
+    color: darken(@brand-primary, 22%);
+    font-size: clamp(23px, 3vw, 32px);
+    line-height: 1.2;
+    .font-brand-semibold();
+  }
+}
+.home-member-updates {
+  display: grid;
+  gap: 12px;
+
+  article {
+    border-inline-start: 3px solid fade(@brand-primary, 48%);
+    border-radius: 8px;
+    padding: 12px 16px;
+    background: fade(@brand-primary, 5%);
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 .home-recent-member-list {
   --member-section-card-width: 18rem;
 
   .member-search-card {
     height: 100%;
+    border-color: fade(@brand-primary, 25%);
+
+    &:hover,
+    &:focus-visible {
+      border-color: darken(@brand-primary, 10%);
+    }
   }
 }
 .home-hosting-map {
-  max-width: 100%;
+  min-width: 0;
+}
+.home-connections-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 16px;
+  row-gap: 4px;
+  margin: 8px 0 4px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
 }
 
 // Upmost element at intro section

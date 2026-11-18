@@ -160,7 +160,14 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
   return (
     <>
-      {user && <HomeConnections key={user._id || user.username} />}
+      {user && (
+        <div className="container">
+          <div className="home-member-feed">
+            <HomeFeaturedNostrNotes memberView />
+            <HomeConnections key={user._id || user.username} />
+          </div>
+        </div>
+      )}
       {!user && (
         // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
         <Board
@@ -247,7 +254,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
         </Board>
       )}
 
-      <HomeFeaturedNostrNotes />
+      {!user && <HomeFeaturedNostrNotes />}
 
       {/* How does it work */}
       <section className="home-how">

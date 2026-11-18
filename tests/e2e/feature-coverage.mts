@@ -228,6 +228,8 @@ const features = [
       'Optional circle/tribe query parameters do not break the page.',
       'Home circles have space below the preceding image at desktop and mobile widths.',
       'Signed-in members can find recent connections and hosting connections.',
+      'Signed-in members see updates, the connections map and recent connections in that order.',
+      'The connections map shows people who are happy to meet when they are not hosting.',
     ],
     relatedSpecs: [
       spec(
@@ -241,6 +243,10 @@ const features = [
       spec(
         'features/public-core/connections-home.spec.ts',
         'signed-in homepage lays out recent connections and opens hosting offers',
+      ),
+      spec(
+        'features/public-core/connections-home.spec.ts',
+        'signed-in homepage puts updates first and shows connections happy to meet',
       ),
     ],
   },

@@ -111,3 +111,66 @@ test('signed-in homepage lays out recent connections and opens hosting offers', 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(cardsPerRow).toEqual(Array(9).fill(1));
 });
+
+test('signed-in homepage puts updates first and shows connections happy to meet', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', [
+    'Signed-in members see updates, the connections map and recent connections in that order.',
+    'The connections map shows people who are happy to meet when they are not hosting.',
+  ]);
+  await signInViaApi(page, request, SEEDED_RELATIONSHIP_MEMBERS.alice);
+  await page.route('**/api/nostr/featured-notes', route =>
+    route.fulfill({
+      json: [
+        {
+          id: 'cd'.repeat(32),
+          npub: 'npub1example',
+          content: 'A fictional community update.',
+          publishedAt: '2026-11-01T12:00:00.000Z',
+        },
+      ],
+    }),
+  );
+  await page.route('**/api/tribes/discovery/connections', route =>
+    route.fulfill({
+      json: {
+        recent: [
+          {
+            _id: 'recent-member-1',
+            username: 'recentmember',
+            displayName: 'Recent Member',
+            activity: 'today',
+          },
+        ],
+        hosts: [],
+        meetings: [
+          {
+            _id: 'meeting-member-1',
+            username: 'meetingmember',
+            displayName: 'Meeting Member',
+            location: [48.8566, 2.3522],
+          },
+        ],
+      },
+    }),
+  );
+
+  await page.goto('/');
+  await expect(
+    page.locator('.home-member-feed').getByRole('heading', { level: 2 }),
+  ).toHaveText([
+    'Trustroots updates',
+    'Connections on the map',
+    'People you know who were active recently',
+  ]);
+  const map = page.getByRole('region', { name: 'Connections on the map' });
+  await expect(map.getByRole('listitem')).toHaveText('Happy to meet');
+  await map.getByRole('button', { name: 'Meeting Member' }).click();
+  const popup = map.locator('.leaflet-popup-content');
+  await expect(popup.getByText('Happy to meet')).toBeVisible();
+  await expect(
+    popup.getByRole('link', { name: 'View meeting availability' }),
+  ).toHaveAttribute('href', '/profile/meetingmember/accommodation');
+});

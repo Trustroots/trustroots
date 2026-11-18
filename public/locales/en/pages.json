@@ -483,5 +483,17 @@
   "Sparkpost EU": "Sparkpost EU",
   "Optional; very limited use": "Optional; very limited use",
   "Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.": "Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.",
-  "Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup.": "Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup."
+  "Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup.": "Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup.",
+  "Approximate locations of people you know who are hosting or happy to meet.": "Approximate locations of people you know who are hosting or happy to meet.",
+  "Approximate locations of your connections": "Approximate locations of your connections",
+  "Connections on the map": "Connections on the map",
+  "Could not load connection locations": "Could not load connection locations",
+  "Happy to meet": "Happy to meet",
+  "Hosting": "Hosting",
+  "Loading connection locations": "Loading connection locations",
+  "No connection locations to show": "No connection locations to show",
+  "View hosting offer": "View hosting offer",
+  "View meeting availability": "View meeting availability",
+  "location": "location",
+  "locations": "locations"
 }
