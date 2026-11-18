@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
@@ -24,8 +25,7 @@ import ProfileTribesTab from './ProfileTribesTab.component';
 import TopNavigationSmall from './TopNavigationSmall.component';
 import TribesInCommon from './TribesInCommon.component';
 import UserDoesNotExist from './UserDoesNotExist.component';
-import { fetch as fetchProfile } from '../api/users.api';
-import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { profileQuery } from '../api/profile-queries';
 import {
   getMobileProfileRedirect,
   getProfileViewTab,
@@ -42,10 +42,8 @@ import ContactList from '@/modules/contacts/client/components/ContactList.compon
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
-import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
-import type { ExperienceMine } from '@/modules/experiences/shared/experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
@@ -294,24 +292,35 @@ export default function ProfilePage({
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 
-  const [profile, setProfile] = useState<ResolvedUserProfile | null>(null);
   const [contact, setContact] = useState<ContactState>({ $resolved: false });
   const [contacts, setContacts] = useState<ContactListData>(
     Object.assign([], { $resolved: false }),
   );
   const [contactsLoadFailed, setContactsLoadFailed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [experienceOnly, setExperienceOnly] = useState(false);
-  const [ownExperience, setOwnExperience] = useState<
-    ExperienceMine | undefined
-  >();
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
   const tab = getProfileViewTab(currentPath, username);
   const activePathName = getProfileViewTabStateName(currentPath, username);
   const canLoadReply = referencesEnabled && !embedded;
   const isCreatingExperience = tab === 'experiences-new';
+  const { data, isPending } = useQuery(
+    profileQuery(username, {
+      canLoadReply,
+      isCreatingExperience,
+      viewerId: authUser?._id,
+    }),
+  );
+  const experienceOnly = Boolean(data?.experienceOnly);
+  const ownExperience = data?.ownExperience;
+  const profile = useMemo<ResolvedUserProfile | null>(() => {
+    if (isPending) return null;
+    return data?.profile?._id
+      ? { ...data.profile, $resolved: true }
+      : { _id: '', username: '', displayName: '', $resolved: true };
+  }, [data, isPending]);
   const isSelf = profile?._id === authUser?._id;
+  const isLoading =
+    isPending || Boolean(profile?._id && !experienceOnly && !contact.$resolved);
 
   const removeContact = useCallback((removedContact: ContactRecord) => {
     setContacts(previousContacts => {
@@ -362,93 +371,42 @@ export default function ProfilePage({
   }, [currentPath, embedded, username]);
 
   useEffect(() => {
-    let isMounted = true;
+    const profileId = profile?._id;
     contactsRequestVersion.current++;
-
-    async function loadProfile() {
-      setIsLoading(true);
-      setExperienceOnly(false);
-      setOwnExperience(undefined);
-      setContact({ $resolved: false });
-      setContacts(Object.assign([], { $resolved: false }));
-      setContactsLoadFailed(false);
-
-      try {
-        let loadedProfile;
-        let replyOnly = false;
-        try {
-          loadedProfile = await fetchProfile(username);
-        } catch (error) {
-          if (!canLoadReply || getErrorResponse(error)?.status !== 404)
-            throw error;
-          loadedProfile = await readReplyRecipient(username);
-          setOwnExperience(loadedProfile.ownExperience);
-          replyOnly = true;
-        }
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (!loadedProfile?._id) {
-          setProfile({
-            _id: '',
-            username: '',
-            displayName: '',
-            $resolved: true,
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        setProfile({ ...loadedProfile, $resolved: true });
-        setExperienceOnly(replyOnly);
-        if (replyOnly) return;
-
-        const viewingOwnProfile = loadedProfile._id === authUser?._id;
-        // The load re-runs when the experience form opens or closes; count
-        // each profile once while this page stays mounted.
-        if (viewedProfileId.current !== loadedProfile._id) {
-          viewedProfileId.current = loadedProfile._id;
-          track('profile_viewed', { own: viewingOwnProfile ? 'yes' : 'no' });
-        }
-        const [loadedContact, loadedContactsResult] = await Promise.all([
-          viewingOwnProfile || !authUser?._id
-            ? Promise.resolve(null)
-            : contactsApi.getByUserId(loadedProfile._id).catch(() => null),
-          loadContactList(loadedProfile._id),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setContact(normalizeContact(loadedContact));
-        setContactsLoadFailed(loadedContactsResult.failed);
-        setContacts(loadedContactsResult.contacts);
-      } catch {
-        if (isMounted) {
-          setProfile({
-            _id: '',
-            username: '',
-            displayName: '',
-            $resolved: true,
-          });
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    setContact({ $resolved: false });
+    setContacts(Object.assign([], { $resolved: false }));
+    setContactsLoadFailed(false);
+    if (!profileId || experienceOnly) {
+      return undefined;
     }
 
-    loadProfile();
+    let isMounted = true;
+    const viewingOwnProfile = profileId === authUser?._id;
+    // The contacts reload when the experience form opens or closes; count
+    // each profile once while this page stays mounted.
+    if (viewedProfileId.current !== profileId) {
+      viewedProfileId.current = profileId;
+      track('profile_viewed', { own: viewingOwnProfile ? 'yes' : 'no' });
+    }
+    void Promise.all([
+      viewingOwnProfile || !authUser?._id
+        ? Promise.resolve(null)
+        : contactsApi.getByUserId(profileId).catch(() => null),
+      loadContactList(profileId),
+    ]).then(([loadedContact, loadedContactsResult]) => {
+      if (!isMounted) {
+        return;
+      }
+      setContact(normalizeContact(loadedContact));
+      setContactsLoadFailed(loadedContactsResult.failed);
+      setContacts(loadedContactsResult.contacts);
+    });
 
     return () => {
       isMounted = false;
       contactsRequestVersion.current++;
     };
-  }, [authUser?._id, username, canLoadReply, isCreatingExperience]);
+  }, [profile?._id, experienceOnly, authUser?._id, isCreatingExperience]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {
