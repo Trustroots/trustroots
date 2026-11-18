@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
@@ -28,6 +28,6 @@ function TribesPageRoute({ user }: RouteContext) {
   );
 }
 
-export const Route = createRoute(
+export const Route = createFileRoute('/circles/')(
   routeOptions('/circles', renderWithUser(TribesPageRoute)),
 );

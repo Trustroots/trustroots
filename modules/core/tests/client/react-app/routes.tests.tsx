@@ -4,11 +4,10 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import {
   createAppRouter,
-  findRoute,
   parseLegacySearch,
   stringifyLegacySearch,
 } from '@/layers/shell/client/router';
-import { routes } from '@/layers/shell/client/routeTree';
+import type { ShellRoute } from '@/layers/shell/client/route-options';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
@@ -25,7 +24,21 @@ type MembershipRouteProps = UserRouteProps & {
 };
 type StatisticsRouteProps = { isAuthenticated: boolean };
 type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
-type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
+type RouteToRender = Pick<ShellRoute, 'path' | 'render'>;
+
+const router = createAppRouter();
+const routes = Object.values(router.routesById)
+  .map(route => route.options.staticData as ShellRoute)
+  .filter(route => route?.path);
+
+function findRoute(path: string) {
+  const url = new URL(path, 'https://trustroots.test');
+  const [match] = router
+    .matchRoutes(url.pathname, Object.fromEntries(url.searchParams))
+    .reverse();
+  const route = match.staticData as ShellRoute | undefined;
+  return route?.path ? { ...route, params: match.params } : undefined;
+}
 
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
@@ -758,9 +771,9 @@ it.each([
   '/circles/sample_circle',
   '/circles/:circle',
 ])('keeps invalid circle path %s on a React not-found page', path => {
-  expect(findRoute(path)?.path).toBe('/not-found');
+  expect(matchReactRoute(path)?.policy.path).toBe('/not-found');
 });
 
 it('does not partially match extra circle path segments', () => {
-  expect(findRoute('/circles/sample/extra')).toBeUndefined();
+  expect(matchReactRoute('/circles/sample/extra')?.policy).toBeUndefined();
 });

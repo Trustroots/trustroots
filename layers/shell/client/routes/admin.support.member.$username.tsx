@@ -1,9 +1,9 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import { SupportMemberPage } from '@/modules/admin/client/components/Support.component';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(
+export const Route = createFileRoute('/admin/support/member/$username')(
   routeOptions('/admin/support/member/:username', ({ params }) => (
     <SupportMemberPage id={params.username} />
   )),
