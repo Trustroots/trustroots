@@ -92,6 +92,16 @@ jest.mock(
   () => () => <main>Admin search users</main>,
 );
 jest.mock(
+  '@/modules/admin/client/components/AdminHeader.component',
+  () => () => <nav>Staff navigation</nav>,
+);
+jest.mock(
+  '@/modules/admin/client/components/NetworkConnections.component',
+  () => ({
+    NetworkConnectionSearchPage: () => <main>External connection search</main>,
+  }),
+);
+jest.mock(
   '@/modules/admin/client/components/AdminThreads.component',
   () => () => <main>Admin threads</main>,
 );
@@ -444,6 +454,15 @@ function renderRoute(
 }
 
 describe('React route ownership', () => {
+  it('renders the staff network connection search page', () => {
+    renderRoute(
+      routes.find(route => route.path === '/admin/network-connections'),
+      { roles: ['support-team'] },
+    );
+    expect(screen.getByText('Staff navigation')).toBeInTheDocument();
+    expect(screen.getByText('External connection search')).toBeInTheDocument();
+  });
+
   it('passes username deep links to the administrator member lookup', () => {
     renderRoute(
       routes.find(route => route.path === '/admin/user/:username'),

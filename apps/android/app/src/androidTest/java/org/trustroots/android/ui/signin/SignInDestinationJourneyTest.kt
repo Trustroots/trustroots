@@ -568,6 +568,7 @@ class SignInDestinationJourneyTest {
         composeScenario = scenario
         waitForSignIn()
         compose.onNodeWithTag("signin-username").performTextInput("anonymous-otter")
+        hideTestKeyboard()
         compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
 
         val recoveryURL = "$apiBaseUrl/browser/password/forgot"

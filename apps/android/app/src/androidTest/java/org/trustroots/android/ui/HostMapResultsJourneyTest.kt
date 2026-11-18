@@ -29,6 +29,7 @@ import java.net.URLDecoder
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
@@ -320,6 +321,88 @@ class HostMapResultsJourneyTest {
         waitForText("Amber Circle")
         compose.onNodeWithText("Quiet Circle").assertDoesNotExist()
         compose.onNodeWithText("Last active: 6 months").assertIsDisplayed()
+    }
+
+    @Test fun resultsRetryReloadsFailedCirclesWithoutRepeatingTheHostSearch() {
+        val failCircles = AtomicBoolean(false)
+        val circleReads = AtomicInteger()
+        val local = apiFixture { request ->
+            if (request.path.startsWith("/api/tribes?")) {
+                circleReads.incrementAndGet()
+                when {
+                    failCircles.get() -> LocalTransportFixture.Response(
+                        """{"message":"Fictional circles temporarily unavailable."}""", status = 503,
+                    )
+                    circleReads.get() >= 3 -> LocalTransportFixture.Response(
+                        """[{"_id":"circle-one","slug":"ready-circle","label":"Ready Circle"}]""",
+                    )
+                    else -> LocalTransportFixture.Response("[]")
+                }
+            } else null
+        }
+        showMap(local)
+        waitForText("1 offer · 0 Nostroots notes in this area")
+        compose.waitUntil(10_000) { circleReads.get() == 1 }
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        failCircles.set(true)
+        compose.onNodeWithTag("openFilters").performClick()
+        waitForText("Fictional circles temporarily unavailable.")
+        compose.onNodeWithTag("openFilters").performClick()
+        val hostReads = local.requests.count { it.path.startsWith("/api/offers?") }
+        failCircles.set(false)
+        compose.onNodeWithText("Retry").performClick()
+        compose.waitUntil(10_000) {
+            circleReads.get() == 3 && compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isEmpty()
+        }
+        assertEquals(hostReads, local.requests.count { it.path.startsWith("/api/offers?") })
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("All circles").performClick()
+        waitForText("Ready Circle")
+        assertEquals(3, circleReads.get())
+        assertEquals(0, invalidations.get())
+    }
+
+    @Test fun resultsRetryRepeatsAnOrdinaryFailedHostSearch() {
+        val hostReads = AtomicInteger()
+        val local = apiFixture { request ->
+            if (request.path.startsWith("/api/offers?") && hostReads.incrementAndGet() == 1) {
+                LocalTransportFixture.Response("""{"message":"Fictional host search unavailable."}""", status = 503)
+            } else null
+        }
+        showMap(local)
+        waitForText("Fictional host search unavailable.")
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithText("Retry").performClick()
+        waitForText("Quiet Fox")
+        compose.onNodeWithText("Fictional host search unavailable.").assertDoesNotExist()
+        assertEquals(2, hostReads.get())
+        assertEquals(0, invalidations.get())
+    }
+
+    @Test fun multipleExpiredVisibleOffersInvalidateTheSessionOnlyOnce() {
+        val local = apiFixture { request ->
+            if (request.path in setOf("/api/offers/offer-one", "/api/offers/offer-two")) {
+                LocalTransportFixture.Response("{}", status = 401)
+            } else null
+        }
+        compose.setContent {
+            TrustrootsTheme {
+                HostMapResults(
+                    offers = listOf(MapOffer("offer-one", 0.0, 0.0), MapOffer("offer-two", 0.0, 0.0)),
+                    loading = false, failure = null, api = MobileApiClient(local.baseURL), session = session,
+                    onRetrySearch = {}, onOpenOffer = {}, onSessionInvalidated = { invalidations.incrementAndGet() },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("map-result-retry-offer-one").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("map-result-retry-offer-two").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitForIdle()
+        assertEquals(1, invalidations.get())
+        assertEquals(2, local.requests.count { it.path.startsWith("/api/offers/") })
+        assertTrue(local.requests.all { it.cookie == session.cookieHeader })
     }
 
     private fun showMap(

@@ -32,6 +32,7 @@ export default function AdminHeader() {
         { path: 'support', label: 'Support inbox' },
         { path: 'support/members', label: 'Member search' },
         { path: 'support/flagged', label: 'Flagged members' },
+        { path: 'network-connections', label: 'External connection search' },
         { path: 'staff-blockers', label: 'Staff blockers' },
         { path: 'location-corrections', label: 'Location corrections' },
       ],
@@ -86,6 +87,7 @@ export default function AdminHeader() {
             'support/members',
             'support/flagged',
             'experience-changes',
+            'network-connections',
           ].includes(page.path) &&
             isSupport) ||
           (page.path === 'staff-blockers' && (isWelcomeTeam || isSupport)) ||
