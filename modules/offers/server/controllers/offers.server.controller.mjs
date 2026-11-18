@@ -1,17 +1,2 @@
-import service from './offers.server.controller.mts';
-
-/** @esmNamed */
-export const {
-  create,
-  delete: deleteOffer,
-  getOffer,
-  list,
-  listOffersByUser,
-  offerById,
-  offersByUserId,
-  removeAllByUserId,
-  update,
-} = service;
-/** @esmNamed */
-export { deleteOffer as delete };
-export default service;
+export { default } from './offers.server.controller.mts';
+export * from './offers.server.controller.mts';
