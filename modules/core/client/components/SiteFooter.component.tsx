@@ -19,6 +19,8 @@ type Props = {
   variant?: string;
 };
 
+const FOOTER_DESCRIPTION = 'Open source, non-profit and free to use.';
+
 function BuildLink({ build }: { build?: Build | null }) {
   if (!build || !build.commitUrl || !build.committedAt || !build.shortCommit) {
     return null;
@@ -115,6 +117,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
       <div className="site-footer-content">
         <FooterLinks />
         <div className="site-footer-meta">
+          <small>{FOOTER_DESCRIPTION}</small>
           <BuildLink build={build} />
           <BoardCredits photoCredits={photoCredits || {}} />
         </div>
@@ -141,6 +144,7 @@ export default function SiteFooter({
   if (variant === 'home') {
     return (
       <footer className="site-footer-home hidden-print" role="contentinfo">
+        <small>{FOOTER_DESCRIPTION}</small>
         <a
           href="/credits"
           onClick={() =>
