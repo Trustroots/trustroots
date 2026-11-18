@@ -114,13 +114,31 @@
 
 .offer-meta .offer-hosting-button,
 .meeting-availability-control [data-slot='button'] {
+  padding-inline: min(1.75em, 28px) min(1.25em, 20px);
   font-weight: 600;
 
   &::before {
-    content: '✓' / '';
-    display: inline-block;
-    margin-inline-end: 6px;
-    visibility: hidden;
+    content: '';
+    position: absolute;
+    inset-inline-start: 0.66em;
+    top: 50%;
+    translate: 0 -50%;
+    display: grid;
+    place-content: center;
+    box-sizing: border-box;
+    inline-size: 0.68em;
+    block-size: 0.68em;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    opacity: 0.65;
+  }
+
+  @media (max-width: 360px) {
+    padding-inline: 22px 14px;
+
+    &::before {
+      inset-inline-start: 0.2em;
+    }
   }
 
   &:has(:checked) {
@@ -130,7 +148,9 @@
     z-index: 1;
 
     &::before {
-      visibility: visible;
+      content: '✓' / '';
+      border-color: transparent;
+      opacity: 1;
     }
   }
 
