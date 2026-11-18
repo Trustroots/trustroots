@@ -9,6 +9,9 @@ const sinon: typeof import('sinon') = require('sinon');
 
 require('./../../server/models/user.server.model.mjs');
 const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
+const {
+  ConnectionHistoryConflictError,
+}: typeof import('../../server/services/connection-history.server.service.mts') = require('../../server/services/connection-history.server.service.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -708,6 +711,23 @@ describe('Profile controller unit tests', () => {
       should.exist(
         await User.exists({ _id: userDoc._id, username: 'renamedelsewhere' }),
       );
+    });
+
+    it('returns a conflict when an external connection changed concurrently', async () => {
+      sinon.stub(userDoc, 'save').rejects(new ConnectionHistoryConflictError());
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { extSitesBW: 'another-member' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(409);
+      responseBody(res).should.deepEqual({
+        message:
+          'An external connection changed in another request. Please try again.',
+      });
     });
 
     const usernameFailures: Array<[string, () => void, number]> = [
@@ -2174,6 +2194,18 @@ describe('Profile controller unit tests', () => {
               changedAt: new Date('2025-01-01T00:00:00.000Z'),
             },
           ],
+          connectionHistory: [
+            {
+              network: 'github',
+              oldIdentifier: 'private-old-login',
+              newIdentifier: 'private-new-login',
+              changedAt: new Date('2025-01-01T00:00:00.000Z'),
+              initial: false,
+            },
+          ],
+          connectionSearchKeys: ['github:private-old-login'],
+          connectionHistoryInitialised: true,
+          connectionHistoryRevision: 4,
           email: 'member@example.test',
           locale: 'en',
           blocked: [],
@@ -2197,6 +2229,10 @@ describe('Profile controller unit tests', () => {
         'pushRegistration',
         'providerData',
         'usernameHistory',
+        'connectionHistory',
+        'connectionSearchKeys',
+        'connectionHistoryInitialised',
+        'connectionHistoryRevision',
         'futurePrivateField',
       ]) {
         (sanitized[field] === undefined).should.be.true();
