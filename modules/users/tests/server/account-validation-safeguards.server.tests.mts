@@ -194,7 +194,7 @@ describe('Account validation safeguards', function () {
           await import(
             '../../server/jobs/user-welcome-sequence-' +
               step +
-              '.server.job.mjs'
+              '.server.job.mts'
           )
         ).default;
         let calls = 0;
