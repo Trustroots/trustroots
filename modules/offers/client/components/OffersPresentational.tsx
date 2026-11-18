@@ -1,5 +1,5 @@
 // External dependencies
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import type { Offer } from '../api/offers.api';
 
@@ -21,17 +21,21 @@ interface OffersPresentationalProps {
   onMeetingStatusChange?: (status: MeetingStatus) => void;
   isSavingMeeting?: boolean;
   meetingError?: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
-export function OffersPresentational(props: OffersPresentationalProps) {
-  function isHosting() {
-    const { offer } = props;
-    return offer?.status === 'yes' || offer?.status === 'maybe';
-  }
+export default function OffersPresentational({
+  isOwnOffer,
+  isUserPublic,
+  offer,
+  username,
+  onMeetingStatusChange,
+  isSavingMeeting,
+  meetingError,
+}: OffersPresentationalProps) {
+  const { t } = useTranslation('offers');
+  const isHosting = offer?.status === 'yes' || offer?.status === 'maybe';
 
-  function renderHostingYesMaybe() {
-    const { offer, isOwnOffer, t } = props;
+  const renderHostingYesMaybe = () => {
     const maxGuests = offer.maxGuests ?? 0;
     return (
       <>
@@ -67,10 +71,9 @@ export function OffersPresentational(props: OffersPresentationalProps) {
         </p>
       </>
     );
-  }
+  };
 
-  function renderHostingNo() {
-    const { isOwnOffer, offer, t } = props;
+  const renderHostingNo = () => {
     return (
       <>
         {/* Edit button */}
@@ -120,7 +123,7 @@ export function OffersPresentational(props: OffersPresentationalProps) {
         )}
 
         {/* Start hosting and meet people action buttons */}
-        {isOwnOffer && !isHosting() && (
+        {isOwnOffer && !isHosting && (
           <div className="text-center">
             <br />
             <hr className="hr-gray hr-tight hr-xs" />
@@ -143,11 +146,9 @@ export function OffersPresentational(props: OffersPresentationalProps) {
         )}
       </>
     );
-  }
+  };
 
-  function renderOffer() {
-    const { t } = props;
-    const { isOwnOffer, offer, username } = props;
+  const renderOffer = () => {
     return (
       <>
         {(isOwnOffer ||
@@ -155,11 +156,11 @@ export function OffersPresentational(props: OffersPresentationalProps) {
           <div className="panel panel-default offer-meeting-status">
             {isOwnOffer ? (
               <>
-                {props.onMeetingStatusChange ? (
+                {onMeetingStatusChange ? (
                   <MeetingAvailabilityControl
                     value={offer.meetingStatus ?? 'not-set'}
-                    onChange={props.onMeetingStatusChange}
-                    disabled={props.isSavingMeeting}
+                    onChange={onMeetingStatusChange}
+                    disabled={isSavingMeeting}
                   />
                 ) : (
                   <a href="/offer/host#location">
@@ -168,12 +169,12 @@ export function OffersPresentational(props: OffersPresentationalProps) {
                     )}
                   </a>
                 )}
-                {props.isSavingMeeting && (
+                {isSavingMeeting && (
                   <span className="sr-only" role="status">
                     {t('Saving…')}
                   </span>
                 )}
-                {props.meetingError && (
+                {meetingError && (
                   <span role="alert">
                     {t(
                       'Could not save meeting availability. Please try again.',
@@ -211,19 +212,19 @@ export function OffersPresentational(props: OffersPresentationalProps) {
           {/* Show offer */}
           <div className="panel-body">
             {/* Hosting: yes | maybe */}
-            {isHosting() && renderHostingYesMaybe()}
+            {isHosting && renderHostingYesMaybe()}
 
             {/* Hosting: no */}
-            {!isHosting() && renderHostingNo()}
+            {!isHosting && renderHostingNo()}
           </div>
-          {(isHosting() ||
+          {(isHosting ||
             offer.meetingStatus === 'yes' ||
             offer.meetingStatus === 'maybe') &&
             offer.location?.length === 2 && (
               <div className="offer-location-section">
                 <div className="offer-location-heading">
                   <span>
-                    {isHosting()
+                    {isHosting
                       ? t('Approximate hosting location')
                       : t('Approximate meeting location')}
                   </span>
@@ -234,17 +235,15 @@ export function OffersPresentational(props: OffersPresentationalProps) {
                 <OfferLocation
                   height={220}
                   location={offer.location}
-                  offerStatus={isHosting() ? offer.status : 'yes'}
-                  offerType={isHosting() ? 'host' : 'meet'}
+                  offerStatus={isHosting ? offer.status : 'yes'}
+                  offerType={isHosting ? 'host' : 'meet'}
                 />
               </div>
             )}
         </div>
       </>
     );
-  }
+  };
 
-  return (props.isOwnOffer || props.isUserPublic) && renderOffer();
+  return (isOwnOffer || isUserPublic) && renderOffer();
 }
-
-export default withTranslation(['offers'])(OffersPresentational);

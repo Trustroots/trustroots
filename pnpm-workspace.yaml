@@ -22,12 +22,14 @@ overrides:
 
 patchedDependencies:
   'deepmerge@4.3.1': patches/deepmerge@4.3.1.patch
+  'i18next-cli@1.88.0': patches/i18next-cli@1.88.0.patch
   'picomatch@2.3.2': patches/picomatch@2.3.2.patch
   'picomatch@4.0.7': patches/picomatch@4.0.7.patch
 
 allowBuilds:
   '@parcel/watcher': true
   'unrs-resolver': true
+  '@swc/core': false
   'esbuild': false
 
 peerDependencyRules:

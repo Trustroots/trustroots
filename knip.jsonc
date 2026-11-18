@@ -63,10 +63,6 @@
         // PM2 starts server.js and worker.js from these in production.
         "config": ["server-pm2.json", "worker-pm2.json"],
       },
-      "babel": {
-        // i18n:extract passes the second with --config-file.
-        "config": ["babel.config.cts", "tooling/babel/i18n.config.cjs"],
-      },
       "ignoreDependencies": [
         // eslint.config.cts loads these by name through FlatCompat, which
         // Knip's ESLint plugin can't read.

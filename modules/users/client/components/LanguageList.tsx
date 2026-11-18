@@ -37,8 +37,7 @@ export default function LanguageList({
     <ul className={className}>
       {languages.map(code => {
         const name = languageNames?.[code]
-          ? // i18next-extract-disable-next-line
-            t(languageNames[code], { ns: 'languages' })
+          ? t(languageNames[code], { ns: 'languages' })
           : code;
         return (
           <li key={code}>
@@ -48,7 +47,6 @@ export default function LanguageList({
               name
             )}
             {languageLevels[code] && (
-              // i18next-extract-disable-next-line
               <>
                 {' '}
                 —{' '}

@@ -1,0 +1,40 @@
+diff --git a/dist/cjs/extractor/parsers/scope-manager.js b/dist/cjs/extractor/parsers/scope-manager.js
+index 837ab5077cc3b62247a60046cd6db45032849e5a..a5d7c9b9c3c3f16ce1f5576dcba71352a34707c7 100644
+--- a/dist/cjs/extractor/parsers/scope-manager.js
++++ b/dist/cjs/extractor/parsers/scope-manager.js
+@@ -320,10 +320,11 @@ class ScopeManager {
+             }
+         }
+         // Determine the actual call expression, looking inside AwaitExpressions.
+-        const callExpr = init.type === 'AwaitExpression' && init.argument.type === 'CallExpression'
+-            ? init.argument
+-            : init.type === 'CallExpression'
+-                ? init
++        const call = ScopeManager.unwrapTsExpression(init);
++        const callExpr = call.type === 'AwaitExpression' && call.argument.type === 'CallExpression'
++            ? call.argument
++            : call.type === 'CallExpression'
++                ? call
+                 : null;
+         if (!callExpr)
+             return;
+diff --git a/dist/esm/extractor/parsers/scope-manager.js b/dist/esm/extractor/parsers/scope-manager.js
+index cb8e9f0fd5422f541ea47474e496e58a0d058d4d..6da1fde7624105e1d5b90d7591f07e3a7b1b1b49 100644
+--- a/dist/esm/extractor/parsers/scope-manager.js
++++ b/dist/esm/extractor/parsers/scope-manager.js
+@@ -318,10 +318,11 @@ class ScopeManager {
+             }
+         }
+         // Determine the actual call expression, looking inside AwaitExpressions.
+-        const callExpr = init.type === 'AwaitExpression' && init.argument.type === 'CallExpression'
+-            ? init.argument
+-            : init.type === 'CallExpression'
+-                ? init
++        const call = ScopeManager.unwrapTsExpression(init);
++        const callExpr = call.type === 'AwaitExpression' && call.argument.type === 'CallExpression'
++            ? call.argument
++            : call.type === 'CallExpression'
++                ? call
+                 : null;
+         if (!callExpr)
+             return;

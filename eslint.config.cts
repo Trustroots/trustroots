@@ -195,7 +195,6 @@ const legacyConfig = {
         '*.mjs',
         '*.mts',
         '*.cjs',
-        'tooling/babel/*.cjs',
         'config/**',
         'scripts/**/*.{mts,cts}',
         'tests/e2e/**/*.{ts,mts}',
@@ -416,7 +415,6 @@ module.exports = defineConfig([
   {
     files: [
       '*.cts',
-      'tooling/babel/*.cts',
       'config/**/*.cts',
       'playwright.config.cts',
       'modules/*/tests/server/**/*.cts',

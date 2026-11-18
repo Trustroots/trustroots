@@ -69,7 +69,7 @@ Plural strings use CLDR suffixes: `key_one`, `key_other`, plus `_zero`, `_two`, 
 
 The Weblate components must use the file format **i18next JSON file v4** (API identifier `i18nextv4`) so Weblate reads and writes these suffixes. A component still on the legacy format will write `_plural` or numeric keys back to the repository, which i18next no longer reads. Switch each component's format (**Settings → Files → File format**) when this change lands, then run **Manage → Repository maintenance → Update**.
 
-`pnpm run i18n:extract` uses `babel-plugin-i18next-extract` 1.x, which writes `_one`/`_other` for keys used with `count`. Its defaults for plural keys are the key plus the suffix, so review the English values after extracting.
+`pnpm run i18n:extract` runs `i18next-cli extract` with `i18next.config.ts`, which writes `_one`/`_other` for keys used with `count`. Its defaults for plural keys are the key plus the suffix, so review the English values after extracting.
 
 ## Local QA
 
