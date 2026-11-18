@@ -1,11 +1,11 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client.ts';
 import type {
   MiniProfile,
   OwnProfile,
   PublicProfile,
   UpdateProfileRequest,
-} from '../../shared/profile.js';
-import type { ClientOwnProfile } from '../types.js';
+} from '../../shared/profile.ts';
+import type { ClientOwnProfile } from '../types.ts';
 
 export type UserUpdate = UpdateProfileRequest;
 

@@ -2,7 +2,7 @@ import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
 import Credits from '@/modules/pages/client/components/Credits.component';
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   return {
     default: function MockBoard({ children }: PropsWithChildren) {

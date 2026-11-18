@@ -4,7 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import '@/config/client/i18n';
 import Privacy from '@/modules/pages/client/components/Privacy.component';
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
 
   function MockBoard({ children }: PropsWithChildren) {

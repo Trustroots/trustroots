@@ -7,7 +7,7 @@ import { getVolunteers } from '@/modules/pages/client/api/volunteers.api';
 
 vi.mock('@/modules/pages/client/api/volunteers.api');
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children }: PropsWithChildren) {
     return actualReact.createElement('div', null, children);

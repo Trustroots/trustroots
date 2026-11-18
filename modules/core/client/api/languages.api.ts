@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 const languageOptionSchema = z.object({
   value: z.string(),

@@ -9,7 +9,7 @@ import {
   type NavigationItem,
 } from '@trustroots/analytics/client';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import Avatar from '@/modules/users/client/components/Avatar.component.js';
+import Avatar from '@/modules/users/client/components/Avatar.component';
 import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
 import Icon from '@/modules/core/client/components/Icon';
 import MenuItem from './NavigationMenuItem';

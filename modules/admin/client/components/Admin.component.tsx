@@ -4,13 +4,13 @@ import {
   getAdminDashboard,
   type AdminDashboard,
   type AdminUserSummary,
-} from '../api/admin-dashboard.api.js';
-import AdminHeader from './AdminHeader.component.js';
-import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
-import UserLink from './UserLink.component.js';
-import AdminNegativeExperiencePreview from './AdminNegativeExperiencePreview.component.js';
-import { formatAdminDateTime } from '../utils/admin-date.js';
-import { getAdminMessagesHref } from '../utils/member-url.js';
+} from '../api/admin-dashboard.api';
+import AdminHeader from './AdminHeader.component';
+import { AdminSearchUsersContent } from './AdminSearchUsers.component';
+import UserLink from './UserLink.component';
+import AdminNegativeExperiencePreview from './AdminNegativeExperiencePreview.component';
+import { formatAdminDateTime } from '../utils/admin-date';
+import { getAdminMessagesHref } from '../utils/member-url';
 
 function adminMessagesUrl(
   userFrom?: AdminUserSummary,

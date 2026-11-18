@@ -15,11 +15,6 @@ const aliases = {
   modules: resolve(root, 'modules'),
 };
 
-// Try the written `.js` specifier before the migrated TypeScript file so
-// Vite and ESLint select the same file when both exist. Vite applies this
-// order in its own resolver: the exact `.js` file, then `.ts`, then `.tsx`.
-const jsExtensionAlias = ['.js', '.ts', '.tsx'];
-
 // unrs-resolver stores each alias as a list of paths.
 function resolverAliases() {
   return Object.fromEntries(
@@ -39,7 +34,6 @@ function loadCommonJsAliases() {
 
 const aliasesConfig = {
   aliases,
-  jsExtensionAlias,
   resolverAliases,
   // ESLint only needs the source aliases. Resolve package entry files when a
   // bundler reads these, so loading the lint config does not depend on them.

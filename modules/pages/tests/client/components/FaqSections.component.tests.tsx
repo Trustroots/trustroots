@@ -12,7 +12,7 @@ import type PageBoard from '@/modules/pages/client/components/PageBoard';
 
 type BoardProps = React.ComponentProps<typeof PageBoard>;
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   function MockBoard({ children }: BoardProps) {

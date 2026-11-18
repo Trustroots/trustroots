@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, transformWithOxc } from 'vite';
+import { defineConfig } from 'vite';
 
 import config from './config/config.mts';
 import clientAliases from './config/client/aliases.mts';
@@ -27,20 +27,6 @@ interface LegacyAliasFileManager {
     options: { ext: string },
   ): Promise<{ filename: string; contents: string }>;
 }
-
-// Existing React components use JSX in .js files. Vite treats those as plain
-// JavaScript unless they are transformed before its normal source transform.
-const legacyJsx = {
-  name: 'trustroots-legacy-jsx',
-  enforce: 'pre',
-  async transform(code: string, id: string) {
-    if (!id.startsWith(resolve(root, 'modules') + '/') || !id.endsWith('.js')) {
-      return null;
-    }
-
-    return transformWithOxc(code, id.replace(/\.js$/, '.jsx'));
-  },
-};
 
 // Client styles still use legacy ~ imports.
 const legacyLessImports = {
@@ -156,7 +142,6 @@ export default defineConfig({
   // Express owns public files; copying public/ into public/assets would nest it.
   publicDir: false,
   plugins: [
-    legacyJsx,
     legacyCssImports,
     tailwindcss(),
     rtlStylesheetPlugin(),
@@ -170,16 +155,6 @@ export default defineConfig({
       '~modules': aliases.modules,
       '~bootstrap': resolve(root, 'node_modules/bootstrap'),
       ...commonJsAliases,
-    },
-  },
-  optimizeDeps: {
-    // Source transforms do not run during the dependency scan. Legacy .js
-    // components contain JSX.
-    include: ['process/browser'],
-    rolldownOptions: {
-      moduleTypes: { '.js': 'jsx' },
-      // Pre-bundled CommonJS dependencies can also use Node's process global.
-      transform: { inject: { process: 'process/browser' } },
     },
   },
   css: {
@@ -216,7 +191,6 @@ export default defineConfig({
       build: {
         outDir: resolve(root, 'public/assets'),
         rolldownOptions: {
-          transform: { inject: { process: 'process/browser' } },
           output: { entryFileNames: 'react-main-[hash].js' },
         },
       },

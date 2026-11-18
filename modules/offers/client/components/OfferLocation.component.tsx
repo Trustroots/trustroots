@@ -4,7 +4,7 @@ import React from 'react';
 // Internal dependencies
 import Map from '@/modules/core/client/components/Map/index';
 import OfferLocationOverlay from './OfferLocationOverlay';
-import { getOfferHexColor } from '../utils/markers.js';
+import { getOfferHexColor } from '../utils/markers';
 
 interface OfferLocationProps {
   location?: number[];

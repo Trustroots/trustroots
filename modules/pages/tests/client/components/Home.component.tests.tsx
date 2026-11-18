@@ -40,7 +40,7 @@ const circle = (id: string, slug: string, label: string): TribeSummary => ({
   count: 3,
 });
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({
     children,
@@ -55,7 +55,7 @@ vi.mock('@/modules/core/client/components/Board.js', async () => {
   return { default: MockBoard };
 });
 
-vi.mock('@/modules/core/client/components/Screenshot.js', async () => {
+vi.mock('@/modules/core/client/components/Screenshot', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockScreenshot() {
     return actualReact.createElement('div', null, 'screenshot');
@@ -63,7 +63,7 @@ vi.mock('@/modules/core/client/components/Screenshot.js', async () => {
   return { default: MockScreenshot };
 });
 
-vi.mock('@/modules/core/client/components/BoardCredits.js', async () => {
+vi.mock('@/modules/core/client/components/BoardCredits', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoardCredits() {
     return actualReact.createElement('div', null, 'board-credits');

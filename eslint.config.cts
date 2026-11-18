@@ -5,22 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { defineConfig } = require('eslint/config');
 const semver = require('semver');
-const { defaultExtensionAlias } = require('eslint-import-resolver-typescript');
-const { jsExtensionAlias, resolverAliases } =
-  require('./config/client/aliases.mts').default;
-
-// Passing extensionAlias replaces the resolver default. Keep every other
-// mapping, and only prefer the shared `.js` order ahead of leftovers such as
-// `.d.ts`.
-const extensionAlias = {
-  ...defaultExtensionAlias,
-  '.js': [
-    ...jsExtensionAlias,
-    ...defaultExtensionAlias['.js'].filter(
-      (extension: string) => !jsExtensionAlias.includes(extension),
-    ),
-  ],
-};
+const { resolverAliases } = require('./config/client/aliases.mts').default;
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
 const coercedReactVersion = semver.coerce(
@@ -108,7 +93,6 @@ const legacyConfig = {
       typescript: {
         project: path.join(__dirname, 'tsconfig.json'),
         alias: resolverAliases(),
-        extensionAlias,
       },
     },
   },

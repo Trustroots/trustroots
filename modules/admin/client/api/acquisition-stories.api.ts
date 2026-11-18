@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 export async function getAcquisitionStories() {
   const { data } = await axios.post('/api/admin/acquisition-stories');

@@ -5,12 +5,9 @@ import { formatRoleLabel } from '../utils/role-label';
 
 // Internal dependencies
 import { searchUsers, listUsersByRole } from '../api/users.api';
-import AdminHeader from './AdminHeader.component.js';
-import AdminUserResultsTable from './AdminUserResultsTable.component.js';
-import {
-  SEARCH_STRING_LIMIT,
-  normalizeAdminQuery,
-} from './userSearch.helpers.js';
+import AdminHeader from './AdminHeader.component';
+import AdminUserResultsTable from './AdminUserResultsTable.component';
+import { SEARCH_STRING_LIMIT, normalizeAdminQuery } from './userSearch.helpers';
 import { Button } from '@trustroots/ui/Button';
 
 interface MemberSort {

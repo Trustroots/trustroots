@@ -9,7 +9,7 @@ import type SupportForm from '@/modules/support/client/components/SupportForm';
 type BoardProps = React.ComponentProps<typeof Board>;
 type SupportFormProps = React.ComponentProps<typeof SupportForm>;
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children, names }: BoardProps) {
     return <div data-board={names}>{children}</div>;

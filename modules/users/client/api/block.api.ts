@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 // Block member
 export async function block(username: string): Promise<unknown> {

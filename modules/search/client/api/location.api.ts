@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {

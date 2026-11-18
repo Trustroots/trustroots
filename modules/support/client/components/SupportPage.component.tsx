@@ -4,7 +4,7 @@ import React from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board';
 import SupportForm from './SupportForm';
 
 type SupportPageProps = { user?: { username?: string } | null };

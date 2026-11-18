@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 export type ReferenceUserOrId =
   string | { _id: string; username?: string; displayName?: string };

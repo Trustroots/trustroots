@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 // Internal dependencies
 import { getVolunteers, type Volunteer } from '../api/volunteers.api';
 import Board from './PageBoard';
-import ManifestoText from './ManifestoText.component.js';
+import ManifestoText from './ManifestoText.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 export default function Team({ user }: { user?: PageUser | null }) {

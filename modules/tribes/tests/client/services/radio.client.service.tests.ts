@@ -7,7 +7,7 @@ import {
   type Event,
   type EventTemplate,
 } from 'nostr-tools';
-import http from '@/modules/core/client/api/http-client.js';
+import http from '@/modules/core/client/api/http-client';
 import { Relay } from 'nostr-tools/relay';
 import {
   activeListeners,
@@ -29,7 +29,7 @@ import {
   tag,
 } from '@/modules/tribes/client/services/radio.client.service';
 
-vi.mock('@/modules/core/client/api/http-client.js', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));

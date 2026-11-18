@@ -1,5 +1,5 @@
-import type { MessageEmailFrequency } from './email-preferences.js';
-import type { LanguageLevels } from './language-levels.js';
+import type { MessageEmailFrequency } from './email-preferences.ts';
+import type { LanguageLevels } from './language-levels.ts';
 
 /** A tribe membership included in a full member profile. */
 export interface ProfileTribe<Id = string> {

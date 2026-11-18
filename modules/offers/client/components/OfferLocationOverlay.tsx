@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Marker, useMap } from 'react-map-gl/mapbox';
 
-import { getOfferHexColor, zoomToPixelMeters } from '../utils/markers.js';
+import { getOfferHexColor, zoomToPixelMeters } from '../utils/markers';
 
 interface OfferLocationOverlayProps {
   location: [number, number];

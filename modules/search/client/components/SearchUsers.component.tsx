@@ -6,7 +6,7 @@ import { Button } from '@trustroots/ui/Button';
 import ContentState from '@/modules/core/client/components/ContentState';
 
 // Internal dependencies
-import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
+import { searchUsers } from '@/modules/users/client/api/search-users.api';
 import UsersResults from './UsersResults';
 
 const MINIMUM_QUERY_LENGTH = 3;
