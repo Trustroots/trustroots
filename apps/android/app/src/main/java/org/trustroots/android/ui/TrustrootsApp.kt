@@ -312,6 +312,9 @@ private fun MemberShell(
     val hostMapResultsCacheStore = remember { HostMapResultsCacheStore() }
     val hostMapResultsCache = hostMapResultsCacheStore.forSession(api.backendURL, session)
     val shellViewModel = rememberMemberShellViewModel(api, session)
+    val circlesCache = remember(shellViewModel, api.backendURL, session.member.username, session.credentialKey) {
+        shellViewModel.circlesCacheFor(api, session)
+    }
     val shellState by shellViewModel.state.collectAsState()
     LaunchedEffect(activeVisitID) {
         shellViewModel.onEvent(MemberShellEvent.ActiveVisitChanged(activeVisitID))
@@ -486,6 +489,7 @@ private fun MemberShell(
                                             session = session,
                                             onSessionInvalidated = onSessionInvalidated,
                                             contentPadding = contentPadding,
+                                            cache = circlesCache,
                                         )
                                     }
                                     Destination.Search -> {

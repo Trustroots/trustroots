@@ -283,8 +283,20 @@ class Navigation3MemberShellJourneyTest {
 
         compose.onNodeWithTag("navigation-messages").performClick()
         waitForText("No conversations yet.")
-        compose.onNodeWithTag("navigation-circles").performClick()
-        waitForText("Mountain Circle")
+        val refreshGate = CountDownLatch(1)
+        membershipResponseGate = refreshGate
+        val harbourTop = try {
+            compose.onNodeWithTag("navigation-circles").performClick()
+            compose.waitUntil(5_000) { membershipReads.get() == 3 }
+            compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
+            compose.onNodeWithText("Joined").assertIsDisplayed()
+            assertEquals(1, compose.onAllNodesWithText("Join").fetchSemanticsNodes().size)
+            compose.onNodeWithText("Quiet Harbour").fetchSemanticsNode().boundsInRoot.top
+        } finally {
+            refreshGate.countDown()
+        }
+        compose.onNodeWithText("Joined").assertIsDisplayed()
+        assertEquals(harbourTop, compose.onNodeWithText("Quiet Harbour").fetchSemanticsNode().boundsInRoot.top, 1f)
         compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("mountain")
         compose.onNodeWithText("Mountain Circle").performClick()
         waitForText("High mountain paths.")

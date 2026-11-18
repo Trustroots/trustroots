@@ -138,13 +138,87 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun firstLoadWaitsForMembershipBeforeDisplayingRowsOrAcceptingToggles() = withScope { scope ->
+        val harbour = circle("circle-one", "Harbour", 3)
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        val repository = FakeCircleRepository(circles = listOf(harbour)).apply {
+            membershipsHandler = { pendingMemberships.await() }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        assertTrue(viewModel.state.value.isLoading)
+        assertTrue(viewModel.state.value.circles.isEmpty())
+        assertFalse(viewModel.state.value.membershipsLoaded)
+        viewModel.onEvent(CirclesEvent.ToggleMembership(harbour))
+        assertTrue(repository.membershipChanges.isEmpty())
+
+        pendingMemberships.complete(Result.success(setOf(harbour.id)))
+
+        assertEquals(listOf(harbour), viewModel.state.value.circles)
+        assertTrue(viewModel.state.value.membershipsLoaded)
+        assertEquals(setOf(harbour.id), viewModel.state.value.memberships)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun warmVisitKeepsCachedRowsAndMembershipWhileRefreshing() = withScope { scope ->
+        val harbour = circle("circle-one", "Harbour", 3)
+        val refreshedHarbour = harbour.copy(count = 4)
+        val cache = CirclesCache()
+        val firstVisit = CirclesViewModel(FakeCircleRepository(circles = listOf(harbour)), scope, cache)
+        firstVisit.onEvent(CirclesEvent.MembershipChanged(harbour.id, isMember = true))
+        firstVisit.onEvent(CirclesEvent.FilterChanged("sea"))
+
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        val repository = FakeCircleRepository(circles = listOf(refreshedHarbour)).apply {
+            membershipsHandler = { pendingMemberships.await() }
+        }
+        val viewModel = CirclesViewModel(repository, scope, cache)
+
+        assertTrue(viewModel.state.value.isLoading)
+        assertTrue(viewModel.state.value.hasLoadedCatalogue)
+        assertTrue(viewModel.state.value.membershipsLoaded)
+        assertEquals(listOf(harbour), viewModel.state.value.visibleCircles)
+        assertEquals(setOf(harbour.id), viewModel.state.value.memberships)
+
+        pendingMemberships.complete(Result.success(setOf(harbour.id)))
+
+        assertEquals(listOf(refreshedHarbour), viewModel.state.value.visibleCircles)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun slowerVisitCannotReplaceTheSnapshotFromANewerVisit() = withScope { scope ->
+        val earlier = circle("circle-one", "Harbour", 3)
+        val current = earlier.copy(count = 4)
+        val cache = CirclesCache()
+        val earlierMemberships = CompletableDeferred<Result<Set<String>>>()
+        val earlierRepository = FakeCircleRepository(circles = listOf(earlier)).apply {
+            membershipsHandler = { earlierMemberships.await() }
+        }
+        val earlierVisit = CirclesViewModel(earlierRepository, scope, cache)
+        assertTrue(earlierVisit.state.value.isLoading)
+
+        CirclesViewModel(FakeCircleRepository(listOf(current), setOf(current.id)), scope, cache)
+        earlierMemberships.complete(Result.success(emptySet()))
+
+        assertFalse(earlierVisit.state.value.isLoading)
+        assertEquals(listOf(current), cache.circles)
+        assertEquals(setOf(current.id), cache.memberships)
+    }
+
+    @Test
     fun membershipToggleWinsOverAnOlderMembershipSnapshotStillLoading() = withScope { scope ->
         val circle = circle("circle-one", "Harbour", 3)
         val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
         val repository = FakeCircleRepository(circles = listOf(circle)).apply {
             membershipsHandler = { pendingMemberships.await() }
         }
-        val viewModel = CirclesViewModel(repository, scope = scope)
+        val cache = CirclesCache().apply {
+            circles = listOf(circle)
+            memberships = emptySet()
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope, cache = cache)
 
         assertTrue(viewModel.state.value.isLoading)
         assertEquals(listOf("circle-one"), viewModel.state.value.circles.map { it.id })

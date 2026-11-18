@@ -56,7 +56,7 @@ class CirclesMembershipFailureJourneyTest {
         waitForText("Membership data is temporarily unavailable.")
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithText("Membership data is temporarily unavailable.").assertIsDisplayed()
-        compose.onNodeWithText("Join").assertIsDisplayed()
+        compose.onNodeWithText("Join").assertDoesNotExist()
         assertEquals(0, invalidatedCalls.get())
         assertTrue(requests.any { it.startsWith("GET /api/tribes?limit=150 ") })
         assertTrue(requests.any { it.startsWith("GET /api/users/memberships ") })
@@ -70,7 +70,7 @@ class CirclesMembershipFailureJourneyTest {
         waitForText("Quiet Harbour")
         compose.waitUntil(5_000) { invalidatedCalls.get() == 1 }
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
-        compose.onNodeWithText("Join").assertIsDisplayed()
+        compose.onNodeWithText("Join").assertDoesNotExist()
         assertFalse(compose.onAllNodesWithText("Please sign in again.").fetchSemanticsNodes().isNotEmpty())
         assertEquals(1, invalidatedCalls.get())
         assertTrue(requests.any { it.startsWith("GET /api/tribes?limit=150 ") })
