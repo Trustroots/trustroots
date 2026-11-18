@@ -68,6 +68,13 @@ describe('Admin policy unit tests', () => {
       resources: '/api/admin/dashboard',
       permissions: ['get'],
     });
+    support.allows.should.containDeep([
+      { resources: '/api/admin/network-connections', permissions: ['get'] },
+      {
+        resources: '/api/admin/network-connections/:memberId',
+        permissions: ['get'],
+      },
+    ]);
     const welcome = policies.shift();
     if (!welcome) throw new Error('Expected the welcome policy');
     welcome.roles.should.deepEqual(['welcome-team', 'support-team']);
@@ -154,6 +161,8 @@ describe('Admin policy unit tests', () => {
   describe('grants per role', () => {
     const supportAndAdmin = [
       'get /api/admin/dashboard',
+      'get /api/admin/network-connections',
+      'get /api/admin/network-connections/:memberId',
       'get /api/admin/experiences',
       'post /api/admin/experiences/:id/change-links',
       'get /api/admin/experience-change-requests',

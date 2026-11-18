@@ -8,6 +8,7 @@ import statService from '../../../stats/server/services/stats.server.service.mts
 import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import crypto from 'crypto';
+import { connectionSearchKey } from '../../shared/network-connections.ts';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
@@ -18,6 +19,10 @@ import {
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
 } from '../services/email-confirmation.server.service.mts';
+import {
+  CONNECTION_HISTORY_CONFLICT_MESSAGE,
+  isConnectionHistoryWriteConflict,
+} from '../services/connection-history.server.service.mts';
 type UserDocument = UserServerDocument;
 type AuthenticatedUser = UserDocument;
 
@@ -528,6 +533,11 @@ service.removeOAuthProvider = function (req, res) {
       });
     },
     function (err: Error) {
+      if (isConnectionHistoryWriteConflict(err, user)) {
+        return res
+          .status(409)
+          .send({ message: CONNECTION_HISTORY_CONFLICT_MESSAGE });
+      }
       res.status(400).send({
         message: errorService.getErrorMessage(err),
       });
@@ -651,6 +661,19 @@ service.confirmEmail = function (req, res) {
       return;
     }
     const result: EmailConfirmationResult = { profileMadePublic: !user.public };
+    const oldEmail = user.email;
+    const newEmail = user.emailTemporary;
+    if (typeof newEmail !== 'string') {
+      res
+        .status(400)
+        .send({ message: 'Email confirm token is invalid or has expired.' });
+      return;
+    }
+    const oldEmailKey =
+      typeof oldEmail === 'string'
+        ? connectionSearchKey('email', oldEmail)
+        : null;
+    const newEmailKey = connectionSearchKey('email', newEmail);
     const authVersion = user.authVersion || 0;
     const authVersionQuery =
       authVersion === 0
@@ -663,12 +686,31 @@ service.confirmEmail = function (req, res) {
         findOneAndUpdateWithCallback(
           {
             _id: user._id,
-            emailTemporary: user.emailTemporary,
+            emailTemporary: newEmail,
             // The token query already contains an $or for legacy expiry
             // handling, so combine both conditions without overwriting it.
             $and: [tokenQuery, authVersionQuery],
           },
           {
+            ...(oldEmailKey && oldEmailKey !== newEmailKey
+              ? {
+                  $push: {
+                    connectionHistory: {
+                      network: 'email',
+                      oldIdentifier: oldEmail,
+                      newIdentifier: newEmail,
+                      changedAt: now,
+                      initial: false,
+                    },
+                  },
+                  $addToSet: {
+                    connectionSearchKeys: {
+                      $each: [oldEmailKey, newEmailKey],
+                    },
+                  },
+                  $inc: { connectionHistoryRevision: 1 },
+                }
+              : {}),
             $unset: {
               emailTemporary: 1,
               emailToken: 1,
@@ -686,13 +728,13 @@ service.confirmEmail = function (req, res) {
               // Welcome sequence emails are sent in time intervals
               welcomeSequenceSent: new Date(),
               // Replace old email with new one
-              email: user.emailTemporary,
+              email: newEmail,
               // @todo: this should be done at user.server.model.js
               emailHash: crypto
                 .createHash('md5')
                 .update(
                   // Stryker disable next-line MethodExpression: the emailTemporary filter is cast trimmed and lowercased, so the update only applies when the stored value already is
-                  user.emailTemporary!.trim().toLowerCase(),
+                  newEmail.trim().toLowerCase(),
                 )
                 .digest('hex'),
             },
