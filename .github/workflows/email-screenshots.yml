@@ -1,0 +1,144 @@
+name: Email screenshots
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/email-screenshots.yml'
+      - 'packages/emails/**'
+      - 'scripts/e2e/screenshot-comment.mts'
+      - 'scripts/e2e/screenshot-diff.mts'
+      - 'scripts/e2e/storybook-screenshots.mts'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Screenshot the PR's email stories
+        run: |
+          pnpm --filter @trustroots/emails run build-storybook
+          node scripts/e2e/storybook-screenshots.mts packages/emails/storybook-static tmp/screenshots
+
+      - name: Screenshot the base branch's email stories
+        run: |
+          base="$RUNNER_TEMP/base"
+          git worktree add "$base" "origin/${GITHUB_BASE_REF}"
+          if [ ! -f "$base/packages/emails/.storybook/main.ts" ]; then
+            echo "The base branch has no email stories."
+            exit 0
+          fi
+          (cd "$base" && pnpm install --frozen-lockfile --prefer-offline && pnpm --filter @trustroots/emails run build-storybook)
+          node scripts/e2e/storybook-screenshots.mts "$base/packages/emails/storybook-static" tmp/screenshots-before
+
+      - name: Diff screenshots
+        run: node scripts/e2e/screenshot-diff.mts tmp/screenshots-before tmp/screenshots tmp/screenshots-diff
+
+      - name: Push screenshots to pr-screenshots branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_DIR: pr-${{ github.event.pull_request.number }}/${{ github.run_id }}
+        run: |
+          pushdir="$(mktemp -d)"
+          cd "$pushdir"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          if git fetch --depth=1 origin pr-screenshots:pr-screenshots 2>/dev/null; then
+            git checkout pr-screenshots
+          else
+            git checkout --orphan pr-screenshots
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          for side in before after diff; do mkdir -p "$RUN_DIR/$side"; done
+          cp "$GITHUB_WORKSPACE"/tmp/screenshots/*.png "$RUN_DIR/after/"
+          find "$GITHUB_WORKSPACE/tmp/screenshots-before" -name '*.png' -exec cp -t "$RUN_DIR/before/" {} + 2>/dev/null || true
+          find "$GITHUB_WORKSPACE/tmp/screenshots-diff" -name '*.png' -exec cp -t "$RUN_DIR/diff/" {} +
+          git add "$RUN_DIR"
+          git commit -m "PR #${{ github.event.pull_request.number }} email screenshots (${{ github.run_id }})"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:pr-screenshots; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            git fetch --depth=1 origin pr-screenshots
+            git rebase --onto FETCH_HEAD HEAD^
+            sleep "$attempt"
+          done
+
+      - name: Upsert PR comment with screenshots
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { buildScreenshotComment } = await import(
+              `${process.env.GITHUB_WORKSPACE}/scripts/e2e/screenshot-comment.mts`
+            );
+            const marker = 'email-screenshots';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const runId = context.runId;
+            const body = buildScreenshotComment({
+              beforeDir: 'tmp/screenshots-before',
+              afterDir: 'tmp/screenshots',
+              diffDir: 'tmp/screenshots-diff',
+              baseUrl: `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`,
+              runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`,
+              testStatus: 0,
+              marker,
+              title: 'Email screenshots',
+              note: 'Each story of the emails Storybook (`pnpm --filter @trustroots/emails storybook`), rendered as the sent HTML at 800px and 375px wide.',
+            });
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.body?.includes(`<!-- ${marker} -->`),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }

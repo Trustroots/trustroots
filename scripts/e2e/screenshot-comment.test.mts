@@ -96,3 +96,25 @@ test('notes failures and a missing base run', () => {
   assert.match(body, /Some changed e2e specs failed/);
   assert.match(body, /_No screenshots were captured\._\n$/);
 });
+
+test('uses its own marker, title and note, and says when there is no baseline', () => {
+  const body = buildScreenshotComment({
+    ...options,
+    marker: 'email-screenshots',
+    title: 'Email screenshots',
+    note: 'Stories from the emails Storybook.',
+    beforeDir: path.join(os.tmpdir(), 'e2e-comment-missing'),
+    afterDir: shots({ 'Signup-mobile.png': 'new' }),
+    diffDir: path.join(os.tmpdir(), 'e2e-comment-missing'),
+    testStatus: 0,
+  });
+  assert.match(
+    body,
+    /^<!-- email-screenshots -->\n## Email screenshots\n\nRun: .*\n\n_Stories from the emails Storybook\._\n\n_The base branch has no screenshots, so there is no baseline to compare against\._\n/,
+  );
+  assert.ok(
+    body.includes(
+      `| — | ${img('after', 'Signup-mobile', 'Signup-mobile.png')} | — |`,
+    ),
+  );
+});
