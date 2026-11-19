@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import JoinButton from './JoinButton';
+import EditCircle from './EditCircle';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
 import HitchhikingMap from './HitchhikingMap';
@@ -101,6 +102,7 @@ export default function TribeDetailPage({
         ? (t('One member') as string)
         : (t('{{count, number}} members', { count: tribe.count }) as string);
   const wikiUrl = circleWikiUrl(tribe);
+  const isAdmin = user?.roles?.includes('admin');
   const isHackersCircle = tribe.slug === 'hackers';
   const hasLocationMap = isHackersCircle || tribe.slug === 'hitchhikers';
 
@@ -190,7 +192,7 @@ export default function TribeDetailPage({
                 )}
                 {user ? (
                   <div className="tribe-actions-group">
-                    {user.roles?.includes('admin') && (
+                    {isAdmin && (
                       <Button
                         render={
                           <a
@@ -200,6 +202,19 @@ export default function TribeDetailPage({
                       >
                         {t('Edit circle') as string}
                       </Button>
+                    )}
+                    {!isAdmin && tribe.canEdit && (
+                      <EditCircle
+                        key={tribe._id}
+                        tribe={tribe}
+                        onSave={({ _id, label, description }) =>
+                          setTribe(current =>
+                            current?._id === _id
+                              ? { ...current, label, description }
+                              : current,
+                          )
+                        }
+                      />
                     )}
                     <JoinButton
                       tribe={tribe}

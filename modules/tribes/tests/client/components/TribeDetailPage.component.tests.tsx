@@ -8,6 +8,7 @@ import TribeDetailPage, {
   getTribeHeaderBackgroundStyle,
 } from '@/modules/tribes/client/components/TribeDetailPage.component';
 import {
+  editTribe,
   get,
   type MembershipUpdate,
   type TribeSummary,
@@ -210,6 +211,62 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       }
     },
   );
+
+  it('lets an assigned organiser retry or discard an edit', async () => {
+    getMock.mockResolvedValue({ ...tribe, canEdit: true });
+    const edit = vi.mocked(editTribe);
+    edit
+      .mockRejectedValueOnce(new Error('Network failure'))
+      .mockResolvedValueOnce({ ...tribe, label: 'Example walkers' });
+    render(
+      <TribeDetailPage
+        circle={tribe.slug}
+        user={user}
+        onMembershipUpdated={vi.fn()}
+      />,
+    );
+
+    const open = await screen.findByRole('button', { name: 'Edit circle' });
+    fireEvent.click(open);
+    const editor = within(screen.getByRole('dialog', { name: 'Edit circle' }));
+    const description = editor.getByRole('textbox', { name: 'Description' });
+    const save = editor.getByRole('button', { name: 'Save circle' });
+    expect(save).toBeDisabled();
+
+    fireEvent.change(description, { target: { value: 'Try example.org' } });
+    expect(editor.getByRole('link', { name: 'example.org' })).toHaveAttribute(
+      'href',
+      'https://example.org',
+    );
+    fireEvent.click(save);
+    expect(await editor.findByRole('alert')).toHaveTextContent(
+      'Could not save the circle.',
+    );
+    expect(description).toHaveValue('Try example.org');
+    expect(edit).toHaveBeenNthCalledWith(1, tribe.slug, {
+      description: 'Try example.org',
+    });
+    fireEvent.click(editor.getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.click(open);
+    const reopened = within(
+      screen.getByRole('dialog', { name: 'Edit circle' }),
+    );
+    expect(reopened.getByRole('textbox', { name: 'Description' })).toHaveValue(
+      tribe.description,
+    );
+    fireEvent.change(reopened.getByRole('textbox', { name: 'Circle name' }), {
+      target: { value: 'Example walkers' },
+    });
+    fireEvent.click(reopened.getByRole('button', { name: 'Save circle' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Example walkers' }),
+    ).toBeVisible();
+    expect(edit).toHaveBeenNthCalledWith(2, tribe.slug, {
+      label: 'Example walkers',
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 
   it('preserves safe links in the circle description', async () => {
     getMock.mockResolvedValue({

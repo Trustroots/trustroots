@@ -161,6 +161,91 @@ describe('Tribe CRUD tests', function () {
     should.not.exist(joined.body.tribe.organisers);
   });
 
+  it('allows current organisers to edit only their visible circle details', async () => {
+    const path = `/api/tribes/${tribe.slug}`;
+    const details = {
+      label: 'Example readers',
+      description: 'Visit example.org',
+    };
+
+    await request(app).patch(path).send(details).expect(403);
+    await utils.signIn(credentials, agent);
+    await agent.patch(path).send(details).expect(403);
+    should.not.exist((await agent.get(path).expect(200)).body.canEdit);
+
+    await Tribe.updateOne({ _id: tribe._id }, { organiserIds: [user._id] });
+    await Tribe.updateOne(
+      { _id: tribeNonPublic._id },
+      { organiserIds: [user._id] },
+    );
+    await agent
+      .patch(`/api/tribes/${tribeNonPublic.slug}`)
+      .send(details)
+      .expect(403);
+    const detail = await agent.get(path).expect(200);
+    detail.body.canEdit.should.equal(true);
+    should.not.exist(detail.body.organiserIds);
+    should.not.exist((await request(app).get(path).expect(200)).body.canEdit);
+    should.not.exist(
+      (await agent.get('/api/tribes').expect(200)).body[0].canEdit,
+    );
+
+    await User.updateOne({ _id: user._id }, { public: false });
+    const privateViewer = await agent.get(path).expect(200);
+    privateViewer.body.canEdit.should.equal(true);
+    should.not.exist(privateViewer.body.organisers);
+    await User.updateOne({ _id: user._id }, { public: true });
+
+    for (const invalid of [
+      {},
+      { label: tribeNonPublic.label },
+      { ...details, label: 'x' },
+      { ...details, label: ['Example readers'] },
+      { ...details, description: 42 },
+      { ...details, description: 'x'.repeat(4001) },
+    ]) {
+      await agent.patch(path).send(invalid).expect(400);
+    }
+
+    const saved = await agent
+      .patch(path)
+      .send({
+        ...details,
+        description:
+          '<b>Visit example.org</b><iframe src="about:blank"></iframe>',
+        organiserIds: [],
+        public: false,
+        count: 200,
+        slug: 'changed',
+      })
+      .expect(200);
+    saved.body.label.should.equal(details.label);
+    saved.body.description.should.equal('<b>Visit example.org</b>');
+    saved.body.slug.should.equal(tribe.slug);
+    saved.body.count.should.equal(tribe.count);
+    should.not.exist(saved.body.organiserIds);
+    (await agent.get(path).expect(200)).body.canEdit.should.equal(true);
+    const descriptionOnly = await agent
+      .patch(path)
+      .send({ description: 'Updated details.' })
+      .expect(200);
+    descriptionOnly.body.label.should.equal(details.label);
+    descriptionOnly.body.description.should.equal('Updated details.');
+
+    await User.updateOne({ _id: user._id }, { roles: ['user', 'shadowban'] });
+    await agent.patch(path).send(details).expect(403);
+    should.not.exist((await agent.get(path).expect(200)).body.canEdit);
+    await User.updateOne({ _id: user._id }, { roles: ['user'] });
+
+    await Tribe.updateOne({ _id: tribe._id }, { organiserIds: [] });
+    await agent.patch(path).send(details).expect(403);
+    const afterRevocation = await agent.get(path).expect(200);
+    should.not.exist(afterRevocation.body.canEdit);
+    afterRevocation.body.description.should.equal(
+      descriptionOnly.body.description,
+    );
+  });
+
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
     tribe.description = [
       '<p>Sample <b>formatted</b> <a href="https://example.org/">linked</a> text</p>',

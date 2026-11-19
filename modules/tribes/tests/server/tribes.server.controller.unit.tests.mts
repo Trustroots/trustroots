@@ -11,7 +11,9 @@ import type {
 import mongoose, { type Types } from 'mongoose';
 import sinon from 'sinon';
 
-import tribesController from './../../server/controllers/tribes.server.controller.mts';
+import tribesController, {
+  editTribe,
+} from './../../server/controllers/tribes.server.controller.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import 'should';
 
@@ -369,6 +371,22 @@ describe('Tribes controller unit tests', () => {
       );
       sinon.assert.calledOnceWithExactly(next, error);
     });
+  });
+
+  it('passes unexpected circle edit failures to the error handler', async () => {
+    const error = new Error('Write unavailable');
+    sinon.stub(Tribe, 'findOneAndUpdate').throws(error);
+    const next = sinon.spy();
+    await editTribe(
+      {
+        tribe: { _id: new mongoose.Types.ObjectId() },
+        user: { _id: new mongoose.Types.ObjectId(), roles: ['user'] },
+        body: { label: 'Example walkers' },
+      },
+      deferredResponse(),
+      next,
+    );
+    sinon.assert.calledOnceWithExactly(next, error);
   });
 
   describe('updateCount', () => {

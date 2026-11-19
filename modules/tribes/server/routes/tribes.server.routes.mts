@@ -1,7 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import tribesPolicy from './../policies/tribes.server.policy.mts';
-import tribes from './../controllers/tribes.server.controller.mts';
+import tribes, { editTribe } from './../controllers/tribes.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 
@@ -36,7 +36,8 @@ function register(app: Express) {
   app
     .route('/api/tribes/:tribe')
     .all(routeHandler(tribesPolicy.isAllowed))
-    .get(routeHandler(tribes.getTribe));
+    .get(routeHandler(tribes.getTribe))
+    .patch(disableDiscoveryCaching, routeHandler(editTribe));
 
   // Finish by binding the tribes middleware
   app.param('tribe', parameterHandler(tribes.tribeBySlug));
