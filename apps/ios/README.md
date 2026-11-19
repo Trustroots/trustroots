@@ -90,8 +90,9 @@ Only legacy Keychain entries are migrated automatically. Old simulator-only
 plaintext preference fallbacks are ignored; import a known backup on the
 simulator instead.
 
-The profile-linked key and local key are separate. Local removal requires
-confirmation and does not unlink the profile. Native linking, Android signing,
+Account can link the local npub by signing the server's ownership challenge.
+Replacing or unlinking the profile key requires confirmation. The profile link
+and the local key can be removed independently. Android browser signing,
 NIP-46 pairing and push alerts remain follow-up work in
 [#3633](https://github.com/Trustroots/trustroots/issues/3633).
 The secret-free scope and session revision rules live in `apps/shared`; Keychain,

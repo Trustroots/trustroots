@@ -306,5 +306,7 @@ The local key is encrypted using Android Keystore and belongs to the current
 Trustroots server and account. Signing out retains it for the next sign-in.
 Removing the local key requires confirmation and keeps the profile link.
 The profile key is shown when the server includes it in the mobile profile
-response. See [#3633](https://github.com/Trustroots/trustroots/issues/3633)
-for profile linking and embedded browser signing.
+response. Choose **Link local key to profile** to sign the server's ownership
+challenge. Replacing or unlinking the profile key requires confirmation.
+See [#3633](https://github.com/Trustroots/trustroots/issues/3633) for embedded
+browser signing.

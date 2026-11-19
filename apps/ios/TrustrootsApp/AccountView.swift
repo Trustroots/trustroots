@@ -27,7 +27,11 @@ struct AccountView: View {
                     ProgressView("Loading account…")
                         .frame(maxWidth: .infinity, minHeight: 240)
                 } else {
-                    NostrKeySection(linkedNpub: profile?.nostrNpub, profileLoaded: profile != nil)
+                    NostrKeySection(
+                        linkedNpub: profile?.nostrNpub,
+                        profileLoaded: profile != nil,
+                        updateProfileLink: updateNostrProfile
+                    )
                     emailSection
                     passwordSection
                     signOutSection
@@ -174,6 +178,31 @@ struct AccountView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    @MainActor
+    private func updateNostrProfile(_ npub: String?) async throws {
+        let identity = NostrIdentityManager.shared
+        let revision = identity.revision
+        let server = session.serverURLString
+        guard let username = session.member?.username, identity.isCurrent(revision) else {
+            throw NostrIdentityError.inactiveSession
+        }
+        let proof: [String: Any]?
+        if let npub {
+            let challenge = try await api.nostrProfileChallenge(serverURLString: server, npub: npub)
+            try Task.checkCancellation()
+            guard identity.isCurrent(revision), identity.npub == npub, let secret = identity.secret() else {
+                throw NostrIdentityError.inactiveSession
+            }
+            proof = try NIP07Bridge.signProfileChallenge(challenge, serverURLString: server, secret: secret)
+        } else {
+            proof = nil
+        }
+        try Task.checkCancellation()
+        let updated = try await api.updateNostrProfile(serverURLString: server, npub: npub, proof: proof)
+        guard identity.isCurrent(revision), updated.username.caseInsensitiveCompare(username) == .orderedSame else { return }
+        profile = updated
     }
 
     private func saveAccount() async {

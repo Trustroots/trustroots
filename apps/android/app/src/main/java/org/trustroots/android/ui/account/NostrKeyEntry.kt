@@ -39,6 +39,8 @@ import kotlinx.coroutines.withContext
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileApiException
+import kotlinx.coroutines.ensureActive
 import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.nostrAccountScope
 
@@ -48,6 +50,8 @@ internal fun NostrKeyEntry(api: MobileApiClient, session: MemberSession, enabled
     TextButton(onClick = { open = true }, enabled = enabled) { Text(stringResource(R.string.nostr_key)) }
     if (open && enabled) NostrKeyDialog(api, session, onClose = { open = false })
 }
+
+private enum class KeyConfirmation { REMOVE_LOCAL, REPLACE_PROFILE, UNLINK_PROFILE }
 
 @Suppress("DEPRECATION") // System credential activity also supports API 26–29.
 @Composable
@@ -64,7 +68,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
     var error by remember { mutableStateOf<Int?>(null) }
     var busy by remember { mutableStateOf(true) }
     var ready by remember { mutableStateOf(false) }
-    var confirmRemoval by remember { mutableStateOf(false) }
+    var confirmation by remember { mutableStateOf<KeyConfirmation?>(null) }
     var awaitingCredential by remember { mutableStateOf(false) }
     var foregroundVersion by remember { mutableStateOf(0) }
     val title = stringResource(R.string.nostr_key)
@@ -117,21 +121,58 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
         }
     }
 
+    fun updateProfile(npub: String?) {
+        if (busy || awaitingCredential) return
+        secret = null
+        error = null
+        busy = true
+        scope.launch {
+            val result = runCatching {
+                val proof = npub?.let { key ->
+                    val event = api.nostrProfileChallenge(session, key)
+                    withContext(Dispatchers.IO) { store.signProfileChallenge(event, api.backendURL, key) }
+                }
+                coroutineContext.ensureActive()
+                api.updateNostrProfile(session, npub, proof)
+            }
+            coroutineContext.ensureActive()
+            result.fold(
+                onSuccess = { linkedKey = Result.success(it) },
+                onFailure = { error = if ((it as? MobileApiException)?.statusCode == 403) {
+                    R.string.nostr_profile_key_unavailable
+                } else {
+                    R.string.nostr_profile_update_error
+                } },
+            )
+            busy = false
+        }
+    }
+
     val secure = DialogProperties(securePolicy = SecureFlagPolicy.SecureOn)
-    if (confirmRemoval) {
+    val decision = confirmation
+    if (decision != null) {
+        val (action, explanation) = when (decision) {
+            KeyConfirmation.REMOVE_LOCAL -> R.string.nostr_remove to R.string.nostr_remove_explanation
+            KeyConfirmation.REPLACE_PROFILE -> R.string.nostr_replace_profile to R.string.nostr_replace_explanation
+            KeyConfirmation.UNLINK_PROFILE -> R.string.nostr_unlink_profile to R.string.nostr_unlink_explanation
+        }
         AlertDialog(
-            onDismissRequest = { confirmRemoval = false },
-            title = { Text(stringResource(R.string.nostr_remove)) },
-            text = { Text(stringResource(R.string.nostr_remove_explanation)) },
+            onDismissRequest = { confirmation = null },
+            title = { Text(stringResource(action)) },
+            text = { Text(stringResource(explanation)) },
             confirmButton = {
                 TextButton(onClick = {
-                    confirmRemoval = false
+                    confirmation = null
                     secret = null
-                    update { store.remove(); null }
-                }) { Text(stringResource(R.string.nostr_remove)) }
+                    when (decision) {
+                        KeyConfirmation.REMOVE_LOCAL -> update { store.remove(); null }
+                        KeyConfirmation.REPLACE_PROFILE -> publicKey?.let(::updateProfile)
+                        KeyConfirmation.UNLINK_PROFILE -> updateProfile(null)
+                    }
+                }) { Text(stringResource(action)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmRemoval = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { confirmation = null }) { Text(stringResource(R.string.cancel)) }
             },
             properties = secure,
         )
@@ -152,8 +193,24 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                         Text(linked.getOrNull() ?: stringResource(R.string.nostr_no_profile_key))
                     }
                 }
-                Text(stringResource(R.string.nostr_local_public))
                 val npub = publicKey
+                if (linked?.isSuccess == true && session.accessToken != null) {
+                    val current = linked.getOrNull()
+                    if (npub != null && npub != current) {
+                        TextButton(enabled = !busy && !awaitingCredential, onClick = {
+                            if (current == null) updateProfile(npub)
+                            else confirmation = KeyConfirmation.REPLACE_PROFILE
+                        }) {
+                            Text(stringResource(if (current == null) R.string.nostr_link_profile else R.string.nostr_replace_profile))
+                        }
+                    }
+                    if (current != null) {
+                        TextButton(enabled = !busy && !awaitingCredential, onClick = {
+                            confirmation = KeyConfirmation.UNLINK_PROFILE
+                        }) { Text(stringResource(R.string.nostr_unlink_profile)) }
+                    }
+                }
+                Text(stringResource(R.string.nostr_local_public))
                 when {
                     npub != null -> {
                         SelectionContainer { Text(npub) }
@@ -178,7 +235,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                             Text(backup)
                             TextButton(onClick = { secret = null }) { Text(stringResource(R.string.nostr_hide_secret)) }
                         }
-                        TextButton(enabled = !busy && !awaitingCredential, onClick = { confirmRemoval = true; secret = null }) {
+                        TextButton(enabled = !busy && !awaitingCredential, onClick = { confirmation = KeyConfirmation.REMOVE_LOCAL; secret = null }) {
                             Text(stringResource(R.string.nostr_remove))
                         }
                     }

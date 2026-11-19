@@ -473,6 +473,25 @@ class MobileApiClient(
         }
     }
 
+    internal suspend fun nostrProfileChallenge(session: MemberSession, npub: String): JSONObject =
+        withContext(Dispatchers.IO) {
+            JSONObject(jsonRequest(
+                "/api/mobile/v0/profile/nostr/challenge", "POST",
+                JSONObject().put("nostrNpub", npub).toString(), session = session,
+            ).body).getJSONObject("event")
+        }
+
+    internal suspend fun updateNostrProfile(session: MemberSession, npub: String?, proof: JSONObject?): String? =
+        withContext(Dispatchers.IO) {
+            val body = JSONObject().put("nostrNpub", npub.orEmpty())
+            if (proof != null) body.put("nostrProof", proof)
+            val profile = JSONObject(jsonRequest(
+                "/api/mobile/v0/profile", "PUT", body.toString(), session = session,
+            ).body)
+            check(profile.getString("username").equals(session.member.username, ignoreCase = true))
+            profile.optionalStringText("nostrNpub")
+        }
+
     /** Resolves the small, authenticated member record needed by an alert-opened conversation. */
     suspend fun messageMember(session: MemberSession, memberID: String): Result<ConversationRecipient> =
         withContext(Dispatchers.IO) {

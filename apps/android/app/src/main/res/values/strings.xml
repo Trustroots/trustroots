@@ -74,4 +74,11 @@
     <string name="nostr_storage_error">The local Nostr key could not be accessed.</string>
     <string name="nostr_invalid_key">Enter a valid nsec or 64-character private key.</string>
     <string name="nostr_done">Done</string>
+    <string name="nostr_link_profile">Link local key to profile</string>
+    <string name="nostr_replace_profile">Replace profile key</string>
+    <string name="nostr_unlink_profile">Unlink profile key</string>
+    <string name="nostr_replace_explanation">This replaces the public key linked to your profile. Your local key stays on this phone.</string>
+    <string name="nostr_unlink_explanation">This removes the public key from your profile. Your local key stays on this phone.</string>
+    <string name="nostr_profile_update_error">The profile key could not be updated. Please try again.</string>
+    <string name="nostr_profile_key_unavailable">The profile update was refused. This public key may already be linked to another member.</string>
 </resources>
