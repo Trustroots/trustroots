@@ -43,6 +43,7 @@ let userToId: UserModelDocument['_id'];
 let _message: MessageRecord;
 let message: MessageDocument;
 let messageUnreadJobHandler: typeof import('./../../../server/jobs/message-unread.server.job.mts').run;
+const senderConversationUrl = `${config.https ? 'https' : 'http'}://${config.domain}/messages/userfrom`;
 
 describe('Job: message unread', function () {
   const jobs = testutils.catchJobs<{
@@ -305,7 +306,9 @@ describe('Job: message unread', function () {
 
     jobs.length.should.equal(1);
     jobs[0].data.to.address.should.equal(_userTo.email);
-    jobs[0].data.text.should.containEql('FullFrom NameFrom (1 unread)');
+    jobs[0].data.text.should.containEql(
+      `FullFrom NameFrom ${senderConversationUrl} (1 unread)`,
+    );
     (await Message.countDocuments({ notificationCount: 0 })).should.equal(4);
     const recipient = required(await User.findById(userToId).lean().exec());
     required(recipient.dailyMessageDigestPeriod)
@@ -325,7 +328,9 @@ describe('Job: message unread', function () {
     });
     await queueMessageDigests(new Date('2026-01-05T12:00:00.000Z'));
     jobs.length.should.equal(1);
-    jobs[0].data.text.should.containEql('userfrom (1 unread)');
+    jobs[0].data.text.should.containEql(
+      `userfrom ${senderConversationUrl} (1 unread)`,
+    );
   });
 
   it('skips blocked senders, restricted senders and conversations with no unread messages', async function () {
