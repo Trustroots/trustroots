@@ -92,7 +92,11 @@ test('place borders and account checkbox spacing survive Bootstrap 5', async ({
   ]);
 
   await page.goto('/signin');
-  await expectTricon(page.locator('.password-toggle .icon-eye'));
+  await expectTricon(
+    page
+      .getByRole('button', { name: 'Toggle password visibility' })
+      .locator('.icon-eye'),
+  );
 
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/search');
