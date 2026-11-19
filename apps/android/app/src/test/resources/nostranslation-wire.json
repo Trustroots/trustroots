@@ -1,0 +1,53 @@
+{
+  "now": 1800000000,
+  "recipient": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+  "note": "Fixtures generated with nostr-tools using public test scalars 1 and 2",
+  "link": "nostrconnect://79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798?relay=wss%3A%2F%2Frelay.trustroots.org&secret=example-4412&perms=sign_event%3A27235&name=Trustroots+Nostranslation&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation",
+  "conversationKey": "c41c775356fd92eadc63ff5a0dc1da211b268cbea22316767095b2871ea1412d",
+  "shortCiphertext": "AgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGsp0u+FdSm5Goi6IxU+ShvBkQId5jsU4OYrba+MDk05xhkkGPw3aC7zoWUcPdvx3luSxh5xBCOLY+4hyAsMWhFnSS",
+  "longCiphertext": "AgcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHW/RhOpxE98epHA2hq6EGF3X6ONkBNR6Urpg71inJekhFSgjYHm0JX55voTQd655H2RmDehIfnquqUcxTdqIhQwjAy7cFQ590yf8/I12qRO3HKmAqPg4YxrH/UGGL7Z6u/9J/fy9sYi1bIozAQLAffWNH54aLo9Tp1YvvyeN7EPNOi05b81+laUqlqOXAunKWlX7aKWgneEyNEw2tXM8mHGGo3NDRX3p4ftmO6eBfnyDjCv0LZdm41rNvHs1Z9gqIeSXK1vPZ17J2WiYTkju8xfXPZzAE4yLj13ww0SCXCUxXDhw2z3ONr8VsFyfA69+zOa594J8G/TyYJfksT7E0BYrn62IkxXN1AgVnAk4N50G9nFtsGKAn76vBr9WR7sFS8ld6KGRc8SWaaXDe/EPIZi+Pk9VhgjmmnYSWQ1MrSWym/ADhiDA9VdapteYagx8bLwr6rfLtXFHiup2kO3Z0zp65",
+  "getPublicKey": {
+    "kind": 24133,
+    "created_at": 1800000000,
+    "tags": [
+      ["p", "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"]
+    ],
+    "content": "AggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI/FftE0vbZg8mRdcvYc0S2YR32G9PAfIVbU7vQQDtDzw8mO4uI6Ts8wdlsRR1GU6Z3RJFehIJfCHI3YOvHbu59+puUU7k6tBs31h5IbayyjBuVw7pncTbszN2Ig0tx7bvax8=",
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "id": "f935361348f8a4d8d108b79d38a6137e6bf15f453b4047aec9dec0a70aa1ce01",
+    "sig": "2e6a50524b57087ec22721297d32c957f4e937e432bc4624ad7898da01f441105027e4105d39b447269d5b502e57751d7b9c0c56df9a80e62aaf06e8e7775d00"
+  },
+  "signReview": {
+    "kind": 24133,
+    "created_at": 1800000000,
+    "tags": [
+      ["p", "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"]
+    ],
+    "content": "AgkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJhpBSzGLFrvi2kuq7Ee3y1Tj+pNJBon9I2g3MKTDew6XvgAg9Ep8e3L7If+BmGwUPcG7VwnQbUscO2nzUkYx31/MsANi/9dt8t7VQ1UkeC0UuWWXYJVISG6WPRr2aHYqiS7+hXkbFHUlPWUAuZzVvs2P7d4wnsIXHAIDB8ZuxPypyZ4xaiG5mAJPZpnr7UqWSNZAYSneoVYA5gPvjtggW5cONdoSGvwj/Jipju0UL2S1STgNkL3kBerjlJkd295uQ6SdfokZegxngAmsJQWdmFh2KMRXGNyyog9AWBVGZ8AeIxjUTty6+hfHNU9J5DUggVYy8K4GSJ5HojQN/BldNv+I1Y9bjYGUdrBAyA6bMgNILWNjnTY4LoJ0cPb/QF02Fj/wRinCyTSydV/rf84xrJo2HyPmmqxKXQYvAlldwrNsnIe0R6ec9/3Scimr0p/IwvXSiBj7bqGNSskp8RNmgAqRj",
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "id": "481aed14072f4a3f293949685e9cf53660db75bb1bc180451879a1764ea1a04f",
+    "sig": "3ebc5d312bfc77241fea255592c38d48867979ef66f39bd4184fe6838c2f74ecc1377b1036e7894832923e8055943cf5a2836fc1fd07c2a6c0d7ffe6414a9803"
+  },
+  "unsupported": {
+    "kind": 24133,
+    "created_at": 1800000000,
+    "tags": [
+      ["p", "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"]
+    ],
+    "content": "AgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK61BhjJmbjcdeLpRt5bz64kbzR+lsqep/wz3ATsTlQ+rNx91xwp6ycFhEfrI7aT8jEFMlr88QY3MQ0XctuUEnqNIt1mI9KuUcy80B3CkfvTC5qbPA8B4/SeBpGylW7c3NQurlsTVheWS/34V+wzxadLqrgEYmv3VCJMMHkgDOYcgJEQ==",
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "id": "6bc797cd3b1924e60243e4cb26f5b73b0ddd6d42c286df3d638c32784321a92f",
+    "sig": "c0bd699ce565b9ffb2f557cdafca054de48fdf457b70723755bb0a01a0a2ee4c6f811a2894728e6b2cd73d68e5635f575600bc58af70f7e0a252da4e90ca3e22"
+  },
+  "connect": {
+    "kind": 24133,
+    "created_at": 1800000000,
+    "tags": [
+      ["p", "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5"]
+    ],
+    "content": "AgsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLrOQRTvTtIZV/Z2rflJHa7a4ikS8a5/99Rv5z+7AxLGYbZoXd44zRjtCtNK+VwznGHfdu5KObcHPXUzqmeNh1MBmITieE5/6bNryxMUthZVTWWwkY10fNg21YtTB7K1ZGwwZdlCb+BwkumuEBmmv8qoutpr58nGWQx3CvyWAOatwMrsFQpuTaH04Qr1RYRoXFA1prckRneqKuNT+u/RTGGhOj",
+    "pubkey": "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "id": "ff426783facd7fae840cf91fe8162439deb271c8422e28f731b53ba7296568cf",
+    "sig": "e5dd80f5308bd5addea484de533204b4a8c92cdc6e1f1f6b03b78e8974b2bd5880beea589ea4f7cc6cec4f8e5c151367ad60562eae5ef07a0913275edd6fdf43"
+  }
+}

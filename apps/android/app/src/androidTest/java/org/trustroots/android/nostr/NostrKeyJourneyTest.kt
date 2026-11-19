@@ -11,13 +11,13 @@ import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -41,6 +41,7 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.account.NostrKeyEntry
 
+@OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
 class NostrKeyJourneyTest {
     @get:Rule val compose = createComposeRule()
@@ -115,7 +116,7 @@ class NostrKeyJourneyTest {
             compose.onNodeWithText(profile).performScrollTo().assertIsDisplayed()
             replacement.performScrollTo().performClick()
             replacement.performClick()
-            compose.waitUntil(10_000) { compose.onAllNodesWithText(profile).fetchSemanticsNodes().isEmpty() }
+            compose.waitUntilDoesNotExist(hasText(profile), timeoutMillis = 10_000)
             compose.onNodeWithText("Remove local key").performScrollTo().performClick()
             compose.onNodeWithText("Cancel").performClick()
             compose.onNodeWithText("Copy public key").performScrollTo().assertIsDisplayed()
@@ -310,6 +311,6 @@ class NostrKeyJourneyTest {
     }
 
     private fun awaitText(text: String) {
-        compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntilAtLeastOneExists(hasText(text), timeoutMillis = 10_000)
     }
 }
