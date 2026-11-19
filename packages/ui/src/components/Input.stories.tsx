@@ -32,3 +32,7 @@ export const Disabled: Story = {
 export const Large: Story = {
   args: { fieldSize: 'lg' },
 };
+
+export const Small: Story = {
+  args: { fieldSize: 'sm' },
+};

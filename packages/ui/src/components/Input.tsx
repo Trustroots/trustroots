@@ -1,22 +1,31 @@
 import React, { type ComponentProps } from 'react';
 import { cn } from '#lib/cn';
+import {
+  fieldBase,
+  fieldPlaceholder,
+  fieldSizes,
+  fieldState,
+} from '#lib/fieldStyles';
 
 type InputProps = ComponentProps<'input'> & {
-  fieldSize?: 'lg';
+  fieldSize?: keyof typeof fieldSizes;
 };
 
-export function Input({ className, fieldSize, ...props }: InputProps) {
+export function Input({ className, fieldSize = 'md', ...props }: InputProps) {
   return (
     <input
       {...props}
       data-slot="input"
       className={cn(
-        'tw:block tw:box-border tw:w-full tw:appearance-none tw:rounded-base tw:border tw:border-solid tw:bg-white tw:bg-clip-padding tw:shadow-none',
-        'tw:transition-[border-color,box-shadow] tw:duration-150 tw:ease-in-out tw:motion-reduce:transition-none',
-        'tw:focus:border-[#86b7fe] tw:focus:[box-shadow:0_0_0_.25rem_#0d6efd40] tw:focus:outline-none tw:disabled:bg-[#e9ecef] tw:disabled:opacity-100',
-        fieldSize === 'lg'
-          ? 'tw:h-[46px] tw:border-[#dee2e6] tw:px-(--tr-padding-large-horizontal) tw:py-(--tr-padding-large-vertical) tw:text-(length:--tr-font-size-large) tw:leading-normal tw:text-[#212529]'
-          : 'tw:h-[34px] tw:border-[#ced4da] tw:px-3 tw:py-1.5 tw:text-sm tw:leading-[1.428571429] tw:text-[#333]',
+        fieldBase,
+        fieldSizes[fieldSize],
+        fieldState,
+        fieldSize === 'sm' ? 'tw:h-[34px]' : fieldPlaceholder,
+        fieldSize === 'lg' && 'tw:h-[46px]',
+        'tw:shadow-none',
+        props.type === 'file' &&
+          'tw:overflow-hidden tw:file:-my-1.5 tw:file:-ms-3 tw:file:me-3 tw:file:border-0 tw:file:border-e tw:file:border-solid tw:file:border-[#dee2e6] tw:file:bg-[#f8f9fa] tw:file:px-3 tw:file:py-1.5 tw:file:text-inherit',
+        props.type === 'range' && 'tw:appearance-auto tw:accent-brand-primary',
         className,
       )}
     />

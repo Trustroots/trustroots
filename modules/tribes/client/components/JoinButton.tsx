@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import React, { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@trustroots/ui/cn';
@@ -236,10 +237,9 @@ export default function JoinButton({
               <label htmlFor={reasonId}>
                 {t('Why would you like to join? (optional)')}
               </label>
-              <input
+              <Input
                 id={reasonId}
                 aria-describedby={`${reasonId}-help`}
-                className="form-control"
                 type="text"
                 maxLength={160}
                 disabled={isUpdating}

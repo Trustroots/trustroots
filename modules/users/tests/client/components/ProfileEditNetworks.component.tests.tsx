@@ -433,7 +433,7 @@ describe('ProfileEditNetworks', () => {
       'https://www.couchsurfing.com/people/ada-cs',
     );
     expect(couchsurfingPreview.closest('a')).toBeNull();
-    expect(couchsurfingPreview.closest('.input-group')).toBeNull();
+    expect(couchsurfingPreview.closest('[data-slot="input-group"]')).toBeNull();
     expect(couchsurfingPreview).toHaveClass('help-block', 'text-break');
   });
 

@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -30,9 +31,8 @@ function LevelSelectors({
           language: names?.[code] ? t(names[code], { ns: 'languages' }) : code,
         })}
       </label>
-      <select
+      <Select
         id={`language-level-${code}`}
-        className="form-control"
         value={levels[code] || ''}
         onChange={event => {
           const next = { ...levels };
@@ -48,7 +48,7 @@ function LevelSelectors({
             {t(label)}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   ));
 }

@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import { isAxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 
@@ -151,8 +152,7 @@ export default function AdminExperienceChanges(): React.JSX.Element {
           <h2>Create a support link</h2>
           <form className="form-inline" onSubmit={event => void search(event)}>
             <label htmlFor="experience-member-username">Member username</label>{' '}
-            <input
-              className="form-control"
+            <Input
               id="experience-member-username"
               value={username}
               onChange={event => setUsername(event.target.value)}
@@ -193,8 +193,7 @@ export default function AdminExperienceChanges(): React.JSX.Element {
               <label htmlFor="experience-change-link">
                 Support link (expires in seven days)
               </label>
-              <input
-                className="form-control"
+              <Input
                 id="experience-change-link"
                 readOnly
                 value={link}
