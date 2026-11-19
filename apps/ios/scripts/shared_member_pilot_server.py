@@ -4,7 +4,9 @@
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Lock
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 
 MEMBER = {
@@ -22,16 +24,19 @@ PARTNER = {
     "displayName": "Robin Example",
     "tagline": "A partner profile",
 }
+INCOMING_MESSAGE = {
+    "_id": "message-pilot-incoming",
+    "content": "Hello from the test fixture.",
+    "userFrom": PARTNER,
+}
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
-    messages = [
-        {
-            "_id": "message-pilot-incoming",
-            "content": "Hello from the test fixture.",
-            "userFrom": PARTNER,
-        }
-    ]
+    session_lock = Lock()
+    access_token = None
+    refresh_token = None
+    refresh_count = 0
+    messages = [INCOMING_MESSAGE]
     send_attempts = 0
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
@@ -42,7 +47,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if not self._authorised():
             return
         if route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
-            self._json(200, {"profile": MEMBER})
+            fixture = type(self)
+            with fixture.session_lock:
+                refresh_count = fixture.refresh_count
+            profile = dict(MEMBER)
+            if refresh_count:
+                profile["tagline"] = f"A test profile after refresh {refresh_count}"
+            self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
             self._json(200, {"profile": PARTNER})
         elif route == "/api/mobile/v0/messages":
@@ -61,20 +72,47 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802 - BaseHTTPRequestHandler API
         body = self._body()
+        fixture = type(self)
+        if self.path == "/fixture/expire-access-token":
+            with fixture.session_lock:
+                expired = fixture.access_token is not None
+                fixture.access_token = None
+            if expired:
+                self._json(200, {"status": "expired"})
+            else:
+                self._json(409, {"message": "The fixture has no active access token."})
+            return
         if self.path == "/api/mobile/v0/auth/signin":
             if body.get("username") != MEMBER["username"] or body.get("password") != "example-password":
                 self._json(401, {"message": "Check the fixture username and password."})
                 return
-            self._json(200, {
-                "accessToken": "fixture-access-token",
-                "refreshToken": "fixture-refresh-token",
-                "accessTokenExpiresAt": "2030-01-01T00:00:00Z",
-                "member": MEMBER,
-            })
+            with fixture.session_lock:
+                fixture.messages = [INCOMING_MESSAGE]
+                fixture.send_attempts = 0
+                fixture.refresh_count = 0
+                session = fixture._rotate_credentials()
+            self._json(200, session)
+            return
+        if self.path == "/api/mobile/v0/auth/refresh":
+            with fixture.session_lock:
+                session = (
+                    fixture._rotate_credentials()
+                    if fixture.refresh_token and body.get("refreshToken") == fixture.refresh_token
+                    else None
+                )
+                if session is not None:
+                    fixture.refresh_count += 1
+            if session is None:
+                self._json(401, {"code": "authentication_required", "message": "Sign in again."})
+            else:
+                self._json(200, session)
             return
         if not self._authorised():
             return
         if self.path == "/api/mobile/v0/auth/signout":
+            with fixture.session_lock:
+                fixture.access_token = None
+                fixture.refresh_token = None
             self._json(200, {})
         elif self.path == "/api/mobile/v0/messages":
             content = body.get("content")
@@ -96,10 +134,24 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(404, {"message": "Fixture route not found."})
 
     def _authorised(self):
-        if self.headers.get("Authorization") == "Bearer fixture-access-token":
+        fixture = type(self)
+        with fixture.session_lock:
+            token = fixture.access_token
+        if token and self.headers.get("Authorization") == f"Bearer {token}":
             return True
         self._json(401, {"code": "authentication_required", "message": "Sign in again."})
         return False
+
+    @classmethod
+    def _rotate_credentials(cls):
+        cls.access_token = f"fixture-access-{uuid4()}"
+        cls.refresh_token = f"fixture-refresh-{uuid4()}"
+        return {
+            "accessToken": cls.access_token,
+            "refreshToken": cls.refresh_token,
+            "accessTokenExpiresAt": "2030-01-01T00:00:00Z",
+            "member": MEMBER,
+        }
 
     def _body(self):
         size = int(self.headers.get("Content-Length", "0"))
@@ -109,6 +161,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         data = json.dumps(value).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
