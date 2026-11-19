@@ -53,7 +53,7 @@ internal fun showSharedMemberPilot(
         username = sessionState.session?.member?.username,
         initialError = sessionState.signedOutMessage?.let { stringResource(R.string.screen_sign_in_session_expired) },
         installBackHandler = { active, onBack -> BackHandler(active, onBack) },
-        renderConnectionsMap = { DashboardConnectionsMap(it) },
+        renderConnectionsMap = { SharedHomeConnectionsMap(it) },
     )
     return true
 }

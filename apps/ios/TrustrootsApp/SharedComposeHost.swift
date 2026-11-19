@@ -19,6 +19,47 @@ struct SharedComposeHost: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
+struct SharedHomeTab: View {
+    @ObservedObject var session: MemberSessionStore
+    @State private var connection: ConnectionProfile?
+
+    var body: some View {
+        SharedHomeController(session: session) { username in
+            connection = ConnectionProfile(id: username)
+        }
+        .id(session.member?.username)
+        .sheet(item: $connection) { profile in
+            NavigationStack {
+                MemberProfileView(session: session, username: profile.id)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { connection = nil }
+                        }
+                    }
+            }
+        }
+    }
+
+    private struct ConnectionProfile: Identifiable {
+        let id: String
+    }
+}
+
+private struct SharedHomeController: UIViewControllerRepresentable {
+    let session: MemberSessionStore
+    let openProfile: (String) -> Void
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.SharedHomeViewController(
+            gateway: SharedMemberPilotGateway(session: session, exit: {}),
+            createConnectionsMap: { DashboardMapView(pins: $0) },
+            openProfile: openProfile
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
 @MainActor
 private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGateway {
     private let session: MemberSessionStore

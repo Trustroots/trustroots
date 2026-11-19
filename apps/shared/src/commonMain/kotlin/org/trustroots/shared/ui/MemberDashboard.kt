@@ -24,22 +24,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-internal fun MemberDashboard(
-    gateway: PilotGateway,
+fun MemberDashboard(
+    accountKey: Any,
+    loadNotes: suspend () -> Result<List<PilotNote>>,
+    loadConnections: suspend () -> Result<PilotConnections>,
     renderConnectionsMap: @Composable (List<PilotMapPin>) -> Unit,
     onConnection: (String) -> Unit,
+    showTitle: Boolean = true,
 ) {
-    var notes by remember { mutableStateOf(emptyList<PilotNote>()) }
-    var connections by remember { mutableStateOf(PilotConnections(emptyList(), emptyList())) }
-    LaunchedEffect(gateway) {
-        awaitData(gateway::featuredNotes).onSuccess { notes = it }
+    var notes by remember(accountKey) { mutableStateOf(emptyList<PilotNote>()) }
+    var connections by remember(accountKey) { mutableStateOf(PilotConnections(emptyList(), emptyList())) }
+    LaunchedEffect(accountKey) {
+        loadNotes().onSuccess { notes = it }
     }
-    LaunchedEffect(gateway) {
-        awaitData(gateway::connections).onSuccess { connections = it }
+    LaunchedEffect(accountKey) {
+        loadConnections().onSuccess { connections = it }
     }
 
     PilotForm(spacing = 8.dp) {
-        PilotTitle("Home")
+        if (showTitle) PilotTitle("Home")
         if (notes.isNotEmpty()) {
             PilotTitle("Trustroots updates")
             notes.forEach { note ->

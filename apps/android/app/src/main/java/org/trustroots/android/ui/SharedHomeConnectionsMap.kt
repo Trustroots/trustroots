@@ -34,7 +34,7 @@ import org.trustroots.android.ui.hostmap.hostMapTiles
 import org.trustroots.shared.ui.PilotMapPin
 
 @Composable
-internal fun DashboardConnectionsMap(pins: List<PilotMapPin>) {
+internal fun SharedHomeConnectionsMap(pins: List<PilotMapPin>) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val tiles = remember { hostMapTiles(BuildConfig.MAPBOX_PUBLIC_TOKEN) }

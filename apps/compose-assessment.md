@@ -299,3 +299,22 @@ dashboard Android journeys cover discovery, a failed feed and return navigation;
 iOS dashboard build and runtime verification must pass on macOS before rollout.
 
 ![Shared member dashboard on an Android emulator](shared/docs/member-dashboard-android.png)
+
+## Shared Home in the regular app shells
+
+The shared dashboard can now run as the first tab in the existing Android and
+SwiftUI member shells. It uses their existing secure sessions, native Search
+and Messages, and opens a regular member profile when a connection is chosen.
+Circles remains available from Android Profile and iOS Menu.
+
+- Android debug: `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_HOME true`.
+- iOS debug: `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-home`.
+
+On Android, the fixture journey covers signing in with a saved session, the
+Home map and feed, profile restoration across activity recreation, Back,
+native tabs and Circles. iOS CI exercises the handoff from the standalone
+pilot to the regular shell with the existing Keychain session. The remaining
+rollout decision centres on supported-device verification and the performance
+comparison described above.
+
+![Shared Home in the regular Android navigation](shared/docs/member-dashboard-android-shell.png)

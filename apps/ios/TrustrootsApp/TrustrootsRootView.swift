@@ -3,7 +3,8 @@ import UIKit
 
 struct TrustrootsRootView: View {
     @ObservedObject var session: MemberSessionStore
-    @State private var destination: TrustrootsDestination = .profile
+    let sharedHome: Bool
+    @State private var destination: TrustrootsDestination
     @State private var browserRoute: TrustrootsBrowserRoute?
     @State private var messagesNavigationID = UUID()
     @State private var searchLocation: String?
@@ -11,6 +12,12 @@ struct TrustrootsRootView: View {
     @State private var isShowingCircleDetail = false
     @State private var isShowingProfileDetail = false
     @StateObject private var offlineAvailability = OfflineAvailability.shared
+
+    init(session: MemberSessionStore, sharedHome: Bool = false) {
+        self.session = session
+        self.sharedHome = sharedHome
+        _destination = State(initialValue: sharedHome ? .home : .profile)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -41,6 +48,8 @@ struct TrustrootsRootView: View {
                         }
                     } else {
                         switch destination {
+                        case .home:
+                            SharedHomeTab(session: session)
                         case .circles:
                             CirclesView(session: session)
                         case .profile:
@@ -75,6 +84,7 @@ struct TrustrootsRootView: View {
                                 .id(messagesNavigationID)
                         case .menu:
                             MoreView(
+                                showsCircles: sharedHome,
                                 openBrowser: { browserRoute = $0 },
                                 selectDestination: { destination = $0 }
                             )
@@ -84,7 +94,10 @@ struct TrustrootsRootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if !isKeyboardVisible {
-                    TrustrootsBottomNavigation(destination: $destination) { selectedDestination in
+                    TrustrootsBottomNavigation(
+                        destination: $destination,
+                        firstTab: sharedHome ? .home : .circles
+                    ) { selectedDestination in
                         if destination == .search, selectedDestination == .search {
                             NotificationCenter.default.post(name: .trustrootsReturnToMap, object: nil)
                         }
@@ -104,7 +117,12 @@ struct TrustrootsRootView: View {
                     browserRoute = nil
                 },
                 openHome: {
-                    browserRoute = .website(path: "/", title: "Trustroots")
+                    if sharedHome {
+                        browserRoute = nil
+                        destination = .home
+                    } else {
+                        browserRoute = .website(path: "/", title: "Trustroots")
+                    }
                 },
                 openProfile: {
                     browserRoute = nil
@@ -321,6 +339,7 @@ struct TrustrootsWebsiteLink {
 }
 
 private enum TrustrootsDestination: CaseIterable {
+    case home
     case circles
     case profile
     case editProfile
@@ -334,6 +353,7 @@ private enum TrustrootsDestination: CaseIterable {
 
     var label: String {
         switch self {
+        case .home: return "Home"
         case .circles: return "Circles"
         case .profile: return "Profile"
         case .editProfile: return "Edit profile"
@@ -349,6 +369,7 @@ private enum TrustrootsDestination: CaseIterable {
 
     var systemImage: String {
         switch self {
+        case .home: return "house.fill"
         case .circles: return "person.2.fill"
         case .profile: return "person.2.fill"
         case .editProfile: return "pencil"
@@ -364,6 +385,7 @@ private enum TrustrootsDestination: CaseIterable {
 
     var analyticsPath: String {
         switch self {
+        case .home: return "/ios/home"
         case .circles: return "/ios/circles"
         case .profile: return "/ios/profile"
         case .editProfile: return "/ios/profile/edit"
@@ -376,13 +398,6 @@ private enum TrustrootsDestination: CaseIterable {
         case .menu: return "/ios/menu"
         }
     }
-
-    static let navigationItems: [TrustrootsDestination] = [
-        .circles,
-        .search,
-        .messages,
-        .menu,
-    ]
 }
 
 private struct NativeAnalyticsPage {
@@ -441,11 +456,12 @@ private enum UmamiAnalytics {
 
 private struct TrustrootsBottomNavigation: View {
     @Binding var destination: TrustrootsDestination
+    let firstTab: TrustrootsDestination
     let selectDestination: (TrustrootsDestination) -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(TrustrootsDestination.navigationItems, id: \.label) { item in
+            ForEach([firstTab, .search, .messages, .menu], id: \.label) { item in
                 Button {
                     selectDestination(item)
                 } label: {
@@ -481,6 +497,7 @@ private struct TrustrootsBottomNavigation: View {
 }
 
 private struct MoreView: View {
+    let showsCircles: Bool
     let openBrowser: (TrustrootsBrowserRoute) -> Void
     let selectDestination: (TrustrootsDestination) -> Void
 
@@ -489,6 +506,11 @@ private struct MoreView: View {
             List {
                 Button("My profile") {
                     selectDestination(.profile)
+                }
+                if showsCircles {
+                    Button("Circles") {
+                        selectDestination(.circles)
+                    }
                 }
                 Button("Contacts") {
                     selectDestination(.contacts)
