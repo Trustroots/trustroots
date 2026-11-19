@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { AuthPasswordInput } from './AuthPasswordInput';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@trustroots/ui/cn';
@@ -409,13 +411,13 @@ export default function SignupPage() {
                     First Name
                   </label>
                   <div className="col-sm-8">
-                    <input
+                    <Input
                       ref={firstNameInput}
                       type="text"
                       required
                       id="firstName"
                       name="firstName"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.firstName}
                       disabled={isLoading}
                       onChange={event =>
@@ -429,12 +431,12 @@ export default function SignupPage() {
                     {t('Last name (optional)')}
                   </label>
                   <div className="col-sm-8">
-                    <input
+                    <Input
                       type="text"
                       id="lastName"
                       name="lastName"
                       aria-describedby="lastNameHelp"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.lastName}
                       disabled={isLoading}
                       onChange={event =>
@@ -453,12 +455,12 @@ export default function SignupPage() {
                     Email
                   </label>
                   <div className="col-sm-8">
-                    <input
+                    <Input
                       type="email"
                       required
                       id="email"
                       name="email"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.email}
                       disabled={isLoading}
                       onChange={event => {
@@ -480,22 +482,25 @@ export default function SignupPage() {
                     )}
                   </div>
                 </div>
-                <div
-                  className={cn('form-group', {
-                    'has-error': usernameErrorMessage,
-                  })}
-                >
+                <div className="form-group">
                   <label htmlFor="username" className="col-sm-4 control-label">
                     Username
                   </label>
                   <div className="col-sm-8">
-                    <input
+                    <Input
                       type="text"
                       required
                       id="username"
                       name="username"
                       autoCapitalize="off"
-                      className="form-control input-lg"
+                      fieldSize="lg"
+                      aria-invalid={Boolean(usernameErrorMessage)}
+                      aria-describedby={
+                        usernameErrorMessage
+                          ? 'signup-username-error'
+                          : undefined
+                      }
+                      className="tw:aria-invalid:border-[#dc3545] tw:aria-invalid:shadow-[0_0_3px_white] tw:aria-invalid:focus:border-[#dc3545] tw:aria-invalid:focus:shadow-[0_0_3px_white]"
                       value={credentials.username}
                       disabled={isLoading}
                       onBlur={() => setUsernameDirty(true)}
@@ -504,7 +509,9 @@ export default function SignupPage() {
                       }
                     />
                     {usernameErrorMessage && (
-                      <p className="help-block">{usernameErrorMessage}</p>
+                      <p className="help-block" id="signup-username-error">
+                        {usernameErrorMessage}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -513,37 +520,22 @@ export default function SignupPage() {
                     Password
                   </label>
                   <div className="col-sm-8">
-                    <div className="input-group">
-                      <input
-                        required
-                        id="password"
-                        name="password"
-                        className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
-                        autoCapitalize="off"
-                        minLength={8}
-                        value={credentials.password}
-                        disabled={isLoading}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
-                      />
-                      <span className="input-group-btn">
-                        <Button
-                          size="lg"
-                          className="password-toggle"
-                          type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </Button>
-                      </span>
-                    </div>
+                    <AuthPasswordInput
+                      required
+                      visible={showPassword}
+                      onToggleVisibility={() =>
+                        setShowPassword(current => !current)
+                      }
+                      id="password"
+                      name="password"
+                      autoCapitalize="off"
+                      minLength={8}
+                      value={credentials.password}
+                      disabled={isLoading}
+                      onChange={event =>
+                        updateCredential('password', event.target.value)
+                      }
+                    />
                     {credentials.password &&
                       credentials.password.length < 8 && (
                         <p className="help-block">
@@ -620,11 +612,11 @@ export default function SignupPage() {
                     How did you hear about us?
                   </label>
                   <div className="col-sm-8">
-                    <input
+                    <Input
                       type="text"
                       id="acquisitionStory"
                       name="acquisitionStory"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       maxLength={500}
                       value={credentials.acquisitionStory}
                       onChange={event =>
