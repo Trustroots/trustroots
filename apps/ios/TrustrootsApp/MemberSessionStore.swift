@@ -21,9 +21,9 @@ final class MemberSessionStore: ObservableObject {
         api: TrustrootsAPI = TrustrootsAPI(),
         serverURLString: String? = nil,
         credentialStore: MobileCredentialStoring = MobileCredentialStore(),
-        nostrIdentity: NostrIdentityManager = .shared
+        nostrIdentity: NostrIdentityManager? = nil
     ) {
-        self.nostrIdentity = nostrIdentity
+        self.nostrIdentity = nostrIdentity ?? .shared
         self.api = api
         self.credentialStore = credentialStore
         let persistedServerURL = UserDefaults.standard.string(forKey: "trustroots.apiServerURL")

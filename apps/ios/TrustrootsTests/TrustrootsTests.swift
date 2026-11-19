@@ -285,7 +285,7 @@ final class TrustrootsTests: XCTestCase {
         try identity.import(NostrTestKeys.first)
         let revision = identity.revision
 
-        identity.activate(serverURLString: "https://API.EXAMPLE.TEST:443/", username: "MIRA")
+        identity.activate(serverURLString: "HTTPS://API.EXAMPLE.TEST:443/", username: "MIRA")
         XCTAssertEqual(identity.secret(), NostrTestKeys.first)
         XCTAssertEqual(identity.revision, revision)
         XCTAssertEqual(storage.values.count, 1)
