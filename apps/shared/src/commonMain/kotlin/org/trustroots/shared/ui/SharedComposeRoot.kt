@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 private sealed interface Destination {
+    data object Home : Destination
     data class Profile(val username: String) : Destination
     data object Inbox : Destination
     data class Conversation(val partner: PilotPerson, val memberId: String) : Destination
@@ -42,7 +43,7 @@ fun SharedComposeRoot(
     initialError: String?,
     installBackHandler: @Composable (Boolean, () -> Unit) -> Unit = { _, _ -> },
 ) {
-    val start = username?.let { listOf(Destination.Profile(it)) }.orEmpty()
+    val start = username?.let { listOf(Destination.Home) }.orEmpty()
     var history by remember(username) { mutableStateOf<List<Destination>>(start) }
     var busy by remember(username) { mutableStateOf(false) }
     val destination = history.lastOrNull()
@@ -80,6 +81,10 @@ fun SharedComposeRoot(
             key(destination) {
                 when (destination) {
                     null -> SignIn(gateway, initialError, busy, beginAction, endAction)
+                    Destination.Home -> MemberDashboard(
+                        onProfile = { username?.let { history = history + Destination.Profile(it) } },
+                        onInbox = { history = history + Destination.Inbox },
+                    )
                     is Destination.Profile -> Profile(
                         gateway = gateway,
                         username = destination.username,
