@@ -4,6 +4,7 @@ node_modules/
 coverage/
 coverage-report/
 playwright-report/
+**/storybook-static/
 test-results/
 tests/e2e/.auth/
 tmp/
