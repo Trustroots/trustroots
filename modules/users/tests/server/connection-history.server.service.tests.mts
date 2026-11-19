@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import should from 'should';
@@ -48,6 +49,7 @@ describe('connection history service', function () {
     const user = trackedUser({
       isNew: true,
       values: {
+        email: 'connection-owner@example.test',
         extSitesServas: 'household/Family',
         nostrNpub: 'npub1example',
       },
@@ -76,7 +78,13 @@ describe('connection history service', function () {
     user.connectionSearchKeys?.should.deepEqual([
       'servas:household/Family',
       'nostr:npub1example',
+      'email:connection-owner@example.test',
     ]);
+    const markModified = user.markModified as sinon.SinonSpy;
+    markModified
+      .getCalls()
+      .map(call => call.args)
+      .should.deepEqual([['connectionHistory'], ['connectionSearchKeys']]);
   });
 
   it('does not query for saves without changed identity paths', async function () {
@@ -94,7 +102,7 @@ describe('connection history service', function () {
       snapshot: { couchers: 'member' },
       modifiedPaths: ['extSitesCouchers'],
     });
-    stubPersisted({
+    const persisted = stubPersisted({
       _id: user._id,
       extSitesCouchers: 'member',
       connectionHistoryInitialised: true,
@@ -104,6 +112,10 @@ describe('connection history service', function () {
 
     await service.trackConnectionHistoryBeforeSave(user);
 
+    sinon.assert.calledOnceWithExactly(
+      persisted.select,
+      '+connectionHistory +connectionSearchKeys +connectionHistoryInitialised +connectionHistoryRevision email extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData',
+    );
     user.connectionHistory?.should.have.length(0);
     should(user.connectionHistoryRevision).equal(4);
     user.$where.should.deepEqual({ connectionHistoryRevision: 3 });
@@ -176,9 +188,10 @@ describe('connection history service', function () {
       connectionHistoryInitialised: true,
     } as UserRecord);
 
-    await service
-      .trackConnectionHistoryBeforeSave(user)
-      .should.be.rejectedWith(service.ConnectionHistoryConflictError);
+    await assert.rejects(service.trackConnectionHistoryBeforeSave(user), {
+      name: 'ConnectionHistoryConflictError',
+      message: service.CONNECTION_HISTORY_CONFLICT_MESSAGE,
+    });
   });
 
   it('initialises an old snapshot and records its first change with a revision CAS', async function () {

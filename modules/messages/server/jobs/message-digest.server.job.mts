@@ -6,17 +6,14 @@ import userRoles from '../../../users/server/services/user-roles.server.service.
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
-export const messageDigestJobName = 'queue unread message digests';
-
 interface UnreadConversation {
   _id: Types.ObjectId;
   messages: Types.ObjectId[];
 }
 
-const memberFields = 'displayName username roles';
-const day = 24 * 60 * 60 * 1000;
-
 export async function queueMessageDigests(now = new Date()) {
+  const memberFields = 'displayName username roles';
+  const day = 24 * 60 * 60 * 1000;
   const User = mongoose.model<UserServerRecord>('User');
   const Message = mongoose.model<MessageRecord>('Message');
   const today = new Date(Math.floor(now.getTime() / day) * day);

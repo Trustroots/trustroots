@@ -243,10 +243,13 @@ describe('Job: message unread', function () {
     const findRecipient = sinon.stub(User, 'find').returns({
       lean: () => ({ cursor: recipients }),
     } as never);
+    const aggregate = sinon.spy(Message, 'aggregate');
     try {
       await queueMessageDigests(new Date('2026-01-05T12:00:00.000Z'));
       jobs.length.should.equal(0);
+      sinon.assert.notCalled(aggregate);
     } finally {
+      aggregate.restore();
       findRecipient.restore();
     }
   });
@@ -277,8 +280,15 @@ describe('Job: message unread', function () {
       { $set: { messageEmailFrequency: 'daily', blocked: [userFromId] } },
     );
     await message.updateOne({ $set: { created } });
-    await queueMessageDigests(now);
-    jobs.length.should.equal(0);
+    const lookups = sinon.spy(User, 'find');
+    try {
+      await queueMessageDigests(now);
+      jobs.length.should.equal(0);
+      // An empty aggregate must not issue a second query to load senders.
+      sinon.assert.calledOnce(lookups);
+    } finally {
+      lookups.restore();
+    }
 
     await User.updateOne({ _id: userToId }, { $set: { blocked: [] } });
     await User.updateOne(
@@ -328,6 +338,87 @@ describe('Job: message unread', function () {
     }
   });
 
+  it('reserves the correct UTC period and only marks selected messages notified', async function () {
+    const { queueMessageDigests } =
+      await import('../../../server/jobs/message-digest.server.job.mts');
+    const now = new Date('2026-01-07T12:00:00.000Z');
+    const today = new Date('2026-01-07T00:00:00.000Z');
+    const monday = new Date('2026-01-05T00:00:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' }, $unset: { blocked: 1 } },
+    );
+    await message.updateOne({
+      $set: { created: new Date('2026-01-07T11:30:00.000Z') },
+    });
+    const sandbox = sinon.createSandbox();
+    const find = sandbox.spy(User, 'find');
+    const aggregate = sandbox.spy(Message, 'aggregate');
+    const reserve = sandbox.spy(User, 'updateOne');
+    const notify = sandbox.spy(Message, 'updateMany');
+    try {
+      await queueMessageDigests(now);
+
+      find.firstCall.args.slice(0, 2).should.deepEqual([
+        {
+          $or: [
+            {
+              messageEmailFrequency: 'daily',
+              dailyMessageDigestPeriod: { $ne: today },
+            },
+            {
+              messageEmailFrequency: 'weekly',
+              weeklyMessageDigestPeriod: { $ne: monday },
+            },
+          ],
+        },
+        'displayName username roles email messageEmailFrequency blocked',
+      ]);
+      find.secondCall.args
+        .slice(0, 2)
+        .should.deepEqual([
+          { _id: { $in: [userFromId] } },
+          'displayName username roles',
+        ]);
+      const matching = aggregate.firstCall.args[0]?.[0] as {
+        $match: { created: { $lt: Date }; userFrom: { $nin: unknown[] } };
+      };
+      matching.$match.userFrom.$nin.should.deepEqual([]);
+      matching.$match.created.$lt
+        .getTime()
+        .should.equal(
+          now.getTime() -
+            Math.min(
+              ...config.limits.unreadMessageReminders.map(interval =>
+                moment.duration(interval).asMilliseconds(),
+              ),
+            ),
+        );
+      reserve.firstCall.args.slice(0, 2).should.deepEqual([
+        {
+          _id: userToId,
+          messageEmailFrequency: 'daily',
+          email: _userTo.email,
+          $or: [
+            { dailyMessageDigestPeriod: { $exists: false } },
+            { dailyMessageDigestPeriod: { $lt: today } },
+          ],
+        },
+        { $set: { dailyMessageDigestPeriod: today } },
+      ]);
+      notify.firstCall.args.slice(0, 2).should.deepEqual([
+        { _id: { $in: [message._id] }, notificationCount: 0 },
+        {
+          $set: {
+            notificationCount: config.limits.unreadMessageReminders.length,
+          },
+        },
+      ]);
+    } finally {
+      sandbox.restore();
+    }
+  });
+
   it('releases the digest reservation when email queueing fails', async function () {
     const { queueMessageDigests } =
       await import('../../../server/jobs/message-digest.server.job.mts');
@@ -372,6 +463,15 @@ describe('Job: message unread', function () {
     }
     jobs.length.should.equal(0);
     (await Message.findById(message._id))!.notificationCount!.should.equal(0);
+
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'immediate' } },
+    );
+    await new Promise<void>((resolve, reject) => {
+      messageUnreadJobHandler({}, error => (error ? reject(error) : resolve()));
+    });
+    jobs.length.should.equal(1);
   });
 
   it('skips push for messages already read, hidden or stale', async function () {

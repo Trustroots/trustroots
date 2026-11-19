@@ -84,8 +84,9 @@ async function start(options: WorkerOptions, callback?: Done) {
   const { captureAgendaInventory } =
     await import('../../modules/admin/server/services/agenda-inventory.server.service.mts');
 
-  const { queueMessageDigests, messageDigestJobName } =
+  const { queueMessageDigests } =
     await import('../../modules/messages/server/jobs/message-digest.server.job.mts');
+  const messageDigestJobName = 'queue unread message digests';
 
   // Define jobs
 
