@@ -144,6 +144,31 @@ enum NIP07Bridge {
         }
     }
 
+    static func signProfileChallenge(
+        _ event: [String: Any],
+        serverURLString: String,
+        secret: String
+    ) throws -> [String: Any] {
+        let now = Int(Date().timeIntervalSince1970)
+        guard event["kind"] as? Int == 27235, let createdAt = event["created_at"] as? Int,
+              (now - 300...now + 30).contains(createdAt),
+              event["content"] as? String == "", let tags = tags(event["tags"]), tags.count == 3,
+              let server = TrustrootsAPIConfiguration(baseURLString: serverURLString)?.baseURL,
+              let destination = tags.first(where: { $0.first == "u" }), destination.count == 2,
+              let url = URL(string: destination[1]),
+              url.scheme?.lowercased() == server.scheme?.lowercased(),
+              url.host?.lowercased() == server.host?.lowercased(),
+              (url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80)) ==
+                  (server.port ?? (server.scheme?.lowercased() == "https" ? 443 : 80)),
+              url.path == "/api/users", url.query == nil, url.fragment == nil, url.user == nil, url.password == nil,
+              tags.contains(["method", "PUT"]),
+              let nonce = tags.first(where: { $0.first == "challenge" }), nonce.count == 2,
+              NostrKeyCodec.isSecretHex(nonce[1]) else {
+            throw TrustrootsAPIError.serverMessage("The server returned an invalid Nostr ownership challenge.")
+        }
+        return try sign(event: event, secret: secret)
+    }
+
     private static func sign(event: [String: Any], secret: String) throws -> [String: Any] {
         guard let kind = number(event["kind"]), let content = event["content"] as? String,
               let tags = tags(event["tags"]) else { throw NostrIdentityError.invalidKey }

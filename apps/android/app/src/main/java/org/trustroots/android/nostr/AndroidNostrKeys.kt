@@ -11,6 +11,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import org.trustroots.shared.nostr.NostrAccountScope
+import org.json.JSONObject
 
 internal fun nostrAccountScope(backend: String, username: String): NostrAccountScope {
     val url = URL(backend)
@@ -26,6 +27,12 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
 
     fun publicKey(): String? = withKey(NostrKeyCodec::npub)
     fun backup(): String? = withKey(NostrKeyCodec::nsec)
+
+    fun signProfileChallenge(event: JSONObject, backend: String, expectedNpub: String): JSONObject =
+        checkNotNull(withKey { secret ->
+            check(NostrKeyCodec.npub(secret) == expectedNpub)
+            NostrProfileProof.sign(event, backend, secret)
+        })
 
     fun generate(): String = insert(NostrKeyCodec.generate())
     fun import(input: String): String = insert(NostrKeyCodec.import(input))

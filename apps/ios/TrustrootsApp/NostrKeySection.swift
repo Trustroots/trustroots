@@ -4,6 +4,7 @@ import UIKit
 struct NostrKeySection: View {
     let linkedNpub: String?
     let profileLoaded: Bool
+    let updateProfileLink: @MainActor (String?) async throws -> Void
     @ObservedObject private var identity = NostrIdentityManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var importedKey = ""
@@ -12,6 +13,9 @@ struct NostrKeySection: View {
     @State private var backupTask: Task<Void, Never>?
     @State private var backupRequestID: UUID?
     @State private var showingRemovalConfirmation = false
+    @State private var showingProfileConfirmation = false
+    @State private var pendingProfileKey: String?
+    @State private var isUpdatingProfile = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -30,9 +34,27 @@ struct NostrKeySection: View {
             } else {
                 Text("Profile key unavailable. Connect to load your profile.").foregroundStyle(.secondary)
             }
-            Text("Link or unlink your profile key in the website's network settings. Removing a local key does not unlink your profile.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            if profileLoaded {
+                if let npub = identity.npub, npub != linkedNpub {
+                    Button(linkedNpub?.isEmpty == false ? "Replace profile key" : "Link local key to profile") {
+                        if linkedNpub?.isEmpty == false {
+                            pendingProfileKey = npub
+                            showingProfileConfirmation = true
+                        } else {
+                            changeProfileLink(npub)
+                        }
+                    }
+                    .disabled(isUpdatingProfile)
+                }
+                if linkedNpub?.isEmpty == false {
+                    Button("Unlink profile key", role: .destructive) {
+                        pendingProfileKey = nil
+                        showingProfileConfirmation = true
+                    }
+                    .disabled(isUpdatingProfile || !identity.isActive)
+                }
+                if isUpdatingProfile { ProgressView("Updating profile key…") }
+            }
 
             Text("Local public key (npub)").font(.subheadline.weight(.semibold))
             if let npub = identity.npub {
@@ -50,6 +72,7 @@ struct NostrKeySection: View {
                         .disabled(backupTask != nil)
                 }
                 Button("Remove local key", role: .destructive) { showingRemovalConfirmation = true }
+                    .disabled(isUpdatingProfile)
             } else {
                 Text("No local key for this account.").foregroundStyle(.secondary)
                 if let legacyNpub = identity.legacyNpub {
@@ -92,6 +115,16 @@ struct NostrKeySection: View {
         } message: {
             Text("Back up your private key first. This removes this account's key from this phone and revokes website permissions. Your profile-linked key stays unchanged.")
         }
+        .alert(pendingProfileKey == nil ? "Unlink profile key?" : "Replace profile key?", isPresented: $showingProfileConfirmation) {
+            Button(pendingProfileKey == nil ? "Unlink" : "Replace", role: .destructive) {
+                changeProfileLink(pendingProfileKey)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(pendingProfileKey == nil
+                 ? "This removes the public key from your profile. The local private key stays on this phone."
+                 : "This changes which public key is linked to your profile. The local private key stays on this phone.")
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { revealedSecret = nil; importedKey = "" }
             // Device authentication can make the scene inactive. Backgrounding
@@ -103,8 +136,23 @@ struct NostrKeySection: View {
             importedKey = ""
             errorMessage = nil
             showingRemovalConfirmation = false
+            showingProfileConfirmation = false
         }
         .onDisappear { hideBackup(); importedKey = "" }
+    }
+
+    private func changeProfileLink(_ npub: String?) {
+        guard !isUpdatingProfile else { return }
+        hideBackup()
+        errorMessage = nil
+        isUpdatingProfile = true
+        let revision = identity.revision
+        Task { @MainActor in
+            defer { isUpdatingProfile = false }
+            guard identity.isCurrent(revision) else { return }
+            do { try await updateProfileLink(npub) }
+            catch { if identity.isCurrent(revision) { errorMessage = error.localizedDescription } }
+        }
     }
 
     private func keyText(_ key: String) -> some View {
