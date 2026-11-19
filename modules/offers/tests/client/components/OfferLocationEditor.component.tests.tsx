@@ -242,7 +242,7 @@ describe('OfferLocationEditor', () => {
     expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
     expect(onLocationChange).not.toHaveBeenCalled();
   });
-  it('dismisses map guidance on navigation and ignores a late device response after a gesture', () => {
+  it('dismisses map guidance on navigation and ignores late device responses after a gesture', () => {
     mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
     const onLocationChange = vi.fn();
     render(
@@ -270,6 +270,7 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Complete location request' }),
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(map).toHaveAttribute('data-location', '34,-17');
