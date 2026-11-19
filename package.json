@@ -242,7 +242,7 @@
     "i18next-cli": "1.88.0",
     "istanbul-lib-coverage": "3.2.2",
     "js-yaml": "5.5.0",
-    "jsdom": "26.1.0",
+    "jsdom": "31.0.1",
     "knip": "6.45.1",
     "less": "4.9.1",
     "lint-staged": "17.6.0",
