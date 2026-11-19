@@ -12,7 +12,7 @@ interface SuspendedResponse {
   status?(code: number): {
     format(formatters: Record<string, () => void>): unknown;
   };
-  sendFile?(path: string): unknown;
+  sendFile?(path: string, options: { root: string }): unknown;
   json?(body: { message: string }): unknown;
 }
 
@@ -25,8 +25,8 @@ interface SuspendedController {
 }
 
 const service = {} as SuspendedController;
-const suspendedPage = fileURLToPath(
-  new URL('../views/suspended.html', import.meta.url),
+const suspendedViewsDirectory = fileURLToPath(
+  new URL('../views/', import.meta.url),
 );
 
 /**
@@ -55,7 +55,7 @@ service.invalidateSuspendedSessions = function (req, res, next) {
         const suspendedMessage = errorService.getErrorMessageByKey('suspended');
         res.status!(403).format({
           'text/html'() {
-            res.sendFile!(suspendedPage);
+            res.sendFile!('suspended.html', { root: suspendedViewsDirectory });
           },
           'application/json'() {
             res.json!({

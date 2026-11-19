@@ -16,7 +16,7 @@ interface NegotiatedErrorResponse {
   status(code: number): {
     format(handlers: Record<string, () => void>): unknown;
   };
-  sendFile(path: string): unknown;
+  sendFile(path: string, options: { root: string }): unknown;
   json(body: ErrorBody): unknown;
   send(body: string): unknown;
 }
@@ -26,8 +26,8 @@ const defaultErrorMessage =
   'Snap! Something went wrong. If this keeps happening, please contact us.';
 
 // Static, so it still renders when the app itself is what failed.
-const serverErrorPage = fileURLToPath(
-  new URL('../views/500.html', import.meta.url),
+const errorViewsDirectory = fileURLToPath(
+  new URL('../views/', import.meta.url),
 );
 
 /**
@@ -148,7 +148,7 @@ export function errorResponse(
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
     'text/html'() {
-      res.sendFile(serverErrorPage);
+      res.sendFile('500.html', { root: errorViewsDirectory });
     },
     'application/json'() {
       res.json(errorResponse);

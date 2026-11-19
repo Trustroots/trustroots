@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import sinon from 'sinon';
 import 'should';
 import errorService from './../../../core/server/services/error.server.service.mts';
@@ -47,8 +48,10 @@ describe('Suspended user controller', () => {
       return res;
     };
 
-    const page = respond('text/html').sendFile.firstCall.args[0];
-    readFileSync(page, 'utf8').should.containEql(`<h1>${message}</h1>`);
+    const [page, { root }] = respond('text/html').sendFile.firstCall.args;
+    readFileSync(join(root, page), 'utf8').should.containEql(
+      `<h1>${message}</h1>`,
+    );
     respond('application/json')
       .json.calledOnceWithExactly({ message })
       .should.be.true();

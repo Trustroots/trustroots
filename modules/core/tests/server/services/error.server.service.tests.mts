@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import errorServiceModule from './../../../server/services/error.server.service.mts';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
 import winston from 'winston';
@@ -23,7 +24,7 @@ type MockResponse = {
   ): MockResponse;
   json(body: ErrorBody): MockResponse;
   send(body: ErrorBody | string): MockResponse;
-  sendFile(path: string): MockResponse;
+  sendFile(path: string, options: { root: string }): MockResponse;
 };
 type ErrorService = {
   getErrorMessageByKey(key?: string): string;
@@ -71,8 +72,8 @@ function mockResponse(acceptType?: string): MockResponse {
       res.body = body;
       return res;
     },
-    sendFile(path) {
-      res.sentFile = path;
+    sendFile(path, { root }) {
+      res.sentFile = join(root, path);
       return res;
     },
   };
