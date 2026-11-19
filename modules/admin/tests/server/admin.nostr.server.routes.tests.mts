@@ -523,6 +523,49 @@ describe('Admin featured Nostr notes', () => {
     assert.equal(response.body.publishedAt, '1970-01-01T00:00:00.000Z');
   });
 
+  it('keeps the newer revision even when an earlier revision has a lower event ID', async () => {
+    const key = new Uint8Array(32).fill(6);
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      tags: [
+        ['d', 'fictional-chronology'],
+        ['published_at', '1780000000'],
+      ],
+    };
+    const earlier = finalizeEvent(
+      {
+        ...template,
+        created_at: 1780000000,
+        content: 'A fictional earlier revision.',
+      },
+      key,
+    );
+    const current = finalizeEvent(
+      {
+        ...template,
+        created_at: 1780000001,
+        content: 'A fictional current revision.',
+      },
+      key,
+    );
+    assert.ok(earlier.id < current.id);
+    const { body: featured } = await admin
+      .post(featurePath)
+      .send({ event: current })
+      .expect(200);
+    await admin
+      .put(`${featurePath}/${featured.id}`)
+      .send({ event: earlier })
+      .expect(409, {
+        message: 'This update already has a newer revision.',
+      });
+    await admin
+      .post(featurePath)
+      .send({ event: earlier })
+      .expect(200, featured);
+    await request(app).get(publicPath).expect(200, [featured]);
+  });
+
   it('deduplicates either filing order for an older note and its addressable version', async () => {
     const first = finalizeEvent(
       {
