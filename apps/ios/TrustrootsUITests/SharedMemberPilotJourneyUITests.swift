@@ -10,6 +10,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "--shared-member-pilot",
+            "--shared-home",
             "-trustroots.apiServerURL",
             fixtureURL.absoluteString,
         ]
@@ -33,6 +34,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.buttons["Back"].tap()
         app.buttons["Exit shared pilot"].tap()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Home"].isSelected)
+        XCTAssertTrue(app.buttons["Search"].exists)
+        XCTAssertTrue(app.buttons["Messages"].exists)
+        XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        let nativeHome = XCTAttachment(screenshot: app.screenshot())
+        nativeHome.name = "shared-home-regular-shell"
+        nativeHome.lifetime = .keepAlways
+        add(nativeHome)
+        app.buttons["Menu"].tap()
+        XCTAssertTrue(app.buttons["Circles"].waitForExistence(timeout: 10))
 
         app.terminate()
         try await updateFixtureSession("expire-access-token", at: fixtureURL)

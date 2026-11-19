@@ -85,7 +85,9 @@ fun SharedComposeRoot(
                     when (destination) {
                         null -> SignIn(gateway, initialError, busy, beginAction, endAction)
                         Destination.Home -> MemberDashboard(
-                            gateway = gateway,
+                            accountKey = gateway,
+                            loadNotes = { awaitData(gateway::featuredNotes) },
+                            loadConnections = { awaitData(gateway::connections) },
                             renderConnectionsMap = renderConnectionsMap,
                             onConnection = { history = history + Destination.Profile(it) },
                         )
