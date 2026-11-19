@@ -3,6 +3,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useAuth } from '@/modules/core/client/react-app/auth';
+import { invalidateProfiles } from '@/modules/users/client/api/profile-queries';
 import useUnreadMessageCountPolling from '@/modules/messages/client/services/use-unread-message-count-polling';
 import { createAppRouter } from './router';
 
@@ -25,6 +26,14 @@ export default function ReactApp({
       void router.invalidate();
     }
   }, [identity, router]);
+
+  const savedUser = useRef(user);
+  useEffect(() => {
+    if (user !== savedUser.current) {
+      savedUser.current = user;
+      void invalidateProfiles(queryClient);
+    }
+  }, [queryClient, user]);
 
   return <RouterProvider context={{ queryClient, user }} router={router} />;
 }

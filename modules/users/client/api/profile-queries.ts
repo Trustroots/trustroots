@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, type QueryClient } from '@tanstack/react-query';
 
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
@@ -37,4 +37,9 @@ export function profileQuery(username: string, options: ProfileQuery) {
     refetchOnWindowFocus: false,
     retry: false,
   });
+}
+
+/** Saving profile changes updates the signed-in member, so profiles read before are stale. */
+export function invalidateProfiles(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({ queryKey: ['profile'] });
 }

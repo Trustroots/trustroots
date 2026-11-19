@@ -868,6 +868,44 @@ describe('<ReactApp />', () => {
     expect(mockedUsersApi.fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('reads the profile again after the member saves profile changes', async () => {
+    const profile = {
+      _id: 'member-one',
+      displayName: 'Member One',
+      username: 'member-one',
+      description: 'A fictional member description',
+      member: [],
+    };
+    mockedUsersApi.fetch.mockResolvedValue(profile);
+    const router = createAppRouter();
+    renderApp(
+      '/profile/member-one',
+      { user: { _id: 'member-one', username: 'member-one', public: true } },
+      { router },
+    );
+    await screen.findByText('A fictional member description');
+    await act(() => router.navigate({ to: '/rules' }));
+    await screen.findByText('Rules route');
+
+    mockedUsersApi.fetch.mockResolvedValue({
+      ...profile,
+      description: 'A saved fictional description',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save user changes' }));
+    await screen.findByText('Header member-after');
+    await act(() =>
+      router.navigate({
+        to: '/profile/$username',
+        params: { username: 'member-one' },
+      }),
+    );
+
+    expect(
+      await screen.findByText('A saved fictional description'),
+    ).toBeInTheDocument();
+    expect(mockedUsersApi.fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('updates the current page and header immediately when user state changes', async () => {
     renderApp('/support', { user: { username: 'member-before' } });
     await screen.findByText('Support route member-before');
