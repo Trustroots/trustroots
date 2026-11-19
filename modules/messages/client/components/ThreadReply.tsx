@@ -269,7 +269,7 @@ export default function ThreadReply({
         >
           {previewing ? t('Edit') : t('Preview')}
         </Button>
-        <small className="text-muted hidden-xs">
+        <small className="text-muted tw:max-sm:hidden">
           {t('Highlight text to change its appearance. {{shortcut}} to send.', {
             shortcut: sendShortcut,
           })}
@@ -282,7 +282,7 @@ export default function ThreadReply({
           disabled={sending}
         >
           <i className="icon-send" />
-          <span className="hidden-xs">&nbsp;{t('Send')}</span>
+          <span className="tw:max-sm:hidden">&nbsp;{t('Send')}</span>
         </Button>
       </div>
     </form>

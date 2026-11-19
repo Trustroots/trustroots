@@ -4,11 +4,11 @@ export default function ProfileSignupPage() {
   return (
     <section className="container container-spacer profile-signup" id="profile">
       <div className="row" aria-hidden="true">
-        <div className="col-xs-12 text-center visible-xs-block profile-signup-blur">
+        <div className="col-xs-12 text-center tw:block tw:sm:hidden profile-signup-blur">
           <img
             src="/img/avatar.png"
             alt=""
-            className="visible-xs-block avatar-circle"
+            className="tw:block tw:sm:hidden avatar-circle"
             width="512"
             height="512"
             aria-hidden="true"
@@ -17,7 +17,7 @@ export default function ProfileSignupPage() {
       </div>
 
       <div className="row">
-        <div className="col-sm-3 hidden-xs" aria-hidden="true">
+        <div className="col-sm-3 tw:max-sm:hidden" aria-hidden="true">
           <div
             className="panel panel-default profile-signup-blur"
             id="profile-sidebar"
@@ -25,7 +25,7 @@ export default function ProfileSignupPage() {
             <img
               src="/img/avatar.png"
               alt=""
-              className="hidden-xs"
+              className="tw:max-sm:hidden"
               width="256"
               height="256"
               aria-hidden="true"
@@ -39,7 +39,7 @@ export default function ProfileSignupPage() {
 
         <div className="col-sm-9">
           <div className="row" aria-hidden="true">
-            <div className="col-md-6 hidden-xs profile-signup-blur">
+            <div className="col-md-6 tw:max-sm:hidden profile-signup-blur">
               <h2 className="profile-name">Firstname Lastname</h2>
               <h4 className="profile-username">@username</h4>
               <div className="profile-tagline">My mission on earth!</div>

@@ -130,7 +130,7 @@ function ProfileAboutTab({
         />
       </div>
       <div className="col-md-6">
-        <div className="hidden-xs">
+        <div className="tw:max-sm:hidden">
           <Offers authUser={authUser} profile={profile} />
         </div>
         {showContactsCommon && <ContactsCommon profileId={profile._id} />}
@@ -628,7 +628,7 @@ export default function ProfilePage({
                 <div className="col-sm-12">{tabContent}</div>
               ) : (
                 <>
-                  <div className="col-sm-3 hidden-xs">
+                  <div className="col-sm-3 tw:max-sm:hidden">
                     <ProfileOverview profile={profile} isSelf={isSelf} />
                     {!isSelf && (
                       <div className="profile-flags">
@@ -645,7 +645,7 @@ export default function ProfilePage({
                     )}
                   </div>
                   <div className="col-sm-9">
-                    <div className="row hidden-xs">
+                    <div className="row tw:max-sm:hidden">
                       <div className="col-xs-12">
                         <div className="tw:mb-2 tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
                           <MemberIdentity
@@ -672,7 +672,7 @@ export default function ProfilePage({
                     </div>
 
                     {(!isSelf || authUser.roles?.includes('admin')) && (
-                      <div className="row hidden-xs">
+                      <div className="row tw:max-sm:hidden">
                         <div className="col-xs-12">
                           <ProfileDesktopActions
                             isAdmin={authUser.roles?.includes('admin') || false}

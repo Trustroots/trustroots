@@ -103,7 +103,7 @@ export default function ProfileEditPage({
 
   return (
     <>
-      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-edit-navbar-mobile">
+      <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden profile-edit-navbar-mobile">
         <div className="container">
           <ProfileEditNav activeTab={activeTab} variant="bottom" />
         </div>
@@ -111,7 +111,7 @@ export default function ProfileEditPage({
 
       <section className="container container-spacer profile-edit">
         <div className="row">
-          <div className="col-sm-3 hidden-xs">
+          <div className="col-sm-3 tw:max-sm:hidden">
             <ProfileEditSidebar
               activeTab={activeTab}
               username={user.username}

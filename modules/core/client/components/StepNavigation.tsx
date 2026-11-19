@@ -100,13 +100,13 @@ export default function StepNavigation({
 
   return (
     <>
-      <div className="text-center hidden-xs">
+      <div className="text-center tw:max-sm:hidden">
         {showBackButton && <BackButton {...backProps} />}
         {showNextButton && withDisabledReason(<NextButton {...nextProps} />)}
         {showSubmitButton &&
           withDisabledReason(<SubmitButton {...submitProps} />)}
       </div>
-      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+      <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden">
         <div className="container">
           <ul
             className="nav navbar-nav nav-justified"

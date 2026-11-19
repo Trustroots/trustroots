@@ -23,8 +23,8 @@ export default function Media() {
             <div className="col-xs-12 text-center">
               <br />
               <br />
-              <h2 className="visible-xs-block">{t('Media')}</h2>
-              <h2 className="hidden-xs">
+              <h2 className="tw:block tw:sm:hidden">{t('Media')}</h2>
+              <h2 className="tw:max-sm:hidden">
                 <img
                   src="/img/tree-white.svg"
                   alt="Trustroots"

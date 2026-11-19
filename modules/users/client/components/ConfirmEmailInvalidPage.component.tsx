@@ -13,7 +13,7 @@ export default function ConfirmEmailInvalidPage() {
           <div className="row">
             <div className="col-xs-12 text-center">
               <img
-                className="hidden-xs"
+                className="tw:max-sm:hidden"
                 src="/img/tree-color.svg"
                 alt="Trustroots"
                 width="120"
@@ -21,7 +21,7 @@ export default function ConfirmEmailInvalidPage() {
                 aria-hidden="true"
               />
               <img
-                className="visible-xs-inline-block"
+                className="tw:inline-block tw:sm:hidden"
                 src="/img/tree-color.svg"
                 alt="Trustroots"
                 width="80"

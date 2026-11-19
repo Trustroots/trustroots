@@ -290,7 +290,7 @@ export default function TribeDetailPage({
             </div>
           </div>
           {tribe.attribution && (
-            <small className="hidden-xs font-brand-light tribe-attribution">
+            <small className="tw:max-sm:hidden font-brand-light tribe-attribution">
               {t('Photo by') as string}{' '}
               {tribe.attribution_url ? (
                 <a href={tribe.attribution_url}>{tribe.attribution}</a>

@@ -764,7 +764,7 @@ export default function SignupPage() {
               Already have an account? <a href="/signin">Login</a>
               <br />
               <br />
-              <p className="visible-xs-block">
+              <p className="tw:block tw:sm:hidden">
                 <Button variant="link" render={<a href="/" />}>
                   About Trustroots
                 </Button>

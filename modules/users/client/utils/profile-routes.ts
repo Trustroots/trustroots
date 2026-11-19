@@ -103,7 +103,7 @@ export function getMobileProfileRedirect(
   const tab = getProfileViewTab(pathname, username);
   const prefix = `/profile/${encodeURIComponent(username)}`;
 
-  // Match the visible-xs profile navigation and hidden-xs desktop content.
+  // Match the breakpoint for the mobile profile navigation.
   if (matchesMediaQuery('(max-width: 767px)')) {
     if (pathname === prefix || pathname === `${prefix}/`) {
       return `${prefix}/overview`;

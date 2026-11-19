@@ -22,7 +22,7 @@ export default function NavigationLoggedOut({
       >
         {/* a span for centering the main header content */}
         <span className="tw:flex-1"></span>
-        <span className="header-welcome-text hidden-xs" dir="auto">
+        <span className="header-welcome-text tw:max-sm:hidden" dir="auto">
           {t('New to Trustroots?')}
         </span>
         <Button size="lg" render={<a href="/signup" />}>
@@ -40,7 +40,7 @@ export default function NavigationLoggedOut({
           <Button
             variant="link"
             aria-label={t('Read more about Trustroots')}
-            className="header-more-text hidden-xs"
+            className="header-more-text tw:max-sm:hidden"
             render={<a href="/" />}
           >
             {t('Read more')}

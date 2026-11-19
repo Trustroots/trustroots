@@ -104,7 +104,7 @@ export default function SearchUsers() {
               type="submit"
             >
               <i className="icon-search"></i>
-              <span className="hidden-xs">{String(t('Search'))}</span>
+              <span className="tw:max-sm:hidden">{String(t('Search'))}</span>
             </Button>
           </span>
         </span>

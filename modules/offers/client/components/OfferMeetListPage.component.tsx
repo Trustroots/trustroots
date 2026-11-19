@@ -196,8 +196,8 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                 intent="primary"
                 render={<a href={`/search?offer=${offer._id}`} />}
               >
-                <span className="hidden-xs">See on big map</span>
-                <span className="visible-xs-inline">Big Map</span>
+                <span className="tw:max-sm:hidden">See on big map</span>
+                <span className="tw:inline tw:sm:hidden">Big Map</span>
               </Button>
               &nbsp;
               <Button

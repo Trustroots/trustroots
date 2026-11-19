@@ -41,7 +41,7 @@ export default function Team({ user }: { user?: PageUser | null }) {
           <div className="col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 text-center">
             <img
               alt="Trustroots"
-              className="hidden-xs"
+              className="tw:max-sm:hidden"
               height="120"
               src="/img/tree-color.svg"
               width="120"
