@@ -11,6 +11,32 @@ internal object NostrEventSigner {
     fun publicKey(secret: ByteArray): String = NostrKeyCodec.publicKey(secret).toHex()
 
     fun sign(event: JSONObject, secret: ByteArray): JSONObject {
+        val body = eventBody(event)
+        val pubkey = publicKey(secret)
+        val id = body.hash(pubkey)
+        val signer = BIP340Signer().apply {
+            init(true, ECPrivateKeyParameters(BigInteger(1, secret), BIP340Signer.getDomain()))
+            update(id, 0, id.size)
+        }
+        return JSONObject().put("pubkey", pubkey).put("created_at", body.createdAt).put("kind", body.kind)
+            .put("tags", JSONArray(body.tags.map { JSONArray(it) })).put("content", body.content)
+            .put("id", id.toHex()).put("sig", signer.generateSignature().toHex())
+    }
+
+    fun verifies(event: JSONObject, expectedAuthor: String): Boolean = runCatching {
+        if (event.opt("pubkey") != expectedAuthor) return false
+        val pubkey = BIP340Signer.decodePublicKey(decodeHex(expectedAuthor, 32)) ?: return false
+        val id = eventBody(event).hash(expectedAuthor)
+        if (event.opt("id") != id.toHex()) return false
+        val signature = decodeHex(event.getString("sig"), 64)
+        BIP340Signer().run {
+            init(false, pubkey)
+            update(id, 0, id.size)
+            verifySignature(signature)
+        }
+    }.getOrDefault(false)
+
+    private fun eventBody(event: JSONObject): EventBody {
         val kind = event.get("kind") as? Int ?: error("Invalid event kind")
         val createdAt = when (val timestamp = event.get("created_at")) {
             is Int -> timestamp.toLong()
@@ -24,18 +50,27 @@ internal object NostrEventSigner {
             val tag = rawTags.getJSONArray(index)
             List(tag.length()) { item -> tag.get(item) as? String ?: error("Invalid event tag") }
         }
-        val pubkey = publicKey(secret)
-        val canonicalTags = tags.joinToString(",", "[", "]") { tag ->
-            tag.joinToString(",", "[", "]", transform = ::quote)
+        return EventBody(kind, createdAt, content, tags)
+    }
+
+    private data class EventBody(
+        val kind: Int,
+        val createdAt: Long,
+        val content: String,
+        val tags: List<List<String>>,
+    ) {
+        fun hash(pubkey: String): ByteArray {
+            val encodedTags = tags.joinToString(",", "[", "]") { tag ->
+                tag.joinToString(",", "[", "]", transform = ::quote)
+            }
+            val payload = "[0,${quote(pubkey)},$createdAt,$kind,$encodedTags,${quote(content)}]"
+            return MessageDigest.getInstance("SHA-256").digest(payload.encodeToByteArray())
         }
-        val payload = "[0,${quote(pubkey)},$createdAt,$kind,$canonicalTags,${quote(content)}]"
-        val id = MessageDigest.getInstance("SHA-256").digest(payload.encodeToByteArray())
-        val signer = BIP340Signer().apply {
-            init(true, ECPrivateKeyParameters(BigInteger(1, secret), BIP340Signer.getDomain()))
-            update(id, 0, id.size)
-        }
-        return JSONObject().put("pubkey", pubkey).put("created_at", createdAt).put("kind", kind)
-            .put("tags", rawTags).put("content", content).put("id", id.toHex()).put("sig", signer.generateSignature().toHex())
+    }
+
+    fun decodeHex(value: String, size: Int): ByteArray {
+        require(value.length == size * 2 && value.all { it in '0'..'9' || it in 'a'..'f' })
+        return ByteArray(size) { value.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
     }
 
     // Match JSON.stringify's string encoding for the NIP-01 event ID, including
