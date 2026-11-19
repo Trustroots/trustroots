@@ -71,6 +71,10 @@ android {
     compileSdk = 37
     testCoverage { jacocoVersion = coverageToolVersion }
 
+    dependenciesInfo {
+        includeInApk = false
+    }
+
     defaultConfig {
         applicationId = "org.trustroots.android"
         minSdk = 26
