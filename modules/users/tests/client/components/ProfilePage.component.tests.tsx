@@ -754,15 +754,14 @@ describe('ProfilePage', () => {
     });
     renderPage();
 
-    expect(
-      await screen.findByRole('button', { name: 'Delete contact request' }),
-    ).toBeVisible();
-    fireEvent.mouseEnter(
-      screen.getByRole('button', { name: 'Delete contact request' }),
+    const deleteRequest = await screen.findByRole('button', {
+      name: 'Delete contact request',
+    });
+    expect(deleteRequest).toBeVisible();
+    act(() => deleteRequest.focus());
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Request sent January 1, 2024',
     );
-    expect(
-      await screen.findByText('Request sent January 1, 2024'),
-    ).toBeVisible();
   });
 
   it('shows a blocked member banner', async () => {

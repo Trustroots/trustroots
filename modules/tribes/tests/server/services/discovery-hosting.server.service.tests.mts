@@ -69,4 +69,26 @@ describe('Discovery hosting locations', () => {
       exec.restore();
     }
   });
+
+  it('retains the newest meeting location when an owner has no hosting offer', async () => {
+    const owner = new mongoose.Types.ObjectId();
+    const exec = sinon.stub(mongoose.Query.prototype, 'exec').resolves([
+      { user: owner, status: 'no', locationFuzzy: [48, 11] },
+      { user: owner, status: 'no', locationFuzzy: [49, 12] },
+    ]);
+    try {
+      const locations = await findDiscoveryOfferLocations(
+        [owner],
+        [],
+        new Date(),
+        { includeMeetings: true },
+      );
+      assert.deepEqual(
+        locations,
+        new Map([[owner.toString(), { type: 'meet', location: [48, 11] }]]),
+      );
+    } finally {
+      exec.restore();
+    }
+  });
 });
