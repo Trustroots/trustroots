@@ -1097,6 +1097,30 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'auth.suspended-member',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Suspended members are signed out and told their account is suspended.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute('suspended', '/suspended', source.usersClient),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/:username', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Suspended members opening a page are sent to the suspended page.',
+      'Suspended members calling the API get a 403 with the suspension message.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/auth-account/suspended-member.spec.ts',
+        'suspended members are signed out and shown the suspended page',
+      ),
+    ],
+  },
+  {
     id: 'auth.email-resend',
     area: AREA.authAccount,
     status: STATUS.active,
