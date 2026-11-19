@@ -294,3 +294,17 @@ adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk
 adb -s emulator-5554 install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb -s emulator-5554 shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner
 ```
+
+## Nostr keys
+
+Use **Account → Nostr key** to generate a local identity or import a private key
+as an `nsec` or 64 hexadecimal characters. The public key (`npub`) can be copied.
+Backing up the private key requires the phone's screen-lock credential. The app
+hides the backup when it goes into the background.
+
+The local key is encrypted using Android Keystore and belongs to the current
+Trustroots server and account. Signing out retains it for the next sign-in.
+Removing the local key requires confirmation and keeps the profile link.
+The profile key is shown when the server includes it in the mobile profile
+response. See [#3633](https://github.com/Trustroots/trustroots/issues/3633)
+for profile linking and embedded browser signing.

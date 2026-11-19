@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -199,6 +200,9 @@ internal fun AccountSettingsScreen(
         ) {
             UsageAnalyticsSettings()
             Text(signedInAs, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            key(api.backendURL, session.member.username, session.sessionId ?: session.cookieHeader) {
+                NostrKeyEntry(api, session, enabled = !state.isSigningOut)
+            }
             if (previewUpdateAlerts) {
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
                 ApkUpdateSettings(
