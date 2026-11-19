@@ -323,7 +323,7 @@ struct TrustrootsWebView: UIViewRepresentable {
             return nil
         }
 
-        static func isTrustrootsURL(_ url: URL) -> Bool {
+        nonisolated static func isTrustrootsURL(_ url: URL) -> Bool {
             guard let host = url.host?.lowercased() else { return false }
             return NIP07Bridge.isTrustedHost(host)
         }
