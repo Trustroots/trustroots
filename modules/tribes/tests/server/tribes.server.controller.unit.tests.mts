@@ -8,12 +8,11 @@ import type {
 /**
  * Unit tests for tribes controller list and middleware branches.
  */
+import express from 'express';
 import mongoose, { type Types } from 'mongoose';
 import sinon from 'sinon';
 
-import tribesController, {
-  editTribe,
-} from './../../server/controllers/tribes.server.controller.mts';
+import tribesController from './../../server/controllers/tribes.server.controller.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import 'should';
 
@@ -90,6 +89,18 @@ describe('Tribes controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
     return utils.clearDatabase();
+  });
+
+  it('registers the circle discovery and detail paths', async () => {
+    const { register } =
+      await import('../../server/routes/tribes.server.routes.mts');
+    const app = express();
+    const route = sinon.spy(app, 'route');
+    register(app);
+
+    sinon.assert.calledWithExactly(route, '/api/tribes/discovery/connections');
+    sinon.assert.calledWithExactly(route, '/api/tribes/:tribe/members');
+    sinon.assert.calledWithExactly(route, '/api/tribes/:tribe');
   });
 
   describe('listTribes', () => {
@@ -373,11 +384,56 @@ describe('Tribes controller unit tests', () => {
     });
   });
 
+  it('checks organiser eligibility before attempting a circle edit', async () => {
+    const write = sinon.spy(Tribe, 'findOneAndUpdate');
+    const tribe = { _id: new mongoose.Types.ObjectId() };
+    const body = { label: 'Example walkers' };
+    const next = sinon.spy();
+
+    for (const user of [
+      undefined,
+      { _id: new mongoose.Types.ObjectId(), roles: ['support-team'] },
+    ]) {
+      const res = deferredResponse();
+      await tribesController.editTribe({ tribe, user, body }, res, next);
+      assert.equal(res.statusCode, 403);
+    }
+    sinon.assert.notCalled(write);
+    sinon.assert.notCalled(next);
+  });
+
+  it('refuses a circle edit if the circle was hidden after its slug was resolved', async () => {
+    const memberId = new mongoose.Types.ObjectId();
+    const tribe = await Tribe.create({
+      label: 'Example walkers',
+      organiserIds: [memberId],
+    });
+    await Tribe.updateOne({ _id: tribe._id }, { public: false });
+
+    const res = deferredResponse();
+    const next = sinon.spy();
+    await tribesController.editTribe(
+      {
+        tribe,
+        user: { _id: memberId, roles: ['user'] },
+        body: { label: 'Different walkers' },
+      },
+      res,
+      next,
+    );
+    assert.equal(res.statusCode, 403);
+    assert.equal(
+      (await Tribe.findById(tribe._id).orFail().exec()).label,
+      tribe.label,
+    );
+    sinon.assert.notCalled(next);
+  });
+
   it('passes unexpected circle edit failures to the error handler', async () => {
     const error = new Error('Write unavailable');
     sinon.stub(Tribe, 'findOneAndUpdate').throws(error);
     const next = sinon.spy();
-    await editTribe(
+    await tribesController.editTribe(
       {
         tribe: { _id: new mongoose.Types.ObjectId() },
         user: { _id: new mongoose.Types.ObjectId(), roles: ['user'] },

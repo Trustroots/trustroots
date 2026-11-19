@@ -133,6 +133,11 @@ const service = {} as {
     res: TribeDetailResponse,
     next: Next,
   ): Promise<unknown>;
+  editTribe(
+    req: TribeRequest,
+    res: TribeDetailResponse,
+    next: Next,
+  ): Promise<unknown>;
   listMembers(
     req: MemberRequest,
     res: JsonResponse<MemberListResponse>,
@@ -285,11 +290,7 @@ function mayEditCircle(user: UserRecord | undefined) {
 }
 
 /** Update the circle's editable details while the organiser assignment is current. */
-export async function editTribe(
-  req: TribeRequest,
-  res: TribeDetailResponse,
-  next: Next,
-) {
+service.editTribe = async function (req, res, next) {
   const { tribe, user, body } = req;
   if (!tribe?._id || !user?._id || !mayEditCircle(user)) {
     return errorService.sendForbidden(res);
@@ -308,13 +309,8 @@ export async function editTribe(
     // The assignment and visibility must still match at the time of the write.
     const updated = await Tribe.findOneAndUpdate(
       { _id: tribe._id, public: true, organiserIds: user._id },
-      {
-        $set: {
-          ...(label !== undefined && { label }),
-          ...(description !== undefined && { description }),
-          modified: new Date(),
-        },
-      },
+      // Mongoose omits undefined fields in updates, preserving omitted details.
+      { $set: { label, description, modified: new Date() } },
       { returnDocument: 'after', runValidators: true },
     )
       .select(service.tribeFields)
@@ -327,7 +323,7 @@ export async function editTribe(
     }
     return next(error);
   }
-}
+};
 
 function visibleMemberMatch(
   req: ConnectionRequest,
