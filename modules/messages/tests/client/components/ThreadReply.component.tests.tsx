@@ -16,20 +16,25 @@ const previewMessageMock = previewMessage as MockedFunction<
 type EditorMockProps = {
   id?: string;
   onChange: (value: string) => void;
-  onCtrlEnter: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onSubmitShortcut: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   text: string;
 };
 type OnSend = React.ComponentProps<typeof ThreadReply>['onSend'];
 
 vi.mock('@/modules/core/client/components/TrEditor', () => {
-  function MockTrEditor({ id, onChange, onCtrlEnter, text }: EditorMockProps) {
+  function MockTrEditor({
+    id,
+    onChange,
+    onSubmitShortcut,
+    text,
+  }: EditorMockProps) {
     return (
       <textarea
         id={id}
         onChange={event => onChange(event.target.value)}
         onKeyDown={event => {
-          if (event.ctrlKey && event.key === 'Enter') {
-            onCtrlEnter(event);
+          if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            onSubmitShortcut(event);
           }
         }}
         value={text}
@@ -380,20 +385,34 @@ describe('<ThreadReply>', () => {
     );
   });
 
-  it('sends content from the editor ctrl-enter shortcut', async () => {
-    const onSend: OnSend = vi.fn().mockResolvedValue(true);
-    const { getByRole } = render(<ThreadReply onSend={onSend} />);
+  it.each([
+    ['MacIntel', 'Command', { metaKey: true }],
+    ['Win32', 'Ctrl', { ctrlKey: true }],
+  ])(
+    'shows and sends with the shortcut on %s',
+    async (platform, modifier, keys) => {
+      const platformGetter = vi
+        .spyOn(window.navigator, 'platform', 'get')
+        .mockReturnValue(platform);
+      const onSend: OnSend = vi.fn().mockResolvedValue(true);
+      try {
+        const { getByRole, getByText } = render(
+          <ThreadReply onSend={onSend} />,
+        );
+        expect(
+          getByText(new RegExp(`${modifier}\\+Enter to send`)),
+        ).toBeInTheDocument();
 
-    fireEvent.change(getByRole('textbox'), {
-      target: { value: '<p>Shortcut send</p>' },
-    });
-    fireEvent.keyDown(getByRole('textbox'), {
-      ctrlKey: true,
-      key: 'Enter',
-    });
+        fireEvent.change(getByRole('textbox'), {
+          target: { value: '<p>Shortcut send</p>' },
+        });
+        fireEvent.keyDown(getByRole('textbox'), { ...keys, key: 'Enter' });
 
-    await waitFor(() =>
-      expect(onSend).toHaveBeenCalledWith('<p>Shortcut send</p>'),
-    );
-  });
+        await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
+        expect(onSend).toHaveBeenCalledWith('<p>Shortcut send</p>');
+      } finally {
+        platformGetter.mockRestore();
+      }
+    },
+  );
 });

@@ -15,12 +15,12 @@ vi.mock('@/modules/core/client/components/TrEditor', async () => {
 
   function MockTrEditor({
     onChange,
-    onCtrlEnter,
+    onSubmitShortcut,
     placeholder,
     text,
   }: {
     onChange: (value: string) => void;
-    onCtrlEnter: () => void | Promise<void>;
+    onSubmitShortcut: () => void | Promise<void>;
     placeholder: string;
     text: string;
   }) {
@@ -32,7 +32,7 @@ vi.mock('@/modules/core/client/components/TrEditor', async () => {
         }
         onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
           if (event.ctrlKey && event.key === 'Enter') {
-            onCtrlEnter();
+            onSubmitShortcut();
           }
         }}
         value={text}

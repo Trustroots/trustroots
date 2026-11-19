@@ -20,6 +20,9 @@ export default function ThreadReply({
   autoFocus = false,
 }: ThreadReplyProps) {
   const { t } = useTranslation('messages');
+  const sendShortcut = navigator.platform.startsWith('Mac')
+    ? 'Command+Enter'
+    : 'Ctrl+Enter';
 
   const [sending, setSending] = useState(false);
   const [composerHeight, setComposerHeight] = useState<number | null>(null);
@@ -249,7 +252,7 @@ export default function ThreadReply({
                 id="message-reply-content"
                 text={content}
                 onChange={text => onChange(text)}
-                onCtrlEnter={event => send(event)}
+                onSubmitShortcut={send}
               />
             </div>
           )}
@@ -267,7 +270,9 @@ export default function ThreadReply({
           {previewing ? t('Edit') : t('Preview')}
         </Button>
         <small className="text-muted hidden-xs">
-          {t('Highlight text to change its appearance. Ctrl+Enter to send.')}
+          {t('Highlight text to change its appearance. {{shortcut}} to send.', {
+            shortcut: sendShortcut,
+          })}
         </small>
         <Button
           id="messageReplySubmit"

@@ -18,7 +18,7 @@ interface AdminNote {
 interface TrEditorProps {
   className?: string;
   onChange: (value: string) => void;
-  onCtrlEnter: () => void | Promise<void>;
+  onSubmitShortcut: () => void | Promise<void>;
   placeholder: string;
   text: string;
 }
@@ -80,7 +80,7 @@ export default function AdminNotes({
           <TypedTrEditor
             className="admin-notes-field"
             onChange={value => setNewNote(value)}
-            onCtrlEnter={addNote}
+            onSubmitShortcut={addNote}
             placeholder="Write a note"
             text={newNote}
           />
