@@ -13,13 +13,10 @@ interface UnreadConversation {
 
 export async function queueMessageDigests(now = new Date()) {
   const memberFields = 'displayName username roles';
-  const day = 24 * 60 * 60 * 1000;
   const User = mongoose.model<UserServerRecord>('User');
   const Message = mongoose.model<MessageRecord>('Message');
-  const today = new Date(Math.floor(now.getTime() / day) * day);
-  const monday = new Date(
-    today.getTime() - ((today.getUTCDay() + 6) % 7) * day,
-  );
+  const today = moment.utc(now).startOf('day').toDate();
+  const monday = moment.utc(now).startOf('isoWeek').toDate();
   const recipients = User.find(
     {
       $or: [
@@ -63,6 +60,7 @@ export async function queueMessageDigests(now = new Date()) {
       {
         $match: {
           userTo: recipient._id,
+          // Stryker disable next-line ArrayDeclaration: equivalent, a placeholder entry never matches a sender id
           userFrom: { $nin: recipient.blocked ?? [] },
           read: false,
           shadowHidden: { $ne: true },
@@ -72,10 +70,10 @@ export async function queueMessageDigests(now = new Date()) {
       },
       { $group: { _id: '$userFrom', messages: { $push: '$_id' } } },
     ]);
-    if (!unread.length) continue;
     const senders = await User.find(
       {
         _id: { $in: unread.map(conversation => conversation._id) },
+        roles: { $nin: userRoles.restrictedMessagingRoles },
       },
       memberFields,
     )
@@ -84,25 +82,20 @@ export async function queueMessageDigests(now = new Date()) {
     const byId = new Map(senders.map(sender => [String(sender._id), sender]));
     const selected = unread.flatMap(conversation => {
       const sender = byId.get(String(conversation._id));
-      return sender && !userRoles.hasRestrictedMessagingRole(sender)
-        ? [{ conversation, sender }]
-        : [];
+      return sender ? [{ conversation, sender }] : [];
     });
     if (!selected.length) continue;
 
-    // One worker reserves this recipient's period, even if Agenda runs overlap.
+    // Only the first worker to set the period modifies the member, so one
+    // worker reserves it even if Agenda runs overlap.
     const claim = {
       _id: recipient._id,
       messageEmailFrequency: frequency,
       email: recipient.email,
     };
-    const reserved = await User.updateOne(
-      {
-        ...claim,
-        $or: [{ [field]: { $exists: false } }, { [field]: { $lt: period } }],
-      },
-      { $set: { [field]: period } },
-    );
+    const reserved = await User.updateOne(claim, {
+      $set: { [field]: period },
+    });
     if (!reserved.modifiedCount) continue;
     try {
       await new Promise<void>((resolve, reject) => {
