@@ -4,9 +4,7 @@
 
 Present consistent site navigation, media resources, and deployed-code
 information across Trustroots pages.
-
 ## Requirements
-
 ### Requirement: Shared site footer
 
 The system SHALL provide a consistent footer across the main site and
@@ -463,7 +461,7 @@ The homepage SHALL show signed-in members up to nine visible confirmed contacts 
 #### Scenario: A signed-in member has recent connections
 
 - **WHEN** a signed-in member opens the homepage
-- **THEN** eligible people appear below the fixed navigation and above the introductory content
+- **THEN** Trustroots updates, the connections map and recent connections appear in that order when each is available, below the fixed navigation and above the introductory content
 - **AND** cards are laid out in three columns on desktop and fewer columns on narrower screens
 - **AND** hidden, restricted and mutually blocked profiles are excluded
 
@@ -474,18 +472,29 @@ The homepage SHALL show signed-in members up to nine visible confirmed contacts 
 
 ### Requirement: Hosting map for connections
 
-The signed-in homepage SHALL show approximate hosting locations for visible confirmed contacts and public positive recommenders with current visible hosting offers, regardless of recent activity. Offers restricted to the host's circles SHALL require a shared circle.
+The signed-in homepage SHALL show approximate hosting locations for visible confirmed contacts and public positive recommenders with current visible hosting offers, regardless of recent activity. It SHALL also show approximate meeting locations for eligible connections who are happy to meet and are not hosting. Offers restricted to the member's circles SHALL require a shared circle.
 
 #### Scenario: A connection has an older activity date
 
 - **WHEN** a connection with a visible current offer was last active more than 30 days ago
-- **THEN** their approximate hosting pin appears on the map
+- **THEN** their approximate pin appears on the map
 - **AND** they are omitted from the recent cards
 
 #### Scenario: A member opens a hosting pin
 
 - **WHEN** a signed-in member opens a hosting pin
 - **THEN** the popup shows the host's name and a separate link to their hosting offer
+
+#### Scenario: A connection is happy to meet
+
+- **WHEN** a connection has ongoing meeting availability set to yes and has explicitly selected that they cannot host
+- **THEN** the viewer sees one approximate pin identified as a meeting location
+- **AND** its popup links to the member's offer details
+
+#### Scenario: A connection can host and meet
+
+- **WHEN** a connection has a visible current hosting offer and is also happy to meet
+- **THEN** the map displays only the hosting pin
 
 ### Requirement: Shared web tooltips
 

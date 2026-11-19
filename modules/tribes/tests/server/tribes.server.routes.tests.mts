@@ -281,7 +281,7 @@ describe('Tribe CRUD tests', function () {
     should.not.exist(response.body.contacts[0].locationFuzzy);
     should.not.exist(response.body.active[0].seen);
   });
-  it('lists recent connections separately from all visible hosting connections', async () => {
+  it('lists recent connections separately from visible hosting and meeting connections', async () => {
     await agent.get('/api/tribes/discovery/connections').expect(403);
     user.member!.push({ tribe: tribe._id });
     await user.save();
@@ -310,6 +310,7 @@ describe('Tribe CRUD tests', function () {
       hidden,
       blocked,
       expired,
+      meeting,
       ...otherContacts
     ] = await utils.saveUsersWithCachedPasswords([
       connectionFixture('recentcontact', { seen: daysAgo(2) }),
@@ -324,18 +325,25 @@ describe('Tribe CRUD tests', function () {
         seen: daysAgo(1),
       }),
       connectionFixture('expiredhost', { seen: daysAgo(40) }),
+      connectionFixture('oldermeeting', { seen: daysAgo(40) }),
       ...Array.from({ length: 8 }, (_, index) =>
         connectionFixture(`contact${index}`, { seen: daysAgo(13 + index) }),
       ),
     ]);
     await Contact.create(
-      [newer, olderHost, hidden, blocked, expired, ...otherContacts].map(
-        connection => ({
-          userFrom: connection._id,
-          userTo: user._id,
-          confirmed: true,
-        }),
-      ),
+      [
+        newer,
+        olderHost,
+        hidden,
+        blocked,
+        expired,
+        meeting,
+        ...otherContacts,
+      ].map(connection => ({
+        userFrom: connection._id,
+        userTo: user._id,
+        confirmed: true,
+      })),
     );
     await Experience.create(
       [newer, restrictedHost].map(connection => ({
@@ -366,6 +374,22 @@ describe('Tribe CRUD tests', function () {
       locationFuzzy: [42.001, 6.001],
       updated: daysAgo(45),
     });
+    const approximateMeeting = [41.001, 7.001];
+    await Offer.collection.insertMany(
+      [meeting, olderHost, restrictedHost, hidden, blocked, expired, newer].map(
+        connection => ({
+          user: connection._id,
+          type: 'host',
+          status: 'no',
+          meetingStatus: connection === newer ? 'maybe' : 'yes',
+          location: [41, 7],
+          locationFuzzy: approximateMeeting,
+          updated: daysAgo(1),
+          showOnlyInMyCircles: connection === restrictedHost,
+          ...(connection === expired && { validUntil: daysAgo(1) }),
+        }),
+      ),
+    );
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     const response = await agent
       .get('/api/tribes/discovery/connections')
@@ -388,6 +412,14 @@ describe('Tribe CRUD tests', function () {
         username: olderHost.username,
         displayName: olderHost.displayName,
         location: approximate,
+      },
+    ]);
+    response.body.meetings.should.deepEqual([
+      {
+        _id: meeting._id.toString(),
+        username: meeting.username,
+        displayName: meeting.displayName,
+        location: approximateMeeting,
       },
     ]);
   });

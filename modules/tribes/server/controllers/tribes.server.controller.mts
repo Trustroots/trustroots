@@ -3,7 +3,7 @@ import paginationService from '../../../core/server/services/pagination.server.s
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import moment from 'moment';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
-import { findDiscoveryHostingLocations } from '../../../users/server/services/discovery-hosting.server.service.mts';
+import { findDiscoveryOfferLocations } from '../../../users/server/services/discovery-offers.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 
 interface TribeRecord {
@@ -58,11 +58,17 @@ interface MemberListResponse {
   active: DiscoveryMember[];
 }
 
+interface ConnectionPin {
+  _id: Types.ObjectId;
+  username: string;
+  displayName: string;
+  location: [number, number];
+}
+
 interface ConnectionsResponse {
   recent: DiscoveryMember[];
-  hosts: (Pick<MemberView, '_id' | 'username' | 'displayName'> & {
-    location: [number, number];
-  })[];
+  hosts: ConnectionPin[];
+  meetings: ConnectionPin[];
 }
 
 interface RequestQuery {
@@ -405,7 +411,7 @@ service.listMembers = async function (req, res, next) {
     const ownerIDs = [...contacts, ...recommenders, ...active].map(
       member => member._id,
     );
-    const locations = await findDiscoveryHostingLocations(
+    const locations = await findDiscoveryOfferLocations(
       ownerIDs,
       ownerIDs,
       now,
@@ -424,7 +430,7 @@ service.listMembers = async function (req, res, next) {
   }
 };
 
-/** Find recent and hosting connections for the signed-in homepage. */
+/** Find recent and available connections for the signed-in homepage. */
 service.listConnections = async function (req, res, next) {
   try {
     const selfId = req.user._id;
@@ -470,7 +476,7 @@ service.listConnections = async function (req, res, next) {
     const viewerCircles = new Set(
       req.user.member?.map(({ tribe }) => tribe.toString()),
     );
-    const locations = await findDiscoveryHostingLocations(
+    const locations = await findDiscoveryOfferLocations(
       connections.map(({ _id }) => _id),
       connections
         .filter(({ member }) =>
@@ -478,16 +484,20 @@ service.listConnections = async function (req, res, next) {
         )
         .map(({ _id }) => _id),
       now,
+      { includeMeetings: true },
     );
-    const hosts = connections.flatMap(({ _id, username, displayName }) => {
-      const location = locations.get(_id.toString());
-      return location && username && displayName
-        ? [{ _id, username, displayName, location }]
-        : [];
-    });
+    const hosts: ConnectionPin[] = [];
+    const meetings: ConnectionPin[] = [];
+    for (const { _id, username, displayName } of connections) {
+      const offer = locations.get(_id.toString());
+      if (!offer || !username || !displayName) continue;
+      const pins = offer.type === 'host' ? hosts : meetings;
+      pins.push({ _id, username, displayName, location: offer.location });
+    }
     return res.json({
       recent: recent.map(member => memberSummary(member, now)),
       hosts,
+      meetings,
     });
   } catch (error) {
     return next(error);

@@ -65,11 +65,14 @@ it('shows only the date when the author has no public username', async () => {
     publishedAt: '2026-11-01T12:00:00.000Z',
   };
   vi.spyOn(http, 'get').mockResolvedValue({ data: [note] });
-  render(<HomeFeaturedNostrNotes />);
+  render(<HomeFeaturedNostrNotes memberView />);
 
   expect(await screen.findByRole('article')).toHaveTextContent(
     /An update from an unlinked author\.\s*2026-11-01$/,
   );
+  expect(
+    screen.getByRole('region', { name: 'Trustroots updates' }),
+  ).toHaveClass('home-member-panel');
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
 

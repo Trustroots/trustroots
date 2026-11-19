@@ -289,6 +289,23 @@ describe('shared circle map', () => {
       [12, 34],
       expect.objectContaining({ fillColor: '#12b591' }),
     );
+    rerender(
+      <CircleLocationMap
+        {...props}
+        headingAs="h2"
+        legend={<div>Meeting location</div>}
+        locations={[{ ...location, markerColor: '#b16a19' }]}
+        markerColor="#12b591"
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Circle locations',
+    );
+    expect(screen.getByText('Meeting location')).toBeInTheDocument();
+    expect(L.circleMarker).toHaveBeenLastCalledWith(
+      [12, 34],
+      expect.objectContaining({ fillColor: '#b16a19' }),
+    );
     const accommodation = '/profile/sample/accommodation';
     const internalLink = locationPopup({
       ...location,

@@ -36,6 +36,7 @@ export interface CircleLocation {
   latitude: number;
   longitude: number;
   details: string[];
+  markerColor?: string;
   popupHeading?: ReactNode;
   facts?: {
     label: string;
@@ -114,6 +115,8 @@ interface Props {
   emptyText: string;
   errorText: string;
   countLabel: string;
+  headingAs?: 'h2' | 'h3';
+  legend?: ReactNode;
   attribution?: ReactNode;
   markerColor?: string;
   className?: string;
@@ -121,6 +124,7 @@ interface Props {
 }
 
 export default function CircleLocationMap(props: Props) {
+  const Heading = props.headingAs ?? 'h3';
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
@@ -212,7 +216,7 @@ export default function CircleLocationMap(props: Props) {
         radius: 8,
         color: '#fff',
         weight: 2,
-        fillColor: props.markerColor || '#488261',
+        fillColor: location.markerColor ?? props.markerColor ?? '#488261',
         fillOpacity: 1,
       })
         .bindPopup(content)
@@ -297,7 +301,7 @@ export default function CircleLocationMap(props: Props) {
       aria-label={props.title}
     >
       <div className="circle-location-map-heading">
-        <h3>{props.title}</h3>
+        <Heading>{props.title}</Heading>
         <p>{props.description}</p>
       </div>
       <div className="circle-location-map-frame">
@@ -326,6 +330,7 @@ export default function CircleLocationMap(props: Props) {
           createPortal(popupHeading.content, popupHeading.container)}
       </div>
       <div className="circle-location-map-footer">
+        {props.legend}
         <span className="circle-location-map-status" aria-live="polite">
           {props.state === 'loading'
             ? props.loadingText

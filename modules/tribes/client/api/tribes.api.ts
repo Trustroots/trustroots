@@ -39,7 +39,7 @@ export type DiscoveryMember = UserProfile & {
   hosting?: boolean;
 };
 
-export interface HostingConnection {
+export interface MappedConnection {
   _id: string;
   username: string;
   displayName: string;
@@ -48,7 +48,8 @@ export interface HostingConnection {
 
 export interface ConnectionsDiscovery {
   recent: DiscoveryMember[];
-  hosts: HostingConnection[];
+  hosts: MappedConnection[];
+  meetings?: MappedConnection[];
 }
 
 export async function listMemberships(): Promise<MembershipUpdate[]> {
