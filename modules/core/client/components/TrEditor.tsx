@@ -165,21 +165,21 @@ function removeTrailingBr(value: string): string {
 type TrEditorProps = {
   id: string;
   onChange: (value: string) => void;
-  onCtrlEnter?: (event: KeyboardEvent) => void;
+  onSubmitShortcut?: (event: KeyboardEvent) => void;
   placeholder?: string;
   text: string;
 };
 export default function TrEditor({
   id,
   onChange,
-  onCtrlEnter = () => {},
+  onSubmitShortcut,
   placeholder,
   text,
 }: TrEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const mediumRef = useRef<InstanceType<typeof MediumEditor> | null>(null);
   const onChangeRef = useRef(onChange);
-  const onCtrlEnterRef = useRef(onCtrlEnter);
+  const onSubmitShortcutRef = useRef(onSubmitShortcut);
   const latestEditorText = useRef(text);
   const [initialMarkup] = useState(() => ({ __html: sanitiseRichText(text) }));
   const isApplyingExternalText = useRef(false);
@@ -187,7 +187,7 @@ export default function TrEditor({
 
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
-    onCtrlEnterRef.current = onCtrlEnter;
+    onSubmitShortcutRef.current = onSubmitShortcut;
   });
 
   useLayoutEffect(() => {
@@ -205,15 +205,28 @@ export default function TrEditor({
       onChangeRef.current(value);
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Enter' && event.ctrlKey && !event.isComposing) {
-        onCtrlEnterRef.current(event);
+      const submit = onSubmitShortcutRef.current;
+      if (
+        !submit ||
+        event.key !== 'Enter' ||
+        !(event.ctrlKey || event.metaKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        event.isComposing
+      ) {
+        return;
       }
+
+      // Handle submission before MediumEditor processes Enter as editing input.
+      event.preventDefault();
+      event.stopPropagation();
+      if (!event.repeat) submit(event);
     };
     medium.subscribe('editableInput', onInput);
-    editable.addEventListener('keydown', onKeyDown);
+    editable.addEventListener('keydown', onKeyDown, { capture: true });
     return () => {
       medium.unsubscribe('editableInput', onInput);
-      editable.removeEventListener('keydown', onKeyDown);
+      editable.removeEventListener('keydown', onKeyDown, { capture: true });
       medium.destroy();
     };
   }, []);

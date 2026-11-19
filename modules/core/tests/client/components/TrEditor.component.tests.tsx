@@ -24,8 +24,8 @@ function onChangeMock(): MockedFunction<TrEditorProps['onChange']> {
   return vi.fn();
 }
 
-function onCtrlEnterMock(): MockedFunction<
-  NonNullable<TrEditorProps['onCtrlEnter']>
+function onSubmitShortcutMock(): MockedFunction<
+  NonNullable<TrEditorProps['onSubmitShortcut']>
 > {
   return vi.fn();
 }
@@ -74,7 +74,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChange}
-        onCtrlEnter={onCtrlEnterMock()}
+        onSubmitShortcut={onSubmitShortcutMock()}
         text="initial"
       />,
     );
@@ -85,13 +85,13 @@ describe('<TrEditor />', () => {
     expect(onChange).toHaveBeenCalledWith('<p>hello</p>');
   });
 
-  it('handles only Ctrl+Enter outside composition, even without a legacy key code', () => {
-    const onCtrlEnter = onCtrlEnterMock();
+  it('handles Ctrl+Enter outside composition, even without a legacy key code', () => {
+    const onSubmitShortcut = onSubmitShortcutMock();
     const { container, unmount } = render(
       <TrEditor
         id="bio"
         onChange={onChangeMock()}
-        onCtrlEnter={onCtrlEnter}
+        onSubmitShortcut={onSubmitShortcut}
         text="initial"
       />,
     );
@@ -104,7 +104,7 @@ describe('<TrEditor />', () => {
       ctrlKey: true,
       isComposing: true,
     });
-    expect(onCtrlEnter).not.toHaveBeenCalled();
+    expect(onSubmitShortcut).not.toHaveBeenCalled();
 
     const shortcut = {
       key: 'Enter',
@@ -113,10 +113,10 @@ describe('<TrEditor />', () => {
     };
     fireEvent.keyDown(editable, shortcut);
 
-    expect(onCtrlEnter).toHaveBeenCalledTimes(1);
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
     unmount();
     fireEvent.keyDown(editable, shortcut);
-    expect(onCtrlEnter).toHaveBeenCalledTimes(1);
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
     expect(mediumEditors[0].destroy).toHaveBeenCalledTimes(1);
   });
 
@@ -126,7 +126,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChange}
-        onCtrlEnter={onCtrlEnterMock()}
+        onSubmitShortcut={onSubmitShortcutMock()}
         text="initial"
       />,
     );
@@ -139,12 +139,12 @@ describe('<TrEditor />', () => {
 
   it('does not re-render the editor for its own input but accepts external text', async () => {
     const onChange = onChangeMock();
-    const onCtrlEnter = onCtrlEnterMock();
+    const onSubmitShortcut = onSubmitShortcutMock();
     const { rerender } = render(
       <TrEditor
         id="bio"
         onChange={onChange}
-        onCtrlEnter={onCtrlEnter}
+        onSubmitShortcut={onSubmitShortcut}
         text="initial"
       />,
     );
@@ -155,7 +155,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChange}
-        onCtrlEnter={onCtrlEnter}
+        onSubmitShortcut={onSubmitShortcut}
         text="<p>initial edit</p>"
       />,
     );
@@ -166,7 +166,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChange}
-        onCtrlEnter={onCtrlEnter}
+        onSubmitShortcut={onSubmitShortcut}
         text=""
       />,
     );
@@ -180,14 +180,14 @@ describe('<TrEditor />', () => {
   it('keeps current callbacks and placeholder without recreating the editor', () => {
     const firstChange = onChangeMock();
     const latestChange = onChangeMock();
-    const firstEnter = onCtrlEnterMock();
-    const latestEnter = onCtrlEnterMock();
+    const firstEnter = onSubmitShortcutMock();
+    const latestEnter = onSubmitShortcutMock();
     const { rerender, container } = render(
       <TrEditor
         id="bio"
         text="initial"
         onChange={firstChange}
-        onCtrlEnter={firstEnter}
+        onSubmitShortcut={firstEnter}
       />,
     );
     const editor = mediumEditors[0];
@@ -196,7 +196,7 @@ describe('<TrEditor />', () => {
         id="bio"
         text="initial"
         onChange={latestChange}
-        onCtrlEnter={latestEnter}
+        onSubmitShortcut={latestEnter}
         placeholder="Updated placeholder"
       />,
     );
@@ -238,7 +238,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChangeMock()}
-        onCtrlEnter={onCtrlEnterMock()}
+        onSubmitShortcut={onSubmitShortcutMock()}
         text="initial"
       />,
     );
@@ -254,7 +254,7 @@ describe('<TrEditor />', () => {
       <TrEditor
         id="bio"
         onChange={onChangeMock()}
-        onCtrlEnter={onCtrlEnterMock()}
+        onSubmitShortcut={onSubmitShortcutMock()}
         placeholder="Write a careful reply"
         text="initial"
       />,
@@ -266,7 +266,7 @@ describe('<TrEditor />', () => {
     );
   });
 
-  it('uses a no-op ctrl+enter handler by default', () => {
+  it('preserves Ctrl+Enter when there is no submit callback', () => {
     const { container } = render(
       <TrEditor id="bio" onChange={onChangeMock()} text="initial" />,
     );
