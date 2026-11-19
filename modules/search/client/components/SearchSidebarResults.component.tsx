@@ -441,7 +441,7 @@ export default function SearchSidebarResults({
       <Button
         intent="primary"
         size="xl"
-        className="visible-xs-block search-sidebar-close"
+        className="tw:block tw:sm:hidden search-sidebar-close"
         onClick={onCloseSidebar}
         type="button"
       >

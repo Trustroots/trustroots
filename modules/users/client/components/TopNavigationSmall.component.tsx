@@ -129,7 +129,7 @@ export default function TopNavigationSmall({
           onCancel={() => setShowRemoveModal(false)}
         />
       )}
-      <nav className="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block">
+      <nav className="navbar navbar-white navbar-fixed-top navbar-fixed-top-below tw:block tw:sm:hidden">
         <div className="container">
           <ul className="nav navbar-nav" role="navigation">
             {links.map(({ id, label, link, onClick }) => (

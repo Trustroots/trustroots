@@ -26,9 +26,10 @@ for (const viewport of [
     await page.goto(`/profile/${SEEDED_MEMBERS[1].username}`);
     if (viewport.width === 1280) {
       await captureSection(
-        page.locator('.profile-view .row.hidden-xs').filter({
-          has: page.locator('.profile-name'),
-        }),
+        page
+          .locator('.profile-view .row:visible')
+          .filter({ has: page.locator('.profile-name') })
+          .last(),
         'member-profile-heading-desktop',
       );
     }
@@ -391,10 +392,10 @@ for (const width of [390, 480, 481, 600, 767]) {
       ).toBeVisible();
       if (width === 390 && member === SEEDED_MEMBERS[1]) {
         await expect(
-          page.locator('.profile-view .visible-xs-block .profile-name'),
+          page.locator('.profile-view .profile-name:visible'),
         ).toHaveCSS('margin-top', '0px');
         await captureSection(
-          page.locator('.profile-view .visible-xs-block').filter({
+          page.locator('.profile-view .member-identity:visible').filter({
             has: page.locator('.profile-name'),
           }),
           'member-profile-heading-mobile',

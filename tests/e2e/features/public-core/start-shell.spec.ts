@@ -65,10 +65,18 @@ test.describe('app shell', () => {
     const errors = collectPageErrors(page);
     await signInViaApi(page, undefined, member!);
     await page.goto('/search');
+    const header = page.locator('#tr-header');
+    const profileMenu = header.getByRole('button', { name: 'Profile menu' });
+    const mobileMenu = header.getByRole('link', {
+      name: 'My profile, info and support',
+    });
     const map = page.locator('section.search');
     await expect(map).toBeVisible();
     await expectNoncedScripts(page);
     expect(await bootstrapUsername(page)).toBe(member!.username);
+    await expect(profileMenu).toBeVisible();
+    await expect(mobileMenu).toBeHidden();
+    await captureSection(header, 'shell-member-header-desktop');
     await captureSection(map, 'shell-search-map-desktop');
 
     await page.goto(`/profile/${other!.username}`);
@@ -78,6 +86,9 @@ test.describe('app shell', () => {
 
     await page.setViewportSize(mobile);
     await expect(profile).toBeVisible();
+    await expect(profileMenu).toBeHidden();
+    await expect(mobileMenu).toBeVisible();
+    await captureSection(header, 'shell-member-header-mobile');
     await captureSection(profile, 'shell-profile-mobile');
     await page.goto('/search');
     await expect(map).toBeVisible();

@@ -65,7 +65,7 @@ export default function SearchSidebar({
           or location
         </Button>
       </div>
-      <div className="search-sidebar-section hidden-xs">
+      <div className="search-sidebar-section tw:max-sm:hidden">
         <SearchPlaceInput
           onPlaceSearch={onPlaceSearch}
           searchQuery={searchQuery}

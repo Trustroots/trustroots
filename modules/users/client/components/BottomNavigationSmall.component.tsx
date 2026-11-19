@@ -72,7 +72,7 @@ export default function BottomNavigationSmall({
 
   return (
     <nav
-      className="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-view-navbar-mobile"
+      className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden profile-view-navbar-mobile"
       role="navigation"
     >
       <div className="container">

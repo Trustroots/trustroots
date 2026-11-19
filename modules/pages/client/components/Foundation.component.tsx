@@ -81,7 +81,7 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
       <section className="vision-footer">
         <div className="container">
           <div className="row" id="mission-vision-values">
-            <div className="col-xs-12 text-center hidden-xs">
+            <div className="col-xs-12 text-center tw:max-sm:hidden">
               <h2>{t('Vision, Mission & Values')}</h2>
               <br />
               <br />

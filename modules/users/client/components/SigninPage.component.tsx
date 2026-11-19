@@ -200,7 +200,7 @@ export default function SigninPage() {
                     <a href={forgotHref}>
                       Forgot?
                       {authError && (
-                        <span className="hidden-xs">
+                        <span className="tw:max-sm:hidden">
                           {' '}
                           Recover your password
                         </span>
@@ -209,7 +209,7 @@ export default function SigninPage() {
                   </div>
                 </fieldset>
               </form>
-              <div className="text-white hidden-xs">
+              <div className="text-white tw:max-sm:hidden">
                 <br />
                 <Button
                   variant="outline"
@@ -228,7 +228,7 @@ export default function SigninPage() {
             </div>
           </div>
 
-          <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+          <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden">
             <div className="container">
               <ul
                 className="nav navbar-nav nav-justified"

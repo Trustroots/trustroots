@@ -82,8 +82,10 @@ export default function Faq({ category, children }: FaqProps) {
         <div className="container">
           <div className="row">
             <div className="col-xs-12 text-center">
-              <h2 className="visible-xs-block">{t('FAQ')}</h2>
-              <h2 className="hidden-xs">{t('Frequently Asked Questions')}</h2>
+              <h2 className="tw:block tw:sm:hidden">{t('FAQ')}</h2>
+              <h2 className="tw:max-sm:hidden">
+                {t('Frequently Asked Questions')}
+              </h2>
               {category === 'get-started' && <h3>{rawT('Get Started')}</h3>}
               {category === 'general' && (
                 <h3>{t('about the site & community')}</h3>

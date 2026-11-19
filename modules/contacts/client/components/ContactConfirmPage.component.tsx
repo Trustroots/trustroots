@@ -120,13 +120,13 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
               <div className="panel panel-default contacts-connection">
                 <div className="panel-body">
                   <div className="row">
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                    <div className="col-xs-12 col-sm-5">
                       <MemberIdentity user={contact.userFrom} size={64} />
                     </div>
-                    <div className="hidden-xs col-sm-2">
+                    <div className="tw:max-sm:hidden col-sm-2">
                       <i className="icon-exchange icon-3x text-muted contacts-connection-divider" />
                     </div>
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                    <div className="col-xs-12 col-sm-5 tw:max-sm:mt-2.5">
                       <MemberIdentity user={contact.userTo} size={64} />
                     </div>
                   </div>

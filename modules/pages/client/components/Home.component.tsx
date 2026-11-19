@@ -183,7 +183,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 <div className="row">
                   <div className="col-xs-12 col-sm-8 col-sm-offset-2">
                     <img
-                      className="home-logo hidden-xs center-block"
+                      className="home-logo tw:max-sm:hidden center-block"
                       src="/img/logo/white.svg"
                       alt="Trustroots"
                       width="210"
@@ -191,7 +191,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                       aria-hidden="true"
                     />
                     <img
-                      className="home-logo visible-xs-block center-block"
+                      className="home-logo tw:block tw:sm:hidden center-block"
                       src="/img/logo/white.svg"
                       alt="Trustroots"
                       width="130"
@@ -207,7 +207,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                     </h4>
                     <Button
                       size="xl"
-                      className="home-join hidden-xs"
+                      className="home-join tw:max-sm:hidden"
                       render={<a href={getSignupUrl(circleRoute)} />}
                     >
                       {t('Join Trustroots now')}
@@ -242,7 +242,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                     </div>
                   )}
                   */}
-                    <div className="home-down hidden-xs">
+                    <div className="home-down tw:max-sm:hidden">
                       <i className="icon-down"></i>
                     </div>
                   </div>
@@ -298,7 +298,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
       <section className="home-how">
         <div className="container">
           <div className="row">
-            <div aria-hidden className="col-xs-12 col-md-7 hidden-xs hidden-sm">
+            <div aria-hidden className="col-xs-12 col-md-7 tw:max-md:hidden">
               <Screenshot
                 png={screenshotProfilePng}
                 png2x={screenshotProfilePng2x}
@@ -307,9 +307,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
               />
             </div>
             <div className="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
-              <div className="home-wohoo center-block hidden-xs hidden-sm"></div>
+              <div className="home-wohoo center-block tw:max-md:hidden"></div>
               <p className="font-brand-light">
-                <br className="hidden-xs hidden-sm" />
+                <br className="tw:max-md:hidden" />
                 {t('Share the beautiful you with the world.')}
                 <br />
                 <br />
@@ -342,7 +342,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                   </p>
                 </div>
               </div>
-              <div className="col-xs-12 visible-xs tribes-xs">
+              <div className="col-xs-12 tw:sm:hidden tribes-xs">
                 {circles.slice(0, 3).map(circle => (
                   <a
                     key={circle._id}
@@ -357,7 +357,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
               {circles.slice(0, 3).map((circle, index) => (
                 <div
                   key={circle._id}
-                  className={cn('col-sm-3 hidden-xs home-circle-card', {
+                  className={cn('col-sm-3 tw:max-sm:hidden home-circle-card', {
                     'home-circle-last': index === 2,
                   })}
                 >

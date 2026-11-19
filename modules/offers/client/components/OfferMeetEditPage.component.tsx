@@ -178,7 +178,7 @@ export default function OfferMeetEditPage() {
           variant="outline"
           intent="primary"
           size="lg"
-          className="pull-right hidden-xs"
+          className="pull-right tw:max-sm:hidden"
           render={<a href="/offer/meet" />}
         >
           Cancel
