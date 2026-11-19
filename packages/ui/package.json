@@ -20,6 +20,7 @@
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./Textarea": "./src/components/Textarea.tsx",
     "./Input": "./src/components/Input.tsx",
+    "./Select": "./src/components/Select.tsx",
     "./Modal": "./src/components/Modal.tsx",
     "./NavigationDropdown": "./src/components/NavigationDropdown.tsx",
     "./intent": "./src/lib/intent.ts",

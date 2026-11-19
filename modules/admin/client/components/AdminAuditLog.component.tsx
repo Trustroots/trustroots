@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 import React, { useEffect, useState } from 'react';
 
 import {
@@ -86,9 +87,9 @@ export default function AdminAuditLog() {
         <p>Latest 100 matching actions. Team filters use current membership.</p>
         <div className="admin-audit-log-filters">
           <label htmlFor="audit-actor">Performed by</label>
-          <select
+          <Select
+            className="tw:w-auto tw:max-w-full"
             id="audit-actor"
-            className="form-control"
             value={filters.username}
             onChange={event =>
               setFilters({ ...filters, username: event.target.value })
@@ -100,11 +101,11 @@ export default function AdminAuditLog() {
                 {actor.username}
               </option>
             ))}
-          </select>
+          </Select>
           <label htmlFor="audit-team">Team</label>
-          <select
+          <Select
+            className="tw:w-auto tw:max-w-full"
             id="audit-team"
-            className="form-control"
             value={filters.team}
             onChange={event =>
               setFilters({
@@ -117,7 +118,7 @@ export default function AdminAuditLog() {
             <option value="admin">Admin</option>
             <option value="welcome-team">Greeters</option>
             <option value="support-team">Support team</option>
-          </select>
+          </Select>
         </div>
         {error && (
           <p role="alert">Could not load the audit log. Please try again.</p>

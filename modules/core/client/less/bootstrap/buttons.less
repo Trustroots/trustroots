@@ -5,22 +5,6 @@
  * are rules for the elements around buttons.
  */
 
-// Fix problem with inverse button hover state covering input border
-.input-group-btn:last-child
-  > [data-slot='button'][data-variant='outline'][data-intent='inverse'] {
-  margin-left: 0;
-}
-
-// Buttons in an input group sit above the input's border, as Bootstrap's
-// `.input-group .btn` did; a focused one rises above its neighbours.
-.input-group [data-slot='button'] {
-  position: relative;
-  z-index: 2;
-  &:focus {
-    z-index: 5;
-  }
-}
-
 // A checked option in a group sits above its neighbours, as Bootstrap's
 // `.btn-group > .btn.active` did.
 [data-slot='button-group'] > [data-slot='button'].active {

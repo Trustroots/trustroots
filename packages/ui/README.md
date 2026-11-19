@@ -122,6 +122,11 @@ uncontrolled values. Associate a label with its `id` and use
 appearance without depending on Bootstrap classes. Associate a label with its
 `id` and use `aria-describedby` to associate help or validation text.
 
+## Select
+
+`Select` accepts native select props, including the options as children. The
+`fieldSize` prop controls its dimensions and padding.
+
 ## shadcn
 
 `components.json` configures the shadcn CLI for the Base UI flavour

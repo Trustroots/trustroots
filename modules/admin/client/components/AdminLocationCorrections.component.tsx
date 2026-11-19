@@ -1,3 +1,4 @@
+import { Textarea } from '@trustroots/ui/Textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -216,9 +217,9 @@ export default function AdminLocationCorrections() {
                 </label>
                 {/* Focus starts in the message field: the dialog opens
                     after an explicit Review action. */}
-                <textarea
+                <Textarea
                   ref={messageRef}
-                  className="form-control"
+                  fieldSize="md"
                   id="location-correction-message"
                   maxLength={5000}
                   onChange={event => setContent(event.target.value)}

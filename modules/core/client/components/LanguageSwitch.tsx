@@ -106,6 +106,7 @@ export default function LanguageSwitch({
         <ModalBody>
           {locales.length >= 8 && (
             <Input
+              fieldSize="sm"
               className="tw:mb-4"
               type="search"
               value={search}

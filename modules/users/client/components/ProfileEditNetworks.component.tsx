@@ -1,3 +1,6 @@
+import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
+import { Textarea } from '@trustroots/ui/Textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
@@ -272,14 +275,16 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                   </Button>
                 </p>
                 <div className="form-group">
-                  <div className="input-group">
-                    <label className="input-group-addon" htmlFor="nostrNpub">
+                  <div data-slot="input-group" className="tw:input-group">
+                    <label
+                      className="tw:flex tw:items-center tw:border-y tw:border-solid tw:border-[#ced4da] tw:bg-white tw:pe-[5px] tw:py-1.5 tw:text-[#333] tw:sm:pe-0"
+                      htmlFor="nostrNpub"
+                    >
                       npub:
                     </label>
-                    <input
+                    <Input
                       id="nostrNpub"
                       type="text"
-                      className="form-control"
                       value={draftUser.nostrNpub || ''}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                         updateDraft({ nostrNpub: event.target.value })
@@ -299,9 +304,8 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                         <label htmlFor="nostrSigningMethod">
                           {t('Signing method')}
                         </label>
-                        <select
+                        <Select
                           id="nostrSigningMethod"
-                          className="form-control"
                           value={signingMethod}
                           onChange={event =>
                             setSigningMethod(
@@ -318,15 +322,14 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                           <option value="external">
                             {t('Sign with another tool')}
                           </option>
-                        </select>
+                        </Select>
                         {signingMethod === 'bunker' && (
                           <>
                             <label htmlFor="nostrBunker">
                               {t('Bunker URI')}
                             </label>
-                            <input
+                            <Input
                               id="nostrBunker"
-                              className="form-control"
                               type="password"
                               autoComplete="off"
                               value={bunkerUri}
@@ -350,9 +353,9 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                                 <label htmlFor="nostrChallenge">
                                   {t('Challenge to sign')}
                                 </label>
-                                <textarea
+                                <Textarea
                                   id="nostrChallenge"
-                                  className="form-control"
+                                  fieldSize="md"
                                   readOnly
                                   value={challengeJson}
                                   rows={8}
@@ -360,9 +363,9 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                                 <label htmlFor="nostrSignedEvent">
                                   {t('Signed event JSON')}
                                 </label>
-                                <textarea
+                                <Textarea
                                   id="nostrSignedEvent"
-                                  className="form-control"
+                                  fieldSize="md"
                                   value={signedJson}
                                   onChange={event =>
                                     setSignedJson(event.target.value)
@@ -431,14 +434,16 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                     string | undefined;
                   return (
                     <div className="form-group" key={field.id}>
-                      <div className="input-group">
-                        <label className="input-group-addon" htmlFor={field.id}>
+                      <div data-slot="input-group" className="tw:input-group">
+                        <label
+                          className="tw:flex tw:items-center tw:border-y tw:border-solid tw:border-[#ced4da] tw:bg-white tw:pe-[5px] tw:py-1.5 tw:text-[#333] tw:sm:pe-0"
+                          htmlFor={field.id}
+                        >
                           {field.label}
                         </label>
-                        <input
+                        <Input
                           id={field.id}
                           type="text"
-                          className="form-control"
                           value={fieldValue || ''}
                           onChange={(
                             event: React.ChangeEvent<HTMLInputElement>,
