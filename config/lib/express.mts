@@ -211,10 +211,9 @@ function initMiddleware(app: Express) {
 function initViewEngine(app: Express) {
   // Each view is a module whose default export renders the page to HTML.
   app.engine('mts', (file, locals, callback) => {
-    import(pathToFileURL(file).href).then(
-      view => callback(null, view.default(locals)),
-      callback,
-    );
+    import(pathToFileURL(file).href)
+      .then(view => view.default(locals))
+      .then(html => callback(null, html), callback);
   });
   app.set('view engine', 'mts');
   app.set('views', './modules/core/server/views');
