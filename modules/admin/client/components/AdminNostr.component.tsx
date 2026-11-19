@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import {
   Modal,
@@ -23,17 +23,39 @@ import {
   publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  reviseFeaturedNostrNote,
   signNostrTextNote,
 } from '../api/featured-nostr-notes.api';
 import AdminHeader from './AdminHeader.component';
 
 type PendingDeletion = { note: FeaturedNostrNote; event?: Event };
 type PendingPublication = { event: Event; acknowledgedRelays?: string[] };
+type LinkDraft = { start: number; end: number; text: string; url: string };
+
+function markdownLink({ text, url }: LinkDraft) {
+  const label = text.trim();
+  if (!label || /[[\]\r\n]/.test(label) || !/^https?:\/\//i.test(url.trim()))
+    return;
+  try {
+    const destination = new URL(url).href
+      .replace(/\(/g, '%28')
+      .replace(/\)/g, '%29');
+    return `[${label}](${destination})`;
+  } catch {
+    return undefined;
+  }
+}
 
 export default function AdminNostr() {
   const [notes, setNotes] = useState<FeaturedNostrNote[] | null>(null);
   const [reference, setReference] = useState('');
   const [draft, setDraft] = useState('');
+  const [editing, setEditing] = useState<FeaturedNostrNote | null>(null);
+  const [link, setLink] = useState<LinkDraft | null>(null);
+  const noteText = useRef<HTMLTextAreaElement>(null);
+  const linkText = useRef<HTMLInputElement>(null);
+  const linkUrl = useRef<HTMLInputElement>(null);
+  const previousDraft = useRef('');
   const [publication, setPublication] = useState<PendingPublication | null>(
     null,
   );
@@ -52,10 +74,57 @@ export default function AdminNostr() {
     return () => controller.abort();
   }, []);
 
-  function addFeaturedNote(note: FeaturedNostrNote) {
-    if (!featuredNotes.some(entry => entry.id === note.id)) {
-      setNotes([note, ...featuredNotes]);
-    }
+  function recordFeaturedNote(note: FeaturedNostrNote) {
+    const next = [...featuredNotes];
+    const index = next.findIndex(entry => entry.id === note.id);
+    if (index === -1) next.unshift(note);
+    else next[index] = note;
+    setNotes(next);
+  }
+
+  function changeDraft(value: string) {
+    setDraft(value);
+    setPublication(null);
+  }
+
+  function startEditing(note: FeaturedNostrNote) {
+    previousDraft.current = draft;
+    setEditing(note);
+    changeDraft(note.content);
+    setError('');
+    setStatus('');
+    noteText.current?.focus();
+  }
+
+  function closeEdit() {
+    setEditing(null);
+    changeDraft(previousDraft.current);
+    setError('');
+  }
+
+  function openLinkEditor() {
+    const textarea = noteText.current!;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    setLink({ start, end, text: draft.slice(start, end), url: '' });
+  }
+
+  function insertLink(
+    event: React.FormEvent<HTMLFormElement>,
+    link: LinkDraft,
+  ) {
+    event.preventDefault();
+    const markdown = markdownLink(link);
+    if (!markdown) return;
+    changeDraft(draft.slice(0, link.start) + markdown + draft.slice(link.end));
+    setLink(null);
+    requestAnimationFrame(() => {
+      noteText.current?.focus();
+      noteText.current?.setSelectionRange(
+        link.start + markdown.length,
+        link.start + markdown.length,
+      );
+    });
   }
 
   async function publish(event: React.FormEvent<HTMLFormElement>) {
@@ -65,17 +134,27 @@ export default function AdminNostr() {
     setStatus('');
     let acknowledgedRelays = publication?.acknowledgedRelays;
     try {
-      const signed = await (publication?.event ?? signNostrTextNote(draft));
+      const signed = await (publication?.event ??
+        (editing
+          ? signNostrTextNote(draft, editing)
+          : signNostrTextNote(draft)));
       if (!acknowledgedRelays) {
         setPublication({ event: signed });
         acknowledgedRelays = await publishNostrTextNote(signed);
         setPublication({ event: signed, acknowledgedRelays });
       }
-      addFeaturedNote(await featureSignedNostrNote(signed));
+      if (editing) {
+        recordFeaturedNote(await reviseFeaturedNostrNote(editing.id, signed));
+        closeEdit();
+      } else {
+        recordFeaturedNote(await featureSignedNostrNote(signed));
+        setDraft('');
+      }
       setPublication(null);
-      setDraft('');
       setStatus(
-        `Note published to ${acknowledgedRelays.join(', ')} and featured on the homepage.`,
+        editing
+          ? `Revision published to ${acknowledgedRelays.join(', ')} and updated on the homepage.`
+          : `Note published to ${acknowledgedRelays.join(', ')} and featured on the homepage.`,
       );
     } catch (cause) {
       const message = getErrorMessage(
@@ -98,7 +177,7 @@ export default function AdminNostr() {
     setError('');
     setStatus('');
     try {
-      addFeaturedNote(await featureNostrNote(reference));
+      recordFeaturedNote(await featureNostrNote(reference));
       setReference('');
       setStatus('Note featured on the homepage.');
     } catch (cause) {
@@ -166,42 +245,52 @@ export default function AdminNostr() {
       <AdminHeader />
       <div className="container">
         <h1>Featured Nostr notes</h1>
-        <h2>Publish a note</h2>
+        <h2>{editing ? 'Edit featured note' : 'Publish a note'}</h2>
         <p>
           Your NIP-07 browser signer will sign the note. Trustroots will publish
           it to {FEATURED_NOTE_PUBLISH_RELAYS.join(', ')} and feature it on the
           homepage.
         </p>
+        {editing && !editing.article && (
+          <p>
+            This edit will publish an editable version and update the homepage.
+            The original short note remains on Nostr.
+          </p>
+        )}
         <form onSubmit={publish}>
           <div className="form-group">
             <label htmlFor="nostr-note-text">Note text</label>
             <textarea
+              ref={noteText}
               id="nostr-note-text"
               className="form-control"
               rows={4}
               value={draft}
-              onChange={event => {
-                setDraft(event.target.value);
-                setPublication(null);
-              }}
+              onChange={event => changeDraft(event.target.value)}
               required
               disabled={busy}
               readOnly={Boolean(publication?.acknowledgedRelays)}
-              aria-describedby="nostr-note-markdown"
             />
-            <p id="nostr-note-markdown" className="help-block">
-              Add a link with Markdown, for example{' '}
-              <code>
-                [Get involved](https://www.trustroots.org/volunteering)
-              </code>
-              .
-            </p>
+            <Button
+              type="button"
+              onClick={openLinkEditor}
+              disabled={busy || Boolean(publication?.acknowledgedRelays)}
+            >
+              Insert link
+            </Button>
           </div>
           <Button type="submit" disabled={busy || !notes || !draft.trim()}>
             {publication?.acknowledgedRelays
               ? 'Retry homepage save'
-              : 'Publish and feature note'}
+              : editing
+                ? 'Publish revision'
+                : 'Publish and feature note'}
           </Button>
+          {editing && (
+            <Button type="button" disabled={busy} onClick={closeEdit}>
+              {publication?.acknowledgedRelays ? 'Close editor' : 'Cancel edit'}
+            </Button>
+          )}
         </form>
         <h2>Feature an existing note</h2>
         <form onSubmit={feature}>
@@ -236,11 +325,20 @@ export default function AdminNostr() {
         {featuredNotes.map(note => (
           <article key={note.id} className="well">
             <FeaturedNostrNoteContent note={note} />
-            <Button disabled={busy} onClick={() => void remove(note.id)}>
+            <Button
+              disabled={busy || Boolean(editing || publication)}
+              onClick={() => startEditing(note)}
+            >
+              Edit note
+            </Button>{' '}
+            <Button
+              disabled={busy || editing?.id === note.id}
+              onClick={() => void remove(note.id)}
+            >
               Remove from homepage
             </Button>{' '}
             <Button
-              disabled={busy}
+              disabled={busy || editing?.id === note.id}
               onClick={() => {
                 setError('');
                 setStatus('');
@@ -252,6 +350,57 @@ export default function AdminNostr() {
           </article>
         ))}
       </div>
+      {link && (
+        <Modal
+          open
+          onClose={() => setLink(null)}
+          initialFocus={link.start === link.end ? linkText : linkUrl}
+        >
+          <ModalHeader>
+            <ModalTitle>Insert link</ModalTitle>
+          </ModalHeader>
+          <form onSubmit={event => insertLink(event, link)}>
+            <ModalBody>
+              <div className="form-group">
+                <label htmlFor="nostr-link-text">Link text</label>
+                <input
+                  id="nostr-link-text"
+                  ref={linkText}
+                  className="form-control"
+                  required
+                  value={link.text}
+                  onChange={event =>
+                    setLink({ ...link, text: event.target.value })
+                  }
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="nostr-link-url">Web address</label>
+                <input
+                  id="nostr-link-url"
+                  ref={linkUrl}
+                  className="form-control"
+                  type="url"
+                  placeholder="https://example.org"
+                  required
+                  value={link.url}
+                  onChange={event =>
+                    setLink({ ...link, url: event.target.value })
+                  }
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" onClick={() => setLink(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!markdownLink(link)}>
+                Insert
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
       {deletion && (
         <Modal open onClose={closeDeletion} dismissible={!busy}>
           <ModalHeader>

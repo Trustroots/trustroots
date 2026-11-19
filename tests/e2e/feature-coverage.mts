@@ -3083,6 +3083,11 @@ const features = [
         ),
         apiRoute('POST', '/api/admin/nostr/featured-notes', source.adminServer),
         apiRoute(
+          'PUT',
+          '/api/admin/nostr/featured-notes/:id',
+          source.adminServer,
+        ),
+        apiRoute(
           'DELETE',
           '/api/admin/nostr/featured-notes/:id',
           source.adminServer,
@@ -3099,6 +3104,7 @@ const features = [
       'Visitors can read featured notes and regular members cannot change them.',
       'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
       'Administrators can publish a public note with a NIP-07 signer and feature it on the homepage.',
+      'Administrators can insert a link and revise a published note at the same Nostr address.',
     ],
     relatedSpecs: [
       spec(

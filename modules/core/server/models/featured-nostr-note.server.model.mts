@@ -7,6 +7,9 @@ export interface FeaturedNostrNoteRecord {
   publishedAt: Date;
   featuredAt: Date | null;
   deletionId?: string;
+  address?: string;
+  revisionId?: string;
+  revisionAt?: number;
 }
 
 const schema = new mongoose.Schema<FeaturedNostrNoteRecord>(
@@ -17,6 +20,9 @@ const schema = new mongoose.Schema<FeaturedNostrNoteRecord>(
     publishedAt: { type: Date, required: true },
     featuredAt: { type: Date, default: null },
     deletionId: String,
+    address: String,
+    revisionId: String,
+    revisionAt: Number,
   },
   { versionKey: false },
 );

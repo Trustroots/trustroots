@@ -6,6 +6,7 @@ import { finalizeEvent, generateSecretKey, nip19 } from 'nostr-tools';
 import express from '../../../../config/lib/express.mts';
 import * as users from '../../../../testutils/server/data.server.testutil.mts';
 import { default as FeaturedNote } from '../../../core/server/models/featured-nostr-note.server.model.mts';
+import { FEATURED_ARTICLE_KIND } from '../../../core/shared/featured-nostr-notes.mts';
 import type {
   TestAgent,
   TestExpressApp,
@@ -302,6 +303,372 @@ describe('Admin featured Nostr notes', () => {
     assert.equal(stored.deletionId, deletion.id);
   });
 
+  it('revises a legacy note in place with a verified addressable version', async () => {
+    const publishedAt = new Date(event.created_at * 1000).toISOString();
+    const path = `${featurePath}/${event.id}`;
+    await admin.post(featurePath).send({ event }).expect(200);
+    const { featuredAt } = await FeaturedNote.findById(event.id)
+      .lean()
+      .orFail();
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at + 1,
+      content: 'Corrected fictional announcement.',
+      tags: [
+        ['d', event.id],
+        ['published_at', String(event.created_at)],
+      ],
+    };
+    const first = finalizeEvent({ ...template }, author);
+    const foreign = finalizeEvent({ ...template }, generateSecretKey());
+    await support.put(path).send({ event: first }).expect(403);
+    await admin.put(path).send({ event: foreign }).expect(404, {
+      message: 'No featured note matches this update and its author.',
+    });
+    const stableAddressError = {
+      message:
+        'The revision must keep the original article address and publication date.',
+    };
+    for (const tags of [
+      [],
+      [['d', 'unrelated'], template.tags[1]],
+      [
+        ['d', event.id],
+        ['published_at', String(event.created_at - 1)],
+      ],
+    ]) {
+      await admin
+        .put(path)
+        .send({ event: finalizeEvent({ ...template, tags }, author) })
+        .expect(400, stableAddressError);
+    }
+    const signatureError = {
+      message: 'A valid signed Nostr article revision is required.',
+    };
+    await admin
+      .put(`${featurePath}/invalid`)
+      .send({ event: first })
+      .expect(400, signatureError);
+    await admin.put(path).send({}).expect(400, signatureError);
+    await admin.put(path).send({ event }).expect(400, signatureError);
+    await admin
+      .put(path)
+      .send({ event: { ...first, sig: '0'.repeat(128) } })
+      .expect(400, signatureError);
+    // An administrator can feature an acknowledged revision before its author
+    // saves it in the editor. Both paths must resolve to the original row.
+    const featuredArticle = await admin
+      .post(featurePath)
+      .send({ event: first })
+      .expect(200);
+    assert.equal(featuredArticle.body.id, event.id);
+    await admin
+      .put(path)
+      .send({ event: first })
+      .expect(200, {
+        id: event.id,
+        npub: nip19.npubEncode(event.pubkey),
+        content: first.content,
+        publishedAt,
+        article: {
+          identifier: event.id,
+          eventId: first.id,
+          createdAt: first.created_at,
+        },
+      });
+    await admin.put(path).send({ event: first }).expect(200);
+    const next = finalizeEvent(
+      {
+        ...template,
+        created_at: first.created_at + 1,
+        content: 'Final fictional announcement.',
+      },
+      author,
+    );
+    await admin.put(path).send({ event: next }).expect(200);
+    await admin.put(path).send({ event: first }).expect(409, {
+      message: 'This update already has a newer revision.',
+    });
+    // Featuring through the stable article address resolves to the same row.
+    await admin.post(featurePath).send({ event: next }).expect(200);
+    await admin.post(featurePath).send({ event }).expect(200);
+    const listed = await request(app).get(publicPath).expect(200);
+    assert.equal(listed.body.length, 1);
+    assert.equal(listed.body[0].id, event.id);
+    assert.equal(listed.body[0].publishedAt, publishedAt);
+    assert.equal(listed.body[0].content, next.content);
+    assert.deepEqual(
+      (await FeaturedNote.findById(event.id).lean().orFail()).featuredAt,
+      featuredAt,
+    );
+
+    const deletion = finalizeEvent(
+      {
+        kind: 5,
+        created_at: next.created_at,
+        content: '',
+        tags: [
+          ['a', `${FEATURED_ARTICLE_KIND}:${event.pubkey}:${event.id}`],
+          ['k', String(FEATURED_ARTICLE_KIND)],
+        ],
+      },
+      author,
+    );
+    await admin.post(`${path}/deletion`).send({ event: deletion }).expect(204);
+    await admin.post(featurePath).send({ event: next }).expect(409, {
+      message: 'A deletion request was recorded for this note.',
+    });
+    await admin.post(featurePath).send({ event }).expect(409);
+    await request(app).get(publicPath).expect(200, []);
+  });
+
+  it('features and restores the latest article at its stable address', async () => {
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at,
+      tags: [['d', 'fictional:update']],
+      content: 'An independent article.',
+    };
+    const variants = ['An independent article.', 'An alternate article.']
+      .map(content => finalizeEvent({ ...template, content }, author))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const [latest, previous] = variants;
+    const { body: original } = await admin
+      .post(featurePath)
+      .send({ event: previous })
+      .expect(200);
+    const path = `${featurePath}/${original.id}`;
+    const { body: revised } = await admin
+      .post(featurePath)
+      .send({ event: latest })
+      .expect(200);
+    assert.equal(revised.id, original.id);
+    assert.equal(revised.article.eventId, latest.id);
+    assert.equal(revised.article.identifier, 'fictional:update');
+    const update = sinon.spy(FeaturedNote, 'findOneAndUpdate');
+    try {
+      await admin
+        .post(featurePath)
+        .send({ event: latest })
+        .expect(200, revised);
+      assert.equal(
+        update.callCount,
+        1,
+        'an already featured revision requires no second write',
+      );
+    } finally {
+      update.restore();
+    }
+    await admin.delete(path).set('X-Trustroots-Request', '1').expect(204);
+    await admin.post(featurePath).send({ event: previous }).expect(409, {
+      message: 'Find the current revision to feature this update again.',
+    });
+    await admin.post(featurePath).send({ event: latest }).expect(200, revised);
+    await request(app).get(publicPath).expect(200, [revised]);
+  });
+
+  it('validates article metadata and accepts its byte and timestamp boundaries', async () => {
+    const identifier = '£'.repeat(256);
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at,
+      content: 'A fictional article.',
+    };
+    for (const tags of [
+      [],
+      [
+        ['d', identifier],
+        ['d', 'duplicate'],
+      ],
+      [['d', identifier + 'a']],
+      [
+        ['d', identifier],
+        ['published_at', '+1'],
+      ],
+      [
+        ['d', identifier],
+        ['published_at', '1 '],
+      ],
+      [
+        ['d', identifier],
+        ['published_at', String(event.created_at + 1)],
+      ],
+    ]) {
+      await admin
+        .post(featurePath)
+        .send({
+          event: finalizeEvent({ ...template, tags }, author),
+        })
+        .expect(400, {
+          message:
+            'A signed update needs a valid article address and publication date.',
+        });
+    }
+    const boundary = finalizeEvent(
+      {
+        ...template,
+        tags: [
+          ['d', identifier],
+          ['published_at', '0'],
+        ],
+      },
+      author,
+    );
+    const response = await admin
+      .post(featurePath)
+      .send({ event: boundary })
+      .expect(200);
+    assert.equal(response.body.article.identifier, identifier);
+    assert.equal(response.body.publishedAt, '1970-01-01T00:00:00.000Z');
+  });
+
+  it('deduplicates either filing order for an older note and its addressable version', async () => {
+    const first = finalizeEvent(
+      {
+        kind: FEATURED_ARTICLE_KIND,
+        created_at: event.created_at + 1,
+        tags: [
+          ['d', event.id],
+          ['published_at', String(event.created_at)],
+        ],
+        content: 'An existing article version.',
+      },
+      author,
+    );
+    const { body: article } = await admin
+      .post(featurePath)
+      .send({ event: first })
+      .expect(200);
+    await admin.post(featurePath).send({ event }).expect(200, article);
+    await admin
+      .delete(`${featurePath}/${article.id}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(204);
+    await admin.post(featurePath).send({ event }).expect(409, {
+      message: 'Feature the current article to restore this updated note.',
+    });
+    await FeaturedNote.deleteMany({});
+    await admin.post(featurePath).send({ event }).expect(200);
+    const { body: converted } = await admin
+      .put(`${featurePath}/${event.id}`)
+      .send({ event: first })
+      .expect(200);
+    assert.equal(converted.id, event.id);
+    await admin
+      .delete(`${featurePath}/${event.id}`)
+      .set('X-Trustroots-Request', '1')
+      .expect(204);
+    await admin.post(featurePath).send({ event }).expect(409, {
+      message: 'Feature the current article to restore this updated note.',
+    });
+    await admin.post(featurePath).send({ event: first }).expect(200, converted);
+    await request(app).get(publicPath).expect(200, [converted]);
+  });
+
+  it('keeps an occupied identifier tied to the matching author, date and address', async () => {
+    await admin.post(featurePath).send({ event }).expect(200);
+    const template = {
+      kind: FEATURED_ARTICLE_KIND,
+      created_at: event.created_at,
+      tags: [['d', event.id]],
+      content: 'Another fictional article.',
+    };
+    const foreign = finalizeEvent(template, generateSecretKey());
+    const dated = finalizeEvent(
+      {
+        ...template,
+        tags: [
+          ['d', event.id],
+          ['published_at', '1'],
+        ],
+      },
+      author,
+    );
+    for (const article of [foreign, dated]) {
+      const response = await admin
+        .post(featurePath)
+        .send({ event: article })
+        .expect(200);
+      assert.notEqual(response.body.id, event.id);
+    }
+    const initial = await admin
+      .post(featurePath)
+      .send({
+        event: finalizeEvent(
+          { ...template, tags: [['d', 'original-article']] },
+          author,
+        ),
+      })
+      .expect(200);
+    const other = await admin
+      .post(featurePath)
+      .send({
+        event: finalizeEvent(
+          { ...template, tags: [['d', initial.body.id]] },
+          author,
+        ),
+      })
+      .expect(200);
+    assert.notEqual(other.body.id, initial.body.id);
+    const listing = await request(app).get(publicPath).expect(200);
+    assert.equal(listing.body.length, 5);
+    assert.equal(
+      (await FeaturedNote.findById(event.id).lean().orFail()).content,
+      event.content,
+    );
+  });
+
+  it('reports a conflict when another write wins before the revision is saved', async () => {
+    await admin.post(featurePath).send({ event }).expect(200);
+    const { featuredAt } = await FeaturedNote.findById(event.id)
+      .lean()
+      .orFail();
+    const revision = finalizeEvent(
+      {
+        kind: FEATURED_ARTICLE_KIND,
+        created_at: event.created_at + 1,
+        tags: [
+          ['d', event.id],
+          ['published_at', String(event.created_at)],
+        ],
+        content: 'A concurrent correction.',
+      },
+      author,
+    );
+    const findOneAndUpdate = FeaturedNote.findOneAndUpdate.bind(FeaturedNote);
+    const update = sinon
+      .stub(FeaturedNote, 'findOneAndUpdate')
+      .callsFake((...args) =>
+        findOneAndUpdate(...args).pre(async () => {
+          await FeaturedNote.updateOne(
+            { _id: event.id },
+            { $set: { featuredAt: null } },
+          );
+        }),
+      );
+    const conflict = {
+      message: 'This update changed. Reload the page and try again.',
+    };
+    try {
+      await admin
+        .put(`${featurePath}/${event.id}`)
+        .send({ event: revision })
+        .expect(409, conflict);
+      await FeaturedNote.updateOne({ _id: event.id }, { $set: { featuredAt } });
+      await admin
+        .post(featurePath)
+        .send({ event: revision })
+        .expect(409, conflict);
+    } finally {
+      update.restore();
+    }
+    await request(app).get(publicPath).expect(200, []);
+    assert.equal(
+      (await FeaturedNote.findById(event.id).lean().orFail()).content,
+      event.content,
+    );
+  });
+
   it('preserves the homepage copy for invalid or mismatched deletion requests', async () => {
     await admin.post(featurePath).send({ event }).expect(200);
     const template = {
@@ -351,5 +718,80 @@ describe('Admin featured Nostr notes', () => {
     });
     const response = await request(app).get(publicPath).expect(200);
     assert.equal(response.body[0].id, event.id);
+  });
+
+  it('requires a current deletion request addressed to the featured article', async () => {
+    const identifier = 'fictional-deletion-target';
+    const revisionAt = event.created_at + 2;
+    const article = finalizeEvent(
+      {
+        kind: FEATURED_ARTICLE_KIND,
+        created_at: revisionAt,
+        content: 'A fictional published update.',
+        tags: [['d', identifier]],
+      },
+      author,
+    );
+    const { body: featured } = await admin
+      .post(featurePath)
+      .send({ event: article })
+      .expect(200);
+    const address = `${FEATURED_ARTICLE_KIND}:${article.pubkey}:${identifier}`;
+    const invalidDeletion = {
+      message: 'A signed deletion request for this note is required.',
+    };
+
+    for (const [tag, value, createdAt] of [
+      ['a', `${address}-other`, revisionAt],
+      ['e', address, revisionAt],
+      ['a', address, revisionAt - 1],
+    ] as const) {
+      const deletion = finalizeEvent(
+        {
+          kind: 5,
+          created_at: createdAt,
+          content: '',
+          tags: [[tag, value]],
+        },
+        author,
+      );
+      await admin
+        .post(`${featurePath}/${featured.id}/deletion`)
+        .send({ event: deletion })
+        .expect(400, invalidDeletion);
+    }
+
+    const missingId = 'ab'.repeat(32);
+    const missingDeletion = finalizeEvent(
+      {
+        kind: 5,
+        created_at: revisionAt,
+        content: '',
+        tags: [['e', missingId]],
+      },
+      author,
+    );
+    await admin
+      .post(`${featurePath}/${missingId}/deletion`)
+      .send({ event: missingDeletion })
+      .expect(404, {
+        message: 'No note matches the deletion request and its author.',
+      });
+    await request(app).get(publicPath).expect(200, [featured]);
+
+    const currentDeletion = finalizeEvent(
+      {
+        kind: 5,
+        created_at: revisionAt,
+        content: '',
+        tags: [['a', address]],
+      },
+      author,
+    );
+    await admin
+      .post(`${featurePath}/${featured.id}/deletion`)
+      .send({ event: currentDeletion })
+      .expect(204);
+    await request(app).get(publicPath).expect(200, []);
   });
 });

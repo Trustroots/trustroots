@@ -9,6 +9,7 @@ import {
   publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  reviseFeaturedNostrNote,
   signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
@@ -30,6 +31,95 @@ const note = {
 };
 
 afterEach(() => vi.resetAllMocks());
+
+it('inserts a web link into selected text and retries a revision without publishing twice', async () => {
+  const content = 'A [fictional](https://example.test/details) update.';
+  const signed = { id: 'bc'.repeat(32), kind: 30023 } as Event;
+  const other = {
+    ...note,
+    id: 'cd'.repeat(32),
+    content: 'Another fictional note.',
+  };
+  listNotes.mockResolvedValue([note, other]);
+  vi.mocked(signNostrTextNote).mockResolvedValue(signed);
+  vi.mocked(publishNostrTextNote).mockResolvedValue([
+    'wss://relay.nomadwiki.org',
+  ]);
+  const revise = vi.mocked(reviseFeaturedNostrNote);
+  revise
+    .mockRejectedValueOnce(new Error('Service unavailable.'))
+    .mockResolvedValue({ ...note, content });
+  render(<AdminNostr />);
+  const input = screen.getByRole<HTMLTextAreaElement>('textbox', {
+    name: 'Note text',
+  });
+  fireEvent.change(input, { target: { value: 'Unpublished draft.' } });
+  fireEvent.click(
+    within((await screen.findAllByRole('article'))[0]).getByRole('button', {
+      name: 'Edit note',
+    }),
+  );
+  expect(input).toHaveValue(note.content);
+  input.setSelectionRange(2, 11);
+  fireEvent.click(screen.getByRole('button', { name: 'Insert link' }));
+  const dialog = within(screen.getByRole('dialog', { name: 'Insert link' }));
+  expect(dialog.getByLabelText('Link text')).toHaveValue('fictional');
+  const url = dialog.getByLabelText('Web address');
+  const insert = dialog.getByRole('button', { name: 'Insert' });
+  fireEvent.change(url, { target: { value: 'javascript:ignored' } });
+  expect(insert).toBeDisabled();
+  fireEvent.submit(insert.closest('form')!);
+  expect(input).toHaveValue(note.content);
+  fireEvent.change(url, { target: { value: 'https://' } });
+  expect(insert).toBeDisabled();
+  fireEvent.change(url, { target: { value: 'https://example.test/details' } });
+  fireEvent.click(insert);
+  expect(input).toHaveValue(content);
+  fireEvent.click(screen.getByRole('button', { name: 'Publish revision' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Service unavailable.',
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Retry homepage save' }));
+  expect(
+    await screen.findByRole('link', { name: 'fictional' }),
+  ).toHaveAttribute('href', 'https://example.test/details');
+  expect(screen.getAllByRole('article')).toHaveLength(2);
+  expect(screen.getAllByRole('article')[1]).toHaveTextContent(other.content);
+  expect(input).toHaveValue('Unpublished draft.');
+  expect(signNostrTextNote).toHaveBeenCalledWith(content, note);
+  expect(publishNostrTextNote).toHaveBeenCalledTimes(1);
+  expect(revise.mock.calls).toEqual([
+    [note.id, signed],
+    [note.id, signed],
+  ]);
+});
+
+it('discards link fields when the link dialog is dismissed without replacing the draft', async () => {
+  listNotes.mockResolvedValue([]);
+  render(<AdminNostr />);
+  await screen.findByText('No featured notes.');
+  const draft = screen.getByRole('textbox', { name: 'Note text' });
+  fireEvent.change(draft, { target: { value: 'One fictional line.' } });
+  const open = screen.getByRole('button', { name: 'Insert link' });
+  fireEvent.click(open);
+  let dialog = within(screen.getByRole('dialog', { name: 'Insert link' }));
+  expect(dialog.getByLabelText('Link text')).toHaveValue('');
+  fireEvent.change(dialog.getByLabelText('Link text'), {
+    target: { value: 'A [broken] label' },
+  });
+  fireEvent.change(dialog.getByLabelText('Web address'), {
+    target: { value: 'https://example.test' },
+  });
+  expect(dialog.getByRole('button', { name: 'Insert' })).toBeDisabled();
+  fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  fireEvent.click(open);
+  dialog = within(screen.getByRole('dialog', { name: 'Insert link' }));
+  expect(dialog.getByLabelText('Link text')).toHaveValue('');
+  fireEvent.keyDown(dialog.getByLabelText('Link text'), { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(draft).toHaveValue('One fictional line.');
+});
 
 it('keeps the draft and retries each failed step with the same signed event', async () => {
   const signed = { id: note.id, kind: 1 } as Event;

@@ -111,7 +111,7 @@ export const invokeRolesPolicies = () => {
         { resources: '/api/admin/nostr/featured-notes', permissions: ['post'] },
         {
           resources: '/api/admin/nostr/featured-notes/:id',
-          permissions: ['delete'],
+          permissions: ['delete', 'put'],
         },
         {
           resources: '/api/admin/nostr/featured-notes/:id/deletion',
