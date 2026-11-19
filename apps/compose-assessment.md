@@ -252,3 +252,18 @@ Allow the existing estimate of 3–6 engineering days for platform verification
 and corrections, then re-estimate the remaining feature work based on those
 results. A fallback also requires the native integrations and parity gates
 described above.
+
+## Nostr signing lifecycle extraction (#3633)
+
+The first Nostr increment shares `NostrAccountScope` and `NostrSigningSession`
+from `apps/shared`: canonical account storage identifiers and revision-based
+invalidation across account changes, sign-out and key changes. These classes
+contain no secrets, platform URLs, crypto, storage or notification code. iOS
+uses them from its existing identity adapter; Android JVM tests exercise the
+same production Kotlin code. Android's key screen and signing adapter remain
+follow-up work, rather than evidence of cross-platform signing parity.
+
+Keychain, Android Keystore, device authentication, WKWebView/WebView and push
+transport stay native boundaries. The current SwiftUI Account section remains
+the comparison baseline; extracting lifecycle rules does not migrate that
+screen to Compose or complete #3232's shared member-journey acceptance gates.

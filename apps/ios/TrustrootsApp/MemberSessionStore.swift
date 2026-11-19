@@ -7,16 +7,23 @@ final class MemberSessionStore: ObservableObject {
     @Published private(set) var member: SignedInMember?
     @Published private(set) var isSigningIn = false
     @Published var errorMessage: String?
-    @Published var serverURLString: String
+    @Published var serverURLString: String {
+        didSet {
+            if serverURLString != oldValue { nostrIdentity.pause() }
+        }
+    }
 
+    private let nostrIdentity: NostrIdentityManager
     private let api: TrustrootsAPI
-    private let credentialStore: MobileCredentialStore
+    private let credentialStore: MobileCredentialStoring
 
     init(
         api: TrustrootsAPI = TrustrootsAPI(),
         serverURLString: String? = nil,
-        credentialStore: MobileCredentialStore = MobileCredentialStore()
+        credentialStore: MobileCredentialStoring = MobileCredentialStore(),
+        nostrIdentity: NostrIdentityManager = .shared
     ) {
+        self.nostrIdentity = nostrIdentity
         self.api = api
         self.credentialStore = credentialStore
         let persistedServerURL = UserDefaults.standard.string(forKey: "trustroots.apiServerURL")
@@ -40,6 +47,7 @@ final class MemberSessionStore: ObservableObject {
             return
         }
 
+        nostrIdentity.pause()
         isSigningIn = true
         errorMessage = nil
         defer { isSigningIn = false }
@@ -65,6 +73,7 @@ final class MemberSessionStore: ObservableObject {
     }
 
     func signOut() async {
+        nostrIdentity.pause()
         await api.signOut(serverURLString: serverURLString)
         credentialStore.delete()
         member = nil
@@ -76,6 +85,7 @@ final class MemberSessionStore: ObservableObject {
     }
 
     func invalidateSession() {
+        nostrIdentity.pause()
         member = nil
         credentialStore.delete()
         errorMessage = "Your session expired or is no longer valid. Please sign in again."
@@ -109,9 +119,11 @@ final class MemberSessionStore: ObservableObject {
 
     private func updateCacheScope() {
         guard let member else {
+            nostrIdentity.pause()
             UserDefaults.standard.removeObject(forKey: OfflineResponseCache.scopeDefaultsKey)
             return
         }
+        nostrIdentity.activate(serverURLString: serverURLString, username: member.username)
         let server = TrustrootsAPIConfiguration(baseURLString: serverURLString)?.normalizedURLString ?? serverURLString
         UserDefaults.standard.set("\(server)|\(member.username.lowercased())", forKey: OfflineResponseCache.scopeDefaultsKey)
     }
