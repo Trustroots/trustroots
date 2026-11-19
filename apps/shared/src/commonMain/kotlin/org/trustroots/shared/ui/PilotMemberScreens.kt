@@ -33,7 +33,6 @@ internal fun Profile(
     gateway: PilotGateway,
     username: String,
     isOwnProfile: Boolean,
-    onInbox: () -> Unit,
     onConversation: (PilotPerson, String) -> Unit,
     busy: Boolean,
     beginAction: () -> Boolean,
@@ -49,7 +48,6 @@ internal fun Profile(
 
     PilotForm {
         PilotTitle("Profile")
-        if (isOwnProfile) PilotButton("Messages", enabled = !busy, onClick = onInbox)
         val loaded = result
         when {
             loaded == null -> PilotText("Loading profile…")

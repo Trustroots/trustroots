@@ -28,8 +28,6 @@ internal fun MemberDashboard(
     gateway: PilotGateway,
     renderConnectionsMap: @Composable (List<PilotMapPin>) -> Unit,
     onConnection: (String) -> Unit,
-    onProfile: () -> Unit,
-    onInbox: () -> Unit,
 ) {
     var notes by remember { mutableStateOf(emptyList<PilotNote>()) }
     var connections by remember { mutableStateOf(PilotConnections(emptyList(), emptyList())) }
@@ -40,11 +38,8 @@ internal fun MemberDashboard(
         awaitData(gateway::connections).onSuccess { connections = it }
     }
 
-    PilotForm {
+    PilotForm(spacing = 8.dp) {
         PilotTitle("Home")
-        PilotText("Welcome to Trustroots")
-        PilotButton("My profile", onClick = onProfile)
-        PilotButton("Messages", primary = true, onClick = onInbox)
         if (notes.isNotEmpty()) {
             PilotTitle("Trustroots updates")
             notes.forEach { note ->
