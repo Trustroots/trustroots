@@ -223,6 +223,34 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNotEqual(npub, publicKey)
     }
 
+    func testNostrProfileChallengeSignsOnlyTheConfiguredServerOwnershipEvent() throws {
+        let server = "https://api.example.test"
+        let method = ["method", "PUT"]
+        let nonce = ["challenge", String(repeating: "a", count: 64)]
+        let endpoint = ["u", server + "/api/users"]
+        let event: [String: Any] = [
+            "kind": 27235, "created_at": Int(Date().timeIntervalSince1970), "content": "",
+            "tags": [endpoint, method, nonce],
+        ]
+        let proof = try NIP07Bridge.signProfileChallenge(event, serverURLString: server, secret: NostrTestKeys.first)
+        XCTAssertEqual(proof["tags"] as? [[String]], [endpoint, method, nonce])
+        XCTAssertEqual((proof["id"] as? String)?.count, 64)
+        XCTAssertEqual((proof["sig"] as? String)?.count, 128)
+        for tags in [
+            [["u", "https://other.example.test/api/users"], method, nonce],
+            [["u", server + "/unrelated"], method, nonce],
+            [endpoint, ["method", "POST"], nonce],
+            [endpoint, method, ["challenge", "invalid"]],
+            [endpoint, method, nonce, ["payload", String(repeating: "a", count: 64)]],
+        ] {
+            var invalid = event
+            invalid["tags"] = tags
+            XCTAssertThrowsError(try NIP07Bridge.signProfileChallenge(
+                invalid, serverURLString: server, secret: NostrTestKeys.first
+            ))
+        }
+    }
+
     @MainActor
     func testNostrIdentityRequiresActiveAccountBeforeWritingOrSigning() throws {
         let storage = InMemoryNostrKeyStorage()

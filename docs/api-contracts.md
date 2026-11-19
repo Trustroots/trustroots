@@ -47,6 +47,14 @@ private-key material or changing the public profile contract. Older native
 clients can ignore it; the sign-in and `/api/mobile/v0/me` member shapes remain
 unchanged.
 
+To link a local key, send `{ nostrNpub }` to the bearer-authenticated
+`POST /api/mobile/v0/profile/nostr/challenge`. The response contains the
+unsigned ownership `event` used by the website. Sign it on device and send
+`{ nostrNpub, nostrProof }` to `PUT /api/mobile/v0/profile`. The proof expires
+after five minutes and is consumed once. The profile route rejects a key
+already linked to another member. Send `{ nostrNpub: "" }` to unlink without
+changing local key storage.
+
 The server controller passes database results to these builders. Checking the
 builders catches errors in their payload construction, but does not type-check
 the surrounding controllers, database queries or untrusted HTTP input. Existing

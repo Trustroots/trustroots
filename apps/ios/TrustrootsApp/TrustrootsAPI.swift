@@ -1229,6 +1229,51 @@ final class TrustrootsAPI {
         }
     }
 
+    func nostrProfileChallenge(serverURLString: String, npub: String) async throws -> [String: Any] {
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/profile/nostr/challenge",
+            method: "POST", body: ["nostrNpub": npub]
+        )
+        guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let event = response["event"] as? [String: Any] else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        return event
+    }
+
+    func updateNostrProfile(serverURLString: String, npub: String?, proof: [String: Any]?) async throws -> MemberProfile {
+        var body: [String: Any] = ["nostrNpub": npub ?? ""]
+        if let proof { body["nostrProof"] = proof }
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/profile", method: "PUT", body: body
+        )
+        return try decoder.decode(MemberProfile.self, from: data)
+    }
+
+    private func writeNostrProfile(
+        serverURLString: String, path: String, method: String, body: [String: Any]
+    ) async throws -> Data {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent(path))
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let http = response as? HTTPURLResponse else { throw TrustrootsAPIError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            struct Failure: Decodable { let message: String? }
+            if let message = (try? decoder.decode(Failure.self, from: data))?.message {
+                throw TrustrootsAPIError.serverMessage(message)
+            }
+            throw TrustrootsAPIError.serverMessage("The profile key could not be updated.")
+        }
+        return data
+    }
+
     func updateProfile(
         serverURLString: String,
         displayName: String,

@@ -11,6 +11,9 @@ const tribes =
   require('../../../tribes/server/controllers/tribes.server.controller.mts').default;
 const userProfile =
   require('../../../users/server/controllers/users.profile.server.controller.mts').default;
+const {
+  challenge: nostrChallenge,
+} = require('../../../users/server/controllers/users.nostr.server.controller.mts');
 const contacts =
   require('../../../contacts/server/controllers/contacts.server.controller.mts').default;
 const experiences =
@@ -364,6 +367,13 @@ module.exports = function (app) {
       resourcePolicy(usersPolicy.isAllowed, '/api/users'),
       userProfile.update,
     );
+  app.post(
+    '/api/mobile/v0/profile/nostr/challenge',
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    resourcePolicy(usersPolicy.isAllowed, '/api/users/nostr/challenge'),
+    nostrChallenge,
+  );
   app
     .route('/api/mobile/v0/account/password')
     .post(

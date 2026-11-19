@@ -179,7 +179,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let publicKey = localKey.label
         XCTAssertTrue(publicKey.hasPrefix("npub1"))
         XCTAssertTrue(app.staticTexts["No linked public key."].exists)
-        attachNostrSection(app, name: "Local Nostr key and separate profile key")
+        let link = app.buttons["Link local key to profile"]
+        XCTAssertTrue(link.waitForExistence(timeout: 10))
+        reveal(link, in: app)
+        link.tap()
+        let unlink = app.buttons["Unlink profile key"]
+        XCTAssertTrue(unlink.waitForExistence(timeout: 10))
+        attachNostrSection(app, name: "Local Nostr key and linked profile key")
 
         let signOut = app.buttons["Sign out"]
         reveal(signOut, in: app)
@@ -203,9 +209,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         remove.tap()
         app.alerts.buttons["Remove"].tap()
         XCTAssertTrue(generate.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["No linked public key."].exists)
         XCTAssertFalse(localKey.exists)
+        XCTAssertTrue(unlink.exists)
         attachNostrSection(app, name: "Local key removed without changing profile")
+        reveal(unlink, in: app)
+        unlink.tap()
+        XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Unlink"].tap()
+        XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
         reveal(signOut, in: app)
         signOut.tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))

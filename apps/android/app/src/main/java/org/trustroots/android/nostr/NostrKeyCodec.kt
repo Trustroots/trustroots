@@ -36,10 +36,12 @@ internal object NostrKeyCodec {
         return secret
     }
 
-    fun npub(secret: ByteArray): String {
+    fun npub(secret: ByteArray): String = encode("npub", publicKey(secret))
+
+    fun publicKey(secret: ByteArray): ByteArray {
         require(valid(secret))
         val point = FixedPointCombMultiplier().multiply(curve.g, BigInteger(1, secret)).normalize()
-        return encode("npub", point.affineXCoord.encoded)
+        return point.affineXCoord.encoded
     }
 
     fun nsec(secret: ByteArray): String {
