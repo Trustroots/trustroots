@@ -81,4 +81,5 @@
     <string name="nostr_unlink_explanation">This removes the public key from your profile. Your local key stays on this phone.</string>
     <string name="nostr_profile_update_error">The profile key could not be updated. Please try again.</string>
     <string name="nostr_profile_key_unavailable">The profile update was refused. This public key may already be linked to another member.</string>
+    <string name="screen_radio">Radio</string>
 </resources>

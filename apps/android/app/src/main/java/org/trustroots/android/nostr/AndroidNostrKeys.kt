@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.net.URL
 import java.security.KeyStore
+import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -25,8 +26,13 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
     private val account = scope.storageAccount
     private val associatedData = account.encodeToByteArray()
 
-    fun publicKey(): String? = withKey(NostrKeyCodec::npub)
-    fun backup(): String? = withKey(NostrKeyCodec::nsec)
+    fun publicKey(): String? = withKey(use = NostrKeyCodec::npub)
+    fun browserPublicKey(revision: Long): String? = withKey(revision, NostrEventSigner::publicKey)
+    fun signBrowserEvent(event: JSONObject, revision: Long): JSONObject? =
+        withKey(revision) { NostrEventSigner.sign(event, it) }
+    fun revision(): Long = keyRevision.get()
+
+    fun backup(): String? = withKey(use = NostrKeyCodec::nsec)
 
     fun signProfileChallenge(event: JSONObject, backend: String, expectedNpub: String): JSONObject =
         checkNotNull(withKey { secret ->
@@ -39,6 +45,8 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
 
     fun remove() = synchronized(lock) {
         check(preferences.edit().remove(account).commit())
+        keyRevision.incrementAndGet()
+        Unit
     }
 
     private fun insert(secret: ByteArray): String = try {
@@ -50,13 +58,15 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
             cipher.updateAAD(associatedData)
             val record = cipher.iv + cipher.doFinal(secret)
             check(preferences.edit().putString(account, Base64.encodeToString(record, Base64.NO_WRAP)).commit())
+            keyRevision.incrementAndGet()
             npub
         }
     } finally {
         secret.fill(0)
     }
 
-    private fun <T> withKey(use: (ByteArray) -> T): T? = synchronized(lock) {
+    private fun <T> withKey(expectedRevision: Long? = null, use: (ByteArray) -> T): T? = synchronized(lock) {
+        if (expectedRevision != null && expectedRevision != keyRevision.get()) return null
         val encoded = preferences.getString(account, null) ?: return null
         val record = Base64.decode(encoded, Base64.NO_WRAP)
         val cipher = Cipher.getInstance(transformation)
@@ -87,6 +97,7 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
 
     private companion object {
         val lock = Any()
+        val keyRevision = AtomicLong()
         const val alias = "org.trustroots.android.nostr-identities"
         const val transformation = "AES/GCM/NoPadding"
     }

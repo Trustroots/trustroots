@@ -32,6 +32,7 @@ internal enum class MenuPage {
 @KotlinSerializable
 internal enum class MenuBrowserDestination {
     Nostroots,
+    Radio,
     ResetPassword,
     SupportLink,
 }

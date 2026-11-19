@@ -308,5 +308,11 @@ Removing the local key requires confirmation and keeps the profile link.
 The profile key is shown when the server includes it in the mobile profile
 response. Choose **Link local key to profile** to sign the server's ownership
 challenge. Replacing or unlinking the profile key requires confirmation.
-See [#3633](https://github.com/Trustroots/trustroots/issues/3633) for embedded
-browser signing.
+Open **Profile → Radio** to use the local key in the embedded browser. Link
+the same public key to your Trustroots profile and sign in on the Radio page
+if the website asks. NIP-07 public-key lookup and event signing are available
+to top-level Trustroots and Hitchwiki HTTPS pages on port 443 while the native
+session is active. This requires an Android System WebView that supports
+origin-aware messages and document-start scripts. See
+[#3633](https://github.com/Trustroots/trustroots/issues/3633) for live Radio
+verification and remote signing.
