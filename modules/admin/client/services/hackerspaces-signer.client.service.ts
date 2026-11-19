@@ -1,5 +1,5 @@
 import { nip19 } from 'nostr-tools';
-import http from '@/modules/core/client/api/http-client.js';
+import http from '@/modules/core/client/api/http-client';
 
 export interface SigningIdentity {
   publicKey: string;

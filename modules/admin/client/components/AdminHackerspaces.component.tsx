@@ -6,9 +6,7 @@ import {
   fetchSigningIdentity,
   type SigningIdentity,
 } from '../services/hackerspaces-signer.client.service';
-import axios, {
-  getErrorResponse,
-} from '@/modules/core/client/api/http-client.js';
+import axios, { getErrorResponse } from '@/modules/core/client/api/http-client';
 import {
   HACKER_PLACE_RELAY_URLS,
   nostrService,

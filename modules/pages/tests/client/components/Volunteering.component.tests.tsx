@@ -5,7 +5,7 @@ import '@/config/client/i18n';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
-vi.mock('@/modules/core/client/components/Board.js', async () => {
+vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
   function MockBoard({ children }: PropsWithChildren) {
     return actualReact.createElement('div', null, children);

@@ -1,8 +1,8 @@
 import { nip19 } from 'nostr-tools';
-import http from '@/modules/core/client/api/http-client.js';
+import http from '@/modules/core/client/api/http-client';
 import { fetchSigningIdentity } from '@/modules/admin/client/services/hackerspaces-signer.client.service';
 
-vi.mock('@/modules/core/client/api/http-client.js', () => ({
+vi.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));

@@ -11,7 +11,7 @@ const mockReportMemberCalls: ReportMemberProps[] = [];
 const mockBlockMemberCalls: BlockMemberProps[] = [];
 
 vi.mock(
-  '@/modules/support/client/components/ReportMember.component.js',
+  '@/modules/support/client/components/ReportMember.component',
   async () => {
     const React = await vi.importActual<typeof import('react')>('react');
 
@@ -32,27 +32,24 @@ vi.mock(
   },
 );
 
-vi.mock(
-  '@/modules/users/client/components/BlockMember.component.js',
-  async () => {
-    const React = await vi.importActual<typeof import('react')>('react');
+vi.mock('@/modules/users/client/components/BlockMember.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-    function MockBlockMember(props: BlockMemberProps) {
-      mockBlockMemberCalls.push(props);
+  function MockBlockMember(props: BlockMemberProps) {
+    mockBlockMemberCalls.push(props);
 
-      return React.createElement(
-        'button',
-        {
-          'data-testid': 'block-member-button',
-          'data-username': props.username,
-        },
-        'Block/Unblock',
-      );
-    }
+    return React.createElement(
+      'button',
+      {
+        'data-testid': 'block-member-button',
+        'data-username': props.username,
+      },
+      'Block/Unblock',
+    );
+  }
 
-    return { default: MockBlockMember };
-  },
-);
+  return { default: MockBlockMember };
+});
 
 describe('<BlockedMemberBanner />', function () {
   beforeEach(function () {

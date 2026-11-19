@@ -38,7 +38,7 @@ function requireElement<T extends HTMLElement>(element: T | null): T {
   return element;
 }
 
-vi.mock('@/modules/users/client/components/Avatar.component.js', async () => {
+vi.mock('@/modules/users/client/components/Avatar.component', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar() {

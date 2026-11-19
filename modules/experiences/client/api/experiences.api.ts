@@ -1,6 +1,4 @@
-import axios, {
-  getErrorResponse,
-} from '../../../core/client/api/http-client.js';
+import axios, { getErrorResponse } from '../../../core/client/api/http-client';
 import type {
   Experience,
   ExperienceMine,

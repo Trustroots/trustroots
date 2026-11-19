@@ -9,7 +9,7 @@ import aliasesConfig from './aliases.mts';
 
 const require = createRequire(import.meta.url);
 const { resolve: resolveImport } = require('eslint-import-resolver-typescript');
-const { commonJsAliases, jsExtensionAlias, resolverAliases } = aliasesConfig;
+const { commonJsAliases, resolverAliases } = aliasesConfig;
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const eslint = new ESLint({ cwd: root });
@@ -18,12 +18,8 @@ const filePath = fileURLToPath(
 );
 
 const resolvedFiles = [
-  ['@/layers/shell/client/ReactApp.js', 'layers/shell/client/ReactApp.tsx'],
-  [
-    'modules/messages/client/services/visibility.client.service.js',
-    'modules/messages/client/services/visibility.client.service.ts',
-  ],
-  ['./i18n.js', 'config/client/i18n.ts'],
+  ['@/layers/shell/client/ReactApp', 'layers/shell/client/ReactApp.tsx'],
+  ['./i18n', 'config/client/i18n.ts'],
   [
     '@/modules/support/shared/volunteering-copy.ts',
     'modules/support/shared/volunteering-copy.ts',
@@ -39,18 +35,6 @@ before(async () => {
   resolverOptions = config.settings['import/resolver'].typescript;
   assert.ok(resolverOptions, 'TypeScript import resolver is not configured');
   assert.deepEqual(resolverOptions.alias, resolverAliases());
-  assert.deepEqual(resolverOptions.extensionAlias['.js'].slice(0, 3), [
-    '.js',
-    '.ts',
-    '.tsx',
-  ]);
-  assert.ok(resolverOptions.extensionAlias['.js'].includes('.d.ts'));
-  for (const extension of ['.jsx', '.ts', '.tsx', '.mjs', '.cjs']) {
-    assert.ok(
-      resolverOptions.extensionAlias[extension]?.length,
-      `extensionAlias lost the ${extension} mapping`,
-    );
-  }
 });
 
 function resolvedPath(source) {
@@ -82,7 +66,7 @@ test('ESLint resolves client imports to the migrated source files', () => {
   assert.match(relay, /nostr-tools/);
 });
 
-test('ESLint resolves source aliases, migrated .js imports and package exports', async () => {
+test('ESLint resolves source aliases and package exports', async () => {
   const messages = await unresolvedImports(
     [
       ...resolvedFiles.map(([source]) => `import '${source}';`),
@@ -100,13 +84,13 @@ test('ESLint resolves source aliases, migrated .js imports and package exports',
 
 test('ESLint still rejects an unresolved aliased import', async () => {
   const messages = await unresolvedImports(
-    "import '@/missing-client-module.js';\n",
+    "import '@/missing-client-module';\n",
   );
   assert.equal(messages.length, 1);
   assert.match(messages[0].message, /missing-client-module/);
 
   const result = resolveImport(
-    '@/missing-client-module.js',
+    '@/missing-client-module',
     filePath,
     resolverOptions,
   );
@@ -114,7 +98,6 @@ test('ESLint still rejects an unresolved aliased import', async () => {
 });
 
 test('bundler package aliases are real CommonJS entry files', () => {
-  assert.deepEqual(jsExtensionAlias, ['.js', '.ts', '.tsx']);
   for (const filename of Object.values(commonJsAliases)) {
     assert.equal(existsSync(filename), true, filename);
     assert.equal(dirname(filename).includes('node_modules'), true, filename);

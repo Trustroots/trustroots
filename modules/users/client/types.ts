@@ -2,7 +2,7 @@ import type {
   MiniProfile,
   OwnProfile,
   ProfileMembership,
-} from '../shared/profile.js';
+} from '../shared/profile.ts';
 
 export type TribeMembership = ProfileMembership;
 

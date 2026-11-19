@@ -7,7 +7,7 @@ import {
   type VerifiedEvent,
 } from 'nostr-tools';
 import { Relay } from 'nostr-tools/relay';
-import http from '@/modules/core/client/api/http-client.js';
+import http from '@/modules/core/client/api/http-client';
 import catalogue from './radio-catalogue.json';
 
 export const RADIO_RELAYS = [

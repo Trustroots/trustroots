@@ -1,5 +1,5 @@
 import type { PublicCharts } from '../../shared/public-charts.mts';
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 
 export interface StatisticsResponse {
   connections?: Array<{ network: string; count: number; percentage: number }>;

@@ -8,7 +8,7 @@ import React from 'react';
 
 import type { ButtonStyleProps } from '@trustroots/ui/Button';
 import BlockMember from './BlockMember.component';
-import ReportMemberImplementation from '@/modules/support/client/components/ReportMember.component.js';
+import ReportMemberImplementation from '@/modules/support/client/components/ReportMember.component';
 import { Alert } from '@trustroots/ui/Alert';
 
 const ReportMember =

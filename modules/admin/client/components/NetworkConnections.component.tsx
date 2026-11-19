@@ -4,7 +4,7 @@ import {
   NETWORKS,
   parseConnectionSearch,
   type Network,
-} from '../../../users/shared/network-connections.js';
+} from '../../../users/shared/network-connections';
 import * as api from '../api/network-connections.api';
 import { formatAdminDateTime } from '../utils/admin-date';
 import UserLink from './UserLink.component';

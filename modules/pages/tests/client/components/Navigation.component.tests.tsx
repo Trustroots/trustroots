@@ -18,7 +18,7 @@ vi.mock('@/modules/core/client/react-app/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-vi.mock('@/modules/users/client/components/Avatar.component.js', async () => {
+vi.mock('@/modules/users/client/components/Avatar.component', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   function MockAvatar({ user }: AvatarProps) {

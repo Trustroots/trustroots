@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 import type { AxiosRequestConfig } from 'axios';
 
 export interface NewsletterAudienceCriteria {

@@ -1,5 +1,5 @@
 import React from 'react';
-import BoardImplementation from '@/modules/core/client/components/Board.js';
+import BoardImplementation from '@/modules/core/client/components/Board';
 
 export interface PageBoardProps {
   children?: React.ReactNode;

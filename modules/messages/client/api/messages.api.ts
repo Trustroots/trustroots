@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 import { nextPageParams } from './pagination';
 import type {
   MarkMessagesReadRequest,

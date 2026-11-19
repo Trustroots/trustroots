@@ -13,12 +13,12 @@ import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
 import SiteFooter, {
   type Build,
-} from '@/modules/core/client/components/SiteFooter.component.js';
+} from '@/modules/core/client/components/SiteFooter.component';
 import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 import HomeConnections from './HomeConnections.component';
 import HomeFeaturedNostrNotes from './HomeFeaturedNostrNotes.component';
-import ManifestoText from './ManifestoText.component.js';
-import Screenshot from '@/modules/core/client/components/Screenshot.js';
+import ManifestoText from './ManifestoText.component';
+import Screenshot from '@/modules/core/client/components/Screenshot';
 import screenshotProfilePng from '../img/screenshot-profile.png';
 import screenshotProfilePng2x from '../img/screenshot-profile-2x.png';
 import screenshotProfileWebp from '../img/screenshot-profile.webp';

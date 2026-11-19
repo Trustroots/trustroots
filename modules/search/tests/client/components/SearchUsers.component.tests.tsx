@@ -18,7 +18,7 @@ vi.mock('@tanstack/react-router', async () =>
     await import('@/testutils/client/router-location.testutil')
   ).mockRouterModule(),
 );
-vi.mock('@/modules/users/client/api/search-users.api.js', () => ({
+vi.mock('@/modules/users/client/api/search-users.api', () => ({
   searchUsers: (query: string, connectionsOnly: boolean) =>
     mockSearchUsers(query, connectionsOnly),
 }));

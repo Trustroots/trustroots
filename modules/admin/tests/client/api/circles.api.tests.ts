@@ -17,7 +17,7 @@ function response<T>(data: T): AxiosResponse<T> {
 
 vi.mock(
   'axios',
-  async () => await import('@/modules/core/tests/client/api/axios.mock.js'),
+  async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
 afterEach(() => {

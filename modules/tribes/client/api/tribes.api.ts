@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '../../../core/client/api/http-client';
 import type { UserProfile } from '@/modules/users/client/types';
 
 export interface TribeSummary {

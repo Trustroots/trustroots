@@ -6,7 +6,7 @@ import React from 'react';
 
 // Internal dependencies`
 import Board from './PageBoard';
-import ManifestoText from './ManifestoText.component.js';
+import ManifestoText from './ManifestoText.component';
 
 export default function Foundation({ user }: { user?: PageUser | null }) {
   const { t: rawT } = useTranslation('pages');

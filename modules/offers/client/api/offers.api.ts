@@ -1,6 +1,6 @@
 import axios, {
   getErrorResponse,
-} from '../../../core/client/api/http-client.js';
+} from '../../../core/client/api/http-client.ts';
 import type { AxiosRequestConfig } from 'axios';
 import type {
   CreateOfferRequest,
@@ -9,7 +9,7 @@ import type {
   OfferReadPayload,
   OfferSearchFeatureCollection,
   UpdateOfferRequest,
-} from '../../shared/offer.js';
+} from '../../shared/offer.ts';
 
 export type {
   CreateOfferRequest,
@@ -19,7 +19,7 @@ export type {
   OfferSearchFeatureCollection,
   OfferType,
   UpdateOfferRequest,
-} from '../../shared/offer.js';
+} from '../../shared/offer.ts';
 
 /** @deprecated Use OfferPayload for read responses and request-specific types. */
 export type Offer = Partial<OfferPayload>;

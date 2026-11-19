@@ -1,5 +1,5 @@
-import axios from '../../../core/client/api/http-client.js';
-import type { Network } from '../../../users/shared/network-connections.js';
+import axios from '../../../core/client/api/http-client';
+import type { Network } from '../../../users/shared/network-connections';
 
 export interface CurrentNetworkConnection {
   network: Network;
