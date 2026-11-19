@@ -8,6 +8,53 @@ import TrEditor from '@/modules/core/client/components/TrEditor';
 type TrEditorProps = React.ComponentProps<typeof TrEditor>;
 
 describe('<TrEditor /> with MediumEditor', () => {
+  it('handles Command+Enter and Ctrl+Enter as submit shortcuts', () => {
+    const onSubmitShortcut = vi.fn();
+    const { getByRole } = render(
+      <TrEditor
+        id="editor"
+        text="Fictional message"
+        onChange={vi.fn()}
+        onSubmitShortcut={onSubmitShortcut}
+      />,
+    );
+    const editor = getByRole('textbox');
+    editor.focus();
+    window.getSelection()!.collapse(editor, 0);
+
+    for (const keys of [
+      { key: 'Enter', which: 13 },
+      { key: 'm', ctrlKey: true, which: 77 },
+      { key: 'Enter', metaKey: true, isComposing: true },
+      { key: 'Enter', metaKey: true, shiftKey: true },
+      { key: 'Enter', ctrlKey: true, altKey: true },
+    ]) {
+      expect(fireEvent.keyDown(editor, keys)).toBe(true);
+    }
+    expect(
+      fireEvent.keyDown(editor, { key: 'Enter', metaKey: true, repeat: true }),
+    ).toBe(false);
+    expect(onSubmitShortcut).not.toHaveBeenCalled();
+
+    expect(fireEvent.keyDown(editor, { key: 'Enter', metaKey: true })).toBe(
+      false,
+    );
+    expect(fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true })).toBe(
+      false,
+    );
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves Enter combinations alone when there is no submit callback', () => {
+    const { getByRole } = render(
+      <TrEditor id="editor" text="Fictional note" onChange={vi.fn()} />,
+    );
+
+    expect(
+      fireEvent.keyDown(getByRole('textbox'), { key: 'Enter', metaKey: true }),
+    ).toBe(true);
+  });
+
   it('offers formatting without a link tool or clickable link preview', () => {
     const content = '<p><a href="https://example.org/">Fictional notes</a></p>';
     const { container } = render(

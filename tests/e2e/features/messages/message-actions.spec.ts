@@ -291,35 +291,39 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
-  test('desktop reply editor keeps focus after sending with Ctrl+Enter', async ({
-    page,
-    request,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'messages.reply-focus', [
-      'The desktop reply editor receives focus when a conversation opens.',
-      'The recreated reply editor receives focus after sending.',
-    ]);
+  for (const shortcut of ['Control+Enter', 'Meta+Enter']) {
+    test(`desktop reply editor keeps focus after sending with ${shortcut}`, async ({
+      page,
+      request,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.reply-focus', [
+        'The desktop reply editor receives focus when a conversation opens.',
+        'The recreated reply editor receives focus after sending.',
+      ]);
 
-    await page.setViewportSize({ width: 1280, height: 800 });
-    const recipientId = await fetchUserIdByUsername(request, portland.username);
-    await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
-    const editor = page.locator('#message-reply-content');
-    await expect(editor).toBeFocused();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      const recipientId = await fetchUserIdByUsername(
+        request,
+        portland.username,
+      );
+      await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
+      const editor = page.locator('#message-reply-content');
+      await expect(editor).toBeFocused();
 
-    const replyText = `Fictional focus check ${Date.now()}`;
-    await page.keyboard.insertText(replyText);
-    const sent = page.waitForResponse(
-      response =>
-        response.url().endsWith('/api/messages') &&
-        response.request().method() === 'POST' &&
-        response.ok(),
-    );
-    // Exercise the browser's key value independently of the legacy key code.
-    await editor.dispatchEvent('keydown', { key: 'Enter', ctrlKey: true });
-    await sent;
-    await expect(page.getByText(replyText)).toBeVisible();
-    await expect(editor).toBeFocused();
-  });
+      const replyText = `Fictional focus check ${Date.now()}`;
+      await page.keyboard.insertText(replyText);
+      const sent = page.waitForResponse(
+        response =>
+          response.url().endsWith('/api/messages') &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      );
+      await editor.press(shortcut);
+      await sent;
+      await expect(page.getByText(replyText)).toBeVisible();
+      await expect(editor).toBeFocused();
+    });
+  }
 
   test('message threads stay within the viewport when scrolling', async ({
     page,
