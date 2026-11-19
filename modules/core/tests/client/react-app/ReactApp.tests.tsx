@@ -640,11 +640,13 @@ describe('<ReactApp />', () => {
   it('redirects unmatched paths to the not-found route', async () => {
     renderApp('/missing-react-route');
 
-    expect(
-      await screen.findByText(/this page cannot be found/i),
-    ).toBeInTheDocument();
-    expect(currentUrl()).toBe('/not-found');
-    expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(currentUrl()).toBe('/not-found');
+      expect(
+        screen.getByText(/this page cannot be found/i),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('Footer')).toBeInTheDocument();
   });
 

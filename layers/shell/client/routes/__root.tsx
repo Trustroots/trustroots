@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-router';
 import React from 'react';
 
+import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import {
   getReactRouteAccessRedirect,
@@ -18,11 +19,7 @@ export const Route = createRootRouteWithContext<{ user: AuthUser | null }>()({
     const route = getReactRoutePolicy(location.pathname);
     const to =
       route?.redirectTo ||
-      getReactRouteAccessRedirect(route, context.user, location.href) ||
-      // Unknown paths and invalid circle slugs both resolve to the not-found policy.
-      ((route?.path ?? '/not-found') === '/not-found' &&
-        location.pathname !== '/not-found' &&
-        '/not-found');
+      getReactRouteAccessRedirect(route, context.user, location.href);
     if (to) {
       throw redirect({ href: to });
     }
@@ -34,4 +31,5 @@ export const Route = createRootRouteWithContext<{ user: AuthUser | null }>()({
     </ClientOnly>
   ),
   head: () => ({ meta: [{ title: getBootstrapData().title }] }),
+  notFoundComponent: NotFoundPage,
 });
