@@ -19,6 +19,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signIn(app)
 
         XCTAssertTrue(app.buttons["My profile"].waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
         let home = XCTAttachment(screenshot: app.screenshot())
         home.name = "shared-member-dashboard"
         home.lifetime = .keepAlways

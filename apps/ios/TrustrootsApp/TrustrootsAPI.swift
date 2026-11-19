@@ -215,6 +215,25 @@ struct OfferFeatureCollection: Decodable {
     let features: [MapOffer]
 }
 
+struct DashboardFeaturedNote: Decodable {
+    let content: String
+    let authorUsername: String?
+    let publishedAt: String
+}
+
+struct DashboardConnection: Decodable {
+    let username: String
+    let displayName: String?
+    let activity: String?
+    let location: [Double]?
+}
+
+struct DashboardConnections: Decodable {
+    let recent: [DashboardConnection]
+    let hosts: [DashboardConnection]
+    let meetings: [DashboardConnection]?
+}
+
 struct MiniMember: Decodable {
     let id: String?
     let username: String?
@@ -938,6 +957,23 @@ final class TrustrootsAPI {
         try await get(serverURLString: serverURLString, path: "api/mobile/v0/offers/\(offerID)")
     }
 
+    func featuredNotes(serverURLString: String) async throws -> [DashboardFeaturedNote] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/nostr/featured-notes",
+            requiresAuthentication: false,
+            useOfflineCache: false
+        )
+    }
+
+    func dashboardConnections(serverURLString: String) async throws -> DashboardConnections {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/connections",
+            useOfflineCache: false
+        )
+    }
+
     func profile(serverURLString: String, username: String) async throws -> MemberProfile {
         struct ProfileResponse: Decodable { let profile: MemberProfile }
         let response: ProfileResponse = try await get(
@@ -1406,7 +1442,9 @@ final class TrustrootsAPI {
     private func get<Response: Decodable>(
         serverURLString: String,
         path: String,
-        queryItems: [URLQueryItem] = []
+        queryItems: [URLQueryItem] = [],
+        requiresAuthentication: Bool = true,
+        useOfflineCache: Bool = true
     ) async throws -> Response {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
@@ -1423,10 +1461,20 @@ final class TrustrootsAPI {
 
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        authorise(&request)
+        if requiresAuthentication {
+            authorise(&request)
+        }
+        if !useOfflineCache {
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+        }
 
         do {
-            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+            let (data, response): (Data, URLResponse)
+            if requiresAuthentication {
+                (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+            } else {
+                (data, response) = try await session.data(for: request)
+            }
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1435,8 +1483,10 @@ final class TrustrootsAPI {
             }
             do {
                 let decoded = try decoder.decode(Response.self, from: data)
-                try? await OfflineResponseCache.shared.save(data, for: url)
-                await OfflineAvailability.shared.showLiveData()
+                if useOfflineCache {
+                    try? await OfflineResponseCache.shared.save(data, for: url)
+                    await OfflineAvailability.shared.showLiveData()
+                }
                 return decoded
             } catch {
                 throw TrustrootsAPIError.invalidResponse
@@ -1444,7 +1494,8 @@ final class TrustrootsAPI {
         } catch let error as TrustrootsAPIError {
             throw error
         } catch {
-            if let cached = await OfflineResponseCache.shared.response(for: url),
+            if useOfflineCache,
+               let cached = await OfflineResponseCache.shared.response(for: url),
                let decoded = try? decoder.decode(Response.self, from: cached.data) {
                 await OfflineAvailability.shared.showSavedData(from: cached.savedAt)
                 return decoded

@@ -1,4 +1,5 @@
 import Foundation
+import MapKit
 import SwiftUI
 import TrustrootsShared
 
@@ -10,7 +11,8 @@ struct SharedComposeHost: UIViewControllerRepresentable {
         MainViewControllerKt.MainViewController(
             gateway: SharedMemberPilotGateway(session: session, exit: exit),
             username: session.member?.username,
-            initialError: session.errorMessage
+            initialError: session.errorMessage,
+            createConnectionsMap: { DashboardMapView(pins: $0) }
         )
     }
 
@@ -51,6 +53,50 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
             drafts.removeAll()
             completion(nil)
         }
+    }
+
+    func featuredNotes(completion: @escaping ([PilotNote]?, String?) -> Void) {
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: session.member?.username, completion: completion) {
+            try await api.featuredNotes(serverURLString: serverURL)
+        } map: { notes in
+            notes.map { note in
+                PilotNote(content: note.content, authorUsername: note.authorUsername, publishedAt: note.publishedAt)
+            }
+        }
+    }
+
+    func connections(completion: @escaping (PilotConnections?, String?) -> Void) {
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: session.member?.username, completion: completion) {
+            try await api.dashboardConnections(serverURLString: serverURL)
+        } map: { connections in
+            let hosts = connections.hosts.compactMap { Self.mapPin($0, hosting: true) }
+            let meetings = (connections.meetings ?? []).compactMap { Self.mapPin($0, hosting: false) }
+            return PilotConnections(recent: connections.recent.map(Self.dashboardMember), pins: hosts + meetings)
+        }
+    }
+
+    private static func dashboardMember(_ connection: DashboardConnection) -> PilotConnection {
+        PilotConnection(
+            username: connection.username,
+            name: displayText(connection.displayName, fallback: connection.username),
+            activity: connection.activity
+        )
+    }
+
+    private static func mapPin(_ connection: DashboardConnection, hosting: Bool) -> PilotMapPin? {
+        guard let location = connection.location, location.count == 2,
+              location[0].isFinite, (-85...85).contains(location[0]),
+              location[1].isFinite, (-180...180).contains(location[1]) else { return nil }
+        return PilotMapPin(
+            connection: dashboardMember(connection),
+            latitude: location[0],
+            longitude: location[1],
+            hosting: hosting
+        )
     }
 
     func profile(
@@ -201,5 +247,59 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
 
     private static func displayText(_ value: String?, fallback: String) -> String {
         optionalDisplayText(value) ?? fallback
+    }
+}
+
+private final class DashboardMapAnnotation: MKPointAnnotation {
+    let hosting: Bool
+
+    init(pin: PilotMapPin) {
+        hosting = pin.hosting
+        super.init()
+        coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
+        title = pin.connection.name
+        subtitle = hosting ? "Hosting" : "Happy to meet"
+    }
+}
+
+private final class DashboardMapView: MKMapView, MKMapViewDelegate {
+    private var needsInitialViewport = true
+
+    init(pins: [PilotMapPin]) {
+        super.init(frame: .zero)
+        delegate = self
+        register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "connection")
+        addAnnotations(pins.map(DashboardMapAnnotation.init(pin:)))
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard needsInitialViewport, bounds.width > 0, bounds.height > 0 else { return }
+        needsInitialViewport = false
+        if let first = annotations.first, annotations.count == 1 {
+            let region = MKCoordinateRegion(
+                center: first.coordinate,
+                latitudinalMeters: 20_000,
+                longitudinalMeters: 20_000
+            )
+            setRegion(region, animated: false)
+        } else {
+            showAnnotations(annotations, animated: false)
+        }
+    }
+
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard let pin = annotation as? DashboardMapAnnotation,
+              let marker = mapView.dequeueReusableAnnotationView(withIdentifier: "connection", for: pin)
+                as? MKMarkerAnnotationView else { return nil }
+        marker.markerTintColor = pin.hosting ? .systemTeal : .systemOrange
+        marker.glyphImage = UIImage(systemName: pin.hosting ? "house" : "person.2")
+        marker.canShowCallout = true
+        marker.accessibilityLabel = [pin.title, pin.subtitle].compactMap { $0 }.joined(separator: ", ")
+        return marker
     }
 }

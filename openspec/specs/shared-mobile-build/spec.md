@@ -87,15 +87,14 @@ The host SHALL use its existing secure session and authenticated API client.
 ### Requirement: Shared pilot starts at a member dashboard
 
 The signed-in shared Compose pilot SHALL start at a dashboard on Android and
-iOS. It SHALL offer the shared profile and inbox journeys and explain Nostroots
-with a link to its public introduction. Dashboard actions SHALL remain usable
+iOS. It SHALL offer the shared profile and inbox journeys. Dashboard actions SHALL remain usable
 without profile, circle or local-event responses. Existing native app defaults
 SHALL remain unchanged during the pilot.
 
 #### Scenario: A saved member opens the shared pilot
 
 - **WHEN** a signed-in member opens the shared pilot
-- **THEN** Home offers My profile, Messages and Learn about Nostroots
+- **THEN** Home offers My profile and Messages
 - **AND** opening profile or messages and going Back returns to Home
 - **AND** Open native app exits using the existing host callback
 
@@ -103,4 +102,20 @@ SHALL remain unchanged during the pilot.
 
 - **WHEN** sign-in succeeds and the host supplies the authenticated username
 - **THEN** the shared pilot displays Home using the existing secure session
-- **AND** no profile, circle or local-event request is required to render Home
+- **AND** Home renders even if discovery requests fail
+
+### Requirement: Shared dashboard shows homepage discovery
+
+The shared dashboard SHALL show the public featured Nostr feed and use the same connection discovery rules as the signed-in website. It SHALL preserve access to profile and messages when discovery is unavailable.
+
+#### Scenario: Dashboard has discovery data
+
+- **WHEN** featured notes and eligible connection data are available
+- **THEN** Home shows the featured notes and recently active connections in server order
+- **AND** the map distinguishes approximate hosting and meeting locations
+- **AND** the dashboard omits the Nostroots introduction
+
+#### Scenario: Discovery is unavailable
+
+- **WHEN** either discovery request fails
+- **THEN** the other section and core navigation remain independently usable

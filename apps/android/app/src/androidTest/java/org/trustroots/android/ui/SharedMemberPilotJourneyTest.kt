@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -67,6 +68,14 @@ class SharedMemberPilotJourneyTest {
                     LocalTransportFixture.Response(
                         """{"accessToken":"pilot-access","refreshToken":"pilot-refresh","member":{"username":"steady-heron","displayName":"Steady Heron"}}""",
                     )
+                request.path == "/api/nostr/featured-notes" -> LocalTransportFixture.Response(
+                    """[{"id":"update-one","content":"A fictional Trustroots update.","authorUsername":"news-team","publishedAt":"2026-03-03T10:00:00Z"}]""",
+                )
+                request.path == "/api/mobile/v0/connections" -> LocalTransportFixture.Response(
+                    """{"recent":[{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox","activity":"today"}],
+                        "hosts":[{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox","location":[41.15,-8.61]}],
+                        "meetings":[{"_id":"member-wren","username":"calm-wren","displayName":"Calm Wren","location":[48.86,2.35]}]}""",
+                )
                 request.path == "/api/mobile/v0/profiles/steady-heron" -> LocalTransportFixture.Response(
                     """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","tagline":"A fictional welcome.","location":"Lisbon"}""",
                 )
@@ -108,7 +117,22 @@ class SharedMemberPilotJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Welcome to Trustroots").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("My profile").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A fictional Trustroots update.").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithText("Quiet Fox · Active today").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("A fictional Trustroots update.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Connections on the map").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("pilot-connections-map").performScrollTo().assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_shared_dashboard_map")
+        compose.onNodeWithText("Calm Wren · Happy to meet").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Quiet Fox · Hosting").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Quiet Fox · Active today").performScrollTo().performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A friendly fictional profile.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Back").performClick()
+        compose.onNodeWithText("My profile").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional welcome.").fetchSemanticsNodes().isNotEmpty()
         }
@@ -167,7 +191,7 @@ class SharedMemberPilotJourneyTest {
             JSONObject(it.body).getString("userTo") == "member-fox" &&
                 JSONObject(it.body).getString("content") == "A saved fictional reply."
         })
-        assertTrue(local.requests.filter { it.path != "/api/mobile/v0/auth/signin" }
+        assertTrue(local.requests.filter { it.path !in setOf("/api/mobile/v0/auth/signin", "/api/nostr/featured-notes") }
             .all { it.authorization == "Bearer pilot-access" && it.cookie == null })
         assertTrue(local.requests.any { it.path == "/api/mobile/v0/profiles/steady-heron" })
         assertTrue(local.requests.any { it.path == "/api/mobile/v0/messages?page=1&limit=50" })

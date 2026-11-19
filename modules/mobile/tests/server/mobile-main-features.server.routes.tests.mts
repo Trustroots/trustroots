@@ -91,6 +91,70 @@ describe('Mobile aliases for existing member features', function () {
       .expect(404);
   });
 
+  it('serves the homepage connection discovery through the bearer route', async function () {
+    const path = '/api/mobile/v0/connections';
+    await request(app).get(path).expect(401);
+
+    const [meeting] = await utils.saveUsers(
+      utils.generateUsers(1, { public: true }),
+    );
+    const host = users[1];
+    host.seen = new Date();
+    await host.save();
+    await Contact.create(
+      [host, meeting].map(member => ({
+        userFrom: users[0]._id,
+        userTo: member._id,
+        confirmed: true,
+      })),
+    );
+    const hostPin = [40.001, 6.001];
+    const meetingPin = [41.001, 7.001];
+    await Offer.collection.insertMany([
+      {
+        user: host._id,
+        type: 'host',
+        status: 'yes',
+        location: [40, 6],
+        locationFuzzy: hostPin,
+        updated: new Date(),
+      },
+      {
+        user: meeting._id,
+        type: 'host',
+        status: 'no',
+        meetingStatus: 'yes',
+        location: [41, 7],
+        locationFuzzy: meetingPin,
+        updated: new Date(),
+      },
+    ]);
+
+    const response = await mobileRequest('get', path)
+      .expect('Cache-Control', 'private, no-store')
+      .expect(200);
+    should.not.exist(response.headers['set-cookie']);
+    response.body.recent[0].username.should.equal(host.username);
+    response.body.recent[0].activity.should.equal('today');
+    should.not.exist(response.body.recent[0].seen);
+    response.body.hosts.should.deepEqual([
+      {
+        _id: host._id.toString(),
+        username: host.username,
+        displayName: host.displayName,
+        location: hostPin,
+      },
+    ]);
+    response.body.meetings.should.deepEqual([
+      {
+        _id: meeting._id.toString(),
+        username: meeting.username,
+        displayName: meeting.displayName,
+        location: meetingPin,
+      },
+    ]);
+  });
+
   it('loads a circle and its members through bearer aliases', async function () {
     const tribe = await new Tribe({
       slug: 'sample-circle',
