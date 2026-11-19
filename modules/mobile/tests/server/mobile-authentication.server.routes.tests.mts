@@ -2,6 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import should from 'should';
 import sinon from 'sinon';
+import { finalizeEvent, getPublicKey, nip19 } from 'nostr-tools';
 import express from '../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 
@@ -162,6 +163,7 @@ describe('Mobile authentication API', function () {
   it('returns the signed-in member profile through the bearer API', async function () {
     member.tagline = 'A mobile profile';
     member.languages = ['eng'];
+    member.nostrNpub = 'npub1examplemobile';
     await member.save();
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
@@ -176,6 +178,7 @@ describe('Mobile authentication API', function () {
     response.body.profile.id.should.equal(member._id.toString());
     response.body.profile.username.should.equal(member.username);
     response.body.profile.tagline.should.equal(member.tagline);
+    response.body.profile.nostrNpub.should.equal(member.nostrNpub);
     response.body.profile.languages.should.deepEqual(['eng']);
     response.body.profile.member.should.deepEqual([]);
     should.not.exist(response.body.profile.password);
@@ -313,6 +316,82 @@ describe('Mobile authentication API', function () {
 
     response.body.tagline.should.equal('Updated from the native app.');
     should.not.exist(response.headers['set-cookie']);
+  });
+
+  it('links and unlinks a mobile Nostr key using the existing ownership proof', async function () {
+    const challengePath = '/api/mobile/v0/profile/nostr/challenge';
+    const profilePath = '/api/mobile/v0/profile';
+    const secret = new Uint8Array(32);
+    secret[31] = 1;
+    const nostrNpub = nip19.npubEncode(getPublicKey(secret));
+    await request(app).post(challengePath).send({ nostrNpub }).expect(401);
+
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const auth = { Authorization: `Bearer ${signin.body.accessToken}` };
+
+    await request(app)
+      .post(challengePath)
+      .set(auth)
+      .send({ nostrNpub: nip19.nsecEncode(secret) })
+      .expect(400);
+    await request(app)
+      .put(profilePath)
+      .set(auth)
+      .send({ nostrNpub })
+      .expect(400);
+
+    const challenge = await request(app)
+      .post(challengePath)
+      .set(auth)
+      .send({ nostrNpub })
+      .expect('Cache-Control', 'no-store')
+      .expect(200);
+    should.not.exist(challenge.headers['set-cookie']);
+
+    const nostrProof = finalizeEvent(challenge.body.event, secret);
+    const otherMember = await new User({
+      username: 'linkedtraveller',
+      firstName: 'Linked',
+      lastName: 'Traveller',
+      email: 'linked@example.test',
+      password: 'strong-password',
+      provider: 'local',
+      roles: ['user'],
+      nostrNpub,
+    }).save();
+    const duplicate = await request(app)
+      .put(profilePath)
+      .set(auth)
+      .send({ nostrNpub, nostrProof })
+      .expect(403);
+    duplicate.body.message.should.match(/already in use/);
+    await User.deleteOne({ _id: otherMember._id });
+
+    const linked = await request(app)
+      .put(profilePath)
+      .set(auth)
+      .send({ nostrNpub, nostrProof })
+      .expect(200);
+    linked.body.nostrNpub.should.equal(nostrNpub);
+
+    await request(app)
+      .put(profilePath)
+      .set(auth)
+      .send({ nostrNpub: '' })
+      .expect(200);
+    const profile = await request(app)
+      .get(`/api/mobile/v0/profiles/${member.username}`)
+      .set(auth)
+      .expect(200);
+    should.equal(profile.body.profile.nostrNpub, null);
+    await request(app)
+      .put(profilePath)
+      .set(auth)
+      .send({ nostrNpub, nostrProof })
+      .expect(400);
   });
 
   it('applies publication policies without blocking account confirmation resources', async function () {
@@ -545,6 +624,7 @@ describe('Mobile authentication API', function () {
       displayName: 'Other Member',
       email: 'other.member@example.org',
       username: 'othermobilemember',
+      nostrNpub: 'npub1exampleother',
       password: 'strong-password',
       provider: 'local',
       roles: ['user'],
@@ -561,6 +641,7 @@ describe('Mobile authentication API', function () {
       .set('Authorization', `Bearer ${signin.body.accessToken}`)
       .expect(200);
 
+    response.body.profile.should.not.have.property('nostrNpub');
     response.body.profile.should.not.have.property('email');
     should.not.exist(response.body.profile.emailTemporary);
     should.not.exist(response.body.profile.newsletter);

@@ -59,6 +59,99 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }
 
+    func testNostrLocalKeySurvivesSignOutAndRemovalKeepsProfileSeparate() throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--shared-member-pilot",
+            "-trustroots.apiServerURL", "http://127.0.0.1:\(port)",
+        ]
+        app.launch()
+        addTeardownBlock { [self] in
+            signOutIfAlreadySignedIn(app)
+        }
+        signOutIfAlreadySignedIn(app)
+        signIn(app)
+        XCTAssertTrue(app.buttons["Open native app"].waitForExistence(timeout: 15))
+        app.buttons["Open native app"].tap()
+        openNostrAccount(app)
+
+        // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
+        // key removed so the journey is repeatable without touching profile links.
+        if app.buttons["Remove local key"].exists {
+            reveal(app.buttons["Remove local key"], in: app)
+            app.buttons["Remove local key"].tap()
+            app.alerts.buttons["Remove"].tap()
+        }
+        let generate = app.buttons["Generate new key"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 10))
+        reveal(generate, in: app)
+        generate.tap()
+        let localKey = app.staticTexts["nostr-local-public-key"]
+        XCTAssertTrue(localKey.waitForExistence(timeout: 10))
+        let publicKey = localKey.label
+        XCTAssertTrue(publicKey.hasPrefix("npub1"))
+        XCTAssertTrue(app.staticTexts["No linked public key."].exists)
+        let link = app.buttons["Link local key to profile"]
+        XCTAssertTrue(link.waitForExistence(timeout: 10))
+        reveal(link, in: app)
+        link.tap()
+        let unlink = app.buttons["Unlink profile key"]
+        XCTAssertTrue(unlink.waitForExistence(timeout: 10))
+        attachNostrSection(app, name: "Local Nostr key and linked profile key")
+
+        let signOut = app.buttons["Sign out"]
+        reveal(signOut, in: app)
+        signOut.tap()
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+        app.terminate()
+        app.launch()
+        signIn(app)
+        XCTAssertTrue(app.buttons["Open native app"].waitForExistence(timeout: 15))
+        app.buttons["Open native app"].tap()
+        openNostrAccount(app)
+        XCTAssertTrue(localKey.waitForExistence(timeout: 10))
+        XCTAssertEqual(localKey.label, publicKey)
+
+        let remove = app.buttons["Remove local key"]
+        reveal(remove, in: app)
+        remove.tap()
+        XCTAssertTrue(app.alerts["Remove local Nostr key?"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(localKey.exists)
+        remove.tap()
+        app.alerts.buttons["Remove"].tap()
+        XCTAssertTrue(generate.waitForExistence(timeout: 10))
+        XCTAssertFalse(localKey.exists)
+        XCTAssertTrue(unlink.exists)
+        attachNostrSection(app, name: "Local key removed without changing profile")
+        reveal(unlink, in: app)
+        unlink.tap()
+        XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Unlink"].tap()
+        XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
+        reveal(signOut, in: app)
+        signOut.tap()
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+    }
+
+    private func openNostrAccount(_ app: XCUIApplication) {
+        let account = app.buttons["Account"].firstMatch
+        XCTAssertTrue(account.waitForExistence(timeout: 10))
+        account.tap()
+        XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10))
+    }
+
+    private func attachNostrSection(_ app: XCUIApplication, name: String) {
+        let section = app.descendants(matching: .any)["nostr-key-section"]
+        XCTAssertTrue(section.exists)
+        let screenshot = XCTAttachment(screenshot: section.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     private func element(labelled label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
@@ -140,6 +233,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     private func signOutIfAlreadySignedIn(_ app: XCUIApplication) {
         let signOut = app.buttons["Sign out"]
         guard signOut.waitForExistence(timeout: 2) else { return }
+        reveal(signOut, in: app)
         signOut.tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }

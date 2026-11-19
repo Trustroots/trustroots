@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,6 +55,7 @@ import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.browser.LocalBrowserNostrSession
 import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.updates.ApkUpdateAlerts
@@ -87,6 +89,7 @@ internal fun AccountSettingsScreen(
     },
 ) {
     val context = LocalContext.current
+    val browserNostrSession = LocalBrowserNostrSession.current
     val uriHandler = LocalUriHandler.current
     val owner = requireNavigationViewModelStoreOwner("Account must be hosted by its decorated Menu Navigation 3 entry.")
     val platform = remember(context.applicationContext, previewUpdateAlerts, isUpdateAlertsEnabled, setUpdateAlertsEnabled, checkPreviewUpdates, disableMessageAlerts) {
@@ -199,6 +202,9 @@ internal fun AccountSettingsScreen(
         ) {
             UsageAnalyticsSettings()
             Text(signedInAs, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            key(api.backendURL, session.member.username, session.sessionId ?: session.cookieHeader) {
+                NostrKeyEntry(api, session, enabled = !state.isSigningOut)
+            }
             if (previewUpdateAlerts) {
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
                 ApkUpdateSettings(
@@ -303,7 +309,12 @@ internal fun AccountSettingsScreen(
                     Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
                 }
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
-                Button(onClick = { leave { viewModel.onEvent(AccountEvent.SignOut) } }, enabled = !state.isSigningOut) {
+                Button(onClick = {
+                    leave {
+                        browserNostrSession?.pause()
+                        viewModel.onEvent(AccountEvent.SignOut)
+                    }
+                }, enabled = !state.isSigningOut) {
                     Text(signOutLabel)
                 }
                 Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))

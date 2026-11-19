@@ -122,6 +122,7 @@ internal fun MenuNavigationDisplay(
                         openNostroots = {
                             pushBrowser(MenuBrowserVisit(MenuBrowserDestination.Nostroots, allocateVisitID()))
                         },
+                        openRadio = { pushBrowser(MenuBrowserVisit(MenuBrowserDestination.Radio, allocateVisitID())) },
                         openContacts = { pushPage(MenuPage.Contacts) },
                         openFindPeople = openFindPeople,
                         openCircles = openCircles,
@@ -236,6 +237,10 @@ internal fun browserRouteFor(
             title = context.getString(org.trustroots.android.R.string.screen_nostroots),
             url = "https://nos.trustroots.org/",
             sessionCookie = sessionCookie,
+        )
+        MenuBrowserDestination.Radio -> BrowserRoute(
+            title = context.getString(org.trustroots.android.R.string.screen_radio),
+            url = "https://www.trustroots.org/circles/radio",
         )
         MenuBrowserDestination.ResetPassword -> BrowserRoute(
             title = context.getString(org.trustroots.android.R.string.screen_reset_password),

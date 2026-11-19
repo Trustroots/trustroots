@@ -1,4 +1,5 @@
 import XCTest
+import Dispatch
 import MapKit
 @testable import Trustroots
 
@@ -208,7 +209,7 @@ final class TrustrootsTests: XCTestCase {
     }
 
     func testNostrKeyCodecGeneratesAndAcceptsPrivateKeyHex() throws {
-        let secret = NostrKeyCodec.generateSecret()
+        let secret = try NostrKeyCodec.generateSecret()
 
         XCTAssertTrue(NostrKeyCodec.isSecretHex(secret))
         XCTAssertEqual(try NostrKeyCodec.importSecret(secret), secret)
@@ -220,6 +221,587 @@ final class TrustrootsTests: XCTestCase {
 
         XCTAssertTrue(npub.hasPrefix("npub1"))
         XCTAssertNotEqual(npub, publicKey)
+    }
+
+    func testNostrProfileChallengeSignsOnlyTheConfiguredServerOwnershipEvent() throws {
+        let server = "https://api.example.test"
+        let method = ["method", "PUT"]
+        let nonce = ["challenge", String(repeating: "a", count: 64)]
+        let endpoint = ["u", server + "/api/users"]
+        let event: [String: Any] = [
+            "kind": 27235, "created_at": Int(Date().timeIntervalSince1970), "content": "",
+            "tags": [endpoint, method, nonce],
+        ]
+        let proof = try NIP07Bridge.signProfileChallenge(event, serverURLString: server, secret: NostrTestKeys.first)
+        XCTAssertEqual(proof["tags"] as? [[String]], [endpoint, method, nonce])
+        XCTAssertEqual((proof["id"] as? String)?.count, 64)
+        XCTAssertEqual((proof["sig"] as? String)?.count, 128)
+        for tags in [
+            [["u", "https://other.example.test/api/users"], method, nonce],
+            [["u", server + "/unrelated"], method, nonce],
+            [endpoint, ["method", "POST"], nonce],
+            [endpoint, method, ["challenge", "invalid"]],
+            [endpoint, method, nonce, ["payload", String(repeating: "a", count: 64)]],
+        ] {
+            var invalid = event
+            invalid["tags"] = tags
+            XCTAssertThrowsError(try NIP07Bridge.signProfileChallenge(
+                invalid, serverURLString: server, secret: NostrTestKeys.first
+            ))
+        }
+    }
+
+    @MainActor
+    func testNostrIdentityRequiresActiveAccountBeforeWritingOrSigning() throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+
+        XCTAssertFalse(identity.isActive)
+        XCTAssertNil(identity.secret())
+        XCTAssertThrowsError(try identity.import(NostrTestKeys.first))
+        XCTAssertThrowsError(try identity.generate())
+        XCTAssertThrowsError(try identity.remove())
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertTrue(storage.values.isEmpty)
+    }
+
+    @MainActor
+    func testNostrKeysAreIsolatedByServerAndAccountAndResumeAfterPause() throws {
+        let storage = InMemoryNostrKeyStorage()
+        var permissionClears = 0
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: { permissionClears += 1 })
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        let firstPublicKey = identity.npub
+        let firstRevision = identity.revision
+
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        XCTAssertFalse(identity.hasKey)
+        XCTAssertNil(identity.secret())
+        XCTAssertFalse(identity.isCurrent(firstRevision))
+        try identity.import(NostrTestKeys.second)
+        XCTAssertNotEqual(identity.npub, firstPublicKey)
+
+        identity.activate(serverURLString: "https://other.example.test", username: "mira")
+        XCTAssertNil(identity.secret())
+        XCTAssertFalse(identity.hasKey)
+        XCTAssertEqual(storage.values.count, 2)
+
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertEqual(identity.npub, firstPublicKey)
+        let beforePause = identity.revision
+        identity.pause()
+        XCTAssertFalse(identity.isActive)
+        XCTAssertNil(identity.publicKey)
+        XCTAssertNil(identity.npub)
+        XCTAssertNil(identity.secret())
+        XCTAssertFalse(identity.isCurrent(beforePause))
+        XCTAssertEqual(storage.values.count, 2)
+
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertFalse(identity.isCurrent(beforePause))
+        XCTAssertGreaterThanOrEqual(permissionClears, 7)
+    }
+
+    @MainActor
+    func testNostrScopeCanonicalisesDefaultPortTrailingSlashAndUsernameCase() throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        let revision = identity.revision
+
+        identity.activate(serverURLString: "HTTPS://API.EXAMPLE.TEST:443/", username: "MIRA")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertEqual(identity.revision, revision)
+        XCTAssertEqual(storage.values.count, 1)
+
+        identity.activate(serverURLString: "https://api.example.test:8443", username: "mira")
+        XCTAssertNil(identity.secret())
+        XCTAssertFalse(identity.hasKey)
+    }
+
+    @MainActor
+    func testNostrInvalidAccountOrServerPausesExistingIdentity() throws {
+        for (server, username) in [
+            ("https://api.example.test", "  "),
+            ("not a server", "mira"),
+            ("https://api.example.test/private-path", "mira"),
+            ("https://name:password@api.example.test", "mira"),
+        ] {
+            let storage = InMemoryNostrKeyStorage()
+            let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+            identity.activate(serverURLString: "https://api.example.test", username: "mira")
+            try identity.import(NostrTestKeys.first)
+            let revision = identity.revision
+            identity.activate(serverURLString: server, username: username)
+            XCTAssertFalse(identity.isActive, server)
+            XCTAssertNil(identity.secret(), server)
+            XCTAssertFalse(identity.isCurrent(revision), server)
+            XCTAssertEqual(storage.values.count, 1)
+        }
+    }
+
+    @MainActor
+    func testNostrExistingKeyCannotBeOverwrittenByImportGenerationOrLegacyClaim() throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.second
+        let revision = identity.revision
+
+        XCTAssertThrowsError(try identity.import(NostrTestKeys.second))
+        XCTAssertThrowsError(try identity.generate())
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertEqual(identity.revision, revision)
+        XCTAssertEqual(storage.values[NostrIdentityManager.legacyAccount], NostrTestKeys.second)
+    }
+
+    @MainActor
+    func testNostrLocalRemovalInvalidatesSigningAndRetainsOtherAccounts() throws {
+        let storage = InMemoryNostrKeyStorage()
+        var permissionClears = 0
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: { permissionClears += 1 })
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        try identity.import(NostrTestKeys.second)
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        let beforeRemoval = identity.revision
+        let beforeClears = permissionClears
+
+        try identity.remove()
+        XCTAssertNil(identity.secret())
+        XCTAssertNil(identity.npub)
+        XCTAssertFalse(identity.isCurrent(beforeRemoval))
+        XCTAssertGreaterThan(permissionClears, beforeClears)
+        XCTAssertEqual(storage.values.count, 1)
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.second)
+    }
+
+    @MainActor
+    func testNostrLegacyKeyIsOnlyACandidateUntilExplicitClaim() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let candidate = try XCTUnwrap(identity.legacyNpub)
+        XCTAssertFalse(identity.hasKey)
+        XCTAssertNil(identity.secret())
+        let revision = identity.revision
+        try identity.considerLegacy(linkedNpub: nil, capturedRevision: revision)
+        try identity.considerLegacy(linkedNpub: "npub1different", capturedRevision: revision)
+        XCTAssertEqual(identity.legacyNpub, candidate)
+        XCTAssertNil(identity.secret())
+
+        try identity.claimLegacy()
+        XCTAssertEqual(identity.npub, candidate)
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertNil(identity.legacyNpub)
+        XCTAssertNil(storage.values[NostrIdentityManager.legacyAccount])
+        XCTAssertNotNil(storage.values[NostrIdentityManager.legacyOwnerAccount])
+        XCTAssertEqual(storage.values.count, 2)
+        XCTAssertFalse(identity.isCurrent(revision))
+    }
+
+    @MainActor
+    func testNostrLegacyAutoAdoptionRequiresMatchingLiveProfileAndCurrentRevision() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let candidate = try XCTUnwrap(identity.legacyNpub)
+        let oldRevision = identity.revision
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        try identity.considerLegacy(linkedNpub: candidate, capturedRevision: oldRevision)
+        XCTAssertNil(identity.secret())
+        XCTAssertNotNil(storage.values[NostrIdentityManager.legacyAccount])
+
+        try identity.considerLegacy(linkedNpub: candidate, capturedRevision: identity.revision)
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertNil(storage.values[NostrIdentityManager.legacyAccount])
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertNil(identity.secret())
+        XCTAssertNil(identity.legacyNpub)
+    }
+
+    @MainActor
+    func testNostrLegacyAdoptionWritesScopedCopyBeforeDeletingOriginal() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        storage.mutations.removeAll()
+
+        try identity.claimLegacy()
+        XCTAssertEqual(storage.mutations.count, 3)
+        XCTAssertEqual(storage.mutations[0], "save:\(NostrIdentityManager.legacyOwnerAccount)")
+        XCTAssertTrue(storage.mutations[1].hasPrefix("save:nostr-v1:"))
+        XCTAssertEqual(storage.mutations[2], "remove:\(NostrIdentityManager.legacyAccount)")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+    }
+
+    @MainActor
+    func testNostrFailedMigrationSavePreservesLegacyKeyAndDoesNotDelete() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let revision = identity.revision
+        storage.failSave = true
+
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertEqual(storage.values[NostrIdentityManager.legacyAccount], NostrTestKeys.first)
+        XCTAssertEqual(storage.values.count, 1)
+        XCTAssertNil(identity.secret())
+        XCTAssertEqual(identity.revision, revision)
+        XCTAssertFalse(storage.mutations.contains { $0.hasPrefix("remove:") })
+    }
+
+    @MainActor
+    func testNostrFailedLegacyDeletionKeepsDurableScopedCopyAndSurfacesError() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let revision = identity.revision
+        storage.failRemove = true
+
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertNotNil(storage.values[NostrIdentityManager.legacyAccount])
+        XCTAssertEqual(storage.values.count, 3)
+        XCTAssertFalse(identity.isCurrent(revision))
+
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        XCTAssertNil(identity.legacyNpub)
+        XCTAssertNil(identity.secret())
+        XCTAssertThrowsError(try identity.claimLegacy())
+        identity.activate(serverURLString: "https://other.example.test", username: "mira")
+        XCTAssertNil(identity.legacyNpub)
+        XCTAssertThrowsError(try identity.claimLegacy())
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+    }
+
+    @MainActor
+    func testNostrInterruptedMigrationReservesOwnerAndCanBeRetriedByThatAccount() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let candidate = try XCTUnwrap(identity.legacyNpub)
+        storage.failScopedSave = true
+
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertEqual(storage.values[NostrIdentityManager.legacyAccount], NostrTestKeys.first)
+        XCTAssertNotNil(storage.values[NostrIdentityManager.legacyOwnerAccount])
+        XCTAssertEqual(storage.values.count, 2)
+        XCTAssertNil(identity.secret())
+        identity.activate(serverURLString: "https://api.example.test", username: "robin")
+        XCTAssertNil(identity.legacyNpub)
+        XCTAssertThrowsError(try identity.claimLegacy())
+
+        storage.failScopedSave = false
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(identity.legacyNpub, candidate)
+        try identity.claimLegacy()
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertNil(storage.values[NostrIdentityManager.legacyAccount])
+    }
+
+    @MainActor
+    func testNostrFailedLocalRemovalPreservesCurrentKeyAndRevision() throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        let revision = identity.revision
+        storage.failRemove = true
+
+        XCTAssertThrowsError(try identity.remove())
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        XCTAssertEqual(identity.revision, revision)
+    }
+
+    @MainActor
+    func testNostrReadFailureIsNotTreatedAsAnEmptyKeySlot() throws {
+        let storage = InMemoryNostrKeyStorage()
+        storage.failRead = true
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+
+        XCTAssertNotNil(identity.errorMessage)
+        XCTAssertFalse(identity.hasKey)
+        XCTAssertThrowsError(try identity.import(NostrTestKeys.first))
+        XCTAssertThrowsError(try identity.claimLegacy())
+        XCTAssertTrue(storage.values.isEmpty)
+        XCTAssertTrue(storage.mutations.isEmpty)
+    }
+
+    @MainActor
+    func testNostrInvalidImportNeverReachesStorage() throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        let revision = identity.revision
+
+        for input in ["not a private key", String(repeating: "0", count: 64), String(repeating: "f", count: 64)] {
+            XCTAssertThrowsError(try identity.import(input))
+        }
+        XCTAssertTrue(storage.values.isEmpty)
+        XCTAssertTrue(storage.mutations.isEmpty)
+        XCTAssertEqual(identity.revision, revision)
+    }
+
+    @MainActor
+    func testNostrBackupAuthenticatesBeforeRevealingRestorableNsec() async throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        var authenticationCalls = 0
+
+        let backup = try await identity.backup(authenticate: { authenticationCalls += 1 })
+        XCTAssertEqual(authenticationCalls, 1)
+        XCTAssertEqual(try NostrKeyCodec.importSecret(backup), NostrTestKeys.first)
+        XCTAssertEqual(backup, NostrTestKeys.firstNsec)
+    }
+
+    @MainActor
+    func testNostrBackupDoesNotRevealKeyWhenDeviceAuthenticationFails() async throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+
+        do {
+            _ = try await identity.backup(authenticate: { throw NostrTestFailure.denied })
+            XCTFail("Denied device authentication must not produce a backup.")
+        } catch NostrTestFailure.denied {
+            XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        }
+    }
+
+    @MainActor
+    func testNostrBackupRejectsAccountSwitchAndReturnDuringAuthentication() async throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+
+        do {
+            _ = try await identity.backup(authenticate: {
+                identity.activate(serverURLString: "https://api.example.test", username: "robin")
+                identity.activate(serverURLString: "https://api.example.test", username: "mira")
+            })
+            XCTFail("Authentication started in an earlier session must be retried.")
+        } catch NostrIdentityError.inactiveSession {
+            XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        }
+    }
+
+    @MainActor
+    func testNostrBackupRejectsKeyReplacementDuringAuthentication() async throws {
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+
+        do {
+            _ = try await identity.backup(authenticate: {
+                try identity.remove()
+                try identity.import(NostrTestKeys.second)
+            })
+            XCTFail("Device authentication must not reveal a replacement key.")
+        } catch NostrIdentityError.inactiveSession {
+            XCTAssertEqual(identity.secret(), NostrTestKeys.second)
+        }
+    }
+
+    @MainActor
+    func testNostrBackupWithoutLocalKeyDoesNotPromptForAuthentication() async throws {
+        let identity = NostrIdentityManager(keyStore: InMemoryNostrKeyStorage(), clearPermissions: {})
+        var authenticationCalls = 0
+        do {
+            _ = try await identity.backup(authenticate: { authenticationCalls += 1 })
+            XCTFail("A missing local key cannot be backed up.")
+        } catch NostrIdentityError.missingKey {
+            XCTAssertEqual(authenticationCalls, 0)
+        }
+    }
+
+    func testNostrNsecUsesKnownBech32VectorAndAcceptsWholeStringUppercase() throws {
+        XCTAssertEqual(try NostrKeyCodec.nsec(secret: NostrTestKeys.first), NostrTestKeys.firstNsec)
+        XCTAssertEqual(try NostrKeyCodec.importSecret(NostrTestKeys.firstNsec), NostrTestKeys.first)
+        XCTAssertEqual(try NostrKeyCodec.importSecret(" \n" + NostrTestKeys.firstNsec.uppercased() + "\n"), NostrTestKeys.first)
+        XCTAssertEqual(try NostrKeyCodec.importSecret(String(repeating: "A", count: 64)), String(repeating: "a", count: 64))
+        XCTAssertEqual(try NostrKeyCodec.importSecret(NostrKeyCodec.nsec(secret: NostrTestKeys.second)), NostrTestKeys.second)
+    }
+
+    func testNostrNsecRejectsChecksumMixedCaseNonCanonicalPaddingAndWrongLengths() throws {
+        let malformed = [
+            String(NostrTestKeys.firstNsec.dropLast()) + "q",
+            "N" + NostrTestKeys.firstNsec.dropFirst(),
+            // Valid checksums, but non-zero padding or 31/33-byte payloads.
+            "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xpt74d",
+            "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzanks0",
+            "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsqjej2ms",
+            "npub" + NostrTestKeys.firstNsec.dropFirst(4),
+            "nsec1invalid!",
+        ]
+        for input in malformed {
+            XCTAssertThrowsError(try NostrKeyCodec.importSecret(input))
+        }
+    }
+
+    func testNostrPrivateKeysRejectZeroCurveOrderAndOutOfRangeScalars() throws {
+        for secret in [
+            String(repeating: "0", count: 64),
+            "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
+            String(repeating: "f", count: 64),
+        ] {
+            XCTAssertThrowsError(try NostrKeyCodec.importSecret(secret))
+            XCTAssertThrowsError(try NostrKeyCodec.nsec(secret: secret))
+        }
+        XCTAssertThrowsError(try NostrKeyCodec.nsec(secret: "bad"))
+    }
+
+    @MainActor
+    func testMemberSessionPausesNostrBeforeSignOutNetworkRequestCompletes() async throws {
+        let defaults = UserDefaults.standard
+        let previousMember = defaults.object(forKey: "trustroots.signedInMember")
+        let previousScope = defaults.object(forKey: OfflineResponseCache.scopeDefaultsKey)
+        defer {
+            defaults.set(previousMember, forKey: "trustroots.signedInMember")
+            defaults.set(previousScope, forKey: OfflineResponseCache.scopeDefaultsKey)
+            MobileAPIURLProtocol.handler = nil
+        }
+        let member = SignedInMember(username: "mira", displayName: "Mira Example", isPublic: true, email: nil, newsletter: nil)
+        defaults.set(try JSONEncoder().encode(member), forKey: "trustroots.signedInMember")
+        let credentials = InMemoryMobileCredentialStore()
+        XCTAssertTrue(credentials.save(MobileCredentials(accessToken: "example-access", refreshToken: "example-refresh")))
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration), credentialStore: credentials)
+        let identity = NostrIdentityManager(keyStore: InMemoryNostrKeyStorage(), clearPermissions: {})
+        let session = MemberSessionStore(
+            api: api,
+            serverURLString: "https://api.example.test",
+            credentialStore: credentials,
+            nostrIdentity: identity
+        )
+        try identity.import(NostrTestKeys.first)
+        let revision = identity.revision
+        let requestStarted = expectation(description: "Sign-out request has started")
+        let releaseResponse = DispatchSemaphore(value: 0)
+        defer { releaseResponse.signal() }
+        MobileAPIURLProtocol.handler = { request in
+            XCTAssertEqual(request.url?.path, "/api/mobile/v0/auth/signout")
+            requestStarted.fulfill()
+            _ = releaseResponse.wait(timeout: .now() + 10)
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("{}".utf8))
+        }
+
+        let signOut = Task { await session.signOut() }
+        await fulfillment(of: [requestStarted], timeout: 5)
+        // The server response is still suspended: local signing must already be paused.
+        XCTAssertNotNil(session.member)
+        XCTAssertNotNil(credentials.load())
+        XCTAssertFalse(identity.isActive)
+        XCTAssertNil(identity.secret())
+        XCTAssertFalse(identity.isCurrent(revision))
+        let bridgeResponse = NIP07Bridge.handle(id: "signed-out", method: "getPublicKey", params: [], identity: identity)
+        XCTAssertEqual(bridgeResponse["ok"] as? Bool, false)
+        releaseResponse.signal()
+        await signOut.value
+        XCTAssertNil(session.member)
+        XCTAssertNil(credentials.load())
+    }
+
+    @MainActor
+    func testMemberSessionInvalidationAndServerChangePauseNostrWithoutDeletingKey() throws {
+        let defaults = UserDefaults.standard
+        let previousMember = defaults.object(forKey: "trustroots.signedInMember")
+        let previousScope = defaults.object(forKey: OfflineResponseCache.scopeDefaultsKey)
+        defer {
+            defaults.set(previousMember, forKey: "trustroots.signedInMember")
+            defaults.set(previousScope, forKey: OfflineResponseCache.scopeDefaultsKey)
+        }
+        defaults.removeObject(forKey: "trustroots.signedInMember")
+        let storage = InMemoryNostrKeyStorage()
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        let credentials = InMemoryMobileCredentialStore()
+        let session = MemberSessionStore(
+            serverURLString: "https://api.example.test",
+            credentialStore: credentials,
+            nostrIdentity: identity
+        )
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        try identity.import(NostrTestKeys.first)
+        session.serverURLString = "https://other.example.test"
+        XCTAssertFalse(identity.isActive)
+        XCTAssertNil(identity.secret())
+        XCTAssertEqual(storage.values.count, 1)
+
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(identity.secret(), NostrTestKeys.first)
+        session.invalidateSession()
+        XCTAssertFalse(identity.isActive)
+        XCTAssertNil(identity.secret())
+        XCTAssertEqual(storage.values.count, 1)
+    }
+
+    func testMobileProfileDecodesOptionalNostrPublicKey() throws {
+        let linked = try JSONDecoder().decode(
+            MemberProfile.self,
+            from: Data("{\"username\":\"mira\",\"nostrNpub\":\"\(NostrTestKeys.firstNpub)\"}".utf8)
+        )
+        let unlinked = try JSONDecoder().decode(MemberProfile.self, from: Data(#"{"username":"robin"}"#.utf8))
+        XCTAssertEqual(linked.nostrNpub, NostrTestKeys.firstNpub)
+        XCTAssertNil(unlinked.nostrNpub)
+    }
+
+    @MainActor
+    func testLiveNostrProfileLookupCannotAdoptFromAnOfflineCachedProfile() async throws {
+        let defaults = UserDefaults.standard
+        let previousScope = defaults.object(forKey: OfflineResponseCache.scopeDefaultsKey)
+        defer {
+            defaults.set(previousScope, forKey: OfflineResponseCache.scopeDefaultsKey)
+            MobileAPIURLProtocol.handler = nil
+            OfflineAvailability.shared.showLiveData()
+        }
+        defaults.set("nostr-profile-test-\(UUID().uuidString)", forKey: OfflineResponseCache.scopeDefaultsKey)
+        let payload = Data("{\"profile\":{\"username\":\"mira\",\"nostrNpub\":\"\(NostrTestKeys.firstNpub)\"}}".utf8)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration), credentialStore: InMemoryMobileCredentialStore())
+        MobileAPIURLProtocol.handler = { request in
+            XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, payload)
+        }
+        _ = try await api.profile(serverURLString: "https://api.example.test", username: "mira", allowSaved: false)
+        MobileAPIURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
+        let cached = try await api.profile(serverURLString: "https://api.example.test", username: "mira")
+        XCTAssertEqual(cached.nostrNpub, NostrTestKeys.firstNpub)
+
+        let storage = InMemoryNostrKeyStorage()
+        storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
+        let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
+        identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        do {
+            let live = try await api.profile(serverURLString: "https://api.example.test", username: "mira", allowSaved: false)
+            try identity.considerLegacy(linkedNpub: live.nostrNpub, capturedRevision: identity.revision)
+            XCTFail("Legacy adoption must require a live response rather than a saved profile.")
+        } catch TrustrootsAPIError.requestFailed {
+            XCTAssertFalse(identity.hasKey)
+            XCTAssertEqual(identity.legacyNpub, NostrTestKeys.firstNpub)
+            XCTAssertTrue(storage.mutations.isEmpty)
+        }
     }
 
     func testConversationExperienceIdentifiesWhoSharedIt() throws {
@@ -890,7 +1472,7 @@ final class TrustrootsTests: XCTestCase {
 }
 
 private final class MobileAPIURLProtocol: URLProtocol {
-    static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
+    static var handler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
     override class func canInit(with request: URLRequest) -> Bool {
         request.url?.host == "api.example.test"
@@ -904,10 +1486,14 @@ private final class MobileAPIURLProtocol: URLProtocol {
         guard let handler = Self.handler else {
             fatalError("Mobile API test handler was not configured")
         }
-        let (response, data) = handler(request)
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: data)
-        client?.urlProtocolDidFinishLoading(self)
+        do {
+            let (response, data) = try handler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
     }
 
     override func stopLoading() {}
@@ -938,5 +1524,44 @@ private actor RefreshOperationCounter {
         calls += 1
         try? await Task.sleep(for: .milliseconds(25))
         return MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh")
+    }
+}
+
+private enum NostrTestKeys {
+    static let first = String(repeating: "0", count: 63) + "1"
+    static let second = String(repeating: "0", count: 63) + "2"
+    static let firstNsec = "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgl"
+    static let firstNpub = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+}
+
+private enum NostrTestFailure: Error {
+    case storage
+    case denied
+}
+
+private final class InMemoryNostrKeyStorage: NostrKeyStorage {
+    var values: [String: String] = [:]
+    var mutations: [String] = []
+    var failRead = false
+    var failSave = false
+    var failScopedSave = false
+    var failRemove = false
+
+    func read(account: String) throws -> String? {
+        if failRead { throw NostrTestFailure.storage }
+        return values[account]
+    }
+
+    func save(secret: String, account: String) throws {
+        if failSave || (failScopedSave && account.hasPrefix("nostr-v1:")) { throw NostrTestFailure.storage }
+        guard values[account] == nil else { throw NostrIdentityError.existingKey }
+        mutations.append("save:\(account)")
+        values[account] = secret
+    }
+
+    func remove(account: String) throws {
+        if failRemove { throw NostrTestFailure.storage }
+        mutations.append("remove:\(account)")
+        values.removeValue(forKey: account)
     }
 }

@@ -70,3 +70,38 @@ Use a matching branch only when a new App Store Connect build is intended.
 After an `ITMS-90382` upload-limit failure, pause pushes to matching branches,
 wait one day as Apple requests, then trigger one build and check **TestFlight →
 Build Uploads** before trying again.
+
+## Account-scoped Nostr keys
+
+Account → Nostr key keeps one local key per API server and signed-in username
+in device-only Keychain storage. Signing out pauses signing and retains that
+key for the next sign-in to the same account. Changing accounts or removing a
+key clears browser permissions and invalidates pending backup/signing work.
+The public npub can be copied; revealing nsec requires device authentication.
+The backup disappears when the app becomes inactive or leaves Account.
+Set up a device passcode before using backup.
+
+A key from older app versions is initially unclaimed. A live own-profile lookup
+adopts it automatically only if the profile's `nostrNpub` matches. Otherwise
+Account displays its public key and offers an explicit claim. A durable owner
+reservation prevents another account claiming it if migration is interrupted.
+Keychain errors remain errors; the app does not store new keys in preferences.
+Only legacy Keychain entries are migrated automatically. Old simulator-only
+plaintext preference fallbacks are ignored; import a known backup on the
+simulator instead.
+
+Account can link the local npub by signing the server's ownership challenge.
+Replacing or unlinking the profile key requires confirmation. The profile link
+and the local key can be removed independently. Android browser signing,
+NIP-46 pairing and push alerts remain follow-up work in
+[#3633](https://github.com/Trustroots/trustroots/issues/3633).
+The secret-free scope and session revision rules live in `apps/shared`; Keychain,
+device authentication and WebKit remain native adapters, following
+[#3232](https://github.com/Trustroots/trustroots/issues/3232).
+
+`TrustrootsTests` covers scope isolation, interrupted adoption, invalid imports,
+backup authentication and stale operations. The simulator UI journey covers
+local generation, sign-out/sign-in retention, removal confirmation and the
+separate profile key. On physical iOS hardware, verify passcode/Face ID backup,
+background hiding, restore and a signed Radio action before releasing this
+feature. Simulator test coverage does not establish that device acceptance.

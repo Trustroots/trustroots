@@ -169,10 +169,12 @@ struct TrustrootsWebView: UIViewRepresentable {
         })();
         """
 
+    @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         weak var webView: WKWebView?
         @Binding private var externalURL: URL?
         @Binding private var nip07PermissionPrompt: NIP07PermissionPrompt?
+        private var pendingRevisions: [String: Int64] = [:]
         private var pendingNIP07Messages: [String: [(id: String, method: String, params: Any?)]] = [:]
 
         init(
@@ -195,8 +197,11 @@ struct TrustrootsWebView: UIViewRepresentable {
                 return
             }
 
+            let capturedRevision = NostrIdentityManager.shared.revision
             Task { @MainActor in
-                guard NIP07Bridge.supportedMethods.contains(metadata.method),
+                guard NostrIdentityManager.shared.isCurrent(capturedRevision),
+                      NIP07Bridge.trustedOrigin(for: self.webView?.url) == NIP07Bridge.trustedOrigin(for: frameURL),
+                      NIP07Bridge.supportedMethods.contains(metadata.method),
                       let origin = NIP07Bridge.trustedOrigin(for: frameURL) else {
                     self.send(NIP07Bridge.response(id: metadata.id, error: "Nostr key access is not available for this website."))
                     return
@@ -204,10 +209,11 @@ struct TrustrootsWebView: UIViewRepresentable {
 
                 if NIP07Bridge.isAutomaticallyAllowed(origin) ||
                     NIP07PermissionStore.shared.isAllowed(origin) {
-                    self.perform(metadata)
+                    self.perform(metadata, capturedRevision: capturedRevision)
                     return
                 }
 
+                self.pendingRevisions[origin] = capturedRevision
                 self.pendingNIP07Messages[origin, default: []].append(metadata)
                 guard self.pendingNIP07Messages[origin]?.count == 1 else { return }
                 let host = URL(string: origin)?.host ?? origin
@@ -215,6 +221,10 @@ struct TrustrootsWebView: UIViewRepresentable {
                     host: host,
                     allow: { [weak self] remember in
                         guard let self else { return }
+                        guard NostrIdentityManager.shared.isCurrent(capturedRevision) else {
+                            self.denyPending(origin: origin)
+                            return
+                        }
                         if remember { NIP07PermissionStore.shared.allow(origin) }
                         self.performPending(origin: origin)
                     },
@@ -228,7 +238,9 @@ struct TrustrootsWebView: UIViewRepresentable {
 
         private func performPending(origin: String) {
             let messages = pendingNIP07Messages.removeValue(forKey: origin) ?? []
-            guard NIP07Bridge.trustedOrigin(for: webView?.url) == origin else {
+            let capturedRevision = pendingRevisions.removeValue(forKey: origin)
+            guard let capturedRevision, NostrIdentityManager.shared.isCurrent(capturedRevision),
+                  NIP07Bridge.trustedOrigin(for: webView?.url) == origin else {
                 messages.forEach {
                     send(NIP07Bridge.response(
                         id: $0.id,
@@ -237,10 +249,11 @@ struct TrustrootsWebView: UIViewRepresentable {
                 }
                 return
             }
-            messages.forEach(perform)
+            messages.forEach { perform($0, capturedRevision: capturedRevision) }
         }
 
         private func denyPending(origin: String) {
+            pendingRevisions.removeValue(forKey: origin)
             let messages = pendingNIP07Messages.removeValue(forKey: origin) ?? []
             for message in messages {
                 send(NIP07Bridge.response(id: message.id, error: "Nostr key access was not allowed."))
@@ -248,7 +261,11 @@ struct TrustrootsWebView: UIViewRepresentable {
         }
 
         @MainActor
-        private func perform(_ metadata: (id: String, method: String, params: Any?)) {
+        private func perform(_ metadata: (id: String, method: String, params: Any?), capturedRevision: Int64) {
+            guard NostrIdentityManager.shared.isCurrent(capturedRevision) else {
+                send(NIP07Bridge.response(id: metadata.id, error: "The signing account or key changed."))
+                return
+            }
             send(NIP07Bridge.handle(
                 id: metadata.id,
                 method: metadata.method,
@@ -306,7 +323,7 @@ struct TrustrootsWebView: UIViewRepresentable {
             return nil
         }
 
-        static func isTrustrootsURL(_ url: URL) -> Bool {
+        nonisolated static func isTrustrootsURL(_ url: URL) -> Bool {
             guard let host = url.host?.lowercased() else { return false }
             return NIP07Bridge.isTrustedHost(host)
         }

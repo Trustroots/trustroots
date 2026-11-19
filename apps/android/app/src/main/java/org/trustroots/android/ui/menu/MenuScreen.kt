@@ -59,6 +59,7 @@ internal fun MenuScreen(
     openAccount: () -> Unit,
     openBrowser: (SharedNavigationLink) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    openRadio: (() -> Unit)? = null,
 ) {
     val buildDate = rememberBuildDate()
     val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
@@ -120,6 +121,9 @@ internal fun MenuScreen(
         MenuLink(editProfile, R.drawable.ic_material_edit, modifier = menuLinkModifier, openEditProfile)
         MenuLink(host, R.drawable.ic_material_home, modifier = menuLinkModifier, openHost)
         MenuLink(nostroots, R.drawable.ic_material_public, modifier = menuLinkModifier, openNostroots)
+        if (openRadio != null) {
+            MenuLink(stringResource(R.string.screen_radio), R.drawable.ic_material_public, modifier = menuLinkModifier, openRadio)
+        }
         MenuLink(contacts, R.drawable.ic_material_people, modifier = menuLinkModifier, openContacts)
         MenuLink(findPeople, R.drawable.ic_material_person_search, modifier = menuLinkModifier, openFindPeople)
         MenuLink(circles, R.drawable.ic_material_groups, modifier = menuLinkModifier, openCircles)

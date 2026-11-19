@@ -36,6 +36,7 @@ function canViewAccountDetails(profile, authenticatedUser) {
     return false;
   }
   const isOwner = identifier(profile) === identifier(authenticatedUser);
+  // Stryker disable next-line ArrayDeclaration: a placeholder role also cannot grant admin access.
   const isAdmin = (authenticatedUser.roles || []).includes('admin');
   return isOwner || isAdmin;
 }
@@ -55,10 +56,12 @@ exports.profile = function (profile, authenticatedUser) {
     replyRate: profile.replyRate || null,
     replyTime: profile.replyTime || null,
     avatarUploaded: Boolean(profile.avatarUploaded),
+    // Stryker disable next-line ArrayDeclaration: placeholder entries have no tribe and are filtered out, like the empty list.
     member: (profile.member || []).map(circleMembership).filter(Boolean),
   };
 
   if (canViewAccountDetails(profile, authenticatedUser)) {
+    presented.nostrNpub = profile.nostrNpub || null;
     presented.email = profile.email || null;
     presented.emailTemporary = profile.emailTemporary || null;
     presented.newsletter = Boolean(profile.newsletter);
