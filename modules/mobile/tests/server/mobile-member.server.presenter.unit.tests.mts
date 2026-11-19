@@ -68,6 +68,7 @@ describe('Mobile member presenter', function () {
           replyRate: '82%',
           replyTime: '4 hours',
           avatarUploaded: true,
+          nostrNpub: 'npub1example',
           email: 'mobile.member@example.org',
           emailTemporary: 'new.mobile.member@example.org',
           newsletter: true,
@@ -94,6 +95,7 @@ describe('Mobile member presenter', function () {
         replyRate: '82%',
         replyTime: '4 hours',
         avatarUploaded: true,
+        nostrNpub: 'npub1example',
         email: 'mobile.member@example.org',
         emailTemporary: 'new.mobile.member@example.org',
         newsletter: true,
@@ -158,6 +160,7 @@ describe('Mobile member presenter', function () {
         email: 'mobile.member@example.org',
         emailTemporary: 'new.mobile.member@example.org',
         newsletter: true,
+        nostrNpub: 'npub1example',
       },
       {
         _id: 'viewer-id',
@@ -165,6 +168,7 @@ describe('Mobile member presenter', function () {
       },
     );
 
+    profile.should.not.have.property('nostrNpub');
     profile.should.not.have.property('email');
     should.not.exist((profile as Record<string, unknown>).emailTemporary);
     should.not.exist((profile as Record<string, unknown>).newsletter);
@@ -180,6 +184,7 @@ describe('Mobile member presenter', function () {
       { _id: 'viewer-id' },
     );
 
+    profile.should.not.have.property('nostrNpub');
     profile.should.not.have.property('email');
   });
 
@@ -195,9 +200,34 @@ describe('Mobile member presenter', function () {
         roles: ['admin'],
       },
     );
+    profile.should.have.property('nostrNpub', null);
     (profile as { email?: string }).email!.should.equal(
       'mobile.member@example.org',
     );
+  });
+
+  it('returns a linked Nostr key to an administrator', function () {
+    mobileMember
+      .profile(
+        {
+          _id: 'profile-id',
+          username: 'mobile_member',
+          nostrNpub: 'npub1example',
+        },
+        { _id: 'admin-id', roles: ['admin'] },
+      )
+      .should.have.property('nostrNpub', 'npub1example');
+  });
+
+  it('returns an explicit null for an unlinked own-profile key', function () {
+    for (const nostrNpub of [undefined, null, '']) {
+      mobileMember
+        .profile(
+          { _id: 'profile-id', username: 'mobile_member', nostrNpub },
+          { _id: 'profile-id', roles: ['user'] },
+        )
+        .should.have.property('nostrNpub', null);
+    }
   });
 
   it('uses an empty membership list when the profile has none', function () {

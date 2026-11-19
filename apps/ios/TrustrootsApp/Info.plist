@@ -25,6 +25,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Trustroots uses Face ID to confirm it is you before revealing your Nostr private key for backup.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Trustroots uses your location only when you ask to centre the map around you.</string>
 	<key>UIApplicationSceneManifest</key>
