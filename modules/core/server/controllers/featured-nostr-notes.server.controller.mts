@@ -18,9 +18,8 @@ function articleId(address: string) {
   return createHash('sha256').update(address).digest('hex');
 }
 
-function validNote(event: Event | undefined): event is Event {
+function validNote(event: Event) {
   return (
-    !!event &&
     isEventId(event.id) &&
     Number.isInteger(event.created_at) &&
     event.created_at >= 0 &&
@@ -43,8 +42,6 @@ function readArticle(event: Event) {
     !identifier ||
     Buffer.byteLength(identifier) > 512 ||
     (published !== undefined && !/^\d+$/.test(published)) ||
-    !Number.isInteger(firstPublishedAt) ||
-    firstPublishedAt < 0 ||
     firstPublishedAt > event.created_at
   )
     return null;
@@ -78,12 +75,13 @@ async function publicNotes(
     authorUsername: usernames.get(note.npub),
     content: note.content,
     publishedAt: note.publishedAt.toISOString(),
-    ...(note.address && note.revisionId && note.revisionAt !== undefined
+    // Article metadata is written together on each publication.
+    ...(note.address
       ? {
           article: {
             identifier: note.address.split(':').slice(2).join(':'),
-            eventId: note.revisionId,
-            createdAt: note.revisionAt,
+            eventId: note.revisionId!,
+            createdAt: note.revisionAt!,
           },
         }
       : {}),
@@ -120,21 +118,24 @@ export const featureNote: RequestHandler = async (req, res) => {
     }
 
     const { identifier, ...article } = decoded;
-    const npub = nip19.npubEncode(event.pubkey);
+    const npub = nip19.npubEncode(String(event.pubkey));
     // A converted short note uses its original event ID as the identifier.
     // Attach a manually featured revision to that same row when it exists.
     const legacy = isEventId(identifier)
       ? await FeaturedNote.findOne({
-          _id: identifier,
+          _id: String(identifier),
           npub,
-          publishedAt: article.publishedAt,
-          $or: [{ address: article.address }, { address: { $exists: false } }],
+          publishedAt: new Date(Number(article.publishedAt)),
+          $or: [
+            { address: String(article.address) },
+            { address: { $exists: false } },
+          ],
         }).lean()
       : null;
     const initial =
       legacy ??
       (await FeaturedNote.findOneAndUpdate(
-        { _id: articleId(article.address) },
+        { _id: articleId(String(article.address)) },
         {
           $setOnInsert: {
             ...article,
@@ -160,9 +161,15 @@ export const featureNote: RequestHandler = async (req, res) => {
     ) {
       const updated = await FeaturedNote.findOneAndUpdate(
         {
-          _id: initial._id,
-          revisionId: initial.revisionId ?? { $exists: false },
-          featuredAt: initial.featuredAt,
+          _id: String(initial._id),
+          revisionId:
+            initial.revisionId === undefined
+              ? { $exists: false }
+              : String(initial.revisionId),
+          featuredAt:
+            initial.featuredAt === null
+              ? null
+              : new Date(Number(initial.featuredAt)),
           deletionId: { $exists: false },
         },
         {
@@ -195,11 +202,11 @@ export const featureNote: RequestHandler = async (req, res) => {
     return;
   }
 
-  const { id } = event;
-  const publishedAt = new Date(event.created_at * 1000);
+  const id = String(event.id);
+  const publishedAt = new Date(Number(event.created_at) * 1000);
   const address = `${FEATURED_ARTICLE_KIND}:${event.pubkey}:${id}`;
   const existingArticle = await FeaturedNote.findOne({
-    _id: articleId(address),
+    _id: articleId(String(address)),
     publishedAt,
   }).lean();
   if (existingArticle) {
@@ -271,9 +278,10 @@ export const reviseFeaturedNote: RequestHandler<{ id: string }> = async (
   }
 
   const article = readArticle(event);
-  const npub = nip19.npubEncode(event.pubkey);
+  const npub = nip19.npubEncode(String(event.pubkey));
+  const noteId = String(id);
   const note = await FeaturedNote.findOne({
-    _id: id,
+    _id: noteId,
     featuredAt: { $ne: null },
     npub,
   }).lean();
@@ -308,7 +316,7 @@ export const reviseFeaturedNote: RequestHandler<{ id: string }> = async (
   }
   const updated = await FeaturedNote.findOneAndUpdate(
     {
-      _id: id,
+      _id: noteId,
       featuredAt: { $ne: null },
       revisionId: note.revisionId ?? { $exists: false },
     },
