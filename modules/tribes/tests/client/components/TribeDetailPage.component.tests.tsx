@@ -152,7 +152,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       />,
     );
     const link = await screen.findByRole('link', {
-      name: 'Example Organiser @example-organiser',
+      name: /^Example Organiser\s*@example-organiser$/,
     });
     expect(link).toHaveAttribute('href', '/profile/example-organiser');
     expect(link).toHaveClass('member-search-card');
@@ -168,7 +168,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
     expect(
       screen.getByRole('link', {
-        name: 'Example Organiser @example-organiser',
+        name: /^Example Organiser\s*@example-organiser$/,
       }),
     ).toBeVisible();
   });

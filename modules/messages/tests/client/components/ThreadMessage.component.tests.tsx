@@ -54,7 +54,7 @@ describe('<ThreadMessage />', function () {
     );
 
     const profileLink = screen.getByRole('link', {
-      name: 'Traveler @travel',
+      name: /^Traveler\s*@travel$/,
     });
 
     expect(profileLink).toHaveAttribute('href', '/profile/travel');

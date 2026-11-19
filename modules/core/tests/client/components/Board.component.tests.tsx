@@ -10,6 +10,9 @@ vi.mock('@/modules/core/client/services/client-runtime', () => ({
 
 const mockedBroadcastClientEvent = vi.mocked(broadcastClientEvent);
 
+const boardPhotoUrl = new URL('/img/board/flickr-bokeh.jpg', document.baseURI);
+const boardBackgroundImage = `url("${boardPhotoUrl.href}")`;
+
 describe('<Board />', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -34,7 +37,7 @@ describe('<Board />', () => {
     expect(board).toHaveClass('small-screen-bad-background');
     await waitFor(() =>
       expect(board).toHaveStyle({
-        backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
+        'background-image': boardBackgroundImage,
       }),
     );
     expect(mockedBroadcastClientEvent).toHaveBeenCalledWith(
@@ -58,8 +61,8 @@ describe('<Board />', () => {
 
     await waitFor(() =>
       expect(screen.getByTestId('board')).toHaveStyle({
-        minHeight: '120px',
-        backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
+        'min-height': '120px',
+        'background-image': boardBackgroundImage,
       }),
     );
 
@@ -84,7 +87,7 @@ describe('<Board />', () => {
 
     await waitFor(() =>
       expect(screen.getByTestId('board')).toHaveStyle({
-        backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
+        'background-image': boardBackgroundImage,
       }),
     );
     expect(mockedBroadcastClientEvent).toHaveBeenCalledWith(
@@ -102,7 +105,7 @@ describe('<Board />', () => {
 
     await waitFor(() =>
       expect(screen.getByTestId('board')).toHaveStyle({
-        backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
+        'background-image': boardBackgroundImage,
       }),
     );
   });

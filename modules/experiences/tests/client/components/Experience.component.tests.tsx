@@ -49,7 +49,7 @@ describe('<Experience />', () => {
     );
 
     expect(
-      screen.getByRole('link', { name: 'Alice Example @alice' }),
+      screen.getByRole('link', { name: /^Alice Example\s*@alice$/ }),
     ).toBeInTheDocument();
     expect(screen.getByText('Lovely person to host.')).toBeInTheDocument();
     expect(screen.getByText('Thanks, was great!')).toBeInTheDocument();
