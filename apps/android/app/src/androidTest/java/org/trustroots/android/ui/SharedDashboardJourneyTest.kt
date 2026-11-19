@@ -1,6 +1,9 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -47,17 +50,18 @@ class SharedDashboardJourneyTest {
             override fun exit() { exited = true }
         }
         compose.setContent { SharedComposeRoot(gateway, "sample-member", null) }
-        compose.onNodeWithText("Welcome to Trustroots").assertIsDisplayed()
+        compose.onNode(hasText("Home") and !hasClickAction()).assertIsDisplayed()
         compose.onNodeWithText("Trustroots updates").assertDoesNotExist()
         compose.onNodeWithText("Connections on the map").assertDoesNotExist()
         compose.onNodeWithText("Learn about Nostroots").assertDoesNotExist()
-        compose.onNodeWithText("My profile").performScrollTo().performClick()
+        compose.onNodeWithText("My profile").assertIsDisplayed().performClick()
         compose.onNodeWithText("Profile unavailable").assertIsDisplayed()
         compose.onNodeWithText("Back").performClick()
-        compose.onNodeWithText("Messages").performScrollTo().performClick()
-        compose.onNodeWithText("Back").performClick()
-        compose.onNodeWithText("Welcome to Trustroots").assertIsDisplayed()
-        compose.onNodeWithText("Open native app").performClick()
+        compose.onNode(hasText("Messages") and hasClickAction()).assertIsDisplayed().performClick()
+        compose.onNode(hasText("Messages") and hasClickAction()).assertIsSelected()
+        compose.onNode(hasText("Home") and hasClickAction()).performClick().assertIsSelected()
+        compose.onNode(hasText("Home") and !hasClickAction()).assertIsDisplayed()
+        compose.onNodeWithText("Exit shared pilot").performClick()
         assertEquals(true, exited)
     }
 }

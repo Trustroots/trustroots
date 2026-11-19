@@ -96,7 +96,7 @@ SHALL remain unchanged during the pilot.
 - **WHEN** a signed-in member opens the shared pilot
 - **THEN** Home offers My profile and Messages
 - **AND** opening profile or messages and going Back returns to Home
-- **AND** Open native app exits using the existing host callback
+- **AND** Exit shared pilot exits using the existing host callback
 
 #### Scenario: A member signs in from the shared pilot
 
@@ -119,3 +119,14 @@ The shared dashboard SHALL show the public featured Nostr feed and use the same 
 
 - **WHEN** either discovery request fails
 - **THEN** the other section and core navigation remain independently usable
+
+### Requirement: Shared pilot provides bottom navigation
+
+The signed-in shared pilot SHALL provide persistent bottom tabs for Home,
+Messages and My profile.
+
+#### Scenario: Switch from a shared journey to Home
+
+- **GIVEN** a signed-in member is reading their inbox or profile
+- **WHEN** they select the Home tab
+- **THEN** the dashboard is displayed and the Home tab is selected

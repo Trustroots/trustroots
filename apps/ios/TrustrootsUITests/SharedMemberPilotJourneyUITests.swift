@@ -18,23 +18,23 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
-        XCTAssertTrue(app.buttons["My profile"].waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
         XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
         let home = XCTAttachment(screenshot: app.screenshot())
         home.name = "shared-member-dashboard"
         home.lifetime = .keepAlways
         add(home)
-        app.buttons["My profile"].tap()
+        element(labelled: "My profile", in: app).tap()
         let profile = element(labelled: "Mira Example", in: app)
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         app.buttons["Back"].tap()
-        app.buttons["Open native app"].tap()
+        app.buttons["Exit shared pilot"].tap()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
 
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["My profile"].waitForExistence(timeout: 10))
-        app.buttons["Messages"].tap()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "Messages", in: app).tap()
         XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10))
         app.buttons["View profile"].tap()
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 10))
@@ -52,14 +52,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["My profile"].waitForExistence(timeout: 10))
-        app.buttons["Messages"].tap()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "Messages", in: app).tap()
         app.buttons["Open conversation"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
 
         app.buttons["Back"].tap()
         app.buttons["Back"].tap()
-        app.buttons["My profile"].tap()
+        element(labelled: "My profile", in: app).tap()
         app.buttons["Sign out"].tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
 
@@ -147,8 +147,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func signOutIfAlreadySignedIn(_ app: XCUIApplication) {
-        if app.buttons["My profile"].waitForExistence(timeout: 2) {
-            app.buttons["My profile"].tap()
+        if element(labelled: "My profile", in: app).waitForExistence(timeout: 2) {
+            element(labelled: "My profile", in: app).tap()
         }
         let signOut = app.buttons["Sign out"]
         guard signOut.waitForExistence(timeout: 2) else { return }

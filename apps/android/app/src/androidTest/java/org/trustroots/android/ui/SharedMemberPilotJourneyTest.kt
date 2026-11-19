@@ -115,7 +115,7 @@ class SharedMemberPilotJourneyTest {
         compose.onNodeWithTag("pilot-password").performTextReplacement("fictional-password")
         compose.onNode(hasText("Sign in") and hasClickAction()).performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Welcome to Trustroots").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("Home").fetchSemanticsNodes().isNotEmpty()
         }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional Trustroots update.").fetchSemanticsNodes().isNotEmpty() &&
@@ -132,7 +132,7 @@ class SharedMemberPilotJourneyTest {
             compose.onAllNodesWithText("A friendly fictional profile.").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Back").performClick()
-        compose.onNodeWithText("My profile").performScrollTo().performClick()
+        compose.onNodeWithText("My profile").assertIsDisplayed().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional welcome.").fetchSemanticsNodes().isNotEmpty()
         }
@@ -170,9 +170,8 @@ class SharedMemberPilotJourneyTest {
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Back").performClick()
-        compose.onNodeWithText("Back").performClick()
-        compose.onNodeWithText("Welcome to Trustroots").assertIsDisplayed()
-        compose.onNodeWithText("Open native app").performClick()
+        compose.onNode(hasText("Home") and !hasClickAction()).assertIsDisplayed()
+        compose.onNodeWithText("Exit shared pilot").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
         }

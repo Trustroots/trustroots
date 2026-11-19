@@ -219,13 +219,13 @@ The pilot is available by explicit launch option in debug builds:
 - On Android, run `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_MEMBER_PILOT true`.
 - On iOS, add `--shared-member-pilot` to the Xcode scheme's launch arguments, or
   run `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-member-pilot`.
-- Choose **Open native app** on the pilot's first screen to return to the
+- Choose **Exit shared pilot** on the pilot's first screen to return to the
   existing app with the same session. Android also supports system Back.
 
 Use an existing test account or a controlled backend with fictional data to
 compare both hosts. Launching the pilot with a saved session opens the
-member dashboard. **My profile** opens the existing shared profile; **Messages**
-opens the inbox. Home also shows the website's featured Nostr notes and recent
+member dashboard. The bottom bar provides **Home**, **Messages** and **My profile**
+throughout the signed-in pilot. Home also shows the website's featured Nostr notes and recent
 connections, with a native map of approximate locations for connections who
 are hosting or happy to meet. The app uses the same eligibility rules and
 keeps the core shortcuts available if either feed is unavailable.
