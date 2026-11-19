@@ -61,6 +61,12 @@ vi.mock('@/modules/tribes/client/components/HackerspaceMap', () => ({
   },
 }));
 
+vi.mock('@/modules/tribes/client/components/TopicChat', () => ({
+  default: function MockTopicChat() {
+    return null;
+  },
+}));
+
 vi.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-indicator" />,
