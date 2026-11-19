@@ -55,6 +55,7 @@ import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.browser.LocalBrowserNostrSession
 import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.updates.ApkUpdateAlerts
@@ -88,6 +89,7 @@ internal fun AccountSettingsScreen(
     },
 ) {
     val context = LocalContext.current
+    val browserNostrSession = LocalBrowserNostrSession.current
     val uriHandler = LocalUriHandler.current
     val owner = requireNavigationViewModelStoreOwner("Account must be hosted by its decorated Menu Navigation 3 entry.")
     val platform = remember(context.applicationContext, previewUpdateAlerts, isUpdateAlertsEnabled, setUpdateAlertsEnabled, checkPreviewUpdates, disableMessageAlerts) {
@@ -307,7 +309,12 @@ internal fun AccountSettingsScreen(
                     Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
                 }
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
-                Button(onClick = { leave { viewModel.onEvent(AccountEvent.SignOut) } }, enabled = !state.isSigningOut) {
+                Button(onClick = {
+                    leave {
+                        browserNostrSession?.pause()
+                        viewModel.onEvent(AccountEvent.SignOut)
+                    }
+                }, enabled = !state.isSigningOut) {
                     Text(signOutLabel)
                 }
                 Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))

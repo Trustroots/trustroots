@@ -34,8 +34,12 @@ class AndroidNostrKeysTest {
             val record = requireNotNull(prefs.getString(scope.storageAccount, null))
             assertFalse(record.contains(imported) || record.contains(nsec))
             val other = differentMember.generate()
+            val oldRevision = original.revision()
             same.remove()
             assertNull(original.publicKey())
+            same.generate()
+            assertNull(original.browserPublicKey(oldRevision))
+            assertEquals(64, original.browserPublicKey(original.revision())?.length)
             assertEquals(other, differentMember.publicKey())
         } finally {
             original.remove()

@@ -119,6 +119,7 @@ internal class AppSessionViewModel(
 
     private var restoreJob: Job? = null
     private var activeBackendURL = normaliseBackendURL(initialBackendURL)
+    private var signingBackendURL: String? = null
     private var isCleared = false
 
     init {
@@ -129,7 +130,11 @@ internal class AppSessionViewModel(
     fun onEvent(event: AppSessionEvent) {
         if (isCleared) return
         when (event) {
-            is AppSessionEvent.BackendChanged -> activeBackendURL = normaliseBackendURL(event.backendURL)
+            is AppSessionEvent.BackendChanged -> {
+                val backend = normaliseBackendURL(event.backendURL)
+                if (backend != activeBackendURL) signingBackendURL = null
+                activeBackendURL = backend
+            }
             is AppSessionEvent.SignedIn -> {
                 if (normaliseBackendURL(event.backendURL) == activeBackendURL) signedIn(event.session)
             }
@@ -148,9 +153,11 @@ internal class AppSessionViewModel(
     @MainThread
     private fun restore() {
         // The activity owns restoration once; cancellation prevents stale results.
+        val restoringBackend = activeBackendURL
         restoreJob = requestScope.launch {
             val restored = withContext(ioDispatcher) { operations.loadSession() }
             currentCoroutineContext().ensureActive()
+            signingBackendURL = restoringBackend.takeIf { restored != null && it == activeBackendURL }
             mutableState.value = mutableState.value.copy(session = restored, isStarting = false)
         }
     }
@@ -159,6 +166,7 @@ internal class AppSessionViewModel(
     private fun signedIn(session: MemberSession) {
         cancelRestore()
         operations.saveSession(session)
+        signingBackendURL = activeBackendURL
         mutableState.value = AppSessionUiState(isStarting = false, session = session)
         operations.clearSignInDestination()
     }
@@ -177,6 +185,7 @@ internal class AppSessionViewModel(
         operations.clearSession()
         operations.clearSignInDestination()
         operations.clearShellAccount()
+        signingBackendURL = null
         mutableState.value = AppSessionUiState(
             isStarting = false,
             signedOutMessage = if (expired) UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED) else null,
@@ -187,6 +196,14 @@ internal class AppSessionViewModel(
     private fun cancelRestore() {
         restoreJob?.cancel()
         restoreJob = null
+    }
+
+    @MainThread
+    fun canSignFor(session: MemberSession, backend: String): Boolean {
+        val current = mutableState.value.session ?: return false
+        return signingBackendURL == normaliseBackendURL(backend) &&
+            current.member.username == session.member.username &&
+            session.sessionId != null && current.sessionId == session.sessionId
     }
 
     private fun currentSessionForSource(source: AppSessionSource): MemberSession? {
