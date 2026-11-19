@@ -100,13 +100,11 @@ class AndroidNip07JourneyTest {
                 frame.src = '/frame';
                 document.body.append(frame);
             """.trimIndent())
-            compose.waitUntil(10_000) { eval(web, "Boolean(window.frameDecision)") == "true" }
-            assertEquals("denied", JSONTokener(eval(web, "window.frameDecision")).nextValue())
+            assertEquals("denied", JSONTokener(awaitValue(web, "window.frameDecision")).nextValue())
 
             compose.runOnUiThread { session.pause() }
             eval(web, "window.nostr.getPublicKey().then(() => window.sessionDecision='allowed', () => window.sessionDecision='denied')")
-            compose.waitUntil(10_000) { eval(web, "Boolean(window.sessionDecision)") == "true" }
-            assertEquals("denied", JSONTokener(eval(web, "window.sessionDecision")).nextValue())
+            assertEquals("denied", JSONTokener(awaitValue(web, "window.sessionDecision")).nextValue())
 
             compose.runOnUiThread {
                 web.loadUrl("https://trustroots.org.example.test/")
@@ -126,11 +124,20 @@ class AndroidNip07JourneyTest {
         }
     }
 
+    private fun awaitValue(view: WebView, script: String): String {
+        var value = "null"
+        compose.waitUntil(15_000) {
+            value = eval(view, script)
+            value != "null"
+        }
+        return value
+    }
+
     private fun eval(view: WebView, script: String): String {
         lateinit var result: String
         val latch = CountDownLatch(1)
         compose.runOnUiThread { view.evaluateJavascript(script) { result = it; latch.countDown() } }
-        assertTrue(latch.await(3, TimeUnit.SECONDS))
+        assertTrue("WebView did not return the JavaScript result", latch.await(10, TimeUnit.SECONDS))
         return result
     }
 

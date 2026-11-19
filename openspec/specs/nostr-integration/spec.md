@@ -4,7 +4,9 @@
 
 Let Trustroots members connect their Nostr identity and discover community
 notes through Nostroots while preserving the privacy of non-public profiles.
+
 ## Requirements
+
 ### Requirement: Nostr public-key association
 
 The system SHALL let a member associate one valid Nostr public key (`npub`) with their profile, canonicalise the stored public-key value, and prevent the same public key from being associated with more than one member. Adding or replacing a non-empty key SHALL require a valid signed, fresh, single-use server challenge bound to the authenticated member and requested key. The editor SHALL support NIP-07, NIP-46 bunker signing and externally signed events without requesting private keys or publishing proofs. Existing unchanged keys and removal SHALL NOT require proof.
@@ -253,3 +255,50 @@ The Nostr admin page SHALL let administrators insert absolute HTTP or HTTPS link
 
 - **WHEN** the original author first edits a featured kind 1 note
 - **THEN** the editor creates an addressable update and the homepage entry displays the revised content
+
+### Requirement: Shared policy for Nostranslation signing approvals
+
+The shared native policy SHALL accept a signing request for review only from the
+authenticated peer of an approved pairing owned by the active account. A
+reviewable event SHALL be kind `27235`, have empty content, and contain exactly
+one destination, method and SHA-256 payload tag. The policy SHALL restrict it to
+the Nostranslation production review endpoint and method POST. The event's
+timestamp SHALL be within 60 seconds of the current time, both at review and
+approval. The approval SHALL be usable once and SHALL expire when the native
+signing session or pairing is invalidated.
+
+#### Scenario: Approved client requests a translation signature
+
+- **WHEN** the authenticated peer submits a current Nostranslation review POST event
+- **THEN** the shared policy prepares a review showing the destination
+- **AND** the event can be handed to the signer once after explicit approval
+
+#### Scenario: Request changes or expires before approval
+
+- **WHEN** the event is stale or the native account, key or pairing changes before approval
+- **THEN** the shared policy rejects the approval
+
+#### Scenario: An unrelated event is requested
+
+- **WHEN** the request comes from a different peer or targets another operation or endpoint
+- **THEN** the shared policy offers no approval
+
+### Requirement: Android Nostranslation pairing wire adapter
+
+The Android wire adapter SHALL accept Nostranslation client links for the
+Trustroots relay and the translation signing permission. It SHALL acknowledge
+a user-approved connection with an encrypted kind `24133` response and a
+separate transport key. Before decrypting a request it SHALL verify the event
+ID, sender signature, paired peer and transport recipient. The adapter SHALL
+expose only the connection, public-key and event signing RPC methods to the
+native caller. Event signing still requires the shared approval policy.
+
+#### Scenario: An approved link receives its handshake
+
+- **WHEN** the native caller confirms a valid Nostranslation connection link
+- **THEN** the adapter can produce an encrypted reply containing its pairing secret
+
+#### Scenario: An incoming request is altered or addressed elsewhere
+
+- **WHEN** the event signature, author or recipient differs from the approved pairing
+- **THEN** the adapter rejects the event before interpreting its content
