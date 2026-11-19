@@ -24,6 +24,11 @@ on:
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
+    inputs:
+      minimum_ios:
+        description: Run on iOS 17.0, the minimum deployment target
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,23 +46,37 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Select an iPhone simulator
+        id: simulator
+        shell: bash
+        env:
+          TEST_MINIMUM_IOS: ${{ inputs.minimum_ios }}
+        run: |
+          if [[ "$TEST_MINIMUM_IOS" == true ]]; then
+            runtime_id=com.apple.CoreSimulator.SimRuntime.iOS-17-0
+            runtime_available() {
+              xcrun simctl list runtimes -j | jq -e --arg id "$runtime_id" \
+                'any(.runtimes[]; .identifier == $id and .isAvailable)' >/dev/null
+            }
+            if ! runtime_available; then
+              xcodebuild -downloadPlatform iOS -buildVersion 17.0
+            fi
+            if ! runtime_available; then
+              xcrun simctl list runtimes
+              echo "::error::The exact iOS 17.0 simulator runtime is unavailable."
+              exit 1
+            fi
+            device_id="$(xcrun simctl create 'Trustroots iOS 17.0' \
+              com.apple.CoreSimulator.SimDeviceType.iPhone-15 "$runtime_id")"
+          else
+            device_id="$(xcrun simctl list devices available -j | jq -er \
+              'first(.devices[][] | select(.name | startswith("iPhone")) | .udid)')"
+          fi
+          test -n "$device_id"
+          echo "id=$device_id" >> "$GITHUB_OUTPUT"
       - name: Compile arm64 iOS device framework
         working-directory: apps/android
         run: ./gradlew :shared:linkReleaseFrameworkIosArm64
-      - name: Select an iPhone simulator
-        id: simulator
-        run: |
-          device_id="$(xcrun simctl list devices available -j | ruby -rjson -e '
-            JSON.parse($stdin.read).fetch("devices").each_value do |devices|
-              iphone = devices.find { |device| device.fetch("name").start_with?("iPhone") }
-              if iphone
-                puts iphone.fetch("udid")
-                break
-              end
-            end
-          ')"
-          test -n "$device_id"
-          echo "id=$device_id" >> "$GITHUB_OUTPUT"
       - name: Run iOS tests
         working-directory: apps/ios
         env:
