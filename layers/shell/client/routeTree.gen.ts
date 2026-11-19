@@ -29,6 +29,7 @@ import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as SuspendedRouteImport } from './routes/suspended'
 import { Route as VolunteeringRouteImport } from './routes/volunteering'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -200,6 +201,11 @@ const StatisticsRoute = StatisticsRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuspendedRoute = SuspendedRouteImport.update({
+  id: '/suspended',
+  path: '/suspended',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VolunteeringRoute = VolunteeringRouteImport.update({
@@ -590,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/statistics': typeof StatisticsRoute
   '/support': typeof SupportRoute
+  '/suspended': typeof SuspendedRoute
   '/volunteering': typeof VolunteeringRoute
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
@@ -683,6 +690,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/statistics': typeof StatisticsRoute
   '/support': typeof SupportRoute
+  '/suspended': typeof SuspendedRoute
   '/volunteering': typeof VolunteeringRoute
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
@@ -778,6 +786,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/statistics': typeof StatisticsRoute
   '/support': typeof SupportRoute
+  '/suspended': typeof SuspendedRoute
   '/volunteering': typeof VolunteeringRoute
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
@@ -874,6 +883,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/statistics'
     | '/support'
+    | '/suspended'
     | '/volunteering'
     | '/welcome'
     | '/admin/acquisition-stories'
@@ -967,6 +977,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/statistics'
     | '/support'
+    | '/suspended'
     | '/volunteering'
     | '/welcome'
     | '/admin/acquisition-stories'
@@ -1061,6 +1072,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/statistics'
     | '/support'
+    | '/suspended'
     | '/volunteering'
     | '/welcome'
     | '/admin/acquisition-stories'
@@ -1156,6 +1168,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   StatisticsRoute: typeof StatisticsRoute
   SupportRoute: typeof SupportRoute
+  SuspendedRoute: typeof SuspendedRoute
   VolunteeringRoute: typeof VolunteeringRoute
   WelcomeRoute: typeof WelcomeRoute
   AdminAcquisitionStoriesRoute: typeof AdminAcquisitionStoriesRoute
@@ -1358,6 +1371,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suspended': {
+      id: '/suspended'
+      path: '/suspended'
+      fullPath: '/suspended'
+      preLoaderRoute: typeof SuspendedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/volunteering': {
@@ -1930,6 +1950,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   StatisticsRoute: StatisticsRoute,
   SupportRoute: SupportRoute,
+  SuspendedRoute: SuspendedRoute,
   VolunteeringRoute: VolunteeringRoute,
   WelcomeRoute: WelcomeRoute,
   AdminAcquisitionStoriesRoute: AdminAcquisitionStoriesRoute,

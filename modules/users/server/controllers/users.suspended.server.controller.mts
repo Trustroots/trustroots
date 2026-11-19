@@ -8,11 +8,9 @@ interface SuspendedRequest {
 }
 
 interface SuspendedResponse {
-  status?(code: number): {
-    format(formatters: Record<string, () => void>): unknown;
-  };
-  render?(view: string, options: { message: string }): unknown;
-  json?(body: { message: string }): unknown;
+  format?(formatters: Record<string, () => void>): unknown;
+  redirect?(url: string): unknown;
+  status?(code: number): { json(body: { message: string }): unknown };
 }
 
 interface SuspendedController {
@@ -48,16 +46,13 @@ service.invalidateSuspendedSessions = function (req, res, next) {
       // Express session middleware way of removing the session
       // https://github.com/expressjs/session#sessiondestroycallback
       return req.session!.destroy!(function () {
-        const suspendedMessage = errorService.getErrorMessageByKey('suspended');
-        res.status!(403).format({
+        res.format!({
           'text/html'() {
-            res.render!('suspended.server.view.html', {
-              message: suspendedMessage,
-            });
+            res.redirect!('/suspended');
           },
           'application/json'() {
-            res.json!({
-              message: suspendedMessage,
+            res.status!(403).json({
+              message: errorService.getErrorMessageByKey('suspended'),
             });
           },
         });
