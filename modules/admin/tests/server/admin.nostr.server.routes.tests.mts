@@ -187,6 +187,7 @@ describe('Admin featured Nostr notes', () => {
       { ...event, id: { toString: null, valueOf: null } },
       { ...event, id: 'invalid' },
       { ...event, created_at: 1.5 },
+      signedNote(1.5, event.content),
       signedNote(-1, event.content),
       signedNote(253402300800, event.content),
       { ...event, content: null },

@@ -20,7 +20,6 @@ function articleId(address: string) {
 
 function validNote(event: Event) {
   return (
-    isEventId(event.id) &&
     Number.isInteger(event.created_at) &&
     event.created_at >= 0 &&
     event.created_at <= 253402300799 &&
