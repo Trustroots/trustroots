@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithQueries as render } from '@/testutils/client/query.testutil';
 
 import '@/config/client/i18n';
@@ -266,6 +266,80 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       label: 'Example walkers',
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens an empty description and dismisses the editor with Escape', async () => {
+    getMock.mockResolvedValue({
+      ...tribe,
+      description: undefined,
+      canEdit: true,
+    });
+    render(
+      <TribeDetailPage
+        circle={tribe.slug}
+        user={user}
+        onMembershipUpdated={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit circle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Edit circle' });
+    const description = within(dialog).getByRole('textbox', {
+      name: 'Description',
+    });
+    expect(description).toHaveValue('');
+    fireEvent.submit(description.closest('form')!);
+    expect(editTribe).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(description, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the current circle when a previous circle save finishes', async () => {
+    getMock.mockResolvedValue({ ...tribe, canEdit: true });
+    let finishSave!: (saved: TribeSummary) => void;
+    vi.mocked(editTribe).mockReturnValueOnce(
+      new Promise(resolve => {
+        finishSave = resolve;
+      }),
+    );
+    const onMembershipUpdated = vi.fn();
+    const { rerender } = render(
+      <TribeDetailPage
+        circle={tribe.slug}
+        user={user}
+        onMembershipUpdated={onMembershipUpdated}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit circle' }));
+    const editor = within(screen.getByRole('dialog', { name: 'Edit circle' }));
+    fireEvent.change(editor.getByRole('textbox', { name: 'Circle name' }), {
+      target: { value: 'Example walkers' },
+    });
+    fireEvent.click(editor.getByRole('button', { name: 'Save circle' }));
+    expect(editTribe).toHaveBeenCalledWith(tribe.slug, {
+      label: 'Example walkers',
+    });
+
+    getMock.mockResolvedValue({
+      _id: 'tribe-2',
+      slug: 'readers',
+      label: 'Example readers',
+      count: 3,
+    });
+    rerender(
+      <TribeDetailPage
+        circle="readers"
+        user={user}
+        onMembershipUpdated={onMembershipUpdated}
+      />,
+    );
+    await screen.findByRole('heading', { name: 'Example readers' });
+
+    await act(async () => finishSave({ ...tribe, label: 'Example walkers' }));
+    expect(
+      screen.getByRole('heading', { name: 'Example readers' }),
+    ).toBeVisible();
   });
 
   it('preserves safe links in the circle description', async () => {
