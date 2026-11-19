@@ -1,6 +1,8 @@
 import CryptoKit
 import Foundation
 import Security
+import LocalAuthentication
+import TrustrootsShared
 #if canImport(NostrSDK)
 import NostrSDK
 #endif
@@ -10,6 +12,9 @@ enum NostrIdentityError: Error, LocalizedError {
     case missingKey
     case keychain(OSStatus)
     case unsupported
+    case inactiveSession
+    case existingKey
+    case authenticationUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -17,116 +22,227 @@ enum NostrIdentityError: Error, LocalizedError {
         case .missingKey: return "Create or import a Nostr key first."
         case .keychain: return "The Nostr key could not be stored on this device."
         case .unsupported: return "Nostr signing support is not available in this build."
+        case .inactiveSession: return "Sign in again before using your Nostr key."
+        case .existingKey: return "Remove the current local key before creating or claiming another."
+        case .authenticationUnavailable: return "Set up a device passcode to back up your Nostr key."
         }
     }
+}
+
+// A narrow native port keeps Keychain outside shared Kotlin and makes failures testable.
+protocol NostrKeyStorage {
+    func read(account: String) throws -> String?
+    func save(secret: String, account: String) throws
+    func remove(account: String) throws
 }
 
 @MainActor
 final class NostrIdentityManager: ObservableObject {
     static let shared = NostrIdentityManager()
+    static let legacyAccount = "nip07.private-key.hex"
+    static let legacyOwnerAccount = legacyAccount + ".owner-v1"
 
     @Published private(set) var publicKey: String?
     @Published private(set) var npub: String?
-    private let keyStore = NostrKeyStore()
+    @Published private(set) var legacyNpub: String?
+    @Published private(set) var errorMessage: String?
+    @Published private(set) var revision: Int64 = 0
+    private let signingSession = NostrSigningSession()
+    private let keyStore: NostrKeyStorage
+    private let clearPermissions: () -> Void
 
-    private init() {
-        refresh()
+    init(
+        keyStore: NostrKeyStorage = NostrKeyStore(),
+        clearPermissions: @escaping () -> Void = { NIP07PermissionStore.shared.clear() }
+    ) {
+        self.keyStore = keyStore
+        self.clearPermissions = clearPermissions
     }
 
     var hasKey: Bool { publicKey != nil }
+    var isActive: Bool { signingSession.scope != nil }
+
+    func activate(serverURLString: String, username: String) {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
+              var origin = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false),
+              !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            pause()
+            return
+        }
+        origin.path = ""
+        origin.query = nil
+        origin.fragment = nil
+        // Explicit default ports identify the same server as their omitted form.
+        if (origin.scheme == "https" && origin.port == 443) || (origin.scheme == "http" && origin.port == 80) {
+            origin.port = nil
+        }
+        guard let server = origin.string else { pause(); return }
+        let account = NostrAccountScope(serverOrigin: server, username: username)
+        if signingSession.activate(account: account) {
+            identityChanged()
+            refresh()
+        }
+    }
+
+    func pause() {
+        signingSession.pause()
+        identityChanged()
+        publicKey = nil
+        npub = nil
+        legacyNpub = nil
+        errorMessage = nil
+    }
+
+    func isCurrent(_ capturedRevision: Int64) -> Bool {
+        signingSession.isCurrent(capturedRevision: capturedRevision)
+    }
 
     func generate() throws {
-        try keyStore.save(secret: NostrKeyCodec.generateSecret())
-        NIP07PermissionStore.shared.clear()
-        refresh()
+        try storeNewSecret(NostrKeyCodec.generateSecret())
     }
 
     func `import`(_ input: String) throws {
-        try keyStore.save(secret: NostrKeyCodec.importSecret(input))
-        NIP07PermissionStore.shared.clear()
+        try storeNewSecret(NostrKeyCodec.importSecret(input))
+    }
+
+    private func storeNewSecret(_ secret: String) throws {
+        let account = try activeAccount()
+        guard try keyStore.read(account: account) == nil else { throw NostrIdentityError.existingKey }
+        // Reject out-of-range scalars before storing, including all-zero hex imports.
+        _ = try NostrCrypto.publicKey(secret: secret)
+        try keyStore.save(secret: secret, account: account)
+        signingSession.invalidate()
+        identityChanged()
         refresh()
     }
 
     func remove() throws {
-        try keyStore.remove()
-        NIP07PermissionStore.shared.clear()
+        try keyStore.remove(account: activeAccount())
+        signingSession.invalidate()
+        identityChanged()
         refresh()
+    }
+
+    func claimLegacy() throws {
+        let account = try activeAccount()
+        guard try keyStore.read(account: account) == nil else { throw NostrIdentityError.existingKey }
+        let owner = try keyStore.read(account: Self.legacyOwnerAccount)
+        guard owner == nil || owner == account else { throw NostrIdentityError.existingKey }
+        guard let legacy = try keyStore.read(account: Self.legacyAccount) else { throw NostrIdentityError.missingKey }
+        _ = try NostrCrypto.publicKey(secret: legacy)
+        // Reserve ownership first, so interruption/deletion failure cannot let another
+        // account claim the same installation key. The owner can retry a failed copy.
+        if owner == nil { try keyStore.save(secret: account, account: Self.legacyOwnerAccount) }
+        try keyStore.save(secret: legacy, account: account)
+        // The scoped copy is durable before the only old copy can be removed.
+        signingSession.invalidate()
+        identityChanged()
+        do {
+            try keyStore.remove(account: Self.legacyAccount)
+        } catch {
+            refresh()
+            throw error
+        }
+        refresh()
+    }
+
+    func considerLegacy(linkedNpub: String?, capturedRevision: Int64) throws {
+        guard isCurrent(capturedRevision), !hasKey,
+              let linkedNpub, linkedNpub == legacyNpub else { return }
+        try claimLegacy()
     }
 
     func refresh() {
-        publicKey = keyStore.secret.flatMap { try? NostrCrypto.publicKey(secret: $0) }
-        npub = publicKey.flatMap { NostrCrypto.npub(publicKey: $0) }
+        publicKey = nil
+        npub = nil
+        legacyNpub = nil
+        errorMessage = nil
+        guard let account = signingSession.scope?.storageAccount else { return }
+        do {
+            if let secret = try keyStore.read(account: account) {
+                publicKey = try NostrCrypto.publicKey(secret: secret)
+                npub = publicKey.flatMap { NostrCrypto.npub(publicKey: $0) }
+            } else {
+                let owner = try keyStore.read(account: Self.legacyOwnerAccount)
+                if owner == nil || owner == account,
+                   let legacy = try keyStore.read(account: Self.legacyAccount) {
+                    legacyNpub = NostrCrypto.npub(publicKey: try NostrCrypto.publicKey(secret: legacy))
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
-    func secret() -> String? { keyStore.secret }
+    func secret() -> String? {
+        guard hasKey, let account = signingSession.scope?.storageAccount else { return nil }
+        return try? keyStore.read(account: account)
+    }
+
+    func backup(
+        authenticate: @escaping @MainActor () async throws -> Void = NostrIdentityManager.authenticateOwner
+    ) async throws -> String {
+        let capturedRevision = revision
+        guard hasKey, isCurrent(capturedRevision) else { throw NostrIdentityError.missingKey }
+        try await authenticate()
+        try Task.checkCancellation()
+        guard isCurrent(capturedRevision), let secret = secret() else { throw NostrIdentityError.inactiveSession }
+        return try NostrKeyCodec.nsec(secret: secret)
+    }
+
+    private static func authenticateOwner() async throws {
+        let context = LAContext()
+        defer { context.invalidate() }
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            throw NostrIdentityError.authenticationUnavailable
+        }
+        guard try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Back up your Nostr private key") else {
+            throw NostrIdentityError.authenticationUnavailable
+        }
+    }
+
+    private func activeAccount() throws -> String {
+        guard let account = signingSession.scope?.storageAccount else { throw NostrIdentityError.inactiveSession }
+        return account
+    }
+
+    private func identityChanged() {
+        revision = signingSession.revision
+        clearPermissions()
+    }
 }
 
-private final class NostrKeyStore {
+final class NostrKeyStore: NostrKeyStorage {
     private let service = "org.trustroots.trustrootsApp.nostr"
-    private let account = "nip07.private-key.hex"
-    private var simulatorFallbackKey: String { "\(service).\(account).simulator-fallback" }
 
-    var secret: String? {
-        var query = lookup
+    func read(account: String) throws -> String? {
+        var query = lookup(account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: AnyObject?
-        if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-           let data = result as? Data {
-            return String(data: data, encoding: .utf8)
-        }
-        #if targetEnvironment(simulator)
-        return UserDefaults.standard.string(forKey: simulatorFallbackKey)
-        #else
-        return nil
-        #endif
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess, let data = result as? Data,
+              let secret = String(data: data, encoding: .utf8) else { throw NostrIdentityError.keychain(status) }
+        return secret
     }
 
-    func save(secret: String) throws {
-        let data = Data(secret.utf8)
-        let status = SecItemCopyMatching(lookup as CFDictionary, nil)
-        if status == errSecSuccess {
-            let update = SecItemUpdate(lookup as CFDictionary, [kSecValueData as String: data] as CFDictionary)
-            guard update == errSecSuccess else {
-                try saveSimulatorFallback(secret, status: update)
-                return
-            }
-            return
-        }
-        var attributes = lookup
-        attributes[kSecValueData as String] = data
+    func save(secret: String, account: String) throws {
+        var attributes = lookup(account)
+        attributes[kSecValueData as String] = Data(secret.utf8)
         attributes[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        let create = SecItemAdd(attributes as CFDictionary, nil)
-        guard create == errSecSuccess else {
-            try saveSimulatorFallback(secret, status: create)
-            return
-        }
+        let status = SecItemAdd(attributes as CFDictionary, nil)
+        // Writes are insert-only: neither a failed read nor a migration may replace a key.
+        guard status == errSecSuccess else { throw NostrIdentityError.keychain(status) }
     }
 
-    func remove() throws {
-        let status = SecItemDelete(lookup as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            #if targetEnvironment(simulator)
-            UserDefaults.standard.removeObject(forKey: simulatorFallbackKey)
-            return
-            #else
-            throw NostrIdentityError.keychain(status)
-            #endif
-        }
-        #if targetEnvironment(simulator)
-        UserDefaults.standard.removeObject(forKey: simulatorFallbackKey)
-        #endif
+    func remove(account: String) throws {
+        let status = SecItemDelete(lookup(account) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else { throw NostrIdentityError.keychain(status) }
     }
 
-    private func saveSimulatorFallback(_ secret: String, status: OSStatus) throws {
-        #if targetEnvironment(simulator)
-        UserDefaults.standard.set(secret, forKey: simulatorFallbackKey)
-        #else
-        throw NostrIdentityError.keychain(status)
-        #endif
-    }
-
-    private var lookup: [String: Any] {
+    private func lookup(_ account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -138,15 +254,24 @@ private final class NostrKeyStore {
 enum NostrKeyCodec {
     private static let charset = Array("qpzry9x8gf2tvdw0s3jn54khce6mua7l")
 
-    static func generateSecret() -> String {
+    static func generateSecret() throws -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
-        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
-        return bytes.map { String(format: "%02x", $0) }.joined()
+        // SecRandom failures must never create a predictable identity.
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else { throw NostrIdentityError.keychain(status) }
+        let secret = bytes.map { String(format: "%02x", $0) }.joined()
+        _ = try NostrCrypto.publicKey(secret: secret)
+        return secret
     }
 
     static func importSecret(_ raw: String) throws -> String {
-        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if isSecretHex(value) { return value }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = trimmed.lowercased()
+        if isSecretHex(value) {
+            _ = try NostrCrypto.publicKey(secret: value)
+            return value
+        }
+        guard trimmed == value || trimmed == trimmed.uppercased() else { throw NostrIdentityError.invalidKey }
         guard value.hasPrefix("nsec1"), let separator = value.lastIndex(of: "1") else {
             throw NostrIdentityError.invalidKey
         }
@@ -163,12 +288,27 @@ enum NostrKeyCodec {
         }
         let bytes = convertBits(Array(values.dropLast(6)), from: 5, to: 8, pad: false)
         let secret = bytes.map { String(format: "%02x", $0) }.joined()
-        guard isSecretHex(secret) else { throw NostrIdentityError.invalidKey }
+        guard values.count == 58, isSecretHex(secret),
+              Array(values.dropLast(6)) == convertBits(bytes, from: 8, to: 5, pad: true) else { throw NostrIdentityError.invalidKey }
+        _ = try NostrCrypto.publicKey(secret: secret)
         return secret
     }
 
     static func isSecretHex(_ value: String) -> Bool {
         value.count == 64 && value.range(of: "^[0-9a-f]+$", options: .regularExpression) != nil
+    }
+
+    static func nsec(secret: String) throws -> String {
+        guard isSecretHex(secret) else { throw NostrIdentityError.invalidKey }
+        _ = try NostrCrypto.publicKey(secret: secret)
+        let bytes = stride(from: 0, to: secret.count, by: 2).map { offset -> UInt8 in
+            let start = secret.index(secret.startIndex, offsetBy: offset)
+            return UInt8(secret[start..<secret.index(start, offsetBy: 2)], radix: 16)!
+        }
+        let values = convertBits(bytes, from: 8, to: 5, pad: true)
+        let checksum = polymod(expand("nsec") + values + Array(repeating: 0, count: 6)) ^ 1
+        let suffix = (0..<6).map { UInt8((checksum >> (5 * (5 - $0))) & 31) }
+        return "nsec1" + String((values + suffix).map { charset[Int($0)] })
     }
 
     private static func convertBits(_ values: [UInt8], from: Int, to: Int, pad: Bool) -> [UInt8] {
@@ -177,7 +317,7 @@ enum NostrKeyCodec {
         let maxValue = (1 << to) - 1
         var output: [UInt8] = []
         for value in values {
-            accumulator = (accumulator << from) | Int(value)
+            accumulator = ((accumulator << from) | Int(value)) & ((1 << (from + to - 1)) - 1)
             bits += from
             while bits >= to {
                 bits -= to

@@ -27,7 +27,7 @@ struct AccountView: View {
                     ProgressView("Loading account…")
                         .frame(maxWidth: .infinity, minHeight: 240)
                 } else {
-                    NostrKeySection()
+                    NostrKeySection(linkedNpub: profile?.nostrNpub, profileLoaded: profile != nil)
                     emailSection
                     passwordSection
                     signOutSection
@@ -150,7 +150,11 @@ struct AccountView: View {
         newsletter = session.member?.newsletter ?? false
         defer { isLoading = false }
         do {
-            let loaded = try await api.profile(serverURLString: session.serverURLString, username: username)
+            let capturedRevision = NostrIdentityManager.shared.revision
+            let loaded = try await api.profile(serverURLString: session.serverURLString, username: username, allowSaved: false)
+            guard NostrIdentityManager.shared.isCurrent(capturedRevision),
+                  loaded.username.caseInsensitiveCompare(username) == .orderedSame else { return }
+            try NostrIdentityManager.shared.considerLegacy(linkedNpub: loaded.nostrNpub, capturedRevision: capturedRevision)
             profile = loaded
             email = loaded.email ?? session.member?.email ?? email
             newsletter = loaded.newsletter ?? session.member?.newsletter ?? newsletter

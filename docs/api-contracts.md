@@ -38,6 +38,15 @@ The enforced boundaries are:
   profiles omit account-only fields and the access-control flag. Mini profiles
   describe the existing projection, including its `blocked` field.
 
+The native bearer profile endpoint, `GET /api/mobile/v0/profiles/:username`,
+returns `profile.nostrNpub` only to that member or an administrator. The value is
+the linked public key string, or explicit `null` when no key is linked. Other
+members' mobile profile responses omit the field. This additive field lets native
+clients compare a device-local public key with the live profile without exposing
+private-key material or changing the public profile contract. Older native
+clients can ignore it; the sign-in and `/api/mobile/v0/me` member shapes remain
+unchanged.
+
 The server controller passes database results to these builders. Checking the
 builders catches errors in their payload construction, but does not type-check
 the surrounding controllers, database queries or untrusted HTTP input. Existing

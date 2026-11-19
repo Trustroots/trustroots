@@ -162,6 +162,7 @@ describe('Mobile authentication API', function () {
   it('returns the signed-in member profile through the bearer API', async function () {
     member.tagline = 'A mobile profile';
     member.languages = ['eng'];
+    member.nostrNpub = 'npub1examplemobile';
     await member.save();
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
@@ -176,6 +177,7 @@ describe('Mobile authentication API', function () {
     response.body.profile.id.should.equal(member._id.toString());
     response.body.profile.username.should.equal(member.username);
     response.body.profile.tagline.should.equal(member.tagline);
+    response.body.profile.nostrNpub.should.equal(member.nostrNpub);
     response.body.profile.languages.should.deepEqual(['eng']);
     response.body.profile.member.should.deepEqual([]);
     should.not.exist(response.body.profile.password);
@@ -545,6 +547,7 @@ describe('Mobile authentication API', function () {
       displayName: 'Other Member',
       email: 'other.member@example.org',
       username: 'othermobilemember',
+      nostrNpub: 'npub1exampleother',
       password: 'strong-password',
       provider: 'local',
       roles: ['user'],
@@ -561,6 +564,7 @@ describe('Mobile authentication API', function () {
       .set('Authorization', `Bearer ${signin.body.accessToken}`)
       .expect(200);
 
+    response.body.profile.should.not.have.property('nostrNpub');
     response.body.profile.should.not.have.property('email');
     should.not.exist(response.body.profile.emailTemporary);
     should.not.exist(response.body.profile.newsletter);

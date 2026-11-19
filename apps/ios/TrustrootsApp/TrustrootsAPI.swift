@@ -317,6 +317,7 @@ struct MemberProfile: Decodable {
     let email: String?
     let emailTemporary: String?
     let newsletter: Bool?
+    let nostrNpub: String?
     let member: [ProfileCircleMembership]?
 
     enum CodingKeys: String, CodingKey {
@@ -337,6 +338,7 @@ struct MemberProfile: Decodable {
         case email
         case emailTemporary
         case newsletter
+        case nostrNpub
         case member
     }
 
@@ -359,6 +361,7 @@ struct MemberProfile: Decodable {
         email = try container.decodeIfPresent(String.self, forKey: .email)
         emailTemporary = try container.decodeIfPresent(String.self, forKey: .emailTemporary)
         newsletter = try container.decodeIfPresent(Bool.self, forKey: .newsletter)
+        nostrNpub = try container.decodeIfPresent(String.self, forKey: .nostrNpub)
         member = try container.decodeIfPresent([ProfileCircleMembership].self, forKey: .member)
     }
 }
@@ -974,11 +977,12 @@ final class TrustrootsAPI {
         )
     }
 
-    func profile(serverURLString: String, username: String) async throws -> MemberProfile {
+    func profile(serverURLString: String, username: String, allowSaved: Bool = true) async throws -> MemberProfile {
         struct ProfileResponse: Decodable { let profile: MemberProfile }
         let response: ProfileResponse = try await get(
             serverURLString: serverURLString,
-            path: "api/mobile/v0/profiles/\(username)"
+            path: "api/mobile/v0/profiles/\(username)",
+            useOfflineCache: allowSaved
         )
         return response.profile
     }
