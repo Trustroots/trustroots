@@ -194,7 +194,7 @@ importers:
     dependencies:
       '@agendajs/mongo-backend':
         specifier: 4.0.5
-        version: 4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        version: 4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       '@tanstack/react-query':
         specifier: 5.107.1
         version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
@@ -230,10 +230,10 @@ importers:
         version: 1.8.2(supports-color@5.5.0)
       connect-mongo:
         specifier: 6.0.0
-        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       dompurify:
-        specifier: 3.4.17
-        version: 3.4.17
+        specifier: 3.4.18
+        version: 3.4.18
       express:
         specifier: 5.3.0
         version: 5.3.0(supports-color@5.5.0)
@@ -256,8 +256,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1
       i18next:
-        specifier: 27.1.1
-        version: 27.1.1(typescript@6.0.3)
+        specifier: 27.1.3
+        version: 27.1.3(typescript@6.0.3)
       i18next-browser-languagedetector:
         specifier: 8.3.0
         version: 8.3.0
@@ -265,8 +265,8 @@ importers:
         specifier: 4.0.10
         version: 4.0.10
       imapflow:
-        specifier: 2.11.0
-        version: 2.11.0
+        specifier: 2.12.1
+        version: 2.12.1
       influx:
         specifier: 5.12.0
         version: 5.12.0
@@ -283,14 +283,14 @@ importers:
         specifier: 4.18.1
         version: 4.18.1
       mailparser:
-        specifier: 3.14.3
-        version: 3.14.3
+        specifier: 3.14.5
+        version: 3.14.5
       mapbox-gl:
         specifier: 3.35.0
         version: 3.35.0
       maxmind:
-        specifier: 5.0.9
-        version: 5.0.9
+        specifier: 5.1.0
+        version: 5.1.0
       medium-editor:
         specifier: 5.23.3
         version: 5.23.3
@@ -301,8 +301,8 @@ importers:
         specifier: 2.31.0
         version: 2.31.0
       mongodb:
-        specifier: 7.8.0
-        version: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+        specifier: 7.9.0
+        version: 7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
       mongoose:
         specifier: 9.12.1
         version: 9.12.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
@@ -313,11 +313,11 @@ importers:
         specifier: 2.5.0
         version: 2.5.0
       nodemailer:
-        specifier: 10.5.0
-        version: 10.5.0
+        specifier: 10.6.0
+        version: 10.6.0
       nostr-tools:
-        specifier: 2.26.0
-        version: 2.26.0(nostr-wasm@0.1.0)(typescript@6.0.3)
+        specifier: 2.26.1
+        version: 2.26.1(nostr-wasm@0.1.0)(typescript@6.0.3)
       nunjucks:
         specifier: 3.2.4
         version: 3.2.4(chokidar@3.6.0)
@@ -344,7 +344,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       react-i18next:
         specifier: 17.1.13
-        version: 17.1.13(i18next@27.1.1(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
+        version: 17.1.13(i18next@27.1.3(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
       react-map-gl:
         specifier: 8.1.3
         version: 8.1.3(mapbox-gl@3.35.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -398,8 +398,8 @@ importers:
         specifier: 10.6.0
         version: 10.6.0
       '@playwright/test':
-        specifier: 1.65.0
-        version: 1.65.0
+        specifier: 1.65.1
+        version: 1.65.1
       '@stryker-mutator/core':
         specifier: 10.1.1
         version: 10.1.1(@types/node@26.6.6)
@@ -474,7 +474,7 @@ importers:
         version: 8.2.6(agenda@6.2.8(supports-color@5.5.0))(express@5.3.0(supports-color@5.5.0))
       autoprefixer:
         specifier: 10.6.2
-        version: 10.6.2(postcss@8.5.32)
+        version: 10.6.2(postcss@8.5.33)
       concurrently:
         specifier: 10.0.7
         version: 10.0.7
@@ -527,14 +527,14 @@ importers:
         specifier: 4.9.1
         version: 4.9.1(supports-color@5.5.0)
       lint-staged:
-        specifier: 17.6.0
-        version: 17.6.0
+        specifier: 17.6.1
+        version: 17.6.1
       nodemon:
         specifier: 3.1.14
         version: 3.1.14
       postcss:
-        specifier: 8.5.32
-        version: 8.5.32
+        specifier: 8.5.33
+        version: 8.5.33
       prettier:
         specifier: 3.10.1
         version: 3.10.1
@@ -891,10 +891,10 @@ importers:
         version: 10.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))(supports-color@10.2.2)(typescript@6.0.3)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.1.0
-        version: 5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
+        version: 5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
       playwright:
-        specifier: 1.65.0
-        version: 1.65.0
+        specifier: 1.65.1
+        version: 1.65.1
       storybook:
         specifier: 10.6.7
         version: 10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1)
@@ -2578,8 +2578,8 @@ packages:
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  '@playwright/test@1.65.0':
-    resolution: {integrity: sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==}
+  '@playwright/test@1.65.1':
+    resolution: {integrity: sha512-y+NCIRm2LvY4slUVWvGh1nujJ8RF/hEisIsq2mtUPgdQC4L701bq5hZGMhrpeXjACvwvO9tj5dJqhvM6TP9lbw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -3752,8 +3752,8 @@ packages:
     resolution: {integrity: sha512-4vPRj28I2wTiGhUoVU9Kirjed+1eurphEjGpf626FlIU0f9sExLMuTWYLjqgU9aVvxkmm1M+CKdrNL0GnSnv9g==}
     engines: {node: '>=22.13.0'}
 
-  '@zone-eu/mailsplit@5.4.30':
-    resolution: {integrity: sha512-qN0KT6/ziAFvo5TzscaqpurIJaJQEXPPtqBZnpyhiGrACOKLDVMV6Lm57kXt5e/8zZUWoYiSC8oKl/aewtrJDQ==}
+  '@zone-eu/mailsplit@5.4.31':
+    resolution: {integrity: sha512-P031SeyobwXE/aZf1f/hN9RZm/t8ZSibCUYA7Us6Fory4b1p5HxNEA08YcfTynkPnvJ3nFjMFguwSp30TXc4Tw==}
     engines: {node: '>=20.0.0'}
 
   a-sync-waterfall@1.0.1:
@@ -4462,8 +4462,8 @@ packages:
     resolution: {integrity: sha512-gYzvtM72ZtxQO0T048kd6HWSbbGCNOUwcnfQ01cqIJ4X2IYKFFHZ5mKvrQETcFXxsRObZulDaKmy//R7TPtsBg==}
     engines: {node: '>=20.19.0'}
 
-  dompurify@3.4.17:
-    resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
+  dompurify@3.4.18:
+    resolution: {integrity: sha512-ofe3wI/uNm68HInABYFJYqQxRw1EaKAjNdrFVKqjUY+UZurvNd2L/HuQe097s/4RivWiZyP6tT7aoT8atjfhwg==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -5140,8 +5140,8 @@ packages:
     resolution: {integrity: sha512-1SwWSlbgpMx/AyWYJvPrg2ns1CzXsaM0olmqfDSm2fIzwbChdkxeaiAXw0xhdNPuo/v8nuwxVTLfpf8NxrdlNw==}
     hasBin: true
 
-  i18next@27.1.1:
-    resolution: {integrity: sha512-Qq3aJizS3RXQ30crhx9BKQLrHoa6GKpgrOJjVZ9vgj3EBxAddrmVfDNUrAMxSUimw5Jc+ld4SSZUAzf1q4nGyQ==}
+  i18next@27.1.3:
+    resolution: {integrity: sha512-Qih5Erw8m9qJPmuNUjoSiBctutYkfgg+mhzLaQ7xbn2Y9e2tsB8dNhYyMB00fUfBRt6v0UTFjPPCSROJPn93JQ==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: ^5 || ^6 || ^7
@@ -5175,8 +5175,8 @@ packages:
     resolution: {integrity: sha512-2E8Q6rh+1RRSq/YdaGsNfXsEZy9FVqv6BSSrkmZJP7BnaoPnRfKL+YaofPvP+5rzdk144qSm6i4+hvPgUcbV4Q==}
     engines: {node: '>= 4'}
 
-  imapflow@2.11.0:
-    resolution: {integrity: sha512-Jv/PBBbBsKjBkdN5DUbELRCo7Xm3DQz+gYBkAy4h87ObQthTRd7nu53WV/dKDf2M8imoJZY+eQFBVkQAJagC6g==}
+  imapflow@2.12.1:
+    resolution: {integrity: sha512-mM0FAU13CU1DMZG9ylow3GgyU+rs0UvWcoZuLpYXWNq3tie0MGNqE/aJqOnNb25kJgeNVtU/spfJ0I0qCYxbpQ==}
     engines: {node: '>=20.0.0'}
 
   import-fresh@3.3.1:
@@ -5546,12 +5546,12 @@ packages:
     resolution: {integrity: sha512-Nyh3H90B3gRtrcxIe56Ayy7635J0jmh6AbxbQgQae8wrSPQMH5wFqJChiMTB13yKG512L3YspbA5DzumhFTITA==}
     engines: {node: '>=20.0.0'}
 
-  libmime@5.6.4:
-    resolution: {integrity: sha512-QWiiwq3ujIUSsCCjFDldDN7FfXuLYSTnEln0oeYfOjgqyVlRV6WQ3UyJ/paguoz8Ynxy1s7k3kh6xomS3bJkCw==}
+  libmime@5.6.5:
+    resolution: {integrity: sha512-2mbKYlwUP2mWys7kUE0MBHNdOndOe++8TIdmGXtt/hMYWSgbjHkSIXyC4jCpVSc/sAox3GSxWn1dSmyiQimLNA==}
     engines: {node: '>=20.0.0'}
 
-  libqp@3.0.1:
-    resolution: {integrity: sha512-7QZxpPX25pga1WiMueduWxmrHMVBFrZPH6ZUaozGYa/H98JH6NVBSET3qVw+4NxzoraIW7rJ81YxSU9IalvCpg==}
+  libqp@3.0.2:
+    resolution: {integrity: sha512-24oL5vCMpFd6lGLbD3vPrmcAEGFScDPX9eARY8TXsRVBSde93xP2iG7+8pg5M56Yiu9Uy14hCVN1E+yj5LMtyQ==}
     engines: {node: '>=20.0.0'}
 
   lightningcss-android-arm64@1.33.0:
@@ -5631,11 +5631,11 @@ packages:
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
-  linkify-it@5.0.2:
-    resolution: {integrity: sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==}
+  linkify-it@6.1.0:
+    resolution: {integrity: sha512-wJ/TwpSDTLepCrQoYWYIExIKg5Zchex2Nn5yk2mFnB+6PtdkHtyLx742md9csRjjOnGkKIS/RrbY7l8D6gT9Vw==}
 
-  lint-staged@17.6.0:
-    resolution: {integrity: sha512-nOhBfYkZEwkFtNzD5pK9s9LkcWoxJ+whLzEnhqi9nl7zTB5n7tg8+9iYgMGx2Wm3VlLu8cbNj0RACzY+nWi5iQ==}
+  lint-staged@17.6.1:
+    resolution: {integrity: sha512-3MXgVN7BERDR/6CXZs2fDHGc+r0+hlvGAa9wqMlVbIS6RVRuaPOnb5SnN6wMXulwfEy9DXVkMVUN/8cUlpPDnw==}
     engines: {node: '>=22.22.1'}
     hasBin: true
 
@@ -5697,8 +5697,8 @@ packages:
   magicast@0.5.5:
     resolution: {integrity: sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==}
 
-  mailparser@3.14.3:
-    resolution: {integrity: sha512-GFaKR2tMTDALRM9PQ3DkfOmWeLaRerjifEhCdUb4mM2+VtO+jZFhPMvQivvM/Df/51qYmH7msrreeQmdWjM2kw==}
+  mailparser@3.14.5:
+    resolution: {integrity: sha512-GVX8bONBtUW7FaakHZX2yUIxzWFAseKltj7GaoFnbwWEf8/+0a5WrjCH+WPJEyaNPFTf5tosEuKPwGkd5LpO6A==}
     engines: {node: '>=20.0.0'}
 
   make-dir@5.1.0:
@@ -5712,8 +5712,8 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
-  maxmind@5.0.9:
-    resolution: {integrity: sha512-eg8QN41aDDtENguCO2+xm+eUqXOn8V2ddbq3+eaXoFpYx+RkMjAEsRXXNyVrP/H8IDswxXrLA62KLw9terWX5g==}
+  maxmind@5.1.0:
+    resolution: {integrity: sha512-4cNAMPKT/TJ1KvIzmzcNAkXUfQtH5+0tOcAFSCkrPx4TIJz9wCow3KZMGAaWONLll60DRYvInLhst6WW1lijfw==}
     engines: {node: '>=12', npm: '>=6'}
 
   media-typer@0.3.0:
@@ -5840,6 +5840,33 @@ packages:
       socks:
         optional: true
 
+  mongodb@7.9.0:
+    resolution: {integrity: sha512-HfpNb8qmfmNxno+Ml5JgHn/nyshK+8xF4ESLCXedRKuGLGRyAvkjcpjk19T2Q+rqC6/FlnZKll4if21R6xs/Tg==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@aws-sdk/credential-providers': ^3.806.0
+      '@mongodb-js/zstd': ^7.0.0
+      gcp-metadata: ^7.0.1
+      kerberos: ^7.0.0
+      mongodb-client-encryption: ^7.2.0
+      snappy: ^7.3.2
+      socks: ^2.8.6
+    peerDependenciesMeta:
+      '@aws-sdk/credential-providers':
+        optional: true
+      '@mongodb-js/zstd':
+        optional: true
+      gcp-metadata:
+        optional: true
+      kerberos:
+        optional: true
+      mongodb-client-encryption:
+        optional: true
+      snappy:
+        optional: true
+      socks:
+        optional: true
+
   mongoose@9.12.1:
     resolution: {integrity: sha512-wPw1NKurTDShT+kr/JJvhdwPKIJkxFJv5GEbv++QahN8snPR9Fp/BFg6nQbbCyUHBB8DexwwlCQW6SfBD99QCg==}
     engines: {node: '>=20.19.0'}
@@ -5930,8 +5957,8 @@ packages:
     resolution: {integrity: sha512-BdiKAgbfRlvfMq/XzO/AF9NPmaA8a+YpLAyAFTVFBj3gARrAIfWvNq7Q7NE4se3KgFu0KkrvQMxTS0XVnsGzHg==}
     engines: {node: '>=18'}
 
-  nodemailer@10.5.0:
-    resolution: {integrity: sha512-L/w/HH5MqpzMDuZD7fQdt/+KqymuvrpaApaIjAH2XA3ILePwlcvXCVVvP75xVrXCEt2ggK2marrrHHFB5Qu0kA==}
+  nodemailer@10.6.0:
+    resolution: {integrity: sha512-jWanL7D9GD3jvUDYKmoC5rWTiG8MnBgnN2yV68bgMKip1zUJhiSTyz7Eg+18y8sk5OvdVDzws5nZK5arSI4f5Q==}
     engines: {node: '>=20.0.0'}
 
   nodemon@3.1.14:
@@ -5943,8 +5970,8 @@ packages:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
 
-  nostr-tools@2.26.0:
-    resolution: {integrity: sha512-PMy//IuirMQR61o44UvjKQcQ4C7puKLxELHGv2ghn16P4NvmgdOMX7kyr9VZW9SxHeZHrSTiNoLeRe3fDbE4RA==}
+  nostr-tools@2.26.1:
+    resolution: {integrity: sha512-PMsQ80lMeLhb9t6GiCWG0YkwaOy0GiLZI7Ag1BalG0SqU9g/sqxwvBrnZZpnCEVK7WDcc6rVYV5GmPDeg+g8yA==}
     peerDependencies:
       nostr-wasm: 0.1.0
       typescript: '>=5.0.0'
@@ -6197,13 +6224,13 @@ packages:
     resolution: {integrity: sha512-r34yH/GlQpKZbU1BvFFqOjhISRo1MNx1tWYsYvmj6KIRHSPMT2+yHOEb1SG6NMvRoHRF0a07kCOox/9yakl1vg==}
     hasBin: true
 
-  playwright-core@1.65.0:
-    resolution: {integrity: sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA==}
+  playwright-core@1.65.1:
+    resolution: {integrity: sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.65.0:
-    resolution: {integrity: sha512-F3AMWcR44qMBt4kq+6Kb6mX7bjGXshktKFOPULd7reED6ZJWevjbNRqysP7q+AATE9kdPEZBibex1BYsvpVoeA==}
+  playwright@1.65.1:
+    resolution: {integrity: sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -6238,8 +6265,8 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.32:
-    resolution: {integrity: sha512-LJlKCCAUFKOuZxipUdYw1NzIITEsPcgyOG9LkvRJvuKj/bRzbuRY0ARXvL0pWGpsZvn8jku+LMep2eU0seHp8g==}
+  postcss@8.5.33:
+    resolution: {integrity: sha512-RVHEU9/Pp1Fnjr/MpAJsZoADukCKhfIi15OunEYiGktIkYLkPVvC1sioWolGDS7XByMTx9m/IGbro0Js13zhnQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -6779,9 +6806,9 @@ packages:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
     engines: {node: '>=10.0.0'}
 
-  string-argv@0.3.2:
-    resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
-    engines: {node: '>=0.6.19'}
+  string-argv@0.4.0:
+    resolution: {integrity: sha512-UOtaksJ3SK3KLHba2i9I27fvuZNfBlImDP5wKsCOxCDMRDNxlipCe8rmnUAaDpqlQ93upnA0SzF2pjWhttozSA==}
+    engines: {node: '>=16.20.0'}
 
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
@@ -7072,8 +7099,8 @@ packages:
   typewise@1.0.3:
     resolution: {integrity: sha512-aXofE06xGhaQSPzt8hlTY+/YWQhm9P0jYUp1f2XtmW/3Bk0qzXcyFWAtPoo2uTGQj1ZwbDuSyuxicq+aDo8lCQ==}
 
-  uc.micro@2.1.0:
-    resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
+  uc.micro@3.0.0:
+    resolution: {integrity: sha512-U3PppEkleoTnIfi8BozMx3yju3qc/L6SwqWo2Sw+54PX+PX0q9I+r1Um5HCmqD7n9VDX5/v3vQH/AjA6deDdtw==}
 
   ufo@1.6.4:
     resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
@@ -7484,11 +7511,11 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agendajs/mongo-backend@4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
+  '@agendajs/mongo-backend@4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
     dependencies:
       agenda: 6.2.8(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)
-      mongodb: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+      mongodb: 7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
     transitivePeerDependencies:
       - supports-color
 
@@ -9111,9 +9138,9 @@ snapshots:
 
   '@pkgr/core@0.3.6': {}
 
-  '@playwright/test@1.65.0':
+  '@playwright/test@1.65.1':
     dependencies:
-      playwright: 1.65.0
+      playwright: 1.65.1
 
   '@polka/url@1.0.0-next.29': {}
 
@@ -9276,7 +9303,7 @@ snapshots:
       storybook: 10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1)
     optionalDependencies:
       '@vitest/browser': 5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
-      '@vitest/browser-playwright': 5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
+      '@vitest/browser-playwright': 5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
       vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(jsdom@26.1.0(supports-color@10.2.2))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))
     transitivePeerDependencies:
       - react
@@ -10222,11 +10249,11 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1)
 
-  '@vitest/browser-playwright@5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)':
+  '@vitest/browser-playwright@5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)':
     dependencies:
       '@vitest/browser': 5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/mocker': 5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))
-      playwright: 1.65.0
+      playwright: 1.65.1
       tinyrainbow: 3.2.0
       vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(jsdom@26.1.0(supports-color@10.2.2))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))
     transitivePeerDependencies:
@@ -10235,11 +10262,11 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser-playwright@5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))(vitest@5.1.0)':
+  '@vitest/browser-playwright@5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))(vitest@5.1.0)':
     dependencies:
       '@vitest/browser': 5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/mocker': 5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))
-      playwright: 1.65.0
+      playwright: 1.65.1
       tinyrainbow: 3.2.0
       vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(jsdom@26.1.0(supports-color@5.5.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))
     transitivePeerDependencies:
@@ -10372,11 +10399,11 @@ snapshots:
 
   '@wordpress/browserslist-config@7.1.0': {}
 
-  '@zone-eu/mailsplit@5.4.30':
+  '@zone-eu/mailsplit@5.4.31':
     dependencies:
       libbase64: 1.4.1
-      libmime: 5.6.4
-      libqp: 3.0.1
+      libmime: 5.6.5
+      libqp: 3.0.2
 
   a-sync-waterfall@1.0.1: {}
 
@@ -10572,13 +10599,13 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  autoprefixer@10.6.2(postcss@8.5.32):
+  autoprefixer@10.6.2(postcss@8.5.33):
     dependencies:
       browserslist: 4.28.7
       caniuse-lite: 1.0.30001816
       fraction.js: 5.3.4
       picocolors: 1.1.1
-      postcss: 8.5.32
+      postcss: 8.5.33
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -10863,12 +10890,12 @@ snapshots:
       tree-kill: 1.2.2
       yargs: 18.0.0
 
-  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
+  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       express-session: 1.19.0(supports-color@5.5.0)
       kruptein: 3.0.8
-      mongodb: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+      mongodb: 7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
     transitivePeerDependencies:
       - supports-color
 
@@ -11110,7 +11137,7 @@ snapshots:
     dependencies:
       domelementtype: 3.0.0
 
-  dompurify@3.4.17:
+  dompurify@3.4.18:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -12003,7 +12030,7 @@ snapshots:
       chokidar: 5.0.0
       commander: 15.1.0
       glob: 14.0.6
-      i18next: 27.1.1(typescript@6.0.3)
+      i18next: 27.1.3(typescript@6.0.3)
       i18next-resources-for-ts: 2.1.2
       jiti: 2.7.0
       jsonc-parser: 3.3.1
@@ -12011,7 +12038,7 @@ snapshots:
       messageformat: 4.1.0
       minimatch: 11.0.3
       nano-spawn: 2.1.0
-      react-i18next: 18.0.2(@types/react@19.3.0)(i18next@27.1.1(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3)
+      react-i18next: 18.0.2(@types/react@19.3.0)(i18next@27.1.3(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3)
       yaml: 2.9.1
       yocto-spinner: 1.2.2
     transitivePeerDependencies:
@@ -12032,7 +12059,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  i18next@27.1.1(typescript@6.0.3):
+  i18next@27.1.3(typescript@6.0.3):
     optionalDependencies:
       typescript: 6.0.3
 
@@ -12057,14 +12084,14 @@ snapshots:
 
   ignore@7.0.13: {}
 
-  imapflow@2.11.0:
+  imapflow@2.12.1:
     dependencies:
-      '@zone-eu/mailsplit': 5.4.30
+      '@zone-eu/mailsplit': 5.4.31
       encoding-japanese: 2.5.0
       iconv-lite: 0.7.3
       libbase64: 1.4.1
-      libmime: 5.6.4
-      libqp: 3.0.1
+      libmime: 5.6.5
+      libqp: 3.0.2
       pino: 10.3.1
       socks: 2.8.10
 
@@ -12381,9 +12408,9 @@ snapshots:
       cheerio: 1.2.0
       commander: 14.0.3
       entities: 9.0.0
-      postcss: 8.5.32
-      postcss-nesting: 14.0.3(postcss@8.5.32)
-      postcss-safe-parser: 7.1.0(postcss@8.5.32)
+      postcss: 8.5.33
+      postcss-nesting: 14.0.3(postcss@8.5.33)
+      postcss-safe-parser: 7.1.0(postcss@8.5.33)
       postcss-selector-parser: 7.1.6
       web-resource-inliner: 8.0.0
 
@@ -12478,14 +12505,14 @@ snapshots:
 
   libbase64@1.4.1: {}
 
-  libmime@5.6.4:
+  libmime@5.6.5:
     dependencies:
       encoding-japanese: 2.5.0
       iconv-lite: 0.7.3
       libbase64: 1.4.1
-      libqp: 3.0.1
+      libqp: 3.0.2
 
-  libqp@3.0.1: {}
+  libqp@3.0.2: {}
 
   lightningcss-android-arm64@1.33.0:
     optional: true
@@ -12538,14 +12565,14 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  linkify-it@5.0.2:
+  linkify-it@6.1.0:
     dependencies:
-      uc.micro: 2.1.0
+      uc.micro: 3.0.0
 
-  lint-staged@17.6.0:
+  lint-staged@17.6.1:
     dependencies:
       picomatch: 4.0.7(patch_hash=4ffd64cd176eeb140eef8fc3de634863001768e04d1971d407e04b6ba72dec5f)
-      string-argv: 0.3.2
+      string-argv: 0.4.0
       tinyexec: 1.3.1
     optionalDependencies:
       yaml: 2.9.1
@@ -12609,14 +12636,14 @@ snapshots:
       '@babel/types': 7.29.11
       source-map-js: 1.2.2
 
-  mailparser@3.14.3:
+  mailparser@3.14.5:
     dependencies:
-      '@zone-eu/mailsplit': 5.4.30
+      '@zone-eu/mailsplit': 5.4.31
       he: 1.2.0
       html-to-text: 10.0.1
-      libmime: 5.6.4
-      linkify-it: 5.0.2
-      nodemailer: 10.5.0
+      libmime: 5.6.5
+      linkify-it: 6.1.0
+      nodemailer: 10.6.0
       punycode.js: 2.3.1
       tlds: 1.261.0
 
@@ -12627,7 +12654,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  maxmind@5.0.9:
+  maxmind@5.1.0:
     dependencies:
       mmdb-lib: 3.0.3
       tiny-lru: 13.1.1
@@ -12705,6 +12732,15 @@ snapshots:
       whatwg-url: 14.2.0
 
   mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10):
+    dependencies:
+      '@mongodb-js/saslprep': 1.6.1
+      bson: 7.3.3
+      mongodb-connection-string-url: 7.0.2
+    optionalDependencies:
+      '@aws-sdk/credential-providers': 3.1151.0
+      socks: 2.8.10
+
+  mongodb@7.9.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10):
     dependencies:
       '@mongodb-js/saslprep': 1.6.1
       bson: 7.3.3
@@ -12818,7 +12854,7 @@ snapshots:
 
   node-releases@2.0.58: {}
 
-  nodemailer@10.5.0: {}
+  nodemailer@10.6.0: {}
 
   nodemon@3.1.14:
     dependencies:
@@ -12835,7 +12871,7 @@ snapshots:
 
   normalize-path@3.0.0: {}
 
-  nostr-tools@2.26.0(nostr-wasm@0.1.0)(typescript@6.0.3):
+  nostr-tools@2.26.1(nostr-wasm@0.1.0)(typescript@6.0.3):
     dependencies:
       '@noble/ciphers': 2.1.1
       '@noble/curves': 2.0.1
@@ -13174,11 +13210,11 @@ snapshots:
       sonic-boom: 4.2.1
       thread-stream: 4.2.0
 
-  playwright-core@1.65.0: {}
+  playwright-core@1.65.1: {}
 
-  playwright@1.65.0:
+  playwright@1.65.1:
     dependencies:
-      playwright-core: 1.65.0
+      playwright-core: 1.65.1
 
   pngjs@5.0.0: {}
 
@@ -13186,16 +13222,16 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-nesting@14.0.3(postcss@8.5.32):
+  postcss-nesting@14.0.3(postcss@8.5.33):
     dependencies:
       '@csstools/selector-resolve-nested': 4.0.2(postcss-selector-parser@7.1.6)
       '@csstools/selector-specificity': 6.0.1(postcss-selector-parser@7.1.6)
-      postcss: 8.5.32
+      postcss: 8.5.33
       postcss-selector-parser: 7.1.6
 
-  postcss-safe-parser@7.1.0(postcss@8.5.32):
+  postcss-safe-parser@7.1.0(postcss@8.5.33):
     dependencies:
-      postcss: 8.5.32
+      postcss: 8.5.33
 
   postcss-selector-parser@7.1.6:
     dependencies:
@@ -13204,7 +13240,7 @@ snapshots:
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.5.32:
+  postcss@8.5.33:
     dependencies:
       nanoid: 3.3.20
       picocolors: 1.1.1
@@ -13322,21 +13358,21 @@ snapshots:
       react: 19.3.1
       scheduler: 0.28.0
 
-  react-i18next@17.1.13(i18next@27.1.1(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3):
+  react-i18next@17.1.13(i18next@27.1.3(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3):
     dependencies:
       '@babel/runtime': 7.29.10
       html-parse-stringify: 4.0.1
-      i18next: 27.1.1(typescript@6.0.3)
+      i18next: 27.1.3(typescript@6.0.3)
       react: 19.3.1
       use-sync-external-store: 1.7.0(react@19.3.1)
     optionalDependencies:
       react-dom: 19.3.1(react@19.3.1)
       typescript: 6.0.3
 
-  react-i18next@18.0.2(@types/react@19.3.0)(i18next@27.1.1(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3):
+  react-i18next@18.0.2(@types/react@19.3.0)(i18next@27.1.3(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3):
     dependencies:
       html-parse-stringify: 4.0.1
-      i18next: 27.1.1(typescript@6.0.3)
+      i18next: 27.1.3(typescript@6.0.3)
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.0
@@ -13500,7 +13536,7 @@ snapshots:
     dependencies:
       escalade: 3.2.0
       picocolors: 1.1.1
-      postcss: 8.5.32
+      postcss: 8.5.33
       strip-json-comments: 3.1.1
 
   run-applescript@7.1.0: {}
@@ -13545,7 +13581,7 @@ snapshots:
       is-plain-object: 5.1.0
       launder: 1.7.2
       parse-srcset: 1.0.2
-      postcss: 8.5.32
+      postcss: 8.5.33
 
   sax@1.6.1:
     optional: true
@@ -13850,7 +13886,7 @@ snapshots:
 
   streamsearch@1.1.0: {}
 
-  string-argv@0.3.2: {}
+  string-argv@0.4.0: {}
 
   string-width@4.2.3:
     dependencies:
@@ -14166,7 +14202,7 @@ snapshots:
     dependencies:
       typewise-core: 1.2.0
 
-  uc.micro@2.1.0: {}
+  uc.micro@3.0.0: {}
 
   ufo@1.6.4: {}
 
@@ -14289,7 +14325,7 @@ snapshots:
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7(patch_hash=4ffd64cd176eeb140eef8fc3de634863001768e04d1971d407e04b6ba72dec5f)
-      postcss: 8.5.32
+      postcss: 8.5.33
       rolldown: 1.2.19
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -14304,7 +14340,7 @@ snapshots:
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7(patch_hash=4ffd64cd176eeb140eef8fc3de634863001768e04d1971d407e04b6ba72dec5f)
-      postcss: 8.5.32
+      postcss: 8.5.33
       rolldown: 1.2.19
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -14337,7 +14373,7 @@ snapshots:
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 26.6.6
-      '@vitest/browser-playwright': 5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
+      '@vitest/browser-playwright': 5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@10.2.2))(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/coverage-v8': 5.1.0(@vitest/browser@5.1.0)(vitest@5.1.0)
       '@vitest/ui': 5.1.0(vitest@5.1.0)
       jsdom: 26.1.0(supports-color@10.2.2)
@@ -14362,7 +14398,7 @@ snapshots:
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 26.6.6
-      '@vitest/browser-playwright': 5.1.0(playwright@1.65.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))(vitest@5.1.0)
+      '@vitest/browser-playwright': 5.1.0(playwright@1.65.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/coverage-v8': 5.1.0(@vitest/browser@5.1.0)(vitest@5.1.0)
       '@vitest/ui': 5.1.0(vitest@5.1.0)
       jsdom: 26.1.0(supports-color@5.5.0)
