@@ -462,6 +462,17 @@ class MobileApiClient(
             }
         }
 
+    internal suspend fun linkedNostrKey(session: MemberSession): Result<String?> = withContext(Dispatchers.IO) {
+        runCatching {
+            val username = session.member.username
+            val profile = JSONObject(jsonRequest(
+                "/api/users/${encode(username)}", "GET", session = session, allowResponseCache = false,
+            ).body)
+            check(profile.getString("username").equals(username, ignoreCase = true) && profile.has("nostrNpub"))
+            profile.optionalStringText("nostrNpub")
+        }
+    }
+
     /** Resolves the small, authenticated member record needed by an alert-opened conversation. */
     suspend fun messageMember(session: MemberSession, memberID: String): Result<ConversationRecipient> =
         withContext(Dispatchers.IO) {
