@@ -458,7 +458,7 @@ it.each([false, true])(
 it('connects a matching signer, restores remote favourites and publishes messages and stars', async () => {
   render(<RadioCircle user={user} />);
   await connect();
-  expect(room.loadFavourites).toHaveBeenCalled();
+  await waitFor(() => expect(room.loadFavourites).toHaveBeenCalled());
   emit(event(roomTemplate('favourite', station, 'Favourite')));
   expect(screen.getByRole('region', { name: 'Favourites' })).toHaveTextContent(
     station.title,

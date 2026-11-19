@@ -61,7 +61,7 @@ describe('<Monkeybox />', () => {
     render(<Monkeybox user={makeUser()} otherUser={otherUser} />);
 
     expect(
-      screen.getByRole('link', { name: 'Alice Example @alice' }),
+      screen.getByRole('link', { name: /^Alice Example\s*@alice$/ }),
     ).toHaveAttribute('href', '/profile/alice');
     expect(screen.getByText('Languages')).toBeInTheDocument();
     expect(screen.getByText('language-en')).toBeInTheDocument();

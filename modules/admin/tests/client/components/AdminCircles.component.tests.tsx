@@ -319,7 +319,7 @@ describe('circle form feedback and fields', () => {
     saveCircleMock.mockResolvedValue(saved);
     render(<AdminCircles />);
     fireEvent.click(
-      await screen.findByRole('button', { name: /Walkers Hidden/ }),
+      await screen.findByRole('button', { name: /^Walkers\s*Hidden$/ }),
     );
     expect(screen.getByAltText('Current circle')).toHaveAttribute(
       'src',
