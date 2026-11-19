@@ -1,8 +1,5 @@
 package org.trustroots.android.ui
 
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -13,6 +10,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.shared.ui.PilotConnections
+import org.trustroots.shared.ui.PilotNote
 import org.trustroots.shared.ui.PilotGateway
 import org.trustroots.shared.ui.PilotMessage
 import org.trustroots.shared.ui.PilotPerson
@@ -25,10 +24,14 @@ class SharedDashboardJourneyTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun dashboardWorksWithoutDiscoveryAndReturnsFromMemberJourneys() {
-        var openedUri: String? = null
-        var failLink = true
         var exited = false
         val gateway = object : PilotGateway {
+            override fun featuredNotes(completion: (List<PilotNote>?, String?) -> Unit) {
+                completion(null, "Featured notes unavailable")
+            }
+            override fun connections(completion: (PilotConnections?, String?) -> Unit) {
+                completion(null, "Connections unavailable")
+            }
             override fun signIn(username: String, password: String, completion: (String?) -> Unit) = error("Unexpected sign-in")
             override fun signOut(completion: (String?) -> Unit) = error("Unexpected sign-out")
             override fun profile(username: String, completion: (PilotProfile?, String?) -> Unit) {
@@ -43,23 +46,11 @@ class SharedDashboardJourneyTest {
             override fun saveDraft(partner: PilotPerson, value: String) = Unit
             override fun exit() { exited = true }
         }
-        compose.setContent {
-            CompositionLocalProvider(LocalUriHandler provides object : UriHandler {
-                override fun openUri(uri: String) {
-                    if (failLink) error("No browser")
-                    openedUri = uri
-                }
-            }) {
-                SharedComposeRoot(gateway, "sample-member", null)
-            }
-        }
+        compose.setContent { SharedComposeRoot(gateway, "sample-member", null) }
         compose.onNodeWithText("Welcome to Trustroots").assertIsDisplayed()
-        captureUsabilityScreenshot(compose, "shared-member-dashboard")
-        compose.onNodeWithText("Learn about Nostroots").performScrollTo().performClick()
-        compose.onNodeWithText("Could not open the introduction. Please try again.").performScrollTo().assertIsDisplayed()
-        failLink = false
-        compose.onNodeWithText("Learn about Nostroots").performScrollTo().performClick()
-        assertEquals("https://team.trustroots.org/nostr.html", openedUri)
+        compose.onNodeWithText("Trustroots updates").assertDoesNotExist()
+        compose.onNodeWithText("Connections on the map").assertDoesNotExist()
+        compose.onNodeWithText("Learn about Nostroots").assertDoesNotExist()
         compose.onNodeWithText("My profile").performScrollTo().performClick()
         compose.onNodeWithText("Profile unavailable").assertIsDisplayed()
         compose.onNodeWithText("Back").performClick()

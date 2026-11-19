@@ -203,6 +203,16 @@ module.exports = function (app) {
     )
     .get(offers.getOffer)
     .put(offers.update);
+  app.route('/api/mobile/v0/connections').get(
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    resourcePolicy(tribesPolicy.isAllowed, '/api/tribes/discovery/connections'),
+    function (_req, res, next) {
+      res.set('Cache-Control', 'private, no-store');
+      return next();
+    },
+    tribes.listConnections,
+  );
   app
     .route('/api/mobile/v0/circles')
     .get(

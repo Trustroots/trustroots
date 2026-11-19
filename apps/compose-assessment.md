@@ -225,9 +225,10 @@ The pilot is available by explicit launch option in debug builds:
 Use an existing test account or a controlled backend with fictional data to
 compare both hosts. Launching the pilot with a saved session opens the
 member dashboard. **My profile** opens the existing shared profile; **Messages**
-opens the inbox. The dashboard also introduces Nostroots through its public
-information page, which opens in the platform browser. It requires no profile,
-circle or local-event data, so it remains useful when discovery is unavailable.
+opens the inbox. Home also shows the website's featured Nostr notes and recent
+connections, with a native map of approximate locations for connections who
+are hosting or happy to meet. The app uses the same eligibility rules and
+keeps the core shortcuts available if either feed is unavailable.
 From **Messages**, open a conversation directly or view the
 other member's profile and then choose **Send a message**.
 
@@ -294,7 +295,7 @@ establish Compose UI parity for #3232.
 The shared dashboard is a pilot increment towards #3533 within #3232. Native
 release home tabs remain unchanged. Optional profile-completion prompts, local
 events, localisation and native-default rollout remain follow-up work. The
-dashboard Android journey covers browser failure/retry and return navigation;
+dashboard Android journeys cover discovery, a failed feed and return navigation;
 iOS dashboard build and runtime verification must pass on macOS before rollout.
 
 ![Shared member dashboard on an Android emulator](shared/docs/member-dashboard-android.png)

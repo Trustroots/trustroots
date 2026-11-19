@@ -41,6 +41,7 @@ fun SharedComposeRoot(
     gateway: PilotGateway,
     username: String?,
     initialError: String?,
+    renderConnectionsMap: @Composable (List<PilotMapPin>) -> Unit = {},
     installBackHandler: @Composable (Boolean, () -> Unit) -> Unit = { _, _ -> },
 ) {
     val start = username?.let { listOf(Destination.Home) }.orEmpty()
@@ -82,6 +83,9 @@ fun SharedComposeRoot(
                 when (destination) {
                     null -> SignIn(gateway, initialError, busy, beginAction, endAction)
                     Destination.Home -> MemberDashboard(
+                        gateway = gateway,
+                        renderConnectionsMap = renderConnectionsMap,
+                        onConnection = { history = history + Destination.Profile(it) },
                         onProfile = { username?.let { history = history + Destination.Profile(it) } },
                         onInbox = { history = history + Destination.Inbox },
                     )
