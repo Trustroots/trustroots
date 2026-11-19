@@ -93,10 +93,6 @@
     }
   }
 
-  .offer-host-map {
-    position: relative;
-  }
-
   .offer-map-guidance {
     margin: 0;
   }
@@ -339,12 +335,16 @@
   .offer-panel-map {
     position: relative;
   }
+  .offer-map-surface {
+    height: 100%;
+  }
   .offer-map-guide {
     position: absolute;
-    top: 0;
+    top: 10px;
     z-index: @zindex-popover;
-    left: 0;
-    right: 0;
+    left: 55px;
+    right: 10px;
+    pointer-events: none;
   }
   .offer-map-location-search {
     margin-bottom: 0;

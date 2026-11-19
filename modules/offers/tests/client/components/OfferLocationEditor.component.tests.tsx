@@ -8,6 +8,7 @@ import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-def
 
 let mockApproximateLocation: MapDefaultLocation | null = null;
 const mockStopDefaultLocation = vi.fn();
+const mockMapLocation = vi.fn<(location: [number, number]) => void>();
 vi.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
   default: (enabled: boolean) => [
@@ -20,9 +21,13 @@ vi.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
   default: ({
     onLocation,
     onApproximateLocation,
+    onRequest,
+    showFeedback,
   }: {
     onLocation: (location: { lat: number; lng: number }) => void;
     onApproximateLocation?: (location: MapDefaultLocation) => void;
+    onRequest: () => void;
+    showFeedback: boolean;
   }) => (
     <>
       <button type="button" onClick={() => onLocation({ lat: 0, lng: 0 })}>
@@ -30,18 +35,32 @@ vi.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
       </button>
       <button
         type="button"
-        onClick={() =>
-          onApproximateLocation?.({ latitude: 12, longitude: 23, zoom: 5 })
-        }
+        onClick={() => {
+          onRequest();
+          onApproximateLocation?.({ latitude: 12, longitude: 23, zoom: 5 });
+        }}
       >
         Use approximate location
       </button>
+      <button type="button" onClick={onRequest}>
+        Start location request
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onApproximateLocation?.({ latitude: 24, longitude: 36, zoom: 4 })
+        }
+      >
+        Complete location request
+      </button>
+      {showFeedback && <span role="status">Location feedback</span>}
     </>
   ),
 }));
 beforeEach(() => {
   mockApproximateLocation = null;
   mockStopDefaultLocation.mockClear();
+  mockMapLocation.mockClear();
 });
 
 type LocationChange = React.ComponentProps<
@@ -112,6 +131,7 @@ vi.mock('@/modules/core/client/components/Map/index', () => {
     fallbackMarker,
     onLocationChange,
   }: MockMapProps) {
+    mockMapLocation(location);
     return (
       <div
         data-testid="offer-map"
@@ -222,6 +242,63 @@ describe('OfferLocationEditor', () => {
     expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
     expect(onLocationChange).not.toHaveBeenCalled();
   });
+  it('dismisses map guidance on navigation and ignores late device responses after a gesture', () => {
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
+    const onLocationChange = vi.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+        showHostingGuide
+      />,
+    );
+    const map = screen.getByTestId('offer-map');
+    const initialCentre = mockMapLocation.mock.lastCall?.[0];
+    fireEvent.keyDown(map, { key: 'Tab' });
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Set your hosting location on the map.',
+    );
+    fireEvent.keyDown(map, { key: '+' });
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    expect(mockMapLocation.mock.lastCall?.[0]).toBe(initialCentre);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Start location request' }),
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('Location feedback');
+    fireEvent.pointerDown(map);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Complete location request' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(map).toHaveAttribute('data-location', '34,-17');
+    expect(onLocationChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the requested zoom after the first map selection', () => {
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
+    function Editor() {
+      const [location, setLocation] = React.useState<[number, number] | null>(
+        null,
+      );
+      return (
+        <OfferLocationEditor
+          location={location}
+          onLocationChange={setLocation}
+        />
+      );
+    }
+
+    render(<Editor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Drag map' }));
+
+    const map = screen.getByTestId('offer-map');
+    expect(map).toHaveAttribute('data-location', '50,10');
+    expect(map).toHaveAttribute('data-zoom', '5');
+  });
+
   it('shows a map without an offer marker before a location is chosen', () => {
     render(<OfferLocationEditor location={null} onLocationChange={vi.fn()} />);
 
