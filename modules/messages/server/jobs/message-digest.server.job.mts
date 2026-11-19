@@ -86,16 +86,17 @@ export async function queueMessageDigests(now = new Date()) {
     });
     if (!selected.length) continue;
 
-    // Only the first worker to set the period modifies the member, so one
-    // worker reserves it even if Agenda runs overlap.
+    // One worker reserves this recipient's period, even if Agenda runs
+    // overlap, and a delayed worker cannot move it back to an older period.
     const claim = {
       _id: recipient._id,
       messageEmailFrequency: frequency,
       email: recipient.email,
     };
-    const reserved = await User.updateOne(claim, {
-      $set: { [field]: period },
-    });
+    const reserved = await User.updateOne(
+      { ...claim, [field]: { $not: { $gte: period } } },
+      { $set: { [field]: period } },
+    );
     if (!reserved.modifiedCount) continue;
     try {
       await new Promise<void>((resolve, reject) => {

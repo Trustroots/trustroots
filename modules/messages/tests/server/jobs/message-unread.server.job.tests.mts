@@ -473,6 +473,30 @@ describe('Job: message unread', function () {
     }
   });
 
+  it('does not let a delayed worker for an older period replace a newer reservation', async function () {
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    const today = new Date('2026-01-06T00:00:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      {
+        $set: {
+          messageEmailFrequency: 'daily',
+          dailyMessageDigestPeriod: today,
+        },
+      },
+    );
+    await message.updateOne({ $set: { created } });
+
+    await queueMessageDigests(new Date('2026-01-05T23:59:00.000Z'));
+    await queueMessageDigests(new Date('2026-01-06T00:01:00.000Z'));
+
+    jobs.length.should.equal(0);
+    const recipient = required(await User.findById(userToId).lean().exec());
+    required(recipient.dailyMessageDigestPeriod)
+      .toISOString()
+      .should.equal(today.toISOString());
+  });
+
   it('releases the digest reservation when email queueing fails', async function () {
     const now = new Date('2026-01-05T12:00:00.000Z');
     await User.updateOne(
