@@ -145,13 +145,14 @@ struct AccountView: View {
 
     private func loadAccount() async {
         guard !isLoading, let username = session.member?.username else { return }
+        let serverURLString = session.serverURLString
         isLoading = true
         email = session.member?.email ?? ""
         newsletter = session.member?.newsletter ?? false
         defer { isLoading = false }
         do {
             let capturedRevision = NostrIdentityManager.shared.revision
-            let loaded = try await api.profile(serverURLString: session.serverURLString, username: username, allowSaved: false)
+            let loaded = try await api.profile(serverURLString: serverURLString, username: username, allowSaved: false)
             guard NostrIdentityManager.shared.isCurrent(capturedRevision),
                   loaded.username.caseInsensitiveCompare(username) == .orderedSame else { return }
             try NostrIdentityManager.shared.considerLegacy(linkedNpub: loaded.nostrNpub, capturedRevision: capturedRevision)
@@ -160,7 +161,12 @@ struct AccountView: View {
             newsletter = loaded.newsletter ?? session.member?.newsletter ?? newsletter
 
             if session.member?.email == nil || session.member?.newsletter == nil {
-                let account = try await api.currentMember(serverURLString: session.serverURLString)
+                // Adoption changes the key revision; bind the next response to
+                // the resulting account/key rather than the earlier candidate.
+                let accountRevision = NostrIdentityManager.shared.revision
+                let account = try await api.currentMember(serverURLString: serverURLString)
+                guard NostrIdentityManager.shared.isCurrent(accountRevision),
+                      account.username.caseInsensitiveCompare(username) == .orderedSame else { return }
                 email = account.email ?? email
                 newsletter = account.newsletter ?? newsletter
                 session.updateAccountDetails(email: account.email, newsletter: account.newsletter)

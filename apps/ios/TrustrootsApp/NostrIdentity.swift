@@ -69,6 +69,7 @@ final class NostrIdentityManager: ObservableObject {
             pause()
             return
         }
+        origin.scheme = origin.scheme?.lowercased()
         origin.path = ""
         origin.query = nil
         origin.fragment = nil
@@ -180,11 +181,12 @@ final class NostrIdentityManager: ObservableObject {
     }
 
     func backup(
-        authenticate: @escaping @MainActor () async throws -> Void = NostrIdentityManager.authenticateOwner
+        authenticate: (@MainActor () async throws -> Void)? = nil
     ) async throws -> String {
         let capturedRevision = revision
         guard hasKey, isCurrent(capturedRevision) else { throw NostrIdentityError.missingKey }
-        try await authenticate()
+        if let authenticate { try await authenticate() }
+        else { try await Self.authenticateOwner() }
         try Task.checkCancellation()
         guard isCurrent(capturedRevision), let secret = secret() else { throw NostrIdentityError.inactiveSession }
         return try NostrKeyCodec.nsec(secret: secret)
