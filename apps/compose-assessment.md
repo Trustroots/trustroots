@@ -207,7 +207,7 @@ signed iOS release.
 
 ## First shared member journey pilot
 
-The pilot implements sign-in, profile viewing, inbox pagination, conversation
+The pilot implements sign-in, a member dashboard, profile viewing, inbox pagination, conversation
 navigation and replies in `apps/shared`. Compose owns the journey's screens,
 back stack, loading and error states, and reply handling. The Android and iOS
 hosts project their existing API models into a small common interface. Each
@@ -224,7 +224,11 @@ The pilot is available by explicit launch option in debug builds:
 
 Use an existing test account or a controlled backend with fictional data to
 compare both hosts. Launching the pilot with a saved session opens the
-member's profile. From **Messages**, open a conversation directly or view the
+member dashboard. **My profile** opens the existing shared profile; **Messages**
+opens the inbox. The dashboard also introduces Nostroots through its public
+information page, which opens in the platform browser. It requires no profile,
+circle or local-event data, so it remains useful when discovery is unavailable.
+From **Messages**, open a conversation directly or view the
 other member's profile and then choose **Send a message**.
 
 | Area                  | Pilot                                                                                          | Remaining comparison                                                                                                         |
@@ -284,3 +288,13 @@ runs the native suite on its selected iPhone simulator before the native app tes
 This adds common contract coverage without adding a desktop application target.
 It does not replace the existing Android and iOS member-journey device tests or
 establish Compose UI parity for #3232.
+
+## Shared pilot dashboard
+
+The shared dashboard is a pilot increment towards #3533 within #3232. Native
+release home tabs remain unchanged. Optional profile-completion prompts, local
+events, localisation and native-default rollout remain follow-up work. The
+dashboard Android journey covers browser failure/retry and return navigation;
+iOS dashboard build and runtime verification must pass on macOS before rollout.
+
+![Shared member dashboard on an Android emulator](shared/docs/member-dashboard-android.png)

@@ -94,6 +94,10 @@ class SharedMemberPilotJourneyTest {
         launchPilot(local)
         signIn()
         compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Welcome to Trustroots").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("My profile").performClick()
+        compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional welcome.").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("A fictional welcome.").assertIsDisplayed()
@@ -130,6 +134,8 @@ class SharedMemberPilotJourneyTest {
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Back").performClick()
+        compose.onNodeWithText("Back").performClick()
+        compose.onNodeWithText("Welcome to Trustroots").assertIsDisplayed()
         compose.onNodeWithText("Open native app").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
