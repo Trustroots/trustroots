@@ -1,5 +1,10 @@
 /* global XMLHttpRequest, window */
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 import type { Request } from '@playwright/test';
 
 declare global {
@@ -74,6 +79,10 @@ for (const entry of cases) {
     });
 
     await page.goto(entry.path);
+    await captureSection(
+      page.locator('.row').filter({ has: page.locator('form') }),
+      entry.name,
+    );
     if (entry.feature === 'auth.password-forgot') {
       await page.getByLabel('Email or username').fill('example-member');
     } else {

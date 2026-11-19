@@ -28,3 +28,7 @@ export const Disabled: Story = {
     ).toBeDisabled();
   },
 };
+
+export const Large: Story = {
+  args: { fieldSize: 'lg' },
+};
