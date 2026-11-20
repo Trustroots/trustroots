@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import ProfileEditAbout from '@/modules/users/client/components/ProfileEditAbout.component';
-import { routeOptions, withUser } from '../route-options';
+import { requireAuth, withUser } from '../route-options';
 
-export const Route = createFileRoute('/profile/edit/')(
-  routeOptions(
-    { title: 'Edit profile', requiresAuth: true },
-    withUser(ProfileEditAbout),
-  ),
-);
+export const Route = createFileRoute('/profile/edit/')({
+  staticData: { title: 'Edit profile' },
+  beforeLoad: requireAuth,
+  component: withUser(ProfileEditAbout),
+});

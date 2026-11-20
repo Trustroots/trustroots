@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
-import { routeOptions, withUser } from '../route-options';
+import { requireAuth, withUser } from '../route-options';
 
-export const Route = createFileRoute('/offer/meet/$offerId')(
-  routeOptions(
-    { title: 'Edit meeting offer', requiresAuth: true, footerHidden: true },
-    withUser(OfferMeetEditPage),
-  ),
-);
+export const Route = createFileRoute('/offer/meet/$offerId')({
+  staticData: { title: 'Edit meeting offer', footerHidden: true },
+  beforeLoad: requireAuth,
+  component: withUser(OfferMeetEditPage),
+});

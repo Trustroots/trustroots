@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import SupportInbox from '@/modules/admin/client/components/Support.component';
-import { adminPolicy, routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/support/requests/$requestId')(
-  routeOptions(
-    adminPolicy('Support request', ['admin', 'support-team']),
-    SupportInbox,
-  ),
-);
+export const Route = createFileRoute('/admin/support/requests/$requestId')({
+  staticData: { title: 'Support request', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin', 'support-team'),
+  component: SupportInbox,
+});

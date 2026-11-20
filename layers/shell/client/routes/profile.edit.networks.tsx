@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
-import { routeOptions, withUser } from '../route-options';
+import { requireAuth, withUser } from '../route-options';
 
-export const Route = createFileRoute('/profile/edit/networks')(
-  routeOptions(
-    { title: 'Edit Profile networks', requiresAuth: true },
-    withUser(ProfileEditNetworks),
-  ),
-);
+export const Route = createFileRoute('/profile/edit/networks')({
+  staticData: { title: 'Edit Profile networks' },
+  beforeLoad: requireAuth,
+  component: withUser(ProfileEditNetworks),
+});

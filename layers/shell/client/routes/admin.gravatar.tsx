@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminGravatar from '@/modules/admin/client/components/AdminGravatar.component';
-import { adminPolicy, routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/gravatar')(
-  routeOptions(adminPolicy('Admin - Gravatar usage'), AdminGravatar),
-);
+export const Route = createFileRoute('/admin/gravatar')({
+  staticData: { title: 'Admin - Gravatar usage', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin'),
+  component: AdminGravatar,
+});

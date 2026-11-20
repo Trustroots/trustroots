@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import ProfileSignupPage from '@/modules/users/client/components/ProfileSignupPage.component';
-import { routeOptions } from '../route-options';
 
-export const Route = createFileRoute('/profile-signup')(
-  routeOptions({ title: 'Trustroots profile' }, ProfileSignupPage),
-);
+export const Route = createFileRoute('/profile-signup')({
+  staticData: { title: 'Trustroots profile' },
+  component: ProfileSignupPage,
+});

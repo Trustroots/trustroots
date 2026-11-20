@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { routeOptions } from '../route-options';
+import { requireAuth } from '../route-options';
 
-export const Route = createFileRoute('/profile/$username/about')(
-  routeOptions({ title: 'Profile', requiresAuth: true, noScrollingTop: true }),
-);
+export const Route = createFileRoute('/profile/$username/about')({
+  staticData: { title: 'Profile', noScrollingTop: true },
+  beforeLoad: requireAuth,
+});

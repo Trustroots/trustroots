@@ -3,7 +3,6 @@ import React from 'react';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import { routeOptions } from '../route-options';
 
 function VolunteeringRoute() {
   const { user } = useAuth();
@@ -28,6 +27,7 @@ function VolunteeringRoute() {
   );
 }
 
-export const Route = createFileRoute('/volunteering')(
-  routeOptions({ title: 'Volunteering' }, VolunteeringRoute),
-);
+export const Route = createFileRoute('/volunteering')({
+  staticData: { title: 'Volunteering' },
+  component: VolunteeringRoute,
+});

@@ -17,7 +17,14 @@ export const Route = createRootRouteWithContext<{
       <ReactAppShell />
     </ClientOnly>
   ),
-  head: () => ({ meta: [{ title: getBootstrapData().title }] }),
+  head: ({ matches }) => {
+    const title = matches[matches.length - 1]?.staticData.title;
+    return {
+      meta: [
+        { title: title ? `${title} - Trustroots` : getBootstrapData().title },
+      ],
+    };
+  },
   notFoundComponent: NotFoundPage,
   // Remount dependencies only see validated query parameters, so pass them all on.
   validateSearch: (search: Record<string, unknown>) => search,
