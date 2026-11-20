@@ -66,7 +66,7 @@ export default function Admin() {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-landing">
+      <div className="tw:page-container admin-landing">
         <header className="admin-landing__hero">
           <h1 className="admin-landing__title">Admin Dashboard</h1>
           {isAdmin && <a href="/admin/circles">Manage circles</a>}
@@ -78,13 +78,13 @@ export default function Admin() {
           </div>
         )}
 
-        <div className="row admin-dashboard-boxes">
+        <div className="tw:grid-row admin-dashboard-boxes">
           {dashboardError && (
-            <div className="col-sm-12">
+            <div className="tw:sm:grid-col-12">
               <p className="text-danger">{dashboardError}</p>
             </div>
           )}
-          <div className="col-sm-4">
+          <div className="tw:sm:grid-col-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">Top 10 Messengers Last Week</h2>
@@ -118,7 +118,7 @@ export default function Admin() {
               </div>
             </section>
           </div>
-          <div className="col-sm-4">
+          <div className="tw:sm:grid-col-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">
@@ -172,7 +172,7 @@ export default function Admin() {
               </div>
             </section>
           </div>
-          <div className="col-sm-4">
+          <div className="tw:sm:grid-col-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">Last 10 Negative Experiences</h2>

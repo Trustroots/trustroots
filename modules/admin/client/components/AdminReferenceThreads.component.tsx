@@ -58,7 +58,7 @@ export default function AdminReferenceThreads() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Reference Threads</h2>
         {topNegativeRecipients.length > 0 && (
           <div className="panel panel-default">

@@ -10,7 +10,7 @@ export default function OfferShell({
   user?: { public?: boolean } | null;
 }) {
   return (
-    <section className="container container-spacer offer">
+    <section className="tw:page-container container-spacer offer">
       {!user?.public && <OfferActivateProfile />}
       {user?.public && children}
     </section>

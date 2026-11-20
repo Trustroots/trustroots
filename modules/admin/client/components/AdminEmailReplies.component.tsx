@@ -30,7 +30,7 @@ export default function AdminEmailReplies() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Email replies</h2>
         <p>Preview up to 20 unprocessed emails from the reply mailbox.</p>
         <Button disabled={loading} onClick={() => void preview()}>

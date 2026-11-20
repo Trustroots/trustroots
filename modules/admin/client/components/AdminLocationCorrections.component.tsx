@@ -116,7 +116,7 @@ export default function AdminLocationCorrections() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h1>Location corrections</h1>
         <p>
           These offers are at or near the map’s default starting point. Nearby

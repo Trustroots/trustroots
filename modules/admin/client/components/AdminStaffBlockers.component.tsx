@@ -19,7 +19,7 @@ export default function AdminStaffBlockers() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h2>
           {isAdmin ? 'Members who blocked staff' : 'Members who blocked you'}
         </h2>

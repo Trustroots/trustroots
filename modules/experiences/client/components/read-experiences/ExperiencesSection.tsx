@@ -15,8 +15,8 @@ export default function ExperiencesSection({
   onReceiverProfile: boolean;
 }) {
   return experiences.map(experience => (
-    <div className="row" key={experience._id}>
-      <div className="col-xs-12">
+    <div className="tw:grid-row" key={experience._id}>
+      <div className="tw:grid-col-12">
         <Experience
           experience={experience}
           onReceiverProfile={onReceiverProfile}

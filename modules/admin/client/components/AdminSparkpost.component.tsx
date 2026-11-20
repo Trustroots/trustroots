@@ -168,7 +168,7 @@ export default function AdminSparkpost() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h2>SparkPost email diagnostics</h2>
         <p>
           Inspect email delivery and review recovery candidates. Recovery emails

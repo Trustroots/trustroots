@@ -23,7 +23,7 @@ export default function AvatarNameMobile({
     isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   return (
-    <div className="visible-xs-block">
+    <div className="tw:block tw:sm:hidden">
       <MemberIdentity
         user={{
           ...profile,

@@ -655,9 +655,9 @@ test.describe('authenticated member flows', () => {
     await page.goto(`/profile/${host.username}`);
 
     await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
-    await expect(page.locator('.row.hidden-xs .profile-username')).toHaveText(
-      `@${host.username}`,
-    );
+    await expect(
+      page.locator('.profile-view .profile-username:visible'),
+    ).toHaveText(`@${host.username}`);
   });
 
   test('profile edit locations page is reachable', async ({

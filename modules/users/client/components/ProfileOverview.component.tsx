@@ -35,7 +35,7 @@ export default function ProfileOverview({
         {/* avatar */}
         {showPhotoEditLink ? (
           <a
-            className="hidden-xs profile-photo-edit-link"
+            className="tw:max-sm:hidden profile-photo-edit-link"
             href="/profile/edit/photo"
             aria-label="Edit profile photo"
           >
@@ -43,7 +43,7 @@ export default function ProfileOverview({
           </a>
         ) : (
           <button
-            className="hidden-xs tw:block tw:w-full tw:border-0 tw:bg-transparent tw:p-0"
+            className="tw:max-sm:hidden tw:block tw:w-full tw:border-0 tw:bg-transparent tw:p-0"
             type="button"
             aria-label={t('Open profile picture of {{name}}', {
               name: profile.displayName || profile.username,

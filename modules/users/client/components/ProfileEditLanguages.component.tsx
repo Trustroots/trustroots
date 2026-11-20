@@ -86,10 +86,10 @@ export default function ProfileEditLanguages({
 
   return (
     <div className="form-group">
-      <label className="col-sm-3 text-right control-label">
+      <label className="tw:sm:grid-col-3 text-right control-label">
         {t('Languages')}
       </label>
-      <div className="col-sm-9 col-md-7 col-lg-6">
+      <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
         <QueryClientProvider client={queryClient}>
           <LanguageSelect
             excludeDeprecated

@@ -209,7 +209,7 @@ export function NetworkConnectionSearchPage() {
   }
 
   return (
-    <main className="container">
+    <main className="tw:page-container">
       <h1>Search external connections</h1>
       <form onSubmit={submit}>
         <div className="form-group">

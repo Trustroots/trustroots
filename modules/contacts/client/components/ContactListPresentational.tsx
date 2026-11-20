@@ -50,8 +50,8 @@ export default function ContactListPresentational({
 
   return (
     <div className="contacts-list">
-      <div className="row">
-        <div className="col-xs-12 col-sm-5">
+      <div className="tw:grid-row tw:mt-5 tw:mb-3">
+        <div className="tw:grid-col-12 tw:sm:grid-col-5">
           <h4 className="text-muted">
             {/* Confirmed contacts */}
             <span>
@@ -70,7 +70,7 @@ export default function ContactListPresentational({
           </h4>
         </div>
 
-        <div className="col-xs-12 col-sm-7">
+        <div className="tw:grid-col-12 tw:sm:grid-col-7">
           <div className="contacts-list-controls">
             <div className="form-group">
               <label htmlFor="contacts-sort">{t('Sort by') as string}</label>

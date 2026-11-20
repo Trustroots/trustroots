@@ -141,7 +141,7 @@ export default function AdminExperienceChanges(): React.JSX.Element {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h1>Experience changes</h1>
         {error && (
           <Alert intent="danger" role="alert">
