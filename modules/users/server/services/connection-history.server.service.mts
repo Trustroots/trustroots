@@ -159,6 +159,8 @@ export async function trackConnectionHistoryBeforeSave(
     user.connectionSearchKeys = allHistoryKeys(user.connectionHistory, user);
     user.connectionHistoryInitialised = true;
     user.connectionHistoryRevision = 1;
+    user.markModified('connectionHistory');
+    user.markModified('connectionSearchKeys');
     return;
   }
 
