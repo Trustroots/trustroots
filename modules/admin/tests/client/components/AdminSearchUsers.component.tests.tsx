@@ -1,10 +1,7 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 
-import { useNavigate } from '@tanstack/react-router';
-import AdminSearchUsers, {
-  SearchUsersContent,
-} from '@/modules/admin/client/components/AdminSearchUsers.component';
+import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
@@ -74,64 +71,33 @@ const makeMemberList = (
   ...overrides,
 });
 
-// Class instances outside a render get the route props their wrapper passes.
-function routeProps() {
-  return {
-    navigate: useNavigate(),
-    search: Object.fromEntries(new URL(window.location.href).searchParams),
-  };
-}
-
-function mockImmediateSetState(component: SearchUsersContent) {
-  vi.spyOn(component, 'setState').mockImplementation((update, callback) => {
-    const nextState =
-      typeof update === 'function'
-        ? update(component.state, component.props)
-        : update;
-    if (nextState) {
-      component.state = { ...component.state, ...nextState };
-    }
-    callback?.();
-  });
-}
-
 describe('<AdminSearchUsers />', () => {
-  it('lists users by role when called without a form event', async () => {
-    const userResults = [makeUser({ displayName: 'Direct Admin' })];
+  it('loads a role list from the URL without submitting a form', async () => {
+    window.history.pushState({}, '', '/admin/search-users?role=admin');
     mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
-      makeMemberList(userResults),
+      makeMemberList([makeUser({ displayName: 'Direct Admin' })]),
     );
-    const component = new SearchUsersContent(routeProps());
-    mockImmediateSetState(component);
 
-    await component.doListUsersByRole();
+    render(<AdminSearchUsers />);
 
+    expect(
+      await screen.findByRole('link', { name: /Direct Admin/ }),
+    ).toBeVisible();
     expect(mockedUsersApi.listUsersByRole).toHaveBeenCalledWith('admin', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
-    expect(component.setState).toHaveBeenCalledWith({
-      sort: { column: 'username', direction: 'ascending' },
-      userResults,
-      userResultsPagination: {
-        page: 1,
-        pageSize: 150,
-        total: 1,
-        totalPages: 1,
-      },
-      userResultsSource: 'role',
-    });
   });
 
-  it('normalises a direct search before querying', async () => {
+  it('normalises typed searches before querying', async () => {
     mockedUsersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
-    const component = new SearchUsersContent(routeProps());
-    component.state = { ...component.state, search: '  alice  ' };
-    mockImmediateSetState(component);
+    render(<AdminSearchUsers />);
 
-    await component.doSearch();
+    const input = screen.getByRole('searchbox');
+    fireEvent.change(input, { target: { value: '  alice  ' } });
+    await act(async () => fireEvent.submit(input.closest('form')!));
 
-    expect(component.setState).toHaveBeenCalledWith({ search: 'alice' });
+    expect(input).toHaveValue('alice');
     expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
@@ -140,13 +106,15 @@ describe('<AdminSearchUsers />', () => {
 
   it('removes an empty normalised search from the URL', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=old');
-    const component = new SearchUsersContent(routeProps());
-    component.state = { ...component.state, search: '   ' };
-    mockImmediateSetState(component);
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
+    await act(async () => render(<AdminSearchUsers />));
+    mockedUsersApi.searchUsers.mockClear();
 
-    await component.doSearch();
+    const input = screen.getByRole('searchbox');
+    fireEvent.change(input, { target: { value: '   ' } });
+    fireEvent.submit(input.closest('form')!);
 
-    expect(component.setState).toHaveBeenCalledWith({ search: '' });
+    expect(input).toHaveValue('');
     expect(window.location.search).toBe('');
     expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
   });
