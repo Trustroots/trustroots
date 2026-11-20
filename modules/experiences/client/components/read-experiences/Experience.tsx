@@ -9,16 +9,18 @@ import { DAYS_TO_REPLY } from '../../utils/constants';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
-import Meta from './Meta';
+import Meta, { type ExperienceTagFilters } from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import type { Experience as ExperienceModel } from '../../../shared/experience';
 
 export default function Experience({
   experience,
   onReceiverProfile,
+  tagFilters,
 }: {
   experience: ExperienceModel;
   onReceiverProfile: boolean;
+  tagFilters?: ExperienceTagFilters;
 }) {
   const { t } = useTranslation('experiences') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -61,12 +63,21 @@ export default function Experience({
                 }) as string)}
             </span>
           </div>
-          <a
-            className="tw:ms-auto tw:[align-self:start] tw:text-[#333] tw:[@media(max-width:480px)]:ms-0 tw:[@media(max-width:480px)]:mb-2.5 tw:[@media(max-width:480px)]:w-full"
-            href={`/profile/${userTo.username}/experiences#${_id}`}
-          >
-            <TimeAgo date={createdDate} />
-          </a>
+          <div className="tw:ms-auto tw:[align-self:start] tw:text-end tw:[@media(max-width:480px)]:ms-0 tw:[@media(max-width:480px)]:mb-2.5 tw:[@media(max-width:480px)]:w-full tw:[@media(max-width:480px)]:text-start">
+            <a
+              className="tw:text-[#333]"
+              href={`/profile/${userTo.username}/experiences#${_id}`}
+            >
+              <TimeAgo date={createdDate} />
+            </a>
+            {tagFilters && (
+              <Meta
+                interactions={interactions}
+                recommend={recommend}
+                tagFilters={tagFilters}
+              />
+            )}
+          </div>
         </div>
         {!isPublicExperience && feedbackPublic === undefined && (
           <>
@@ -101,7 +112,9 @@ export default function Experience({
             )}
           </>
         )}
-        <Meta interactions={interactions} recommend={recommend} />
+        {!tagFilters && (
+          <Meta interactions={interactions} recommend={recommend} />
+        )}
         {feedbackPublic && (
           <div className="tw:max-w-[600px]">{feedbackPublic}</div>
         )}
