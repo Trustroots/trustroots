@@ -343,9 +343,10 @@ export default function ProfilePage({
     enabled: canCheckSharedExperience,
     queryFn: async () => {
       const experience = await readMine({ userWith: viewedMemberId });
-      const author = experience?.userFrom;
-      const authorId = typeof author === 'string' ? author : author?._id;
-      return authorId === authUser._id ? (experience?._id ?? null) : null;
+      if (!experience) return null;
+      const author = experience.userFrom;
+      const authorId = typeof author === 'string' ? author : author._id;
+      return authorId === authUser._id ? experience._id : null;
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
