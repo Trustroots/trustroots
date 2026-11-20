@@ -386,6 +386,7 @@ describe('ProfilePage', () => {
     fetchProfile.mockResolvedValue(profile);
     getContact.mockResolvedValue(null);
     listContacts.mockResolvedValue([]);
+    vi.mocked(experiencesApi.readMine).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -522,6 +523,49 @@ describe('ProfilePage', () => {
     expect(
       analytics.track.mock.calls.filter(([name]) => name === 'profile_viewed'),
     ).toEqual([['profile_viewed', { own: 'no' }]]);
+  });
+
+  it('refreshes the normal profile action after leaving the Experience form', async () => {
+    renderPage(authUser, '/profile/bob/experiences/new', {
+      referencesEnabled: true,
+    });
+    expect(await screen.findByText('New experience form')).toBeVisible();
+    expect(
+      await screen.findByRole('link', { name: 'Share your experience' }),
+    ).toHaveAttribute('href', '/profile/bob/experiences/new');
+
+    vi.mocked(experiencesApi.readMine).mockResolvedValue({
+      _id: 'experience-1',
+      created: '2024-01-01T00:00:00.000Z',
+      public: false,
+      userFrom: { _id: authUser._id, username: authUser.username },
+      userTo: profile._id,
+      response: null,
+    });
+    window.history.pushState({}, '', '/profile/bob');
+    fireEvent.popState(window);
+
+    expect(
+      await screen.findByRole('link', { name: 'View your experience' }),
+    ).toHaveAttribute('href', '/profile/bob/experiences#experience-1');
+    expect(
+      screen.queryByRole('link', { name: 'Share your experience' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('still offers sharing when only the other member has written an Experience', async () => {
+    vi.mocked(experiencesApi.readMine).mockResolvedValue({
+      _id: 'received-experience',
+      created: '2024-01-01T00:00:00.000Z',
+      public: false,
+      userFrom: profile._id,
+      userTo: authUser._id,
+      response: null,
+    });
+    renderPage(authUser, '/profile/bob', { referencesEnabled: true });
+    expect(
+      await screen.findByRole('link', { name: 'Share your experience' }),
+    ).toHaveAttribute('href', '/profile/bob/experiences/new');
   });
 
   it('shows remove contact for an existing confirmed contact', async () => {

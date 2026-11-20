@@ -3,14 +3,14 @@ import { rememberOutreachSource } from '@trustroots/analytics/client';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
-import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
+import type { ExperienceAction } from '@/modules/experiences/client/components/ListExperiences.component';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 
 interface TopNavigationSmallProps {
   isAdmin?: boolean;
   username: string;
   contact?: ContactRecord | null;
-  referencesEnabled: boolean;
+  experienceAction?: ExperienceAction;
   isResolved: boolean;
   selfId: string;
   userId: string;
@@ -28,7 +28,7 @@ export default function TopNavigationSmall({
   isAdmin = false,
   username,
   contact,
-  referencesEnabled,
+  experienceAction,
   isResolved,
   selfId,
   userId,
@@ -71,11 +71,11 @@ export default function TopNavigationSmall({
       },
     ];
 
-    if (referencesEnabled) {
+    if (experienceAction) {
       links.push({
         id: 'share-experience',
-        label: t('Share your experience'),
-        link: getProfileExperiencesPath(username),
+        label: experienceAction.label,
+        link: experienceAction.href,
       });
     }
 
