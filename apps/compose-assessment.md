@@ -245,6 +245,11 @@ relaunches. Both journeys used local fixture servers.
 The local iOS simulator linker reported that a bundled ICU data object targeted
 iOS Simulator 18.5 while the app targets 17.0. The pilot needs runtime checks on
 older supported iOS versions before it becomes a default destination.
+To test the exact deployment minimum, run the **iOS** GitHub Actions workflow
+with **Run on iOS 17.0** enabled. The workflow requests that runtime from Xcode
+if necessary, creates an iPhone 15 simulator and runs the same tests. It fails
+if the requested runtime is unavailable so the result cannot be mistaken for
+a run on a newer simulator.
 
 Continue the pilot alongside SwiftUI. The next decision should follow
 a device comparison with current native behaviour.
