@@ -96,9 +96,29 @@ export default function ListExperiences({
     );
   }
 
+  const needsReply = (experience: Experience) =>
+    onReceiverProfile && !experience.response;
+  const awaitingReply = [...pendingExperiences, ...publicExperiences].filter(
+    needsReply,
+  );
+  const otherPending = pendingExperiences.filter(
+    experience => !needsReply(experience),
+  );
+  const otherPublic = publicExperiences.filter(
+    experience => !needsReply(experience),
+  );
+
   return (
     <>
-      {hasPendingExperiences && (
+      {awaitingReply.length > 0 && (
+        <section aria-labelledby="experiences-awaiting-reply-heading">
+          <h3 id="experiences-awaiting-reply-heading">
+            {t('Experiences awaiting your reply')}
+          </h3>
+          <ExperiencesSection experiences={awaitingReply} onReceiverProfile />
+        </section>
+      )}
+      {otherPending.length > 0 && (
         <>
           <div className="row">
             <div className="col-xs-12 col-sm-6">
@@ -108,19 +128,19 @@ export default function ListExperiences({
             </div>
           </div>
           <ExperiencesSection
-            experiences={pendingExperiences}
+            experiences={otherPending}
             onReceiverProfile={onReceiverProfile}
           />
         </>
       )}
       {hasPublicExperiences && (
-        <>
-          <ExperienceCounts experiences={publicExperiences} />
-          <ExperiencesSection
-            experiences={publicExperiences}
-            onReceiverProfile={onReceiverProfile}
-          />
-        </>
+        <ExperienceCounts experiences={publicExperiences} />
+      )}
+      {otherPublic.length > 0 && (
+        <ExperiencesSection
+          experiences={otherPublic}
+          onReceiverProfile={onReceiverProfile}
+        />
       )}
     </>
   );

@@ -5,6 +5,7 @@ import '@/config/client/i18n';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
 import { read as readExperiences } from '@/modules/experiences/client/api/experiences.api';
 import type { Experience } from '@/modules/experiences/shared/experience';
+import type ExperienceCounts from '@/modules/experiences/client/components/read-experiences/ExperienceCounts';
 import type ExperiencesSection from '@/modules/experiences/client/components/read-experiences/ExperiencesSection';
 
 vi.mock('@/modules/experiences/client/api/experiences.api');
@@ -14,8 +15,10 @@ vi.mock(
   '@/modules/experiences/client/components/read-experiences/ExperienceCounts',
   async () => {
     const React = await vi.importActual<typeof import('react')>('react');
-    function MockExperienceCounts() {
-      return <div>experience-counts</div>;
+    function MockExperienceCounts({
+      experiences,
+    }: React.ComponentProps<typeof ExperienceCounts>) {
+      return <div>{`public count: ${experiences.length}`}</div>;
     }
     return { default: MockExperienceCounts };
   },
@@ -28,7 +31,9 @@ vi.mock(
     function MockExperiencesSection({
       experiences,
     }: React.ComponentProps<typeof ExperiencesSection>) {
-      return <div>{`experiences-section-${experiences.length}`}</div>;
+      return (
+        <div>{experiences.map(experience => experience._id).join(', ')}</div>
+      );
     }
     return { default: MockExperiencesSection };
   },
@@ -73,7 +78,7 @@ describe('<ListExperiences />', () => {
     ).toHaveAttribute('href', '/profile/member-one/experiences/new');
   });
 
-  it('renders public and pending experience sections', async () => {
+  it('renders the normal public and pending sections for visitors', async () => {
     readExperiencesMock.mockResolvedValueOnce([
       makeExperience('e1', true),
       makeExperience('e2', false),
@@ -81,14 +86,50 @@ describe('<ListExperiences />', () => {
     ]);
 
     render(
-      <ListExperiences profile={profile} authenticatedUser={{ ...profile }} />,
+      <ListExperiences
+        profile={profile}
+        authenticatedUser={authenticatedMember}
+      />,
     );
 
     expect(
       await screen.findByText('Experiences pending publishing'),
     ).toBeInTheDocument();
-    expect(screen.getByText('experience-counts')).toBeInTheDocument();
-    expect(screen.getByText('experiences-section-1')).toBeInTheDocument();
-    expect(screen.getByText('experiences-section-2')).toBeInTheDocument();
+    expect(screen.getByText('public count: 1')).toBeInTheDocument();
+    expect(screen.getByText('e1')).toBeInTheDocument();
+    expect(screen.getByText('e3, e2')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Experiences awaiting your reply' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('groups unanswered Experiences for the owner and keeps all public Experiences in the count', async () => {
+    const response = {
+      _id: 'reply',
+      created: '2024-01-02T00:00:00.000Z',
+      interactions: { met: true, guest: false, host: false },
+      recommend: 'yes',
+    } as const;
+    readExperiencesMock.mockResolvedValueOnce([
+      makeExperience('public-unanswered', true),
+      makeExperience('newer-pending', false),
+      { ...makeExperience('public-answered', true), response },
+      makeExperience('older-pending', false),
+      { ...makeExperience('pending-answered', false), response },
+    ]);
+
+    render(<ListExperiences profile={profile} authenticatedUser={profile} />);
+
+    const awaitingReply = await screen.findByRole('region', {
+      name: 'Experiences awaiting your reply',
+    });
+    expect(awaitingReply).toHaveTextContent(
+      'older-pending, newer-pending, public-unanswered',
+    );
+    expect(awaitingReply).not.toHaveTextContent('public-answered');
+    expect(awaitingReply).not.toHaveTextContent('pending-answered');
+    expect(screen.getByText('public count: 2')).toBeInTheDocument();
+    expect(screen.getByText('public-answered')).toBeInTheDocument();
+    expect(screen.getByText('pending-answered')).toBeInTheDocument();
   });
 });
