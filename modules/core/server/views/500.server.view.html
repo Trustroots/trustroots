@@ -1,12 +1,15 @@
 {% extends 'react-layout.server.view.html' %} {% block header %}{% endblock
 header %} {% block content %}
 <section
-  class="container container-fullscreen container-error board board-error"
+  class="tw:page-container container-fullscreen container-error board board-error"
 >
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
-      <div class="row">
-        <div class="col-md-6 col-md-offset-3 text-center" role="alert">
+      <div class="tw:grid-row">
+        <div
+          class="tw:md:grid-col-6 tw:md:grid-offset-3 text-center"
+          role="alert"
+        >
           <h2><em>Don't panic</em></h2>
           <h1>Oops! Something went wrong...</h1>
           <br /><br />

@@ -9,11 +9,11 @@ export default function ActivateProfileNotice() {
 
   return (
     <div
-      className="row"
+      className="tw:grid-row"
       role="alertdialog"
       aria-labelledby="activate-profile-message"
     >
-      <div className="col-xs-12 text-center" role="document">
+      <div className="tw:grid-col-12 text-center" role="document">
         <h2>{t("Don't panic!")}</h2>
         <p className="lead" id="activate-profile-message">
           <em>

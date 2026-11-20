@@ -656,7 +656,7 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
     await expect(
-      page.locator('.profile-view .row .profile-username:visible'),
+      page.locator('.profile-view .profile-username:visible'),
     ).toHaveText(`@${host.username}`);
   });
 

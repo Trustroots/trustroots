@@ -66,9 +66,12 @@ export default function SearchCirclesToggle({
   }
 
   return (
-    <ul className="list-unstyled row">
+    <ul className="list-unstyled tw:grid-row">
       {circles.map(circle => (
-        <li className="form-group col-xs-12 col-sm-6 col-md-4" key={circle._id}>
+        <li
+          className="form-group tw:grid-col-12 tw:sm:grid-col-6 tw:md:grid-col-4"
+          key={circle._id}
+        >
           <label className="tr-switch tr-switch-side-left tr-switch-sm">
             <input
               checked={Boolean(toggles[circle._id])}

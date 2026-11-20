@@ -15,7 +15,7 @@ export default function AdminHeader() {
 
   useEffect(() => {
     const input = document.querySelector<HTMLInputElement>(
-      '.container input:not([type="hidden"]):not([disabled])',
+      ':is(.container, [class~="tw:page-container"]) input:not([type="hidden"]):not([disabled])',
     );
 
     if (input) {
@@ -129,7 +129,7 @@ export default function AdminHeader() {
       className="navbar navbar-white navbar-admin"
       aria-label="Administration"
     >
-      <div className="container">
+      <div className="tw:page-container">
         <div className="admin-nav-groups">
           {groups.map(group => (
             <div className="admin-nav-group" key={group.id}>

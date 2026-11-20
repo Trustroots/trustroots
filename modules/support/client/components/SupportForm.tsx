@@ -164,10 +164,13 @@ export default function SupportForm({ user }: SupportFormProps) {
           className="form-horizontal"
         >
           <div className="form-group">
-            <label htmlFor="category" className="col-sm-3 control-label">
+            <label
+              htmlFor="category"
+              className="tw:sm:grid-col-3 control-label"
+            >
               {t('What can we help with?')}
             </label>
-            <div className="col-sm-9">
+            <div className="tw:sm:grid-col-9">
               <select
                 ref={categoryInput}
                 id="category"
@@ -192,10 +195,10 @@ export default function SupportForm({ user }: SupportFormProps) {
           {/* Reporting another profile */}
           {category === 'reportMember' && (
             <div className="form-group">
-              <label className="col-sm-3 control-label">
+              <label className="tw:sm:grid-col-3 control-label">
                 {t('Reported member')}
               </label>
-              <div className="col-sm-9">
+              <div className="tw:sm:grid-col-9">
                 {reportMember ? (
                   <p className="form-control-static">
                     <strong>{reportMember}</strong>
@@ -231,10 +234,10 @@ export default function SupportForm({ user }: SupportFormProps) {
           )}
 
           <div className="form-group">
-            <label htmlFor="message" className="col-sm-3 control-label">
+            <label htmlFor="message" className="tw:sm:grid-col-3 control-label">
               {t('Message')}
             </label>
-            <div className="col-sm-9">
+            <div className="tw:sm:grid-col-9">
               {category === 'volunteering' && (
                 <p className="help-block" id="volunteering-help">
                   {t(VOLUNTEERING_DISCLAIMER)}
@@ -282,18 +285,23 @@ export default function SupportForm({ user }: SupportFormProps) {
           {/* Name is sent only for logged in users, don't bother to ask it from non-logged users */}
           {user?.displayName && (
             <div className="form-group">
-              <label className="col-sm-3 control-label">{t('Name')}</label>
-              <div className="col-sm-9">
+              <label className="tw:sm:grid-col-3 control-label">
+                {t('Name')}
+              </label>
+              <div className="tw:sm:grid-col-9">
                 <p className="form-control-static">{user.displayName}</p>
               </div>
             </div>
           )}
 
           <div className="form-group">
-            <label htmlFor="username" className="col-sm-3 control-label">
+            <label
+              htmlFor="username"
+              className="tw:sm:grid-col-3 control-label"
+            >
               {t('Username')}
             </label>
-            <div className="col-sm-9">
+            <div className="tw:sm:grid-col-9">
               {user?.username ? (
                 <p className="form-control-static">{user.username}</p>
               ) : (
@@ -311,10 +319,10 @@ export default function SupportForm({ user }: SupportFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email" className="col-sm-3 control-label">
+            <label htmlFor="email" className="tw:sm:grid-col-3 control-label">
               {t('Email')}
             </label>
-            <div className="col-sm-9">
+            <div className="tw:sm:grid-col-9">
               {user?.email ? (
                 <p className="form-control-static">{user.email}</p>
               ) : (
@@ -333,7 +341,7 @@ export default function SupportForm({ user }: SupportFormProps) {
           </div>
 
           <div className="form-group">
-            <div className="offset-sm-3 col-sm-9">
+            <div className="tw:min-[576px]:grid-offset-3 tw:sm:grid-col-9">
               <Button
                 type="submit"
                 intent="primary"

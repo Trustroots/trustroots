@@ -108,7 +108,7 @@ export default function AdminSignupReviewRules() {
   return (
     <>
       <AdminHeader />
-      <main className="container admin-page">
+      <main className="tw:page-container admin-page">
         <h1>Signup watchlist</h1>
         <p>
           Matching signups are allowed and flagged to alert staff for review.

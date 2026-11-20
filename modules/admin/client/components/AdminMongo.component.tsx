@@ -73,7 +73,7 @@ export default function AdminMongo() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h2>MongoDB diagnostics</h2>
         <Button
           type="button"

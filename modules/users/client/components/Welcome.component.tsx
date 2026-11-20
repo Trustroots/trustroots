@@ -8,9 +8,9 @@ export default function Welcome() {
   };
 
   return (
-    <section className="container container-spacer">
-      <div className="row">
-        <div className="col-xs-offset-2 col-xs-8 col-md-offset-3 col-md-6 text-center">
+    <section className="tw:page-container container-spacer">
+      <div className="tw:grid-row">
+        <div className="tw:grid-offset-2 tw:grid-col-8 tw:md:grid-offset-3 tw:md:grid-col-6 text-center">
           <img
             className="tw:max-sm:hidden"
             src="/img/tree-color.svg"

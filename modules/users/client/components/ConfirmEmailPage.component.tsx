@@ -90,7 +90,7 @@ export default function ConfirmEmailPage() {
   }
 
   return (
-    <section className="container container-spacer email-confirmation">
+    <section className="tw:page-container container-spacer email-confirmation">
       <div
         className="email-confirmation-card"
         aria-labelledby="email-confirmation-title"

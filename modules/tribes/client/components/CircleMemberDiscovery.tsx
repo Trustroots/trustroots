@@ -149,7 +149,7 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
   }, [circle.slug, user._id, attempt]);
 
   return (
-    <div className="circle-member-discovery container">
+    <div className="circle-member-discovery tw:page-container">
       <MemberSection
         title={t('Your contacts in this circle')}
         subtitle={t('People you already know on Trustroots')}

@@ -267,7 +267,7 @@ export default function AdminAcquisitionStories() {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-acquisition-stories-page">
+      <div className="tw:page-container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 500 stories</p>
 

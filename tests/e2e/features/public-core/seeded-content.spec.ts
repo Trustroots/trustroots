@@ -248,11 +248,14 @@ test.describe('seeded content and public API flows', () => {
 
       const content = page.locator('.tribe-header-info');
       await expect(content).toBeVisible();
-      await content.locator('.container').evaluate(element => {
-        const filler = element.ownerDocument.createElement('div');
-        filler.style.height = '960px';
-        element.append(filler);
-      });
+      await content
+        .locator(':scope > div')
+        .first()
+        .evaluate(element => {
+          const filler = element.ownerDocument.createElement('div');
+          filler.style.height = '960px';
+          element.append(filler);
+        });
       const state = await content.evaluate(element => {
         const document = element.ownerDocument;
         const defaultView = document.defaultView;

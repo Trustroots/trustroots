@@ -10,9 +10,9 @@ export default function TribesHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <Board names="tribes-1" className="tribes-header">
-      <div className="container">
-        <div className="row">
-          <div className="col-xs-12 text-center">
+      <div className="tw:page-container">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 text-center">
             <br />
             <br />
             <h2>{t('Discover circles') as string}</h2>

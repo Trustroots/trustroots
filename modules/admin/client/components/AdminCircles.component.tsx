@@ -240,7 +240,7 @@ export default function AdminCircles({
   return (
     <>
       <AdminHeader />
-      <div className="container admin-circles-page">
+      <div className="tw:page-container admin-circles-page">
         <div className="admin-circles-heading">
           <div>
             <h2>Circles</h2>
@@ -254,8 +254,8 @@ export default function AdminCircles({
         </div>
         {message && <p className="text-success">{message}</p>}
         {error && <p className="text-danger">{error}</p>}
-        <div className="row">
-          <div className="col-md-7">
+        <div className="tw:grid-row">
+          <div className="tw:md:grid-col-7">
             <div className="table-responsive">
               <table className="table admin-circles-table" aria-label="Circles">
                 <thead>
@@ -341,7 +341,7 @@ export default function AdminCircles({
               </table>
             </div>
           </div>
-          <div className="col-md-5">
+          <div className="tw:md:grid-col-5">
             {circle.slug && (
               <p>
                 <a href={`/circles/${encodeURIComponent(circle.slug)}`}>
@@ -448,8 +448,8 @@ export default function AdminCircles({
                   Add organiser
                 </Button>
               </fieldset>
-              <div className="row">
-                <div className="col-sm-4 form-group">
+              <div className="tw:grid-row">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="circle-color">Colour</label>
                   <input
                     className="form-control"
@@ -478,7 +478,7 @@ export default function AdminCircles({
                     </p>
                   )}
                 </div>
-                <div className="col-sm-8 form-group">
+                <div className="tw:sm:grid-col-8 form-group">
                   <label htmlFor="circle-image">Image</label>
                   <input
                     accept="image/jpeg,image/png,image/gif"

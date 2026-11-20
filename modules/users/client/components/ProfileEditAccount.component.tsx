@@ -306,11 +306,11 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               <div className="form-group">
                 <label
                   htmlFor="email"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Email Address')}
                 </label>
-                <div className="col-sm-9">
+                <div className="tw:sm:grid-col-9">
                   <input
                     type="email"
                     id="email"
@@ -334,7 +334,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 </div>
               </div>
               <div className="form-group">
-                <div className="col-sm-push-3 col-sm-9">
+                <div className="tw:sm:grid-push-3 tw:sm:grid-col-9">
                   <Button
                     type="submit"
                     intent="primary"
@@ -378,11 +378,11 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               <div className="form-group">
                 <label
                   htmlFor="username"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Username')}
                 </label>
-                <div className="col-sm-9">
+                <div className="tw:sm:grid-col-9">
                   <input
                     type="text"
                     id="username"
@@ -411,7 +411,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 </div>
               </div>
               <div className="form-group">
-                <div className="col-sm-push-3 col-sm-9">
+                <div className="tw:sm:grid-push-3 tw:sm:grid-col-9">
                   <Button
                     intent="primary"
                     type="submit"

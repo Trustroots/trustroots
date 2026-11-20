@@ -9,7 +9,7 @@ export default function UserDoesNotExist() {
   };
 
   return (
-    <div className="row text-center" role="alert">
+    <div className="tw:grid-row text-center" role="alert">
       <h1>{t('Oops!')}</h1>
       <em className="lead">
         {t('The person you are looking for is not available.')}

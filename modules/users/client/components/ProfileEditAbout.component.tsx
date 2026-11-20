@@ -120,11 +120,11 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="firstname"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('First name')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <input
                     type="text"
                     className="form-control"
@@ -139,11 +139,11 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="lastname"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Last name (optional)')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <input
                     type="text"
                     className="form-control"
@@ -164,11 +164,11 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="tagline"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Short tagline')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <input
                     type="text"
                     className="form-control"
@@ -186,11 +186,11 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="gender"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('I Am')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <select
                     className="form-control"
                     id="gender"
@@ -208,10 +208,10 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                 </div>
               </div>
               <div className="form-group">
-                <label className="col-sm-3 text-right control-label">
+                <label className="tw:sm:grid-col-3 text-right control-label">
                   {t('Birthdate')}
                 </label>
-                <div className="col-sm-9">
+                <div className="tw:sm:grid-col-9">
                   <BirthdateSelect
                     onChange={birthdate => updateDraft({ birthdate })}
                     value={draftUser.birthdate || ''}

@@ -57,7 +57,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
 
   return (
     <nav
-      className="container tw:flex tw:min-h-[43px] tw:items-center"
+      className="tw:page-container tw:flex tw:min-h-[43px] tw:items-center"
       aria-label={t('Page navigation')}
     >
       <div className="header-brand tw:me-4 tw:shrink-0 tw:pt-1.5 tw:pb-1.25 tw:whitespace-nowrap">

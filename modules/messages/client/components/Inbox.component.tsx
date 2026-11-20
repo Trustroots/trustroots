@@ -115,7 +115,7 @@ export default function Inbox({ user }: InboxProps) {
 
   return (
     <section className="container-spacer">
-      <div className="container inbox-controls">
+      <div className="tw:page-container inbox-controls">
         <nav
           aria-label={t('Conversation filter')}
           className="inbox-view-filters"
@@ -180,7 +180,7 @@ export default function Inbox({ user }: InboxProps) {
         </div>
       </div>
       {isFetching && !loadFailed && (
-        <div className="container">
+        <div className="tw:page-container">
           <ContentState
             kind="loading"
             heading={
@@ -193,7 +193,7 @@ export default function Inbox({ user }: InboxProps) {
         </div>
       )}
       {loadFailed && (
-        <div className="container">
+        <div className="tw:page-container">
           <ContentState
             kind="error"
             heading={

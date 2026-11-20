@@ -15,9 +15,9 @@ export default function Volunteering({ children }: React.PropsWithChildren) {
         className="volunteer-header board-happyhippies"
         names="happyhippies"
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <i className="icon-3x icon-heart-o"></i>
@@ -30,9 +30,9 @@ export default function Volunteering({ children }: React.PropsWithChildren) {
         <div></div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8">
             <p className="lead">
               {t(
                 'Help us build Trustroots! Nobody can do everything, but everyone can do something…',

@@ -6,7 +6,7 @@
   padding: 16px 0;
   border-bottom: 1px solid @gray-lighter;
 
-  > .container {
+  > :is(.container, [class~='tw:page-container']) {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -75,11 +75,11 @@
     font-weight: 600;
   }
 
-  + .container {
+  + :is(.container, [class~='tw:page-container']) {
     padding-top: 18px;
   }
 
-  + .container > h2:first-child {
+  + :is(.container, [class~='tw:page-container']) > h2:first-child {
     margin-top: 0;
   }
 }
@@ -133,7 +133,7 @@
     border: 0;
     border-right: 1px solid @gray-lighter;
 
-    > .container {
+    > :is(.container, [class~='tw:page-container']) {
       width: 100%;
       padding: 0;
     }
@@ -172,8 +172,8 @@
       padding: 5px 12px;
     }
 
-    + .container,
-    + .container.admin-user-page {
+    + :is(.container, [class~='tw:page-container']),
+    + :is(.container, [class~='tw:page-container']).admin-user-page {
       width: calc(100% - 264px);
       max-width: none;
       margin-right: 16px;

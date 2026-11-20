@@ -72,7 +72,7 @@ export default function AdminGravatar() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Gravatar usage</h2>
         <p>
           Gravatar used to be the default avatar setting. Accounts without a

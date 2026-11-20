@@ -94,7 +94,7 @@ export default function AdminThreads() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Threads</h2>
         {username && (
           <p>

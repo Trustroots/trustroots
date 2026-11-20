@@ -81,7 +81,7 @@ export default function AdminAuditLog() {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-audit-log-page">
+      <div className="tw:page-container admin-audit-log-page">
         <h2>Audit log</h2>
         <p>Latest 100 matching actions. Team filters use current membership.</p>
         <div className="admin-audit-log-filters">
