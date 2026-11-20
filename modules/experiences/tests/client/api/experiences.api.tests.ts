@@ -71,6 +71,16 @@ describe('experiences api', () => {
     });
   });
 
+  it('requests pending authored Experiences explicitly', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: [] });
+    await expect(
+      read({ userTo: 'member-one', view: 'pending-authored' }),
+    ).resolves.toEqual([]);
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/experiences', {
+      params: { userTo: 'member-one', view: 'pending-authored' },
+    });
+  });
+
   it('reads the mutual experience', async () => {
     const mutualExperience: ExperienceMine = {
       ...experienceMine,

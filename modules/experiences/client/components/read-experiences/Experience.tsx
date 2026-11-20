@@ -19,10 +19,12 @@ const feedbackClassName =
 export default function Experience({
   experience,
   onReceiverProfile,
+  showPendingRecipient = false,
   tagFilters,
 }: {
   experience: ExperienceModel;
   onReceiverProfile: boolean;
+  showPendingRecipient?: boolean;
   tagFilters?: ExperienceTagFilters;
 }) {
   const { t } = useTranslation('experiences') as {
@@ -42,6 +44,8 @@ export default function Experience({
   } = experience;
 
   const createdDate = new Date(created);
+  const subject = showPendingRecipient ? userTo : userFrom;
+  const isAuthorView = showPendingRecipient || feedbackPublic !== undefined;
 
   // Get how many days are left before experience will become public
   const getDaysLeft = (date: Date): number =>
@@ -51,18 +55,17 @@ export default function Experience({
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
-  // TODO use `onReceiverProfile` in conditions below instead of `feedbackPublic === undefined`
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body">
         <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:gap-2.5 tw:leading-[1.3em]">
           <div className="tw:min-w-0">
-            <MemberIdentity user={userFrom} size={36} profileLink />
+            <MemberIdentity user={subject} size={36} profileLink />
             <span className="muted">
-              {userFrom?.gender && `${getGender(userFrom.gender)}. `}
-              {userFrom?.created &&
+              {subject?.gender && `${getGender(subject.gender)}. `}
+              {subject?.created &&
                 (t('Member since {{date, YYYY}}.', {
-                  date: new Date(userFrom.created),
+                  date: new Date(subject.created),
                 }) as string)}
             </span>
           </div>
@@ -82,7 +85,7 @@ export default function Experience({
             )}
           </div>
         </div>
-        {!isPublicExperience && feedbackPublic === undefined && (
+        {!isPublicExperience && !isAuthorView && (
           <>
             <div className="tw:py-5 tw:italic">
               <div
@@ -138,7 +141,7 @@ export default function Experience({
             )}
           </div>
         )}
-        {!isPublicExperience && feedbackPublic !== undefined && (
+        {!isPublicExperience && isAuthorView && (
           <>
             <div className="tw:py-5 tw:italic">
               {
