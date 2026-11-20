@@ -14,7 +14,7 @@ async function app(signedIn = false) {
   const { default: routes } = await mockModule<
     typeof import('../../server/routes/core.server.routes.mts')
   >(new URL('../../server/routes/core.server.routes.mts', import.meta.url), {
-    './../controllers/core.server.controller.mjs': {
+    './../controllers/core.server.controller.mts': {
       renderIndex(req: TribeRequest, res: Response) {
         res.send(`index:${req.tribe?.slug ?? ''}`);
       },
@@ -28,7 +28,7 @@ async function app(signedIn = false) {
         res.send('languages');
       },
     },
-    './../../../tribes/server/controllers/tribes.server.controller.mjs': {
+    './../../../tribes/server/controllers/tribes.server.controller.mts': {
       tribeBySlug(
         req: TribeRequest,
         _res: Response,

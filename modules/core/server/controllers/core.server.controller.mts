@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
-import errorService from './../services/error.server.service.mjs';
-import userProfile from './../../../users/server/controllers/users.profile.server.controller.mjs';
+import errorService from './../services/error.server.service.mts';
+import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import textService from './../services/text.server.service.mts';
 import {
   getStartShell,
   renderStartShell,
 } from './../services/start-shell.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
 import reactRouteOwnership, {
   type ReactRouteUser,

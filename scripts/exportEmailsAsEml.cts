@@ -36,14 +36,14 @@ interface StreamMailer {
 const path = require('node:path') as typeof import('node:path');
 const fs = require('node:fs') as typeof import('node:fs');
 const removeLocalPath =
-  require('../modules/core/server/services/file-removal.server.service.mjs')
+  require('../modules/core/server/services/file-removal.server.service.mts')
     .default.removeLocalPath as (filename: string) => Promise<void>;
 const nodemailer = require('nodemailer') as StreamMailer;
 const config = require('./../config/config.mts').default as {
   supportEmail: string;
 };
 const emailService =
-  require('./../modules/core/server/services/email.server.service.mjs')
+  require('./../modules/core/server/services/email.server.service.mts')
     .default as typeof import('../modules/core/server/services/email.server.service.mts').default;
 
 // Default temp folder

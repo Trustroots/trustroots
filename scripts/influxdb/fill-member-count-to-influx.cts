@@ -7,14 +7,14 @@ import type {
 } from '../legacy-cli-contracts.d.cts';
 const _ = require('lodash') as typeof import('lodash');
 const moment = require('moment') as typeof import('moment');
-const mongooseService = require('./../../config/lib/mongoose.mjs')
+const mongooseService = require('./../../config/lib/mongoose.mts')
   .default as ConnectionHelper;
 const mongoose = require('mongoose') as LegacyMongoose;
 const statsService =
   require('./../../modules/stats/server/services/stats.server.service.mts')
     .default as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
 
-require('./../../modules/users/server/models/user.server.model.mjs');
+require('./../../modules/users/server/models/user.server.model.mts');
 const User = mongoose.model<CountUsers>('User');
 
 let cumulativeUserCount = 0;

@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
  */
 import _ from 'lodash';
 import moment from 'moment';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import semver from 'semver';
 import mongoose, { type Types } from 'mongoose';

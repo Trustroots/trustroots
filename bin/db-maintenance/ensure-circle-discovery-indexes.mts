@@ -7,7 +7,7 @@
  *
  * This is safe to run more than once. It never drops or synchronises indexes.
  */
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import type { Connection } from 'mongoose';
 
 mongooseService.connect(async (connection: Connection) => {

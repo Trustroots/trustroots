@@ -1,5 +1,5 @@
-import './../../../users/server/models/user.server.model.mjs';
-import './../../../offers/server/models/offer.server.model.mjs';
+import './../../../users/server/models/user.server.model.mts';
+import './../../../offers/server/models/offer.server.model.mts';
 import { Readable } from 'stream';
 import sinon from 'sinon';
 import mongoose from 'mongoose';

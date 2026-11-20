@@ -1,6 +1,6 @@
 import type { Express, RequestHandler } from 'express';
 
-import statistics from './../controllers/statistics.server.controller.mjs';
+import statistics from './../controllers/statistics.server.controller.mts';
 type MiddlewareCallback = (...args: never[]) => unknown;
 
 // Route policies establish the request shape each narrower controller needs.

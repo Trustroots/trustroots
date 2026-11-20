@@ -36,7 +36,7 @@ async function loadJob(sendError: Error | null, allow: boolean | Error = true) {
       './../../../../config/config.mts': {
         mailer: { options: { fictional: 'transport' } },
       },
-      './../../../../config/lib/logger.mjs': (...args: unknown[]) => {
+      '@trustroots/logger': (...args: unknown[]) => {
         events.push(args);
       },
     },

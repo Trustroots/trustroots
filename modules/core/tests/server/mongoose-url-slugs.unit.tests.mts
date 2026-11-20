@@ -9,7 +9,7 @@ describe('Mongoose URL slug adapter', function () {
 
   async function slug(name: string, options: Record<string, unknown> = {}) {
     const { default: urlSlugs } =
-      await import('../../../../config/lib/mongoose-url-slugs.mjs');
+      await import('../../../../config/lib/mongoose-url-slugs.mts');
     const schema = new mongoose.Schema<{ name: string; slug?: string }>({
       name: String,
     });

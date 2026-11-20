@@ -72,7 +72,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
-        'modules/*/server/**/*.{mjs,mts}',
+        'modules/*/server/**/*.mts',
         'modules/mobile/server/**/*.cjs',
         'packages/analytics/server/**/*.mts',
         'packages/logger/**/*.mts',
@@ -80,12 +80,11 @@ export default defineConfig({
       exclude: [
         'modules/*/tests/**',
         'deploy/docker/data/**',
-        'modules/*/server/**/*.model.{mjs,mts}',
+        'modules/*/server/**/*.model.mts',
         'modules/*/server/models/**',
-        'modules/core/server/jobs/send-push-message.server.job.mjs',
-        'modules/users/server/jobs/user-welcome-sequence-first.server.job.{mjs,mts}',
-        'modules/users/server/jobs/user-welcome-sequence-second.server.job.{mjs,mts}',
-        'modules/users/server/jobs/user-welcome-sequence-third.server.job.{mjs,mts}',
+        'modules/users/server/jobs/user-welcome-sequence-first.server.job.mts',
+        'modules/users/server/jobs/user-welcome-sequence-second.server.job.mts',
+        'modules/users/server/jobs/user-welcome-sequence-third.server.job.mts',
       ],
       // Parallel workers must not clean or read each other's raw coverage data.
       reportsDirectory:

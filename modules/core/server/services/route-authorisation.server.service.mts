@@ -1,4 +1,4 @@
-import errorService from './error.server.service.mjs';
+import errorService from './error.server.service.mts';
 import type {
   MemoryPolicy,
   PolicyNext,

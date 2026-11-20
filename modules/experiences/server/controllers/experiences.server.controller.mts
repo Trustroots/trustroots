@@ -3,11 +3,11 @@ import _ from 'lodash';
 import util from 'util';
 import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import emailService from '../../../core/server/services/email.server.service.mjs';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import {
   prepareNewExperience,
   prepareSendingToClient,

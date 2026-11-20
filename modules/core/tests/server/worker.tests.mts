@@ -4,6 +4,7 @@ import sinon from 'sinon';
 import 'should';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import workerModule from './../../../../config/lib/worker.mts';
+import mockModule from './../../../../testutils/server/mock-module.mts';
 
 describe('Worker tests', function () {
   interface AgendaDouble {
@@ -235,6 +236,20 @@ describe('Worker tests', function () {
     scheduledJobs.forEach(function (job) {
       job.name.should.be.oneOf(jobNames);
     });
+  });
+
+  it('refuses to start when a job module has no handler', async function () {
+    const { default: brokenWorker } = await mockModule<{
+      default: WorkerDouble;
+    }>(new URL('../../../../config/lib/worker.mts', import.meta.url), {
+      './../../modules/experiences/server/jobs/experiences-publish.server.job.mts':
+        {},
+    });
+    await brokenWorker
+      .start(workerOptions)
+      .should.be.rejectedWith(
+        'Agenda job "publish expired experiences" has no handler',
+      );
   });
 
   it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {

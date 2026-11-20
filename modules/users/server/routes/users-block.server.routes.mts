@@ -1,5 +1,5 @@
 import usersPolicy from './../policies/users.server.policy.mts';
-import userBlock from './../controllers/users.block.server.controller.mjs';
+import userBlock from './../controllers/users.block.server.controller.mts';
 
 /**
  * Module dependencies.

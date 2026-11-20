@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import mongoose, { type Types } from 'mongoose';
 import validator from 'validator';
-import agendaModule from '../../../../config/lib/agenda.mjs';
+import agendaModule from '../../../../config/lib/agenda.mts';
 import config from '../../../../config/config.mts';
 import type { SupportMessageRecord } from '../models/support-message.server.model.mts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';

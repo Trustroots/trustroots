@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import moment from 'moment';
 import request from 'supertest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import express from '../../../../config/lib/express.mjs';
+import express from '../../../../config/lib/express.mts';
 import type { PublicCharts } from '../../shared/public-charts.mts';
 
 describe('Public statistics charts', () => {

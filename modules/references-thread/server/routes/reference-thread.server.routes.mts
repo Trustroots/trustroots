@@ -1,7 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import referenceThreadPolicy from './../policies/reference-thread.server.policy.mts';
-import referenceThread from './../controllers/reference-thread.server.controller.mjs';
+import referenceThread from './../controllers/reference-thread.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

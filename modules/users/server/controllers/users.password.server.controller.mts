@@ -2,12 +2,12 @@ import {
   matchToken,
   setToken,
 } from '../services/action-token.server.service.mts';
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.mjs';
-import emailService from '../../../core/server/services/email.server.service.mjs';
-import profileHandler from './users.profile.server.controller.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import profileHandler from './users.profile.server.controller.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
-import log from '../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mts';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';

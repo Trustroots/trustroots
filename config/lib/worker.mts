@@ -32,6 +32,9 @@ function defineJob<Data>(
   processor: (job: Job<Data>, done: Done) => unknown,
   options: JobDefinitionOptions = {},
 ) {
+  if (typeof processor !== 'function') {
+    throw new TypeError(`Agenda job "${name}" has no handler`);
+  }
   agenda.define<Data>(
     name,
     (job, done) => {
@@ -44,25 +47,25 @@ function defineJob<Data>(
 async function start(options: WorkerOptions, callback?: Done) {
   // Initialise Agenda inside `start()` so importing worker helpers does not
   // open a database connection.
-  ({ default: agenda } = await import('./agenda.mjs'));
-  const { default: dependency4 } =
-    await import('./../../modules/core/server/jobs/send-email.server.job.mjs');
-  const { default: dependency5 } =
-    await import('./../../modules/messages/server/jobs/message-unread.server.job.mjs');
-  const { default: dependency6 } =
-    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mjs');
-  const { default: dependency7 } =
-    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mjs');
-  const { default: dependency8 } =
-    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mjs');
-  const { default: dependency9 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs');
-  const { default: dependency10 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs');
-  const { default: dependency11 } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs');
-  const { default: dependency12 } =
-    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mjs');
+  ({ default: agenda } = await import('./agenda.mts'));
+  const { default: sendEmailJob } =
+    await import('./../../modules/core/server/jobs/send-email.server.job.mts');
+  const { default: unreadMessagesJob } =
+    await import('./../../modules/messages/server/jobs/message-unread.server.job.mts');
+  const { default: dailyStatisticsJob } =
+    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mts');
+  const { default: signupRemindersJob } =
+    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mts');
+  const { default: reactivateHostsJob } =
+    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mts');
+  const { default: welcomeSequenceFirstJob } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mts');
+  const { default: welcomeSequenceSecondJob } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mts');
+  const { default: welcomeSequenceThirdJob } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mts');
+  const { default: publishExperiencesJob } =
+    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mts');
   const { sendSupportMessage: supportMessageJob } =
     await import('./../../modules/support/server/jobs/send-support-message.server.job.mts');
   const { pollSupportMailbox: pollSupportMailboxJob } =
@@ -81,8 +84,9 @@ async function start(options: WorkerOptions, callback?: Done) {
   const { captureAgendaInventory } =
     await import('../../modules/admin/server/services/agenda-inventory.server.service.mts');
 
-  const { queueMessageDigests, messageDigestJobName } =
+  const { queueMessageDigests } =
     await import('../../modules/messages/server/jobs/message-digest.server.job.mts');
+  const messageDigestJobName = 'queue unread message digests';
 
   // Define jobs
 
@@ -97,7 +101,7 @@ async function start(options: WorkerOptions, callback?: Done) {
     { concurrency: 1 },
   );
 
-  defineJob('send email', dependency4, {
+  defineJob('send email', sendEmailJob, {
     priority: 'high',
     concurrency: 10,
   });
@@ -121,34 +125,34 @@ async function start(options: WorkerOptions, callback?: Done) {
     concurrency: 1,
     lockLifetime: 60000,
   });
-  defineJob('check unread messages', dependency5, {
+  defineJob('check unread messages', unreadMessagesJob, {
     lockLifetime: 10000,
   });
-  defineJob('daily statistics', dependency6, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('send signup reminders', dependency7, {
+  defineJob('daily statistics', dailyStatisticsJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });
-  defineJob('reactivate hosts', dependency8, {
+  defineJob('send signup reminders', signupRemindersJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });
-  defineJob('welcome sequence first', dependency9, {
+  defineJob('reactivate hosts', reactivateHostsJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });
-  defineJob('welcome sequence second', dependency10, {
+  defineJob('welcome sequence first', welcomeSequenceFirstJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });
-  defineJob('welcome sequence third', dependency11, {
+  defineJob('welcome sequence second', welcomeSequenceSecondJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });
-  defineJob('publish expired experiences', dependency12, {
+  defineJob('welcome sequence third', welcomeSequenceThirdJob, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('publish expired experiences', publishExperiencesJob, {
     lockLifetime: 10000,
     concurrency: 1,
   });

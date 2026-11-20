@@ -3,17 +3,17 @@ import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
-import log from '../../../../config/lib/logger.mjs';
-import messageToStatsService from '../services/message-to-stats.server.service.mjs';
-import messageStatService from '../services/message-stat.server.service.mjs';
+import log from '@trustroots/logger';
+import messageToStatsService from '../services/message-to-stats.server.service.mts';
+import messageStatService from '../services/message-stat.server.service.mts';
 import { queueMessagePush } from '../jobs/message-push.server.job.mts';
 import messageThrottleAlertService from '../services/message-throttle-alert.server.service.mts';
-import errorService from '../../../core/server/services/error.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
-import paginationService from '../../../core/server/services/pagination.server.service.mjs';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import paginationService from '../../../core/server/services/pagination.server.service.mts';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import type {
   MessageMember,
   MessagePayload,

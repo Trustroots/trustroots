@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import moment from 'moment';
 import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mts';
-import './../../modules/offers/server/models/offer.server.model.mjs';
+import './../../modules/offers/server/models/offer.server.model.mts';
 
 interface City {
   lat: number;

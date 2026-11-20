@@ -1,12 +1,12 @@
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
 import config from './../../../../config/config.mts';
-import errorService from './../../../core/server/services/error.server.service.mjs';
-import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
+import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, {
@@ -32,7 +32,7 @@ import type {
   OfferSanitiseDocument,
   OfferReadDocument,
 } from './offers.server.contracts.mts';
-import normaliseOfferExpiry from './../services/offer-expiry.server.service.mjs';
+import normaliseOfferExpiry from './../services/offer-expiry.server.service.mts';
 import {
   prepareNewOfferInput,
   prepareOfferPayload,

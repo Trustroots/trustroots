@@ -219,12 +219,10 @@ function stubSearch(
 }
 
 const controllerPath =
-  './../../server/controllers/users.profile.server.controller.mjs';
-const controllerModulePath =
   '../../server/controllers/users.profile.server.controller.mts';
 
 const emailServicePath =
-  './../../../core/server/services/email.server.service.mjs';
+  './../../../core/server/services/email.server.service.mts';
 
 async function stubControllerDependencies<
   TDependencies extends Record<string, object>,
@@ -297,17 +295,16 @@ describe('Profile controller unit tests', () => {
         sinon.stub(UnifiedPushRegistration, 'deleteMany').rejects(error);
       const controller = (
         await mockModule<{ default: typeof profileController }>(
-          new URL(controllerModulePath, import.meta.url),
+          new URL(controllerPath, import.meta.url),
           {
-            './../../../offers/server/controllers/offers.server.controller.mjs':
+            './../../../offers/server/controllers/offers.server.controller.mts':
               {
                 removeAllByUserId: done('offers'),
               },
-            './../../../contacts/server/controllers/contacts.server.controller.mjs':
+            './../../../contacts/server/controllers/contacts.server.controller.mts':
               { removeAllByUserId: done('contacts') },
             [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
-            './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
-              logs.push(args),
+            '@trustroots/logger': (...args: unknown[]) => logs.push(args),
           },
         )
       ).default;
@@ -1109,7 +1106,7 @@ describe('Profile controller unit tests', () => {
     it('sends the removal token only after it is persisted', async () => {
       const [created] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(created._id);
-      const emailService: typeof import('../../../core/server/services/email.server.service.mjs') =
+      const emailService: typeof import('../../../core/server/services/email.server.service.mts') =
         (await import(emailServicePath)).default;
       const send = sinon
         .stub(emailService, 'sendRemoveProfile')
@@ -1205,7 +1202,7 @@ describe('Profile controller unit tests', () => {
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
       const messageHandlerPath =
-        './../../../messages/server/controllers/messages.server.controller.mjs';
+        './../../../messages/server/controllers/messages.server.controller.mts';
       const controller = await stubControllerDependencies(controllerPath, {
         [messageHandlerPath]: {
           markAllMessagesToUserNotified: (
@@ -1240,7 +1237,7 @@ describe('Profile controller unit tests', () => {
     it('reports upload deletion failures without leaving the request pending', async () => {
       const removeLocalPath = sinon.stub().rejects(new Error('uploads failed'));
       const controller = await stubControllerDependencies(controllerPath, {
-        '../../../core/server/services/file-removal.server.service.mjs': {
+        '../../../core/server/services/file-removal.server.service.mts': {
           removeLocalPath,
         },
       });
@@ -1276,7 +1273,7 @@ describe('Profile controller unit tests', () => {
       ];
       await userDoc.save();
       const controller = await stubControllerDependencies(controllerPath, {
-        './../../../tribes/server/controllers/tribes.server.controller.mjs': {
+        './../../../tribes/server/controllers/tribes.server.controller.mts': {
           updateCount: (
             _id: unknown,
             _change: number,
@@ -1317,7 +1314,7 @@ describe('Profile controller unit tests', () => {
       const queued: unknown[] = [];
       const controller = (
         await mockModule<{ default: typeof profileController }>(
-          new URL(controllerModulePath, import.meta.url),
+          new URL(controllerPath, import.meta.url),
           {
             '../services/gravatar-cleanup.server.service.mts': {
               queueProfileGravatarCheck: (profile: unknown) =>
@@ -1640,7 +1637,7 @@ describe('Profile controller unit tests', () => {
 
     it('continues when reply statistics lookup fails', async () => {
       const controller = await stubControllerDependencies(controllerPath, {
-        './../../../messages/server/services/message-stat.server.service.mjs': {
+        './../../../messages/server/services/message-stat.server.service.mts': {
           readFormattedMessageStatsOfUser(
             _userId: unknown,
             _now: Date,
