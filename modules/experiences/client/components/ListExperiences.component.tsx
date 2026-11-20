@@ -8,6 +8,7 @@ import { read as readExperiences } from '../api/experiences.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
+import PublicExperiencesList from './read-experiences/PublicExperiencesList';
 import NoContent from '@/modules/core/client/components/NoContent';
 import type { Experience, ExperienceUser } from '../../shared/experience';
 
@@ -140,7 +141,8 @@ export default function ListExperiences({
         <ExperienceCounts experiences={publicExperiences} />
       )}
       {otherPublic.length > 0 && (
-        <ExperiencesSection
+        <PublicExperiencesList
+          key={profile._id}
           experiences={otherPublic}
           onReceiverProfile={onReceiverProfile}
         />
