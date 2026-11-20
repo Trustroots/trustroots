@@ -6,17 +6,29 @@
 import React, {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from 'react';
 
 import { createUmamiTracker, type AnalyticsTracker } from './umami.ts';
+import {
+  installUmamiBeforeSend,
+  type RouteTemplate,
+} from './umami-before-send.ts';
 
 export {
   MAX_QUEUED_EVENTS,
   createUmamiTracker,
   type AnalyticsTracker,
 } from './umami.ts';
+export {
+  UMAMI_BEFORE_SEND,
+  createUmamiBeforeSend,
+  scrubUmamiUrl,
+  type RouteTemplate,
+  type UmamiPayload,
+} from './umami-before-send.ts';
 export {
   rememberOutreachSource,
   readOutreachSource,
@@ -58,14 +70,24 @@ const AnalyticsContext = createContext<AnalyticsTracker | null>(null);
 type AnalyticsProviderProps = {
   /** Defaults to the Umami tracker script the page layout loads. */
   tracker?: AnalyticsTracker;
+  /**
+   * Names pages for Umami page views. The tracker script is activated only
+   * once this is given, so tests and stories without it never load it.
+   */
+  routeTemplate?: RouteTemplate;
   children: ReactNode;
 };
 
 export function AnalyticsProvider({
   tracker,
+  routeTemplate,
   children,
 }: AnalyticsProviderProps) {
   const [defaultTracker] = useState(() => tracker ?? createUmamiTracker());
+
+  useEffect(() => {
+    if (routeTemplate) installUmamiBeforeSend(routeTemplate);
+  }, [routeTemplate]);
 
   return (
     <AnalyticsContext.Provider value={tracker ?? defaultTracker}>

@@ -97,7 +97,6 @@ vi.mock('@/modules/core/client/api/http-client', () => {
   };
 });
 
-/* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
 vi.mock('@tanstack/react-router', async () =>
   (
     await import('@/testutils/client/router-location.testutil')
@@ -405,7 +404,6 @@ vi.mock('@/modules/tribes/client/components/TribeDetailPage.component', () => ({
     </main>
   ),
 }));
-/* eslint-enable react/display-name */
 
 function renderRoute(
   route: ShellRoute | undefined,
