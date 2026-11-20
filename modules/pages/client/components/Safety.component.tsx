@@ -215,22 +215,24 @@ export default function Safety() {
             </p>
 
             <h2 id="community-safety">{t('Community Safety')}</h2>
-            <h3>{t('Leave Honest References')}</h3>
-            <p>
-              {t('References help future members make informed decisions.')}
-            </p>
-            <p>{t('When leaving a reference:')}</p>
-            <ul>
-              <li>{t('Be honest')}</li>
-              <li>{t('Be fair')}</li>
-              <li>{t('Focus on your actual experience')}</li>
-              <li>{t('Include information that may be useful to others')}</li>
-            </ul>
-            <p>
-              {t(
-                'A healthy reference system helps strengthen trust throughout the community.',
-              )}
-            </p>
+            <section aria-labelledby="sharing-experiences">
+              <h3 id="sharing-experiences">{t('Sharing an Experience')}</h3>
+              <p>
+                {t(
+                  'After you meet, host or stay with another member, you can choose “Share your experience” on their profile. Describe what happened from your point of view, including anything that would help someone plan a similar visit or meeting.',
+                )}
+              </p>
+              <p>
+                {t(
+                  'Your Experience normally becomes public when both of you have shared, or after 14 days. Your written feedback appears on the other member’s profile. Leave out home addresses, personal contact details, private messages and information that could identify other people.',
+                )}
+              </p>
+              <p>
+                {t(
+                  'If published feedback exposes private information, contact the Trustroots team using the link below. Include a link to the Experience so we can find it.',
+                )}
+              </p>
+            </section>
 
             <h3>{t('Report Concerning Behaviour')}</h3>
             <p>
