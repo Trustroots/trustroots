@@ -755,9 +755,8 @@ service.experienceById = async function experienceById(req, res, next) {
     validate(validateReadOne, id);
 
     const selfId = req.user._id;
-
-    // find the experience by id
-    const experience = (await Experience.findById(id)
+    const experienceId = new mongoose.Types.ObjectId(id);
+    const experience = (await Experience.findById(experienceId)
       .populate({
         path: 'userFrom',
         select: userProfile.userMiniProfileFields,
