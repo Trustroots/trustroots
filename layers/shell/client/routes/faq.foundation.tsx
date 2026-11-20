@@ -3,5 +3,5 @@ import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.compo
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/faq/foundation')(
-  routeOptions('/faq/foundation', FaqFoundation),
+  routeOptions({ title: 'FAQ - Foundation' }, FaqFoundation),
 );

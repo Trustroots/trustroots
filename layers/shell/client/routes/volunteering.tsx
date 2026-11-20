@@ -29,5 +29,5 @@ function VolunteeringRoute() {
 }
 
 export const Route = createFileRoute('/volunteering')(
-  routeOptions('/volunteering', VolunteeringRoute),
+  routeOptions({ title: 'Volunteering' }, VolunteeringRoute),
 );

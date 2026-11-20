@@ -3,5 +3,8 @@ import Navigation from '@/modules/pages/client/components/Navigation.component';
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/navigation')(
-  routeOptions('/navigation', withUser(Navigation)),
+  routeOptions(
+    { title: 'Navigation', requiresAuth: true, footerHidden: true },
+    withUser(Navigation),
+  ),
 );

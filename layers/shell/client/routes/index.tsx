@@ -3,5 +3,5 @@ import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/')(
-  routeOptions('/', withUser(HomeRoute)),
+  routeOptions({ title: 'Home', footerHidden: true }, withUser(HomeRoute)),
 );

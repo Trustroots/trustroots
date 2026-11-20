@@ -3,5 +3,5 @@ import SupportPage from '@/modules/support/client/components/SupportPage.compone
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/contact')(
-  routeOptions('/contact', withUser(SupportPage)),
+  routeOptions({ title: 'Contact us' }, withUser(SupportPage)),
 );

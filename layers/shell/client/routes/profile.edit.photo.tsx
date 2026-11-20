@@ -3,5 +3,8 @@ import ProfileEditPhoto from '@/modules/users/client/components/ProfileEditPhoto
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/profile/edit/photo')(
-  routeOptions('/profile/edit/photo', withUser(ProfileEditPhoto)),
+  routeOptions(
+    { title: 'Edit profile photo', requiresAuth: true },
+    withUser(ProfileEditPhoto),
+  ),
 );

@@ -21,10 +21,6 @@ import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import {
-  REACT_ROUTE_POLICIES,
-  type ReactRoutePolicy,
-} from '@/modules/core/shared/react-route-ownership.mts';
 import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
@@ -507,12 +503,9 @@ describe('<ReactApp />', () => {
   });
 
   it('honors headerHidden and noScrollingTop route metadata', async () => {
-    const policy = REACT_ROUTE_POLICIES.find(
-      route => route.path === '/rules',
-    ) as ReactRoutePolicy;
-    const staticData = RulesRoute.options.staticData as ReactRoutePolicy;
+    const staticData = RulesRoute.options.staticData!;
     staticData.headerHidden = true;
-    policy.noScrollingTop = true;
+    staticData.noScrollingTop = true;
     const router = createAppRouter();
 
     try {
@@ -528,7 +521,7 @@ describe('<ReactApp />', () => {
       await waitFor(() => expect(scrolledOn).toEqual(['/faq']));
     } finally {
       delete staticData.headerHidden;
-      delete policy.noScrollingTop;
+      delete staticData.noScrollingTop;
     }
   });
 
@@ -581,6 +574,16 @@ describe('<ReactApp />', () => {
     renderApp('/about');
 
     await waitFor(() => expect(currentUrl()).toBe('/'));
+  });
+
+  it('sends guests from the members-only circle to sign in', async () => {
+    renderApp('/circles/naturists');
+
+    await waitFor(() =>
+      expect(currentUrl()).toBe(
+        '/signin?continue=true&returnTo=%2Fcircles%2Fnaturists',
+      ),
+    );
   });
 
   it('routes ordinary React-owned links through client navigation', async () => {

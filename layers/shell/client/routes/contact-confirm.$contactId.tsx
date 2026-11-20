@@ -3,5 +3,8 @@ import ContactConfirmPage from '@/modules/contacts/client/components/ContactConf
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/contact-confirm/$contactId')(
-  routeOptions('/contact-confirm/:contactId', withUser(ContactConfirmPage)),
+  routeOptions(
+    { title: 'Confirm contact', requiresAuth: true },
+    withUser(ContactConfirmPage),
+  ),
 );

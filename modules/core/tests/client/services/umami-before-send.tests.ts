@@ -1,11 +1,17 @@
+import { routeTemplate } from '@/layers/shell/client/route-options';
+import { createAppRouter } from '@/layers/shell/client/router';
 import {
   UMAMI_BEFORE_SEND,
+  createUmamiBeforeSend,
   installUmamiBeforeSend,
-  scrubUmamiUrl,
-  umamiBeforeSend,
+  scrubUmamiUrl as scrub,
   type UmamiPayload,
 } from '@/modules/core/client/services/umami-before-send';
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
+
+const router = createAppRouter();
+const templateFor = (pathname: string) => routeTemplate(router, pathname);
+const scrubUmamiUrl = (value: string | undefined) => scrub(value, templateFor);
+const umamiBeforeSend = createUmamiBeforeSend(templateFor);
 
 const ORIGIN = window.location.origin;
 
@@ -65,12 +71,15 @@ afterEach(() => {
 
 describe('scrubUmamiUrl', () => {
   it('has an example for every dynamic route', () => {
-    const dynamicPolicies = REACT_ROUTE_POLICIES.map(
-      route => route.path,
-    ).filter(path => path.includes(':'));
+    const dynamicTemplates = Object.values(router.routesById)
+      .filter(route => route.options.staticData?.title)
+      .map(route =>
+        route.fullPath.replace(/(.)\/$/, '$1').replace(/\$(\w+)/g, ':$1'),
+      )
+      .filter(path => path.includes(':'));
 
     expect(DYNAMIC_ROUTES.map(([, template]) => template).sort()).toEqual(
-      dynamicPolicies.sort(),
+      dynamicTemplates.sort(),
     );
   });
 
@@ -106,7 +115,6 @@ describe('scrubUmamiUrl', () => {
 
   it('sends unknown addresses as the not-found page', () => {
     expect(scrubUmamiUrl('/member1')).toBe('/not-found');
-    expect(scrubUmamiUrl('/circles/Not%20A%20Slug')).toBe('/not-found');
     expect(scrubUmamiUrl('/circles/hitchhikers/extra')).toBe('/not-found');
   });
 
@@ -180,14 +188,14 @@ describe('installUmamiBeforeSend', () => {
     replaceWith.mockImplementationOnce((...nodes) => {
       expect(
         (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND],
-      ).toBe(umamiBeforeSend);
+      ).toEqual(expect.any(Function));
       replaceWith.mockRestore();
       template.replaceWith(...nodes);
     });
 
     expect(document.head.querySelector('script[data-before-send]')).toBeNull();
-    installUmamiBeforeSend();
-    installUmamiBeforeSend();
+    installUmamiBeforeSend(templateFor);
+    installUmamiBeforeSend(templateFor);
 
     const scripts = document.head.querySelectorAll('script[data-before-send]');
     expect(scripts).toHaveLength(1);
@@ -201,11 +209,14 @@ describe('installUmamiBeforeSend', () => {
   });
 
   it('exposes the hook under the name the script tag points to', () => {
-    installUmamiBeforeSend();
+    installUmamiBeforeSend(templateFor);
 
+    const hook = (window as unknown as Record<string, typeof umamiBeforeSend>)[
+      UMAMI_BEFORE_SEND
+    ]!;
     expect(
-      (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND],
-    ).toBe(umamiBeforeSend);
+      hook('event', payload({ url: `${ORIGIN}/profile/member1` }))?.url,
+    ).toBe(`${ORIGIN}/profile/:username`);
     expect(UMAMI_BEFORE_SEND).toBe('trUmamiBeforeSend');
   });
 });

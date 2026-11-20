@@ -3,5 +3,5 @@ import Inbox from '@/modules/messages/client/components/Inbox.component';
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/messages/')(
-  routeOptions('/messages', withUser(Inbox)),
+  routeOptions({ title: 'Messages', requiresAuth: true }, withUser(Inbox)),
 );

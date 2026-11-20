@@ -3,5 +3,8 @@ import ForgotPasswordPage from '@/modules/users/client/components/ForgotPassword
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/password/forgot')(
-  routeOptions('/password/forgot', ForgotPasswordPage),
+  routeOptions(
+    { title: 'Reset password', footerVariant: 'account' },
+    ForgotPasswordPage,
+  ),
 );

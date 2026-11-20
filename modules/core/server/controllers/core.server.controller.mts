@@ -8,9 +8,6 @@ import {
 } from './../services/start-shell.server.service.mts';
 import log from '@trustroots/logger';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
-import reactRouteOwnership, {
-  type ReactRouteUser,
-} from '../../shared/react-route-ownership.mts';
 import type { UserServerDocument } from '../../../users/server/models/user.server.types.mts';
 const languagesObject: Record<string, string> = JSON.parse(
   readFileSync(
@@ -27,10 +24,13 @@ const languagesArray: Array<{ value: string; label: string }> = JSON.parse(
     'utf8',
   ),
 );
-type BootstrapUser = ReactRouteUser & { username?: string; _id?: unknown };
+type BootstrapUser = {
+  roles?: readonly string[];
+  username?: string;
+  _id?: unknown;
+};
 type IndexRequest = {
   path: string;
-  originalUrl?: string;
   user?: UserServerDocument;
   tribe?: unknown;
 };
@@ -51,7 +51,6 @@ type CoreResponse = {
     variables: BootstrapVariables,
     callback: (error: Error | null, html: string) => void,
   ): unknown;
-  redirect(url: string): unknown;
   json(value?: unknown): unknown;
   send(value: string): unknown;
 };
@@ -61,8 +60,6 @@ const service = {
   receiveCSPViolationReport,
   getLanguages,
 };
-const { getReactRouteAccessRedirect, getReactRoutePolicy } =
-  reactRouteOwnership;
 
 /**
  * Render the main application page
@@ -101,18 +98,7 @@ function renderIndex(
   if (req.path === '/signup') {
     renderVars.invite = true;
   }
-  const reactRoutePolicy = getReactRoutePolicy(req.path);
-  const accessRedirect = getReactRouteAccessRedirect(
-    reactRoutePolicy,
-    renderVars.user,
-    req.originalUrl,
-  );
-  const redirect = reactRoutePolicy?.redirectTo || accessRedirect;
-  if (redirect) {
-    return res.redirect(redirect);
-  }
-
-  // All SPA routes use the React shell; unknown paths render React NotFound.
+  // The client routes apply their own redirects and access rules.
   return getStartShell().then(shell => {
     res.render('react-index.server.view.html', renderVars, (error, head) => {
       if (error) return next(error);

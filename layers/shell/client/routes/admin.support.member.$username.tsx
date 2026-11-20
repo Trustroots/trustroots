@@ -1,7 +1,7 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import React from 'react';
 import { SupportMemberPage } from '@/modules/admin/client/components/Support.component';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 
 function SupportMemberRoute() {
   const { username } = useParams({ from: '/admin/support/member/$username' });
@@ -9,5 +9,8 @@ function SupportMemberRoute() {
 }
 
 export const Route = createFileRoute('/admin/support/member/$username')(
-  routeOptions('/admin/support/member/:username', SupportMemberRoute),
+  routeOptions(
+    adminPolicy('Support - Member', ['admin', 'support-team']),
+    SupportMemberRoute,
+  ),
 );

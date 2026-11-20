@@ -3,5 +3,5 @@ import FaqGetStarted from '@/modules/pages/client/components/FaqGetStarted.compo
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/faq/get-started')(
-  routeOptions('/faq/get-started', FaqGetStarted),
+  routeOptions({ title: 'FAQ - Get Started' }, FaqGetStarted),
 );

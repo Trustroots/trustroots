@@ -2,7 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { getReactRoutePolicy } from '../../modules/core/shared/react-route-ownership.mts';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router';
 
 const root = process.argv[2]
   ? path.resolve(process.argv[2])
@@ -164,19 +169,40 @@ function clientFiles(directory: string): string[] {
 const routeIds = new Map<string, Set<string>>();
 for (const file of clientFiles(path.join(root, 'layers/shell/client/routes'))) {
   const routeFile = readSource(file);
+  let routePath: string | undefined;
+  let files: string[] | undefined;
   const findRoute = (node: ts.Node): void => {
-    const isRouteOptions =
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      /^(routeOptions|childRouteOptions)$/.test(node.expression.text);
-    const [route, ...rest] = isRouteOptions ? node.arguments : [];
-    if (route && ts.isStringLiteral(route)) {
-      const files = rest.flatMap(arg => [...importedFiles(routeFile, arg)]);
-      routeIds.set(route.text, collectIds(files));
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const [first, ...rest] = node.arguments;
+      if (
+        node.expression.text === 'createFileRoute' &&
+        first &&
+        ts.isStringLiteral(first)
+      ) {
+        routePath = first.text.replace(/(.)\/$/, '$1');
+      } else if (node.expression.text === 'routeOptions') {
+        files = rest.flatMap(arg => [...importedFiles(routeFile, arg)]);
+      }
     }
     ts.forEachChild(node, findRoute);
   };
   findRoute(routeFile.source);
+  if (routePath && files) routeIds.set(routePath, collectIds(files));
+}
+
+const matcherRoot = createRootRoute();
+const matcher = createRouter({
+  history: createMemoryHistory(),
+  routeTree: matcherRoot.addChildren(
+    [...routeIds.keys()].map(routePath =>
+      createRoute({ getParentRoute: () => matcherRoot, path: routePath }),
+    ),
+  ),
+});
+function matchRoutePath(pathname: string): string | undefined {
+  const matches = matcher.matchRoutes(pathname);
+  const match = matches[matches.length - 1];
+  return match && !matches.some(m => m._notFound) ? match.fullPath : undefined;
 }
 
 const errors: string[] = [];
@@ -208,12 +234,8 @@ for (const module of fs.readdirSync(path.join(root, 'modules'))) {
       } else if (!href.startsWith('/') && !/^https?:/.test(href)) {
         problem = 'relative browser route; use an absolute path';
       } else {
-        const policy = getReactRoutePolicy(destination.pathname);
-        if (
-          !policy ||
-          (policy.path === '/not-found' &&
-            destination.pathname !== '/not-found')
-        ) {
+        const routePath = matchRoutePath(destination.pathname);
+        if (!routePath) {
           const asset = path.join(
             root,
             'public',
@@ -225,7 +247,7 @@ for (const module of fs.readdirSync(path.join(root, 'modules'))) {
           destination.hash &&
           !shellIds.has(decodeURIComponent(destination.hash.slice(1))) &&
           !routeIds
-            .get(policy.path)
+            .get(routePath)
             ?.has(decodeURIComponent(destination.hash.slice(1)))
         ) {
           problem = 'missing fragment';

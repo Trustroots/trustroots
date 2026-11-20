@@ -3,5 +3,8 @@ import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/contact-add/$userId')(
-  routeOptions('/contact-add/:userId', withUser(ContactAddPage)),
+  routeOptions(
+    { title: 'Add contact', requiresAuth: true },
+    withUser(ContactAddPage),
+  ),
 );

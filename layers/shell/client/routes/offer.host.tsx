@@ -3,5 +3,8 @@ import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.comp
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/offer/host')(
-  routeOptions('/offer/host', withUser(OfferHostPage)),
+  routeOptions(
+    { title: 'Host travellers', requiresAuth: true, footerHidden: true },
+    withUser(OfferHostPage),
+  ),
 );

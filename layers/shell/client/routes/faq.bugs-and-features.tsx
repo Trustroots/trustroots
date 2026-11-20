@@ -3,5 +3,5 @@ import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeat
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/faq/bugs-and-features')(
-  routeOptions('/faq/bugs-and-features', FaqBugsAndFeatures),
+  routeOptions({ title: 'FAQ - Bugs & Features' }, FaqBugsAndFeatures),
 );

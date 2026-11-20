@@ -3,5 +3,8 @@ import SuspendedPage from '@/modules/users/client/components/SuspendedPage.compo
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/suspended')(
-  routeOptions('/suspended', SuspendedPage),
+  routeOptions(
+    { title: 'Account suspended', footerHidden: true, headerHidden: true },
+    SuspendedPage,
+  ),
 );

@@ -3,5 +3,8 @@ import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPas
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/password/reset/success')(
-  routeOptions('/password/reset/success', ResetPasswordSuccessPage),
+  routeOptions(
+    { title: 'Reset password', footerVariant: 'account' },
+    ResetPasswordSuccessPage,
+  ),
 );

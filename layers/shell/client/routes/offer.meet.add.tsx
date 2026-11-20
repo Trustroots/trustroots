@@ -3,5 +3,8 @@ import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditP
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/offer/meet/add')(
-  routeOptions('/offer/meet/add', withUser(OfferMeetEditPage)),
+  routeOptions(
+    { title: 'Add meeting offer', requiresAuth: true, footerHidden: true },
+    withUser(OfferMeetEditPage),
+  ),
 );

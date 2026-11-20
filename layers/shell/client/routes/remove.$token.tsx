@@ -3,5 +3,13 @@ import RemoveProfilePage from '@/modules/users/client/components/RemoveProfilePa
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/remove/$token')(
-  routeOptions('/remove/:token', RemoveProfilePage),
+  routeOptions(
+    {
+      title: 'Remove profile',
+      requiresAuth: true,
+      headerHidden: true,
+      footerHidden: true,
+    },
+    RemoveProfilePage,
+  ),
 );

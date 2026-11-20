@@ -3,5 +3,5 @@ import ProfileSignupPage from '@/modules/users/client/components/ProfileSignupPa
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/profile-signup')(
-  routeOptions('/profile-signup', ProfileSignupPage),
+  routeOptions({ title: 'Trustroots profile' }, ProfileSignupPage),
 );

@@ -26,7 +26,6 @@ type MockResponse = {
   rendered: string;
   renderVars: Record<string, unknown> | undefined;
   headers: Record<string, string>;
-  redirected: string;
   locals: { nonce: string };
   renderError: Error | null;
   status: (code: number) => MockResponse;
@@ -41,7 +40,6 @@ type MockResponse = {
     callback?: (error: Error | null, html: string) => void,
   ) => MockResponse;
   set: (key: string, value: string) => MockResponse;
-  redirect: (url: string) => MockResponse;
 };
 type Language = { value: string; label: string; deprecated: boolean };
 
@@ -105,7 +103,6 @@ function mockResponse(acceptType?: string): MockResponse {
     rendered: '',
     renderVars: undefined,
     headers: {},
-    redirected: '',
     locals: { nonce: 'test-nonce' },
     renderError: null,
 
@@ -137,10 +134,6 @@ function mockResponse(acceptType?: string): MockResponse {
     },
     set(key, value) {
       res.headers[key] = value;
-      return res;
-    },
-    redirect(url) {
-      res.redirected = url;
       return res;
     },
   };
@@ -217,23 +210,12 @@ describe('Controller: core', function () {
       should(renderVars(res).invite).be.true();
     });
 
-    it('redirects legacy React routes to their replacement', async function () {
-      const res = mockResponse();
-      await coreController.renderIndex({ path: '/about' }, res, fail);
-      res.redirected.should.equal('/');
-    });
-
-    it('renders the React index for unknown paths', async function () {
-      const res = mockResponse();
-      res.redirect = function () {
-        throw new Error('should not redirect unknown paths');
-      };
-      await coreController.renderIndex(
-        { path: '/definitely-not-a-route' },
-        res,
-        fail,
-      );
-      res.rendered.should.equal('react-index.server.view.html');
+    it('renders the React index for redirecting, guarded and unknown paths', async function () {
+      for (const path of ['/about', '/admin', '/definitely-not-a-route']) {
+        const res = mockResponse();
+        await coreController.renderIndex({ path }, res, fail);
+        res.rendered.should.equal('react-index.server.view.html');
+      }
     });
 
     it('exposes a sanitized user profile when signed in', async function () {

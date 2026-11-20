@@ -3,5 +3,5 @@ import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEm
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/confirm-email-invalid')(
-  routeOptions('/confirm-email-invalid', ConfirmEmailInvalidPage),
+  routeOptions({ title: 'Confirm email invalid' }, ConfirmEmailInvalidPage),
 );

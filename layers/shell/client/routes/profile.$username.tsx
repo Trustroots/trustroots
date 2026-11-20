@@ -5,7 +5,10 @@ import { getBootstrapData } from '../bootstrap';
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/profile/$username')({
-  ...routeOptions('/profile/:username', withUser(ProfilePage)),
+  ...routeOptions(
+    { title: 'Profile', requiresAuth: true, noScrollingTop: true },
+    withUser(ProfilePage),
+  ),
   // Fetch early without blocking navigation; the page shows its own loading.
   loader: ({ context, params }) => {
     void context.queryClient.prefetchQuery(
