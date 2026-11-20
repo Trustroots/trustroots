@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithQueries as render } from '@/testutils/client/query.testutil';
 
 import '@/config/client/i18n';
@@ -148,7 +148,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     getMock.mockResolvedValue({
       ...tribe,
       organisers: [
-        { username: 'example-organiser', displayName: 'Example Organiser' },
+        { username: 'example-organiser', displayName: 'Example 🏳️‍🌈' },
         { username: 'another-organiser' },
       ],
     });
@@ -160,10 +160,11 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       />,
     );
     const link = await screen.findByRole('link', {
-      name: /^Example Organiser\s*@example-organiser$/,
+      name: /^Example 🏳️‍🌈\s*@example-organiser$/u,
     });
     expect(link).toHaveAttribute('href', '/profile/example-organiser');
     expect(link).toHaveClass('member-search-card');
+    expect(within(link).getByText('E🏳️‍🌈')).toBeVisible();
     const description = screen.getByText('Guide the galaxy.');
     expect(link.compareDocumentPosition(description)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -176,7 +177,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
     expect(
       screen.getByRole('link', {
-        name: /^Example Organiser\s*@example-organiser$/,
+        name: /^Example 🏳️‍🌈\s*@example-organiser$/u,
       }),
     ).toBeVisible();
   });

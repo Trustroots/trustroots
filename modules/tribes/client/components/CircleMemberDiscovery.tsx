@@ -74,26 +74,29 @@ function MemberSection({
       <ul className="web-section-list list-unstyled">
         {members.map(member => (
           <li className="circle-member-row" key={member._id}>
-            <div className="circle-discovery-card">
-              <MemberSearchCard user={member} />
-              {(member.activity || member.hosting) && (
-                <div className="circle-discovery-card-meta">
-                  {member.activity && (
-                    <span data-testid="circle-member-activity">
-                      {memberActivityLabel(member.activity, t)}
-                    </span>
-                  )}
-                  {member.hosting && (
-                    <a
-                      data-testid="circle-member-accommodation"
-                      href={`/profile/${encodeURIComponent(member.username)}/accommodation`}
-                    >
-                      {t('Hosting')}
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
+            <MemberSearchCard
+              user={member}
+              compact
+              activityLabel={
+                member.activity && memberActivityLabel(member.activity, t)
+              }
+              action={
+                member.hosting && (
+                  <Button
+                    variant="soft"
+                    intent="primary"
+                    size="xs"
+                    render={
+                      <a
+                        href={`/profile/${encodeURIComponent(member.username)}/accommodation`}
+                      />
+                    }
+                  >
+                    {t('Hosting')}
+                  </Button>
+                )
+              }
+            />
           </li>
         ))}
       </ul>
