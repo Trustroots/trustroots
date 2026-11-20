@@ -1,5 +1,10 @@
 import { createRouter } from '@tanstack/react-router';
 
+import {
+  getReactRoutePolicy,
+  type ReactRoutePolicy,
+} from '@/modules/core/shared/react-route-ownership.mts';
+import { getBootstrapData } from './bootstrap';
 import { routeTree } from './routeTree.gen';
 
 export function parseLegacySearch(search: string): Record<string, string> {
@@ -26,14 +31,20 @@ export function stringifyLegacySearch(
 }
 
 export function createAppRouter() {
+  let shownPolicy: ReactRoutePolicy | null | undefined;
   return createRouter({
-    context: {
-      navigateOverride: undefined,
-    },
+    context: { user: getBootstrapData().user },
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
-    scrollRestoration: () => false,
+    // Scroll to the top when the page changes, unless it opts out. Query
+    // and param changes on the same page keep their place.
+    scrollRestoration: ({ location }) => {
+      const policy = getReactRoutePolicy(location.pathname);
+      const pageChanged = policy !== shownPolicy;
+      shownPolicy = policy;
+      return Boolean(location.hash) || (pageChanged && !policy?.noScrollingTop);
+    },
     stringifySearch: stringifyLegacySearch,
   });
 }

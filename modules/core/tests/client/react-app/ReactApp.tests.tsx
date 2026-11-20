@@ -12,17 +12,34 @@ import {
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
 import { createAppRouter } from '@/layers/shell/client/router';
+import { Route as rootRoute } from '@/layers/shell/client/routes/__root';
+import { Route as RulesRoute } from '@/layers/shell/client/routes/rules';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import type { BootstrapData } from '@/modules/core/client/react-app/app-context';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
+import {
+  REACT_ROUTE_POLICIES,
+  type ReactRoutePolicy,
+} from '@/modules/core/shared/react-route-ownership.mts';
 import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 
+// Start renders the head in its document shell, which the tests leave out.
+Object.assign(rootRoute.options, {
+  shellComponent: ({ children }: React.PropsWithChildren) => (
+    <>
+      <reactRouter.HeadContent />
+      {children}
+    </>
+  ),
+});
+
+const currentUrl = () =>
+  window.location.pathname + window.location.search + window.location.hash;
 const mockedUsersApi = vi.mocked(usersApi);
 const mockedMessagesApi = vi.mocked(messagesApi);
 const mockedOffersApi = vi.mocked(offersApi);
@@ -228,6 +245,9 @@ vi.mock('@/modules/core/client/hooks/use-media-query', async () => ({
   __esModule: true,
   default: () => true,
 }));
+vi.mock('@/modules/pages/client/components/HomeRoute', () => ({
+  default: () => <main>Home route</main>,
+}));
 vi.mock('@/modules/offers/client/api/offers.api');
 vi.mock('@/modules/contacts/client/api/contacts.api', () => ({
   getByUserId: vi.fn(async () => null),
@@ -318,12 +338,20 @@ vi.mock('@/modules/search/client/components/SearchMap.component', async () => {
 function UpdateUser() {
   const { user, setUser } = useAuth();
   return (
-    <button
-      type="button"
-      onClick={() => setUser({ ...user, username: 'member-after' })}
-    >
-      Save user changes
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setUser({ ...user, username: 'member-after' })}
+      >
+        Save user changes
+      </button>
+      <button
+        type="button"
+        onClick={() => setUser({ ...user, roles: ['user'] })}
+      >
+        Drop admin role
+      </button>
+    </>
   );
 }
 
@@ -363,6 +391,14 @@ describe('<ReactApp />', () => {
     );
   }
 
+  function recordScrolls() {
+    const paths: string[] = [];
+    vi.mocked(window.scrollTo).mockImplementation(() => {
+      paths.push(window.location.pathname);
+    });
+    return paths;
+  }
+
   it('renders with the router that TanStack Start hydrated', async () => {
     const router = createAppRouter();
     renderApp('/rules', {}, { router });
@@ -371,23 +407,19 @@ describe('<ReactApp />', () => {
     expect(router.state.location.pathname).toBe('/rules');
   });
 
-  it('renders a React-owned route and updates the document title', async () => {
+  it('renders a React-owned route, sets its title and scrolls to the top', async () => {
     renderApp('/rules');
 
     expect(await screen.findByText('Rules route')).toBeInTheDocument();
     expect(screen.getByText('Header guest')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
-    expect(document.title).toBe('Rules - Trustroots');
-    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+    await waitFor(() => expect(document.title).toBe('Rules - Trustroots'));
+    expect(window.scrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ left: 0, top: 0 }),
+    );
   });
 
   it('scrolls to the element named by the URL fragment after the route renders', async () => {
-    const animationFrame = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation(callback => {
-        callback(0);
-        return 1;
-      });
     const target = document.createElement('div');
     target.id = 'rules-anchor';
     target.scrollIntoView = vi.fn();
@@ -397,55 +429,28 @@ describe('<ReactApp />', () => {
       renderApp('/rules#rules-anchor');
 
       expect(await screen.findByText('Rules route')).toBeInTheDocument();
-      expect(target.scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      await waitFor(() => expect(target.scrollIntoView).toHaveBeenCalled());
     } finally {
-      animationFrame.mockRestore();
       target.remove();
     }
   });
 
   it('renders normally when the URL fragment matches no element', async () => {
-    const animationFrame = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation(callback => {
-        callback(0);
-        return 1;
-      });
+    renderApp('/rules#missing-anchor');
 
-    try {
-      renderApp('/rules#missing-anchor');
-
-      expect(await screen.findByText('Rules route')).toBeInTheDocument();
-      expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
-    } finally {
-      animationFrame.mockRestore();
-    }
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    expect(currentUrl()).toBe('/rules#missing-anchor');
   });
 
-  it('renders normally when the URL fragment is empty', async () => {
-    const useRouterState = reactRouter.useRouterState;
-    const routerState = vi
-      .spyOn(reactRouter, 'useRouterState')
-      .mockImplementation(options => {
-        const state = useRouterState();
-        const fragmentState = {
-          ...state,
-          location: { ...state.location, hash: '#' },
-        };
-        // Jest's spy erases the hook's generic selected return type.
-        return (
-          options?.select ? options.select(fragmentState) : fragmentState
-        ) as typeof state;
-      });
+  it('scrolls to the top when the URL fragment is empty', async () => {
+    renderApp('/rules#');
 
-    try {
-      renderApp('/rules#');
-
-      expect(await screen.findByText('Rules route')).toBeInTheDocument();
-      expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
-    } finally {
-      routerState.mockRestore();
-    }
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({ left: 0, top: 0 }),
+      ),
+    );
   });
 
   it('passes bootstrap user data to route and shell components', async () => {
@@ -470,7 +475,9 @@ describe('<ReactApp />', () => {
     expect(await screen.findByText('Admin audit route')).toBeInTheDocument();
     expect(screen.getByText('Header admin')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
-    expect(document.title).toBe('Admin - Audit log - Trustroots');
+    await waitFor(() =>
+      expect(document.title).toBe('Admin - Audit log - Trustroots'),
+    );
   });
 
   it('renders the admin circles page for an administrator', async () => {
@@ -478,7 +485,9 @@ describe('<ReactApp />', () => {
       user: { roles: ['user', 'admin'], username: 'admin' },
     });
     expect(await screen.findByText('Admin circles route')).toBeInTheDocument();
-    expect(document.title).toBe('Admin - Circles - Trustroots');
+    await waitFor(() =>
+      expect(document.title).toBe('Admin - Circles - Trustroots'),
+    );
   });
 
   it('navigates to the selected circle editor with its slug', async () => {
@@ -495,74 +504,84 @@ describe('<ReactApp />', () => {
   });
 
   it('honors headerHidden and noScrollingTop route metadata', async () => {
-    const route = REACT_ROUTE_POLICIES.find(route => route.path === '/rules')!;
-    route.headerHidden = true;
-    route.noScrollingTop = true;
+    const policy = REACT_ROUTE_POLICIES.find(
+      route => route.path === '/rules',
+    ) as ReactRoutePolicy;
+    const staticData = RulesRoute.options.staticData as ReactRoutePolicy;
+    staticData.headerHidden = true;
+    policy.noScrollingTop = true;
+    const router = createAppRouter();
 
     try {
-      renderApp('/rules');
+      renderApp('/support', {}, { router });
+      await screen.findByText(/Support route/);
+      const scrolledOn = recordScrolls();
+      await act(() => router.navigate({ to: '/rules' }));
 
       expect(await screen.findByText('Rules route')).toBeInTheDocument();
       expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
-      expect(window.scrollTo).not.toHaveBeenCalled();
+
+      await act(() => router.navigate({ to: '/faq' }));
+      await waitFor(() => expect(scrolledOn).toEqual(['/faq']));
     } finally {
-      delete route.headerHidden;
-      delete route.noScrollingTop;
+      delete staticData.headerHidden;
+      delete policy.noScrollingTop;
     }
   });
 
-  it('defensively redirects guests away from protected routes', async () => {
-    const navigate = vi.fn();
+  it('keeps the scroll position when only the query changes', async () => {
+    const router = createAppRouter();
+    renderApp('/support', {}, { router });
+    await screen.findByText(/Support route/);
+    const scrolledOn = recordScrolls();
 
-    renderApp('/admin', {}, { navigate });
+    await act(() =>
+      router.navigate({ to: '/support', search: { report: 'alice' } }),
+    );
+    await act(() => router.navigate({ to: '/rules' }));
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    await waitFor(() => expect(scrolledOn).toEqual(['/rules']));
+  });
+
+  it('defensively redirects guests away from protected routes', async () => {
+    renderApp('/admin');
 
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        '/signin?continue=true&returnTo=%2Fadmin',
-      ),
+      expect(currentUrl()).toBe('/signin?continue=true&returnTo=%2Fadmin'),
     );
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
   it('preserves the removal fragment when guests need to sign in', async () => {
-    const navigate = vi.fn();
-    renderApp('/profile/edit/account#remove', {}, { navigate });
+    renderApp('/profile/edit/account#remove');
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
+      expect(currentUrl()).toBe(
         '/signin?continue=true&returnTo=%2Fprofile%2Fedit%2Faccount%23remove',
       ),
     );
   });
 
   it('defensively redirects non-admin users away from admin routes', async () => {
-    const navigate = vi.fn();
-
-    renderApp(
-      '/admin',
-      {
-        user: {
-          roles: ['user'],
-          username: 'member',
-        },
+    renderApp('/admin', {
+      user: {
+        roles: ['user'],
+        username: 'member',
       },
-      { navigate },
-    );
+    });
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/volunteering'));
+    await waitFor(() => expect(currentUrl()).toBe('/volunteering'));
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
   it('redirects legacy routes to their replacement', async () => {
-    const navigate = vi.fn();
+    renderApp('/about');
 
-    renderApp('/about', {}, { navigate });
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(currentUrl()).toBe('/'));
   });
 
   it('routes ordinary React-owned links through client navigation', async () => {
-    const navigate = vi.fn();
-    renderApp('/rules', {}, { navigate });
+    renderApp('/rules');
     await screen.findByText('Rules route');
     const link = document.createElement('a');
     link.href = '/faq?topic=routes';
@@ -570,8 +589,8 @@ describe('<ReactApp />', () => {
     document.body.appendChild(link);
 
     try {
-      fireEvent.click(link);
-      expect(navigate).toHaveBeenCalledWith('/faq?topic=routes');
+      expect(fireEvent.click(link)).toBe(false);
+      await waitFor(() => expect(currentUrl()).toBe('/faq?topic=routes'));
     } finally {
       link.remove();
     }
@@ -604,8 +623,7 @@ describe('<ReactApp />', () => {
   });
 
   it('leaves links outside React route ownership to the browser', async () => {
-    const navigate = vi.fn();
-    renderApp('/rules', {}, { navigate });
+    renderApp('/rules');
     await screen.findByText('Rules route');
     const link = document.createElement('a');
     link.href = '/api/auth/signout';
@@ -613,25 +631,25 @@ describe('<ReactApp />', () => {
     document.body.appendChild(link);
 
     try {
-      fireEvent.click(link);
-      expect(navigate).not.toHaveBeenCalled();
+      expect(fireEvent.click(link)).toBe(true);
     } finally {
       link.remove();
     }
   });
 
   it('redirects unmatched paths to the not-found route', async () => {
-    const navigate = vi.fn();
+    renderApp('/missing-react-route');
 
-    renderApp('/missing-react-route', {}, { navigate });
-
-    expect(
-      await screen.findByText(/this page cannot be found/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Header guest')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(currentUrl()).toBe('/not-found');
+      expect(
+        screen.getByText(/this page cannot be found/i),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('Footer')).toBeInTheDocument();
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/not-found'));
   });
+
   it('sends to the new recipient after direct conversation navigation', async () => {
     const user: AuthUser & { _id: string; username: string } = {
       _id: 'sender',
@@ -818,5 +836,32 @@ describe('<ReactApp />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save user changes' }));
     await screen.findByText('Support route member-after');
     expect(screen.getByText('Header member-after')).toBeInTheDocument();
+  });
+
+  it('reruns route guards only when the member identity or roles change', async () => {
+    const router = createAppRouter();
+    const invalidate = vi.spyOn(router, 'invalidate');
+    renderApp(
+      '/admin/audit-log',
+      { user: { _id: 'staff-1', roles: ['user', 'admin'], username: 'staff' } },
+      { router },
+    );
+    await screen.findByText('Admin audit route');
+    fireEvent.click(screen.getByRole('button', { name: 'Save user changes' }));
+    await screen.findByText('Header member-after');
+    expect(invalidate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drop admin role' }));
+    await waitFor(() => expect(currentUrl()).toBe('/volunteering'));
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the not-found page for an invalid circle address', async () => {
+    renderApp('/circles/Sample_circle');
+
+    expect(
+      await screen.findByText(/this page cannot be found/i),
+    ).toBeInTheDocument();
+    expect(currentUrl()).toBe('/not-found');
   });
 });
