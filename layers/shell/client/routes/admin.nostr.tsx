@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminNostr from '@/modules/admin/client/components/AdminNostr.component';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/admin/nostr')(
-  routeOptions('/admin/nostr', AdminNostr),
+  routeOptions(adminPolicy('Admin - Featured Nostr notes'), AdminNostr),
 );

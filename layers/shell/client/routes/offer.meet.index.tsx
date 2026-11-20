@@ -3,5 +3,8 @@ import OfferMeetListPage from '@/modules/offers/client/components/OfferMeetListP
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/offer/meet/')(
-  routeOptions('/offer/meet', withUser(OfferMeetListPage)),
+  routeOptions(
+    { title: 'Meet', requiresAuth: true },
+    withUser(OfferMeetListPage),
+  ),
 );

@@ -3,5 +3,8 @@ import NotFoundPage from '@/modules/core/client/components/NotFoundPage.componen
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/not-found')(
-  routeOptions('/not-found', NotFoundPage),
+  routeOptions(
+    { title: 'Not found', footerVariant: 'account', headerHidden: true },
+    NotFoundPage,
+  ),
 );

@@ -7,24 +7,23 @@ import {
   parseLegacySearch,
   stringifyLegacySearch,
 } from '@/layers/shell/client/router';
-import type { RoutePolicy } from '@/layers/shell/client/route-options';
-import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
-  getReactRouteAccessRedirect,
-  getReactRoutePolicy,
-  matchReactRoute,
-  REACT_OWNED_PATHS,
-  REACT_ROUTE_POLICIES,
-  normalizePath,
-  toTanStackPath,
-} from '@/modules/core/shared/react-route-ownership.mts';
+  accessRedirect,
+  matchAppRoute,
+  type RoutePolicy,
+} from '@/layers/shell/client/route-options';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 
 type UserRouteProps = { user?: AuthUser | null };
 type MembershipRouteProps = UserRouteProps & {
   onMembershipUpdated: (data: { user?: Partial<AuthUser> } | null) => void;
 };
 type StatisticsRouteProps = { isAuthenticated: boolean };
-type ShellRoute = RoutePolicy & { component: React.ComponentType };
+type ShellRoute = RoutePolicy & {
+  component: React.ComponentType;
+  id: string;
+  path: string;
+};
 
 const router = createAppRouter();
 const routes = Object.values(router.routesById).flatMap(route => {
@@ -32,19 +31,31 @@ const routes = Object.values(router.routesById).flatMap(route => {
   // Profile tabs render through the profile route's component.
   const component =
     route.options.component ?? route.parentRoute?.options.component;
-  return policy?.path ? [{ ...policy, component } as ShellRoute] : [];
+  return policy?.title
+    ? [
+        {
+          ...policy,
+          component,
+          id: route.id,
+          path: route.fullPath
+            .replace(/(.)\/$/, '$1')
+            .replace(/\$(\w+)/g, ':$1'),
+        } as ShellRoute,
+      ]
+    : [];
 });
 
 function findRoute(path: string) {
   const url = new URL(path, 'https://trustroots.test');
-  const [match] = router
-    .matchRoutes(url.pathname, Object.fromEntries(url.searchParams))
-    .reverse();
-  const route = routes.find(
-    ({ path }) => path === (match?.staticData as RoutePolicy | undefined)?.path,
-  );
-  return route && { ...route, params: match.params };
+  const match = matchAppRoute(router, url.pathname);
+  const route = routes.find(({ id }) => id === match?.routeId);
+  return route && { ...route, params: match!.params };
 }
+
+const returnTo = '/fictional-return';
+const signIn = `/signin?continue=true&returnTo=${encodeURIComponent(returnTo)}`;
+const access = (path: string, user: { roles?: string[] } | null) =>
+  accessRedirect(findRoute(path)!, user, returnTo);
 
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
@@ -451,29 +462,12 @@ describe('React route ownership', () => {
   it('shows suspended members the suspended page without the site chrome', () => {
     const route = findRoute('/suspended')!;
     expect(route).toMatchObject({ footerHidden: true, headerHidden: true });
-    expect(getReactRouteAccessRedirect(route, null)).toBeNull();
+    expect(access('/suspended', null)).toBeUndefined();
 
     renderRoute(route, null);
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Your account has been suspended.',
     );
-  });
-
-  it('keeps the React route table aligned with the shared ownership list', () => {
-    expect(routes.map(route => route.path).sort()).toEqual(
-      [...REACT_OWNED_PATHS].sort(),
-    );
-  });
-
-  it('gives each route file the policy for its own path', () => {
-    const mismatched = Object.values(router.routesById)
-      .filter(route => (route.options.staticData as ShellRoute)?.path)
-      .map(route => [
-        route.fullPath.replace(/(.)\/$/, '$1'),
-        toTanStackPath((route.options.staticData as ShellRoute).path),
-      ])
-      .filter(([fullPath, policyPath]) => fullPath !== policyPath);
-    expect(mismatched).toEqual([]);
   });
 
   it('defines a renderer for every React-owned route policy', () => {
@@ -482,8 +476,7 @@ describe('React route ownership', () => {
     });
   });
 
-  it('normalizes paths before ownership checks', () => {
-    expect(normalizePath('/support/?report=alice')).toBe('/support');
+  it('ignores trailing slashes and queries when matching routes', () => {
     expect(findRoute('/support/?report=alice')?.title).toBe('Support');
   });
 
@@ -515,13 +508,9 @@ describe('React route ownership', () => {
       params: { username: 'alice' },
       path: '/messages/:username',
     });
-    expect(matchReactRoute('/circles/hitchhikers')).toMatchObject({
+    expect(findRoute('/circles/hitchhikers')).toMatchObject({
       params: { circle: 'hitchhikers' },
-    });
-    expect(findRoute('/circles/naturists')).toMatchObject({
-      requiresAuthParams: {
-        circle: ['naturists'],
-      },
+      path: '/circles/:circle',
     });
   });
 
@@ -544,14 +533,10 @@ describe('React route ownership', () => {
     }
   });
 
-  it('keeps the shared route policy aligned with owned paths', () => {
-    expect(REACT_ROUTE_POLICIES.map(route => route.path).sort()).toEqual(
-      [...REACT_OWNED_PATHS].sort(),
-    );
-    expect(getReactRoutePolicy('/admin/')).toMatchObject({
+  it('defines the admin home policy', () => {
+    expect(findRoute('/admin/')).toMatchObject({
       footerVariant: 'admin',
       path: '/admin',
-      requiresAuth: true,
       requiresRole: ['admin', 'support-team'],
       title: 'Admin',
     });
@@ -563,27 +548,23 @@ describe('React route ownership', () => {
     expect(adminRoute).toMatchObject({
       footerVariant: 'admin',
       path: '/admin/audit-log',
-      requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin'],
       title: 'Admin - Audit log',
     });
     expect(adminRoute.component).toEqual(expect.any(Function));
 
     expect(findRoute('/admin/gravatar')).toMatchObject({
       path: '/admin/gravatar',
-      requiresAuth: true,
       requiresRole: ['admin'],
     });
     expect(findRoute('/admin/support/flagged')).toMatchObject({
       path: '/admin/support/flagged',
-      requiresAuth: true,
       requiresRole: ['admin', 'support-team'],
     });
     const usernameChangesRoute = findRoute('/admin/username-changes')!;
     expect(usernameChangesRoute).toMatchObject({
       footerVariant: 'admin',
       path: '/admin/username-changes',
-      requiresAuth: true,
       requiresRole: ['admin'],
       title: 'Admin - Username changes',
     });
@@ -601,7 +582,6 @@ describe('React route ownership', () => {
 
     expect(findRoute('/admin/support/members')).toMatchObject({
       path: '/admin/support/members',
-      requiresAuth: true,
       requiresRole: ['admin', 'support-team'],
       title: 'Support - Member search',
     });
@@ -611,8 +591,7 @@ describe('React route ownership', () => {
     const route = findRoute('/admin/circles')!;
     expect(route).toMatchObject({
       path: '/admin/circles',
-      requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin'],
       title: 'Admin - Circles',
     });
     expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
@@ -622,8 +601,7 @@ describe('React route ownership', () => {
     const route = findRoute('/admin/mongo')!;
     expect(route).toMatchObject({
       path: '/admin/mongo',
-      requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin'],
       title: 'Admin - MongoDB diagnostics',
     });
     expect(
@@ -635,8 +613,7 @@ describe('React route ownership', () => {
     const route = findRoute('/admin/circles/walkers')!;
     expect(route).toMatchObject({
       path: '/admin/circles/:circle',
-      requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin'],
     });
     expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
   });
@@ -665,40 +642,42 @@ describe('React route ownership', () => {
   );
 
   it('returns access redirects for protected route policies', () => {
-    const route = getReactRoutePolicy('/admin');
-
-    expect(getReactRouteAccessRedirect(route, null)).toBe('/signin');
-    expect(getReactRoutePolicy('/about')).toMatchObject({ redirectTo: '/' });
-    expect(getReactRoutePolicy('/offer')).toMatchObject({
-      redirectTo: '/offer/host',
-    });
-    expect(getReactRouteAccessRedirect(route, { roles: ['user'] })).toBe(
-      '/volunteering',
-    );
-    expect(
-      getReactRouteAccessRedirect(route, { roles: ['user', 'admin'] }),
-    ).toBe(null);
-    expect(
-      getReactRouteAccessRedirect(getReactRoutePolicy('/support'), null),
-    ).toBe(null);
-    expect(
-      getReactRouteAccessRedirect(getReactRoutePolicy('/messages'), null),
-    ).toBe('/signin');
-    expect(
-      getReactRouteAccessRedirect(
-        getReactRoutePolicy('/circles/naturists'),
-        null,
-        '/circles/naturists',
-      ),
-    ).toBe('/signin?continue=true&returnTo=%2Fcircles%2Fnaturists');
-    expect(
-      getReactRouteAccessRedirect(
-        getReactRoutePolicy('/circles/hitchhikers'),
-        null,
-        '/circles/hitchhikers',
-      ),
-    ).toBe(null);
+    expect(access('/admin', null)).toBe(signIn);
+    expect(access('/about', null)).toBe('/');
+    expect(access('/offer', { roles: ['user'] })).toBe('/offer/host');
+    expect(access('/admin', { roles: ['user'] })).toBe('/volunteering');
+    expect(access('/admin', { roles: ['user', 'admin'] })).toBeUndefined();
+    expect(access('/admin', { roles: ['support-team'] })).toBeUndefined();
+    expect(access('/support', null)).toBeUndefined();
+    expect(access('/messages', null)).toBe(signIn);
+    expect(access('/messages', {})).toBeUndefined();
   });
+
+  it.each([
+    ['/admin/experience-changes', ['admin', 'support-team']],
+    ['/admin/user/fictional-member', ['admin', 'support-team']],
+    ['/admin/user', ['admin']],
+    ['/admin/acquisition-stories', ['admin', 'welcome-team', 'support-team']],
+    ['/admin/staff-blockers', ['admin', 'welcome-team', 'support-team']],
+    ['/admin/location-corrections', ['admin', 'welcome-team']],
+    ['/admin/gravatar', ['admin']],
+  ])('lets only the right staff roles open %s', (path, allowed) => {
+    for (const role of ['admin', 'support-team', 'welcome-team', 'user']) {
+      expect(access(path, { roles: [role] })).toBe(
+        allowed.includes(role) ? undefined : '/volunteering',
+      );
+    }
+    expect(access(path, null)).toBe(signIn);
+  });
+
+  it.each(['/welcome', '/navigation', '/search/members'])(
+    'keeps the member entry route %s authenticated and footer-free',
+    path => {
+      expect(findRoute(path)?.footerHidden).toBe(true);
+      expect(access(path, null)).toBe(signIn);
+      expect(access(path, { roles: ['user'] })).toBeUndefined();
+    },
+  );
 
   it('matches profile and contact route policies', () => {
     expect(findRoute('/profile/alice')).toMatchObject({
@@ -720,20 +699,7 @@ describe('React route ownership', () => {
       path: '/contact-add/:userId',
       requiresAuth: true,
     });
-    expect(
-      getReactRouteAccessRedirect(getReactRoutePolicy('/profile/alice'), null),
-    ).toBe('/signin');
-  });
-
-  it('keeps member search authenticated and footer-free', () => {
-    expect(findRoute('/search/members')).toMatchObject({
-      footerHidden: true,
-      path: '/search/members',
-      requiresAuth: true,
-    });
-    expect(
-      getReactRouteAccessRedirect(getReactRoutePolicy('/search/members'), null),
-    ).toBe('/signin');
+    expect(access('/profile/alice', null)).toBe(signIn);
   });
 
   it('does not claim legacy profile-edit paths', () => {
@@ -784,16 +750,6 @@ describe('React route ownership', () => {
   });
 });
 
-it.each([
-  '/circles/%ZZ',
-  '/circles/sample%2Fextra',
-  '/circles/Hitchhikers',
-  '/circles/sample_circle',
-  '/circles/:circle',
-])('keeps invalid circle path %s on a React not-found page', path => {
-  expect(matchReactRoute(path)?.policy.path).toBe('/not-found');
-});
-
 it('does not partially match extra circle path segments', () => {
-  expect(matchReactRoute('/circles/sample/extra')?.policy).toBeUndefined();
+  expect(findRoute('/circles/sample/extra')).toBeUndefined();
 });

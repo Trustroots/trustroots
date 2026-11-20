@@ -3,5 +3,5 @@ import FaqTechnology from '@/modules/pages/client/components/FaqTechnology.compo
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/faq/technology')(
-  routeOptions('/faq/technology', FaqTechnology),
+  routeOptions({ title: 'FAQ - Technology' }, FaqTechnology),
 );

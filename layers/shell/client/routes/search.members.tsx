@@ -3,5 +3,8 @@ import SearchUsers from '@/modules/search/client/components/SearchUsers.componen
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/search/members')(
-  routeOptions('/search/members', SearchUsers),
+  routeOptions(
+    { title: 'Search members', requiresAuth: true, footerHidden: true },
+    SearchUsers,
+  ),
 );

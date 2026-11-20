@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/admin/circles/$circle')(
-  routeOptions('/admin/circles/:circle', AdminCircles),
+  routeOptions(adminPolicy('Admin - Circle'), AdminCircles),
 );

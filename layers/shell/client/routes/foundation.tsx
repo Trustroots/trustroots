@@ -3,5 +3,5 @@ import Foundation from '@/modules/pages/client/components/Foundation.component';
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/foundation')(
-  routeOptions('/foundation', withUser(Foundation)),
+  routeOptions({ title: 'Foundation' }, withUser(Foundation)),
 );

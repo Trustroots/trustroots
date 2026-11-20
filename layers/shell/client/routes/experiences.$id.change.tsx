@@ -9,5 +9,8 @@ function ExperienceChangeRoute() {
 }
 
 export const Route = createFileRoute('/experiences/$id/change')(
-  routeOptions('/experiences/:id/change', ExperienceChangeRoute),
+  routeOptions(
+    { title: 'Change an Experience', requiresAuth: true },
+    ExperienceChangeRoute,
+  ),
 );

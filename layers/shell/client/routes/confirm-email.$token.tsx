@@ -3,5 +3,5 @@ import ConfirmEmailPage from '@/modules/users/client/components/ConfirmEmailPage
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/confirm-email/$token')(
-  routeOptions('/confirm-email/:token', ConfirmEmailPage),
+  routeOptions({ title: 'Confirm email' }, ConfirmEmailPage),
 );

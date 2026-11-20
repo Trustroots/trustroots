@@ -3,5 +3,8 @@ import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNe
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/profile/edit/networks')(
-  routeOptions('/profile/edit/networks', withUser(ProfileEditNetworks)),
+  routeOptions(
+    { title: 'Edit Profile networks', requiresAuth: true },
+    withUser(ProfileEditNetworks),
+  ),
 );

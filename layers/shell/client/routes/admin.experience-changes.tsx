@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/admin/experience-changes')(
-  routeOptions('/admin/experience-changes', AdminExperienceChanges),
+  routeOptions(
+    adminPolicy('Admin - Experience changes', ['admin', 'support-team']),
+    AdminExperienceChanges,
+  ),
 );

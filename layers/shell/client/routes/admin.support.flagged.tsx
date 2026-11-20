@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import FlaggedMembers from '@/modules/admin/client/components/FlaggedMembers.component';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 export const Route = createFileRoute('/admin/support/flagged')(
-  routeOptions('/admin/support/flagged', FlaggedMembers),
+  routeOptions(
+    adminPolicy('Support - Flagged members', ['admin', 'support-team']),
+    FlaggedMembers,
+  ),
 );

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
-import { routeOptions } from '../route-options';
+import { adminPolicy, routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/admin/reference-threads')(
-  routeOptions('/admin/reference-threads', AdminReferenceThreads),
+  routeOptions(adminPolicy('Admin - Reference threads'), AdminReferenceThreads),
 );

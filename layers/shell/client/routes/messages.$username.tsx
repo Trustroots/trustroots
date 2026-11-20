@@ -21,5 +21,8 @@ function ThreadRoute() {
 }
 
 export const Route = createFileRoute('/messages/$username')(
-  routeOptions('/messages/:username', ThreadRoute),
+  routeOptions(
+    { title: 'Messages', requiresAuth: true, footerHidden: true },
+    ThreadRoute,
+  ),
 );

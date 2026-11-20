@@ -9,11 +9,33 @@
  * Like the router, the hooks re-render on browser history (popstate) changes,
  * and `useNavigate`/`<Navigate>` write the jsdom URL.
  */
+import { readFileSync } from 'node:fs';
 import { useEffect, useSyncExternalStore } from 'react';
 
-const { matchReactRoute } = await vi.importActual<
-  typeof import('@/modules/core/shared/react-route-ownership.mts')
->('@/modules/core/shared/react-route-ownership.mts');
+const { createMemoryHistory, createRootRoute, createRoute, createRouter } =
+  await vi.importActual<typeof import('@tanstack/react-router')>(
+    '@tanstack/react-router',
+  );
+
+// Match the app's route paths without loading their page modules.
+const routeTreeSource = readFileSync(
+  'layers/shell/client/routeTree.gen.ts',
+  'utf8',
+);
+const routePaths = [
+  .../interface FileRoutesByTo \{([^}]*)\}/
+    .exec(routeTreeSource)![1]!
+    .matchAll(/'([^']+)':/g),
+].map(([, path]) => path!);
+const matcherRoot = createRootRoute();
+const matcher = createRouter({
+  history: createMemoryHistory(),
+  routeTree: matcherRoot.addChildren(
+    routePaths.map(path =>
+      createRoute({ getParentRoute: () => matcherRoot, path }),
+    ),
+  ),
+});
 
 type Select<T> = { select?: (value: T) => unknown };
 type Search = Record<string, unknown>;
@@ -100,7 +122,7 @@ export async function mockRouterModule() {
     },
     useNavigate: () => navigate,
     useParams: (options?: Select<Record<string, string>>) =>
-      read(matchReactRoute(useUrl().pathname)?.params || {}, options),
+      read(matcher.matchRoutes(useUrl().pathname).pop()!.params, options),
     useSearch: (options?: Select<Record<string, string>>) =>
       read(Object.fromEntries(useUrl().searchParams), options),
   };

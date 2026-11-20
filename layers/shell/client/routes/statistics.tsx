@@ -10,5 +10,5 @@ function StatisticsRoute() {
 }
 
 export const Route = createFileRoute('/statistics')(
-  routeOptions('/statistics', StatisticsRoute),
+  routeOptions({ title: 'Statistics' }, StatisticsRoute),
 );

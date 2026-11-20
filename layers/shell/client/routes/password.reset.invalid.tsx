@@ -3,5 +3,8 @@ import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPas
 import { routeOptions } from '../route-options';
 
 export const Route = createFileRoute('/password/reset/invalid')(
-  routeOptions('/password/reset/invalid', ResetPasswordInvalidPage),
+  routeOptions(
+    { title: 'Reset password', footerVariant: 'account' },
+    ResetPasswordInvalidPage,
+  ),
 );

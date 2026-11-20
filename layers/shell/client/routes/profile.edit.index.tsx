@@ -3,5 +3,8 @@ import ProfileEditAbout from '@/modules/users/client/components/ProfileEditAbout
 import { routeOptions, withUser } from '../route-options';
 
 export const Route = createFileRoute('/profile/edit/')(
-  routeOptions('/profile/edit', withUser(ProfileEditAbout)),
+  routeOptions(
+    { title: 'Edit profile', requiresAuth: true },
+    withUser(ProfileEditAbout),
+  ),
 );
