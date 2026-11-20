@@ -482,12 +482,7 @@ describe('API route registrations', () => {
       './../../../users/server/routes/users.server.routes.mts',
       { '../policies/users.server.policy': policy },
     );
-    const service =
-      await import('../../server/services/targeted-request-limits.server.service.mts');
-
     assert.strictEqual(routes.length, 18);
-    assert.equal(service.default.consume, service.consume);
-    assert.equal(service.default.digest, service.digest);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
     assert.deepStrictEqual(unsubscribeRoute.all, []);

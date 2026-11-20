@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import sinon from 'sinon';
-import requestLimitService from './../../server/services/targeted-request-limits.server.service.mts';
 import config from './../../../../config/config.mts';
 import express from './../../../../config/lib/express.mts';
 import * as utils from './../../../../testutils/server/data.server.testutil.mts';
@@ -19,11 +18,7 @@ describe('Signup and support request allowances', () => {
   });
   beforeEach(() => {
     // Keep requests in one window with expiry ahead of MongoDB's real clock.
-    const now = Date.now() + 60_000;
-    const consume = requestLimitService.consume;
-    sandbox
-      .stub(requestLimitService, 'consume')
-      .callsFake(options => consume({ ...options, now }));
+    sandbox.useFakeTimers({ now: Date.now() + 60_000, toFake: ['Date'] });
     originalSignup = config.targetedRequestLimits.signup;
     originalSupport = config.targetedRequestLimits.support;
     jobs.length = 0;

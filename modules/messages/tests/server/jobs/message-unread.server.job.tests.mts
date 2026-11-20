@@ -1,4 +1,5 @@
 import unreadJob from '../../../server/jobs/message-unread.server.job.mts';
+import { queueMessageDigests } from '../../../server/jobs/message-digest.server.job.mts';
 import config from '../../../../../config/config.mts';
 import moment from 'moment';
 import emailService from './../../../../core/server/services/email.server.service.mts';
@@ -156,8 +157,6 @@ describe('Job: message unread', function () {
   });
 
   it('uses one digest per recipient and period, grouping eligible conversations', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     const otherSender = await User.create({
       ..._userFrom,
       email: 'othersender@example.test',
@@ -199,6 +198,13 @@ describe('Job: message unread', function () {
     await Message.create({ ..._message, created });
     await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
     jobs.length.should.equal(3);
+    const weekly = required(await User.findById(userToId).lean().exec());
+    required(weekly.weeklyMessageDigestPeriod)
+      .toISOString()
+      .should.equal('2026-01-05T00:00:00.000Z');
+    required(weekly.dailyMessageDigestPeriod)
+      .toISOString()
+      .should.equal('2026-01-06T00:00:00.000Z');
     await Message.create({ ..._message, created });
     await queueMessageDigests(new Date('2026-01-11T12:00:00.000Z'));
     jobs.length.should.equal(3);
@@ -207,8 +213,6 @@ describe('Job: message unread', function () {
   });
 
   it('skips digest recipients without an email address or with a restricted role', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     const now = new Date('2026-01-05T12:00:00.000Z');
     const created = new Date('2026-01-05T11:30:00.000Z');
     await message.updateOne({ $set: { created } });
@@ -234,14 +238,21 @@ describe('Job: message unread', function () {
   });
 
   it('skips recipients with an unsupported digest frequency', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
-    const recipient = await User.findById(userToId).lean().exec();
-    const recipients = async function* () {
-      yield { ...required(recipient), messageEmailFrequency: 'off' };
-    };
-    const findRecipient = sinon.stub(User, 'find').returns({
-      lean: () => ({ cursor: recipients }),
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'off' } },
+    );
+    await message.updateOne({
+      $set: { created: new Date('2026-01-05T11:30:00.000Z') },
+    });
+    const recipient = required(await User.findById(userToId).lean().exec());
+    const findRecipient = sinon.stub(User, 'find').callThrough();
+    findRecipient.onFirstCall().returns({
+      lean: () => ({
+        async *cursor() {
+          yield recipient;
+        },
+      }),
     } as never);
     const aggregate = sinon.spy(Message, 'aggregate');
     try {
@@ -254,9 +265,56 @@ describe('Job: message unread', function () {
     }
   });
 
+  it('digests only due members, only messages old enough, and records the daily period', async function () {
+    const today = new Date('2026-01-07T00:00:00.000Z');
+    const created = new Date('2026-01-07T11:30:00.000Z');
+    const [dailyDone, weeklyDone] = await User.create([
+      {
+        ..._userFrom,
+        email: 'dailydone@example.test',
+        username: 'dailydone',
+        messageEmailFrequency: 'daily',
+        dailyMessageDigestPeriod: today,
+      },
+      {
+        ..._userFrom,
+        email: 'weeklydone@example.test',
+        username: 'weeklydone',
+        messageEmailFrequency: 'weekly',
+        weeklyMessageDigestPeriod: new Date('2026-01-05T00:00:00.000Z'),
+      },
+    ]);
+    await User.updateOne(
+      { _id: userToId },
+      { $set: { messageEmailFrequency: 'daily' } },
+    );
+    await message.updateOne({ $set: { created } });
+    await Message.create([
+      { ..._message, created: new Date('2026-01-07T11:55:00.000Z') },
+      { ..._message, userFrom: userToId, userTo: userFromId, created },
+      { ..._message, userTo: dailyDone._id, created },
+      { ..._message, userTo: weeklyDone._id, created },
+    ]);
+    const aggregate = sinon.spy(Message, 'aggregate');
+    try {
+      await queueMessageDigests(new Date('2026-01-07T12:00:00.000Z'));
+      aggregate.callCount.should.equal(1);
+    } finally {
+      aggregate.restore();
+    }
+
+    jobs.length.should.equal(1);
+    jobs[0].data.to.address.should.equal(_userTo.email);
+    jobs[0].data.text.should.containEql('FullFrom NameFrom (1 unread)');
+    (await Message.countDocuments({ notificationCount: 0 })).should.equal(4);
+    const recipient = required(await User.findById(userToId).lean().exec());
+    required(recipient.dailyMessageDigestPeriod)
+      .toISOString()
+      .should.equal(today.toISOString());
+    Object.hasOwn(recipient, 'weeklyMessageDigestPeriod').should.equal(false);
+  });
+
   it('uses the sender username when their display name is empty', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     await User.updateOne(
       { _id: userToId },
       { $set: { messageEmailFrequency: 'daily' } },
@@ -271,8 +329,6 @@ describe('Job: message unread', function () {
   });
 
   it('skips blocked senders, restricted senders and conversations with no unread messages', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     const now = new Date('2026-01-05T12:00:00.000Z');
     const created = new Date('2026-01-05T11:30:00.000Z');
     await User.updateOne(
@@ -317,8 +373,6 @@ describe('Job: message unread', function () {
   });
 
   it('does not send a digest when another worker has reserved the period', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     const now = new Date('2026-01-05T12:00:00.000Z');
     await User.updateOne(
       { _id: userToId },
@@ -419,9 +473,31 @@ describe('Job: message unread', function () {
     }
   });
 
+  it('does not let a delayed worker for an older period replace a newer reservation', async function () {
+    const created = new Date('2026-01-05T11:30:00.000Z');
+    const today = new Date('2026-01-06T00:00:00.000Z');
+    await User.updateOne(
+      { _id: userToId },
+      {
+        $set: {
+          messageEmailFrequency: 'daily',
+          dailyMessageDigestPeriod: today,
+        },
+      },
+    );
+    await message.updateOne({ $set: { created } });
+
+    await queueMessageDigests(new Date('2026-01-05T23:59:00.000Z'));
+    await queueMessageDigests(new Date('2026-01-06T00:01:00.000Z'));
+
+    jobs.length.should.equal(0);
+    const recipient = required(await User.findById(userToId).lean().exec());
+    required(recipient.dailyMessageDigestPeriod)
+      .toISOString()
+      .should.equal(today.toISOString());
+  });
+
   it('releases the digest reservation when email queueing fails', async function () {
-    const { queueMessageDigests } =
-      await import('../../../server/jobs/message-digest.server.job.mts');
     const now = new Date('2026-01-05T12:00:00.000Z');
     await User.updateOne(
       { _id: userToId },
@@ -446,7 +522,7 @@ describe('Job: message unread', function () {
     }
   });
 
-  it('does not send immediate reminders to members choosing a digest or off', async function () {
+  it('sends immediate reminders only to members not choosing a digest or off', async function () {
     await message.updateOne({
       $set: { created: new Date(Date.now() - 30 * 60_000) },
     });

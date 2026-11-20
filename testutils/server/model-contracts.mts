@@ -39,6 +39,9 @@ export interface UserRecord {
   public?: boolean;
   locale?: string;
   newsletter?: boolean;
+  messageEmailFrequency?: import('../../modules/users/shared/email-preferences.js').MessageEmailFrequency;
+  dailyMessageDigestPeriod?: Date;
+  weeklyMessageDigestPeriod?: Date;
   publicReminderCount?: number;
   acquisitionStory?: string;
   extSitesCouchers?: string;

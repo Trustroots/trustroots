@@ -91,6 +91,4 @@ async function consume({
   };
 }
 
-export default { consume, digest };
-/** @esmNamed */
 export { consume, digest };
