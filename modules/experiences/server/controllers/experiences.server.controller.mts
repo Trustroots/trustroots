@@ -90,12 +90,7 @@ interface ExperienceController {
   readMine: ExperienceHandler;
   readOne: ExperienceHandler;
   getCount: ExperienceHandler;
-  experienceById: (
-    req: ExperienceRequest,
-    res: ExperienceResponseWriter,
-    next: ExperienceNext,
-    id: string,
-  ) => unknown;
+  experienceById: ExperienceHandler;
 }
 
 const service = {} as ExperienceController;
@@ -753,12 +748,10 @@ function validateReadOne(id: string | undefined) {
 /**
  * Load an experience by id to request.experience
  */
-service.experienceById = async function experienceById(req, res, next, id) {
+service.experienceById = async function experienceById(req, res, next) {
   try {
-    // don't bother fetching an experience for non-public users or guests
-    if (!req.user || !req.user.public) return next();
-
     // validate
+    const id = req.params.experienceId;
     validate(validateReadOne, id);
 
     const selfId = req.user._id;
