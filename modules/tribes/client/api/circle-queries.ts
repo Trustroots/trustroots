@@ -25,10 +25,10 @@ export function circleQuery(slug: string, viewerId?: string) {
   });
 }
 
-/** Puts a circle changed by joining or leaving into every cached list and detail. */
+/** Apply updated circle fields to every cached list and detail. */
 export function setCachedCircle(
   queryClient: QueryClient,
-  circle: TribeSummary,
+  circle: Pick<TribeSummary, '_id'> & Partial<TribeSummary>,
 ) {
   const update = (cached: TribeSummary) =>
     cached._id === circle._id ? { ...cached, ...circle } : cached;

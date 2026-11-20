@@ -208,11 +208,11 @@ export default function TribeDetailPage({
                         key={tribe._id}
                         tribe={tribe}
                         onSave={({ _id, label, description }) =>
-                          setTribe(current =>
-                            current?._id === _id
-                              ? { ...current, label, description }
-                              : current,
-                          )
+                          setCachedCircle(queryClient, {
+                            _id,
+                            label,
+                            description,
+                          })
                         }
                       />
                     )}
