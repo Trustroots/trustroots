@@ -19,20 +19,7 @@ struct TrustrootsRootView: View {
                     TrustrootsPalette.green.frame(height: 50)
                 }
 
-                if offlineAvailability.isUsingSavedData {
-                    HStack(spacing: 7) {
-                        Image(systemName: "wifi.slash")
-                        Text(offlineWarning)
-                            .lineLimit(1)
-                    }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.36, green: 0.22, blue: 0.03))
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color(red: 1.0, green: 0.90, blue: 0.68))
-                    .accessibilityLabel(offlineWarning)
-                }
+                OfflineSavedDataBanner(availability: offlineAvailability)
 
                 Group {
                     if let browserRoute {
@@ -163,13 +150,6 @@ struct TrustrootsRootView: View {
                 offlineAvailability.showLiveData()
             }
         }
-    }
-
-    private var offlineWarning: String {
-        guard let savedAt = offlineAvailability.savedAt else {
-            return "Offline — showing saved data"
-        }
-        return "Offline — saved \(savedAt.formatted(date: .abbreviated, time: .shortened))"
     }
 
     private var isImmersiveDetail: Bool {
@@ -559,4 +539,34 @@ private struct MoreView: View {
 
 #Preview {
     TrustrootsRootView(session: MemberSessionStore())
+}
+
+struct OfflineSavedDataBanner: View {
+    @ObservedObject var availability: OfflineAvailability
+
+    var body: some View {
+        if availability.isUsingSavedData {
+            HStack(spacing: 7) {
+                Image(systemName: "wifi.slash")
+                Text(message)
+                    .lineLimit(1)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color(red: 0.36, green: 0.22, blue: 0.03))
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(red: 1.0, green: 0.90, blue: 0.68))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(message)
+            .accessibilityIdentifier("offline-saved-data")
+        }
+    }
+
+    private var message: String {
+        guard let savedAt = availability.savedAt else {
+            return "Offline — showing saved data"
+        }
+        return "Offline — saved \(savedAt.formatted(date: .abbreviated, time: .shortened))"
+    }
 }

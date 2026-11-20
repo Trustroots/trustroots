@@ -36,6 +36,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     access_token = None
     refresh_token = None
     refresh_count = 0
+    drop_profile_response = False
     messages = [INCOMING_MESSAGE]
     send_attempts = 0
 
@@ -49,7 +50,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
             fixture = type(self)
             with fixture.session_lock:
+                drop_profile_response = fixture.drop_profile_response
                 refresh_count = fixture.refresh_count
+            if drop_profile_response:
+                self.close_connection = True
+                return
             profile = dict(MEMBER)
             if refresh_count:
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
@@ -135,6 +140,19 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(201, message)
         else:
             self._json(404, {"message": "Fixture route not found."})
+
+    def do_PUT(self):  # noqa: N802 - BaseHTTPRequestHandler API
+        if self.path != "/fixture/profile-connection":
+            self._json(404, {"message": "Fixture route not found."})
+            return
+        drop = self._body().get("drop")
+        if not isinstance(drop, bool):
+            self._json(400, {"message": "Expected a boolean drop value."})
+            return
+        fixture = type(self)
+        with fixture.session_lock:
+            fixture.drop_profile_response = drop
+        self._json(200, {"drop": drop})
 
     def _authorised(self):
         fixture = type(self)
