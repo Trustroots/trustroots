@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import request from 'supertest';
 import should from 'should';
 import sinon from 'sinon';
+import { expect } from 'vitest';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import express from './../../../../config/lib/express.mts';
@@ -121,6 +122,57 @@ describe('Read experiences by userTo Id', () => {
     });
     afterEach(function () {
       return utils.signOut.call(this, agent);
+    });
+    it('returns only the authenticated author’s pending and unremoved Experiences', async () => {
+      const experiences = mongoose.connection.collection('experiences');
+      await experiences.insertMany([
+        {
+          userFrom: users[0]._id,
+          userTo: users[4]._id,
+          public: false,
+          created: new Date('2020-01-01T00:00:00Z'),
+          feedbackPublic: 'A pending account for this test.',
+          interactions: { met: true, guest: false, host: false },
+          recommend: 'unknown',
+        },
+        {
+          userFrom: users[0]._id,
+          userTo: users[5]._id,
+          public: false,
+          created: new Date('2020-01-01T00:00:00Z'),
+          removedAt: new Date(),
+          interactions: { met: true, guest: false, host: false },
+          recommend: 'unknown',
+        },
+      ]);
+      const { body } = await agent
+        .get('/api/experiences')
+        .query({ userTo: String(users[0]._id), view: 'pending-authored' })
+        .expect(200);
+      expect(body).toHaveLength(2);
+      expect(body).toMatchObject([
+        {
+          userFrom: { _id: String(users[0]._id) },
+          userTo: { _id: String(users[3]._id) },
+          public: false,
+          response: null,
+        },
+        {
+          userFrom: { _id: String(users[0]._id) },
+          userTo: { _id: String(users[4]._id) },
+          public: false,
+          response: null,
+          feedbackPublic: 'A pending account for this test.',
+        },
+      ]);
+    });
+
+    it('denies accessing another member’s pending authored Experiences', async () => {
+      const { body } = await agent
+        .get('/api/experiences')
+        .query({ userTo: String(users[1]._id), view: 'pending-authored' })
+        .expect(404);
+      expect(body).toEqual({ message: 'Not found.' });
     });
     it('[param userTo] respond with all public experiences to userTo', async () => {
       const { body } = await agent

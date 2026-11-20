@@ -43,6 +43,7 @@ import RemoveContactContainer from '@/modules/contacts/client/components/RemoveC
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
+import PendingAuthoredExperiences from '@/modules/experiences/client/components/PendingAuthoredExperiences';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
@@ -467,7 +468,10 @@ export default function ProfilePage({
         );
       case 'experiences':
         return referencesEnabled ? (
-          <ListExperiences authenticatedUser={authUser} profile={profile} />
+          <>
+            {isSelf && <PendingAuthoredExperiences userId={profile._id} />}
+            <ListExperiences authenticatedUser={authUser} profile={profile} />
+          </>
         ) : null;
       case 'experiences-new':
         return referencesEnabled ? (

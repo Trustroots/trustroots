@@ -91,4 +91,12 @@ describe('<ListExperiences />', () => {
     expect(screen.getByText('experiences-section-1')).toBeInTheDocument();
     expect(screen.getByText('experiences-section-2')).toBeInTheDocument();
   });
+
+  it('labels the empty incoming list on the owner’s profile', async () => {
+    readExperiencesMock.mockResolvedValueOnce([]);
+    render(<ListExperiences profile={profile} authenticatedUser={profile} />);
+    expect(
+      await screen.findByText('No experiences received yet.'),
+    ).toBeInTheDocument();
+  });
 });
