@@ -32,4 +32,6 @@ export const Route = createRootRouteWithContext<{ user: AuthUser | null }>()({
   ),
   head: () => ({ meta: [{ title: getBootstrapData().title }] }),
   notFoundComponent: NotFoundPage,
+  // Remount dependencies only see validated query parameters, so pass them all on.
+  validateSearch: (search: Record<string, unknown>) => search,
 });

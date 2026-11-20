@@ -29,6 +29,13 @@ const getCirclesMock = vi.mocked(getCircles);
 const saveCircleMock = vi.mocked(saveCircle);
 const getUserByUsernameMock = vi.mocked(getUserByUsername);
 
+function visit(path: string) {
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+beforeEach(() => window.history.replaceState({}, '', '/admin/circles'));
+
 type CircleFixture = {
   _id?: string;
   label: string;
@@ -224,7 +231,8 @@ describe('circle editor navigation and preview', () => {
             fails ? reject(new Error('Unavailable')) : resolve([selected]);
         }),
       );
-      const { unmount } = render(<AdminCircles circleSlug="walkers" />);
+      visit('/admin/circles/walkers');
+      const { unmount } = render(<AdminCircles />);
       unmount();
       await act(async () => {
         complete();
@@ -233,10 +241,8 @@ describe('circle editor navigation and preview', () => {
   );
 
   it('loads a slug directly, links to its public page and returns to a new circle', async () => {
-    const onNavigate = vi.fn();
-    const { rerender } = render(
-      <AdminCircles circleSlug="walkers" onNavigate={onNavigate} />,
-    );
+    visit('/admin/circles/walkers');
+    render(<AdminCircles />);
     await waitFor(() =>
       expect(screen.getByLabelText('Name')).toHaveValue('Walkers'),
     );
@@ -245,10 +251,10 @@ describe('circle editor navigation and preview', () => {
       '/circles/walkers',
     );
     fireEvent.click(screen.getByRole('button', { name: 'New circle' }));
-    expect(onNavigate).toHaveBeenCalledWith('/admin/circles');
-    fireEvent.click(screen.getByRole('button', { name: 'Walkers' }));
-    expect(onNavigate).toHaveBeenCalledWith('/admin/circles/walkers');
-    rerender(<AdminCircles circleSlug="missing" onNavigate={onNavigate} />);
+    expect(window.location.pathname).toBe('/admin/circles');
+    fireEvent.click(await screen.findByRole('button', { name: 'Walkers' }));
+    expect(window.location.pathname).toBe('/admin/circles/walkers');
+    act(() => visit('/admin/circles/missing'));
     expect(await screen.findByText('Circle not found.')).toBeVisible();
     expect(screen.getByLabelText('Name')).toHaveValue('');
   });
@@ -272,15 +278,14 @@ describe('circle editor navigation and preview', () => {
   });
 
   it('navigates to the created circle after saving', async () => {
-    const onNavigate = vi.fn();
     saveCircleMock.mockResolvedValue(selected);
-    render(<AdminCircles onNavigate={onNavigate} />);
+    render(<AdminCircles />);
     await screen.findByRole('button', { name: 'Walkers' });
     fireEvent.submit(
       screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
     );
     await waitFor(() =>
-      expect(onNavigate).toHaveBeenCalledWith('/admin/circles/walkers'),
+      expect(window.location.pathname).toBe('/admin/circles/walkers'),
     );
   });
 });

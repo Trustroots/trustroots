@@ -1,49 +1,23 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import React from 'react';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
-import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { routeOptions, type RouteContext } from '../route-options';
+import useMembershipUpdated from '@/modules/tribes/client/hooks/useMembershipUpdated';
+import { useAuth } from '@/modules/core/client/react-app/auth';
+import { routeOptions } from '../route-options';
 
-function TribeDetailPageRoute({
-  user,
-  circle,
-}: {
-  user: AuthUser | null;
-  circle?: string;
-}) {
-  const { setUser } = useAuth();
-
-  const handleMembershipUpdated = (
-    data: { user?: Partial<NonNullable<AuthUser>> } | null,
-  ) => {
-    /* istanbul ignore else -- malformed membership callbacks cannot update auth state. */
-    if (data?.user) {
-      setUser({ ...user, ...data.user, roles: user?.roles });
-    }
-  };
-
+function TribeDetailPageRoute() {
+  const { user } = useAuth();
+  const { circle } = useParams({ from: '/circles/$circle' });
+  const onMembershipUpdated = useMembershipUpdated();
   return (
     <TribeDetailPage
-      circle={circle as string}
-      onMembershipUpdated={handleMembershipUpdated}
+      circle={circle}
+      onMembershipUpdated={onMembershipUpdated}
       user={user as React.ComponentProps<typeof TribeDetailPage>['user']}
     />
   );
 }
 
-function renderCircleDetail({ user, params }: RouteContext) {
-  return React.createElement(
-    TribeDetailPageRoute as unknown as React.ComponentType<{
-      user: AuthUser | null;
-      circle?: string;
-    }>,
-    {
-      user,
-      circle: params.circle,
-    },
-  );
-}
-
 export const Route = createFileRoute('/circles/$circle')(
-  routeOptions('/circles/:circle', renderCircleDetail),
+  routeOptions('/circles/:circle', TribeDetailPageRoute),
 );

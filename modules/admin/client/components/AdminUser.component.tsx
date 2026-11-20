@@ -1506,9 +1506,6 @@ export class AdminUserContent extends Component<
                 {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
               </h4>
               <ProfilePage
-                currentPath={`/profile/${encodeURIComponent(
-                  user.profile.username,
-                )}`}
                 embedded
                 profileUsername={user.profile.username}
                 user={viewer as UserProfile}

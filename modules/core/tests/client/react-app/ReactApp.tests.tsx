@@ -91,18 +91,19 @@ vi.mock(
   '@/modules/admin/client/components/AdminCircles.component',
   async () => {
     const React = await vi.importActual<typeof import('react')>('react');
+    const { useNavigate, useParams } = await vi.importActual<
+      typeof import('@tanstack/react-router')
+    >('@tanstack/react-router');
 
-    function MockAdminCircles({
-      circleSlug,
-      onNavigate,
-    }: {
-      circleSlug?: string;
-      onNavigate: (path: string) => void;
-    }) {
+    function MockAdminCircles() {
+      const { circle } = useParams({ strict: false });
+      const navigate = useNavigate();
       return (
         <main>
-          Admin circles route <span>{circleSlug}</span>
-          <button onClick={() => onNavigate('/admin/circles/walkers')}>
+          Admin circles route <span>{circle}</span>
+          <button
+            onClick={() => void navigate({ to: '/admin/circles/walkers' })}
+          >
             Select Walkers
           </button>
         </main>
@@ -635,6 +636,15 @@ describe('<ReactApp />', () => {
     } finally {
       link.remove();
     }
+  });
+
+  it('wraps offer pages in the offer layout', async () => {
+    renderApp('/offer/host', { user: { username: 'member', public: false } });
+
+    expect(await screen.findByText('Do not panic!')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(document.title).toBe('Host travellers - Trustroots'),
+    );
   });
 
   it('redirects unmatched paths to the not-found route', async () => {

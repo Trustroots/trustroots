@@ -272,6 +272,7 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     path: '/offer',
     title: 'Host travellers',
     requiresAuth: true,
+    redirectTo: '/offer/host',
   },
   {
     path: '/offer/host',

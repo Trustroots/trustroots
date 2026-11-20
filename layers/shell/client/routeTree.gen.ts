@@ -20,6 +20,7 @@ import { Route as GuideRouteImport } from './routes/guide'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as NavigationRouteImport } from './routes/navigation'
 import { Route as NotFoundRouteImport } from './routes/not-found'
+import { Route as OfferRouteImport } from './routes/offer'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileSignupRouteImport } from './routes/profile-signup'
 import { Route as RulesRouteImport } from './routes/rules'
@@ -154,6 +155,11 @@ const NavigationRoute = NavigationRouteImport.update({
 const NotFoundRoute = NotFoundRouteImport.update({
   id: '/not-found',
   path: '/not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfferRoute = OfferRouteImport.update({
+  id: '/offer',
+  path: '/offer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -373,14 +379,14 @@ const MessagesUsernameRoute = MessagesUsernameRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfferIndexRoute = OfferIndexRouteImport.update({
-  id: '/offer/',
-  path: '/offer/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OfferRoute,
 } as any)
 const OfferHostRoute = OfferHostRouteImport.update({
-  id: '/offer/host',
-  path: '/offer/host',
-  getParentRoute: () => rootRouteImport,
+  id: '/host',
+  path: '/host',
+  getParentRoute: () => OfferRoute,
 } as any)
 const PasswordForgotRoute = PasswordForgotRouteImport.update({
   id: '/password/forgot',
@@ -458,19 +464,19 @@ const ExperiencesIdChangeRoute = ExperiencesIdChangeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfferMeetIndexRoute = OfferMeetIndexRouteImport.update({
-  id: '/offer/meet/',
-  path: '/offer/meet/',
-  getParentRoute: () => rootRouteImport,
+  id: '/meet/',
+  path: '/meet/',
+  getParentRoute: () => OfferRoute,
 } as any)
 const OfferMeetOfferIdRoute = OfferMeetOfferIdRouteImport.update({
-  id: '/offer/meet/$offerId',
-  path: '/offer/meet/$offerId',
-  getParentRoute: () => rootRouteImport,
+  id: '/meet/$offerId',
+  path: '/meet/$offerId',
+  getParentRoute: () => OfferRoute,
 } as any)
 const OfferMeetAddRoute = OfferMeetAddRouteImport.update({
-  id: '/offer/meet/add',
-  path: '/offer/meet/add',
-  getParentRoute: () => rootRouteImport,
+  id: '/meet/add',
+  path: '/meet/add',
+  getParentRoute: () => OfferRoute,
 } as any)
 const PasswordResetTokenRoute = PasswordResetTokenRouteImport.update({
   id: '/password/reset/$token',
@@ -575,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/media': typeof MediaRoute
   '/navigation': typeof NavigationRoute
   '/not-found': typeof NotFoundRoute
+  '/offer': typeof OfferRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile-signup': typeof ProfileSignupRoute
   '/rules': typeof RulesRoute
@@ -762,6 +769,7 @@ export interface FileRoutesById {
   '/media': typeof MediaRoute
   '/navigation': typeof NavigationRoute
   '/not-found': typeof NotFoundRoute
+  '/offer': typeof OfferRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile-signup': typeof ProfileSignupRoute
   '/rules': typeof RulesRoute
@@ -857,6 +865,7 @@ export interface FileRouteTypes {
     | '/media'
     | '/navigation'
     | '/not-found'
+    | '/offer'
     | '/privacy'
     | '/profile-signup'
     | '/rules'
@@ -1043,6 +1052,7 @@ export interface FileRouteTypes {
     | '/media'
     | '/navigation'
     | '/not-found'
+    | '/offer'
     | '/privacy'
     | '/profile-signup'
     | '/rules'
@@ -1137,6 +1147,7 @@ export interface RootRouteChildren {
   MediaRoute: typeof MediaRoute
   NavigationRoute: typeof NavigationRoute
   NotFoundRoute: typeof NotFoundRoute
+  OfferRoute: typeof OfferRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ProfileSignupRoute: typeof ProfileSignupRoute
   RulesRoute: typeof RulesRoute
@@ -1176,7 +1187,6 @@ export interface RootRouteChildren {
   FaqGetStartedRoute: typeof FaqGetStartedRoute
   FaqTechnologyRoute: typeof FaqTechnologyRoute
   MessagesUsernameRoute: typeof MessagesUsernameRoute
-  OfferHostRoute: typeof OfferHostRoute
   PasswordForgotRoute: typeof PasswordForgotRoute
   ProfileUsernameRoute: typeof ProfileUsernameRouteWithChildren
   RemoveTokenRoute: typeof RemoveTokenRoute
@@ -1186,7 +1196,6 @@ export interface RootRouteChildren {
   CirclesIndexRoute: typeof CirclesIndexRoute
   FaqIndexRoute: typeof FaqIndexRoute
   MessagesIndexRoute: typeof MessagesIndexRoute
-  OfferIndexRoute: typeof OfferIndexRoute
   SearchIndexRoute: typeof SearchIndexRoute
   TeamIndexRoute: typeof TeamIndexRoute
   AdminCirclesCircleRoute: typeof AdminCirclesCircleRoute
@@ -1194,8 +1203,6 @@ export interface RootRouteChildren {
   AdminSupportMembersRoute: typeof AdminSupportMembersRoute
   AdminUserUsernameRoute: typeof AdminUserUsernameRoute
   ExperiencesIdChangeRoute: typeof ExperiencesIdChangeRoute
-  OfferMeetOfferIdRoute: typeof OfferMeetOfferIdRoute
-  OfferMeetAddRoute: typeof OfferMeetAddRoute
   PasswordResetTokenRoute: typeof PasswordResetTokenRoute
   PasswordResetInvalidRoute: typeof PasswordResetInvalidRoute
   PasswordResetSuccessRoute: typeof PasswordResetSuccessRoute
@@ -1206,7 +1213,6 @@ export interface RootRouteChildren {
   AdminCirclesIndexRoute: typeof AdminCirclesIndexRoute
   AdminSupportIndexRoute: typeof AdminSupportIndexRoute
   AdminUserIndexRoute: typeof AdminUserIndexRoute
-  OfferMeetIndexRoute: typeof OfferMeetIndexRoute
   ProfileEditIndexRoute: typeof ProfileEditIndexRoute
   AdminSupportMemberUsernameRoute: typeof AdminSupportMemberUsernameRoute
   AdminSupportRequestsRequestIdRoute: typeof AdminSupportRequestsRequestIdRoute
@@ -1289,6 +1295,13 @@ declare module '@tanstack/react-router' {
       path: '/not-found'
       fullPath: '/not-found'
       preLoaderRoute: typeof NotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offer': {
+      id: '/offer'
+      path: '/offer'
+      fullPath: '/offer'
+      preLoaderRoute: typeof OfferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1594,17 +1607,17 @@ declare module '@tanstack/react-router' {
     }
     '/offer/': {
       id: '/offer/'
-      path: '/offer'
+      path: '/'
       fullPath: '/offer/'
       preLoaderRoute: typeof OfferIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OfferRoute
     }
     '/offer/host': {
       id: '/offer/host'
-      path: '/offer/host'
+      path: '/host'
       fullPath: '/offer/host'
       preLoaderRoute: typeof OfferHostRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OfferRoute
     }
     '/password/forgot': {
       id: '/password/forgot'
@@ -1713,24 +1726,24 @@ declare module '@tanstack/react-router' {
     }
     '/offer/meet/': {
       id: '/offer/meet/'
-      path: '/offer/meet'
+      path: '/meet'
       fullPath: '/offer/meet/'
       preLoaderRoute: typeof OfferMeetIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OfferRoute
     }
     '/offer/meet/$offerId': {
       id: '/offer/meet/$offerId'
-      path: '/offer/meet/$offerId'
+      path: '/meet/$offerId'
       fullPath: '/offer/meet/$offerId'
       preLoaderRoute: typeof OfferMeetOfferIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OfferRoute
     }
     '/offer/meet/add': {
       id: '/offer/meet/add'
-      path: '/offer/meet/add'
+      path: '/meet/add'
       fullPath: '/offer/meet/add'
       preLoaderRoute: typeof OfferMeetAddRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OfferRoute
     }
     '/password/reset/$token': {
       id: '/password/reset/$token'
@@ -1854,6 +1867,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OfferRouteChildren {
+  OfferHostRoute: typeof OfferHostRoute
+  OfferIndexRoute: typeof OfferIndexRoute
+  OfferMeetOfferIdRoute: typeof OfferMeetOfferIdRoute
+  OfferMeetAddRoute: typeof OfferMeetAddRoute
+  OfferMeetIndexRoute: typeof OfferMeetIndexRoute
+}
+
+const OfferRouteChildren: OfferRouteChildren = {
+  OfferHostRoute: OfferHostRoute,
+  OfferIndexRoute: OfferIndexRoute,
+  OfferMeetOfferIdRoute: OfferMeetOfferIdRoute,
+  OfferMeetAddRoute: OfferMeetAddRoute,
+  OfferMeetIndexRoute: OfferMeetIndexRoute,
+}
+
+const OfferRouteWithChildren = OfferRoute._addFileChildren(OfferRouteChildren)
+
 interface ProfileUsernameRouteChildren {
   ProfileUsernameAboutRoute: typeof ProfileUsernameAboutRoute
   ProfileUsernameAccommodationRoute: typeof ProfileUsernameAccommodationRoute
@@ -1890,6 +1921,7 @@ const rootRouteChildren: RootRouteChildren = {
   MediaRoute: MediaRoute,
   NavigationRoute: NavigationRoute,
   NotFoundRoute: NotFoundRoute,
+  OfferRoute: OfferRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ProfileSignupRoute: ProfileSignupRoute,
   RulesRoute: RulesRoute,
@@ -1929,7 +1961,6 @@ const rootRouteChildren: RootRouteChildren = {
   FaqGetStartedRoute: FaqGetStartedRoute,
   FaqTechnologyRoute: FaqTechnologyRoute,
   MessagesUsernameRoute: MessagesUsernameRoute,
-  OfferHostRoute: OfferHostRoute,
   PasswordForgotRoute: PasswordForgotRoute,
   ProfileUsernameRoute: ProfileUsernameRouteWithChildren,
   RemoveTokenRoute: RemoveTokenRoute,
@@ -1939,7 +1970,6 @@ const rootRouteChildren: RootRouteChildren = {
   CirclesIndexRoute: CirclesIndexRoute,
   FaqIndexRoute: FaqIndexRoute,
   MessagesIndexRoute: MessagesIndexRoute,
-  OfferIndexRoute: OfferIndexRoute,
   SearchIndexRoute: SearchIndexRoute,
   TeamIndexRoute: TeamIndexRoute,
   AdminCirclesCircleRoute: AdminCirclesCircleRoute,
@@ -1947,8 +1977,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSupportMembersRoute: AdminSupportMembersRoute,
   AdminUserUsernameRoute: AdminUserUsernameRoute,
   ExperiencesIdChangeRoute: ExperiencesIdChangeRoute,
-  OfferMeetOfferIdRoute: OfferMeetOfferIdRoute,
-  OfferMeetAddRoute: OfferMeetAddRoute,
   PasswordResetTokenRoute: PasswordResetTokenRoute,
   PasswordResetInvalidRoute: PasswordResetInvalidRoute,
   PasswordResetSuccessRoute: PasswordResetSuccessRoute,
@@ -1959,7 +1987,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCirclesIndexRoute: AdminCirclesIndexRoute,
   AdminSupportIndexRoute: AdminSupportIndexRoute,
   AdminUserIndexRoute: AdminUserIndexRoute,
-  OfferMeetIndexRoute: OfferMeetIndexRoute,
   ProfileEditIndexRoute: ProfileEditIndexRoute,
   AdminSupportMemberUsernameRoute: AdminSupportMemberUsernameRoute,
   AdminSupportRequestsRequestIdRoute: AdminSupportRequestsRequestIdRoute,

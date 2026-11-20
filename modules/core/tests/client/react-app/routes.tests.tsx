@@ -7,7 +7,7 @@ import {
   parseLegacySearch,
   stringifyLegacySearch,
 } from '@/layers/shell/client/router';
-import type { ShellRoute } from '@/layers/shell/client/route-options';
+import type { RoutePolicy } from '@/layers/shell/client/route-options';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
@@ -24,21 +24,26 @@ type MembershipRouteProps = UserRouteProps & {
   onMembershipUpdated: (data: { user?: Partial<AuthUser> } | null) => void;
 };
 type StatisticsRouteProps = { isAuthenticated: boolean };
-type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
-type RouteToRender = Pick<ShellRoute, 'path' | 'render'>;
+type ShellRoute = RoutePolicy & { component: React.ComponentType };
 
 const router = createAppRouter();
-const routes = Object.values(router.routesById)
-  .map(route => route.options.staticData as ShellRoute)
-  .filter(route => route?.path);
+const routes = Object.values(router.routesById).flatMap(route => {
+  const policy = route.options.staticData as RoutePolicy | undefined;
+  // Profile tabs render through the profile route's component.
+  const component =
+    route.options.component ?? route.parentRoute?.options.component;
+  return policy?.path ? [{ ...policy, component } as ShellRoute] : [];
+});
 
 function findRoute(path: string) {
   const url = new URL(path, 'https://trustroots.test');
   const [match] = router
     .matchRoutes(url.pathname, Object.fromEntries(url.searchParams))
     .reverse();
-  const route = match?.staticData as ShellRoute | undefined;
-  return route?.path ? { ...route, params: match.params } : undefined;
+  const route = routes.find(
+    ({ path }) => path === (match?.staticData as RoutePolicy | undefined)?.path,
+  );
+  return route && { ...route, params: match.params };
 }
 
 // Routes that are not mocked below fire API requests on mount. Keep them off
@@ -219,19 +224,6 @@ vi.mock('@/modules/search/client/components/SearchPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Search {user?.username}</main>,
 }));
-vi.mock('@/modules/offers/client/components/OfferShell.component', () => ({
-  __esModule: true,
-  default: ({ children, user }: OfferShellRouteProps) => (
-    <main>
-      Offer shell {user?.username}
-      {children}
-    </main>
-  ),
-}));
-vi.mock(
-  '@/modules/offers/client/components/OfferRedirectPage.component',
-  () => ({ default: () => <main>Offer redirect</main> }),
-);
 vi.mock('@/modules/offers/client/components/OfferHostPage.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
@@ -385,7 +377,7 @@ vi.mock('@/modules/tribes/client/components/TribeDetailPage.component', () => ({
 /* eslint-enable react/display-name */
 
 function renderRoute(
-  route: RouteToRender | undefined,
+  route: ShellRoute | undefined,
   user: AuthUser | null = { username: 'alice', public: true },
 ) {
   if (!route) {
@@ -413,6 +405,11 @@ function renderRoute(
                       : route.path === '/contact-confirm/:contactId'
                         ? { contactId: 'contact-1' }
                         : {};
+  window.history.pushState(
+    {},
+    '',
+    route.path.replace(/:([^/]+)/g, (_, key: string) => params[key] || ''),
+  );
 
   return render(
     <AppProviders
@@ -424,19 +421,14 @@ function renderRoute(
         user,
       }}
     >
-      {route.render({
-        params,
-        user,
-        currentPath: route.path.replace(
-          /:([^/]+)/g,
-          (_, key: string) => params[key] || '',
-        ),
-      })}
+      <route.component />
     </AppProviders>,
   );
 }
 
 describe('React route ownership', () => {
+  afterEach(() => window.history.replaceState({}, '', '/'));
+
   it('renders the staff network connection search page', () => {
     renderRoute(
       routes.find(route => route.path === '/admin/network-connections'),
@@ -475,7 +467,7 @@ describe('React route ownership', () => {
 
   it('defines a renderer for every React-owned route policy', () => {
     routes.forEach(route => {
-      expect(route.render).toEqual(expect.any(Function));
+      expect(route.component).toEqual(expect.any(Function));
     });
   });
 
@@ -564,7 +556,7 @@ describe('React route ownership', () => {
       requiresRole: 'admin',
       title: 'Admin - Audit log',
     });
-    expect(adminRoute.render).toEqual(expect.any(Function));
+    expect(adminRoute.component).toEqual(expect.any(Function));
 
     expect(findRoute('/admin/gravatar')).toMatchObject({
       path: '/admin/gravatar',
@@ -666,6 +658,9 @@ describe('React route ownership', () => {
 
     expect(getReactRouteAccessRedirect(route, null)).toBe('/signin');
     expect(getReactRoutePolicy('/about')).toMatchObject({ redirectTo: '/' });
+    expect(getReactRoutePolicy('/offer')).toMatchObject({
+      redirectTo: '/offer/host',
+    });
     expect(getReactRouteAccessRedirect(route, { roles: ['user'] })).toBe(
       '/volunteering',
     );
@@ -734,13 +729,15 @@ describe('React route ownership', () => {
     expect(findRoute('/profile-edit/about')).toBe(undefined);
   });
 
-  it('renders every React-owned route', () => {
-    routes.forEach(route => {
-      const { container, unmount } = renderRoute(route);
+  it('renders every React-owned route that does not redirect', () => {
+    routes
+      .filter(route => !route.redirectTo)
+      .forEach(route => {
+        const { container, unmount } = renderRoute(route);
 
-      expect(container.firstChild).toBeTruthy();
-      unmount();
-    });
+        expect(container.firstChild).toBeTruthy();
+        unmount();
+      });
   });
 
   it('renders no message thread when the route has no authenticated user', () => {

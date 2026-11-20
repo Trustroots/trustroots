@@ -269,12 +269,10 @@ function ProfileDesktopActions({
 }
 
 export default function ProfilePage({
-  currentPath: routedPath,
   embedded = false,
   profileUsername,
   user: authUser,
 }: {
-  currentPath?: string;
   embedded?: boolean;
   profileUsername?: string;
   user: UserProfile;
@@ -287,9 +285,12 @@ export default function ProfilePage({
   const viewedProfileId = useRef<string | null>(null);
   const contactsRequestVersion = useRef(0);
   const browserPath = useLocation({ select: location => location.pathname });
-  const currentPath = routedPath || browserPath;
   const routeParams = useParams({ strict: false });
   const username = profileUsername || routeParams.username;
+  // An embedded profile always shows its About tab, wherever it is embedded.
+  const currentPath = embedded
+    ? `/profile/${encodeURIComponent(username)}`
+    : browserPath;
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 
