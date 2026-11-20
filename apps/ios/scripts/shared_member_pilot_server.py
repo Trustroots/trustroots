@@ -73,14 +73,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802 - BaseHTTPRequestHandler API
         body = self._body()
         fixture = type(self)
-        if self.path == "/fixture/expire-access-token":
+        if self.path in ("/fixture/expire-access-token", "/fixture/revoke-session"):
+            revoke_session = self.path == "/fixture/revoke-session"
             with fixture.session_lock:
-                expired = fixture.access_token is not None
+                token = fixture.refresh_token if revoke_session else fixture.access_token
                 fixture.access_token = None
-            if expired:
-                self._json(200, {"status": "expired"})
+                if revoke_session:
+                    fixture.refresh_token = None
+            if token is not None:
+                self._json(200, {"status": "revoked" if revoke_session else "expired"})
             else:
-                self._json(409, {"message": "The fixture has no active access token."})
+                self._json(409, {"message": "The fixture has no active token for this action."})
             return
         if self.path == "/api/mobile/v0/auth/signin":
             if body.get("username") != MEMBER["username"] or body.get("password") != "example-password":
