@@ -22,6 +22,7 @@ const cases = [
     scenario:
       'Recovery transport failures show guidance without automatic retries.',
     button: 'Restore',
+    heading: 'Restore your password',
     guidance:
       'We could not confirm whether the recovery request completed. Check your inbox before trying again.',
   },
@@ -33,6 +34,7 @@ const cases = [
     scenario:
       'Reset transport failures show guidance without automatic retries.',
     button: 'Update Password',
+    heading: 'Reset your password',
     guidance:
       'We could not confirm whether your password was changed. Try signing in with your new password before requesting another reset.',
   },
@@ -80,7 +82,9 @@ for (const entry of cases) {
 
     await page.goto(entry.path);
     await captureSection(
-      page.locator('.row').filter({ has: page.locator('form') }),
+      page
+        .getByRole('heading', { name: entry.heading, exact: true })
+        .locator('..'),
       entry.name,
     );
     if (entry.feature === 'auth.password-forgot') {
