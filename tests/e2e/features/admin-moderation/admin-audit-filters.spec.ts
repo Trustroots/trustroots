@@ -13,6 +13,7 @@ test('audit history has compact summaries and staff/team filters', async ({
   ]);
   const actorId = new ObjectId();
   const entryId = new ObjectId();
+  const ownEntryId = new ObjectId();
   const username = `welcome${Date.now()}`;
   try {
     await withE2eDb(async db => {
@@ -21,6 +22,17 @@ test('audit history has compact summaries and staff/team filters', async ({
         username,
         displayName: 'Fictional Welcomer',
         roles: ['user', 'welcome-team'],
+      });
+      const admin = await db
+        .collection('users')
+        .findOne({ username: SEEDED_ADMIN.username });
+      if (!admin) throw new Error('Missing seeded administrator');
+      await db.collection('auditlogs').insertOne({
+        _id: ownEntryId,
+        user: admin._id,
+        date: new Date(),
+        route: '/api/admin/users',
+        body: { search: 'fictional audit checkbox fixture' },
       });
       await db.collection('auditlogs').insertOne({
         _id: entryId,
@@ -65,8 +77,16 @@ test('audit history has compact summaries and staff/team filters', async ({
         entry => entry._id,
       ),
     ).toEqual([String(entryId)]);
-    await page.getByLabel('Performed by').selectOption('');
+    await page.getByLabel('Performed by').selectOption(SEEDED_ADMIN.username);
     await page.getByLabel('Team', { exact: true }).selectOption('admin');
+    const hideMyActions = page.getByRole('checkbox', {
+      name: 'Don’t show my actions',
+    });
+    await expect(hideMyActions).toBeChecked();
+    await expect(
+      page.getByText('Nothing found...', { exact: true }),
+    ).toBeVisible();
+    await hideMyActions.uncheck();
     await expect(
       page
         .getByRole('link', { name: SEEDED_ADMIN.username, exact: false })
@@ -74,7 +94,9 @@ test('audit history has compact summaries and staff/team filters', async ({
     ).toBeVisible();
   } finally {
     await withE2eDb(async db => {
-      await db.collection('auditlogs').deleteOne({ _id: entryId });
+      await db
+        .collection('auditlogs')
+        .deleteMany({ _id: { $in: [entryId, ownEntryId] } });
       await db.collection('users').deleteOne({ _id: actorId });
     });
   }

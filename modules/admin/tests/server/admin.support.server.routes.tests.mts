@@ -83,6 +83,27 @@ describe('Support team access and investigation', () => {
       .set('X-Trustroots-Request', '1')
       .send({ status: value });
   }
+  it('allows support to apply restrictions and protects self, administrators and suspensions', async () => {
+    const changeRole = (id: Types.ObjectId, role: string, action = 'add') =>
+      agent
+        .post('/api/admin/user/change-role')
+        .set('X-Trustroots-Request', '1')
+        .send({ id, role, action });
+    const target = users[2]._id;
+    await changeRole(users[0]._id, 'suspended').expect(403);
+    await changeRole(users[3]._id, 'shadowban').expect(403);
+    await changeRole(target, 'shadowban').expect(200);
+    (await User.findById(target))!.roles!.should.containEql('shadowban');
+    await changeRole(target, 'shadowban', 'remove').expect(403);
+    await changeRole(target, 'suspended').expect(200);
+    await changeRole(target, 'shadowban').expect(403);
+    const saved = (await User.findById(target))!;
+    saved.roles!.should.containEql('suspended');
+    saved.roles!.should.not.containEql('shadowban');
+    should(saved.public).be.false();
+    should(saved.newsletter).be.false();
+  });
+
   it('flags and unflags profiles idempotently without changing account state', async () => {
     const target = users[2];
     const before = await User.findById(target._id).lean();
@@ -416,7 +437,7 @@ describe('Support team access and investigation', () => {
       await agent
         .post(url)
         .set('X-Trustroots-Request', '1')
-        .send({ id: users[1]._id, role: 'suspended' })
+        .send({ id: users[1]._id, role: 'support-team' })
         .expect(403);
   });
   it('denies ordinary members, moderators and greeters, and permits administrators', async () => {

@@ -28,7 +28,13 @@ interface UserRecord {
 }
 
 interface AuditRequest {
-  query?: { username?: unknown; team?: unknown };
+  query?: {
+    username?: unknown;
+    team?: unknown;
+    action?: unknown;
+    hideOwn?: unknown;
+  };
+  user?: { _id: Types.ObjectId | string };
 }
 
 interface AuditRecordRequest {
@@ -89,16 +95,32 @@ export const list = async (
   req: AuditRequest,
   res: AuditResponse,
 ): Promise<unknown> => {
-  const { username, team } = req.query || {};
+  const { username, team, action, hideOwn } = req.query || {};
   if (
     (username !== undefined && typeof username !== 'string') ||
     (team !== undefined && typeof team !== 'string') ||
-    (team && !['admin', 'welcome-team', 'support-team'].includes(team))
+    (team && !['admin', 'welcome-team', 'support-team'].includes(team)) ||
+    (action !== undefined &&
+      action !== '' &&
+      action !== 'shadowban' &&
+      action !== 'suspend') ||
+    (hideOwn !== undefined && hideOwn !== 'true' && hideOwn !== 'false')
   ) {
     return res.status(400).send({ message: 'Invalid audit log filters.' });
   }
   try {
     const criteria: Record<string, unknown> = {};
+    const actorIds: { $in?: Types.ObjectId[]; $ne?: Types.ObjectId | string } =
+      {};
+    if (hideOwn === 'true' && req.user) actorIds.$ne = req.user._id;
+    if (action) {
+      criteria.route = '/api/admin/user/change-role';
+      criteria['body.role'] = action === 'suspend' ? 'suspended' : 'shadowban';
+      criteria.$or = [
+        { 'body.action': 'add' },
+        { 'body.action': { $exists: false } },
+      ];
+    }
     if (username || team) {
       const actorCriteria: Record<string, unknown> = {};
       // The username schema path lowercases and trims query values itself.
@@ -110,8 +132,9 @@ export const list = async (
           '_id',
         )
         .lean();
-      criteria.user = { $in: actors.map(actor => actor._id) };
+      actorIds.$in = actors.map(actor => actor._id);
     }
+    if (actorIds.$in || actorIds.$ne) criteria.user = actorIds;
     const items = await AuditLog.find(criteria)
       .select('-ip -body.ipAddress -query.ip -query.ipAddress')
       .sort({ date: -1, _id: -1 })

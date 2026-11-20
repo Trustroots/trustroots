@@ -18,6 +18,7 @@ import {
   type SupportStatus,
 } from '../../../support/shared/statuses';
 import * as api from '../api/support.api';
+import { setUserRole } from '../api/users.api';
 import { formatAdminDateTime } from '../utils/admin-date';
 import { useAuth } from '../../../core/client/react-app/auth';
 import type {
@@ -29,6 +30,13 @@ import type {
   SupportRequest,
 } from '../api/support.api';
 import { Button } from '@trustroots/ui/Button';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 
 const DEFAULT_STATUS = 'unresolved';
 const SEARCH_LIMIT = 200;
@@ -894,15 +902,108 @@ export function SupportMemberSearchPage() {
   );
 }
 
+function SupportModerationActions({
+  member,
+  onChanged,
+}: {
+  member: SupportMember;
+  onChanged: () => void;
+}) {
+  const [role, setRole] = useState<'shadowban' | 'suspended' | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const label = role === 'suspended' ? 'Suspend' : 'Shadowban';
+
+  async function confirm() {
+    if (!role || saving) return;
+    setSaving(true);
+    setFailed(false);
+    try {
+      await setUserRole(member._id, role, 'add');
+      setRole(null);
+      onChanged();
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div role="group" aria-label="Moderation actions">
+      {!member.roles.includes('shadowban') && (
+        <Button intent="danger" onClick={() => setRole('shadowban')}>
+          Shadowban
+        </Button>
+      )}{' '}
+      <Button intent="danger" onClick={() => setRole('suspended')}>
+        Suspend
+      </Button>
+      <Modal
+        open={role !== null}
+        dismissible={!saving}
+        onClose={() => {
+          setFailed(false);
+          setRole(null);
+        }}
+      >
+        <ModalHeader>
+          <ModalTitle>
+            {label} {member.username}?
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <p>
+            {role === 'suspended'
+              ? 'This will block their access until an administrator intervenes.'
+              : 'Their profile and outreach will be hidden from others.'}
+          </p>
+          {failed && (
+            <p role="alert">
+              Could not update the account status. Please try again.
+            </p>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            disabled={saving}
+            onClick={() => {
+              setFailed(false);
+              setRole(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            intent="danger"
+            disabled={saving}
+            onClick={() => void confirm()}
+          >
+            {saving ? 'Updating…' : label}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
+  );
+}
+
 export function SupportMemberPage({ id }: { id: string }) {
   const {
     data: member,
     setData,
     failed,
+    reload,
   } = useResource<SupportMember>(
     `/api/admin/support-members/${encodeURIComponent(id)}`,
   );
-  const canOpenAdminUserPage = useAuth().hasRole('admin');
+  const auth = useAuth();
+  const canOpenAdminUserPage = auth.hasRole('admin');
+  const canModerate =
+    auth.hasRole('support-team') &&
+    member &&
+    member._id !== auth.user?._id &&
+    !member.roles.includes('admin') &&
+    !member.roles.includes('suspended');
   const navigate = useNavigate();
   useEffect(() => {
     if (member && id !== member.username) {
@@ -934,6 +1035,13 @@ export function SupportMemberPage({ id }: { id: string }) {
               )}
             </h1>
             <UserState user={member} />
+            {canModerate && (
+              <SupportModerationActions
+                key={member._id}
+                member={member}
+                onChanged={reload}
+              />
+            )}
             <p>
               <a href={`/profile/${encodeURIComponent(member.username)}`}>
                 View profile

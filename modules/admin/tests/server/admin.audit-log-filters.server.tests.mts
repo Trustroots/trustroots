@@ -150,11 +150,62 @@ describe('Audit history actor filters', () => {
     );
     should(res.body).eql([]);
   });
+  it('intersects moderation actions with actor, team and viewer filters', async () => {
+    const members = utils.generateUsers(2);
+    members[0].roles = ['user', 'admin', 'support-team'];
+    members[1].roles = ['user', 'support-team'];
+    const [viewer, support] = await utils.saveUsers(members);
+    const route = '/api/admin/user/change-role';
+    await AuditLog.create([
+      { user: viewer._id, route, body: { role: 'shadowban', action: 'add' } },
+      { user: support._id, route, body: { role: 'shadowban' } },
+      {
+        user: support._id,
+        route,
+        body: { role: 'shadowban', action: 'remove' },
+      },
+      { user: support._id, route, body: { role: 'suspended', action: 'add' } },
+      {
+        user: support._id,
+        route: '/api/admin/users',
+        body: { role: 'shadowban' },
+      },
+    ]);
+    const req = {
+      user: { _id: viewer._id },
+      query: { team: 'support-team', action: 'shadowban', hideOwn: 'true' },
+    };
+    const res = response();
+    await controller.list(req, res);
+    historyBody(res)
+      .map(item => item.user.username)
+      .should.eql([support.username]);
+    await controller.list(
+      { ...req, query: { ...req.query, username: viewer.username } },
+      res,
+    );
+    should(res.body).eql([]);
+    await controller.list(
+      { ...req, query: { ...req.query, hideOwn: 'false' } },
+      res,
+    );
+    historyBody(res).length.should.equal(2);
+    await controller.list(
+      { ...req, query: { ...req.query, action: 'suspend' } },
+      res,
+    );
+    historyBody(res)
+      .map(item => item.user.username)
+      .should.eql([support.username]);
+  });
   it('rejects unsupported teams and non-string filters', async () => {
     for (const query of [
       { team: 'unknown' },
       { username: ['river'] },
       { team: ['admin'] },
+      { action: ['shadowban'] },
+      { action: 'remove' },
+      { hideOwn: 'yes' },
     ]) {
       const res = response();
       await controller.list({ query }, res);
