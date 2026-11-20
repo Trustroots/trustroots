@@ -9,9 +9,8 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { useNavigate } from '@tanstack/react-router';
 import AdminUser, {
-  AdminUserContent,
+  type MemberRecord as AdminUserRecord,
   InfoTable,
 } from '@/modules/admin/client/components/AdminUser.component';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
@@ -22,11 +21,12 @@ vi.mock('@/modules/core/client/react-app/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
-type AdminUserRecord = Exclude<AdminUserContent['state']['user'], false>;
 type MemberList = {
   users: AdminUserRecord[];
-  pagination: NonNullable<AdminUserContent['state']['matchingUsersPagination']>;
-  sort: AdminUserContent['state']['matchingUsersSort'];
+  pagination: NonNullable<
+    React.ComponentProps<typeof AdminUserResultsTable>['pagination']
+  >;
+  sort: React.ComponentProps<typeof AdminUserResultsTable>['sort'];
 };
 type MemberListRow = React.ComponentProps<
   typeof AdminUserResultsTable
@@ -209,34 +209,22 @@ function submitMemberSearch(value: string) {
   fireEvent.submit(input.closest('form')!);
 }
 
-// Class instances outside a render get the route props their wrapper passes.
-function routeProps() {
-  return {
-    navigate: useNavigate(),
-    search: Object.fromEntries(new URL(window.location.href).searchParams),
-  };
-}
-
 describe('<AdminUser />', () => {
   it('omits an information table when it has no visible rows', () => {
     const { container } = render(<InfoTable rows={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('handles role helpers safely before a profile has loaded', () => {
-    const component = new AdminUserContent(routeProps());
+  it('keeps role actions unavailable before a profile loads', () => {
+    render(<AdminUser />);
 
-    expect(component.hasRole('volunteer')).toBe(false);
-    expect(() => component.handleUserRoleChange('volunteer')).not.toThrow();
+    expect(
+      screen.queryByRole('button', { name: 'Suspend' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Make volunteer' }),
+    ).not.toBeInTheDocument();
     expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
-
-    // Deliberately partial state exercises role helpers before profile data is complete.
-    component.state = {
-      ...component.state,
-      user: { profile: { roles: ['volunteer'] } } as AdminUserRecord,
-    };
-
-    expect(component.hasRole('volunteer')).toBe(true);
   });
 
   it('loads a valid member id from the URL and renders the report card', async () => {
@@ -760,32 +748,64 @@ describe('<AdminUser />', () => {
     },
   );
 
-  it('prevents closing the delete dialog while deletion is pending', () => {
-    const ref = React.createRef<AdminUserContent>();
-    render(<AdminUserContent {...routeProps()} ref={ref} />);
-    act(() => {
-      ref.current!.setState({ deleteDialogOpen: true, deletingMember: true });
+  it('prevents closing the delete dialog while deletion is pending', async () => {
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, username: 'alice', roles: ['suspended'] },
+      }),
+    );
+    mockedUsersApi.deleteMember.mockReturnValueOnce(new Promise(() => {}));
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Delete member' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+      target: { value: 'alice' },
     });
-    act(() => ref.current!.cancelDeleteDialog());
-    expect(ref.current!.state.deleteDialogOpen).toBe(true);
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'confirmed request' },
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancel' }),
+    ).toBeDisabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+
+    expect(dialog).toBeVisible();
+    expect(mockedUsersApi.deleteMember).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call the deletion API without a loaded suspended member', async () => {
-    const component = new AdminUserContent(routeProps());
-    await component.confirmDeleteMember();
+  it('does not offer deletion before loading a suspended member', () => {
+    render(<AdminUser />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Delete member' }),
+    ).not.toBeInTheDocument();
     expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
   });
 
   it('does not delete a suspended record without a username', async () => {
-    const component = new AdminUserContent(routeProps());
-    component.state = {
-      ...component.state,
-      user: makeReportCard({
-        profile: { _id: userId, roles: ['suspended'] },
-      }) as AdminUserRecord,
-      deleteReason: 'confirmed request',
-    };
-    await component.confirmDeleteMember();
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({ profile: { _id: userId, roles: ['suspended'] } }),
+    );
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Delete member' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'confirmed request' },
+    });
+    expect(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    ).toBeDisabled();
     expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
   });
 
@@ -974,15 +994,18 @@ describe('<AdminUser />', () => {
     );
   });
 
-  it('ignores invalid ids passed directly to the loader', async () => {
-    const ref = React.createRef<AdminUserContent>();
+  it('ignores an invalid member ID returned by search', async () => {
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([{ _id: 'not-a-mongo-id', username: 'alice' }]),
+    );
 
-    render(<AdminUserContent ref={ref} {...routeProps()} />);
+    render(<AdminUser />);
+    await act(async () => submitMemberSearch('alice'));
 
-    await act(async () => {
-      ref.current?.getUserById('not-a-mongo-id');
-    });
-
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith(
+      'alice',
+      expect.anything(),
+    );
     expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
   });
 
@@ -1876,8 +1899,7 @@ describe('<AdminUser />', () => {
         finishRoleChange = resolve;
       }),
     );
-    const componentRef = React.createRef<AdminUserContent>();
-    render(<AdminUserContent ref={componentRef} {...routeProps()} />);
+    render(<AdminUser />);
     submitMemberSearch(userId);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Suspend' }));
@@ -1895,8 +1917,8 @@ describe('<AdminUser />', () => {
     });
     updateButton.removeAttribute('disabled');
     fireEvent.click(updateButton);
-    componentRef.current?.confirmUserRoleChange();
-    componentRef.current?.cancelUserRoleChange();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(dialog).toBeVisible();
     expect(mockedUsersApi.setUserRole).toHaveBeenCalledTimes(1);
     finishRoleChange({});
     await waitFor(() =>

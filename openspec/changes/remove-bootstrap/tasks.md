@@ -2,7 +2,7 @@
 
 - [x] Migrate account sign-in, signup and password recovery inputs.
 - [x] Migrate styled inputs, selects and textareas in function components.
-- [ ] Migrate form controls in the administrative member search and detail class components.
+- [x] Migrate form controls in administrative member search and detail.
 - [ ] Migrate form layout helpers such as groups, labels and help text.
 
 ## 2. Layout and dependency removal
