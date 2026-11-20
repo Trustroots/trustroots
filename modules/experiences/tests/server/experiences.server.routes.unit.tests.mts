@@ -51,18 +51,57 @@ describe('Experiences routes unit tests', () => {
   });
 
   it('registers experience routes when reference is enabled', async () => {
-    const app = buildApp(true);
-    const res = await request(app).get('/api/experiences');
-    res.status.should.equal(200);
-    res.body.action.should.equal('readMany');
+    const client = request(buildApp(true));
+    for (const [method, path, action] of [
+      ['post', '/api/experiences', 'create'],
+      ['get', '/api/experiences', 'readMany'],
+      ['get', '/api/experiences/count', 'getCount'],
+      ['get', '/api/experiences/suggestion', 'getSuggestion'],
+      ['get', '/api/experiences/reply-recipient/member', 'readReplyRecipient'],
+      ['get', '/api/my-experience', 'readMine'],
+      ['get', '/api/experiences/000000000000000000000001', 'readOne'],
+      [
+        'get',
+        '/api/experiences/000000000000000000000001/change-access',
+        'readAccess',
+      ],
+      [
+        'post',
+        '/api/experiences/000000000000000000000001/change-requests',
+        'submit',
+      ],
+      [
+        'get',
+        '/api/experiences/000000000000000000000001/change-requests/mine',
+        'readMine',
+      ],
+    ] as const) {
+      await client[method](path).expect(200, { action });
+    }
+  });
 
-    const suggestion = await request(app).get('/api/experiences/suggestion');
-    suggestion.status.should.equal(200);
-    suggestion.body.action.should.equal('getSuggestion');
-    const recipient = await request(app).get(
-      '/api/experiences/reply-recipient/member',
-    );
-    recipient.status.should.equal(200);
-    recipient.body.action.should.equal('readReplyRecipient');
+  it('shares a client limit across routes before loading experiences', async () => {
+    const app = buildApp(true);
+    const client = request(app);
+    const first = await client
+      .get('/api/experiences/count')
+      .expect(200)
+      .expect('RateLimit-Policy', /q=120; w=60;/);
+    (first.headers['x-ratelimit-limit'] === undefined).should.equal(true);
+
+    for (let count = 1; count < 120; count++) {
+      await client.get('/api/experiences/count').expect(200);
+    }
+
+    await client
+      .get('/api/experiences/000000000000000000000001')
+      .expect(429, {
+        message: 'Too many experience requests. Please try again later.',
+      })
+      .expect('Retry-After', /^\d+$/);
+    sinon.assert.notCalled(controller.experienceById as sinon.SinonStub);
+
+    Object.defineProperty(app.request, 'ip', { value: undefined });
+    await client.get('/api/experiences/count').expect(200);
   });
 });

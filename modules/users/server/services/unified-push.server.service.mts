@@ -90,7 +90,7 @@ async function register(
 ): Promise<void> {
   await Registration.findOneAndUpdate(
     {
-      endpoint: registration.endpoint,
+      endpoint: { $eq: registration.endpoint },
     },
     {
       $set: {
@@ -115,7 +115,7 @@ async function unregister(
 ): Promise<void> {
   await Registration.deleteOne({
     user: userId,
-    endpoint,
+    endpoint: { $eq: endpoint },
   });
 }
 const testDelayMs = 15_000;
@@ -134,7 +134,7 @@ async function scheduleTest(
   endpoint: string,
 ): Promise<'scheduled' | 'missing' | 'limited'> {
   const requestedAt = new Date();
-  const target = { user: userId, endpoint };
+  const target = { user: userId, endpoint: { $eq: endpoint } };
   const registration = await Registration.findOneAndUpdate(
     {
       ...target,
