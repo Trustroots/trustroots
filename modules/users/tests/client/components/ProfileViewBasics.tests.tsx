@@ -123,7 +123,10 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('Reply rate 80%.')).toBeInTheDocument();
     expect(screen.getByText('Replies within 3 hours.')).toBeInTheDocument();
     expect(screen.getByText(/Female\./)).toBeInTheDocument();
-    expect(screen.getByText(/Member since/)).toBeInTheDocument();
+    expect(screen.getByText(/^Registered .+ ago$/)).toHaveAttribute(
+      'datetime',
+      '2020-01-01T00:00:00.000Z',
+    );
     expect(screen.getByText(/Online/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Seaview' })).toHaveAttribute(
       'href',
@@ -294,7 +297,7 @@ describe('<ProfileViewBasics />', () => {
       />,
     );
 
-    expect(screen.getByText(/Member since/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Registered /)).not.toBeInTheDocument();
     expect(screen.getByText('Online long ago')).toBeInTheDocument();
     expect(screen.queryByText(/^Reply rate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^Replies within/)).not.toBeInTheDocument();

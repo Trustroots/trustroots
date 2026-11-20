@@ -51,9 +51,6 @@ export default function ProfileViewBasics({
   const getReplyTime = (replyTime: string) =>
     t('Replies within {{replyTime}}.', { replyTime });
 
-  const getMemberSince = (created?: string) =>
-    t('Member since {{date, ll}}', { date: new Date(created || '') });
-
   const getSeenOnline = (seen?: string) => {
     if (seen) {
       return t('Online {{ date, fromNow }}', { date: new Date(seen) });
@@ -88,9 +85,21 @@ export default function ProfileViewBasics({
     );
   };
 
-  const renderMemberSince = (created?: string) => (
-    <div className="profile-sidebar-section">{getMemberSince(created)}</div>
-  );
+  const renderMemberSince = (created?: string) => {
+    const date = new Date(created ?? NaN);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return (
+      <div className="profile-sidebar-section">
+        <time
+          dateTime={date.toISOString()}
+          title={t('Member since {{date, ll}}', { date })}
+        >
+          {t('Registered {{date, fromNow}}', { date })}
+        </time>
+      </div>
+    );
+  };
 
   const renderSeenOnline = (seen?: string) => (
     <div className="profile-sidebar-section">

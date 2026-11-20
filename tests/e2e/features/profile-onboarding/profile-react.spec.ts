@@ -66,6 +66,35 @@ for (const viewport of [
   });
 }
 
+test('profile shows how long ago the member registered', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.view-about', [
+    'The profile shows relative membership age and retains the exact date.',
+  ]);
+
+  const created = '2023-11-20T12:00:00.000Z';
+  await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00.000Z'));
+  const member = SEEDED_MEMBERS[1];
+  await page.route(`**/api/users/${member.username}`, async route => {
+    const response = await route.fetch();
+    const profile = await response.json();
+    await route.fulfill({ response, json: { ...profile, created } });
+  });
+
+  await page.goto(`/profile/${member.username}`);
+  const membership = page.getByText(/^(?:Registered .+ ago|Member since .+)$/);
+  await captureSection(membership, 'profile-membership-age-desktop');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/profile/${member.username}/overview`);
+  await captureSection(membership, 'profile-membership-age-mobile');
+  await expect(membership).toHaveText('Registered 3 years ago');
+  await expect(membership).toHaveAttribute('datetime', created);
+});
+
 test('profile descriptions retain supported formatting in collapsed and expanded views', async ({
   page,
   request,

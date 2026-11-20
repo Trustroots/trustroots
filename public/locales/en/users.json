@@ -62,6 +62,7 @@
   "Overview": "Overview",
   "Please ensure you are connected to internet and try again.": "Please ensure you are connected to internet and try again.",
   "Profile": "Profile",
+  "Registered {{date, fromNow}}": "Registered {{date, fromNow}}",
   "Remove contact": "Remove contact",
   "Replies within {{replyTime}}.": "Replies within {{replyTime}}.",
   "Reply rate {{replyRate}}.": "Reply rate {{replyRate}}.",
