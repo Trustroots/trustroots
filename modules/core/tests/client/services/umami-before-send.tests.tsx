@@ -1,12 +1,16 @@
-import { routeTemplate } from '@/layers/shell/client/route-options';
-import { createAppRouter } from '@/layers/shell/client/router';
+import React from 'react';
+import { render } from '@testing-library/react';
 import {
+  AnalyticsProvider,
   UMAMI_BEFORE_SEND,
   createUmamiBeforeSend,
-  installUmamiBeforeSend,
   scrubUmamiUrl as scrub,
+  type AnalyticsTracker,
   type UmamiPayload,
-} from '@/modules/core/client/services/umami-before-send';
+} from '@trustroots/analytics/client';
+
+import { routeTemplate } from '@/layers/shell/client/route-options';
+import { createAppRouter } from '@/layers/shell/client/router';
 
 const router = createAppRouter();
 const templateFor = (pathname: string) => routeTemplate(router, pathname);
@@ -177,25 +181,66 @@ describe('umamiBeforeSend', () => {
   });
 });
 
-describe('installUmamiBeforeSend', () => {
-  it('installs the hook before activating the tracker and activates it only once', () => {
-    const template = document.createElement('template');
-    template.id = 'tr-umami-tracker';
-    template.innerHTML =
-      '<script async src="https://analytics.example.org/script.js" data-before-send="trUmamiBeforeSend" nonce="test-nonce"></script>';
-    document.head.append(template);
+const tracker: AnalyticsTracker = { track: vi.fn() };
+
+function addTrackerTemplate(): HTMLTemplateElement {
+  const template = document.createElement('template');
+  template.id = 'tr-umami-tracker';
+  template.innerHTML =
+    '<script async src="https://analytics.example.org/script.js" data-before-send="trUmamiBeforeSend" nonce="test-nonce"></script>';
+  document.head.append(template);
+  return template;
+}
+
+function hook() {
+  return (window as unknown as Record<string, typeof umamiBeforeSend>)[
+    UMAMI_BEFORE_SEND
+  ];
+}
+
+describe('AnalyticsProvider with a routeTemplate', () => {
+  afterEach(() => window.history.replaceState(null, '', '/'));
+
+  it('scrubs the first page view the tracker sends when it activates', () => {
+    window.history.replaceState(null, '', '/profile/member1?secret=s3cret');
+    const template = addTrackerTemplate();
+    const firstPageView = vi.fn();
     const replaceWith = vi.spyOn(template, 'replaceWith');
     replaceWith.mockImplementationOnce((...nodes) => {
-      expect(
-        (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND],
-      ).toEqual(expect.any(Function));
+      firstPageView(
+        hook()?.('pageview', payload({ url: window.location.href }))?.url,
+      );
       replaceWith.mockRestore();
       template.replaceWith(...nodes);
     });
 
-    expect(document.head.querySelector('script[data-before-send]')).toBeNull();
-    installUmamiBeforeSend(templateFor);
-    installUmamiBeforeSend(templateFor);
+    render(
+      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
+        page
+      </AnalyticsProvider>,
+    );
+
+    expect(firstPageView).toHaveBeenCalledExactlyOnceWith(
+      `${ORIGIN}/profile/:username`,
+    );
+  });
+
+  it('activates the tracker script once, keeping its attributes', () => {
+    addTrackerTemplate();
+
+    const { rerender } = render(
+      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
+        page
+      </AnalyticsProvider>,
+    );
+    rerender(
+      <AnalyticsProvider
+        tracker={tracker}
+        routeTemplate={path => templateFor(path)}
+      >
+        page
+      </AnalyticsProvider>,
+    );
 
     const scripts = document.head.querySelectorAll('script[data-before-send]');
     expect(scripts).toHaveLength(1);
@@ -209,14 +254,24 @@ describe('installUmamiBeforeSend', () => {
   });
 
   it('exposes the hook under the name the script tag points to', () => {
-    installUmamiBeforeSend(templateFor);
+    render(
+      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
+        page
+      </AnalyticsProvider>,
+    );
 
-    const hook = (window as unknown as Record<string, typeof umamiBeforeSend>)[
-      UMAMI_BEFORE_SEND
-    ]!;
     expect(
-      hook('event', payload({ url: `${ORIGIN}/profile/member1` }))?.url,
+      hook()?.('event', payload({ url: `${ORIGIN}/profile/member1` }))?.url,
     ).toBe(`${ORIGIN}/profile/:username`);
     expect(UMAMI_BEFORE_SEND).toBe('trUmamiBeforeSend');
+  });
+
+  it('leaves the tracker inactive without a routeTemplate', () => {
+    addTrackerTemplate();
+
+    render(<AnalyticsProvider tracker={tracker}>page</AnalyticsProvider>);
+
+    expect(hook()).toBeUndefined();
+    expect(document.querySelector('#tr-umami-tracker')).not.toBeNull();
   });
 });
