@@ -8,7 +8,12 @@ import {
   getAdminDateTimeAttribute,
 } from '../utils/admin-date';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import React, { Component, type ChangeEvent, type FormEvent } from 'react';
+import React, {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
 import {
   Modal,
   ModalBody,
@@ -48,6 +53,8 @@ import {
   isSuspendedUser,
 } from './userSearch.helpers';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { Textarea } from '@trustroots/ui/Textarea';
 
 interface MemberSort {
   column: string;
@@ -145,7 +152,7 @@ function ExperienceStats({
   );
 }
 
-interface MemberRecord {
+export interface MemberRecord {
   _id: string;
   profile: MemberProfile;
   potentialMatches?: Array<{
@@ -355,110 +362,103 @@ interface AdminUserRouteProps extends AdminUserProps {
   search: { id?: string; ipHash?: string; q?: string };
 }
 
-export class AdminUserContent extends Component<
-  AdminUserRouteProps,
-  AdminUserState
-> {
-  constructor(props: AdminUserRouteProps) {
-    super(props);
-    this.getUserById = this.getUserById.bind(this);
-    this.getUsersByLastIpHash = this.getUsersByLastIpHash.bind(this);
-    this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
-    this.cancelUserRoleChange = this.cancelUserRoleChange.bind(this);
-    this.confirmUserRoleChange = this.confirmUserRoleChange.bind(this);
-    this.onMatchingUsersPageChange = this.onMatchingUsersPageChange.bind(this);
-    this.onMatchingUsersSortChange = this.onMatchingUsersSortChange.bind(this);
-    this.onQueryChange = this.onQueryChange.bind(this);
-    this.queryUser = this.queryUser.bind(this);
-    this.state = {
-      hasSearched: false,
-      isSettingUserRole: false,
-      isSearching: false,
-      notesRevision: 0,
-      matchingUsersIpHash: null,
-      matchingUsersPagination: null,
-      matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
-      matchingUsersSource: null,
-      matchingUsers: [],
-      query: '',
-      user: false,
-      pendingRoleChange: null,
-      roleChangeSucceeded: false,
-      deletingMember: false,
-      deleteDialogOpen: false,
-      deleteUsername: '',
-      deleteReason: '',
-      deleteKeywords: '',
-      deleteError: false,
-      deleteSucceeded: false,
-      deleteCleanupIncomplete: false,
-    };
+export function useAdminUserReport({
+  navigate,
+  search,
+  username,
+}: Omit<AdminUserRouteProps, 'viewer'>) {
+  const [state, setState] = useState<AdminUserState>({
+    hasSearched: false,
+    isSettingUserRole: false,
+    isSearching: false,
+    notesRevision: 0,
+    matchingUsersIpHash: null,
+    matchingUsersPagination: null,
+    matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
+    matchingUsersSource: null,
+    matchingUsers: [],
+    query: '',
+    user: false,
+    pendingRoleChange: null,
+    roleChangeSucceeded: false,
+    deletingMember: false,
+    deleteDialogOpen: false,
+    deleteUsername: '',
+    deleteReason: '',
+    deleteKeywords: '',
+    deleteError: false,
+    deleteSucceeded: false,
+    deleteCleanupIncomplete: false,
+  });
+
+  function updateState(
+    patch:
+      | Partial<AdminUserState>
+      | ((state: AdminUserState) => Partial<AdminUserState>),
+  ) {
+    setState(current => ({
+      ...current,
+      ...(typeof patch === 'function' ? patch(current) : patch),
+    }));
   }
 
-  componentDidMount() {
-    const { id, ipHash, q: query } = this.props.search;
-
-    if (this.props.username) {
-      this.setState({ query: this.props.username }, () =>
-        this.getUserByUsername(this.props.username as string),
-      );
+  useEffect(() => {
+    const { id, ipHash, q: query } = search;
+    if (username) {
+      updateState({ query: username });
+      void getUserByUsername(username);
     } else if (id && isMongoObjectId(id)) {
-      this.getUserById(id);
+      void getUserById(id);
     } else if (ipHash) {
-      this.getUsersByLastIpHash(ipHash);
+      void getUsersByLastIpHash(ipHash);
     } else if (query) {
-      this.setState({ query }, () => this.queryUser(null));
+      updateState({ query });
+      void queryUser(null, { query });
     }
-  }
+  }, []);
 
-  onQueryChange(event: ChangeEvent<HTMLInputElement>) {
+  function onQueryChange(event: ChangeEvent<HTMLInputElement>) {
     const query = event.target.value;
     const normalizedQuery = normalizeAdminQuery(query);
-    this.setState({ query });
+    updateState({ query });
 
-    const search = !query
+    const updatedSearch = !query
       ? {}
       : isMongoObjectId(normalizedQuery)
         ? { id: normalizedQuery }
         : { q: query };
-    void this.props.navigate({
+    void navigate({
       hash: true,
       search: (current: Record<string, string>) => ({
         ...current,
         id: undefined,
         ipHash: undefined,
         q: undefined,
-        ...search,
+        ...updatedSearch,
       }),
       to: '/admin/user',
     });
   }
 
-  onMatchingUsersPageChange(page: number) {
-    if (this.state.matchingUsersSource === 'ip') {
-      return this.getUsersByLastIpHash(this.state.matchingUsersIpHash, {
-        page,
-      });
+  function onMatchingUsersPageChange(page: number) {
+    if (state.matchingUsersSource === 'ip') {
+      return getUsersByLastIpHash(state.matchingUsersIpHash, { page });
     }
-    return this.queryUser(null, { page });
+    return queryUser(null, { page });
   }
 
-  onMatchingUsersSortChange(sort: MemberSort) {
-    this.setState({ matchingUsersSort: sort }, () => {
-      if (this.state.matchingUsersSource === 'ip') {
-        this.getUsersByLastIpHash(this.state.matchingUsersIpHash, {
-          page: 1,
-          sort,
-        });
-      } else {
-        this.queryUser(null, { page: 1, sort });
-      }
-    });
+  function onMatchingUsersSortChange(sort: MemberSort) {
+    updateState({ matchingUsersSort: sort });
+    if (state.matchingUsersSource === 'ip') {
+      void getUsersByLastIpHash(state.matchingUsersIpHash, { page: 1, sort });
+    } else {
+      void queryUser(null, { page: 1, sort });
+    }
   }
 
-  handleUserRoleChange(role: string, action?: 'add' | 'remove') {
-    if (get(this, ['state', 'user', 'profile', '_id'])) {
-      this.setState({
+  function handleUserRoleChange(role: string, action?: 'add' | 'remove') {
+    if (state.user && state.user.profile?._id) {
+      updateState({
         pendingRoleChange: { role, action },
         roleChangeError: false,
         roleChangeSucceeded: false,
@@ -466,9 +466,9 @@ export class AdminUserContent extends Component<
     }
   }
 
-  cancelUserRoleChange() {
-    if (!this.state.isSettingUserRole) {
-      this.setState({
+  function cancelUserRoleChange() {
+    if (!state.isSettingUserRole) {
+      updateState({
         pendingRoleChange: null,
         roleChangeError: false,
         roleChangeSucceeded: false,
@@ -476,8 +476,8 @@ export class AdminUserContent extends Component<
     }
   }
 
-  openDeleteDialog() {
-    this.setState({
+  function openDeleteDialog() {
+    updateState({
       deleteDialogOpen: true,
       deleteUsername: '',
       deleteReason: '',
@@ -486,29 +486,29 @@ export class AdminUserContent extends Component<
     });
   }
 
-  cancelDeleteDialog() {
-    if (!this.state.deletingMember) {
-      this.setState({ deleteDialogOpen: false });
+  function cancelDeleteDialog() {
+    if (!state.deletingMember) {
+      updateState({ deleteDialogOpen: false });
     }
   }
 
-  async confirmDeleteMember() {
-    const user = this.state.user;
+  async function confirmDeleteMember() {
+    const user = state.user;
     if (
       !user ||
       !isSuspendedUser(user.profile) ||
       !user.profile.username ||
-      this.state.deletingMember ||
-      this.state.deleteUsername !== user.profile.username ||
-      !this.state.deleteReason.trim()
+      state.deletingMember ||
+      state.deleteUsername !== user.profile.username ||
+      !state.deleteReason.trim()
     )
       return;
-    const reason = this.state.deleteReason.trim();
-    const keywords = this.state.deleteKeywords
+    const reason = state.deleteReason.trim();
+    const keywords = state.deleteKeywords
       .split(',')
       .map(keyword => keyword.trim())
       .filter(Boolean);
-    this.setState({ deletingMember: true, deleteError: false });
+    updateState({ deletingMember: true, deleteError: false });
     try {
       const result = await deleteMember(
         user.profile._id,
@@ -516,7 +516,7 @@ export class AdminUserContent extends Component<
         reason,
         keywords,
       );
-      this.setState({
+      updateState({
         deleteDialogOpen: false,
         user: false,
         query: '',
@@ -525,1144 +525,1138 @@ export class AdminUserContent extends Component<
         deleteCleanupIncomplete: result.cleanupIncomplete,
       });
     } catch {
-      this.setState({ deleteError: true });
+      updateState({ deleteError: true });
     } finally {
-      this.setState({ deletingMember: false });
+      updateState({ deletingMember: false });
     }
   }
 
-  confirmUserRoleChange() {
-    const id = get(this, ['state', 'user', 'profile', '_id']);
-    const pendingRoleChange = this.state.pendingRoleChange;
-    if (!id || !pendingRoleChange || this.state.isSettingUserRole) {
+  async function confirmUserRoleChange() {
+    const id = state.user && state.user.profile?._id;
+    const { pendingRoleChange, isSettingUserRole, roleChangeSucceeded } = state;
+    if (!id || !pendingRoleChange || isSettingUserRole) {
       return;
     }
-    if (this.state.roleChangeSucceeded) {
-      this.cancelUserRoleChange();
+    if (roleChangeSucceeded) {
+      cancelUserRoleChange();
       return;
     }
 
-    this.setState(
-      { isSettingUserRole: true, roleChangeError: false },
-      async () => {
-        try {
-          if (pendingRoleChange.action) {
-            await setUserRole(
-              id,
-              pendingRoleChange.role,
-              pendingRoleChange.action,
-            );
-          } else {
-            await setUserRole(id, pendingRoleChange.role);
-          }
-          this.setState(({ notesRevision }) => ({
-            notesRevision: notesRevision + 1,
-            roleChangeSucceeded: true,
-          }));
-          try {
-            const user = await getUser(id);
-            this.setState({ user, pendingRoleChange: null });
-          } catch {
-            this.setState({ roleChangeError: 'refresh' });
-          }
-        } catch {
-          this.setState({ roleChangeError: 'change' });
-        } finally {
-          this.setState({ isSettingUserRole: false });
-        }
-      },
-    );
+    updateState({ isSettingUserRole: true, roleChangeError: false });
+    try {
+      if (pendingRoleChange.action) {
+        await setUserRole(id, pendingRoleChange.role, pendingRoleChange.action);
+      } else {
+        await setUserRole(id, pendingRoleChange.role);
+      }
+      updateState(({ notesRevision }) => ({
+        notesRevision: notesRevision + 1,
+        roleChangeSucceeded: true,
+      }));
+      try {
+        const user = await getUser(id);
+        updateState({ user, pendingRoleChange: null });
+      } catch {
+        updateState({ roleChangeError: 'refresh' });
+      }
+    } catch {
+      updateState({ roleChangeError: 'change' });
+    } finally {
+      updateState({ isSettingUserRole: false });
+    }
   }
 
-  queryUser(
+  async function queryUser(
     event: FormEvent<HTMLFormElement> | null,
-    options: { page?: number; sort?: MemberSort } = {},
+    options: { page?: number; sort?: MemberSort; query?: string } = {},
   ) {
-    if (event) {
-      event.preventDefault();
-    }
-    const query = normalizeAdminQuery(this.state.query);
+    event?.preventDefault();
+    const query = normalizeAdminQuery(options.query ?? state.query);
     if (query.length < SEARCH_STRING_LIMIT) {
       return;
     }
-
     if (isMongoObjectId(query)) {
-      this.getUserById(query);
+      await getUserById(query);
       return;
     }
-    const requestedSort = options.sort || this.state.matchingUsersSort;
 
-    this.setState(
-      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
-      async () => {
-        const memberList: MemberList = await searchUsers(query, {
-          page: options.page || 1,
-          sort: requestedSort,
-        });
-        const exactMatch = memberList.users.find(user =>
-          isExactUserMatch(query, user),
-        );
-
-        if (exactMatch) {
-          this.getUserById(exactMatch._id);
-          return;
-        }
-
-        this.setState({
-          isSearching: false,
-          matchingUsers: memberList.users,
-          matchingUsersPagination: memberList.pagination,
-          matchingUsersSort: memberList.sort,
-          matchingUsersSource: 'search',
-        });
-      },
+    updateState({
+      hasSearched: true,
+      isSearching: true,
+      matchingUsers: [],
+      user: false,
+    });
+    const memberList: MemberList = await searchUsers(query, {
+      page: options.page || 1,
+      sort: options.sort || state.matchingUsersSort,
+    });
+    const exactMatch = memberList.users.find(user =>
+      isExactUserMatch(query, user),
     );
+    if (exactMatch) {
+      await getUserById(exactMatch._id);
+      return;
+    }
+
+    updateState({
+      isSearching: false,
+      matchingUsers: memberList.users,
+      matchingUsersPagination: memberList.pagination,
+      matchingUsersSort: memberList.sort,
+      matchingUsersSource: 'search',
+    });
   }
 
-  getUserById(id: string) {
-    this.setState(
-      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
-      async () => {
-        if (isMongoObjectId(id)) {
-          const user: MemberRecord | false = await getUser(id);
-          this.setState({ isSearching: false, user });
-        }
-      },
-    );
+  async function getUserById(id: string) {
+    updateState({
+      hasSearched: true,
+      isSearching: true,
+      matchingUsers: [],
+      user: false,
+    });
+    if (isMongoObjectId(id)) {
+      const user: MemberRecord | false = await getUser(id);
+      updateState({ isSearching: false, user });
+    }
   }
 
-  getUserByUsername(username: string) {
-    this.setState(
-      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
-      async () => {
-        try {
-          const user: MemberRecord | false =
-            await getUserRecordByUsername(username);
-          this.setState({ isSearching: false, user });
-        } catch {
-          this.setState({ isSearching: false, user: false });
-        }
-      },
-    );
+  async function getUserByUsername(username: string) {
+    updateState({
+      hasSearched: true,
+      isSearching: true,
+      matchingUsers: [],
+      user: false,
+    });
+    try {
+      const user: MemberRecord | false =
+        await getUserRecordByUsername(username);
+      updateState({ isSearching: false, user });
+    } catch {
+      updateState({ isSearching: false, user: false });
+    }
   }
 
-  getUsersByLastIpHash(
+  async function getUsersByLastIpHash(
     ipHash: string | null,
     options: { page?: number; sort?: MemberSort } = {},
   ) {
-    const requestedSort = options.sort || this.state.matchingUsersSort;
-    this.setState(
-      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
-      async () => {
-        const memberList: MemberList = await listUsersByLastIpHash(ipHash, {
-          page: options.page || 1,
-          sort: requestedSort,
-        });
-        this.setState({
-          isSearching: false,
-          matchingUsers: memberList.users,
-          matchingUsersIpHash: ipHash,
-          matchingUsersPagination: memberList.pagination,
-          matchingUsersSort: memberList.sort,
-          matchingUsersSource: 'ip',
-        });
-      },
-    );
+    updateState({
+      hasSearched: true,
+      isSearching: true,
+      matchingUsers: [],
+      user: false,
+    });
+    const memberList: MemberList = await listUsersByLastIpHash(ipHash, {
+      page: options.page || 1,
+      sort: options.sort || state.matchingUsersSort,
+    });
+    updateState({
+      isSearching: false,
+      matchingUsers: memberList.users,
+      matchingUsersIpHash: ipHash,
+      matchingUsersPagination: memberList.pagination,
+      matchingUsersSort: memberList.sort,
+      matchingUsersSource: 'ip',
+    });
   }
 
-  hasRole(role: string) {
-    return get(this.state.user, ['profile', 'roles'], []).includes(role);
+  function hasRole(role: string) {
+    return get(state.user, ['profile', 'roles'], []).includes(role);
   }
 
-  render() {
-    const {
-      hasSearched,
-      isSearching,
-      isSettingUserRole,
-      pendingRoleChange,
-      matchingUsers,
-      matchingUsersPagination,
-      matchingUsersSort,
-      query,
-      roleChangeError,
-      roleChangeSucceeded,
-      user,
-    } = this.state;
-    const isProfile = user && user.profile;
-    const isSuspended = isSuspendedUser(get(user, ['profile']));
-    const isShadowbanned = this.hasRole('shadowban');
-    const isProfileVisible =
-      isProfile && isProfile.public && !isSuspended && !isShadowbanned;
-    const visibilityReasons: string[] = [];
-    if (isSuspended) visibilityReasons.push('Account suspended');
-    if (isShadowbanned) visibilityReasons.push('Account shadowbanned');
-    if (isProfile && !isProfile.public) {
-      if (
-        isProfile.emailTemporary &&
-        isProfile.emailTemporary === isProfile.email
-      ) {
-        visibilityReasons.push('Signup email has not been confirmed');
-      } else if (!visibilityReasons.length) {
-        visibilityReasons.push('Reason unknown');
-      }
+  return {
+    state,
+    updateState,
+    onQueryChange,
+    onMatchingUsersPageChange,
+    onMatchingUsersSortChange,
+    handleUserRoleChange,
+    cancelUserRoleChange,
+    confirmUserRoleChange,
+    openDeleteDialog,
+    cancelDeleteDialog,
+    confirmDeleteMember,
+    queryUser,
+    hasRole,
+  };
+}
+
+export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
+  const {
+    state,
+    updateState,
+    onQueryChange,
+    onMatchingUsersPageChange,
+    onMatchingUsersSortChange,
+    handleUserRoleChange,
+    cancelUserRoleChange,
+    confirmUserRoleChange,
+    openDeleteDialog,
+    cancelDeleteDialog,
+    confirmDeleteMember,
+    queryUser,
+    hasRole,
+  } = useAdminUserReport(route);
+
+  const {
+    hasSearched,
+    isSearching,
+    isSettingUserRole,
+    pendingRoleChange,
+    matchingUsers,
+    matchingUsersPagination,
+    matchingUsersSort,
+    query,
+    roleChangeError,
+    roleChangeSucceeded,
+    user,
+  } = state;
+  const isProfile = user && user.profile;
+  const isSuspended = isSuspendedUser(get(user, ['profile']));
+  const isShadowbanned = hasRole('shadowban');
+  const isProfileVisible =
+    isProfile && isProfile.public && !isSuspended && !isShadowbanned;
+  const visibilityReasons: string[] = [];
+  if (isSuspended) visibilityReasons.push('Account suspended');
+  if (isShadowbanned) visibilityReasons.push('Account shadowbanned');
+  if (isProfile && !isProfile.public) {
+    if (
+      isProfile.emailTemporary &&
+      isProfile.emailTemporary === isProfile.email
+    ) {
+      visibilityReasons.push('Signup email has not been confirmed');
+    } else if (!visibilityReasons.length) {
+      visibilityReasons.push('Reason unknown');
     }
-    const isRestricted = get(user, ['profile', 'roles'], []).some(
-      (role: string) => ['shadowban', 'suspended'].includes(role),
-    );
-    const potentialMatches = user ? user.potentialMatches || [] : [];
-    const hasNoMatchingUsers =
-      hasSearched && !isSearching && matchingUsers.length === 0;
-    const userId = get(user, ['profile', '_id']);
-    const profileLabel = isProfile
-      ? [user.profile.username, user.profile.displayName]
-          .filter(Boolean)
-          .join(': ') || 'Unknown member'
-      : '';
-    const profileRows: InfoTableProps['rows'] = isProfile
-      ? ([
-          ['Display name', user.profile.displayName],
-          [
-            'Username',
-            isProfileVisible && user.profile.username ? (
-              <a href={`/profile/${user.profile.username}`}>
-                {user.profile.username}
-              </a>
-            ) : (
-              user.profile.username
-            ),
-          ],
-          [
-            'Public profile',
-            isProfileVisible && user.profile.username && (
-              <a href={`/profile/${user.profile.username}`}>
-                /profile/{user.profile.username}
-              </a>
-            ),
-          ],
-          ['Email', user.profile.email],
-          ['Temporary email', user.profile.emailTemporary],
-          ['Nostr npub', user.profile.nostrNpub],
-          ['Acquisition story', user.profile.acquisitionStory],
-          [
-            'Roles',
-            user.profile.roles && user.profile.roles.length
-              ? user.profile.roles.map(formatRoleLabel).join(', ')
-              : null,
-          ],
-          ['Profile visible', isProfileVisible ? 'Yes' : 'No'],
-          ['Visibility restrictions', visibilityReasons.join(', ')],
-          ['Signed up', formatAdminDateTime(user.profile.created)],
-          ['Last seen', formatAdminDateTime(user.profile.seen)],
-          [
-            'Shared IP',
-            user.profile.lastIpHash && (
-              <a
-                href={`/admin/user?ipHash=${user.profile.lastIpHash}`}
-                target="_self"
-              >
-                Find accounts using the same IP
-              </a>
-            ),
-          ],
-          [
-            'Location',
-            user.profile.location &&
-              [user.profile.location.city, user.profile.location.country]
-                .filter(Boolean)
-                .join(', '),
-          ],
-        ].filter(([, value]) => value) as InfoTableProps['rows'])
-      : [];
-    const threadReferences =
-      user && user.threadReferences ? user.threadReferences : [];
-    const threadVoteGroups = isProfile
-      ? [
-          {
-            id: 'thread-votes-received-positive',
-            label: 'Positive votes received',
-            reference: 'yes',
-            votes: threadReferences.filter(
-              referenceThread =>
-                getReferenceUserId(referenceThread, 'userTo') === userId &&
-                referenceThread.reference === 'yes',
-            ),
-          },
-          {
-            id: 'thread-votes-received-negative',
-            label: 'Negative votes received',
-            reference: 'no',
-            votes: threadReferences.filter(
-              referenceThread =>
-                getReferenceUserId(referenceThread, 'userTo') === userId &&
-                referenceThread.reference === 'no',
-            ),
-          },
-          {
-            id: 'thread-votes-gave-positive',
-            label: 'Positive votes gave',
-            reference: 'yes',
-            votes: threadReferences.filter(
-              referenceThread =>
-                getReferenceUserId(referenceThread, 'userFrom') === userId &&
-                referenceThread.reference === 'yes',
-            ),
-          },
-          {
-            id: 'thread-votes-gave-negative',
-            label: 'Negative votes gave',
-            reference: 'no',
-            votes: threadReferences.filter(
-              referenceThread =>
-                getReferenceUserId(referenceThread, 'userFrom') === userId &&
-                referenceThread.reference === 'no',
-            ),
-          },
-        ]
-      : [];
-    const hasThreadVotes = threadVoteGroups.some(({ votes }) => votes.length);
-    const roleChangeConfirmation =
-      isProfile && pendingRoleChange
-        ? getRoleChangeConfirmation(
-            pendingRoleChange.role,
-            pendingRoleChange.action,
-            user.profile.username || 'this member',
-          )
-        : null;
-    const viewer = this.props.viewer;
-    const deleteKeywords = this.state.deleteKeywords
-      .split(',')
-      .map(keyword => keyword.trim())
-      .filter(Boolean);
-    const invalidDeleteKeywords =
-      deleteKeywords.length > 20 ||
-      deleteKeywords.some(keyword => keyword.length > 80);
+  }
+  const isRestricted = get(user, ['profile', 'roles'], []).some(
+    (role: string) => ['shadowban', 'suspended'].includes(role),
+  );
+  const potentialMatches = user ? user.potentialMatches || [] : [];
+  const hasNoMatchingUsers =
+    hasSearched && !isSearching && matchingUsers.length === 0;
+  const userId = get(user, ['profile', '_id']);
+  const profileLabel = isProfile
+    ? [user.profile.username, user.profile.displayName]
+        .filter(Boolean)
+        .join(': ') || 'Unknown member'
+    : '';
+  const profileRows: InfoTableProps['rows'] = isProfile
+    ? ([
+        ['Display name', user.profile.displayName],
+        [
+          'Username',
+          isProfileVisible && user.profile.username ? (
+            <a href={`/profile/${user.profile.username}`}>
+              {user.profile.username}
+            </a>
+          ) : (
+            user.profile.username
+          ),
+        ],
+        [
+          'Public profile',
+          isProfileVisible && user.profile.username && (
+            <a href={`/profile/${user.profile.username}`}>
+              /profile/{user.profile.username}
+            </a>
+          ),
+        ],
+        ['Email', user.profile.email],
+        ['Temporary email', user.profile.emailTemporary],
+        ['Nostr npub', user.profile.nostrNpub],
+        ['Acquisition story', user.profile.acquisitionStory],
+        [
+          'Roles',
+          user.profile.roles && user.profile.roles.length
+            ? user.profile.roles.map(formatRoleLabel).join(', ')
+            : null,
+        ],
+        ['Profile visible', isProfileVisible ? 'Yes' : 'No'],
+        ['Visibility restrictions', visibilityReasons.join(', ')],
+        ['Signed up', formatAdminDateTime(user.profile.created)],
+        ['Last seen', formatAdminDateTime(user.profile.seen)],
+        [
+          'Shared IP',
+          user.profile.lastIpHash && (
+            <a
+              href={`/admin/user?ipHash=${user.profile.lastIpHash}`}
+              target="_self"
+            >
+              Find accounts using the same IP
+            </a>
+          ),
+        ],
+        [
+          'Location',
+          user.profile.location &&
+            [user.profile.location.city, user.profile.location.country]
+              .filter(Boolean)
+              .join(', '),
+        ],
+      ].filter(([, value]) => value) as InfoTableProps['rows'])
+    : [];
+  const threadReferences =
+    user && user.threadReferences ? user.threadReferences : [];
+  const threadVoteGroups = isProfile
+    ? [
+        {
+          id: 'thread-votes-received-positive',
+          label: 'Positive votes received',
+          reference: 'yes',
+          votes: threadReferences.filter(
+            referenceThread =>
+              getReferenceUserId(referenceThread, 'userTo') === userId &&
+              referenceThread.reference === 'yes',
+          ),
+        },
+        {
+          id: 'thread-votes-received-negative',
+          label: 'Negative votes received',
+          reference: 'no',
+          votes: threadReferences.filter(
+            referenceThread =>
+              getReferenceUserId(referenceThread, 'userTo') === userId &&
+              referenceThread.reference === 'no',
+          ),
+        },
+        {
+          id: 'thread-votes-gave-positive',
+          label: 'Positive votes gave',
+          reference: 'yes',
+          votes: threadReferences.filter(
+            referenceThread =>
+              getReferenceUserId(referenceThread, 'userFrom') === userId &&
+              referenceThread.reference === 'yes',
+          ),
+        },
+        {
+          id: 'thread-votes-gave-negative',
+          label: 'Negative votes gave',
+          reference: 'no',
+          votes: threadReferences.filter(
+            referenceThread =>
+              getReferenceUserId(referenceThread, 'userFrom') === userId &&
+              referenceThread.reference === 'no',
+          ),
+        },
+      ]
+    : [];
+  const hasThreadVotes = threadVoteGroups.some(({ votes }) => votes.length);
+  const roleChangeConfirmation =
+    isProfile && pendingRoleChange
+      ? getRoleChangeConfirmation(
+          pendingRoleChange.role,
+          pendingRoleChange.action,
+          user.profile.username || 'this member',
+        )
+      : null;
+  const deleteKeywords = state.deleteKeywords
+    .split(',')
+    .map(keyword => keyword.trim())
+    .filter(Boolean);
+  const invalidDeleteKeywords =
+    deleteKeywords.length > 20 ||
+    deleteKeywords.some(keyword => keyword.length > 80);
 
-    return (
-      <>
-        <AdminHeader />
-        <div className="container admin-user-page">
-          {this.state.deleteSucceeded &&
-            (this.state.deleteCleanupIncomplete ? (
-              <p role="alert">
-                Member account deleted, but some cleanup is incomplete. Staff
-                follow-up is required.
-              </p>
-            ) : (
-              <p role="status">Member deleted successfully.</p>
-            ))}
-          {!isProfile && (
-            <div className="admin-user-page__search">
-              <form
-                onSubmit={this.queryUser}
-                className="form-inline admin-user-search-form"
-              >
-                <input
-                  aria-label="Member username, email or ID"
-                  className="form-control input-lg"
-                  onChange={this.onQueryChange}
-                  placeholder="Member username, email or ID"
-                  size={32}
-                  type="search"
-                  value={query}
-                />
-              </form>
-
-              {isSearching && (
-                <p className="admin-user-loading text-muted">
-                  Loading member...
-                </p>
-              )}
-            </div>
-          )}
-
-          {!isProfile && (
-            <AdminUserResultsTable
-              onPageChange={this.onMatchingUsersPageChange}
-              onSortChange={this.onMatchingUsersSortChange}
-              pagination={matchingUsersPagination}
-              sort={matchingUsersSort}
-              userResults={matchingUsers}
-            />
-          )}
-
-          {!isProfile && hasNoMatchingUsers && (
-            <p>
-              <br />
-              <em className="text-muted">No matching members found.</em>
+  return (
+    <>
+      <AdminHeader />
+      <div className="container admin-user-page">
+        {state.deleteSucceeded &&
+          (state.deleteCleanupIncomplete ? (
+            <p role="alert">
+              Member account deleted, but some cleanup is incomplete. Staff
+              follow-up is required.
             </p>
-          )}
+          ) : (
+            <p role="status">Member deleted successfully.</p>
+          ))}
+        {!isProfile && (
+          <div className="admin-user-page__search">
+            <form
+              onSubmit={queryUser}
+              className="form-inline admin-user-search-form"
+            >
+              <Input
+                aria-label="Member username, email or ID"
+                fieldSize="lg"
+                className="tw:max-w-[520px]"
+                onChange={onQueryChange}
+                placeholder="Member username, email or ID"
+                size={32}
+                type="search"
+                value={query}
+              />
+            </form>
 
-          {isProfile && (
-            <>
-              <div className="admin-user-report-header">
-                <h3>
-                  <strong>{profileLabel}</strong>
-                </h3>
+            {isSearching && (
+              <p className="admin-user-loading text-muted">Loading member...</p>
+            )}
+          </div>
+        )}
 
-                <MemberFlag
-                  member={user.profile}
-                  onChanged={roles =>
-                    this.setState({
-                      user: { ...user, profile: { ...user.profile, roles } },
-                    })
-                  }
-                />
-                <div className="admin-user-actions">
-                  {user.profile.username && isProfileVisible && (
-                    <Button
-                      render={<a href={`/profile/${user.profile.username}`} />}
-                    >
-                      Public profile
-                    </Button>
+        {!isProfile && (
+          <AdminUserResultsTable
+            onPageChange={onMatchingUsersPageChange}
+            onSortChange={onMatchingUsersSortChange}
+            pagination={matchingUsersPagination}
+            sort={matchingUsersSort}
+            userResults={matchingUsers}
+          />
+        )}
+
+        {!isProfile && hasNoMatchingUsers && (
+          <p>
+            <br />
+            <em className="text-muted">No matching members found.</em>
+          </p>
+        )}
+
+        {isProfile && (
+          <>
+            <div className="admin-user-report-header">
+              <h3>
+                <strong>{profileLabel}</strong>
+              </h3>
+
+              <MemberFlag
+                member={user.profile}
+                onChanged={roles =>
+                  updateState({
+                    user: { ...user, profile: { ...user.profile, roles } },
+                  })
+                }
+              />
+              <div className="admin-user-actions">
+                {user.profile.username && isProfileVisible && (
+                  <Button
+                    render={<a href={`/profile/${user.profile.username}`} />}
+                  >
+                    Public profile
+                  </Button>
+                )}
+                <div
+                  className="admin-user-action-group"
+                  role="group"
+                  aria-label="Account access"
+                >
+                  <span className="admin-user-action-label">
+                    Account access
+                  </span>
+                  {isSuspended && (
+                    <UnsuspendMember
+                      member={user.profile}
+                      onRefresh={async () => {
+                        const refreshed = await getUser(user.profile._id);
+                        updateState({ user: refreshed });
+                      }}
+                    />
                   )}
-                  <div
-                    className="admin-user-action-group"
-                    role="group"
-                    aria-label="Account access"
-                  >
-                    <span className="admin-user-action-label">
-                      Account access
-                    </span>
-                    {isSuspended && (
-                      <UnsuspendMember
-                        member={user.profile}
-                        onRefresh={async () => {
-                          const refreshed = await getUser(user.profile._id);
-                          this.setState({ user: refreshed });
-                        }}
-                      />
-                    )}
-                    {[
-                      {
-                        role: 'suspended',
-                        label: 'Suspend',
-                      },
-                      ...(!isSuspended || isShadowbanned
-                        ? [
-                            {
-                              role: 'shadowban',
-                              label: 'Shadow ban',
-                            },
-                          ]
-                        : []),
-                    ].map(({ role, label }) =>
-                      role === 'shadowban' && isShadowbanned ? (
-                        <Button
-                          key={role}
-                          type="button"
-
-                          disabled={isSettingUserRole}
-                          onClick={() =>
-                            this.handleUserRoleChange('shadowban', 'remove')
-                          }
-                        >
-                          Unshadowban
-                        </Button>
-                      ) : (
-                        <Button
-                          key={role}
-                          intent="danger"
-                          disabled={
-                            user.profile.roles.includes(role) ||
-                            isSettingUserRole
-                          }
-                          onClick={() => this.handleUserRoleChange(role)}
-                        >
-                          {label}
-                        </Button>
-                      ),
-                    )}
-                  </div>
-                  <div>
-                    <Button
-                      type="button"
-                      intent="danger"
-                      disabled={
-                        !isSuspended ||
-                        this.hasRole('admin') ||
-                        Boolean(viewer?._id && viewer._id === user.profile._id)
-                      }
-                      onClick={() => this.openDeleteDialog()}
-                    >
-                      Delete member
-                    </Button>
-                    {!isSuspended && (
-                      <p className="text-muted">
-                        Suspend this member before deleting their account.
-                      </p>
-                    )}
-                  </div>
-                  <div
-                    className="admin-user-action-group"
-                    role="group"
-                    aria-label="Team roles"
-                  >
-                    <span className="admin-user-action-label">Team roles</span>
-                    {!isSuspended &&
-                      [
-                        { role: 'volunteer', label: 'Make volunteer' },
-                        {
-                          role: 'volunteer-alumni',
-                          label: 'Make volunteer alumni',
-                        },
-                      ].map(({ role, label }) => (
-                        <Button
-                          key={role}
-                          type="button"
-
-                          disabled={
-                            user.profile.roles.includes(role) ||
-                            isSettingUserRole
-                          }
-                          onClick={() => this.handleUserRoleChange(role)}
-                        >
-                          {label}
-                        </Button>
-                      ))}
-                    <Tooltip
-                      placement="bottom"
-                      tooltip={ROLE_DESCRIPTIONS['welcome-team']}
-                    >
+                  {[
+                    {
+                      role: 'suspended',
+                      label: 'Suspend',
+                    },
+                    ...(!isSuspended || isShadowbanned
+                      ? [
+                          {
+                            role: 'shadowban',
+                            label: 'Shadow ban',
+                          },
+                        ]
+                      : []),
+                  ].map(({ role, label }) =>
+                    role === 'shadowban' && isShadowbanned ? (
                       <Button
+                        key={role}
                         type="button"
 
-                        aria-describedby="welcome-team-role-description"
                         disabled={isSettingUserRole}
                         onClick={() =>
-                          this.handleUserRoleChange(
-                            'welcome-team',
-                            this.hasRole('welcome-team') ? 'remove' : 'add',
-                          )
+                          handleUserRoleChange('shadowban', 'remove')
                         }
                       >
-                        {this.hasRole('welcome-team')
-                          ? 'Remove greeter'
-                          : 'Make greeter'}
+                        Unshadowban
                       </Button>
-                    </Tooltip>
-                    <span
-                      id="welcome-team-role-description"
-                      className="sr-only"
-                    >
-                      {ROLE_DESCRIPTIONS['welcome-team']}
-                    </span>
+                    ) : (
+                      <Button
+                        key={role}
+                        intent="danger"
+                        disabled={
+                          user.profile.roles.includes(role) || isSettingUserRole
+                        }
+                        onClick={() => handleUserRoleChange(role)}
+                      >
+                        {label}
+                      </Button>
+                    ),
+                  )}
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    intent="danger"
+                    disabled={
+                      !isSuspended ||
+                      hasRole('admin') ||
+                      Boolean(viewer?._id && viewer._id === user.profile._id)
+                    }
+                    onClick={() => openDeleteDialog()}
+                  >
+                    Delete member
+                  </Button>
+                  {!isSuspended && (
+                    <p className="text-muted">
+                      Suspend this member before deleting their account.
+                    </p>
+                  )}
+                </div>
+                <div
+                  className="admin-user-action-group"
+                  role="group"
+                  aria-label="Team roles"
+                >
+                  <span className="admin-user-action-label">Team roles</span>
+                  {!isSuspended &&
+                    [
+                      { role: 'volunteer', label: 'Make volunteer' },
+                      {
+                        role: 'volunteer-alumni',
+                        label: 'Make volunteer alumni',
+                      },
+                    ].map(({ role, label }) => (
+                      <Button
+                        key={role}
+                        type="button"
+
+                        disabled={
+                          user.profile.roles.includes(role) || isSettingUserRole
+                        }
+                        onClick={() => handleUserRoleChange(role)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  <Tooltip
+                    placement="bottom"
+                    tooltip={ROLE_DESCRIPTIONS['welcome-team']}
+                  >
                     <Button
                       type="button"
 
+                      aria-describedby="welcome-team-role-description"
                       disabled={isSettingUserRole}
-                      title={ROLE_DESCRIPTIONS['support-team']}
                       onClick={() =>
-                        this.handleUserRoleChange(
-                          'support-team',
-                          this.hasRole('support-team') ? 'remove' : 'add',
+                        handleUserRoleChange(
+                          'welcome-team',
+                          hasRole('welcome-team') ? 'remove' : 'add',
                         )
                       }
                     >
-                      {this.hasRole('support-team')
-                        ? 'Remove from support team'
-                        : 'Add to support team'}
+                      {hasRole('welcome-team')
+                        ? 'Remove greeter'
+                        : 'Make greeter'}
                     </Button>
-                  </div>
+                  </Tooltip>
+                  <span id="welcome-team-role-description" className="sr-only">
+                    {ROLE_DESCRIPTIONS['welcome-team']}
+                  </span>
+                  <Button
+                    type="button"
+
+                    disabled={isSettingUserRole}
+                    title={ROLE_DESCRIPTIONS['support-team']}
+                    onClick={() =>
+                      handleUserRoleChange(
+                        'support-team',
+                        hasRole('support-team') ? 'remove' : 'add',
+                      )
+                    }
+                  >
+                    {hasRole('support-team')
+                      ? 'Remove from support team'
+                      : 'Add to support team'}
+                  </Button>
                 </div>
               </div>
+            </div>
 
-              <div id="roles" className="admin-user-roles">
-                <div className="panel-body">
-                  {user.profile.roles.some(role => role !== 'user') && (
-                    <span className="admin-user-action-label">
-                      Current roles
-                    </span>
-                  )}
-                  <ul className="list-inline" aria-label="Current roles">
-                    {user.profile.roles
-                      .filter(role => role !== 'user')
-                      .map(role => (
-                        <li key={role}>
-                          <Tooltip
-                            placement="bottom"
-                            tooltip={
-                              ROLE_DESCRIPTIONS[role] ||
-                              'Role stored on this member.'
+            <div id="roles" className="admin-user-roles">
+              <div className="panel-body">
+                {user.profile.roles.some(role => role !== 'user') && (
+                  <span className="admin-user-action-label">Current roles</span>
+                )}
+                <ul className="list-inline" aria-label="Current roles">
+                  {user.profile.roles
+                    .filter(role => role !== 'user')
+                    .map(role => (
+                      <li key={role}>
+                        <Tooltip
+                          placement="bottom"
+                          tooltip={
+                            ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'
+                          }
+                        >
+                          {role === 'welcome-team' ||
+                          role === 'volunteer' ||
+                          role === 'volunteer-alumni' ||
+                          role === 'flagged' ? (
+                            <a
+                              href={`/admin/search-users?role=${encodeURIComponent(
+                                role,
+                              )}`}
+                              aria-describedby={`member-role-${role}-description`}
+                            >
+                              {formatRoleLabel(role)}
+                            </a>
+                          ) : (
+                            // Keyboard focus exposes the role description tooltip.
+                            /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
+                            <span
+                              tabIndex={0}
+                              aria-describedby={`member-role-${role}-description`}
+                            >
+                              {formatRoleLabel(role)}
+                            </span>
+                            /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
+                          )}
+                        </Tooltip>
+                        <span
+                          id={`member-role-${role}-description`}
+                          className="sr-only"
+                        >
+                          {ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="admin-member-report-grid">
+              <div className="admin-member-box admin-member-box--wide">
+                <h4 id="stats">
+                  <a href="#stats">Stats</a>
+                </h4>
+                <section
+                  className="panel panel-default admin-user admin-member-stats"
+                  aria-labelledby="stats"
+                >
+                  <div className="panel-body">
+                    <UserState user={user.profile} showRoles={false} />
+                    <div className="admin-member-stats-grid">
+                      <section
+                        className="admin-member-stat"
+                        aria-label="Messages"
+                      >
+                        <h5>Messages</h5>
+                        <p className="admin-member-stat-total">
+                          <a
+                            href={
+                              user.profile.username
+                                ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                : `/admin/threads?userId=${user.profile._id}`
                             }
                           >
-                            {role === 'welcome-team' ||
-                            role === 'volunteer' ||
-                            role === 'volunteer-alumni' ||
-                            role === 'flagged' ? (
-                              <a
-                                href={`/admin/search-users?role=${encodeURIComponent(
-                                  role,
-                                )}`}
-                                aria-describedby={`member-role-${role}-description`}
-                              >
-                                {formatRoleLabel(role)}
-                              </a>
-                            ) : (
-                              // Keyboard focus exposes the role description tooltip.
-                              /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
-                              <span
-                                tabIndex={0}
-                                aria-describedby={`member-role-${role}-description`}
-                              >
-                                {formatRoleLabel(role)}
-                              </span>
-                              /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
-                            )}
-                          </Tooltip>
-                          <span
-                            id={`member-role-${role}-description`}
-                            className="sr-only"
-                          >
-                            {ROLE_DESCRIPTIONS[role] ||
-                              'Role stored on this member.'}
-                          </span>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="admin-member-report-grid">
-                <div className="admin-member-box admin-member-box--wide">
-                  <h4 id="stats">
-                    <a href="#stats">Stats</a>
-                  </h4>
-                  <section
-                    className="panel panel-default admin-user admin-member-stats"
-                    aria-labelledby="stats"
-                  >
-                    <div className="panel-body">
-                      <UserState user={user.profile} showRoles={false} />
-                      <div className="admin-member-stats-grid">
-                        <section
-                          className="admin-member-stat"
-                          aria-label="Messages"
-                        >
-                          <h5>Messages</h5>
-                          <p className="admin-member-stat-total">
+                            {user.threadCount || 0} threads total
+                          </a>
+                        </p>
+                        <ul>
+                          <li>{user.messageFromCount || 0} sent</li>
+                          <li>{user.messageToCount || 0} received</li>
+                        </ul>
+                      </section>
+                      <ExperienceStats
+                        title="Experiences received"
+                        stats={user.experiencesReceived}
+                      />
+                      <ExperienceStats
+                        title="Experiences written"
+                        stats={user.experiencesWritten}
+                      />
+                      <section
+                        className="admin-member-stat"
+                        aria-label="Thread votes received"
+                      >
+                        <h5>Thread votes received</h5>
+                        <ul>
+                          <li>
                             <a
-                              href={
+                              className="text-success"
+                              href={`${
                                 user.profile.username
                                   ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
                                   : `/admin/threads?userId=${user.profile._id}`
-                              }
+                              }&vote=received-positive`}
                             >
-                              {user.threadCount || 0} threads total
+                              {user.threadReferencesReceivedYes || 0} positive
                             </a>
-                          </p>
-                          <ul>
-                            <li>{user.messageFromCount || 0} sent</li>
-                            <li>{user.messageToCount || 0} received</li>
-                          </ul>
-                        </section>
-                        <ExperienceStats
-                          title="Experiences received"
-                          stats={user.experiencesReceived}
-                        />
-                        <ExperienceStats
-                          title="Experiences written"
-                          stats={user.experiencesWritten}
-                        />
-                        <section
-                          className="admin-member-stat"
-                          aria-label="Thread votes received"
-                        >
-                          <h5>Thread votes received</h5>
-                          <ul>
-                            <li>
-                              <a
-                                className="text-success"
-                                href={`${
-                                  user.profile.username
-                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
-                                    : `/admin/threads?userId=${user.profile._id}`
-                                }&vote=received-positive`}
-                              >
-                                {user.threadReferencesReceivedYes || 0} positive
-                              </a>
-                            </li>
-                            <li>
-                              <a
-                                className="text-danger"
-                                href={`${
-                                  user.profile.username
-                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
-                                    : `/admin/threads?userId=${user.profile._id}`
-                                }&vote=received-negative`}
-                              >
-                                {user.threadReferencesReceivedNo || 0} negative
-                              </a>
-                            </li>
-                          </ul>
-                        </section>
-                        <section
-                          className="admin-member-stat"
-                          aria-label="Thread votes given"
-                        >
-                          <h5>Thread votes given</h5>
-                          <ul>
-                            <li>
-                              <a
-                                className="text-success"
-                                href={`${
-                                  user.profile.username
-                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
-                                    : `/admin/threads?userId=${user.profile._id}`
-                                }&vote=given-positive`}
-                              >
-                                {user.threadReferencesSentYes || 0} positive
-                              </a>
-                            </li>
-                            <li>
-                              <a
-                                className="text-danger"
-                                href={`${
-                                  user.profile.username
-                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
-                                    : `/admin/threads?userId=${user.profile._id}`
-                                }&vote=given-negative`}
-                              >
-                                {user.threadReferencesSentNo || 0} negative
-                              </a>
-                            </li>
-                          </ul>
-                        </section>
-                        <section
-                          className="admin-member-stat"
-                          aria-label="Connections and offers"
-                        >
-                          <h5>Connections and offers</h5>
-                          <ul>
-                            <li>{user.contacts.length} contacts</li>
-                            <li>{user.offers.length} hosting or meet offers</li>
-                          </ul>
-                        </section>
-                      </div>
-                      <p className="admin-member-stat-note">
-                        Experience recommendations cover published experiences;
-                        unpublished experiences are counted separately.
-                      </p>
-                      <div className="admin-member-email-status">
-                        <UserEmailConfirmLink user={user.profile} />
-                      </div>
+                          </li>
+                          <li>
+                            <a
+                              className="text-danger"
+                              href={`${
+                                user.profile.username
+                                  ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                  : `/admin/threads?userId=${user.profile._id}`
+                              }&vote=received-negative`}
+                            >
+                              {user.threadReferencesReceivedNo || 0} negative
+                            </a>
+                          </li>
+                        </ul>
+                      </section>
+                      <section
+                        className="admin-member-stat"
+                        aria-label="Thread votes given"
+                      >
+                        <h5>Thread votes given</h5>
+                        <ul>
+                          <li>
+                            <a
+                              className="text-success"
+                              href={`${
+                                user.profile.username
+                                  ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                  : `/admin/threads?userId=${user.profile._id}`
+                              }&vote=given-positive`}
+                            >
+                              {user.threadReferencesSentYes || 0} positive
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              className="text-danger"
+                              href={`${
+                                user.profile.username
+                                  ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                  : `/admin/threads?userId=${user.profile._id}`
+                              }&vote=given-negative`}
+                            >
+                              {user.threadReferencesSentNo || 0} negative
+                            </a>
+                          </li>
+                        </ul>
+                      </section>
+                      <section
+                        className="admin-member-stat"
+                        aria-label="Connections and offers"
+                      >
+                        <h5>Connections and offers</h5>
+                        <ul>
+                          <li>{user.contacts.length} contacts</li>
+                          <li>{user.offers.length} hosting or meet offers</li>
+                        </ul>
+                      </section>
                     </div>
-                  </section>
-                </div>
-
-                {hasThreadVotes && (
-                  <div className="admin-member-box">
-                    <h4 id="thread-votes">
-                      <a href="#thread-votes">Thread votes</a>
-                    </h4>
-                    <div className="panel panel-default">
-                      <div className="panel-body">
-                        {threadVoteGroups.map(
-                          ({ id, label, votes }) =>
-                            votes.length > 0 && (
-                              <section id={id} key={id}>
-                                <h5>{label}</h5>
-                                <ul className="list-unstyled">
-                                  {votes.map(referenceThread => (
-                                    <AdminReferenceVoteItem
-                                      key={referenceThread._id}
-                                      referenceThread={referenceThread}
-                                      showBadge
-                                      showMessagesLink
-                                    />
-                                  ))}
-                                </ul>
-                              </section>
-                            ),
-                        )}
-                      </div>
+                    <p className="admin-member-stat-note">
+                      Experience recommendations cover published experiences;
+                      unpublished experiences are counted separately.
+                    </p>
+                    <div className="admin-member-email-status">
+                      <UserEmailConfirmLink user={user.profile} />
                     </div>
                   </div>
-                )}
-                <div className="admin-member-box">
-                  <NetworkConnectionsPanel key={userId} memberId={userId} />
-                </div>
-                <div className="admin-member-box">
-                  <AdminNotes
-                    id={userId}
-                    refreshToken={this.state.notesRevision}
-                  />
-                </div>
+                </section>
+              </div>
 
-                {isRestricted && (
-                  <div className="admin-member-box admin-member-box--wide">
-                    <h4 id="potential-matches">
-                      <a href="#potential-matches">
-                        Potential related accounts
-                      </a>
-                    </h4>
-                    <div className="panel panel-warning">
-                      <div className="panel-body">
-                        <p className="text-muted">
-                          Investigation leads only. Matches do not change
-                          account state automatically.
-                        </p>
-                        <table className="table table-condensed table-striped">
-                          <thead>
-                            <tr>
-                              <th>Member</th>
-                              <th>Email</th>
-                              <th>Roles</th>
-                              <th>Matched on</th>
-                              <th>Acquisition story</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {potentialMatches.map(match => (
-                              <tr key={match._id}>
-                                <td>
-                                  <a href={getAdminUserHref(match)}>
-                                    {match.displayName || match.username}
-                                  </a>
-                                  <div className="text-muted">
-                                    @{match.username}
-                                  </div>
-                                </td>
-                                <td>{match.email}</td>
-                                <td>
-                                  {match.roles.map(formatRoleLabel).join(', ')}
-                                </td>
-                                <td>{match.matchReasons.join(', ')}</td>
-                                <td>{match.acquisitionStory}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {!potentialMatches.length && (
-                          <p>
-                            <em>No potential related accounts found.</em>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+              {hasThreadVotes && (
                 <div className="admin-member-box">
-                  <h4 id="profile">
-                    <a href="#profile">Profile</a>
-                    <details className="admin-section-raw-data">
-                      <summary>raw data</summary>
-                      <Json content={user.profile} />
-                    </details>
+                  <h4 id="thread-votes">
+                    <a href="#thread-votes">Thread votes</a>
                   </h4>
                   <div className="panel panel-default">
                     <div className="panel-body">
-                      <InfoTable rows={profileRows} />
+                      {threadVoteGroups.map(
+                        ({ id, label, votes }) =>
+                          votes.length > 0 && (
+                            <section id={id} key={id}>
+                              <h5>{label}</h5>
+                              <ul className="list-unstyled">
+                                {votes.map(referenceThread => (
+                                  <AdminReferenceVoteItem
+                                    key={referenceThread._id}
+                                    referenceThread={referenceThread}
+                                    showBadge
+                                    showMessagesLink
+                                  />
+                                ))}
+                              </ul>
+                            </section>
+                          ),
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
-
-          {user && (
-            <div className="admin-member-report-grid">
+              )}
               <div className="admin-member-box">
-                <h4 id="offers">
-                  <a href="#offers">Hosting & meeting offers</a>
-                </h4>
-                <div className="panel panel-default">
-                  <div className="panel-body">
-                    {user.offers.length ? (
-                      user.offers.map(offer => {
-                        const formattedLocation = formatLocation(
-                          offer.location,
-                        );
-                        const searchLocation = formatLocationForSearch(
-                          offer.location,
-                        );
+                <NetworkConnectionsPanel key={userId} memberId={userId} />
+              </div>
+              <div className="admin-member-box">
+                <AdminNotes id={userId} refreshToken={state.notesRevision} />
+              </div>
 
-                        return (
-                          <div className="admin-readable-item" key={offer._id}>
-                            <InfoTable
-                              rows={[
-                                ['Type', offer.type],
-                                ['Status', offer.status],
-                                ['Description', offer.description],
-                                ['Location', formattedLocation],
-                                ['Created', formatAdminDateTime(offer.created)],
-                                ['Updated', formatAdminDateTime(offer.updated)],
-                              ]}
-                            />
-                            <p>
-                              <Button
-                                size="sm"
-                                render={
-                                  <a href={`/search?offer=${offer._id}`} />
-                                }
-                              >
-                                Show offer on map
-                              </Button>
-                              {formattedLocation && (
-                                <Button
-                                  size="sm"
-                                  render={
-                                    <a
-                                      href={`/search?location=${searchLocation}`}
-                                    />
-                                  }
-                                >
-                                  Show location on map
-                                </Button>
-                              )}
-                            </p>
-                            <details>
-                              <summary>Raw offer data</summary>
-                              <Json content={offer} />
-                            </details>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <p>
-                        <em>{"Member doesn't have any saved offers."}</em>
+              {isRestricted && (
+                <div className="admin-member-box admin-member-box--wide">
+                  <h4 id="potential-matches">
+                    <a href="#potential-matches">Potential related accounts</a>
+                  </h4>
+                  <div className="panel panel-warning">
+                    <div className="panel-body">
+                      <p className="text-muted">
+                        Investigation leads only. Matches do not change account
+                        state automatically.
                       </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="admin-member-box">
-                <h4 id="contacts">
-                  <a href="#contacts">Contacts</a>
-                </h4>
-                <div className="panel panel-default">
-                  <div className="panel-body">
-                    {user.contacts.length ? (
                       <table className="table table-condensed table-striped">
                         <thead>
                           <tr>
                             <th>Member</th>
-                            <th>Created</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Matched on</th>
+                            <th>Acquisition story</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {[...user.contacts]
-                            .sort(newestFirstByCreated)
-                            .map(contact => {
-                              const contactMember = getContactOtherMember(
-                                contact,
-                                userId,
-                              );
-                              const contactName =
-                                get(contactMember, ['username']) ||
-                                get(contactMember, ['displayName']) ||
-                                'Unknown member';
-                              const contactMemberId = get(contactMember, [
-                                '_id',
-                              ]);
-
-                              return (
-                                <tr key={contact._id}>
-                                  <td>
-                                    {contactMemberId ? (
-                                      <a
-                                        href={getAdminUserHref({
-                                          _id: contactMemberId,
-                                          username: get(contactMember, [
-                                            'username',
-                                          ]),
-                                        })}
-                                      >
-                                        {contactName}
-                                      </a>
-                                    ) : (
-                                      contactName
-                                    )}
-                                  </td>
-                                  <td>
-                                    <time
-                                      dateTime={getAdminDateTimeAttribute(
-                                        contact.created,
-                                      )}
-                                    >
-                                      {formatAdminDateTime(contact.created)}
-                                    </time>
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                          {potentialMatches.map(match => (
+                            <tr key={match._id}>
+                              <td>
+                                <a href={getAdminUserHref(match)}>
+                                  {match.displayName || match.username}
+                                </a>
+                                <div className="text-muted">
+                                  @{match.username}
+                                </div>
+                              </td>
+                              <td>{match.email}</td>
+                              <td>
+                                {match.roles.map(formatRoleLabel).join(', ')}
+                              </td>
+                              <td>{match.matchReasons.join(', ')}</td>
+                              <td>{match.acquisitionStory}</td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
-                    ) : (
-                      <p>
-                        <em>{"Member doesn't have any contacts."}</em>
-                      </p>
-                    )}
+                      {!potentialMatches.length && (
+                        <p>
+                          <em>No potential related accounts found.</em>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="admin-member-box">
+                <h4 id="profile">
+                  <a href="#profile">Profile</a>
+                  <details className="admin-section-raw-data">
+                    <summary>raw data</summary>
+                    <Json content={user.profile} />
+                  </details>
+                </h4>
+                <div className="panel panel-default">
+                  <div className="panel-body">
+                    <InfoTable rows={profileRows} />
                   </div>
                 </div>
               </div>
             </div>
-          )}
-          {isProfile && user.profile.username && viewer?._id && (
-            <section
-              className="admin-user-embedded-profile"
-              aria-labelledby="reported-member-profile-heading"
-            >
-              <h4 id="reported-member-profile-heading">
-                {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
-              </h4>
-              <ProfilePage
-                embedded
-                profileUsername={user.profile.username}
-                user={viewer as UserProfile}
-              />
-            </section>
-          )}
-        </div>
-        <Modal
-          open={this.state.deleteDialogOpen}
-          onClose={() => this.cancelDeleteDialog()}
-          dismissible={!this.state.deletingMember}
-        >
-          <ModalHeader>
-            <ModalTitle id="admin-delete-member-title">
-              Delete member?
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <p>
-              This permanently deletes the suspended member account, offers,
-              contacts and uploaded files. Existing messages, experiences and
-              moderation records are retained. Enter the exact username and a
-              reason (maximum 1000 characters).
-            </p>
-            <p>No confirmation email is sent to the member.</p>
-            {this.state.deleteError && (
-              <p role="alert">
-                Could not delete this member. Please try again.
-              </p>
-            )}
-            <label htmlFor="delete-member-username">Confirm username</label>
-            <input
-              id="delete-member-username"
-              className="form-control"
-              value={this.state.deleteUsername}
-              onChange={event =>
-                this.setState({ deleteUsername: event.target.value })
-              }
-              autoComplete="off"
-            />
-            <label htmlFor="delete-member-reason">Reason</label>
-            <textarea
-              id="delete-member-reason"
-              className="form-control"
-              maxLength={1000}
-              value={this.state.deleteReason}
-              onChange={event =>
-                this.setState({ deleteReason: event.target.value })
-              }
-            />
-            <label htmlFor="delete-member-keywords">Audit keywords</label>
-            <input
-              id="delete-member-keywords"
-              className="form-control"
-              value={this.state.deleteKeywords}
-              onChange={event =>
-                this.setState({ deleteKeywords: event.target.value })
-              }
-              placeholder="Comma-separated, up to 20"
-            />
-            <p className="text-muted">
-              Optional audit labels only; they are not added to the signup
-              watchlist.{' '}
-              <a href="/admin/signup-review-rules">Manage signup watchlist</a>
-            </p>
-            {invalidDeleteKeywords && (
-              <p role="alert">
-                Use at most 20 keywords, each 80 characters or fewer.
-              </p>
-            )}
-            {this.state.deletingMember && <p role="status">Deleting member…</p>}
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              type="button"
-              onClick={() => this.setState({ deleteDialogOpen: false })}
-              disabled={this.state.deletingMember}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              intent="danger"
-              onClick={() => void this.confirmDeleteMember()}
-              disabled={
-                this.state.deletingMember ||
-                this.state.deleteUsername !== (user && user.profile.username) ||
-                !this.state.deleteReason.trim() ||
-                !isSuspended ||
-                invalidDeleteKeywords
-              }
-            >
-              {this.state.deletingMember ? 'Deleting…' : 'Delete permanently'}
-            </Button>
-          </ModalFooter>
-        </Modal>
-        <Modal
-          open={Boolean(roleChangeConfirmation)}
-          onClose={this.cancelUserRoleChange}
-          dismissible={!isSettingUserRole}
-        >
-          {roleChangeConfirmation && (
-            <>
-              <ModalHeader>
-                <ModalTitle id="admin-role-change-title">
-                  {roleChangeConfirmation.title}
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                {roleChangeConfirmation.message && (
-                  <p>{roleChangeConfirmation.message}</p>
-                )}
-                {roleChangeError === 'change' && (
-                  <p role="alert">
-                    Could not change the role. Please try again.
-                  </p>
-                )}
-                {roleChangeError === 'refresh' && (
-                  <p role="alert">
-                    The role was updated, but member details could not be
-                    refreshed. Close this dialog and reload the report.
-                  </p>
-                )}
-                {isSettingUserRole && (
-                  <p role="status" aria-live="polite">
-                    Updating role…
-                  </p>
-                )}
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  type="button"
+          </>
+        )}
 
-                  onClick={this.cancelUserRoleChange}
-                  disabled={isSettingUserRole}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  intent="danger"
-                  onClick={this.confirmUserRoleChange}
-                  disabled={isSettingUserRole}
-                >
-                  {isSettingUserRole
-                    ? 'Updating…'
-                    : roleChangeSucceeded
-                      ? 'Close'
-                      : roleChangeConfirmation.confirmLabel}
-                </Button>
-              </ModalFooter>
-            </>
+        {user && (
+          <div className="admin-member-report-grid">
+            <div className="admin-member-box">
+              <h4 id="offers">
+                <a href="#offers">Hosting & meeting offers</a>
+              </h4>
+              <div className="panel panel-default">
+                <div className="panel-body">
+                  {user.offers.length ? (
+                    user.offers.map(offer => {
+                      const formattedLocation = formatLocation(offer.location);
+                      const searchLocation = formatLocationForSearch(
+                        offer.location,
+                      );
+
+                      return (
+                        <div className="admin-readable-item" key={offer._id}>
+                          <InfoTable
+                            rows={[
+                              ['Type', offer.type],
+                              ['Status', offer.status],
+                              ['Description', offer.description],
+                              ['Location', formattedLocation],
+                              ['Created', formatAdminDateTime(offer.created)],
+                              ['Updated', formatAdminDateTime(offer.updated)],
+                            ]}
+                          />
+                          <p>
+                            <Button
+                              size="sm"
+                              render={<a href={`/search?offer=${offer._id}`} />}
+                            >
+                              Show offer on map
+                            </Button>
+                            {formattedLocation && (
+                              <Button
+                                size="sm"
+                                render={
+                                  <a
+                                    href={`/search?location=${searchLocation}`}
+                                  />
+                                }
+                              >
+                                Show location on map
+                              </Button>
+                            )}
+                          </p>
+                          <details>
+                            <summary>Raw offer data</summary>
+                            <Json content={offer} />
+                          </details>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p>
+                      <em>{"Member doesn't have any saved offers."}</em>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="admin-member-box">
+              <h4 id="contacts">
+                <a href="#contacts">Contacts</a>
+              </h4>
+              <div className="panel panel-default">
+                <div className="panel-body">
+                  {user.contacts.length ? (
+                    <table className="table table-condensed table-striped">
+                      <thead>
+                        <tr>
+                          <th>Member</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...user.contacts]
+                          .sort(newestFirstByCreated)
+                          .map(contact => {
+                            const contactMember = getContactOtherMember(
+                              contact,
+                              userId,
+                            );
+                            const contactName =
+                              get(contactMember, ['username']) ||
+                              get(contactMember, ['displayName']) ||
+                              'Unknown member';
+                            const contactMemberId = get(contactMember, ['_id']);
+
+                            return (
+                              <tr key={contact._id}>
+                                <td>
+                                  {contactMemberId ? (
+                                    <a
+                                      href={getAdminUserHref({
+                                        _id: contactMemberId,
+                                        username: get(contactMember, [
+                                          'username',
+                                        ]),
+                                      })}
+                                    >
+                                      {contactName}
+                                    </a>
+                                  ) : (
+                                    contactName
+                                  )}
+                                </td>
+                                <td>
+                                  <time
+                                    dateTime={getAdminDateTimeAttribute(
+                                      contact.created,
+                                    )}
+                                  >
+                                    {formatAdminDateTime(contact.created)}
+                                  </time>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p>
+                      <em>{"Member doesn't have any contacts."}</em>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {isProfile && user.profile.username && viewer?._id && (
+          <section
+            className="admin-user-embedded-profile"
+            aria-labelledby="reported-member-profile-heading"
+          >
+            <h4 id="reported-member-profile-heading">
+              {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
+            </h4>
+            <ProfilePage
+              embedded
+              profileUsername={user.profile.username}
+              user={viewer as UserProfile}
+            />
+          </section>
+        )}
+      </div>
+      <Modal
+        open={state.deleteDialogOpen}
+        onClose={() => cancelDeleteDialog()}
+        dismissible={!state.deletingMember}
+      >
+        <ModalHeader>
+          <ModalTitle id="admin-delete-member-title">Delete member?</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <p>
+            This permanently deletes the suspended member account, offers,
+            contacts and uploaded files. Existing messages, experiences and
+            moderation records are retained. Enter the exact username and a
+            reason (maximum 1000 characters).
+          </p>
+          <p>No confirmation email is sent to the member.</p>
+          {state.deleteError && (
+            <p role="alert">Could not delete this member. Please try again.</p>
           )}
-        </Modal>
-      </>
-    );
-  }
+          <label htmlFor="delete-member-username">Confirm username</label>
+          <Input
+            id="delete-member-username"
+            value={state.deleteUsername}
+            onChange={event =>
+              updateState({ deleteUsername: event.target.value })
+            }
+            autoComplete="off"
+          />
+          <label htmlFor="delete-member-reason">Reason</label>
+          <Textarea
+            id="delete-member-reason"
+            fieldSize="md"
+            maxLength={1000}
+            value={state.deleteReason}
+            onChange={event =>
+              updateState({ deleteReason: event.target.value })
+            }
+          />
+          <label htmlFor="delete-member-keywords">Audit keywords</label>
+          <Input
+            id="delete-member-keywords"
+            value={state.deleteKeywords}
+            onChange={event =>
+              updateState({ deleteKeywords: event.target.value })
+            }
+            placeholder="Comma-separated, up to 20"
+          />
+          <p className="text-muted">
+            Optional audit labels only; they are not added to the signup
+            watchlist.{' '}
+            <a href="/admin/signup-review-rules">Manage signup watchlist</a>
+          </p>
+          {invalidDeleteKeywords && (
+            <p role="alert">
+              Use at most 20 keywords, each 80 characters or fewer.
+            </p>
+          )}
+          {state.deletingMember && <p role="status">Deleting member…</p>}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            onClick={() => updateState({ deleteDialogOpen: false })}
+            disabled={state.deletingMember}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            intent="danger"
+            onClick={() => void confirmDeleteMember()}
+            disabled={
+              state.deletingMember ||
+              state.deleteUsername !== (user && user.profile.username) ||
+              !state.deleteReason.trim() ||
+              !isSuspended ||
+              invalidDeleteKeywords
+            }
+          >
+            {state.deletingMember ? 'Deleting…' : 'Delete permanently'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+      <Modal
+        open={Boolean(roleChangeConfirmation)}
+        onClose={cancelUserRoleChange}
+        dismissible={!isSettingUserRole}
+      >
+        {roleChangeConfirmation && (
+          <>
+            <ModalHeader>
+              <ModalTitle id="admin-role-change-title">
+                {roleChangeConfirmation.title}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              {roleChangeConfirmation.message && (
+                <p>{roleChangeConfirmation.message}</p>
+              )}
+              {roleChangeError === 'change' && (
+                <p role="alert">Could not change the role. Please try again.</p>
+              )}
+              {roleChangeError === 'refresh' && (
+                <p role="alert">
+                  The role was updated, but member details could not be
+                  refreshed. Close this dialog and reload the report.
+                </p>
+              )}
+              {isSettingUserRole && (
+                <p role="status" aria-live="polite">
+                  Updating role…
+                </p>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                type="button"
+
+                onClick={cancelUserRoleChange}
+                disabled={isSettingUserRole}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                intent="danger"
+                onClick={confirmUserRoleChange}
+                disabled={isSettingUserRole}
+              >
+                {isSettingUserRole
+                  ? 'Updating…'
+                  : roleChangeSucceeded
+                    ? 'Close'
+                    : roleChangeConfirmation.confirmLabel}
+              </Button>
+            </ModalFooter>
+          </>
+        )}
+      </Modal>
+    </>
+  );
 }
 
 export default function AdminUser(props: AdminUserProps) {

@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 import React, { useEffect, useMemo, useState } from 'react';
 
 const MONTHS = [
@@ -89,8 +90,7 @@ export default function BirthdateSelect({
       <label className="sr-only" htmlFor="birthdate-month">
         Month
       </label>
-      <select
-        className="form-control"
+      <Select
         id="birthdate-month"
         value={parts.month || ''}
         onChange={event => updatePart('month', event.target.value)}
@@ -101,13 +101,12 @@ export default function BirthdateSelect({
             {month.name}
           </option>
         ))}
-      </select>
+      </Select>
 
       <label className="sr-only" htmlFor="birthdate-date">
         Day
       </label>
-      <select
-        className="form-control"
+      <Select
         id="birthdate-date"
         value={parts.date || ''}
         onChange={event => updatePart('date', event.target.value)}
@@ -118,13 +117,12 @@ export default function BirthdateSelect({
             {date}
           </option>
         ))}
-      </select>
+      </Select>
 
       <label className="sr-only" htmlFor="birthdate-year">
         Year
       </label>
-      <select
-        className="form-control"
+      <Select
         id="birthdate-year"
         value={parts.year || ''}
         onChange={event => updatePart('year', event.target.value)}
@@ -135,7 +133,7 @@ export default function BirthdateSelect({
             {year}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }

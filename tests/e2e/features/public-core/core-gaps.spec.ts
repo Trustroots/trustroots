@@ -1,6 +1,7 @@
 /* global window */
 import {
   annotateFeature,
+  captureSection,
   expectPresent,
   test,
   expect,
@@ -60,6 +61,12 @@ test.describe('public core manifest gap coverage', () => {
       );
 
       await page.goto('/support');
+      await captureSection(
+        page
+          .locator('form')
+          .filter({ has: page.getByLabel('Message', { exact: true }) }),
+        `support-form-${size}`,
+      );
       await page
         .getByRole('textbox', { name: 'Message', exact: true })
         .fill('E2E failing support request.');

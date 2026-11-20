@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import SignupRecovery from './SignupRecovery.component';
 import SparkpostDaily from './SparkpostDaily.component';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -310,8 +311,7 @@ export default function AdminSparkpost() {
         >
           <div className="form-group">
             <label htmlFor="sparkpost-from">From (UTC, inclusive)</label>
-            <input
-              className="form-control"
+            <Input
               id="sparkpost-from"
               type="text"
               placeholder="yyyy-mm-dd hh:mm"
@@ -323,8 +323,7 @@ export default function AdminSparkpost() {
           </div>
           <div className="form-group">
             <label htmlFor="sparkpost-to">To (UTC, exclusive)</label>
-            <input
-              className="form-control"
+            <Input
               id="sparkpost-to"
               type="text"
               placeholder="yyyy-mm-dd hh:mm"

@@ -1,3 +1,5 @@
+import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
 import React, { useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
@@ -125,9 +127,8 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                   {t('First name')}
                 </label>
                 <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                  <Input
                     type="text"
-                    className="form-control"
                     id="firstname"
                     value={draftUser.firstName || ''}
                     onChange={event =>
@@ -144,9 +145,8 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                   {t('Last name (optional)')}
                 </label>
                 <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                  <Input
                     type="text"
-                    className="form-control"
                     id="lastname"
                     aria-describedby="lastNameHelp"
                     value={draftUser.lastName || ''}
@@ -169,9 +169,8 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                   {t('Short tagline')}
                 </label>
                 <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                  <Input
                     type="text"
-                    className="form-control"
                     id="tagline"
                     value={draftUser.tagline || ''}
                     onChange={event =>
@@ -191,8 +190,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                   {t('I Am')}
                 </label>
                 <div className="col-sm-9 col-md-7 col-lg-6">
-                  <select
-                    className="form-control"
+                  <Select
                     id="gender"
                     value={draftUser.gender || ''}
                     onChange={event =>
@@ -204,7 +202,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                     <option value="male">{t('Male')}</option>
                     <option value="non-binary">{t('Non-binary')}</option>
                     <option value="other">{t('Other')}</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="form-group">

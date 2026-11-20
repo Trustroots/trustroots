@@ -1,3 +1,5 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Input } from '@trustroots/ui/Input';
 import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
@@ -204,10 +206,11 @@ export default function OfferMeetEditPage() {
                     </h4>
                   </div>
                   <div className="panel-body">
-                    <textarea
+                    <Textarea
                       aria-labelledby="offerDescriptionLabel"
                       aria-required="true"
-                      className="form-control offer-description"
+                      fieldSize="md"
+                      className="offer-description"
                       onChange={({ target: { value } }) =>
                         setOffer({ ...offer, description: value })
                       }
@@ -225,9 +228,9 @@ export default function OfferMeetEditPage() {
                     </h4>
                   </div>
                   <div className="panel-body text-center">
-                    <input
+                    <Input
                       aria-labelledby="offerVisibilityLabel"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       max={defaultValidUntil().slice(0, 10)}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={({ target: { value } }) =>

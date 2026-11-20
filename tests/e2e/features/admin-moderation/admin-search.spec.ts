@@ -1,4 +1,9 @@
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  test,
+  expect,
+} from '../../support/fixtures.mts';
 import {
   SEEDED_ADMIN,
   SEEDED_MEMBERS,
@@ -76,6 +81,15 @@ test.describe('admin moderation search flows', () => {
     const berlin = SEEDED_MEMBERS[0];
 
     await page.goto('/admin/search-users');
+    const search = page.getByLabel('Name, username or email');
+    await captureSection(
+      search.locator('xpath=ancestor::form[1]'),
+      'admin-member-search',
+    );
+    await captureSection(
+      page.locator('select[name="role"]').locator('xpath=ancestor::form[1]'),
+      'admin-member-role-filter',
+    );
 
     await page
       .locator('input[type="search"]')

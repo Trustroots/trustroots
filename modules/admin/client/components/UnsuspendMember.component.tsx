@@ -1,3 +1,4 @@
+import { Textarea } from '@trustroots/ui/Textarea';
 import React, { useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import {
@@ -80,9 +81,9 @@ export default function UnsuspendMember({
             subscriptions are retained.
           </p>
           <label htmlFor="unsuspend-reason">Administrator reason</label>
-          <textarea
+          <Textarea
             id="unsuspend-reason"
-            className="form-control"
+            fieldSize="md"
             value={reason}
             required
             maxLength={1000}

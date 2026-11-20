@@ -1,4 +1,6 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
+import { Input } from '@trustroots/ui/Input';
+import { Textarea } from '@trustroots/ui/Textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
@@ -351,8 +353,7 @@ export default function AdminCircles() {
             <form onSubmit={submit}>
               <div className="form-group">
                 <label htmlFor="circle-label">Name</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-label"
                   name="label"
                   onChange={update}
@@ -366,8 +367,8 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-description">Description</label>
-                <textarea
-                  className="form-control"
+                <Textarea
+                  fieldSize="md"
                   id="circle-description"
                   name="description"
                   onChange={update}
@@ -417,8 +418,7 @@ export default function AdminCircles() {
                 <label htmlFor="circle-organiser-username">
                   Organiser username
                 </label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-organiser-username"
                   aria-describedby="circle-organiser-help"
                   aria-invalid={Boolean(organiserError)}
@@ -450,8 +450,7 @@ export default function AdminCircles() {
               <div className="row">
                 <div className="col-sm-4 form-group">
                   <label htmlFor="circle-color">Colour</label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="circle-color"
                     list="circle-colours"
                     maxLength={6}
@@ -479,9 +478,8 @@ export default function AdminCircles() {
                 </div>
                 <div className="col-sm-8 form-group">
                   <label htmlFor="circle-image">Image</label>
-                  <input
+                  <Input
                     accept="image/jpeg,image/png,image/gif"
-                    className="form-control"
                     id="circle-image"
                     onChange={event =>
                       setImage(event.currentTarget.files?.[0] || null)
@@ -515,8 +513,7 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-attribution">Image attribution</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-attribution"
                   name="attribution"
                   onChange={update}
@@ -525,8 +522,7 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-attribution-url">Attribution URL</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-attribution-url"
                   name="attribution_url"
                   onChange={update}

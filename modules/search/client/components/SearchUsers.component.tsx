@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
@@ -57,11 +58,11 @@ export default function SearchUsers() {
         fetchUsers(searchQuery);
       }}
     >
-      <div className="input-group">
-        <input
+      <div data-slot="input-group" className="tw:input-group">
+        <Input
           aria-label={t('Search members')}
           disabled={isSearching}
-          className="form-control input-lg"
+          fieldSize="lg"
           onChange={({ target: { value } }) => {
             setHasSearched(false);
             setSearchFailed(false);

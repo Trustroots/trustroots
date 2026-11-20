@@ -1,3 +1,4 @@
+import { Textarea } from './Textarea';
 import React, { useRef, useState, type ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
@@ -189,12 +190,7 @@ function ScrollableDemo(args: ComponentProps<typeof Modal>) {
           <p key={index}>Hosting offer {index + 1} at Berlin, Germany</p>
         ))}
         <label htmlFor="story-message">Message from your account</label>
-        <textarea
-          ref={messageRef}
-          id="story-message"
-          className="form-control"
-          rows={4}
-        />
+        <Textarea ref={messageRef} id="story-message" fieldSize="md" rows={4} />
       </ModalBody>
     </Modal>
   );

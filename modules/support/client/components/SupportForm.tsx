@@ -1,3 +1,5 @@
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 // External dependencies
 import React, { useState, useEffect, useRef } from 'react';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -168,10 +170,10 @@ export default function SupportForm({ user }: SupportFormProps) {
               {t('What can we help with?')}
             </label>
             <div className="col-sm-9">
-              <select
+              <Select
                 ref={categoryInput}
                 id="category"
-                className="form-control input-lg"
+                fieldSize="lg"
                 value={category}
                 disabled={isSending}
                 onChange={event => {
@@ -186,7 +188,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                     </option>
                   ),
                 )}
-              </select>
+              </Select>
             </div>
           </div>
           {/* Reporting another profile */}
@@ -197,7 +199,7 @@ export default function SupportForm({ user }: SupportFormProps) {
               </label>
               <div className="col-sm-9">
                 {reportMember ? (
-                  <p className="form-control-static">
+                  <p className="tw:mb-0 tw:py-[7px]">
                     <strong>{reportMember}</strong>
                   </p>
                 ) : (
@@ -205,7 +207,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                     {t('Please include the member’s username in your message.')}
                   </p>
                 )}
-                <p className="form-control-static">
+                <p className="tw:mb-0 tw:py-[7px]">
                   <em>
                     {t(
                       'This message goes to Trustroots support, not to the member.',
@@ -219,7 +221,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                     )}
                   </p>
                 )}
-                <p className="form-control-static">
+                <p className="tw:mb-0 tw:py-[7px]">
                   <em>
                     {t(
                       'If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.',
@@ -284,7 +286,7 @@ export default function SupportForm({ user }: SupportFormProps) {
             <div className="form-group">
               <label className="col-sm-3 control-label">{t('Name')}</label>
               <div className="col-sm-9">
-                <p className="form-control-static">{user.displayName}</p>
+                <p className="tw:mb-0 tw:py-[7px]">{user.displayName}</p>
               </div>
             </div>
           )}
@@ -295,11 +297,11 @@ export default function SupportForm({ user }: SupportFormProps) {
             </label>
             <div className="col-sm-9">
               {user?.username ? (
-                <p className="form-control-static">{user.username}</p>
+                <p className="tw:mb-0 tw:py-[7px]">{user.username}</p>
               ) : (
-                <input
+                <Input
                   type="text"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   id="username"
                   onChange={event => {
                     setUsername(event.target.value);
@@ -316,13 +318,13 @@ export default function SupportForm({ user }: SupportFormProps) {
             </label>
             <div className="col-sm-9">
               {user?.email ? (
-                <p className="form-control-static">{user.email}</p>
+                <p className="tw:mb-0 tw:py-[7px]">{user.email}</p>
               ) : (
-                <input
+                <Input
                   type="email"
                   id="email"
                   name="email"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   disabled={isSending}
                   onChange={event => {
                     setEmail(event.target.value);
