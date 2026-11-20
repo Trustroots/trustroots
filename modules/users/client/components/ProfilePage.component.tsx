@@ -327,7 +327,11 @@ export default function ProfilePage({
   const viewedMemberId = profile?._id || '';
   const profileUsernameForAction = profile?.username || username;
   const canCheckSharedExperience =
-    canLoadReply && !experienceOnly && Boolean(viewedMemberId) && !isSelf;
+    canLoadReply &&
+    !experienceOnly &&
+    !isCreatingExperience &&
+    Boolean(viewedMemberId) &&
+    !isSelf;
   const sharedExperience = useQuery({
     queryKey: [
       'profile',
@@ -344,6 +348,7 @@ export default function ProfilePage({
       return authorId === authUser._id ? (experience?._id ?? null) : null;
     },
     staleTime: 60_000,
+    refetchOnWindowFocus: false,
     retry: false,
   });
   const experienceAction = useMemo<ExperienceAction | undefined>(() => {
@@ -351,7 +356,9 @@ export default function ProfilePage({
       !referencesEnabled ||
       !viewedMemberId ||
       isSelf ||
-      (canCheckSharedExperience && sharedExperience.isPending)
+      isCreatingExperience ||
+      (canCheckSharedExperience &&
+        (sharedExperience.isPending || sharedExperience.isFetching))
     ) {
       return undefined;
     }
@@ -367,10 +374,12 @@ export default function ProfilePage({
     };
   }, [
     canCheckSharedExperience,
+    isCreatingExperience,
     isSelf,
     profileUsernameForAction,
     referencesEnabled,
     sharedExperience.data,
+    sharedExperience.isFetching,
     sharedExperience.isPending,
     t,
     viewedMemberId,

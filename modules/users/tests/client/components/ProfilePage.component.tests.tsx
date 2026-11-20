@@ -526,13 +526,16 @@ describe('ProfilePage', () => {
   });
 
   it('refreshes the normal profile action after leaving the Experience form', async () => {
-    renderPage(authUser, '/profile/bob/experiences/new', {
+    renderPage(authUser, '/profile/bob', {
       referencesEnabled: true,
     });
-    expect(await screen.findByText('New experience form')).toBeVisible();
     expect(
       await screen.findByRole('link', { name: 'Share your experience' }),
     ).toHaveAttribute('href', '/profile/bob/experiences/new');
+    window.history.pushState({}, '', '/profile/bob/experiences/new');
+    fireEvent.popState(window);
+    expect(await screen.findByText('New experience form')).toBeVisible();
+    expect(experiencesApi.readMine).toHaveBeenCalledTimes(1);
 
     vi.mocked(experiencesApi.readMine).mockResolvedValue({
       _id: 'experience-1',
