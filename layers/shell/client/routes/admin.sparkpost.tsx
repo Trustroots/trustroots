@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminSparkpost from '@/modules/admin/client/components/AdminSparkpost.component';
-import { adminPolicy, routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/sparkpost')(
-  routeOptions(adminPolicy('Admin - SparkPost'), AdminSparkpost),
-);
+export const Route = createFileRoute('/admin/sparkpost')({
+  staticData: { title: 'Admin - SparkPost', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin'),
+  component: AdminSparkpost,
+});

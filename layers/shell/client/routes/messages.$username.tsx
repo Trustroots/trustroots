@@ -3,7 +3,7 @@ import React from 'react';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import { routeOptions } from '../route-options';
+import { requireAuth } from '../route-options';
 
 function ThreadRoute() {
   const { user } = useAuth();
@@ -20,9 +20,8 @@ function ThreadRoute() {
   );
 }
 
-export const Route = createFileRoute('/messages/$username')(
-  routeOptions(
-    { title: 'Messages', requiresAuth: true, footerHidden: true },
-    ThreadRoute,
-  ),
-);
+export const Route = createFileRoute('/messages/$username')({
+  staticData: { title: 'Messages', footerHidden: true },
+  beforeLoad: requireAuth,
+  component: ThreadRoute,
+});

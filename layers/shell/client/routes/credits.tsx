@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import Credits from '@/modules/pages/client/components/Credits.component';
-import { routeOptions } from '../route-options';
 
-export const Route = createFileRoute('/credits')(
-  routeOptions({ title: 'Credits' }, Credits),
-);
+export const Route = createFileRoute('/credits')({
+  staticData: { title: 'Credits' },
+  component: Credits,
+});

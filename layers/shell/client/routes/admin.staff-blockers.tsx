@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
-import { adminPolicy, routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/staff-blockers')(
-  routeOptions(
-    adminPolicy('Admin - Staff blockers', [
-      'admin',
-      'welcome-team',
-      'support-team',
-    ]),
-    AdminStaffBlockers,
-  ),
-);
+export const Route = createFileRoute('/admin/staff-blockers')({
+  staticData: { title: 'Admin - Staff blockers', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin', 'welcome-team', 'support-team'),
+  component: AdminStaffBlockers,
+});

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { createRouter } from '@tanstack/react-router';
+import { createRouter, rootRouteId } from '@tanstack/react-router';
 
 import { getBootstrapData } from './bootstrap';
 import { matchAppRoute } from './route-options';
@@ -33,6 +33,8 @@ export function createAppRouter() {
   const router = createRouter({
     context: { queryClient: new QueryClient(), user: getBootstrapData().user },
     defaultPreload: 'intent',
+    defaultRemountDeps: ({ routeId, params, search }) =>
+      routeId === rootRouteId ? undefined : { params, search },
     parseSearch: parseLegacySearch,
     routeTree,
     // Scroll to the top when the page changes, unless it opts out. Query

@@ -170,24 +170,28 @@ const routeIds = new Map<string, Set<string>>();
 for (const file of clientFiles(path.join(root, 'layers/shell/client/routes'))) {
   const routeFile = readSource(file);
   let routePath: string | undefined;
-  let files: string[] | undefined;
+  let files: string[] = [];
   const findRoute = (node: ts.Node): void => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
-      const [first, ...rest] = node.arguments;
+      const [first] = node.arguments;
       if (
         node.expression.text === 'createFileRoute' &&
         first &&
         ts.isStringLiteral(first)
       ) {
         routePath = first.text.replace(/(.)\/$/, '$1');
-      } else if (node.expression.text === 'routeOptions') {
-        files = rest.flatMap(arg => [...importedFiles(routeFile, arg)]);
       }
+    }
+    if (
+      ts.isPropertyAssignment(node) &&
+      node.name.getText(routeFile.source) === 'component'
+    ) {
+      files = [...importedFiles(routeFile, node.initializer)];
     }
     ts.forEachChild(node, findRoute);
   };
   findRoute(routeFile.source);
-  if (routePath && files) routeIds.set(routePath, collectIds(files));
+  if (routePath) routeIds.set(routePath, collectIds(files));
 }
 
 const matcherRoot = createRootRoute();
