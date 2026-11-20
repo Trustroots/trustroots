@@ -4,12 +4,15 @@ import {
   act,
   fireEvent,
   render,
+  renderHook,
   screen,
   within,
   waitFor,
 } from '@testing-library/react';
 
+import { useNavigate } from '@tanstack/react-router';
 import AdminUser, {
+  useAdminUserReport,
   type MemberRecord as AdminUserRecord,
   InfoTable,
 } from '@/modules/admin/client/components/AdminUser.component';
@@ -213,6 +216,47 @@ describe('<AdminUser />', () => {
   it('omits an information table when it has no visible rows', () => {
     const { container } = render(<InfoTable rows={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('guards report actions before a member has loaded', async () => {
+    const { result } = renderHook(() =>
+      useAdminUserReport({ navigate: useNavigate(), search: {} }),
+    );
+
+    await act(async () => {
+      result.current.handleUserRoleChange('volunteer');
+      await result.current.confirmUserRoleChange();
+      await result.current.confirmDeleteMember();
+    });
+
+    expect(result.current.state.pendingRoleChange).toBeNull();
+    expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
+    expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
+  });
+
+  it('keeps dialogs open when cancellation races a pending request', () => {
+    const { result } = renderHook(() =>
+      useAdminUserReport({ navigate: useNavigate(), search: {} }),
+    );
+    act(() =>
+      result.current.updateState({
+        isSettingUserRole: true,
+        pendingRoleChange: { role: 'volunteer', action: 'add' },
+        deleteDialogOpen: true,
+        deletingMember: true,
+      }),
+    );
+
+    act(() => {
+      result.current.cancelUserRoleChange();
+      result.current.cancelDeleteDialog();
+    });
+
+    expect(result.current.state.pendingRoleChange).toEqual({
+      role: 'volunteer',
+      action: 'add',
+    });
+    expect(result.current.state.deleteDialogOpen).toBe(true);
   });
 
   it('keeps role actions unavailable before a profile loads', () => {

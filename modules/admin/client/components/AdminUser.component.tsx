@@ -362,12 +362,11 @@ interface AdminUserRouteProps extends AdminUserProps {
   search: { id?: string; ipHash?: string; q?: string };
 }
 
-export function AdminUserContent({
+export function useAdminUserReport({
   navigate,
   search,
   username,
-  viewer,
-}: AdminUserRouteProps) {
+}: Omit<AdminUserRouteProps, 'viewer'>) {
   const [state, setState] = useState<AdminUserState>({
     hasSearched: false,
     isSettingUserRole: false,
@@ -664,6 +663,40 @@ export function AdminUserContent({
   function hasRole(role: string) {
     return get(state.user, ['profile', 'roles'], []).includes(role);
   }
+
+  return {
+    state,
+    updateState,
+    onQueryChange,
+    onMatchingUsersPageChange,
+    onMatchingUsersSortChange,
+    handleUserRoleChange,
+    cancelUserRoleChange,
+    confirmUserRoleChange,
+    openDeleteDialog,
+    cancelDeleteDialog,
+    confirmDeleteMember,
+    queryUser,
+    hasRole,
+  };
+}
+
+export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
+  const {
+    state,
+    updateState,
+    onQueryChange,
+    onMatchingUsersPageChange,
+    onMatchingUsersSortChange,
+    handleUserRoleChange,
+    cancelUserRoleChange,
+    confirmUserRoleChange,
+    openDeleteDialog,
+    cancelDeleteDialog,
+    confirmDeleteMember,
+    queryUser,
+    hasRole,
+  } = useAdminUserReport(route);
 
   const {
     hasSearched,
