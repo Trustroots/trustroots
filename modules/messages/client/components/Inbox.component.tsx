@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import { useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -138,9 +139,8 @@ export default function Inbox({ user }: InboxProps) {
           </Button>
         </nav>
         <div className="inbox-search">
-          <input
+          <Input
             type="search"
-            className="form-control"
             aria-label={t('Filter conversations')}
             placeholder={t('Filter conversations')}
             value={searchText}

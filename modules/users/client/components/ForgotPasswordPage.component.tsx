@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import Board from '@/modules/core/client/components/Board';
@@ -71,20 +72,20 @@ export default function ForgotPasswordPage() {
         <div className="col-xs-offset-1 col-xs-10 col-sm-offset-4 col-sm-4 col-md-offset-5 col-md-2">
           <br />
           <form
-            className="form-auth form-horizontal"
+            className="tw:mb-5 tw:[&_[data-slot=input]]:border-0 tw:[&_[data-slot=input]]:shadow-[0_0_10px_#0000001a] tw:[&_[data-slot=input]:focus]:shadow-[0_0_10px_#0000001a] form-horizontal"
             autoComplete="off"
             onSubmit={handleSubmit}
           >
             <fieldset>
               <div className="form-group text-center">
                 <label htmlFor="username">Email or username</label>
-                <input
+                <Input
                   ref={usernameInput}
                   type="text"
                   required
                   id="username"
                   name="username"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   value={credentials.username}
                   disabled={isLoading}
                   onChange={event =>

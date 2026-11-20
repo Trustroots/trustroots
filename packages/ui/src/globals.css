@@ -60,3 +60,23 @@
 @utility navigation-panel-divider {
   @apply tw:my-2 tw:border-0 tw:border-t tw:border-solid tw:border-black/17.5;
 }
+
+@utility input-group {
+  @apply tw:relative tw:flex tw:w-full tw:flex-wrap tw:items-stretch;
+
+  & > [data-slot='input'] {
+    @apply tw:relative tw:w-px tw:min-w-0 tw:flex-auto tw:focus:z-5;
+  }
+
+  & > :not(:first-child) {
+    @apply tw:-ms-px tw:rounded-s-none;
+  }
+
+  & > :not(:last-child) {
+    @apply tw:rounded-e-none;
+  }
+
+  & [data-slot='button'] {
+    @apply tw:relative tw:z-2 tw:focus:z-5;
+  }
+}

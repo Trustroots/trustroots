@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 // External dependencies
 import React from 'react';
 
@@ -28,8 +29,7 @@ export default function UserEmailConfirmLink({
           Link to confirm email change {user.email} → {user.emailTemporary}
         </label>
       )}
-      <input
-        className="form-control"
+      <Input
         id="user-email-reset-link"
         readOnly
         type="text"

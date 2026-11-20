@@ -1,3 +1,5 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Select } from '@trustroots/ui/Select';
 import React, { useEffect, useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
@@ -145,8 +147,8 @@ export default function ExperienceChangePage({
                   <label htmlFor="experience-change-feedback">
                     Written feedback
                   </label>
-                  <textarea
-                    className="form-control"
+                  <Textarea
+                    fieldSize="md"
                     id="experience-change-feedback"
                     maxLength={2000}
                     value={feedbackPublic}
@@ -157,8 +159,7 @@ export default function ExperienceChangePage({
                   <label htmlFor="experience-change-recommend">
                     Recommendation
                   </label>
-                  <select
-                    className="form-control"
+                  <Select
                     id="experience-change-recommend"
                     value={recommend}
                     onChange={event =>
@@ -170,7 +171,7 @@ export default function ExperienceChangePage({
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
                     <option value="unknown">Unsure</option>
-                  </select>
+                  </Select>
                 </div>
                 <fieldset>
                   <legend>How do you know them?</legend>

@@ -1,4 +1,9 @@
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 import {
   createUser,
   registerViaApi,
@@ -30,6 +35,7 @@ test('admins can delete a suspended member after confirming the username', async
 
     await page.goto(`/admin/user?id=${fixtureId}`);
     await page.getByRole('button', { name: 'Delete member' }).click();
+    await captureSection(page.getByRole('dialog'), 'admin-member-delete-form');
 
     await expect(
       page.getByText('Delete member?', { exact: true }),

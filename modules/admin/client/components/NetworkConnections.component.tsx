@@ -1,3 +1,5 @@
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useState } from 'react';
 import {
   connectionUrl,
@@ -212,8 +214,7 @@ export function NetworkConnectionSearchPage() {
       <form onSubmit={submit}>
         <div className="form-group">
           <label htmlFor="connection-network">Network</label>
-          <select
-            className="form-control"
+          <Select
             id="connection-network"
             value={network}
             onChange={event => setNetwork(event.target.value as Network)}
@@ -223,12 +224,11 @@ export function NetworkConnectionSearchPage() {
                 {item.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="form-group">
           <label htmlFor="connection-identifier">Identifier</label>
-          <input
-            className="form-control"
+          <Input
             id="connection-identifier"
             value={identifier}
             required

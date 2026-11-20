@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { AuthPasswordInput } from './AuthPasswordInput';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -123,23 +125,23 @@ export default function SigninPage() {
                 </Alert>
               )}
               <form
-                className="form-auth"
+                className="tw:mb-5 tw:[&_[data-slot=input]]:border-0 tw:[&_[data-slot=input]]:shadow-[0_0_10px_#0000001a] tw:[&_[data-slot=input]:focus]:shadow-[0_0_10px_#0000001a]"
                 autoComplete="off"
                 onSubmit={handleSubmit}
               >
                 <fieldset>
                   <div className="form-group">
-                    <label htmlFor="username" className="lead">
+                    <label htmlFor="username" className="lead tw:mb-[5px]">
                       Email or username
                     </label>
-                    <input
+                    <Input
                       ref={usernameInput}
                       type="text"
                       autoCapitalize="off"
                       required
                       id="username"
                       name="username"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       placeholder="Email or username"
                       value={credentials.username}
                       disabled={isLoading}
@@ -149,40 +151,25 @@ export default function SigninPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="password" className="lead">
+                    <label htmlFor="password" className="lead tw:mb-[5px]">
                       Password
                     </label>
-                    <div className="input-group">
-                      <input
-                        required
-                        id="password"
-                        name="password"
-                        placeholder="Password"
-                        className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
-                        autoCapitalize="off"
-                        disabled={isLoading}
-                        value={credentials.password}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
-                      />
-                      <span className="input-group-btn">
-                        <Button
-                          size="lg"
-                          className="password-toggle"
-                          type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </Button>
-                      </span>
-                    </div>
+                    <AuthPasswordInput
+                      required
+                      visible={showPassword}
+                      onToggleVisibility={() =>
+                        setShowPassword(current => !current)
+                      }
+                      id="password"
+                      name="password"
+                      placeholder="Password"
+                      autoCapitalize="off"
+                      disabled={isLoading}
+                      value={credentials.password}
+                      onChange={event =>
+                        updateCredential('password', event.target.value)
+                      }
+                    />
                   </div>
                   <div className="form-group">
                     <Button size="lg" type="submit" disabled={isLoading}>

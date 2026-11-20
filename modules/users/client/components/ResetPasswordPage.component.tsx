@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 
 import {
   passwordResetFailureReason,
@@ -87,20 +88,20 @@ export default function ResetPasswordPage() {
         <div className="col-xs-offset-1 col-xs-10 col-sm-offset-4 col-sm-4 col-md-offset-5 col-md-2">
           <br />
           <form
-            className="form-horizontal form-auth"
+            className="form-horizontal tw:mb-5 tw:[&_[data-slot=input]]:border-0 tw:[&_[data-slot=input]]:shadow-[0_0_10px_#0000001a] tw:[&_[data-slot=input]:focus]:shadow-[0_0_10px_#0000001a]"
             autoComplete="off"
             onSubmit={handleSubmit}
           >
             <fieldset>
               <div className="form-group">
                 <label htmlFor="newPassword">New Password</label>
-                <input
+                <Input
                   ref={passwordInput}
                   type="password"
                   required
                   id="newPassword"
                   name="newPassword"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   placeholder="New Password"
                   minLength={8}
                   value={passwordDetails.newPassword}
@@ -116,12 +117,12 @@ export default function ResetPasswordPage() {
               </div>
               <div className="form-group">
                 <label htmlFor="verifyPassword">Verify Password</label>
-                <input
+                <Input
                   type="password"
                   required
                   id="verifyPassword"
                   name="verifyPassword"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   placeholder="Verify Password"
                   minLength={8}
                   value={passwordDetails.verifyPassword}

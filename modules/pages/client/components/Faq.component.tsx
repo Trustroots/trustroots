@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import type { PageTranslator } from '../types';
 import React, { useEffect, useRef, useState } from 'react';
 import Board from './PageBoard';
@@ -427,10 +428,9 @@ export default function Faq({ category, children }: FaqProps) {
               <label htmlFor="faq-filter">
                 {t('Search all frequently asked questions')}
               </label>
-              <input
+              <Input
                 id="faq-filter"
                 type="search"
-                className="form-control"
                 value={filter}
                 onChange={event => setFilter(event.target.value)}
               />
