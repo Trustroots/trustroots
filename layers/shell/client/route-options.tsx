@@ -31,7 +31,7 @@ export function routeOptions(path: string, component?: RouteComponent) {
   return {
     component,
     head: () => ({ meta: [{ title: `${route.title} - Trustroots` }] }),
-    remountDeps: ({ params, search }: { params: object; search: object }) => ({
+    remountDeps: ({ params, search }: Record<'params' | 'search', object>) => ({
       params,
       search,
     }),

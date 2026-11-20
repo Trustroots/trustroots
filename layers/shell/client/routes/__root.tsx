@@ -3,6 +3,7 @@ import {
   createRootRouteWithContext,
   redirect,
 } from '@tanstack/react-router';
+import type { QueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
@@ -14,7 +15,10 @@ import {
 import { getBootstrapData } from '../bootstrap';
 import ReactAppShell from '../ReactAppShell';
 
-export const Route = createRootRouteWithContext<{ user: AuthUser | null }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  user: AuthUser | null;
+}>()({
   beforeLoad: ({ context, location }) => {
     const route = getReactRoutePolicy(location.pathname);
     const to =

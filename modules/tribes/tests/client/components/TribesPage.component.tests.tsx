@@ -1,11 +1,7 @@
 import React from 'react';
-import {
-  fireEvent,
-  render as rtlRender,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, waitFor, within } from '@testing-library/react';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import { renderWithQueries } from '@/testutils/client/query.testutil';
 import '@/config/client/i18n';
 
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
@@ -23,8 +19,8 @@ vi.mock('@/modules/tribes/client/api/tribes.api');
 vi.mock('@/modules/core/client/services/client-runtime');
 
 const analytics = fakeAnalytics();
-const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
-  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
+const render = (ui: React.ReactElement) =>
+  renderWithQueries(ui, { wrapper: analytics.wrapper });
 
 const onMembershipUpdated = vi.fn<(...args: [MembershipUpdate]) => void>();
 
@@ -101,6 +97,19 @@ describe('CirclesPage', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('keeps the list when a membership change returns no circle', async () => {
+    api.tribes.join.mockResolvedValue({});
+    const page = await renderAndWaitForTribes({ user: fake.users[0] });
+    const tribe = page.getByText(nestedTextMatch('Forest Folk'), {
+      selector: 'li',
+    });
+
+    fireEvent.click(within(tribe).getByText('Join', { selector: 'button' }));
+
+    await waitFor(() => expect(onMembershipUpdated).toHaveBeenCalledWith({}));
+    expect(tribe).toHaveTextContent('4');
   });
 
   describe('not signed in', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import { useBootstrapData } from '@/modules/core/client/react-app/app-context';
@@ -57,6 +57,30 @@ describe('AppProviders', () => {
 
     expect(screen.getByText('Window title')).toBeInTheDocument();
     delete window.title;
+  });
+
+  it("uses the router's query client so loaders and pages share one cache", () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['loaded-by-route'], 'from the loader');
+
+    function Consumer() {
+      return (
+        <span>
+          {useQueryClient().getQueryData<string>(['loaded-by-route'])}
+        </span>
+      );
+    }
+
+    render(
+      <AppProviders
+        bootstrapData={{ settings: {}, title: 'Trustroots', user: null }}
+        queryClient={queryClient}
+      >
+        <Consumer />
+      </AppProviders>,
+    );
+
+    expect(screen.getByText('from the loader')).toBeInTheDocument();
   });
 
   it('shares core bootstrap, auth and query state across rerenders', () => {

@@ -1,3 +1,4 @@
+import { QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
 
 import {
@@ -33,7 +34,7 @@ export function stringifyLegacySearch(
 export function createAppRouter() {
   let shownPolicy: ReactRoutePolicy | null | undefined;
   return createRouter({
-    context: { user: getBootstrapData().user },
+    context: { queryClient: new QueryClient(), user: getBootstrapData().user },
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,

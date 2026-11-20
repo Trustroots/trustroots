@@ -19,6 +19,7 @@ import type { BootstrapData } from '@/modules/core/client/react-app/app-context'
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
+import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import {
   REACT_ROUTE_POLICIES,
@@ -250,6 +251,7 @@ vi.mock('@/modules/pages/client/components/HomeRoute', () => ({
   default: () => <main>Home route</main>,
 }));
 vi.mock('@/modules/offers/client/api/offers.api');
+vi.mock('@/modules/tribes/client/api/tribes.api');
 vi.mock('@/modules/contacts/client/api/contacts.api', () => ({
   getByUserId: vi.fn(async () => null),
   list: vi.fn(async () => []),
@@ -645,6 +647,32 @@ describe('<ReactApp />', () => {
     await waitFor(() =>
       expect(document.title).toBe('Host travellers - Trustroots'),
     );
+  });
+
+  it('loads the circles list in its route loader', async () => {
+    vi.mocked(tribesApi.read).mockResolvedValue([
+      { _id: 'circle-1', slug: 'walkers', label: 'Walkers', count: 2 },
+    ]);
+    renderApp('/circles');
+
+    expect(await screen.findByText('Walkers')).toBeInTheDocument();
+    expect(tribesApi.read).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads a circle in its route loader', async () => {
+    vi.mocked(tribesApi.get).mockResolvedValue({
+      _id: 'circle-1',
+      slug: 'walkers',
+      label: 'Walkers',
+      count: 2,
+    });
+    renderApp('/circles/walkers');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Walkers' }),
+    ).toBeInTheDocument();
+    expect(tribesApi.get).toHaveBeenCalledTimes(1);
+    expect(tribesApi.get).toHaveBeenCalledWith('walkers');
   });
 
   it('redirects unmatched paths to the not-found route', async () => {

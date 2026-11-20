@@ -17,17 +17,23 @@ type AppProvidersProps = {
   bootstrapData?: BootstrapData;
   /** Defaults to the Umami tracker; tests pass a fake one. */
   analyticsTracker?: AnalyticsTracker;
+  /** The router's client, so route loaders and pages share one cache. */
+  queryClient?: QueryClient;
   children: ReactNode;
 };
 
 export function AppProviders({
   bootstrapData,
   analyticsTracker,
+  queryClient: routerQueryClient,
   children,
 }: AppProvidersProps) {
   const resolvedBootstrapData =
     bootstrapData === undefined ? getBootstrapData() : bootstrapData;
-  const queryClient = useMemo(() => new QueryClient(), []);
+  const queryClient = useMemo(
+    () => routerQueryClient ?? new QueryClient(),
+    [routerQueryClient],
+  );
 
   return (
     <AppBootstrapContext.Provider value={resolvedBootstrapData}>

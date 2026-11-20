@@ -19,7 +19,7 @@ enableFaviconUpdater();
 void hydrateStart().then(router => {
   hydrateRoot(
     document,
-    <AppProviders>
+    <AppProviders queryClient={router.options.context.queryClient}>
       <ReactApp router={router} />
     </AppProviders>,
   );

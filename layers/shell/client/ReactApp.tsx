@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef } from 'react';
 
@@ -12,6 +13,7 @@ export default function ReactApp({
 }) {
   const router = useMemo(() => startRouter ?? createAppRouter(), [startRouter]);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   useUnreadMessageCountPolling();
 
   // Guards and loaders depend on who the member is, so rerun them when that changes.
@@ -24,5 +26,5 @@ export default function ReactApp({
     }
   }, [identity, router]);
 
-  return <RouterProvider context={{ user }} router={router} />;
+  return <RouterProvider context={{ queryClient, user }} router={router} />;
 }
