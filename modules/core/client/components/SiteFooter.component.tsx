@@ -109,7 +109,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
     <footer
       id="tr-footer"
       role="contentinfo"
-      className={cn('container tw:print:hidden', {
+      className={cn('tw:page-container tw:print:hidden', {
         'tw:[@media(max-width:767px)]:hidden': !showOnMobile,
         'site-footer-circle': variant === 'circle',
       })}

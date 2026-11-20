@@ -5,10 +5,10 @@ export default function OfferActivateProfile() {
   return (
     <div
       aria-labelledby="activate-profile-message"
-      className="row"
+      className="tw:grid-row"
       role="alertdialog"
     >
-      <div className="col-xs-12 text-center" role="document">
+      <div className="tw:grid-col-12 text-center" role="document">
         <h2>Do not panic!</h2>
         <p className="lead" id="activate-profile-message">
           <em>

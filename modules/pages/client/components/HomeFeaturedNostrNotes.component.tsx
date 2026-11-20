@@ -40,7 +40,11 @@ export default function HomeFeaturedNostrNotes({
       }
       aria-labelledby="home-featured-nostr-notes"
     >
-      {memberView ? content : <div className="container">{content}</div>}
+      {memberView ? (
+        content
+      ) : (
+        <div className="tw:page-container">{content}</div>
+      )}
     </section>
   );
 }

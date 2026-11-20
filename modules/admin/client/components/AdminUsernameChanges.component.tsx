@@ -85,7 +85,7 @@ export default function AdminUsernameChanges() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Recent username changes</h2>
         <p>Review recorded old and new usernames for each member.</p>
         <p className="text-muted">Times in UTC.</p>

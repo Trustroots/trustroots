@@ -886,7 +886,7 @@ export function SupportMemberSearchPage() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h1>Member search</h1>
         <MemberSearch />
       </main>
@@ -916,7 +916,7 @@ export function SupportMemberPage({ id }: { id: string }) {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <p>
           <a href="/admin/support">Support inbox</a>
         </p>
@@ -1026,7 +1026,7 @@ export default function SupportInbox() {
   return (
     <>
       <AdminHeader />
-      <main className="container support-inbox">
+      <main className="tw:page-container support-inbox">
         <header className="support-inbox__intro">
           <h1>Support inbox</h1>
           <p>

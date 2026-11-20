@@ -60,11 +60,11 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="location-living"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Where do you live')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <LocationInput
                     id="location-living"
                     limitLocationTypes
@@ -77,11 +77,11 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="location-from"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Where are you from')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
                   <LocationInput
                     id="location-from"
                     limitLocationTypes

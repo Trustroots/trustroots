@@ -113,12 +113,12 @@ export default function SigninPage() {
   return (
     <BoardWithPhotoList
       names={['nordiclights', 'jungleroad']}
-      className="container container-fullscreen"
+      className="tw:page-container container-fullscreen"
     >
       <div className="middle-wrapper middle-wrapper-horizontal">
         <div className="middle-content">
-          <div className="row">
-            <div className="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 tw:sm:grid-offset-3 tw:sm:grid-col-6 tw:md:grid-offset-4 tw:md:grid-col-4">
               {errorMessage && (
                 <Alert intent="danger" role="alert">
                   {errorMessage}
@@ -216,7 +216,7 @@ export default function SigninPage() {
           </div>
 
           <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden">
-            <div className="container">
+            <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
               <ul
                 className="nav navbar-nav nav-justified"
                 aria-label="Profile actions"

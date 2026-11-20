@@ -130,7 +130,7 @@ export default function TopNavigationSmall({
         />
       )}
       <nav className="navbar navbar-white navbar-fixed-top navbar-fixed-top-below tw:block tw:sm:hidden">
-        <div className="container">
+        <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
           <ul className="nav navbar-nav" role="navigation">
             {links.map(({ id, label, link, onClick }) => (
               <li key={id}>

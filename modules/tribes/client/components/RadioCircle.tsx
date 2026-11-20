@@ -321,7 +321,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
 
   return (
     <section
-      className={`container radio-circle${user ? '' : ' radio-circle-public'}`}
+      className={`tw:page-container radio-circle${user ? '' : ' radio-circle-public'}`}
       aria-label={t('Trustroots Radio')}
     >
       <div className="radio-player-panel">

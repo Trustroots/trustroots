@@ -347,7 +347,7 @@ export default function AdminNewsletter() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Newsletter subscribers</h2>
         <p>
           Eligible recipients are members who are public, subscribed to the
@@ -407,8 +407,8 @@ export default function AdminNewsletter() {
           {usesHostingLocation && (
             <fieldset>
               <legend className="h4">Hosting area</legend>
-              <div className="row">
-                <div className="col-sm-4 form-group">
+              <div className="tw:grid-row">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-latitude">Latitude</label>
                   <Input
                     id="newsletter-location-latitude"
@@ -421,7 +421,7 @@ export default function AdminNewsletter() {
                     value={audienceCriteria.latitude}
                   />
                 </div>
-                <div className="col-sm-4 form-group">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-longitude">
                     Longitude
                   </label>
@@ -436,7 +436,7 @@ export default function AdminNewsletter() {
                     value={audienceCriteria.longitude}
                   />
                 </div>
-                <div className="col-sm-4 form-group">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-radius">
                     Radius (kilometres)
                   </label>

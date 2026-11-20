@@ -15,9 +15,9 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
   return (
     <>
       <Board names="nordiclights">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <i className="icon-3x icon-heart-o"></i>
@@ -29,9 +29,9 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8">
             <p className="lead">
               {t(`Trustroots is owned and operated by Trustroots Foundation, a non-profit
               Limited by Guarantee (LBG) under section 60 exemption, registered in the
@@ -79,21 +79,21 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
       {/* /.container */}
 
       <section className="vision-footer">
-        <div className="container">
-          <div className="row" id="mission-vision-values">
-            <div className="col-xs-12 text-center tw:max-sm:hidden">
+        <div className="tw:page-container">
+          <div className="tw:grid-row" id="mission-vision-values">
+            <div className="tw:grid-col-12 text-center tw:max-sm:hidden">
               <h2>{t('Vision, Mission & Values')}</h2>
               <br />
               <br />
             </div>
 
-            <div className="col-sm-4 text-center">
+            <div className="tw:sm:grid-col-4 text-center">
               <h3 id="vision">{t('Vision')}</h3>
               <p className="lead">
                 <em>“{t('A world that encourages trust and adventure.')}”</em>
               </p>
             </div>
-            <div className="col-sm-4 text-center">
+            <div className="tw:sm:grid-col-4 text-center">
               <h3 id="mission">{t('Mission')}</h3>
               <p className="lead">
                 {t(`Trustroots seeks to be a platform for sharing and getting people
@@ -101,7 +101,7 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
                 trust, adventure and intercultural connections.`)}
               </p>
             </div>
-            <div className="col-sm-4 text-center">
+            <div className="tw:sm:grid-col-4 text-center">
               <h3 id="values">{t('Values')}</h3>
               <ul className="list-unstyled lead">
                 <li>{t('Trust')}</li>
@@ -122,9 +122,9 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
         names="jungleroad"
         id="manifesto"
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:md:grid-offset-3 tw:md:grid-col-6 text-center lead font-brand-light">
               <ManifestoText></ManifestoText>
               {!user && (
                 <p>

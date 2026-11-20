@@ -27,7 +27,7 @@ for (const viewport of [
     if (viewport.width === 1280) {
       await captureSection(
         page
-          .locator('.profile-view .row:visible')
+          .locator(".profile-view :is(.row, [class~='tw:grid-row']):visible")
           .filter({ has: page.locator('.profile-name') })
           .last(),
         'member-profile-heading-desktop',

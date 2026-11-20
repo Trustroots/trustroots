@@ -124,8 +124,8 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
         <div className="panel-heading">{t('Profile photo')}</div>
         <div className="panel-body">
           <div className="profile-avatar-choises">
-            <div className="row profile-edit-avatar-choise">
-              <div className="col-xs-12 col-md-3">
+            <div className="tw:grid-row profile-edit-avatar-choise">
+              <div className="tw:grid-col-12 tw:md:grid-col-3">
                 {previewStyle ? (
                   <div
                     className="avatar avatar-source-preview"
@@ -141,7 +141,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                 )}
                 {isUploading && <span>{t('Wait a moment…')}</span>}
               </div>
-              <div className="col-xs-12 col-md-9 profile-edit-avatar-label">
+              <div className="tw:grid-col-12 tw:md:grid-col-9 profile-edit-avatar-label">
                 <input
                   ref={fileInputRef}
                   type="file"

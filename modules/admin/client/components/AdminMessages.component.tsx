@@ -173,7 +173,7 @@ export default function AdminMessages() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Messages</h2>
 
         {!member1Value || !member2Value ? (

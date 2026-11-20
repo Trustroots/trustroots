@@ -107,7 +107,7 @@ export default function StepNavigation({
           withDisabledReason(<SubmitButton {...submitProps} />)}
       </div>
       <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden">
-        <div className="container">
+        <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
           <ul
             className="nav navbar-nav nav-justified"
             aria-label="Offer actions"

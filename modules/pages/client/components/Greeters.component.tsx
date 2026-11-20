@@ -30,9 +30,9 @@ export default function Greeters({ user }: { user?: PageUser | null }) {
   }, []);
 
   return (
-    <section className="container container-spacer">
-      <div className="row">
-        <div className="col-xs-12 col-sm-8 col-sm-offset-2 text-center">
+    <section className="tw:page-container container-spacer">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 tw:sm:grid-col-8 tw:sm:grid-offset-2 text-center">
           <h1>{t('Trustroots greeters')}</h1>
           <p className="lead">
             {t(
@@ -46,8 +46,8 @@ export default function Greeters({ user }: { user?: PageUser | null }) {
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-xs-12">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12">
           {isLoading && <LoadingIndicator />}
           {hasError && (
             <p className="text-center" role="alert">
@@ -81,8 +81,8 @@ export default function Greeters({ user }: { user?: PageUser | null }) {
       </div>
 
       <hr />
-      <div className="row">
-        <div className="col-xs-12 text-center">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 text-center">
           <h2>{t('Want to join the greeters?')}</h2>
           <p>
             <Button

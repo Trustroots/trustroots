@@ -121,15 +121,15 @@ function ProfileAboutTab({
   const showCircles = isSelf || (profile.member && profile.member.length > 0);
 
   return (
-    <div className="row">
-      <div className="col-md-6">
+    <div className="tw:grid-row">
+      <div className="tw:md:grid-col-6">
         <AboutMe
           isSelf={isSelf}
           profile={profile}
           profileMinimumLength={profileMinimumLength}
         />
       </div>
-      <div className="col-md-6">
+      <div className="tw:md:grid-col-6">
         <div className="tw:max-sm:hidden">
           <Offers authUser={authUser} profile={profile} />
         </div>
@@ -504,7 +504,7 @@ export default function ProfilePage({
 
   if (experienceOnly && !isLoading && profile && canLoadReply) {
     return (
-      <section className="container container-spacer">
+      <section className="tw:page-container container-spacer">
         <MemberIdentity user={profile} size={64} heading />
         <ReportMemberButton username={profile.username} />
         {isCreatingExperience ? (
@@ -556,7 +556,7 @@ export default function ProfilePage({
         className={
           embedded
             ? 'container-spacer profile-view profile-view-embedded'
-            : 'container container-spacer profile-view'
+            : 'tw:page-container container-spacer profile-view'
         }
       >
         {profile && (authUser.blocked || []).includes(profile._id) && (
@@ -565,7 +565,7 @@ export default function ProfilePage({
 
         {isLoading && (
           <div
-            className="row content-wait"
+            className="tw:grid-row content-wait"
             role="alertdialog"
             aria-busy="true"
             aria-live="assertive"
@@ -588,11 +588,11 @@ export default function ProfilePage({
           <>
             {pendingIncomingContact && (
               <div
-                className="row"
+                className="tw:grid-row"
                 role="alertdialog"
                 aria-labelledby="confirmContactDialogLabel"
               >
-                <div className="col-xs-12 text-center">
+                <div className="tw:grid-col-12 text-center">
                   <ul className="list-inline">
                     <li id="confirmContactDialogLabel">
                       <strong>{profile.displayName}</strong>{' '}
@@ -623,12 +623,12 @@ export default function ProfilePage({
               </div>
             )}
 
-            <div className="row">
+            <div className="tw:grid-row">
               {tab === 'overview' ? (
-                <div className="col-sm-12">{tabContent}</div>
+                <div className="tw:sm:grid-col-12">{tabContent}</div>
               ) : (
                 <>
-                  <div className="col-sm-3 tw:max-sm:hidden">
+                  <div className="tw:sm:grid-col-3 tw:max-sm:hidden">
                     <ProfileOverview profile={profile} isSelf={isSelf} />
                     {!isSelf && (
                       <div className="profile-flags">
@@ -644,9 +644,9 @@ export default function ProfilePage({
                       </div>
                     )}
                   </div>
-                  <div className="col-sm-9">
-                    <div className="row tw:max-sm:hidden">
-                      <div className="col-xs-12">
+                  <div className="tw:sm:grid-col-9">
+                    <div className="tw:grid-row tw:max-sm:hidden">
+                      <div className="tw:grid-col-12">
                         <div className="tw:mb-2 tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:gap-3">
                           <MemberIdentity
                             user={profile}
@@ -672,8 +672,8 @@ export default function ProfilePage({
                     </div>
 
                     {(!isSelf || authUser.roles?.includes('admin')) && (
-                      <div className="row tw:max-sm:hidden">
-                        <div className="col-xs-12">
+                      <div className="tw:grid-row tw:max-sm:hidden">
+                        <div className="tw:grid-col-12">
                           <ProfileDesktopActions
                             isAdmin={authUser.roles?.includes('admin') || false}
                             isSelf={isSelf}
@@ -687,8 +687,8 @@ export default function ProfilePage({
                       </div>
                     )}
 
-                    <div className="row">
-                      <div className="col-xs-12">
+                    <div className="tw:grid-row">
+                      <div className="tw:grid-col-12">
                         <ProfileTabs
                           activePathName={activePathName}
                           contactsCount={contacts.length || 0}

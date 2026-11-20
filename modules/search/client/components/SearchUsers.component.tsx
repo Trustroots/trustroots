@@ -129,7 +129,7 @@ export default function SearchUsers() {
   );
 
   return (
-    <section className="container container-spacer">
+    <section className="tw:page-container container-spacer">
       {searchForm}
       {isSearching && (
         <ContentState

@@ -245,7 +245,7 @@ export default function AdminNostr() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h1>Featured Nostr notes</h1>
         <h2>{editing ? 'Edit featured note' : 'Publish a note'}</h2>
         <p>

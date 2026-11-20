@@ -12,3 +12,36 @@
 
 @source '../../../modules';
 @source '../../../layers/shell';
+
+@utility page-container {
+  @apply tw:mx-auto tw:w-full tw:px-3 tw:sm:max-w-[750px] tw:md:max-w-[970px] tw:lg:max-w-[1170px];
+}
+
+@utility grid-row {
+  @apply tw:-mx-3 tw:flex tw:flex-wrap;
+
+  & > * {
+    @apply tw:box-border tw:mt-0 tw:w-full tw:max-w-full tw:shrink-0 tw:px-3;
+  }
+}
+
+@utility grid-col-* {
+  --column-width: calc(100% * --value(integer) / 12);
+  flex: 0 0 var(--column-width);
+  width: var(--column-width);
+  max-width: var(--column-width);
+}
+
+@utility grid-offset-* {
+  margin-inline-start: calc(100% * --value(integer) / 12);
+}
+
+@utility grid-push-* {
+  position: relative;
+  inset-inline-start: calc(100% * --value(integer) / 12);
+}
+
+@utility grid-pull-* {
+  position: relative;
+  inset-inline-end: calc(100% * --value(integer) / 12);
+}

@@ -12,11 +12,11 @@ export default function NotFoundPage() {
   }, []);
 
   return (
-    <section className="container container-fullscreen container-error board board-error">
+    <section className="tw:page-container container-fullscreen container-error board board-error">
       <div className="middle-wrapper middle-wrapper-horizontal">
         <div className="middle-content">
-          <div className="row">
-            <div className="col-md-6 col-md-offset-3 text-center">
+          <div className="tw:grid-row">
+            <div className="tw:md:grid-col-6 tw:md:grid-offset-3 text-center">
               <h1>{t('This page cannot be found.')}</h1>
               <br />
               <br />

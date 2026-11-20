@@ -14,7 +14,7 @@ export default function NavigationLoggedOut({
   const { t } = useTranslation('core');
 
   return (
-    <div className="container tw:flex tw:min-h-[43px] tw:items-center">
+    <div className="tw:page-container tw:flex tw:min-h-[43px] tw:items-center">
       <nav
         aria-label={t('Page navigation')}
         className="header-welcome tw:flex tw:flex-1 tw:items-center tw:justify-center tw:py-1.25 tw:text-center"

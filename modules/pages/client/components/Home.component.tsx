@@ -161,7 +161,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
   return (
     <>
       {user && (
-        <div className="container">
+        <div className="tw:page-container">
           <div className="home-member-feed">
             <HomeFeaturedNostrNotes memberView />
             <HomeConnections key={user._id || user.username} />
@@ -179,9 +179,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
         >
           <div className="middle-wrapper middle-wrapper-horizontal">
             <div className="middle-content">
-              <div className="container">
-                <div className="row">
-                  <div className="col-xs-12 col-sm-8 col-sm-offset-2">
+              <div className="tw:page-container">
+                <div className="tw:grid-row">
+                  <div className="tw:grid-col-12 tw:sm:grid-col-8 tw:sm:grid-offset-2">
                     <img
                       className="home-logo tw:max-sm:hidden center-block"
                       src="/img/logo/white.svg"
@@ -258,9 +258,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
       {/* How does it work */}
       <section className="home-how">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-5 text-center lead">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:md:grid-col-5 text-center lead">
               <div className="icon-sofa icon-3x text-muted"></div>
               <br />
               <h2 className="font-brand-light">{t('How does it work?')}</h2>
@@ -282,7 +282,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 </TypedTrans>
               </p>
             </div>
-            <div aria-hidden className="col-md-7">
+            <div aria-hidden className="tw:md:grid-col-7">
               <Screenshot
                 png={screenshotSearchPng}
                 png2x={screenshotSearchPng2x}
@@ -296,9 +296,12 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
       {/* Share */}
       <section className="home-how">
-        <div className="container">
-          <div className="row">
-            <div aria-hidden className="col-xs-12 col-md-7 tw:max-md:hidden">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div
+              aria-hidden
+              className="tw:grid-col-12 tw:md:grid-col-7 tw:max-md:hidden"
+            >
               <Screenshot
                 png={screenshotProfilePng}
                 png2x={screenshotProfilePng2x}
@@ -306,7 +309,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 webp2x={screenshotProfileWebp2x}
               />
             </div>
-            <div className="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
+            <div className="tw:grid-col-12 tw:sm:grid-offset-2 tw:sm:grid-col-8 tw:md:grid-offset-0 tw:md:grid-col-5 text-center lead">
               <div className="home-wohoo center-block tw:max-md:hidden"></div>
               <p className="font-brand-light">
                 <br className="tw:max-md:hidden" />
@@ -326,9 +329,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
       {circles.length > 0 && (
         <section className="home-how">
-          <div className="container">
-            <div className="row home-circles-row">
-              <div className="col-xs-12 col-sm-3 home-circles-intro">
+          <div className="tw:page-container">
+            <div className="tw:grid-row home-circles-row">
+              <div className="tw:grid-col-12 tw:sm:grid-col-3 home-circles-intro">
                 <div className="text-center tribe-intro">
                   <h2 className="font-brand-light">{t('Circles')}</h2>
                   <p className="font-brand-light">
@@ -342,7 +345,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                   </p>
                 </div>
               </div>
-              <div className="col-xs-12 tw:sm:hidden tribes-xs">
+              <div className="tw:grid-col-12 tw:sm:hidden tribes-xs">
                 {circles.slice(0, 3).map(circle => (
                   <a
                     key={circle._id}
@@ -357,9 +360,12 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
               {circles.slice(0, 3).map((circle, index) => (
                 <div
                   key={circle._id}
-                  className={cn('col-sm-3 tw:max-sm:hidden home-circle-card', {
-                    'home-circle-last': index === 2,
-                  })}
+                  className={cn(
+                    'tw:sm:grid-col-3 tw:max-sm:hidden home-circle-card',
+                    {
+                      'home-circle-last': index === 2,
+                    },
+                  )}
                 >
                   <div
                     className="tribe tribe-image tw:rounded-[50%]"
@@ -382,9 +388,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
         names="mountainforest"
         id="manifesto"
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:md:grid-offset-3 tw:md:grid-col-6 text-center lead font-brand-light">
               <ManifestoText></ManifestoText>
               {!user && (
                 <p>
@@ -409,9 +415,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
         names="bokeh"
         ignoreBackgroundOnSmallScreen
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-sm-6 col-md-3">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:sm:grid-col-6 tw:md:grid-col-3">
               <h3 className="font-brand-light">{t('Foundation')}</h3>
               <p>
                 {t(`Owned and operated by Trustroots Foundation, a non-profit registered
@@ -427,7 +433,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 </a>
               </p>
             </div>
-            <div className="col-sm-6 col-md-3">
+            <div className="tw:sm:grid-col-6 tw:md:grid-col-3">
               <h3 className="font-brand-light">{t('Team')}</h3>
               <p>
                 {/* @TODO remove ns (issue #1368) */}
@@ -451,7 +457,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 </a>
               </p>
             </div>
-            <div className="col-sm-6 col-md-3">
+            <div className="tw:sm:grid-col-6 tw:md:grid-col-3">
               <h3 className="font-brand-light">{t('Free and open source')}</h3>
               <p>
                 {t(`We think it's a shame that former non-profits have been sold to
@@ -468,7 +474,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 </a>
               </p>
             </div>
-            <div className="col-sm-6 col-md-3">
+            <div className="tw:sm:grid-col-6 tw:md:grid-col-3">
               <ul className="list-unstyled home-footer-pages font-brand-light">
                 <li>
                   <a href="/faq">{t('FAQ')}</a>
@@ -497,7 +503,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
             </div>
           </div>
 
-          <div className="row text-center">
+          <div className="tw:grid-row text-center">
             <hr className="hr-white hr-xs" />
             {/*
             {!isNativeMobileApp && (

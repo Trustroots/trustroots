@@ -76,7 +76,7 @@ export default function Navigation({ user }: NavigationProps) {
         </button>
       </div>
 
-      <div className="container">
+      <div className="tw:page-container">
         <h5 className="text-uppercase text-muted">
           {t(infoAndSupportHeading)}
         </h5>

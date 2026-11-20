@@ -204,7 +204,7 @@ describe('<AdminHeader />', () => {
     render(
       <>
         <AdminHeader />
-        <main className="container">
+        <main className="tw:page-container">
           <input aria-label="First field" />
           <input aria-label="Second field" />
         </main>

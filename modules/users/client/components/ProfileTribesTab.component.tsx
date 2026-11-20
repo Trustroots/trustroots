@@ -73,8 +73,8 @@ export default function ProfileTribesTab({
   onMembershipUpdated?: MembershipUpdated;
 }) {
   return (
-    <div className="row">
-      <div className="col-md-12">
+    <div className="tw:grid-row">
+      <div className="tw:md:grid-col-12">
         <ul className="tribes-grid">
           {memberships.map(membership => (
             <TribeCard

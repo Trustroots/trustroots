@@ -92,9 +92,9 @@ export default function Statistics({
   return (
     <>
       <Board names="nordiclights">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <h2>{t('Trustroots Statistics')}</h2>
@@ -111,9 +111,9 @@ export default function Statistics({
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12">
             <div className={statisticsGridClass}>
               <Stat title={t('Real-life connections')}>
                 {!statistics ? (

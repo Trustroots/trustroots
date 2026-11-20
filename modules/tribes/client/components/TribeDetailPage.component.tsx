@@ -63,7 +63,7 @@ export default function TribeDetailPage({
 
   if (isPending) {
     return (
-      <div className="container container-spacer text-muted text-center">
+      <div className="tw:page-container container-spacer text-muted text-center">
         <LoadingIndicator />
         <br />
         <br />
@@ -74,9 +74,9 @@ export default function TribeDetailPage({
 
   if (!tribe?._id) {
     return (
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12">
             <h2>{t('This circle is not here...') as string}</h2>
             <p className="lead">
               {
@@ -116,9 +116,9 @@ export default function TribeDetailPage({
         } ${tribe.slug === 'radio' ? 'has-radio-player' : ''}`}
       >
         <div className="tribe-header-info">
-          <div className="container">
-            <div className="row no-gutters">
-              <div className="col-xs-12">
+          <div className="tw:mx-auto tw:w-full tw:max-w-[1600px] tw:px-6">
+            <div className="tw:grid-row no-gutters">
+              <div className="tw:grid-col-12">
                 <Button
                   variant="link"
                   size="lg"
@@ -129,14 +129,14 @@ export default function TribeDetailPage({
                 </Button>
               </div>
             </div>
-            <div className="row">
+            <div className="tw:grid-row">
               <div
                 className={
                   hasLocationMap
-                    ? 'col-xs-12 col-md-5 col-lg-5'
+                    ? 'tw:grid-col-12 tw:md:grid-col-5 tw:lg:grid-col-5'
                     : `${
-                        user ? 'col-xs-10' : 'col-xs-12'
-                      } col-sm-offset-1 col-sm-7 col-md-6 col-lg-6`
+                        user ? 'tw:grid-col-10' : 'tw:grid-col-12'
+                      } tw:sm:grid-offset-1 tw:sm:grid-col-7 tw:md:grid-col-6 tw:lg:grid-col-6`
                 }
               >
                 <p className="lead tribe-pre">
@@ -283,7 +283,7 @@ export default function TribeDetailPage({
                 )}
               </div>
               {hasLocationMap && (
-                <div className="col-xs-12 col-md-7 col-lg-7 circle-hero-map">
+                <div className="tw:grid-col-12 tw:md:grid-col-7 tw:lg:grid-col-7 circle-hero-map">
                   {isHackersCircle ? <HackerspaceMap /> : <HitchhikingMap />}
                 </div>
               )}
