@@ -38,7 +38,9 @@ internal fun SharedHomeConnectionsMap(pins: List<PilotMapPin>) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val tiles = remember { hostMapTiles(BuildConfig.MAPBOX_PUBLIC_TOKEN) }
-    val map = remember(context, pins) {
+    val hostingLabel = stringResource(R.string.screen_hosting)
+    val meetingLabel = stringResource(R.string.screen_meet)
+    val map = remember(context, pins, hostingLabel, meetingLabel) {
         Configuration.getInstance().apply {
             osmdroidBasePath = File(context.filesDir, "maps").also { it.mkdirs() }
             osmdroidTileCache = File(context.filesDir, "map-tiles").also { it.mkdirs() }
@@ -58,7 +60,7 @@ internal fun SharedHomeConnectionsMap(pins: List<PilotMapPin>) {
                 overlays.add(Marker(this).apply {
                     position = point
                     title = pin.connection.name
-                    snippet = context.getString(if (pin.hosting) R.string.screen_hosting else R.string.screen_meet)
+                    snippet = if (pin.hosting) hostingLabel else meetingLabel
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     ContextCompat.getDrawable(context, org.osmdroid.library.R.drawable.marker_default)
                         ?.mutate()?.let { drawable ->
