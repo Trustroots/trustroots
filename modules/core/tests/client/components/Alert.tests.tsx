@@ -15,9 +15,9 @@ test.each(['danger', 'info', 'success', 'warning'] as const)(
     expect(alert).toHaveClass(
       'tw:p-4',
       'tw:rounded-md',
-      `tw:bg-(--bs-${intent}-bg-subtle)`,
-      `tw:border-(--bs-${intent}-border-subtle)`,
-      `tw:text-(--bs-${intent}-text-emphasis)`,
+      `tw:bg-(--tr-${intent}-bg-subtle)`,
+      `tw:border-(--tr-${intent}-border-subtle)`,
+      `tw:text-(--tr-${intent}-text-emphasis)`,
     );
   },
 );
@@ -45,6 +45,6 @@ test('a caller class name merges with the intent classes', () => {
   expect(screen.getByRole('note')).toHaveClass(
     'offer-map-guide',
     'tw:text-center',
-    'tw:bg-(--bs-info-bg-subtle)',
+    'tw:bg-(--tr-info-bg-subtle)',
   );
 });

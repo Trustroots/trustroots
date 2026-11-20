@@ -211,13 +211,12 @@
   .admin-landing__search {
     margin-bottom: 20px;
 
-    .row {
+    [class~='tw:grid-row'] {
       margin-right: -8px;
       margin-left: -8px;
     }
 
-    [class^='col-'],
-    [class*=' col-'] {
+    [class*='grid-col-'] {
       padding-right: 8px;
       padding-left: 8px;
     }
@@ -1329,7 +1328,7 @@ td:hover .admin-hidden-until-hover {
 
 // Member reports use the available desktop width; public profiles stay contained.
 @media (min-width: 1200px) {
-  .container.admin-user-page {
+  .admin-user-page {
     width: 100%;
     max-width: none;
     padding-right: 24px;

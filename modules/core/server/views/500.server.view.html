@@ -13,12 +13,10 @@ header %} {% block content %}
           <h2><em>Don't panic</em></h2>
           <h1>Oops! Something went wrong...</h1>
           <br /><br />
-          <a href="/" target="_top" class="btn btn-default btn-md"
+          <a href="/" target="_top" class="error-action"
             ><strong>Continue...</strong></a
           >
-          <a href="/contact" target="_top" class="btn btn-default btn-md"
-            >Contact us</a
-          >
+          <a href="/contact" target="_top" class="error-action">Contact us</a>
           {% include 'error-build-version.server.view.html' %}
         </div>
       </div>
