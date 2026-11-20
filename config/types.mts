@@ -29,6 +29,7 @@ export interface Config {
   sessionProxy: boolean;
   sessionSecret: string;
   ipHashSecret: string;
+  dataExportSigning: { nsec: string };
   sessionCollection: string;
   domain: string;
   csrfAllowedOrigins: string[];
