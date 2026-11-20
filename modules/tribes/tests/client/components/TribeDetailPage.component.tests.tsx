@@ -1,6 +1,12 @@
 import React from 'react';
 import { QueryClient } from '@tanstack/react-query';
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { renderWithQueries as render } from '@/testutils/client/query.testutil';
 
 import '@/config/client/i18n';
