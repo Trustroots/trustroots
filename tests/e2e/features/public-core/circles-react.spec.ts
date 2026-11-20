@@ -197,6 +197,8 @@ test('circle membership retains account roles and legacy member links', async ({
               username: 'sample-active',
               displayName: 'Sample Active',
               avatarSource: 'none',
+              activity: 'today',
+              hosting: true,
             },
           ],
         },
@@ -251,9 +253,17 @@ test('circle membership retains account roles and legacy member links', async ({
     await expect(
       page.getByRole('link', { name: /Sample Recommender/ }),
     ).toBeVisible();
+    const active = page
+      .getByRole('listitem')
+      .filter({ hasText: 'Sample Active' });
+    const activeCard = active.locator('.member-card-surface');
     await expect(
-      page.getByRole('link', { name: /Sample Active/ }),
+      activeCard.getByRole('link', { name: /Sample Active/ }),
     ).toBeVisible();
+    await expect(activeCard.getByText('Active today')).toBeVisible();
+    await expect(
+      activeCard.getByRole('link', { name: 'Hosting' }),
+    ).toHaveAttribute('href', '/profile/sample-active/accommodation');
     await page.unroute('**/api/tribes/hitchhikers/members');
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),

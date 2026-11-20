@@ -123,6 +123,17 @@ test.describe('admin circles feature coverage', () => {
     await page.getByRole('button', { name: 'Add organiser' }).click();
     const remove = page.getByRole('button', { name: /^Remove / });
     await expect(remove).toBeVisible();
+    const organiserCard = page.getByRole('link', {
+      name: new RegExp(`@${organiser.username}`),
+    });
+    await expect(organiserCard).toHaveAttribute(
+      'href',
+      `/profile/${organiser.username}`,
+    );
+    await expect(organiserCard).toHaveClass(/member-search-card/);
+    await expect(
+      page.getByText('Circle saved.', { exact: true }),
+    ).toBeVisible();
     await page.locator('#circle-image').setInputFiles({
       name: 'circle.png',
       mimeType: 'image/png',
@@ -132,7 +143,6 @@ test.describe('admin circles feature coverage', () => {
         .png()
         .toBuffer(),
     });
-    await page.getByRole('button', { name: 'Save circle' }).click();
     await expect(
       page.getByText('Circle saved.', { exact: true }),
     ).toBeVisible();
@@ -157,7 +167,6 @@ test.describe('admin circles feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
     await page.goto(editPath);
     await remove.click();
-    await page.getByRole('button', { name: 'Save circle' }).click();
     await expect(
       page.getByText('Circle saved.', { exact: true }),
     ).toBeVisible();
@@ -225,7 +234,7 @@ test.describe('admin circles feature coverage', () => {
         response.url().includes('/api/admin/circles') &&
         ['POST', 'PUT'].includes(response.request().method()),
     );
-    await page.getByRole('button', { name: 'Save circle' }).click();
+    await page.getByRole('button', { name: 'Create circle' }).click();
     const saveResponse = await saved;
     expect(saveResponse.ok(), await saveResponse.text()).toBeTruthy();
     await expect(page).toHaveURL(new RegExp(`/admin/circles/${circleSlug}$`));
@@ -283,7 +292,9 @@ test.describe('admin circles feature coverage', () => {
     await page
       .locator('#circle-description')
       .fill('Edited by the administration test.');
-    await page.getByRole('button', { name: 'Save circle' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Create circle' }),
+    ).toHaveCount(0);
     await expect(page.getByText('Circle saved.')).toBeVisible();
     await page.reload();
     await expect(page.locator('#circle-description')).toHaveValue(
