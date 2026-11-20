@@ -7,13 +7,9 @@ import {
 } from '@tanstack/react-router';
 import React from 'react';
 
-import {
-  REACT_ROUTE_POLICIES,
-  toTanStackPath,
-} from '@/modules/core/shared/react-route-ownership.mts';
+import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
 import OfferShell from '@/modules/offers/client/components/OfferShell.component';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { Route as rootRoute } from './routes/__root';
 
 type RouteUser = AuthUser;
 export type RouteContext = {
@@ -95,27 +91,14 @@ function shellRoute(path: string, render: ShellRoute['render']): ShellRoute {
   return { ...policy, render };
 }
 
-// Options for a route under the root, with the policy for its path.
+// Options for a route, with the policy for its path.
 export function routeOptions(path: string, render: ShellRoute['render']) {
   const route = shellRoute(path, render);
-  return {
-    component: createClientRouteComponent(route),
-    getParentRoute: () => rootRoute,
-    path: toTanStackPath(path),
-    staticData: route,
-  };
+  return { component: createClientRouteComponent(route), staticData: route };
 }
 
 // Options for a route that the parent's component renders, such as a profile tab.
-export function childRouteOptions<TParent extends AnyRoute>(
-  path: string,
-  parent: TParent,
-) {
-  const parentRoute = parent.options.staticData as ShellRoute;
-  const route = shellRoute(path, parentRoute.render);
-  return {
-    getParentRoute: () => parent,
-    path: toTanStackPath(path.slice(parentRoute.path.length + 1)),
-    staticData: route,
-  };
+export function childRouteOptions(path: string, parent: AnyRoute) {
+  const { render } = parent.options.staticData as ShellRoute;
+  return { staticData: shellRoute(path, render) };
 }

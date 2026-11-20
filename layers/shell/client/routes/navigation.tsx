@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import {
@@ -15,6 +15,6 @@ function NavigationRoute({ user }: RouteContext) {
   );
 }
 
-export const Route = createRoute(
+export const Route = createFileRoute('/navigation')(
   routeOptions('/navigation', renderWithUser(NavigationRoute)),
 );

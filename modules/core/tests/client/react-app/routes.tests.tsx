@@ -4,11 +4,10 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import {
   createAppRouter,
-  findRoute,
   parseLegacySearch,
   stringifyLegacySearch,
 } from '@/layers/shell/client/router';
-import { routes } from '@/layers/shell/client/routeTree';
+import type { ShellRoute } from '@/layers/shell/client/route-options';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
@@ -17,6 +16,7 @@ import {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   normalizePath,
+  toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
 
 type UserRouteProps = { user?: AuthUser | null };
@@ -25,7 +25,21 @@ type MembershipRouteProps = UserRouteProps & {
 };
 type StatisticsRouteProps = { isAuthenticated: boolean };
 type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
-type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
+type RouteToRender = Pick<ShellRoute, 'path' | 'render'>;
+
+const router = createAppRouter();
+const routes = Object.values(router.routesById)
+  .map(route => route.options.staticData as ShellRoute)
+  .filter(route => route?.path);
+
+function findRoute(path: string) {
+  const url = new URL(path, 'https://trustroots.test');
+  const [match] = router
+    .matchRoutes(url.pathname, Object.fromEntries(url.searchParams))
+    .reverse();
+  const route = match?.staticData as ShellRoute | undefined;
+  return route?.path ? { ...route, params: match.params } : undefined;
+}
 
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
@@ -448,6 +462,17 @@ describe('React route ownership', () => {
     );
   });
 
+  it('gives each route file the policy for its own path', () => {
+    const mismatched = Object.values(router.routesById)
+      .filter(route => (route.options.staticData as ShellRoute)?.path)
+      .map(route => [
+        route.fullPath.replace(/(.)\/$/, '$1'),
+        toTanStackPath((route.options.staticData as ShellRoute).path),
+      ])
+      .filter(([fullPath, policyPath]) => fullPath !== policyPath);
+    expect(mismatched).toEqual([]);
+  });
+
   it('defines a renderer for every React-owned route policy', () => {
     routes.forEach(route => {
       expect(route.render).toEqual(expect.any(Function));
@@ -758,9 +783,9 @@ it.each([
   '/circles/sample_circle',
   '/circles/:circle',
 ])('keeps invalid circle path %s on a React not-found page', path => {
-  expect(findRoute(path)?.path).toBe('/not-found');
+  expect(matchReactRoute(path)?.policy.path).toBe('/not-found');
 });
 
 it('does not partially match extra circle path segments', () => {
-  expect(findRoute('/circles/sample/extra')).toBeUndefined();
+  expect(matchReactRoute('/circles/sample/extra')?.policy).toBeUndefined();
 });

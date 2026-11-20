@@ -1,10 +1,10 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(
+export const Route = createFileRoute('/volunteering')(
   routeOptions('/volunteering', ({ user }) => {
     const member =
       user?._id && user.username

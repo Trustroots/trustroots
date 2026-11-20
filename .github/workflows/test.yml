@@ -198,6 +198,8 @@ jobs:
         run: pnpm run test:vite:rtl
       - name: Build Vite client assets
         run: pnpm run build:vite
+      - name: Check the committed route tree is current
+        run: git diff --exit-code layers/shell/client/routeTree.gen.ts
       - name: Install Chromium for Vite smoke tests
         run: pnpm exec playwright install chromium
       - name: Test UI component stories

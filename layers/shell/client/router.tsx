@@ -1,7 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 
-import { matchReactRoute } from '@/modules/core/shared/react-route-ownership.mts';
-import { routes, routeTree } from './routeTree';
+import { routeTree } from './routeTree.gen';
 
 export function parseLegacySearch(search: string): Record<string, string> {
   const values: Record<string, string> = {};
@@ -37,18 +36,4 @@ export function createAppRouter() {
     scrollRestoration: () => false,
     stringifySearch: stringifyLegacySearch,
   });
-}
-
-export function findRoute(path: string) {
-  const matched = matchReactRoute(path);
-
-  if (!matched?.policy) {
-    return undefined;
-  }
-
-  return {
-    ...matched.policy,
-    params: matched.params,
-    render: routes.find(route => route.path === matched.policy.path)!.render,
-  };
 }

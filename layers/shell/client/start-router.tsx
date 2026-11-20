@@ -1,4 +1,5 @@
 import {
+  type AnyRouter,
   createRootRoute,
   createRoute,
   createRouter,
@@ -10,7 +11,7 @@ import ShellDocument from './ShellDocument';
  * The server only prerenders the SPA shell, so it gets the bare document for
  * every path and never imports browser-only page modules.
  */
-export async function createStartRouter(server: boolean) {
+export async function createStartRouter(server: boolean): Promise<AnyRouter> {
   if (server) {
     const rootRoute = createRootRoute({
       shellComponent: ShellDocument,

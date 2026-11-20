@@ -16,8 +16,9 @@ after Bootstrap. Vite prepends `import.meta.glob` imports, so that glob lives in
 its own module; otherwise Bootstrap's later focus rules override app styles of
 equal specificity.
 
-The client builds with the TanStack Start Vite plugin in SPA mode, with the
-code-based route tree in `layers/shell/client/routeTree.tsx`. Start's router
+The client builds with the TanStack Start Vite plugin in SPA mode. Start
+generates the route tree, `layers/shell/client/routeTree.gen.ts`, from the
+files in `layers/shell/client/routes/`. Start's router
 entry, `layers/shell/client/start-router.tsx`, gives the browser the app routes
 and gives Start's server bundle only the document shell, so browser-only page
 modules are never imported in Node. Express is still the only server: Start's

@@ -1,7 +1,7 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import { routeOptions, renderWithUser } from '../route-options';
 
-export const Route = createRoute(
+export const Route = createFileRoute('/about')(
   routeOptions('/about', renderWithUser(HomeRoute)),
 );

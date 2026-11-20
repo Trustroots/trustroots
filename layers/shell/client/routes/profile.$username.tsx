@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import { routeOptions, type RouteContext } from '../route-options';
@@ -12,6 +12,6 @@ function renderProfile({ currentPath, user }: RouteContext) {
   );
 }
 
-export const Route = createRoute(
+export const Route = createFileRoute('/profile/$username')(
   routeOptions('/profile/:username', renderProfile),
 );

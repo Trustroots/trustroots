@@ -113,10 +113,6 @@ function startPlugins() {
       router: {
         entry: 'start-router.tsx',
         basepath: '/',
-        // Routes stay code-based in routeTree.tsx; the file-route generator
-        // only needs the root route, and its output is unused.
-        routeFileIgnorePattern: '^(?!__root\\.)',
-        generatedRouteTree: '../../../build/start-routeTree.gen.ts',
       },
       client: { entry: '../../../config/vite/react-main.tsx' },
       // Prerendered to public/assets/_shell.html, which Express serves.
