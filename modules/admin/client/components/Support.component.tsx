@@ -914,12 +914,16 @@ function SupportModerationActions({
   const [failed, setFailed] = useState(false);
   const label = role === 'suspended' ? 'Suspend' : 'Shadowban';
 
-  async function confirm() {
-    if (!role || saving) return;
+  function close() {
+    setFailed(false);
+    setRole(null);
+  }
+
+  async function confirm(roleToAdd: NonNullable<typeof role>) {
     setSaving(true);
     setFailed(false);
     try {
-      await setUserRole(member._id, role, 'add');
+      await setUserRole(member._id, roleToAdd, 'add');
       setRole(null);
       onChanged();
     } catch {
@@ -939,14 +943,7 @@ function SupportModerationActions({
       <Button intent="danger" onClick={() => setRole('suspended')}>
         Suspend
       </Button>
-      <Modal
-        open={role !== null}
-        dismissible={!saving}
-        onClose={() => {
-          setFailed(false);
-          setRole(null);
-        }}
-      >
+      <Modal open={role !== null} dismissible={!saving} onClose={close}>
         <ModalHeader>
           <ModalTitle>
             {label} {member.username}?
@@ -965,22 +962,18 @@ function SupportModerationActions({
           )}
         </ModalBody>
         <ModalFooter>
-          <Button
-            disabled={saving}
-            onClick={() => {
-              setFailed(false);
-              setRole(null);
-            }}
-          >
+          <Button disabled={saving} onClick={close}>
             Cancel
           </Button>
-          <Button
-            intent="danger"
-            disabled={saving}
-            onClick={() => void confirm()}
-          >
-            {saving ? 'Updating…' : label}
-          </Button>
+          {role && (
+            <Button
+              intent="danger"
+              disabled={saving}
+              onClick={() => void confirm(role)}
+            >
+              {saving ? 'Updating…' : label}
+            </Button>
+          )}
         </ModalFooter>
       </Modal>
     </div>
