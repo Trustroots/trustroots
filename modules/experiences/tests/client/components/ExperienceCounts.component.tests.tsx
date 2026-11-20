@@ -63,7 +63,12 @@ describe('<ExperienceCounts />', () => {
         experiences={[experience({ interactions: undefined }), experience()]}
       />,
     );
-    expect(screen.getByText('Did not meet with anyone.')).toBeInTheDocument();
+    expect(
+      screen.getByText('2 members shared their experiences.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Did not meet with anyone.'),
+    ).not.toBeInTheDocument();
   });
 
   it('summarizes a single positive experience', () => {
@@ -129,7 +134,7 @@ describe('<ExperienceCounts />', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows all-negative recommendation and no-meeting stats', () => {
+  it('shows all-negative recommendations without inferring a lack of meetings', () => {
     render(
       <ExperienceCounts
         experiences={[
@@ -158,7 +163,9 @@ describe('<ExperienceCounts />', () => {
     expect(
       screen.getByText('All experiences are by male members.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Did not meet with anyone.')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Did not meet with anyone.'),
+    ).not.toBeInTheDocument();
   });
 
   it('shows mixed recommendation, gender, host, guest, and met percentages', () => {
