@@ -17,6 +17,7 @@ import type {
 import should from 'should';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import sinon from 'sinon';
 import express from './../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
@@ -107,6 +108,56 @@ describe('Tribe CRUD tests', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+
+  it('shares the circle request limit across routes for each client', async () => {
+    const clientAddressHeader = '!~Passenger-Client-Address';
+    const clientAddress = '2001:db8:1234::1';
+    for (let count = 0; count < 120; count += 1) {
+      await request(app)
+        .get('/api/tribes')
+        .set(clientAddressHeader, clientAddress)
+        .expect(200);
+    }
+
+    const detail = `/api/tribes/${tribe.slug}`;
+    const findBySlug = sinon.spy(Tribe, 'findOne');
+    try {
+      for (const path of [
+        '/api/tribes',
+        '/api/tribes/discovery/connections',
+        `${detail}/members`,
+        detail,
+      ]) {
+        await request(app)
+          .get(path)
+          .set(clientAddressHeader, '2001:db8:1234::2')
+          .expect('Retry-After', /^\d+$/)
+          .expect(429);
+      }
+      await request(app)
+        .patch(detail)
+        .set(clientAddressHeader, clientAddress)
+        .send({ description: 'Sample circle' })
+        .expect(429);
+      sinon.assert.notCalled(findBySlug);
+    } finally {
+      findBySlug.restore();
+    }
+
+    await request(app)
+      .get(detail)
+      .set(clientAddressHeader, '2001:db8:5678::1')
+      .expect(200);
+  });
+
+  it('accepts requests when no client address is available', async () => {
+    const appWithoutClientAddress = await express.init(mongoose.connection);
+    Object.defineProperty(appWithoutClientAddress.request, 'ip', {
+      value: undefined,
+    });
+    await request(appWithoutClientAddress).get('/api/tribes').expect(200);
+  });
+
   it('returns only current, visible organiser identities to signed-in viewers', async () => {
     const organisers = await utils.saveUsersWithCachedPasswords(
       utils.generateUsersWithSharedPassword(7).map((member, index) => ({

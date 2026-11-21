@@ -1,5 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
+import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
 import tribesPolicy from './../policies/tribes.server.policy.mts';
 import tribes from './../controllers/tribes.server.controller.mts';
 
@@ -21,6 +23,23 @@ const disableDiscoveryCaching: RequestHandler = (_req, res, next) => {
  * Module dependencies.
  */
 function register(app: Express) {
+  // Mount before the routes so the limit also applies before slug lookups.
+  app.use(
+    '/api/tribes',
+    rateLimit({
+      windowMs: 60_000,
+      limit: 120,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+      // Requests without a validated client address share one bucket.
+      // Stryker disable next-line StringLiteral: the fallback label does not change the shared bucket's quota
+      keyGenerator: req => ipKeyGenerator(getClientIpAddress(req) ?? 'unknown'),
+      message: {
+        message: 'Too many circle requests. Please try again shortly.',
+      },
+    }),
+  );
+
   app
     .route('/api/tribes')
     .all(routeHandler(tribesPolicy.isAllowed))
