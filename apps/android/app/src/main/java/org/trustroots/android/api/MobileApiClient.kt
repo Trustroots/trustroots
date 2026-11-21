@@ -713,11 +713,7 @@ class MobileApiClient(
                     "/api/tribes/discovery/connections", "GET",
                     session = session, allowResponseCache = false,
                 ).body)
-                PilotConnections(
-                    recent = connections.optJSONArray("recent").objects().map(::parseDashboardConnection),
-                    pins = parseDashboardPins(connections.optJSONArray("hosts"), hosting = true) +
-                        parseDashboardPins(connections.optJSONArray("meetings"), hosting = false),
-                )
+                parseDashboardConnections(connections)
             }
         }
 
@@ -979,6 +975,13 @@ private fun JSONObject.optionalID(): String? = optionalText("_id") ?: optionalTe
 
 private fun JSONArray?.objects(): List<JSONObject> =
     if (this == null) emptyList() else (0 until length()).mapNotNull { optJSONObject(it) }
+
+internal fun parseDashboardConnections(connections: JSONObject): PilotConnections =
+    PilotConnections(
+        recent = connections.optJSONArray("recent").objects().map(::parseDashboardConnection),
+        pins = parseDashboardPins(connections.optJSONArray("hosts"), hosting = true) +
+            parseDashboardPins(connections.optJSONArray("meetings"), hosting = false),
+    )
 
 private fun parseDashboardConnection(member: JSONObject): PilotConnection {
     val username = member.getString("username")

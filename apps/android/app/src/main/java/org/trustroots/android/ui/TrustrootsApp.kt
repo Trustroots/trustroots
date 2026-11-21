@@ -133,7 +133,7 @@ internal fun TrustrootsApp(
     }
     val sessionState by sessionViewModel.state.collectAsState()
     var onboardingUsername by rememberSaveable(apiBaseUrl) { mutableStateOf<String?>(null) }
-    val sharedHome = BuildConfig.DEBUG && activity.intent.getBooleanExtra(SHARED_HOME_EXTRA, false)
+    val sharedHome = isSharedHomeRequested(activity)
     val defaultDestination = if (sharedHome) Destination.Home else Destination.Circles
     var initialMemberDestination by rememberSaveable(apiBaseUrl, sharedHome) { mutableStateOf(defaultDestination) }
     val session = sessionState.session

@@ -18,6 +18,36 @@ import org.junit.Test
 
 class MobileApiClientTest {
     @Test
+    fun ignoresInvalidDashboardPinsAndDefaultsMissingListsAndNames() {
+        val empty = parseDashboardConnections(JSONObject())
+        assertTrue(empty.recent.isEmpty())
+        assertTrue(empty.pins.isEmpty())
+
+        val dashboard = parseDashboardConnections(JSONObject("""
+            {
+              "recent": [null, {"username":"quiet-fox","displayName":"Quiet Fox","activity":"today"}],
+              "hosts": [
+                {"username":"missing-location"},
+                {"username":"invalid-latitude","location":[null,0]},
+                {"username":"invalid-longitude","location":[0,"east"]},
+                {"username":"too-far-north","location":[86,0]},
+                {"username":"too-far-south","location":[-86,0]},
+                {"username":"too-far-east","location":[0,181]},
+                {"username":"too-far-west","location":[0,-181]},
+                {"username":"quiet-fox","location":[41.15,-8.61]}
+              ],
+              "meetings": [{"username":"calm-wren","displayName":"Calm Wren","location":[48.86,2.35]}]
+            }
+        """.trimIndent()))
+
+        assertEquals("today", dashboard.recent.single().activity)
+        assertEquals(listOf("quiet-fox", "Calm Wren"), dashboard.pins.map { it.connection.name })
+        assertEquals(listOf(41.15, 48.86), dashboard.pins.map { it.latitude })
+        assertEquals(listOf(-8.61, 2.35), dashboard.pins.map { it.longitude })
+        assertEquals(listOf(true, false), dashboard.pins.map { it.hosting })
+    }
+
+    @Test
     fun preservesTheBearerResourceContractForEveryMemberFeature() {
         val routes = listOf(
             Triple("/api/mobile/v0/auth/signout", "POST", "/api/mobile/v0/auth/signout"),

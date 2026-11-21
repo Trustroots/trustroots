@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.browser.BrowserRoute
+import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.profile.MemberProfileScreen
 import org.trustroots.shared.ui.MemberDashboard
 
@@ -59,7 +59,7 @@ internal fun NativeSharedHome(
                 loadNotes = { api.featuredNotes() },
                 loadConnections = {
                     api.dashboardConnections(session).onFailure { error ->
-                        if (error is MobileApiException && error.isAuthenticationFailure) onSessionInvalidated()
+                        if (error.isAuthenticationFailure()) onSessionInvalidated()
                     }
                 },
                 renderConnectionsMap = { SharedHomeConnectionsMap(it) },
