@@ -200,15 +200,27 @@ async function main() {
       assert.deepEqual(
         await page.evaluate(() => {
           const probe = document.createElement('div');
-          probe.innerHTML =
-            '<div class="row"><div class="col-md-6"></div></div><div class="d-none"></div>';
+          const row = document.createElement('div');
+          const column = document.createElement('div');
+          const hidden = document.createElement('div');
+          const legacyRow = document.createElement('div');
+          row.className = 'tw:grid-row';
+          column.className = 'tw:grid-col-12 tw:md:grid-col-6';
+          hidden.className = 'tw:sm:hidden';
+          legacyRow.className = 'row';
+          row.append(column);
+          probe.append(row, hidden, legacyRow);
           document.body.append(probe);
           const styles = {
-            rowDisplay: getComputedStyle(probe.querySelector('.row')!).display,
-            hiddenDisplay: getComputedStyle(probe.querySelector('.d-none')!)
-              .display,
-            columnBoxSizing: getComputedStyle(probe.querySelector('.col-md-6')!)
-              .boxSizing,
+            rowDisplay: getComputedStyle(row).display,
+            hiddenDisplay: getComputedStyle(hidden).display,
+            columnBoxSizing: getComputedStyle(column).boxSizing,
+            halfWidth:
+              Math.abs(
+                column.getBoundingClientRect().width -
+                  row.getBoundingClientRect().width / 2,
+              ) < 1,
+            legacyRowDisplay: getComputedStyle(legacyRow).display,
           };
           probe.remove();
           return styles;
@@ -217,8 +229,10 @@ async function main() {
           rowDisplay: 'flex',
           hiddenDisplay: 'none',
           columnBoxSizing: 'border-box',
+          halfWidth: true,
+          legacyRowDisplay: 'block',
         },
-        `Bootstrap grid and utilities must be available on ${route.path}`,
+        `Owned grid and visibility styles must be available on ${route.path}`,
       );
     }
     if (!development) {

@@ -45,7 +45,7 @@ function invokeRolesPolicies() {
         },
         {
           resources: '/api/tribes/:tribe',
-          permissions: ['get'],
+          permissions: ['get', 'patch'],
         },
         {
           resources: '/api/tribes/:tribe/members',

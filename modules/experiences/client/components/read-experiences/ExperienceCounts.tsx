@@ -53,18 +53,9 @@ export default function ExperienceCounts({
   // Details about recommendations.
   const renderRecommendationStats = () => {
     const summaries: string[] = [];
+    const unanswered = totalCount - recommendCount - nonRecommendCount;
 
-    if (totalCount === recommendCount) {
-      summaries.push(t('Everyone recommends them.') as string);
-    }
-
-    if (totalCount === nonRecommendCount) {
-      summaries.push(
-        t('Everyone said they would not recommend them.') as string,
-      );
-    }
-
-    if (totalCount !== nonRecommendCount && nonRecommendCount > 0) {
+    if (nonRecommendCount > 0) {
       summaries.push(
         t('{{count}} did not recommend.', {
           count: nonRecommendCount,
@@ -72,7 +63,7 @@ export default function ExperienceCounts({
       );
     }
 
-    if (totalCount !== recommendCount && recommendCount > 0) {
+    if (recommendCount > 0) {
       summaries.push(
         t('{{count}} recommended them.', {
           count: recommendCount,
@@ -80,68 +71,80 @@ export default function ExperienceCounts({
       );
     }
 
-    return summaries.length > 0 ? (
+    if (unanswered > 0) {
+      summaries.push(
+        t(
+          'No recommendation recorded in {{count}} of {{total}} public experiences.',
+          {
+            count: unanswered,
+            total: totalCount,
+          },
+        ),
+      );
+    }
+
+    return (
       <p>
         <Icon
           className="text-muted tw:me-[7px]"
           fixedWidth
-          icon={nonRecommendCount > 0 ? 'close' : 'ok'}
+          icon="users"
           size={undefined}
         />
         {summaries.join(' ')}
       </p>
-    ) : null;
+    );
   };
 
   // Statistics about "met", "host", "guest" interactions.
   const renderInteractionStats = () => {
     const interactions: string[] = [];
 
-    const getInteractionPercentage = (
+    const getInteractionCount = (
       interaction: keyof NonNullable<Experience['interactions']>,
-    ): number => {
-      const count = experiences.filter(({ interactions }) =>
-        Boolean(interactions?.[interaction]),
-      ).length;
+    ) =>
+      experiences.filter(({ interactions: answer }) => answer?.[interaction])
+        .length;
 
-      return parseInt(String((count / totalCount) * 100), 10);
-    };
+    const met = getInteractionCount('met');
+    const guests = getInteractionCount('guest');
+    const hosts = getInteractionCount('host');
+    const unanswered = experiences.filter(
+      ({ interactions: answer }) =>
+        !answer?.met && !answer?.guest && !answer?.host,
+    ).length;
 
-    const metPercentage = getInteractionPercentage('met');
-    const experiencesFromGuestsPercentage = getInteractionPercentage('guest');
-    const experiencesFromHostsPercentage = getInteractionPercentage('host');
-
-    if (experiencesFromHostsPercentage === 100) {
-      interactions.push(t('Was hosted by everyone.') as string);
-    } else if (experiencesFromHostsPercentage > 0) {
+    if (hosts > 0) {
       interactions.push(
-        t('Was hosted by {{percentage}}% of members.', {
-          percentage: experiencesFromHostsPercentage,
-        }) as string,
+        t('{{count}} reported hosting them.', { count: hosts }),
       );
     }
 
-    if (experiencesFromGuestsPercentage === 100) {
-      interactions.push(t('They hosted everyone.') as string);
-    } else if (experiencesFromGuestsPercentage > 0) {
+    if (guests > 0) {
       interactions.push(
-        t('They hosted {{percentage}}% of members.', {
-          percentage: experiencesFromGuestsPercentage,
-        }) as string,
+        t('{{count}} reported staying with them.', { count: guests }),
       );
     }
 
-    if (metPercentage === 100) {
-      interactions.push(t('Met with everyone.') as string);
-    } else if (metPercentage > 0) {
+    if (met > 0) {
       interactions.push(
-        t('Met with {{percentage}}% of members.', {
-          percentage: metPercentage,
-        }) as string,
+        t('{{count}} reported meeting them in person.', { count: met }),
       );
     }
 
-    return interactions.length > 0 ? (
+    if (unanswered > 0) {
+      interactions.push(
+        t(
+          'No interaction recorded in {{count}} of {{total}} public experiences.',
+          {
+            count: unanswered,
+            total: totalCount,
+          },
+        ),
+      );
+    }
+
+    return (
       <p>
         <Icon
           className="text-muted tw:me-[7px]"
@@ -151,62 +154,44 @@ export default function ExperienceCounts({
         />
         {interactions.join(' ')}
       </p>
-    ) : null;
+    );
   };
 
   // Statistics about genders
   const renderGenderStats = () => {
-    const getGenderPercentage = (value: string): number => {
-      const count = experiences.filter(
-        ({ userFrom: { gender } }) => gender === value,
-      ).length;
+    const countGender = (value: string) =>
+      experiences.filter(({ userFrom }) => userFrom.gender === value).length;
+    const females = countGender('female');
+    const males = countGender('male');
+    if (!females && !males) return null;
 
-      return parseInt(String((count / totalCount) * 100), 10);
-    };
-
-    const females = getGenderPercentage('female');
-    const males = getGenderPercentage('male');
-
-    let genderSummary: string | undefined;
-    let genderIcon = 'user';
-
-    if (females === 100) {
-      genderSummary = t('All experiences are by female members.') as string;
-    } else if (males === 100) {
-      genderSummary = t('All experiences are by male members.') as string;
-    } else if (females > 0 && males > 0) {
-      genderIcon = 'users'; // Plural instead of singular
-      genderSummary = t(
-        '{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.',
-        {
-          percentageFemales: females,
-          percentageMales: males,
-        },
-      ) as string;
-    } else if (females > 0) {
-      genderSummary = t(
-        '{{percentage}}% of experiences are by female members.',
-        {
-          percentage: females,
-        },
-      ) as string;
-    } else if (males > 0) {
-      genderSummary = t('{{percentage}}% of experiences are by male members.', {
-        percentage: males,
-      }) as string;
+    const summaries: string[] = [];
+    if (females > 0) {
+      summaries.push(t('{{count}} from female members.', { count: females }));
+    }
+    if (males > 0) {
+      summaries.push(t('{{count}} from male members.', { count: males }));
+    }
+    const other = totalCount - females - males;
+    if (other > 0) {
+      summaries.push(
+        t('{{count}} from members with another or unlisted gender.', {
+          count: other,
+        }),
+      );
     }
 
-    return genderSummary ? (
+    return (
       <p>
         <Icon
           className="text-muted tw:me-[7px]"
           fixedWidth
-          icon={genderIcon}
+          icon="users"
           size={undefined}
         />
-        {genderSummary}
+        {summaries.join(' ')}
       </p>
-    ) : null;
+    );
   };
 
   return (

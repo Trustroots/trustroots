@@ -6,6 +6,7 @@ import {
   leave,
   read,
   get,
+  editTribe,
   listMembers,
   getConnections,
   type CircleMemberGroups,
@@ -138,6 +139,24 @@ describe('tribes api', () => {
 
     await expect(get('hitchhikers')).resolves.toBe(tribe);
     expect(axiosMock.get).toHaveBeenCalledWith('/api/tribes/hitchhikers');
+  });
+
+  it('updates the supplied circle details by slug', async () => {
+    const details = { description: 'Visit example.org.' };
+    const tribe: TribeSummary = {
+      _id: 'tribe-1',
+      slug: 'sample-circle',
+      label: 'Sample Circle',
+      count: 3,
+      ...details,
+    };
+    axiosMock.patch.mockResolvedValueOnce(response(tribe));
+
+    await expect(editTribe(tribe.slug, details)).resolves.toBe(tribe);
+    expect(axiosMock.patch).toHaveBeenCalledWith(
+      '/api/tribes/sample-circle',
+      details,
+    );
   });
 
   it('lists bounded, deduplicated discovery groups for a circle', async () => {

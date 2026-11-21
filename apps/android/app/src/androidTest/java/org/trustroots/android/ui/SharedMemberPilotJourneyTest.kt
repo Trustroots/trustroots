@@ -17,6 +17,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -25,10 +27,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.R
 import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.SecureMobileSessionStore
-import org.json.JSONObject
-import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class SharedMemberPilotJourneyTest {
@@ -37,27 +38,24 @@ class SharedMemberPilotJourneyTest {
     private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     private var fixture: LocalTransportFixture? = null
     private val sessions by lazy { SecureMobileSessionStore(context) }
-    private var previousSession = sessions.load()
+    private val previousSession = sessions.load()
     private val draftKey = MessageDraftStore.cacheKey("steady-heron", "quiet-fox")
+    private val savedDrafts = context.getSharedPreferences("message_drafts", Context.MODE_PRIVATE)
     private var previousDraft: String? = null
-    private var hadPreviousDraft = false
+    private var restoreDraft = false
 
     @After fun restoreSessionAndCloseFixture() {
         scenario?.close()
         fixture?.close()
-        if (previousSession == null) sessions.clear() else sessions.save(previousSession!!)
-        if (hadPreviousDraft) {
-            context.getSharedPreferences("message_drafts", Context.MODE_PRIVATE).edit()
-                .putString(draftKey, previousDraft).commit()
-        } else {
-            context.getSharedPreferences("message_drafts", Context.MODE_PRIVATE).edit().remove(draftKey).commit()
+        if (previousSession == null) sessions.clear() else sessions.save(previousSession)
+        if (restoreDraft) {
+            savedDrafts.edit().putString(draftKey, previousDraft).commit()
         }
     }
 
     @Test fun sharedPilotSignsInProfilesReadsInboxPreservesRejectedDraftAndReturnsToNativeShell() {
         sessions.clear()
-        val savedDrafts = context.getSharedPreferences("message_drafts", Context.MODE_PRIVATE)
-        hadPreviousDraft = savedDrafts.contains(draftKey)
+        restoreDraft = true
         previousDraft = savedDrafts.getString(draftKey, null)
         savedDrafts.edit().remove(draftKey).commit()
         val sends = AtomicInteger()
@@ -93,18 +91,8 @@ class SharedMemberPilotJourneyTest {
                 else -> LocalTransportFixture.Response("[]")
             }
         }.also { fixture = it }
-        scenario = ActivityScenario.launch(
-            Intent(context, SignInJourneyActivity::class.java)
-                .putExtra(SHARED_MEMBER_PILOT_EXTRA, true)
-                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, local.baseURL),
-        )
-
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Username or email").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithTag("pilot-username").performTextReplacement("steady-heron")
-        compose.onNodeWithTag("pilot-password").performTextReplacement("fictional-password")
-        compose.onNode(hasText("Sign in") and hasClickAction()).performClick()
+        launchPilot(local)
+        signIn()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional welcome.").fetchSemanticsNodes().isNotEmpty()
         }
@@ -165,5 +153,69 @@ class SharedMemberPilotJourneyTest {
             .all { it.authorization == "Bearer pilot-access" && it.cookie == null })
         assertTrue(local.requests.any { it.path == "/api/mobile/v0/profiles/steady-heron" })
         assertTrue(local.requests.any { it.path == "/api/mobile/v0/messages?page=1&limit=50" })
+    }
+
+    @Test fun rejectedRefreshClearsTheSavedSessionAndKeepsThePilotSignedOutAfterRelaunch() {
+        sessions.clear()
+        val inboxPath = "/api/mobile/v0/messages?page=1&limit=50"
+        val refreshPath = "/api/mobile/v0/auth/refresh"
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "POST" && request.path == "/api/mobile/v0/auth/signin" ->
+                    LocalTransportFixture.Response(
+                        """{"accessToken":"pilot-access","refreshToken":"pilot-refresh","member":{"username":"steady-heron","displayName":"Steady Heron"}}""",
+                    )
+                request.path == "/api/mobile/v0/profiles/steady-heron" && request.authorization == "Bearer pilot-access" ->
+                    LocalTransportFixture.Response(
+                        """{"profile":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","tagline":"A fictional welcome."}}""",
+                    )
+                request.path == inboxPath || request.path == refreshPath ->
+                    LocalTransportFixture.Response("""{"code":"authentication_required"}""", status = 401)
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.also { fixture = it }
+
+        launchPilot(local)
+        signIn()
+        waitForText("A fictional welcome.")
+        assertEquals("pilot-refresh", sessions.load()?.refreshToken)
+
+        compose.onNodeWithText("Messages").performClick()
+        waitForText(context.getString(R.string.screen_sign_in_session_expired))
+        compose.onNodeWithTag("pilot-username").assertIsDisplayed()
+        compose.onNodeWithText("Messages").assertDoesNotExist()
+        assertNull(sessions.load())
+        assertEquals("Bearer pilot-access", local.requests.single { it.path == inboxPath }.authorization)
+        val refresh = local.requests.single { it.path == refreshPath }
+        assertEquals("POST", refresh.method)
+        assertEquals("pilot-refresh", JSONObject(refresh.body).getString("refreshToken"))
+
+        scenario?.close()
+        launchPilot(local)
+        waitForText("Username or email")
+        compose.onNodeWithTag("pilot-username").assertIsDisplayed()
+        compose.onNodeWithText("Messages").assertDoesNotExist()
+        assertEquals(1, local.requests.count { it.path == refreshPath })
+    }
+
+    private fun launchPilot(local: LocalTransportFixture) {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SHARED_MEMBER_PILOT_EXTRA, true)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, local.baseURL),
+        )
+    }
+
+    private fun signIn() {
+        waitForText("Username or email")
+        compose.onNodeWithTag("pilot-username").performTextReplacement("steady-heron")
+        compose.onNodeWithTag("pilot-password").performTextReplacement("fictional-password")
+        compose.onNode(hasText("Sign in") and hasClickAction()).performClick()
+    }
+
+    private fun waitForText(text: String) {
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

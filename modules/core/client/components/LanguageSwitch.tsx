@@ -24,7 +24,7 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
 
 const languageChoiceClass =
-  'tw:flex tw:h-full tw:min-h-11 tw:w-full tw:items-center tw:rounded-(--bs-border-radius) tw:border-0 tw:px-3 tw:py-2.5 tw:text-start tw:text-[length:inherit] tw:leading-[1.5] tw:wrap-anywhere';
+  'tw:flex tw:h-full tw:min-h-11 tw:w-full tw:items-center tw:rounded-(--tr-control-radius) tw:border-0 tw:px-3 tw:py-2.5 tw:text-start tw:text-[length:inherit] tw:leading-[1.5] tw:wrap-anywhere';
 
 const buttonLooks = {
   default: {},
