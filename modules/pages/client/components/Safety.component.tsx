@@ -10,9 +10,9 @@ export default function Safety() {
   return (
     <>
       <Board names="forestpath">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <h2>{t('Safety Tips for Trustroots')}</h2>
@@ -21,9 +21,9 @@ export default function Safety() {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8">
             <p className="lead">
               {t(
                 'Trustroots is built on trust, kindness, and mutual respect. It helps people connect with fellow travellers and hosts, but cannot guarantee the identity, intentions, or behaviour of any member.',
@@ -215,22 +215,24 @@ export default function Safety() {
             </p>
 
             <h2 id="community-safety">{t('Community Safety')}</h2>
-            <h3>{t('Leave Honest References')}</h3>
-            <p>
-              {t('References help future members make informed decisions.')}
-            </p>
-            <p>{t('When leaving a reference:')}</p>
-            <ul>
-              <li>{t('Be honest')}</li>
-              <li>{t('Be fair')}</li>
-              <li>{t('Focus on your actual experience')}</li>
-              <li>{t('Include information that may be useful to others')}</li>
-            </ul>
-            <p>
-              {t(
-                'A healthy reference system helps strengthen trust throughout the community.',
-              )}
-            </p>
+            <section aria-labelledby="sharing-experiences">
+              <h3 id="sharing-experiences">{t('Sharing an Experience')}</h3>
+              <p>
+                {t(
+                  'After you meet, host or stay with another member, you can choose “Share your experience” on their profile. Describe what happened from your point of view, including anything that would help someone plan a similar visit or meeting.',
+                )}
+              </p>
+              <p>
+                {t(
+                  'Your Experience normally becomes public when both of you have shared, or after 14 days. Your written feedback appears on the other member’s profile. Leave out home addresses, personal contact details, private messages and information that could identify other people.',
+                )}
+              </p>
+              <p>
+                {t(
+                  'If published feedback exposes private information, contact the Trustroots team using the link below. Include a link to the Experience so we can find it.',
+                )}
+              </p>
+            </section>
 
             <h3>{t('Report Concerning Behaviour')}</h3>
             <p>

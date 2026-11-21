@@ -1,3 +1,5 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Input } from '@trustroots/ui/Input';
 import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
@@ -178,7 +180,7 @@ export default function OfferMeetEditPage() {
           variant="outline"
           intent="primary"
           size="lg"
-          className="pull-right hidden-xs"
+          className="pull-right tw:max-sm:hidden"
           render={<a href="/offer/meet" />}
         >
           Cancel
@@ -192,11 +194,11 @@ export default function OfferMeetEditPage() {
             </Tab>
           </TabsList>
           <TabsPanel value={0}>
-            <div className="row">
-              <div className="col-xs-12 col-sm-6 col-sm-push-6 text-center">
+            <div className="tw:grid-row">
+              <div className="tw:grid-col-12 tw:sm:grid-col-6 tw:sm:grid-push-6 text-center">
                 <MeetsExplanation />
               </div>
-              <div className="col-xs-12 col-sm-6 col-sm-pull-6">
+              <div className="tw:grid-col-12 tw:sm:grid-col-6 tw:sm:grid-pull-6">
                 <div className="panel panel-default">
                   <div className="panel-heading">
                     <h4 id="offerDescriptionLabel">
@@ -204,10 +206,11 @@ export default function OfferMeetEditPage() {
                     </h4>
                   </div>
                   <div className="panel-body">
-                    <textarea
+                    <Textarea
                       aria-labelledby="offerDescriptionLabel"
                       aria-required="true"
-                      className="form-control offer-description"
+                      fieldSize="md"
+                      className="offer-description"
                       onChange={({ target: { value } }) =>
                         setOffer({ ...offer, description: value })
                       }
@@ -225,9 +228,9 @@ export default function OfferMeetEditPage() {
                     </h4>
                   </div>
                   <div className="panel-body text-center">
-                    <input
+                    <Input
                       aria-labelledby="offerVisibilityLabel"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       max={defaultValidUntil().slice(0, 10)}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={({ target: { value } }) =>

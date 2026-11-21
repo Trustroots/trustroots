@@ -114,17 +114,17 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
 
   if (!user.public) {
     return (
-      <section className="container container-spacer">
+      <section className="tw:page-container container-spacer">
         <ActivateProfileNotice />
       </section>
     );
   }
 
   return (
-    <section className="container container-spacer">
+    <section className="tw:page-container container-spacer">
       <form onSubmit={handleSubmit} autoComplete="off">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8 tw:lg:grid-offset-3 tw:lg:grid-col-6">
             <div className="page-header">
               <h2>{t('Add contact') as string}</h2>
             </div>
@@ -134,14 +134,14 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
             {!isFetching && friend?._id && (
               <div className="panel panel-default contacts-connection">
                 <div className="panel-body">
-                  <div className="row">
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                  <div className="tw:grid-row">
+                    <div className="tw:grid-col-12 tw:sm:grid-col-5">
                       <MemberIdentity user={user} size={64} />
                     </div>
-                    <div className="hidden-xs col-sm-2">
+                    <div className="tw:max-sm:hidden tw:sm:grid-col-2">
                       <i className="icon-exchange icon-3x text-muted contacts-connection-divider" />
                     </div>
-                    <div className="col-xs-12 col-sm-5 contacts-connection-profile">
+                    <div className="tw:grid-col-12 tw:sm:grid-col-5 tw:max-sm:mt-2.5">
                       <MemberIdentity user={friend} size={64} />
                     </div>
                   </div>

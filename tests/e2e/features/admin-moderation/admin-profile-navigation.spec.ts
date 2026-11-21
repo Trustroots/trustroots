@@ -62,9 +62,7 @@ test('profile actions align and expose admin records only to administrators', as
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/profile/${member.username}`);
   await expect(
-    page
-      .locator('.visible-xs-block')
-      .getByRole('link', { name: 'Admin', exact: true }),
+    page.getByRole('link', { name: 'Admin', exact: true }),
   ).toHaveAttribute('href', `/admin/user/${member.username}`);
   const context = await createIsolatedContext(browser, baseURL);
   try {

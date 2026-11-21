@@ -1,14 +1,17 @@
+import Foundation
 import XCTest
 
 final class SharedMemberPilotJourneyUITests: XCTestCase {
-    func testMemberJourneyRetainsFailedReplyAndUsesSavedSession() throws {
+    @MainActor
+    func testMemberJourneyRetainsFailedReplyAndUsesSavedSession() async throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
         let app = XCUIApplication()
         app.launchArguments = [
             "--shared-member-pilot",
             "-trustroots.apiServerURL",
-            "http://127.0.0.1:\(port)",
+            fixtureURL.absoluteString,
         ]
 
         app.launch()
@@ -24,7 +27,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
 
         app.terminate()
+        try await updateFixtureSession("expire-access-token", at: fixtureURL)
         app.launch()
+        XCTAssertTrue(
+            element(labelled: "A test profile after refresh 1", in: app).waitForExistence(timeout: 15),
+            "The saved session should refresh and load the profile after relaunch.\n\(app.debugDescription)"
+        )
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
         app.buttons["Messages"].tap()
         XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10))
@@ -43,7 +51,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
 
         app.terminate()
+        // The fixture rejects the original refresh token after the first rotation.
+        try await updateFixtureSession("expire-access-token", at: fixtureURL)
         app.launch()
+        XCTAssertTrue(
+            element(labelled: "A test profile after refresh 2", in: app).waitForExistence(timeout: 15),
+            "The rotated refresh token should survive relaunch.\n\(app.debugDescription)"
+        )
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
         app.buttons["Messages"].tap()
         app.buttons["Open conversation"].tap()
@@ -57,6 +71,38 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+
+        signIn(app)
+        XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
+        try await updateFixtureSession("revoke-session", at: fixtureURL)
+        app.buttons["Messages"].tap()
+
+        let sessionExpired = element(
+            labelled: "Your session expired or is no longer valid. Please sign in again.",
+            in: app
+        )
+        XCTAssertTrue(sessionExpired.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.buttons["Sign in"].exists)
+        XCTAssertFalse(app.buttons["Messages"].exists)
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(app.buttons["Sign out"].exists)
+    }
+
+    private func updateFixtureSession(_ action: String, at fixtureURL: URL) async throws {
+        var request = URLRequest(
+            url: fixtureURL.appendingPathComponent("fixture/\(action)"),
+            timeoutInterval: 5
+        )
+        request.httpMethod = "POST"
+        let (_, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual(
+            (response as? HTTPURLResponse)?.statusCode,
+            200,
+            "Fixture action \(action) requires an active session."
+        )
     }
 
     private func element(labelled label: String, in app: XCUIApplication) -> XCUIElement {

@@ -44,6 +44,31 @@ test('allows sanitised links when explicitly requested', () => {
   ).not.toBeInTheDocument();
 });
 
+test('makes plain web addresses clickable when links are allowed', () => {
+  const content =
+    '<p>Visit <b>example.org</b>, https://www.example.com/resource?a=1&amp;b=2, or <a href="https://example.net/guide">example.net</a>. Archive at ftp://example.net.</p>';
+  const { rerender } = render(<RichText content={content} />);
+  expect(screen.queryByRole('link')).not.toBeInTheDocument();
+
+  rerender(<RichText content={content} allowLinks />);
+  const bareLink = screen.getByRole('link', { name: 'example.org' });
+  expect(bareLink).toHaveAttribute('href', 'https://example.org');
+  expect(bareLink.closest('b')).not.toBeNull();
+  expect(
+    screen.getByRole('link', {
+      name: 'https://www.example.com/resource?a=1&b=2',
+    }),
+  ).toHaveAttribute('href', 'https://www.example.com/resource?a=1&b=2');
+  expect(screen.getByRole('link', { name: 'example.net' })).toHaveAttribute(
+    'href',
+    'https://example.net/guide',
+  );
+  expect(
+    screen.queryByRole('link', { name: 'ftp://example.net' }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText(/^Visit/)).toHaveTextContent(/example\.org, https/);
+});
+
 test('preserves allowed links around hashtags', () => {
   render(
     <RichText

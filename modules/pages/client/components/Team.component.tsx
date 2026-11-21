@@ -35,13 +35,13 @@ export default function Team({ user }: { user?: PageUser | null }) {
 
   return (
     <>
-      <section className="container container-spacer">
+      <section className="tw:page-container container-spacer">
         {/* Intro */}
-        <div className="row">
-          <div className="col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 text-center">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-col-6 tw:sm:grid-offset-3 tw:md:grid-col-4 tw:md:grid-offset-4 text-center">
             <img
               alt="Trustroots"
-              className="hidden-xs"
+              className="tw:max-sm:hidden"
               height="120"
               src="/img/tree-color.svg"
               width="120"
@@ -65,8 +65,8 @@ export default function Team({ user }: { user?: PageUser | null }) {
           </div>
         </div>
 
-        <div className="row">
-          <div className="col-xs-12">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12">
             {isFetching && <LoadingIndicator />}
             {volunteers.length > 0 && (
               <div className="team-volunteers">
@@ -96,8 +96,8 @@ export default function Team({ user }: { user?: PageUser | null }) {
           </div>
         </div>
         <hr />
-        <div className="row">
-          <div className="col-xs-12 text-center">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 text-center">
             <h2>{t('Help us build Trustroots!')}</h2>
             <p className="lead">
               <em>
@@ -119,8 +119,8 @@ export default function Team({ user }: { user?: PageUser | null }) {
           </div>
         </div>
         <hr />
-        <div className="row">
-          <div className="col-xs-12 text-center">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 text-center">
             <h4>
               {t(
                 'Thank you to everyone who has helped Trustroots over the years!',
@@ -146,9 +146,9 @@ export default function Team({ user }: { user?: PageUser | null }) {
         names="jungleroad"
         id="manifesto"
       >
-        <div className="container">
-          <div className="row">
-            <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:md:grid-offset-3 tw:md:grid-col-6 text-center lead font-brand-light">
               <ManifestoText></ManifestoText>
               {!user && (
                 <p>
@@ -169,9 +169,9 @@ export default function Team({ user }: { user?: PageUser | null }) {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 text-center">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 text-center">
             <p className="text-muted">{t('Follow Trustroots')}</p>
             <ButtonGroup>
               <Button

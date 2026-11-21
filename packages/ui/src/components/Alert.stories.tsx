@@ -33,7 +33,7 @@ export const Warning: Story = {
   },
 };
 
-/** Every intent; the tints come from Bootstrap's `--bs-*-subtle` variables. */
+/** Every intent; the tints come from the shared status colour tokens. */
 export const Intents: Story = {
   args: { role: 'status' },
   render: args => (

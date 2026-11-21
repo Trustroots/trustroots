@@ -81,7 +81,7 @@ describe('<ExperienceCounts />', () => {
         'One member shared their experience and they recommended them.',
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Everyone recommends/)).not.toBeInTheDocument();
+    expect(screen.queryByText('1 recommended them.')).not.toBeInTheDocument();
   });
 
   it('summarizes a single negative experience', () => {
@@ -125,12 +125,12 @@ describe('<ExperienceCounts />', () => {
     expect(
       screen.getByText('3 members shared their experiences.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Everyone recommends them.')).toBeInTheDocument();
+    expect(screen.getByText('3 recommended them.')).toBeInTheDocument();
+    expect(screen.getByText('3 from female members.')).toBeInTheDocument();
     expect(
-      screen.getByText('All experiences are by female members.'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Was hosted by everyone. Met with everyone.'),
+      screen.getByText(
+        '3 reported hosting them. 3 reported meeting them in person.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -157,18 +157,14 @@ describe('<ExperienceCounts />', () => {
       />,
     );
 
-    expect(
-      screen.getByText('Everyone said they would not recommend them.'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('All experiences are by male members.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('3 did not recommend.')).toBeInTheDocument();
+    expect(screen.getByText('3 from male members.')).toBeInTheDocument();
     expect(
       screen.queryByText('Did not meet with anyone.'),
     ).not.toBeInTheDocument();
   });
 
-  it('shows mixed recommendation, gender, host, guest, and met percentages', () => {
+  it('shows mixed recommendation, gender and reported interaction counts', () => {
     render(
       <ExperienceCounts
         experiences={[
@@ -201,16 +197,18 @@ describe('<ExperienceCounts />', () => {
     );
 
     expect(
-      screen.getByText('1 did not recommend. 2 recommended them.'),
-    ).toBeInTheDocument();
-    expect(
       screen.getByText(
-        '50% of experiences are by females, and 25% are by males.',
+        '1 did not recommend. 2 recommended them. No recommendation recorded in 1 of 4 public experiences.',
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Was hosted by 50% of members. They hosted 25% of members. Met with 50% of members.',
+        '2 from female members. 1 from male members. 1 from members with another or unlisted gender.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        '2 reported hosting them. 1 reported staying with them. 2 reported meeting them in person. No interaction recorded in 1 of 4 public experiences.',
       ),
     ).toBeInTheDocument();
   });
@@ -236,7 +234,9 @@ describe('<ExperienceCounts />', () => {
     );
 
     expect(
-      screen.getByText('They hosted everyone. Met with everyone.'),
+      screen.getByText(
+        '3 reported staying with them. 3 reported meeting them in person.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -260,7 +260,11 @@ describe('<ExperienceCounts />', () => {
       />,
     );
 
-    expect(screen.getByText('Met with 33% of members.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        '1 reported meeting them in person. No interaction recorded in 2 of 3 public experiences.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('shows partial female-only and male-only gender stats', () => {
@@ -278,7 +282,9 @@ describe('<ExperienceCounts />', () => {
     );
 
     expect(
-      screen.getByText('33% of experiences are by female members.'),
+      screen.getByText(
+        '1 from female members. 2 from members with another or unlisted gender.',
+      ),
     ).toBeInTheDocument();
 
     rerender(
@@ -295,7 +301,9 @@ describe('<ExperienceCounts />', () => {
     );
 
     expect(
-      screen.getByText('33% of experiences are by male members.'),
+      screen.getByText(
+        '1 from male members. 2 from members with another or unlisted gender.',
+      ),
     ).toBeInTheDocument();
   });
 });

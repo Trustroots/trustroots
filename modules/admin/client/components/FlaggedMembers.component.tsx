@@ -30,7 +30,7 @@ export default function FlaggedMembers() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h1>Flagged members</h1>
         <p>
           Profiles flagged for internal moderation follow-up. Flags do not

@@ -153,6 +153,20 @@ describe('Tribes policy unit tests', () => {
     });
   });
 
+  it('grants PATCH only to signed-in members on circle details', () => {
+    const { policy, mockAcl } = loadPolicy();
+    policy.invokeRolesPolicies();
+
+    const patchGrants = mockAcl.allow.firstCall.args[0].flatMap(entry =>
+      entry.allows
+        .filter(grant => grant.permissions.includes('patch'))
+        .map(grant => ({ roles: entry.roles, route: grant.resources })),
+    );
+    patchGrants.should.deepEqual([
+      { roles: ['user'], route: '/api/tribes/:tribe' },
+    ]);
+  });
+
   it('keeps active circle-member listings private to signed-in roles', () => {
     const { policy, mockAcl } = loadPolicy();
     policy.invokeRolesPolicies();

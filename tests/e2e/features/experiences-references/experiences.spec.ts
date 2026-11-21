@@ -114,6 +114,14 @@ test.describe('seeded experience flows', () => {
       summary.locator('..'),
       'experience-summary-unknown-meetings',
     );
+    await expect(
+      page.getByText(
+        'No recommendation recorded in 2 of 2 public experiences.',
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText('No interaction recorded in 2 of 2 public experiences.'),
+    ).toBeVisible();
     await expect(page.getByText('Did not meet with anyone.')).toHaveCount(0);
   });
 

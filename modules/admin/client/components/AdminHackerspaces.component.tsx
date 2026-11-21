@@ -386,7 +386,7 @@ export default function AdminHackerspaces() {
   return (
     <>
       <AdminHeader />
-      <main className="container admin-hackerspaces-page">
+      <main className="tw:page-container admin-hackerspaces-page">
         <h2>Hackerspaces</h2>
         <p>
           Preview the SpaceAPI Collector against published place events, then

@@ -34,8 +34,10 @@ export default function Feedback({
       .with('yes', () => t('Did you enjoy their cooking? singing?'))
       .with('no', () =>
         report
-          ? t('Did you not like their cooking? singing?')
-          : t('Did you not enjoy their cooking? singing?'),
+          ? t(
+              'Describe what happened and keep sensitive details in your private report.',
+            )
+          : t('Describe what happened and how it affected you.'),
       )
       .with('unknown', () => t('Did you maybe enjoy their cooking? singing?'))
       .with(P.nullish, () => undefined)
@@ -72,7 +74,7 @@ export default function Feedback({
           id="feedback-message"
           onChange={event => onChangeFeedback(event.target.value)}
           value={feedback}
-          aria-describedby="feedback-length"
+          aria-describedby="feedback-length feedback-visibility"
           aria-invalid={feedback.length > maximumLength}
         />
         <p id="feedback-length" className="help-block">
@@ -87,10 +89,10 @@ export default function Feedback({
             </span>
           )}
         </p>
-        <span className="help-block">
+        <span className="help-block" id="feedback-visibility">
           {
             t(
-              'The answer you write will be publicly available on their profile.',
+              'Your feedback appears on their profile when the experience becomes public. Leave out private details such as addresses, phone numbers and private messages.',
             ) as string
           }
           <br />

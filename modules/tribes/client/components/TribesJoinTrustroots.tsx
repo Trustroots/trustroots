@@ -8,8 +8,8 @@ export default function TribesJoinTrustroots() {
   };
 
   return (
-    <div className="row">
-      <div className="col-xs-12 text-center">
+    <div className="tw:grid-row">
+      <div className="tw:grid-col-12 text-center">
         <hr />
         <p className="lead">
           {t('Join Trustroots to find members behind circles.') as string}

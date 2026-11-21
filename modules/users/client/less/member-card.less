@@ -18,6 +18,20 @@
   }
 }
 
-.member-search-card:is(:hover, :focus-visible) {
-  border-color: #94b8a4;
+.member-search-card-frame {
+  &:is(:hover, :focus-within) {
+    border-color: #94b8a4;
+    box-shadow: 0 5px 18px rgba(26, 68, 47, 0.1);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+
+    &:is(:hover, :focus-within) {
+      transform: translateY(-1px);
+    }
+  }
 }

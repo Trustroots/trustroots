@@ -63,9 +63,9 @@ export function ToggleGroup<Value extends string>({
 const toggleClassName = cn(
   'tw:relative tw:inline-block tw:flex-[1_1_auto] tw:cursor-pointer tw:select-none tw:align-middle tw:text-center',
   'tw:m-0 tw:rounded-lg tw:border tw:border-solid tw:px-4 tw:py-2 tw:text-xl tw:leading-normal tw:font-normal',
-  'tw:border-(--bs-secondary) tw:bg-transparent tw:text-(--bs-secondary)',
-  'tw:has-checked:bg-(--bs-secondary) tw:has-checked:text-white',
-  'tw:has-focus-visible:shadow-[0_0_0_0.25rem_rgb(var(--bs-secondary-rgb)/0.5)]',
+  'tw:border-(--tr-control-neutral) tw:bg-transparent tw:text-(--tr-control-neutral)',
+  'tw:has-checked:bg-(--tr-control-neutral) tw:has-checked:text-white',
+  'tw:has-focus-visible:shadow-[0_0_0_0.25rem_rgb(var(--tr-secondary-rgb)/0.5)]',
   'tw:hover:z-1 tw:has-checked:z-1 tw:has-focus-visible:z-1',
   'tw:has-disabled:pointer-events-none tw:has-disabled:opacity-65',
   'tw:transition-[color,background-color,border-color,box-shadow] tw:duration-150 tw:ease-in-out tw:motion-reduce:transition-none',

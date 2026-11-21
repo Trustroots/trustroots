@@ -43,6 +43,12 @@ describe('<Safety />', () => {
       screen.getByRole('heading', { name: 'Emergencies' }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole('region', { name: 'Sharing an Experience' }),
+    ).toHaveTextContent(/Leave out home addresses, personal contact details/);
+    expect(
+      screen.getByText(/becomes public when both of you have shared/),
+    ).toHaveTextContent('after 14 days');
+    expect(
       screen.getByRole('heading', {
         name: 'Women Travellers and Gender Minorities',
       }),

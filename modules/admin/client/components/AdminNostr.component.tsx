@@ -1,3 +1,5 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import {
@@ -243,7 +245,7 @@ export default function AdminNostr() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h1>Featured Nostr notes</h1>
         <h2>{editing ? 'Edit featured note' : 'Publish a note'}</h2>
         <p>
@@ -260,10 +262,10 @@ export default function AdminNostr() {
         <form onSubmit={publish}>
           <div className="form-group">
             <label htmlFor="nostr-note-text">Note text</label>
-            <textarea
+            <Textarea
               ref={noteText}
               id="nostr-note-text"
-              className="form-control"
+              fieldSize="md"
               rows={4}
               value={draft}
               onChange={event => changeDraft(event.target.value)}
@@ -298,9 +300,8 @@ export default function AdminNostr() {
             <label htmlFor="featured-note-reference">
               Nostr note link or event ID
             </label>
-            <input
+            <Input
               id="featured-note-reference"
-              className="form-control"
               value={reference}
               onChange={event => setReference(event.target.value)}
               required
@@ -363,10 +364,9 @@ export default function AdminNostr() {
             <ModalBody>
               <div className="form-group">
                 <label htmlFor="nostr-link-text">Link text</label>
-                <input
+                <Input
                   id="nostr-link-text"
                   ref={linkText}
-                  className="form-control"
                   required
                   value={link.text}
                   onChange={event =>
@@ -376,10 +376,9 @@ export default function AdminNostr() {
               </div>
               <div className="form-group">
                 <label htmlFor="nostr-link-url">Web address</label>
-                <input
+                <Input
                   id="nostr-link-url"
                   ref={linkUrl}
-                  className="form-control"
                   type="url"
                   placeholder="https://example.org"
                   required

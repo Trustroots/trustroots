@@ -161,6 +161,122 @@ describe('Tribe CRUD tests', function () {
     should.not.exist(joined.body.tribe.organisers);
   });
 
+  it('allows current organisers to edit only their visible circle details', async () => {
+    const path = `/api/tribes/${tribe.slug}`;
+    const details = {
+      label: 'Example readers',
+      description: 'Visit example.org',
+    };
+
+    await request(app).patch(path).send(details).expect(403);
+    await utils.signIn(credentials, agent);
+    await agent.patch(path).send(details).expect(403);
+    should.not.exist((await agent.get(path).expect(200)).body.canEdit);
+
+    const previousModified = new Date(0);
+    await Tribe.updateOne(
+      { _id: tribe._id },
+      {
+        organiserIds: [new mongoose.Types.ObjectId(), user._id],
+        modified: previousModified,
+      },
+    );
+    const otherCircle = await Tribe.create({
+      label: 'Example other circle',
+      organiserIds: [user._id],
+    });
+    await Tribe.updateOne(
+      { _id: tribeNonPublic._id },
+      { organiserIds: [user._id] },
+    );
+    await agent
+      .patch(`/api/tribes/${tribeNonPublic.slug}`)
+      .send(details)
+      .expect(403);
+    const detail = await agent.get(path).expect(200);
+    detail.body.canEdit.should.equal(true);
+    should.not.exist(detail.body.organiserIds);
+    should.not.exist((await request(app).get(path).expect(200)).body.canEdit);
+    should.not.exist(
+      (await agent.get('/api/tribes').expect(200)).body[0].canEdit,
+    );
+
+    await User.updateOne({ _id: user._id }, { public: false });
+    const privateViewer = await agent.get(path).expect(200);
+    privateViewer.body.canEdit.should.equal(true);
+    should.not.exist(privateViewer.body.organisers);
+    await User.updateOne({ _id: user._id }, { public: true });
+
+    await agent.patch(path).set('X-Trustroots-Request', '1').expect(400);
+    const duplicate = await agent
+      .patch(path)
+      .send({ label: tribeNonPublic.label })
+      .expect(400);
+    duplicate.body.message.should.equal('Tribe exists already.');
+
+    for (const invalid of [
+      {},
+      { ...details, label: 'x' },
+      { ...details, label: ['Example readers'] },
+      { ...details, description: 42 },
+      { ...details, description: 'x'.repeat(4000) + ' ' },
+    ]) {
+      await agent.patch(path).send(invalid).expect(400);
+    }
+
+    const saved = await agent
+      .patch(path)
+      .send({
+        ...details,
+        description:
+          '<b>Visit example.org</b><iframe src="about:blank"></iframe>',
+        organiserIds: [],
+        public: false,
+        count: 200,
+        slug: 'changed',
+      })
+      .expect(200);
+    saved.headers['cache-control'].should.equal('private, no-store');
+    saved.body.label.should.equal(details.label);
+    saved.body.description.should.equal('<b>Visit example.org</b>');
+    saved.body.slug.should.equal(tribe.slug);
+    saved.body.count.should.equal(tribe.count);
+    should.not.exist(saved.body.organiserIds);
+    const persisted = await Tribe.findById(tribe._id).orFail().exec();
+    persisted.modified!.getTime().should.be.above(previousModified.getTime());
+    (await Tribe.findById(otherCircle._id).orFail().exec()).label.should.equal(
+      otherCircle.label,
+    );
+    (await agent.get(path).expect(200)).body.canEdit.should.equal(true);
+    const newDescription = 'x'.repeat(4000);
+    const descriptionOnly = await agent
+      .patch(path)
+      .send({ description: newDescription })
+      .expect(200);
+    descriptionOnly.body.label.should.equal(details.label);
+    descriptionOnly.body.description.should.equal(newDescription);
+
+    const labelOnly = await agent
+      .patch(path)
+      .send({ label: 'Example reading club' })
+      .expect(200);
+    labelOnly.body.label.should.equal('Example reading club');
+    labelOnly.body.description.should.equal(newDescription);
+
+    await User.updateOne({ _id: user._id }, { roles: ['user', 'shadowban'] });
+    await agent.patch(path).send(details).expect(403);
+    should.not.exist((await agent.get(path).expect(200)).body.canEdit);
+    await User.updateOne({ _id: user._id }, { roles: ['user'] });
+
+    await Tribe.updateOne({ _id: tribe._id }, { organiserIds: [] });
+    await agent.patch(path).send(details).expect(403);
+    const afterRevocation = await agent.get(path).expect(200);
+    should.not.exist(afterRevocation.body.canEdit);
+    afterRevocation.body.description.should.equal(
+      descriptionOnly.body.description,
+    );
+  });
+
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
     tribe.description = [
       '<p>Sample <b>formatted</b> <a href="https://example.org/">linked</a> text</p>',

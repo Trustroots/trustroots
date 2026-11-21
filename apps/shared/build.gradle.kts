@@ -12,6 +12,7 @@ kotlin {
         namespace = "org.trustroots.shared"
         compileSdk = 37
         minSdk = 26
+        withHostTest {}
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -32,6 +33,10 @@ kotlin {
     }
 
     sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+        }
         commonMain.dependencies {
             implementation("org.jetbrains.compose.runtime:runtime:1.12.2")
             implementation("org.jetbrains.compose.foundation:foundation:1.12.2")

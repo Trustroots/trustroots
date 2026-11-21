@@ -4,9 +4,9 @@ import config from '../../support/app-config.mts';
 import crypto from 'node:crypto';
 import {
   annotateFeature,
+  captureSection,
   test,
   expect,
-  useElementScreenshot,
 } from '../../support/fixtures.mts';
 
 import {
@@ -237,9 +237,12 @@ test.describe.serial('authentication smoke', () => {
     annotateFeature(testInfo, 'auth.signup', [
       'Signup form validates required fields.',
     ]);
-    useElementScreenshot(testInfo, '.signup-form-steps');
 
     await page.goto('/signup');
+    await captureSection(
+      page.locator('.signup-form-step:visible'),
+      'signup-desktop',
+    );
     await expect(
       page.getByRole('button', { name: 'Please fill in the form' }),
     ).toBeDisabled();
@@ -557,6 +560,52 @@ test.describe.serial('authentication smoke', () => {
 
     await expect(page).toHaveURL(/\/messages\?filter=unread/);
   });
+});
+
+test('sign-in fields and password toggle work on desktop, mobile and RTL', async ({
+  page,
+  baseURL,
+}) => {
+  for (const { name, width, direction } of [
+    { name: 'desktop', width: 1280, direction: 'ltr' },
+    { name: 'mobile', width: 390, direction: 'ltr' },
+    { name: 'mobile-rtl', width: 390, direction: 'rtl' },
+  ]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (direction === 'rtl') {
+      await page
+        .context()
+        .addCookies([{ name: 'i18n', value: 'ar', url: baseURL! }]);
+    }
+    await page.goto('/signin');
+    await expect(page.locator('html')).toHaveAttribute('dir', direction);
+
+    const username = page.getByLabel('Email or username');
+    const password = page.getByLabel('Password', { exact: true });
+    const toggle = page.getByRole('button', {
+      name: 'Toggle password visibility',
+    });
+    await expect(username).toHaveCSS('height', '46px');
+    await expect(password).toHaveCSS('height', '46px');
+    await expect(toggle).toHaveCSS('height', '46px');
+    const [fieldBox, toggleBox] = await Promise.all([
+      password.boundingBox(),
+      toggle.boundingBox(),
+    ]);
+    expect(fieldBox!.y).toBeCloseTo(toggleBox!.y, 0);
+    expect(toggleBox!.x > fieldBox!.x).toBe(direction === 'ltr');
+
+    await captureSection(page.locator('form'), `signin-${name}`);
+
+    await password.fill('example-password');
+    await toggle.focus();
+    await toggle.press('Space');
+    await expect(password).toHaveAttribute('type', 'text');
+    await expect(password).toHaveValue('example-password');
+    await expect(toggle).toBeFocused();
+    await toggle.press('Space');
+    await expect(password).toHaveAttribute('type', 'password');
+  }
 });
 
 test('sign-in returns 429 with Retry-After after repeated attempts', async ({

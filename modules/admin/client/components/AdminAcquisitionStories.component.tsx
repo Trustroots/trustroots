@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 import { useAuth } from '../../../core/client/react-app/auth';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
@@ -267,35 +268,32 @@ export default function AdminAcquisitionStories() {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-acquisition-stories-page">
+      <div className="tw:page-container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 500 stories</p>
 
-        <div className="form-check mb-3">
+        <div className="tw:mb-4 tw:flex tw:min-h-[21px] tw:items-baseline tw:gap-1.5">
           <input
             checked={unassignedOnly}
-            className="form-check-input"
+            className="tw:relative tw:top-0.5 tw:size-3.5 tw:shrink-0 tw:accent-brand-primary"
             id="acquisition-stories-unassigned-only"
             onChange={event => setUnassignedOnly(event.target.checked)}
             type="checkbox"
           />
-          <label
-            className="form-check-label"
-            htmlFor="acquisition-stories-unassigned-only"
-          >
+          <label htmlFor="acquisition-stories-unassigned-only">
             Unassigned only
           </label>
         </div>
 
-        <div className="mb-3">
+        <div className="tw:mb-4">
           <label
-            className="form-label"
+            className="tw:mb-2"
             htmlFor="acquisition-stories-profile-visibility"
           >
             Profile visibility
           </label>
-          <select
-            className="form-select"
+          <Select
+            className="tw:appearance-auto tw:text-base"
             id="acquisition-stories-profile-visibility"
             onChange={event =>
               setProfileVisibility(event.target.value as ProfileVisibility)
@@ -305,8 +303,8 @@ export default function AdminAcquisitionStories() {
             <option value="all">All</option>
             <option value="visible">Visible</option>
             <option value="hidden">Hidden</option>
-          </select>
-          <small className="form-text text-muted">
+          </Select>
+          <small className="text-muted tw:mt-1 tw:inline-block tw:text-[.875em]">
             Hidden profiles have not activated their signup through email
             confirmation.
           </small>

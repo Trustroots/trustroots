@@ -10,6 +10,7 @@ export interface TribeSummary {
   image?: string;
   new?: boolean;
   description?: string;
+  canEdit?: true;
   attribution?: string;
   attribution_url?: string;
   organisers?: { username: string; displayName?: string }[];
@@ -86,6 +87,17 @@ export async function read({ limit = 150 }: TribeListOptions = {}): Promise<
 
 export async function get(slug: string): Promise<TribeSummary> {
   const { data } = await axios.get(`/api/tribes/${slug}`);
+  return data;
+}
+
+export async function editTribe(
+  slug: string,
+  details: { label?: string; description?: string },
+): Promise<TribeSummary> {
+  const { data } = await axios.patch<TribeSummary>(
+    `/api/tribes/${encodeURIComponent(slug)}`,
+    details,
+  );
   return data;
 }
 

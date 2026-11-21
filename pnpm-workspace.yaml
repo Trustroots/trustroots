@@ -7,6 +7,7 @@ catalog:
 
 overrides:
   'follow-redirects': '1.16.2'
+  '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0>glob': '14.0.6'
   'minimatch@>=9': '11.0.3'
   'browserslist': '4.28.7'
   'baseline-browser-mapping': '2.11.0'

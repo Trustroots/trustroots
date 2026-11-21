@@ -106,11 +106,11 @@ export default function SearchSidebarFilters({
       <hr className="hr-gray hr-tight" />
 
       <div aria-label="Filter by circles" role="group">
-        <div className="row">
-          <div className="col-xs-6">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-6">
             <h4>Circles</h4>
           </div>
-          <div className="col-xs-6 text-right">
+          <div className="tw:grid-col-6 text-right">
             <Button
               className="search-sidebar-filters-clear"
               disabled={!filters.tribes.length}
@@ -161,7 +161,7 @@ export default function SearchSidebarFilters({
       <Button
         intent="primary"
         size="xl"
-        className="visible-xs-block search-sidebar-close"
+        className="tw:block tw:sm:hidden search-sidebar-close"
         onClick={onCloseSidebar}
         type="button"
       >

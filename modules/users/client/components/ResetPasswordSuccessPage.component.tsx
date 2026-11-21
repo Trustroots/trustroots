@@ -6,12 +6,12 @@ export default function ResetPasswordSuccessPage() {
   return (
     <Board
       names="bokeh"
-      className="container container-spacer container-fullscreen"
+      className="tw:page-container container-spacer container-fullscreen"
     >
-      <div className="row">
-        <div className="col-xs-12 text-center">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 text-center">
           <img
-            className="hidden-xs"
+            className="tw:max-sm:hidden"
             src="/img/tree-color.svg"
             alt="Trustroots"
             width="120"
@@ -19,7 +19,7 @@ export default function ResetPasswordSuccessPage() {
             aria-hidden="true"
           />
           <img
-            className="visible-xs-inline-block"
+            className="tw:inline-block tw:sm:hidden"
             src="/img/tree-color.svg"
             alt="Trustroots"
             width="80"
@@ -28,8 +28,8 @@ export default function ResetPasswordSuccessPage() {
           />
         </div>
       </div>
-      <div className="row">
-        <div className="text-center col-xs-12">
+      <div className="tw:grid-row">
+        <div className="text-center tw:grid-col-12">
           <br />
           <br />
           <i className="icon-4x icon-ok" />

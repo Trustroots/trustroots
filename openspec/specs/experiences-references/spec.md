@@ -61,6 +61,22 @@ experience visibility rules.
 - **AND** the author's experience details and paired responses are hidden
 - **AND** removing the moderation role restores visibility according to the existing public and private visibility rules
 
+### Requirement: Profile action for an already-shared Experience
+
+The web profile SHALL link the signed-in author to their existing Experience
+instead of offering to create another for the same member.
+
+#### Scenario: An author views a member's profile after sharing
+
+- **WHEN** a member views another member's profile and already has an Experience for them
+- **THEN** the desktop and mobile profile actions link to the existing card
+- **AND** the action works while the author's Experience is pending or public
+
+#### Scenario: A member can still share their own account
+
+- **WHEN** a member views a profile and has not authored an Experience for that member
+- **THEN** the profile offers the Share action, including when an incoming Experience awaits a reply
+
 ### Requirement: Duplicate experience prevention
 
 The system SHALL identify an existing experience between the same members and
@@ -272,18 +288,14 @@ without originals SHALL explicitly display current values instead.
 - **WHEN** an administrator reviews a request after the live Experience changes
 - **THEN** the stored original values remain unchanged in the comparison
 
-### Requirement: Profile action for an already-shared Experience
+### Requirement: Counts in the public Experience summary
 
-The web profile SHALL link the signed-in author to their existing Experience
-instead of offering to create another for the same member.
+The web profile summary SHALL count public primary Experiences and omit
+attached replies and pending Experiences from its totals.
 
-#### Scenario: An author views a member's profile after sharing
+#### Scenario: Public Experiences include unanswered and overlapping categories
 
-- **WHEN** a member views another member's profile and already has an Experience for them
-- **THEN** the desktop and mobile profile actions link to the existing card
-- **AND** the action works while the author's Experience is pending or public
-
-#### Scenario: A member can still share their own account
-
-- **WHEN** a member views a profile and has not authored an Experience for that member
-- **THEN** the profile offers the Share action, including when an incoming Experience awaits a reply
+- **WHEN** the detailed summary displays recommendation and interaction counts
+- **THEN** missing answers are reported separately and are not counted as negative answers
+- **AND** a public Experience may contribute to multiple reported interaction counts
+- **AND** the existing gender breakdown counts other or unlisted values together when any of the displayed categories applies

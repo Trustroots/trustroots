@@ -386,9 +386,9 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   }
 
   return (
-    <section className="container container-spacer">
-      <div className="row">
-        <div className="col-xs-12 col-sm-9">
+    <section className="tw:page-container container-spacer">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 tw:sm:grid-col-9">
           {isFetching && <Loading />}
           {!isFetching && (
             <div className="thread-container tw:fixed tw:inset-s-0 tw:top-[var(--tr-header-height,44px)] tw:bottom-[var(--trustroots-keyboard-inset,0px)] tw:flex tw:min-h-0 tw:w-full tw:flex-col tw:overflow-hidden tw:sm:inset-s-auto tw:sm:bottom-3 tw:sm:w-[505px] tw:md:w-[667px] tw:lg:w-[800px]">
@@ -455,7 +455,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
           )}
         </div>
         {otherUser && !isExtraSmall && !removed && (
-          <div className="col-sm-3 text-center">
+          <div className="tw:sm:grid-col-3 text-center">
             <QueryClientProvider client={queryClient}>
               <Monkeybox
                 user={
