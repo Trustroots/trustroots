@@ -37,6 +37,7 @@
 		B1C95F9614ACC4A4F57B571E /* CurrentLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34CCA59CF4924249D463D8 /* CurrentLocationManager.swift */; };
 		B723E46EDE3A2E24538FAB5D /* TrustrootsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4451489F9D874431A361845 /* TrustrootsRootView.swift */; };
 		BA7460A3665E780B7245EDC7 /* OfflineResponseCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721EB49D8267392766F4B575 /* OfflineResponseCache.swift */; };
+		BA8EE3B0BC517DAE9ED88948 /* PilotMessageDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10E7A208FB754E75B211A6C4 /* PilotMessageDraftStore.swift */; };
 		C5E9F66FE8D73DD80460CD32 /* MemberProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */; };
 		CE5EC4119A1230187F5012EF /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5790E2D72B85D29F350AE24 /* FlowLayout.swift */; };
 		DB41F3645D6C655B25AA092C /* CirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6874F19F24BF3E9D4D801051 /* CirclesView.swift */; };
@@ -80,6 +81,7 @@
 		6EC27FA444EF5257316FDB35 /* SignInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
 		721EB49D8267392766F4B575 /* OfflineResponseCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfflineResponseCache.swift; sourceTree = "<group>"; };
+		10E7A208FB754E75B211A6C4 /* PilotMessageDraftStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PilotMessageDraftStore.swift; sourceTree = "<group>"; };
 		780E2E35821BC34C111A81B8 /* TrustrootsAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsAPI.swift; sourceTree = "<group>"; };
 		803C2E0AE7321926A1ABB7F0 /* TrustrootsApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsApp.swift; sourceTree = "<group>"; };
 		812386EF5BF95842DAAF39C1 /* AccountView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 				E82F35538CEB951435D8D59F /* NostrKeySection.swift */,
 				D449CA143A8F71AB9A565F05 /* OfferMapView.swift */,
 				721EB49D8267392766F4B575 /* OfflineResponseCache.swift */,
+				10E7A208FB754E75B211A6C4 /* PilotMessageDraftStore.swift */,
 				4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */,
 				6EC27FA444EF5257316FDB35 /* SignInView.swift */,
 				780E2E35821BC34C111A81B8 /* TrustrootsAPI.swift */,
@@ -401,6 +404,7 @@
 				4951CB2CA766B8942009DE0F /* NostrKeySection.swift in Sources */,
 				F4D20135BF257F65348025D5 /* OfferMapView.swift in Sources */,
 				BA7460A3665E780B7245EDC7 /* OfflineResponseCache.swift in Sources */,
+				BA8EE3B0BC517DAE9ED88948 /* PilotMessageDraftStore.swift in Sources */,
 				7879E8D6BF1D06FFF5E84117 /* ProfileCircleDetailView.swift in Sources */,
 				39E542290B8429EB621D1D5A /* SignInView.swift in Sources */,
 				F4991488F43CCE5292D2B198 /* TrustrootsAPI.swift in Sources */,
