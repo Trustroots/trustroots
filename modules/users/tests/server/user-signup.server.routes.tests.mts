@@ -644,7 +644,7 @@ describe('User signup and authentication CRUD tests', function () {
       })
       .catch(done);
   });
-  it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function (done) {
+  it('should invalidate sessions of authenticated user with "suspended" role and return JSON for API requests with a wildcard Accept header', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
@@ -662,7 +662,7 @@ describe('User signup and authentication CRUD tests', function () {
             // Load some json from API, get 403 suspended error
             agent
               .get('/api/users/' + confirmedUser.username)
-              .set('Accept', 'application/json')
+              .set('Accept', '*/*')
               .expect('Content-Type', /json/)
               .expect(403)
               .end(function (err, res) {

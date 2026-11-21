@@ -2,6 +2,7 @@ import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 
 interface SuspendedRequest {
+  path: string;
   user?: { roles?: unknown };
   logout?: (callback: (error?: Error | null) => void) => void;
   session?: { destroy?: (callback: () => void) => void };
@@ -46,15 +47,20 @@ service.invalidateSuspendedSessions = function (req, res, next) {
       // Express session middleware way of removing the session
       // https://github.com/expressjs/session#sessiondestroycallback
       return req.session!.destroy!(function () {
+        const sendSuspendedJson = () =>
+          res.status!(403).json({
+            message: errorService.getErrorMessageByKey('suspended'),
+          });
+
+        if (/^\/api(?:\/|$)/i.test(req.path)) {
+          return sendSuspendedJson();
+        }
+
         res.format!({
           'text/html'() {
             res.redirect!('/suspended');
           },
-          'application/json'() {
-            res.status!(403).json({
-              message: errorService.getErrorMessageByKey('suspended'),
-            });
-          },
+          'application/json': sendSuspendedJson,
         });
       });
     });
