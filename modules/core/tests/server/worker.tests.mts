@@ -175,7 +175,11 @@ describe('Worker tests', function () {
   });
 
   it('defines right number of repeating jobs', function () {
-    scheduledJobs.length.should.equal(10);
+    scheduledJobs.length.should.equal(11);
+    scheduledJobs.should.containEql({
+      name: 'queue experience reply reminders',
+      repeat: '30 minutes',
+    });
     scheduledJobs.should.containEql({
       name: 'capture agenda storage',
       repeat: '0 3 * * *',

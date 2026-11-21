@@ -1,11 +1,13 @@
 import type { Agenda, Job } from 'agenda';
 import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
 import sinon from 'sinon';
 import { expect, it, vi } from 'vitest';
 
 import config from '../../../../config/config.mts';
-import sendEmailJob from '../../../core/server/jobs/send-email.server.job.mts';
-import emailService from '../../../core/server/services/email.server.service.mts';
+import emailService, {
+  type RenderedEmail,
+} from '../../../core/server/services/email.server.service.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import {
   queueExperienceReplyReminders,
@@ -13,9 +15,7 @@ import {
   sendExperienceReplyReminderJob,
 } from '../../server/jobs/experience-reply-reminder.server.job.mts';
 
-vi.mock('../../../core/server/jobs/send-email.server.job.mts', () => ({
-  default: vi.fn((_job, done: (error?: Error) => void) => done()),
-}));
+const sendMail = vi.fn((_email: RenderedEmail, done: () => void) => done());
 
 const now = new Date('2026-11-20T12:00:00.000Z');
 const day = 24 * 60 * 60 * 1000;
@@ -89,7 +89,11 @@ function makeQueue() {
 describe('day-11 Experience reply reminders', () => {
   beforeEach(() => {
     sinon.useFakeTimers({ now, toFake: ['Date'] });
-    vi.clearAllMocks();
+    sendMail.mockClear();
+    sinon.stub(nodemailer, 'createTransport').returns({
+      sendMail,
+      close: vi.fn(),
+    } as unknown as ReturnType<typeof nodemailer.createTransport>);
   });
   afterEach(() => sinon.restore());
   afterEach(utils.clearDatabase);
@@ -164,12 +168,8 @@ describe('day-11 Experience reply reminders', () => {
         removedAt: now,
       });
       await deliver(String(id));
-      expect(sendEmailJob).toHaveBeenCalledTimes(1);
-      const [
-        {
-          attrs: { data: email },
-        },
-      ] = vi.mocked(sendEmailJob).mock.calls[0];
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const [email] = sendMail.mock.calls[0];
       expect(email).toMatchObject({
         to: { address: recipientEmail },
         subject: 'You can still share your Experience on Trustroots',
@@ -177,14 +177,14 @@ describe('day-11 Experience reply reminders', () => {
           `${https ? 'https' : 'http'}://${config.domain}/profile/${authorUsername}/experiences/new`,
         ),
       });
-      expect(email?.text).not.toContain('Sensitive feedback');
+      expect(email.text).not.toContain('Sensitive feedback');
     },
   );
 
   it('does not substitute another record when the queued Experience is missing', async () => {
     await experienceAt(12);
     await deliver(String(new mongoose.Types.ObjectId()));
-    expect(sendEmailJob).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
   });
 
   it('stops delivery after a reply, publication, expiry or removal', async () => {
@@ -196,7 +196,7 @@ describe('day-11 Experience reply reminders', () => {
     await deliver(String((await experienceAt(12, { public: true })).id));
     await deliver(String((await experienceAt(12, { removedAt: now })).id));
     await deliver();
-    expect(sendEmailJob).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
   });
 
   it('fails the job when the renderer does not provide an email', async () => {
@@ -207,7 +207,7 @@ describe('day-11 Experience reply reminders', () => {
     await expect(deliver(String(id))).rejects.toThrow(
       'Experience reminder email did not render.',
     );
-    expect(sendEmailJob).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -223,7 +223,7 @@ describe('day-11 Experience reply reminders', () => {
       const pair = await experienceAt(12);
       await members.updateOne({ _id: pair[side] }, { $set: update });
       await deliver(String(pair.id));
-      expect(sendEmailJob).not.toHaveBeenCalled();
+      expect(sendMail).not.toHaveBeenCalled();
     },
   );
 
@@ -237,7 +237,7 @@ describe('day-11 Experience reply reminders', () => {
         { $set: { blocked: [new mongoose.Types.ObjectId(), pair[other]] } },
       );
       await deliver(String(pair.id));
-      expect(sendEmailJob).not.toHaveBeenCalled();
+      expect(sendMail).not.toHaveBeenCalled();
     },
   );
 
@@ -248,6 +248,6 @@ describe('day-11 Experience reply reminders', () => {
     await queueExperienceReplyReminders(agenda);
     await deliver(String(id));
     expect(create).not.toHaveBeenCalled();
-    expect(sendEmailJob).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
   });
 });
