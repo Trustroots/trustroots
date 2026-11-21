@@ -12,6 +12,7 @@ import SupportInbox, {
   SupportMemberSearchPage,
 } from '../../../client/components/Support.component';
 import * as api from '../../../client/api/support.api';
+import { setUserRole } from '../../../client/api/users.api';
 import type { SupportRequest } from '../../../client/api/support.api';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
@@ -33,6 +34,7 @@ vi.mock('../../../client/api/support.api', () => ({
   retryReply: vi.fn(),
   setMemberFlag: vi.fn(),
 }));
+vi.mock('../../../client/api/users.api');
 vi.mock('../../../client/components/AdminHeader.component', () => ({
   default: function Header() {
     return <nav>Staff navigation</nav>;
@@ -603,6 +605,33 @@ test('shows safe restricted account information and member notes', async () => {
   expect(
     screen.getByRole('link', { name: 'fictional-target (Fictional Member)' }),
   ).toHaveAttribute('href', '/admin/user/fictional-target');
+});
+
+test('confirms support moderation and refreshes the account status', async () => {
+  setViewer({ _id: 'staff-1', roles: ['support-team'] });
+  load.mockResolvedValue({ ...member, roles: ['user'] });
+  const changeRole = vi.mocked(setUserRole);
+  changeRole.mockRejectedValueOnce(new Error('Could not save'));
+  changeRole.mockImplementationOnce(async () => {
+    load.mockResolvedValue({ ...member, roles: ['user', 'suspended'] });
+  });
+  render(<SupportMemberPage id={member.username} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Shadowban' }));
+  let dialog = within(await screen.findByRole('dialog'));
+  fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+  expect(changeRole).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
+  dialog = within(await screen.findByRole('dialog'));
+  fireEvent.click(dialog.getByRole('button', { name: 'Suspend' }));
+  expect(await dialog.findByRole('alert')).toHaveTextContent(
+    'Could not update the account status',
+  );
+  fireEvent.click(dialog.getByRole('button', { name: 'Suspend' }));
+  expect(await screen.findByText('suspended')).toBeVisible();
+  expect(changeRole).toHaveBeenLastCalledWith(member._id, 'suspended', 'add');
+  expect(
+    screen.queryByRole('group', { name: 'Moderation actions' }),
+  ).not.toBeInTheDocument();
 });
 
 test('handles deleted accounts and missing optional member fields', async () => {

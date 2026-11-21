@@ -787,6 +787,18 @@ export const changeRole = async (
   const roleValue = _.get(req, ['body', 'role']);
 
   const actionValue = _.get(req, ['body', 'action'], 'add');
+  const isSupportOnly =
+    req.user?.roles?.includes('support-team') &&
+    !req.user.roles.includes('admin');
+  if (
+    isSupportOnly &&
+    (actionValue !== 'add' ||
+      (roleValue !== 'shadowban' && roleValue !== 'suspended'))
+  ) {
+    return res
+      .status(403)
+      .send({ message: 'This role change is restricted to administrators.' });
+  }
   if (
     !isChangeableRole(roleValue) ||
     (actionValue !== 'add' && actionValue !== 'remove') ||
@@ -821,6 +833,16 @@ export const changeRole = async (
       if (!current) break;
 
       const currentRoles = current.roles || [];
+      if (
+        isSupportOnly &&
+        (String(id) === String(req.user!._id) ||
+          currentRoles.includes('admin') ||
+          (role === 'shadowban' && currentRoles.includes('suspended')))
+      ) {
+        return res.status(403).send({
+          message: 'This role change is restricted to administrators.',
+        });
+      }
       const nextRoles = currentRoles.filter(existingRole => {
         if (action === 'remove') return existingRole !== role;
         if (

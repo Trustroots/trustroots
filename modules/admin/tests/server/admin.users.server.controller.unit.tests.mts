@@ -949,6 +949,20 @@ describe('Admin users controller unit tests', () => {
       });
     }
 
+    it('validates role changes from an actor with a missing role list', async () => {
+      const [actor] = await saveMembers(1);
+      actor.set('roles', undefined);
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        { body: { role: 'unknown' }, user: actor },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      responseField(res, 'message').should.equal('Invalid role.');
+    });
+
     it('promotes a volunteer and removes volunteer-alumni', async () => {
       const users = await saveMembers(2);
       const admin = users[0];

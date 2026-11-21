@@ -20,6 +20,8 @@ export interface AuditActor {
 
 export interface AuditLogFilters {
   username: string;
+  action?: '' | 'shadowban' | 'suspend';
+  hideOwn?: boolean;
   team: '' | 'admin' | 'welcome-team' | 'support-team';
 }
 
