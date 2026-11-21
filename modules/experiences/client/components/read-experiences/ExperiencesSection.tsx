@@ -2,6 +2,7 @@ import React from 'react';
 
 // Internal dependencies
 import Experience from './Experience';
+import type { ExperienceTagFilters } from './Meta';
 import type { Experience as ExperienceModel } from '../../../shared/experience';
 
 /**
@@ -10,9 +11,11 @@ import type { Experience as ExperienceModel } from '../../../shared/experience';
 export default function ExperiencesSection({
   experiences,
   onReceiverProfile,
+  tagFilters,
 }: {
   experiences: ExperienceModel[];
   onReceiverProfile: boolean;
+  tagFilters?: ExperienceTagFilters;
 }) {
   return experiences.map(experience => (
     <div className="tw:grid-row" key={experience._id}>
@@ -20,6 +23,7 @@ export default function ExperiencesSection({
         <Experience
           experience={experience}
           onReceiverProfile={onReceiverProfile}
+          tagFilters={tagFilters}
         />
       </div>
     </div>
