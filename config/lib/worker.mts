@@ -66,6 +66,13 @@ async function start(options: WorkerOptions, callback?: Done) {
     await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mts');
   const { default: publishExperiencesJob } =
     await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mts');
+  const {
+    queueExperienceReplyReminders,
+    queueExperienceReplyRemindersJob,
+    sendExperienceReplyReminder,
+    sendExperienceReplyReminderJob,
+  } =
+    await import('../../modules/experiences/server/jobs/experience-reply-reminder.server.job.mts');
   const { sendSupportMessage: supportMessageJob } =
     await import('./../../modules/support/server/jobs/send-support-message.server.job.mts');
   const { pollSupportMailbox: pollSupportMailboxJob } =
@@ -156,6 +163,15 @@ async function start(options: WorkerOptions, callback?: Done) {
     lockLifetime: 10000,
     concurrency: 1,
   });
+  agenda.define(
+    queueExperienceReplyRemindersJob,
+    async () => queueExperienceReplyReminders(agenda),
+    { concurrency: 1, lockLifetime: 120000 },
+  );
+  agenda.define(sendExperienceReplyReminderJob, sendExperienceReplyReminder, {
+    concurrency: 2,
+    lockLifetime: 60000,
+  });
   defineJob('send support message', supportMessageJob, {
     priority: 'high',
     concurrency: 2,
@@ -185,6 +201,7 @@ async function start(options: WorkerOptions, callback?: Done) {
         agenda.every('60 minutes', 'welcome sequence second'),
         agenda.every('60 minutes', 'welcome sequence third'),
         agenda.every('23 minutes', 'publish expired experiences'),
+        agenda.every('30 minutes', queueExperienceReplyRemindersJob),
         ...(config.supportInbox.enabled && config.supportInbox.imap.enabled
           ? [
               agenda.every(
