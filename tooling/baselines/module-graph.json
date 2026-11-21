@@ -1,37 +1,13 @@
 {
   "imports": {
-    "admin": [
-      "core",
-      "messages",
-      "search",
-      "support",
-      "tribes",
-      "users"
-    ],
-    "contacts": [
-      "core",
-      "users"
-    ],
-    "core": [
-      "support",
-      "tribes",
-      "users"
-    ],
-    "experiences": [
-      "contacts",
-      "core",
-      "support",
-      "users"
-    ],
-    "messages": [
-      "core",
-      "references-thread",
-      "stats",
-      "support",
-      "users"
-    ],
+    "admin": ["core", "messages", "search", "support", "tribes", "users"],
+    "contacts": ["core", "users"],
+    "core": ["support", "tribes", "users"],
+    "experiences": ["contacts", "core", "support", "users"],
+    "messages": ["core", "references-thread", "stats", "support", "users"],
     "mobile": [
       "contacts",
+      "core",
       "experiences",
       "messages",
       "offers",
@@ -39,50 +15,14 @@
       "tribes",
       "users"
     ],
-    "offers": [
-      "core",
-      "experiences",
-      "search",
-      "tribes",
-      "users"
-    ],
-    "pages": [
-      "core",
-      "support",
-      "tribes",
-      "users"
-    ],
-    "references-thread": [
-      "core",
-      "stats",
-      "users"
-    ],
-    "search": [
-      "core",
-      "offers",
-      "tribes",
-      "users"
-    ],
-    "sparkpost": [
-      "core",
-      "stats",
-      "users"
-    ],
-    "statistics": [
-      "core",
-      "experiences",
-      "stats",
-      "users"
-    ],
-    "support": [
-      "core",
-      "stats"
-    ],
-    "tribes": [
-      "core",
-      "search",
-      "users"
-    ],
+    "offers": ["core", "experiences", "search", "tribes", "users"],
+    "pages": ["core", "support", "tribes", "users"],
+    "references-thread": ["core", "stats", "users"],
+    "search": ["core", "offers", "tribes", "users"],
+    "sparkpost": ["core", "stats", "users"],
+    "statistics": ["core", "experiences", "stats", "users"],
+    "support": ["core", "stats"],
+    "tribes": ["core", "search", "users"],
     "users": [
       "admin",
       "contacts",
@@ -107,35 +47,15 @@
       "tribes",
       "users"
     ],
-    "contacts": [
-      "users"
-    ],
-    "core": [
-      "users"
-    ],
-    "experiences": [
-      "contacts",
-      "users"
-    ],
-    "messages": [
-      "users"
-    ],
-    "mobile": [
-      "users"
-    ],
-    "offers": [
-      "users"
-    ],
-    "pages": [
-      "users"
-    ],
-    "references-thread": [
-      "messages",
-      "users"
-    ],
-    "sparkpost": [
-      "users"
-    ],
+    "contacts": ["users"],
+    "core": ["users"],
+    "experiences": ["contacts", "users"],
+    "messages": ["users"],
+    "mobile": ["users"],
+    "offers": ["users"],
+    "pages": ["users"],
+    "references-thread": ["messages", "users"],
+    "sparkpost": ["users"],
     "statistics": [
       "experiences",
       "messages",
@@ -143,19 +63,8 @@
       "references-thread",
       "users"
     ],
-    "support": [
-      "admin",
-      "users"
-    ],
-    "tribes": [
-      "contacts",
-      "experiences",
-      "users"
-    ],
-    "users": [
-      "experiences",
-      "messages",
-      "offers"
-    ]
+    "support": ["admin", "users"],
+    "tribes": ["contacts", "experiences", "users"],
+    "users": ["experiences", "messages", "offers"]
   }
 }

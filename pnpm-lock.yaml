@@ -659,6 +659,9 @@ importers:
       '@trustroots/contacts':
         specifier: workspace:*
         version: link:../contacts
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
       '@trustroots/experiences':
         specifier: workspace:*
         version: link:../experiences
