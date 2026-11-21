@@ -862,7 +862,7 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-user-page">
+      <div className="tw:page-container admin-user-page">
         {state.deleteSucceeded &&
           (state.deleteCleanupIncomplete ? (
             <p role="alert">

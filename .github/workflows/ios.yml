@@ -77,6 +77,9 @@ jobs:
       - name: Compile arm64 iOS device framework
         working-directory: apps/android
         run: ./gradlew :shared:linkReleaseFrameworkIosArm64
+      - name: Run shared Kotlin contract tests
+        working-directory: apps/android
+        run: ./gradlew :shared:iosSimulatorArm64Test --device '${{ steps.simulator.outputs.id }}'
       - name: Run iOS tests
         working-directory: apps/ios
         env:

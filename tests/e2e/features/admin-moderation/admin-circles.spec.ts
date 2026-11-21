@@ -177,6 +177,64 @@ test.describe('admin circles feature coverage', () => {
     await expect(section).toHaveCount(0);
   });
 
+  test('an assigned organiser can update a circle and link to a resource', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.circles', [
+      'An assigned organiser can edit the public name and description of their circle.',
+      'Circle previews and public pages link bare web addresses.',
+    ]);
+    const [organiser, otherMember] = SEEDED_MEMBERS;
+    const member = await request.get(`/api/users/${organiser.username}`);
+    expect(member.ok()).toBeTruthy();
+    const { _id: organiserId } = await member.json();
+    const label = `Example readers ${Date.now()}`;
+    const created = await request.post('/api/admin/circles', {
+      data: { label, public: true, organiserIds: [organiserId] },
+    });
+    expect(created.status()).toBe(201);
+    const { slug } = await created.json();
+    const circlePath = `/circles/${slug}`;
+
+    await signInViaApi(page, request, organiser);
+    await page.goto(circlePath);
+    await page.getByRole('button', { name: 'Edit circle' }).click();
+    const editor = page.getByRole('dialog', { name: 'Edit circle' });
+    await editor.getByLabel('Circle name').fill(`${label} club`);
+    await editor
+      .getByLabel('Description', { exact: true })
+      .fill('Find reading recommendations at example.org.');
+    await expect(
+      editor.getByRole('link', { name: 'example.org' }),
+    ).toHaveAttribute('href', 'https://example.org');
+    await captureSection(editor, 'circle-organiser-editor');
+    await editor.getByRole('button', { name: 'Save circle' }).click();
+    await expect(editor).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: `${label} club` }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${circlePath}$`));
+
+    await signInViaApi(page, request, otherMember);
+    await page.goto(circlePath);
+    await expect(
+      page.getByRole('link', { name: 'example.org' }),
+    ).toHaveAttribute('href', 'https://example.org');
+    await expect(page.getByRole('button', { name: 'Edit circle' })).toHaveCount(
+      0,
+    );
+
+    await page.context().clearCookies();
+    await page.goto(circlePath);
+    const publishedLink = page.getByRole('link', { name: 'example.org' });
+    await expect(publishedLink).toHaveAttribute('href', 'https://example.org');
+    await captureSection(
+      page.locator('.tribe-meta').filter({ has: publishedLink }),
+      'circle-description-links',
+    );
+  });
+
   test('admin can create and edit a circle', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.circles', [
       'Admin circles page loads.',

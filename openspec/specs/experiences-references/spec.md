@@ -159,6 +159,23 @@ removal request subject to independent support approval, and the requester SHALL
 - **THEN** the Experience remains unchanged
 - **AND** the requester can see the rejected status
 
+### Requirement: Reminder for a pending Experience reply
+
+The system SHALL queue at most one reply reminder per Experience from day 11
+until the ordinary automatic publication deadline.
+
+#### Scenario: A pending Experience has an eligible recipient
+
+- **WHEN** the Experience is at least 11 days old and is still in the reply window
+- **THEN** the worker schedules a reply reminder for its recipient
+- **AND** the email links to the sharing form without including pending feedback
+
+#### Scenario: A queued reminder is no longer applicable
+
+- **WHEN** the Experience is public, removed, expired or already has a reciprocal Experience at delivery
+- **THEN** the worker skips the email
+- **AND** it also skips unavailable or restricted members and blocked pairs
+
 ### Requirement: Recoverable experience drafts
 
 The system SHALL save public experience drafts on the device for seven days,
@@ -272,19 +289,14 @@ without originals SHALL explicitly display current values instead.
 - **WHEN** an administrator reviews a request after the live Experience changes
 - **THEN** the stored original values remain unchanged in the comparison
 
-### Requirement: Reminder for a pending Experience reply
+### Requirement: Counts in the public Experience summary
 
-The system SHALL queue at most one reply reminder per Experience from day 11
-until the ordinary automatic publication deadline.
+The web profile summary SHALL count public primary Experiences and omit
+attached replies and pending Experiences from its totals.
 
-#### Scenario: A pending Experience has an eligible recipient
+#### Scenario: Public Experiences include unanswered and overlapping categories
 
-- **WHEN** the Experience is at least 11 days old and is still in the reply window
-- **THEN** the worker schedules a reply reminder for its recipient
-- **AND** the email links to the sharing form without including pending feedback
-
-#### Scenario: A queued reminder is no longer applicable
-
-- **WHEN** the Experience is public, removed, expired or already has a reciprocal Experience at delivery
-- **THEN** the worker skips the email
-- **AND** it also skips unavailable or restricted members and blocked pairs
+- **WHEN** the detailed summary displays recommendation and interaction counts
+- **THEN** missing answers are reported separately and are not counted as negative answers
+- **AND** a public Experience may contribute to multiple reported interaction counts
+- **AND** the existing gender breakdown counts other or unlisted values together when any of the displayed categories applies

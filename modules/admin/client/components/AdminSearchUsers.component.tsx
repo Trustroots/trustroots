@@ -170,8 +170,8 @@ export function SearchUsersContent({
     <>
       {showHeading && <h2>Search members</h2>}
 
-      <div className="row">
-        <div className="col-xs-12 col-md-6">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 tw:md:grid-col-6">
           <form onSubmit={loadSearch} className="form-inline">
             <label htmlFor={id}>
               Name, username or email
@@ -191,7 +191,7 @@ export function SearchUsersContent({
             </Button>
           </form>
         </div>
-        <div className="col-xs-12 col-md-6">
+        <div className="tw:grid-col-12 tw:md:grid-col-6">
           <form onSubmit={loadRole} className="form-inline pull-right">
             <Select
               name="role"
@@ -234,7 +234,7 @@ export default function AdminSearchUsers() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <AdminSearchUsersContent />
       </div>
     </>

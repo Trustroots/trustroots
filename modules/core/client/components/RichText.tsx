@@ -1,3 +1,4 @@
+import { Autolinker } from 'autolinker';
 import React, { useMemo } from 'react';
 import {
   sanitiseRichText,
@@ -23,7 +24,23 @@ export default function RichText({
   ...props
 }: RichTextProps) {
   const html = useMemo(() => {
-    const sanitised = sanitiseRichText(content);
+    const linked = allowLinks
+      ? Autolinker.link(content, {
+          email: false,
+          phone: false,
+          decodePercentEncoding: false,
+          stripPrefix: false,
+          stripTrailingSlash: false,
+          newWindow: false,
+          replaceFn(match) {
+            if (/^https?:\/\//i.test(match.getMatchedText())) return true;
+            const href = match.getAnchorHref();
+            if (!href.startsWith('http://')) return false;
+            return match.buildTag().setAttr('href', 'https://' + href.slice(7));
+          },
+        })
+      : content;
+    const sanitised = sanitiseRichText(linked);
     const html = allowLinks
       ? sanitised
       : disableUserContentLinks(sanitised, allowTrustrootsLinks);
