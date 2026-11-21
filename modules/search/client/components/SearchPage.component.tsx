@@ -6,19 +6,21 @@ import React, {
   useState,
 } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
-import { getOffer } from '@/modules/offers/client/api/offers.api';
+import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
 import SearchMap from './SearchMap.component';
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebar from './SearchSidebar.component';
+import { getBoundsObject } from '../utils/location';
 import {
   getSearchFilters,
   setSearchFilter,
@@ -52,6 +54,9 @@ interface SearchCommunityNote {
   notes: import('nostr-tools').Event[];
   plusCode: string | null;
 }
+
+const noOfferIds: string[] = [];
+const CITY_SEARCH_HALF_SPAN_DEGREES = 0.1;
 
 function parseLocationQuery(locationParam?: string): string {
   if (!locationParam) {
@@ -87,6 +92,10 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
+  const [citySearch, setCitySearch] = useState<{
+    name: string;
+    bounds: SearchMapBounds;
+  } | null>(null);
   const placeSearchGenerationRef = useRef(0);
   const locationNavigationGenerationRef = useRef(0);
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
@@ -95,7 +104,10 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     SearchCommunityNote[]
   >([]);
   const [visibleOfferIds, setVisibleOfferIds] = useState<string[]>([]);
-  const [visibleOffers, setVisibleOffers] = useState<SearchResultOffer[]>([]);
+  const [resultOffers, setResultOffers] = useState<{
+    ids: string[];
+    offers: SearchResultOffer[];
+  }>({ ids: noOfferIds, offers: [] });
   const [isLoadingVisibleOffers, setIsLoadingVisibleOffers] = useState(false);
   const offerCache = useRef(new Map<string, SearchResultOffer>());
   const offerRequests = useRef(
@@ -121,6 +133,31 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   const [onlineInPast6Months, setOnlineInPast6Months] = useState(
     initialFilters.seen?.months === 6,
   );
+  const cityFilters = JSON.stringify({ ...filters, types: ['host'] });
+  const cityOffers = useQuery({
+    queryKey: ['city-host-offers', user?._id, citySearch?.bounds, cityFilters],
+    queryFn: citySearch
+      ? async () => {
+          const { northEast, southWest } = citySearch.bounds;
+          const { features } = await queryOffers({
+            filters: cityFilters,
+            northEastLat: northEast.lat,
+            northEastLng: northEast.lng,
+            southWestLat: southWest.lat,
+            southWestLng: southWest.lng,
+          });
+          return features
+            .filter(({ properties }) => properties.type === 'host')
+            .map(({ properties }) => properties.id);
+        }
+      : skipToken,
+  });
+  const resultOfferIds = citySearch
+    ? (cityOffers.data ?? noOfferIds)
+    : visibleOfferIds;
+  const isLoadingCityOffers =
+    Boolean(citySearch) &&
+    (cityOffers.isPending || resultOffers.ids !== resultOfferIds);
 
   const requestDeviceLocation = useCallback(() => {
     placeSearchGenerationRef.current += 1;
@@ -143,6 +180,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     ({ lat, lng, zoom = 13 }: { lat: number; lng: number; zoom?: number }) => {
       locationNavigationGenerationRef.current += 1;
       clearSelection();
+      setCitySearch(null);
       setBounds({});
       setLocation({ lat, lng, zoom, clearSelection: true });
       setSearchQuery('');
@@ -192,6 +230,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   const closeSidebar = useCallback(() => {
     setIsSidebarOpen(false);
+    setCitySearch(null);
     clearSelection();
   }, [clearSelection]);
 
@@ -258,12 +297,12 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     let isMounted = true;
 
     async function loadVisibleOffers() {
-      const cachedOffers = visibleOfferIds
+      const cachedOffers = resultOfferIds
         .map(id => offerCache.current.get(id))
         .filter((item): item is SearchResultOffer => Boolean(item));
-      setVisibleOffers(cachedOffers);
+      setResultOffers({ ids: resultOfferIds, offers: cachedOffers });
 
-      const missingIds = visibleOfferIds.filter(
+      const missingIds = resultOfferIds.filter(
         id => !offerCache.current.has(id),
       );
       setIsLoadingVisibleOffers(missingIds.length > 0);
@@ -308,11 +347,12 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       const loadedById = new Map<string, SearchResultOffer>(
         [...cachedOffers, ...completedOffers].map(item => [item._id!, item]),
       );
-      setVisibleOffers(
-        visibleOfferIds
+      setResultOffers({
+        ids: resultOfferIds,
+        offers: resultOfferIds
           .map(id => loadedById.get(id))
           .filter((item): item is SearchResultOffer => Boolean(item)),
-      );
+      });
       setIsLoadingVisibleOffers(false);
     }
 
@@ -321,12 +361,39 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     return () => {
       isMounted = false;
     };
-  }, [communityNote, isSidebarOpen, offer, sidebarTab, visibleOfferIds]);
+  }, [communityNote, isSidebarOpen, offer, sidebarTab, resultOfferIds]);
 
   const onPlaceSearch = useCallback(
-    (data: SearchMapLocation | SearchMapBounds, type: 'center' | 'bounds') => {
+    (
+      data: SearchMapLocation | SearchMapBounds,
+      type: 'center' | 'bounds',
+      cityName?: string,
+    ) => {
       setIsPlaceSearchVisible(false);
 
+      if (cityName && isUserPublic) {
+        placeSearchGenerationRef.current += 1;
+        locationNavigationGenerationRef.current += 1;
+        clearSelection();
+        const { lat, lng } = data as SearchMapLocation;
+        const halfSpan = CITY_SEARCH_HALF_SPAN_DEGREES;
+        const cityBounds =
+          type === 'bounds'
+            ? (data as SearchMapBounds)
+            : getBoundsObject(
+                Math.min(lat + halfSpan, 90),
+                Math.min(lng + halfSpan, 180),
+                Math.max(lat - halfSpan, -90),
+                Math.max(lng - halfSpan, -180),
+              );
+        setCitySearch({ name: cityName, bounds: cityBounds });
+        setLocation({});
+        setBounds(cityBounds);
+        openSidebar('results');
+        return;
+      }
+
+      setCitySearch(null);
       /* istanbul ignore else -- callers only emit centre or bounds results. */
       if (data && type === 'center') {
         setBounds({});
@@ -336,7 +403,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         setBounds(data as SearchMapBounds);
       }
     },
-    [],
+    [clearSelection, isUserPublic, openSidebar],
   );
 
   useEffect(() => {
@@ -509,17 +576,21 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         >
           <SearchSidebar
             activeTab={sidebarTab}
+            cityName={citySearch?.name}
             communityNote={communityNote}
-            communityNoteThreads={communityNoteThreads}
+            communityNoteThreads={citySearch ? [] : communityNoteThreads}
             communityNotesEnabled={communityNotesEnabled}
             filters={filters}
+            hasCitySearchError={Boolean(
+              citySearch && cityOffers.isLoadingError,
+            )}
             isLoadingOffer={isLoadingOffer}
             offer={offer}
-            offers={visibleOffers}
+            offers={isLoadingCityOffers ? [] : resultOffers.offers}
             onOfferSelect={previewOffer}
             onCommunityNoteSelect={previewCommunityNote}
             onBackToOffers={closeOffer}
-            isLoadingOffers={isLoadingVisibleOffers}
+            isLoadingOffers={isLoadingCityOffers || isLoadingVisibleOffers}
             onCloseSidebar={() => toggleSidebar()}
             onCommunityNotesToggle={() => {
               const nextValue = !communityNotesEnabled;
@@ -534,6 +605,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               updateFilters({ seen: { months } });
             }}
             onPlaceSearch={onPlaceSearch}
+            onRetryCitySearch={() => void cityOffers.refetch()}
             onTabSelect={setSidebarTab}
             onlineInPast6Months={onlineInPast6Months}
             searchQuery={searchQuery}

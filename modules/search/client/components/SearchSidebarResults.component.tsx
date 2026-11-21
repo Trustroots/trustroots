@@ -1,6 +1,6 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { match, P } from 'ts-pattern';
 import { Badge } from '@trustroots/ui/Badge';
@@ -65,7 +65,9 @@ export interface CommunityNoteSummary {
 }
 
 interface SearchSidebarResultsProps {
+  cityName?: string;
   communityNote?: CommunityNoteSummary | null;
+  hasCitySearchError?: boolean;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
   offers?: SearchResultOffer[];
@@ -73,6 +75,7 @@ interface SearchSidebarResultsProps {
   onOfferSelect?: (offer: SearchResultOffer) => void;
   onCommunityNoteSelect?: (note: CommunityNoteSummary) => void;
   onBackToOffers?: () => void;
+  onRetryCitySearch?: () => void;
   isLoadingOffers?: boolean;
   onCloseSidebar: () => void;
 }
@@ -131,7 +134,9 @@ export function OfferDescription({
 }
 
 export default function SearchSidebarResults({
+  cityName,
   communityNote,
+  hasCitySearchError,
   isLoadingOffer,
   offer,
   offers = [],
@@ -139,6 +144,7 @@ export default function SearchSidebarResults({
   onOfferSelect = () => {},
   onCommunityNoteSelect = () => {},
   onBackToOffers = () => {},
+  onRetryCitySearch,
   isLoadingOffers,
   onCloseSidebar,
 }: SearchSidebarResultsProps) {
@@ -151,7 +157,12 @@ export default function SearchSidebarResults({
   const translateStatus = (key: string) => String(t(key));
   const selectedAvailability = offer && getAvailability(offer, translateStatus);
   const selectedResultId = useRef<string | undefined>(undefined);
+  const cityHeadingRef = useRef<HTMLHeadingElement>(null);
   const showList = !offer && !isLoadingOffer && !communityNote;
+
+  useEffect(() => {
+    cityHeadingRef.current?.focus();
+  }, [cityName]);
 
   const renderResultButton = (
     resultId: string,
@@ -184,7 +195,31 @@ export default function SearchSidebarResults({
       aria-busy={Boolean(isLoadingOffers || isLoadingOffer)}
       className="search-sidebar-results"
     >
-      {showList && (
+      {showList && cityName && (
+        <h2
+          className="search-sidebar-section"
+          ref={cityHeadingRef}
+          tabIndex={-1}
+        >
+          Hosts near {cityName}
+        </h2>
+      )}
+      {showList && cityName && hasCitySearchError && (
+        <div className="search-sidebar-section">
+          <p role="status">Could not load hosts near {cityName}.</p>
+          <Button onClick={onRetryCitySearch} type="button">
+            Try again
+          </Button>
+        </div>
+      )}
+      {showList && cityName && !hasCitySearchError && (
+        <p className="sr-only" role="status">
+          {isLoadingOffers
+            ? 'Loading hosts…'
+            : `Hosting offers: ${offers.length}.`}
+        </p>
+      )}
+      {showList && !cityName && (
         <p role="status" className="sr-only">
           Offers in this map area: {offers.length}. Community note threads:{' '}
           {communityNoteThreads.length}.
@@ -200,7 +235,12 @@ export default function SearchSidebarResults({
       )}
 
       {showList && offers.length > 0 && (
-        <ul aria-label="Visible search results" className="search-result-list">
+        <ul
+          aria-label={
+            cityName ? `Hosts near ${cityName}` : 'Visible search results'
+          }
+          className="search-result-list"
+        >
           {offers.map(item => {
             const { hosting, meetingLabel, showHosting } = getAvailability(
               item,
@@ -278,21 +318,32 @@ export default function SearchSidebarResults({
         </ul>
       )}
 
-      {showList && offers.length === 0 && communityNoteThreads.length === 0 && (
-        <section
-          aria-label="Search results: no results are visible in this map area."
-          aria-live="polite"
-          className="content-empty text-muted text-center"
-        >
-          <br />
-          <br />
-          <em>
-            {isLoadingOffers
-              ? 'Loading visible offers…'
-              : 'No results are visible in this map area.'}
-          </em>
-        </section>
-      )}
+      {showList &&
+        !hasCitySearchError &&
+        offers.length === 0 &&
+        communityNoteThreads.length === 0 && (
+          <section
+            aria-label={
+              cityName
+                ? undefined
+                : 'Search results: no results are visible in this map area.'
+            }
+            aria-live="polite"
+            className="content-empty text-muted text-center"
+          >
+            <br />
+            <br />
+            <em>
+              {cityName
+                ? isLoadingOffers
+                  ? 'Loading hosts…'
+                  : `No hosts match your filters near ${cityName}.`
+                : isLoadingOffers
+                  ? 'Loading visible offers…'
+                  : 'No results are visible in this map area.'}
+            </em>
+          </section>
+        )}
 
       {!offer && isLoadingOffer && (
         <div

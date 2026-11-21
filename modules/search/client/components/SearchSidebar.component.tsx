@@ -9,8 +9,10 @@ import type { SearchFilters } from '../utils/search-filters';
 
 type SearchSidebarResultsPassthrough = Pick<
   React.ComponentProps<typeof SearchSidebarResults>,
+  | 'cityName'
   | 'communityNote'
   | 'communityNoteThreads'
+  | 'hasCitySearchError'
   | 'isLoadingOffer'
   | 'isLoadingOffers'
   | 'offer'
@@ -19,6 +21,7 @@ type SearchSidebarResultsPassthrough = Pick<
   | 'onCloseSidebar'
   | 'onCommunityNoteSelect'
   | 'onOfferSelect'
+  | 'onRetryCitySearch'
 >;
 
 interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
@@ -32,6 +35,7 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
       | import('../utils/location').MapBounds
       | import('../utils/location').MapPoint,
     type: 'center' | 'bounds',
+    cityName?: string,
   ) => void;
   onTabSelect: (tab: 'filters' | 'results') => void;
   onlineInPast6Months: boolean;

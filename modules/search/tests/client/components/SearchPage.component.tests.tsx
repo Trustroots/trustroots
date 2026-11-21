@@ -8,6 +8,8 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
 import SearchPage from '@/modules/search/client/components/SearchPage.component';
@@ -285,7 +287,15 @@ function renderSearchPage(
     public: true,
   },
 ) {
-  return render(<SearchPage user={user} />, { wrapper: analytics.wrapper });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <SearchPage user={user} />
+    </QueryClientProvider>,
+    { wrapper: analytics.wrapper },
+  );
 }
 
 function openResultsWithVisibleOfferIds(offerIds: string[]) {
@@ -520,6 +530,98 @@ describe('<SearchPage />', () => {
     fireEvent.click(screen.getByRole('button', { name: /back to map/i }));
 
     expect(screen.queryByLabelText('Search places')).not.toBeInTheDocument();
+  });
+
+  it('retries a failed city search using a fixed area when only a centre is available', async () => {
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place.test-harbour', trTitle: 'Test Harbour', center: [24, 60] },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 60, lng: 24 },
+      type: 'center',
+    });
+    offersApi.queryOffers
+      .mockRejectedValueOnce(new Error('Search unavailable'))
+      .mockResolvedValueOnce({ type: 'FeatureCollection', features: [] });
+
+    renderSearchPage();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: 'Test Harb' },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Test Harbour' }),
+    );
+
+    expect(
+      await screen.findByText('Could not load hosts near Test Harbour.'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(
+      await screen.findByText('No hosts match your filters near Test Harbour.'),
+    ).toBeInTheDocument();
+    expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledTimes(1);
+    expect(offersApi.queryOffers).toHaveBeenCalledTimes(2);
+    expect(offersApi.queryOffers).toHaveBeenLastCalledWith({
+      filters: expect.stringContaining('"types":["host"]'),
+      northEastLat: 60.1,
+      northEastLng: 24.1,
+      southWestLat: 59.9,
+      southWestLng: 23.9,
+    });
+  });
+
+  it('shows only hosting offers inside the selected city bounds', async () => {
+    const bounds = {
+      southWest: { lat: 59.9, lng: 23.9 },
+      northEast: { lat: 60.1, lng: 24.1 },
+    };
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      {
+        id: 'place.test-harbour',
+        trTitle: 'Test Harbour',
+        bbox: [23.9, 59.9, 24.1, 60.1],
+      },
+    ]);
+    locationApi.locatePlace.mockReturnValue({ data: bounds, type: 'bounds' });
+    offersApi.queryOffers.mockResolvedValueOnce({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { id: mockOffer._id, type: 'host' },
+          geometry: { type: 'Point', coordinates: [24, 60] },
+        },
+        {
+          type: 'Feature',
+          properties: { id: 'meeting-offer', type: 'meet' },
+          geometry: { type: 'Point', coordinates: [24, 60] },
+        },
+      ],
+    });
+
+    renderSearchPage();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: 'Test Harb' },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Test Harbour' }),
+    );
+
+    const results = await screen.findByRole('list', {
+      name: 'Hosts near Test Harbour',
+    });
+    expect(
+      within(results).getByRole('button', { name: /Host Person/ }),
+    ).toBeInTheDocument();
+    expect(offersApi.getOffer).toHaveBeenCalledExactlyOnceWith(mockOffer._id);
+    expect(offersApi.queryOffers).toHaveBeenCalledWith({
+      filters: expect.stringContaining('"types":["host"]'),
+      northEastLat: 60.1,
+      northEastLng: 24.1,
+      southWestLat: 59.9,
+      southWestLng: 23.9,
+    });
   });
 
   it('initialises tribe filters from the route params', async () => {
