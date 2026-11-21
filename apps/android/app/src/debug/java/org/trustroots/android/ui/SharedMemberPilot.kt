@@ -20,6 +20,9 @@ import org.trustroots.shared.ui.SharedComposeRoot
 
 internal const val SHARED_MEMBER_PILOT_EXTRA = "org.trustroots.android.debug.SHARED_MEMBER_PILOT"
 
+internal fun isSharedHomeRequested(activity: ComponentActivity): Boolean =
+    activity.intent.getBooleanExtra(SHARED_HOME_EXTRA, false)
+
 @Composable
 internal fun showSharedMemberPilot(
     activity: ComponentActivity,

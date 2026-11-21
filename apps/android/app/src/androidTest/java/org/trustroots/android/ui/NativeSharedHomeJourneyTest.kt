@@ -13,9 +13,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -59,11 +61,7 @@ class NativeSharedHomeJourneyTest {
             }
             LocalTransportFixture.Response(payload)
         }.also { fixture = it }
-        val activity = ActivityScenario.launch<SignInJourneyActivity>(
-            Intent(context, SignInJourneyActivity::class.java)
-                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, api.baseURL)
-                .putExtra(SHARED_HOME_EXTRA, true),
-        ).also { scenario = it }
+        val activity = launchSharedHome(api)
 
         waitForText("A note for the shared Home preview.")
         compose.onNodeWithTag("navigation-home").assertIsSelected()
@@ -101,6 +99,54 @@ class NativeSharedHomeJourneyTest {
         assertEquals("Bearer fixture-access", api.requests.first { it.path == "/api/mobile/v0/connections" }.authorization)
         assertNull(api.requests.first { it.path == "/api/nostr/featured-notes" }.authorization)
     }
+
+    @Test fun sharedHomeOpensAfterSignInAndOnlyRejectsTheSessionOnAuthenticationFailure() {
+        sessions.clear()
+        val connectionRequests = AtomicInteger()
+        val api = LocalTransportFixture { request ->
+            when (request.path.substringBefore('?')) {
+                "/api/mobile/v0/auth/signin" -> LocalTransportFixture.Response(
+                    """{"accessToken":"fixture-access","refreshToken":"fixture-refresh","member":{"username":"steady-heron","displayName":"Steady Heron"}}""",
+                )
+                "/api/mobile/v0/connections" -> when (connectionRequests.incrementAndGet()) {
+                    1 -> LocalTransportFixture.Response(
+                        """{"hosts":[{"username":"quiet-fox","displayName":"Quiet Fox","location":[41.15,-8.61]}]}""",
+                    )
+                    2 -> LocalTransportFixture.Response("""{"message":"Temporarily unavailable."}""", status = 503)
+                    else -> LocalTransportFixture.Response("""{"message":"Session expired."}""", status = 401)
+                }
+                "/api/mobile/v0/auth/refresh" -> LocalTransportFixture.Response("{}", status = 401)
+                else -> LocalTransportFixture.Response("[]")
+            }
+        }.also { fixture = it }
+        val activity = launchSharedHome(api)
+
+        waitForText("Username or email")
+        compose.onNodeWithText("Username or email").performTextInput("steady-heron")
+        compose.onNodeWithText("Password").performTextInput("fictional-password")
+        compose.onNodeWithText("Sign in").performScrollTo().performClick()
+
+        waitForText("Quiet Fox · Hosting")
+        compose.onNodeWithTag("navigation-home").assertIsSelected()
+        compose.onNodeWithTag("pilot-connections-map").performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithTag("navigation-search").performClick()
+        compose.onNodeWithTag("navigation-home").performClick()
+        compose.waitUntil(10_000) { connectionRequests.get() >= 2 }
+        compose.onNodeWithTag("navigation-home").assertIsSelected()
+        assertEquals("steady-heron", sessions.load()?.member?.username)
+
+        activity.recreate()
+        waitForText("Your session expired or is no longer valid. Please sign in again.")
+        assertNull(sessions.load())
+    }
+
+    private fun launchSharedHome(api: LocalTransportFixture): ActivityScenario<SignInJourneyActivity> =
+        ActivityScenario.launch<SignInJourneyActivity>(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, api.baseURL)
+                .putExtra(SHARED_HOME_EXTRA, true),
+        ).also { scenario = it }
 
     private fun waitForText(text: String) {
         compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }

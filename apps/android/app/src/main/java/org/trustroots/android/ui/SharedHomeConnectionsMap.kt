@@ -17,7 +17,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -62,20 +61,20 @@ internal fun SharedHomeConnectionsMap(pins: List<PilotMapPin>) {
                     title = pin.connection.name
                     snippet = if (pin.hosting) hostingLabel else meetingLabel
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                    ContextCompat.getDrawable(context, org.osmdroid.library.R.drawable.marker_default)
-                        ?.mutate()?.let { drawable ->
-                            drawable.setTint(if (pin.hosting) Color.rgb(0, 130, 105) else Color.rgb(177, 106, 25))
-                            icon = drawable
+                    icon = context.resources.getDrawable(org.osmdroid.library.R.drawable.marker_default, context.theme)
+                        .mutate().apply {
+                            setTint(if (pin.hosting) Color.rgb(0, 130, 105) else Color.rgb(177, 106, 25))
                         }
                 })
                 point
             }
             val distinctPoints = points.distinct()
             addOnFirstLayoutListener { _, _, _, _, _ ->
+                // MemberDashboard only mounts the map when it has a pin.
                 if (distinctPoints.size == 1) {
                     controller.setZoom(9.0)
                     controller.setCenter(distinctPoints.first())
-                } else if (distinctPoints.isNotEmpty()) {
+                } else {
                     val pinPadding = (56 * resources.displayMetrics.density).roundToInt()
                     zoomToBoundingBox(BoundingBox.fromGeoPoints(distinctPoints), false, pinPadding, 9.0, null)
                 }
