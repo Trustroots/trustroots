@@ -8,14 +8,14 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 
 - `pnpm check`: lint, typecheck and client unit tests. Run it before every commit; it needs no database.
 - `pnpm lint:boundaries` and `pnpm lint:boundaries:test`: check shared package production imports and reject production module imports into layers/apps, then run the guard regressions. These also run as part of `pnpm lint` and CI; affected checks run the guard before module tasks.
-- `pnpm lint`, `pnpm typecheck`, `pnpm test:client`: the three parts of `pnpm check` on their own.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test:client`: the three parts of `pnpm check` on their own. `pnpm lint` runs the boundary guards, oxlint (`oxlint.config.ts`) and the oxfmt format check (`oxfmt.config.ts`).
 - `pnpm check:affected`: For changes confined to module workspace packages, Turborepo runs lint and client tests for affected modules and their dependents, then the repository-wide typecheck. Changes outside those packages (including `layers/shell`) or unavailable Git comparison fall back to full `pnpm check`. Compares committed, staged, unstaged and non-ignored untracked changes against the merge base with `origin/main` (override with `TURBO_SCM_BASE`). Each module is a workspace package, so `pnpm --filter @trustroots/<module> run lint` (also `test:client`, `test:server`) works on one module. After changing links between modules, run `pnpm modules:update-baseline` and `pnpm modules:update-packages`. CI still runs the full suite. Run `pnpm test:affected` for the affected-check runner's regression tests.
 - `pnpm test:server`: the Vitest/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
 - `pnpm test:e2e`: the Playwright end-to-end suite.
 - `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `tooling/baselines/coverage.json`.
 - `pnpm test:mutation:server` and `pnpm mutation:check`: Stryker mutation runs and the comparison against the floors in `tooling/baselines/mutation.json`.
 - `pnpm build`: the production client build.
-- `pnpm reformat-files <files>`: run Prettier on the given files.
+- `pnpm reformat-files <files>`: format the given files with oxfmt.
 
 This project is under active development again (no longer in maintenance mode),
 so improvements, refactors, and cleanups are welcome where they add value.

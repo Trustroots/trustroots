@@ -2,8 +2,8 @@
   "$schema": "https://turbo.build/schema.json",
   "envMode": "loose",
   "globalDependencies": [
-    "eslint.config.cts",
-    "eslint.config.cjs",
+    "oxlint.config.ts",
+    "oxfmt.config.ts",
     "package.json",
     "pnpm-lock.yaml",
     "tsconfig.json",

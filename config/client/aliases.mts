@@ -15,13 +15,6 @@ const aliases = {
   modules: resolve(root, 'modules'),
 };
 
-// unrs-resolver stores each alias as a list of paths.
-function resolverAliases() {
-  return Object.fromEntries(
-    Object.entries(aliases).map(([name, filename]) => [name, [filename]]),
-  );
-}
-
 let commonJsAliases;
 
 function loadCommonJsAliases() {
@@ -34,9 +27,7 @@ function loadCommonJsAliases() {
 
 const aliasesConfig = {
   aliases,
-  resolverAliases,
-  // ESLint only needs the source aliases. Resolve package entry files when a
-  // bundler reads these, so loading the lint config does not depend on them.
+  // Resolve package entry files only when a bundler reads these.
   get commonJsAliases() {
     commonJsAliases ??= loadCommonJsAliases();
     return commonJsAliases;

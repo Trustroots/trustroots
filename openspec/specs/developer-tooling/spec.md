@@ -344,7 +344,7 @@ and the matching PR head for a companion lint workflow.
 
 ### Requirement: CI avoids repeated tooling work
 
-CI SHALL run ESLint once and reuse its output for annotations and enforcement.
+CI SHALL run oxlint once and use its output for both annotations and enforcement.
 Client checks SHALL run on Node 24 with the pinned pnpm version independently
 of the development Docker image. End-to-end groups SHALL reuse one asset build
 from the same checkout and retain all existing tests and coverage requirements.
@@ -354,7 +354,7 @@ from the same checkout and retain all existing tests and coverage requirements.
 - **WHEN** application CI runs
 - **THEN** all existing client checks run directly on Node 24
 - **AND** one shared end-to-end asset build supplies all three test groups
-- **AND** lint failures still fail CI even if annotation reporting fails
+- **AND** lint failures fail CI
 
 #### Scenario: End-to-end asset build fails
 
@@ -556,3 +556,17 @@ Android coverage SHALL remove only bytecode-proven compiler instructions or veri
 - **THEN** it uses complete matching Android unit and device execution probes, including API 32 compatibility coverage
 - **AND** the corrected report retains 100% executable lines and 100% branch outcomes
 - **AND** both committed coverage floors are 100%, with no branch allowance
+
+### Requirement: oxlint and oxfmt check the repository
+
+The repository SHALL lint JavaScript and TypeScript with oxlint and format supported files with oxfmt, both configured in TypeScript files at the repository root. Local lint, module lint tasks and CI SHALL fail on oxlint errors and on files oxfmt would change.
+
+#### Scenario: A change is not formatted
+
+- **WHEN** a file differs from oxfmt's output
+- **THEN** `pnpm lint` and CI fail
+
+#### Scenario: Client JSX is inaccessible
+
+- **WHEN** client JSX breaks a jsx-a11y rule from the repository configuration
+- **THEN** oxlint reports a blocking error
