@@ -99,5 +99,20 @@ jobs:
             -project Trustroots.xcodeproj \
             -scheme TrustrootsTests \
             -destination 'id=${{ steps.simulator.outputs.id }}' \
+            -resultBundlePath "$RUNNER_TEMP/TrustrootsTests.xcresult" \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             test
+      - name: Export Compose offline screenshot
+        if: github.event_name == 'pull_request'
+        run: |
+          xcrun xcresulttool export attachments \
+            --path "$RUNNER_TEMP/TrustrootsTests.xcresult" \
+            --output-path "$RUNNER_TEMP/compose-offline-screenshots" \
+            --test-id 'SharedMemberPilotJourneyUITests/testShowsSavedProfileAndClearsOfflineBannerAfterLiveRequest()'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: github.event_name == 'pull_request'
+        with:
+          name: ios-compose-offline-screenshot
+          path: ${{ runner.temp }}/compose-offline-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 7
