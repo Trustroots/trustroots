@@ -8,7 +8,7 @@
   pointer-events: none; // Click trough the spacer element
   top: auto;
   right: 0;
-  top: (@navbar-height + @input-height-large);
+  top: calc(var(--tr-header-height, @navbar-height) + @input-height-large);
   left: 0;
   z-index: @zindex-navbar + 1;
   height: @search-sidebar-toggle-height;
@@ -17,7 +17,7 @@
     // See `.is-sidebar-open` below regarding `0` width
     min-width: 0;
     width: 0;
-    top: (@navbar-height + 10px);
+    top: calc(var(--tr-header-height, @navbar-height) + 10px);
     right: auto;
     bottom: auto;
     left: 0;

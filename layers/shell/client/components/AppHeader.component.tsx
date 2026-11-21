@@ -12,11 +12,21 @@ type Props = {
   currentPath?: string;
   user?: AuthUser | null;
 };
+
+type BrowserNavigator = Navigator & {
+  userAgentData?: { platform?: string };
+};
+
 export default function AppHeader({ currentPath: routedPath, user }: Props) {
   const { t } = useTranslation('core');
   const browserPath = useLocation({ select: location => location.pathname });
   const currentPath = routedPath || browserPath;
   const headerRef = useRef<HTMLElement>(null);
+  const { userAgent, userAgentData }: BrowserNavigator = window.navigator;
+  const platform = userAgentData?.platform;
+  const isAndroid = platform
+    ? platform === 'Android'
+    : /\bAndroid\b/i.test(userAgent);
 
   useEffect(() => {
     const header = headerRef.current as HTMLElement;
@@ -48,7 +58,7 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
     <header
       id="tr-header"
       ref={headerRef}
-      className="tw:fixed tw:inset-x-0 tw:top-0 tw:z-1030 tw:flex tw:min-h-[43px] tw:items-center tw:bg-brand-primary tw:text-white tw:print:hidden"
+      className={`tw:fixed tw:inset-x-0 tw:top-0 tw:z-1030 tw:flex tw:min-h-[43px] tw:items-center tw:bg-brand-primary tw:text-white tw:print:hidden${isAndroid ? ' tw:flex-col' : ''}`}
     >
       <Button
         intent="primary"
@@ -67,6 +77,13 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
         <NavigationLoggedIn user={user} currentPath={currentPath} />
       ) : (
         <NavigationLoggedOut currentPath={currentPath} />
+      )}
+      {isAndroid && (
+        <div className="header-android-preview">
+          <a href="https://team.trustroots.org/apps/latest-apk/">
+            {t('Download Android preview (APK)')}
+          </a>
+        </div>
       )}
     </header>
   );

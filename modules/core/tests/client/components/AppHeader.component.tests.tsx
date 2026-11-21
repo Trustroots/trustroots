@@ -44,6 +44,46 @@ afterEach(() => {
 });
 
 describe('<AppHeader />', () => {
+  it.each([
+    { platform: 'Android', userAgent: 'Mozilla/5.0', visible: true },
+    { platform: 'Linux', userAgent: 'Mozilla/5.0 (Android)', visible: false },
+    { platform: undefined, userAgent: 'Mozilla/5.0 (Android)', visible: true },
+    { platform: '', userAgent: 'Mozilla/5.0 (Android)', visible: true },
+    { platform: undefined, userAgent: 'Mozilla/5.0 (iPhone)', visible: false },
+  ])(
+    'uses platform $platform and user agent $userAgent to show the APK link ($visible)',
+    ({ platform, userAgent, visible }) => {
+      const navigator = window.navigator;
+      const userAgentMock = jest
+        .spyOn(navigator, 'userAgent', 'get')
+        .mockReturnValue(userAgent);
+      Object.defineProperty(navigator, 'userAgentData', {
+        configurable: true,
+        value: platform === undefined ? undefined : { platform },
+      });
+
+      try {
+        render(<AppHeader />);
+
+        const link = screen.queryByRole('link', {
+          name: 'Download Android preview (APK)',
+        });
+        if (visible) {
+          expect(link).toHaveAttribute(
+            'href',
+            'https://team.trustroots.org/apps/latest-apk/',
+          );
+          expect(link).not.toHaveAttribute('target');
+        } else {
+          expect(link).not.toBeInTheDocument();
+        }
+      } finally {
+        Reflect.deleteProperty(navigator, 'userAgentData');
+        userAgentMock.mockRestore();
+      }
+    },
+  );
+
   it.each([false, true])(
     'skips navigation without leaving the current page (main present: %s)',
     hasMain => {

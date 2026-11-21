@@ -194,13 +194,13 @@
 
 .offer-tabs {
   @media (max-width: @screen-xs) {
-    margin-top: @navbar-height;
+    margin-top: var(--tr-header-height, @navbar-height);
   }
   &[data-slot='tabs-list'] {
     @media (max-width: @screen-xs) {
       position: fixed;
       z-index: @zindex-navbar-fixed;
-      top: @navbar-height;
+      top: var(--tr-header-height, @navbar-height);
       left: 0;
       right: 0;
       margin: 0;
@@ -284,12 +284,13 @@
     .offer-map,
     .offer-location-overlay {
       position: fixed;
-      top: (@navbar-height + @navbar-height - 4px);
+      top: calc(var(--tr-header-height, @navbar-height) + @navbar-height - 4px);
       left: 0;
       right: 0;
       height: @offer-map-height-xs; // fallback for browsers without support for calc()
       height: calc(
-        ~'100% - ' (@navbar-height + @navbar-height + @navbar-height)
+        100% - var(--tr-header-height, @navbar-height) - @navbar-height -
+          @navbar-height
       );
     }
     .offer-meet-actions {
@@ -303,7 +304,7 @@
     }
     .offer-map-location-search {
       position: fixed;
-      top: (@navbar-height + @navbar-height + 4px);
+      top: calc(var(--tr-header-height, @navbar-height) + @navbar-height + 4px);
       z-index: @zindex-navbar-fixed + 1;
       left: 60px;
       right: 10px;
