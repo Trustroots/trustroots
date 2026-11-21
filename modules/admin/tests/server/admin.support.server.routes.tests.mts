@@ -90,13 +90,17 @@ describe('Support team access and investigation', () => {
         .set('X-Trustroots-Request', '1')
         .send({ id, role, action });
     const target = users[2]._id;
-    await changeRole(users[0]._id, 'suspended').expect(403);
-    await changeRole(users[3]._id, 'shadowban').expect(403);
+    const forbidden = {
+      message: 'This role change is restricted to administrators.',
+    };
+    await changeRole(users[0]._id, 'suspended').expect(403, forbidden);
+    await changeRole(users[3]._id, 'shadowban').expect(403, forbidden);
     await changeRole(target, 'shadowban').expect(200);
     (await User.findById(target))!.roles!.should.containEql('shadowban');
-    await changeRole(target, 'shadowban', 'remove').expect(403);
+    await changeRole(target, 'shadowban', 'remove').expect(403, forbidden);
     await changeRole(target, 'suspended').expect(200);
-    await changeRole(target, 'shadowban').expect(403);
+    await changeRole(target, 'suspended').expect(200);
+    await changeRole(target, 'shadowban').expect(403, forbidden);
     const saved = (await User.findById(target))!;
     saved.roles!.should.containEql('suspended');
     saved.roles!.should.not.containEql('shadowban');
@@ -596,7 +600,11 @@ describe('Support team access and investigation', () => {
       users[3]._id,
     ).should.be.rejected();
   });
-  it('allows administrators to grant and remove the support role', async () => {
+  it('allows administrators on the support team to grant and remove the support role', async () => {
+    await User.updateOne(
+      { _id: users[3]._id },
+      { $addToSet: { roles: 'support-team' } },
+    );
     const admin = request.agent(app);
     await utils.signIn(raw[3], admin);
     for (const action of ['add', 'remove']) {

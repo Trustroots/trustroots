@@ -14,7 +14,7 @@ type AuditLogRecord = {
   query?: unknown;
   ip?: string;
 };
-type AuditHistoryItem = { user: { username: string } };
+type AuditHistoryItem = { user: { username: string }; body?: unknown };
 type HistoricalActor = { username: string; roles?: string[] };
 type MockResponse = {
   code: number;
@@ -180,6 +180,7 @@ describe('Audit history actor filters', () => {
     historyBody(res)
       .map(item => item.user.username)
       .should.eql([support.username]);
+    should(historyBody(res)[0].body).eql({ role: 'shadowban' });
     await controller.list(
       { ...req, query: { ...req.query, username: viewer.username } },
       res,
@@ -197,12 +198,17 @@ describe('Audit history actor filters', () => {
     historyBody(res)
       .map(item => item.user.username)
       .should.eql([support.username]);
+    should(historyBody(res)[0].body).eql({ role: 'suspended', action: 'add' });
+    await controller.list({ ...req, query: { action: '' } }, res);
+    res.code.should.equal(200);
+    historyBody(res).length.should.equal(5);
   });
   it('rejects unsupported teams and non-string filters', async () => {
     for (const query of [
       { team: 'unknown' },
       { username: ['river'] },
       { team: ['admin'] },
+      { team: null },
       { action: ['shadowban'] },
       { action: 'remove' },
       { hideOwn: 'yes' },
@@ -210,6 +216,7 @@ describe('Audit history actor filters', () => {
       const res = response();
       await controller.list({ query }, res);
       res.code.should.equal(400);
+      should(res.body).eql({ message: 'Invalid audit log filters.' });
     }
   });
   it('reports a failed actor lookup', async () => {
