@@ -74,13 +74,23 @@ export function createUmamiBeforeSend(routeTemplate: RouteTemplate) {
 }
 
 /** Install the hook, then activate the tracker from the page template. */
-export function installUmamiBeforeSend(routeTemplate: RouteTemplate): void {
+export function installUmamiBeforeSend(
+  routeTemplate: RouteTemplate,
+): Promise<void> | undefined {
   (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND] =
     createUmamiBeforeSend(routeTemplate);
 
   const template =
     document.querySelector<HTMLTemplateElement>('#tr-umami-tracker');
-  if (template) {
-    template.replaceWith(template.content.cloneNode(true));
-  }
+  if (!template) return undefined;
+
+  const content = template.content.cloneNode(true) as DocumentFragment;
+  const script = content.querySelector('script');
+  if (!script) return undefined;
+  const settled = new Promise<void>(resolve => {
+    script.addEventListener('load', () => resolve(), { once: true });
+    script.addEventListener('error', () => resolve(), { once: true });
+  });
+  template.replaceWith(content);
+  return settled;
 }
