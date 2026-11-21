@@ -27,19 +27,21 @@ describe('<Feedback />', () => {
     ).toBeInTheDocument();
   });
 
-  it('uses a softer negative prompt when this is not a report', () => {
+  it('asks members to describe the impact of an experience they would not recommend', () => {
     renderFeedback({ recommend: 'no', report: false });
 
     expect(
-      screen.getByText('Did you not enjoy their cooking? singing?'),
+      screen.getByText('Describe what happened and how it affected you.'),
     ).toBeInTheDocument();
   });
 
-  it('uses the stronger negative prompt when this is a report', () => {
+  it('asks members to keep sensitive details in a private report', () => {
     renderFeedback({ recommend: 'no', report: true });
 
     expect(
-      screen.getByText('Did you not like their cooking? singing?'),
+      screen.getByText(
+        'Describe what happened and keep sensitive details in your private report.',
+      ),
     ).toBeInTheDocument();
   });
 
