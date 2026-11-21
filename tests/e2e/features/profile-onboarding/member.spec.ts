@@ -338,8 +338,11 @@ test.describe('confirmed member flows', () => {
       page.getByRole('link', { name: /send a message/i }).first(),
     ).toHaveAttribute('href', `/messages/${portland.username}`);
     await expect(
-      page.getByRole('link', { name: /share your experience/i }).first(),
-    ).toHaveAttribute('href', `/profile/${portland.username}/experiences/new`);
+      page.getByRole('link', { name: /view your experience/i }).first(),
+    ).toHaveAttribute(
+      'href',
+      new RegExp(`^/profile/${portland.username}/experiences#[a-f0-9]{24}$`),
+    );
   });
 
   test('profile experiences tab is reachable from another member profile', async ({

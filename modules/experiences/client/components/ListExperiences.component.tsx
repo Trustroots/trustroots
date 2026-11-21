@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { read as readExperiences } from '../api/experiences.api';
-import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
@@ -19,15 +18,19 @@ const NoContentWithChildren = NoContent as unknown as React.ComponentType<{
   children?: React.ReactNode;
 }>;
 
+export type ExperienceAction = { href: string; label: string };
+
 /**
  * List of user's experiences
  */
 export default function ListExperiences({
   profile,
   authenticatedUser,
+  experienceAction,
 }: {
   profile: ExperienceUser;
   authenticatedUser: ExperienceUser;
+  experienceAction?: ExperienceAction;
 }) {
   const { t } = useTranslation('experiences') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -82,14 +85,14 @@ export default function ListExperiences({
         icon="users"
         message={t('No experiences yet.') as string}
       >
-        {!onReceiverProfile && (
+        {!onReceiverProfile && experienceAction && (
           <p>
             <br />
             <Button
               intent="primary"
-              render={<a href={getProfileExperiencesPath(profile.username)} />}
+              render={<a href={experienceAction.href} />}
             >
-              {t('Share your experience') as string}
+              {experienceAction.label}
             </Button>
           </p>
         )}
