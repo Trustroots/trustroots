@@ -69,7 +69,10 @@ let seen: {
   logged: unknown[][];
 };
 
-function createBackend(options: AvatarFailureOptions = {}): SharpFactory {
+function createBackend(
+  options: AvatarFailureOptions,
+  signal: AbortSignal,
+): SharpFactory {
   const open = (): SharpPipeline => {
     seen.opened++;
     let size = 0;
@@ -98,12 +101,14 @@ function createBackend(options: AvatarFailureOptions = {}): SharpFactory {
       },
       async metadata() {
         await options.onMetadata?.();
+        signal.throwIfAborted();
         if (options.metadataError) throw options.metadataError;
         return options.metadata || { format: 'png', width: 600, height: 600 };
       },
       async toFile(outputPath: string) {
         seen.writes++;
         options.onWrite?.();
+        signal.throwIfAborted();
         if (options.writeError) throw options.writeError;
         await fs.writeFile(
           outputPath,
@@ -119,12 +124,24 @@ function createBackend(options: AvatarFailureOptions = {}): SharpFactory {
   return Object.assign(open, { concurrency() {} });
 }
 
-const unusedBackend = Object.assign(
-  () => {
-    throw new Error('native processor should not be used');
-  },
-  { concurrency() {} },
-);
+function mockWorker(options: AvatarFailureOptions = {}) {
+  return async (sourcePath: string, stageDir: string, signal: AbortSignal) => {
+    const { createNativeThumbnails } = await mockModule<
+      typeof import('../../server/services/avatar-processing.server.image.mts')
+    >(
+      new URL(
+        '../../server/services/avatar-processing.server.image.mts',
+        import.meta.url,
+      ),
+      { sharp: createBackend(options, signal) },
+    );
+    await createNativeThumbnails(sourcePath, stageDir);
+  };
+}
+
+function unusedWorker() {
+  throw new Error('native processor should not be used');
+}
 
 function createFsProxy(hooks: FsHooks = {}): typeof fs {
   return new Proxy(fs, {
@@ -204,7 +221,7 @@ describe('Avatar processing failure handling', () => {
               ...serviceConfig,
             },
             fs: { promises: createFsProxy(fsHooks) },
-            sharp: createBackend(options),
+            './avatar-processing.server.worker.mts': mockWorker(options),
             '@trustroots/logger': (...args: unknown[]) =>
               seen.logged.push(args),
           },
@@ -390,7 +407,7 @@ describe('Avatar processing failure handling', () => {
             uploadTmpDir: path.join(temporaryRoot, 'private'),
           },
           fs: { promises: publicCleanupFs },
-          sharp: unusedBackend,
+          './avatar-processing.server.worker.mts': unusedWorker,
           '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
             logged.push(args),
         },
@@ -439,7 +456,7 @@ describe('Avatar processing failure handling', () => {
             uploadTmpDir: path.join(temporaryRoot, 'private'),
           },
           fs: { promises: privateCleanupFs },
-          sharp: createBackend(),
+          './avatar-processing.server.worker.mts': mockWorker(),
           '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
             logged.push(args),
         },
@@ -491,7 +508,7 @@ describe('Avatar processing failure handling', () => {
             uploadTmpDir: path.join(temporaryRoot, 'private'),
           },
           fs: { promises: createFsProxy({ chmod, rm }) },
-          sharp: unusedBackend,
+          './avatar-processing.server.worker.mts': unusedWorker,
           '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
             logged.push(args),
         },
