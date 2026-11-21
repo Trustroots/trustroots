@@ -22,7 +22,7 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
     private let session: MemberSessionStore
     private let exitAction: () -> Void
     private let api = TrustrootsAPI()
-    private var drafts: [String: String] = [:]
+    private let drafts = PilotMessageDraftStore()
     private var isActive = true
 
     init(session: MemberSessionStore, exit: @escaping () -> Void) {
@@ -48,7 +48,6 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
             guard let self, isActive else { return }
             await session.signOut()
             guard isActive else { return }
-            drafts.removeAll()
             completion(nil)
         }
     }
@@ -148,21 +147,17 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
     }
 
     func loadDraft(partner: PilotPerson) -> String {
-        drafts[partnerKey(partner)] ?? ""
+        guard let key = draftKey(for: partner) else { return "" }
+        return drafts.load(key)
     }
 
     func saveDraft(partner: PilotPerson, value: String) {
-        let key = partnerKey(partner)
-        if value.isEmpty {
-            drafts.removeValue(forKey: key)
-        } else {
-            drafts[key] = value
-        }
+        guard let key = draftKey(for: partner) else { return }
+        try? drafts.save(value, for: key)
     }
 
     func exit() {
         isActive = false
-        drafts.removeAll()
         exitAction()
     }
 
@@ -189,8 +184,11 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
         }
     }
 
-    private func partnerKey(_ partner: PilotPerson) -> String {
-        partner.id ?? partner.username ?? partner.name
+    private func draftKey(for partner: PilotPerson) -> PilotMessageDraftStore.Key? {
+        guard isActive, let username = session.member?.username,
+              let recipientID = partner.id, !recipientID.isEmpty,
+              let server = TrustrootsAPIConfiguration(baseURLString: session.serverURLString) else { return nil }
+        return .init(server: server.normalizedURLString, username: username, recipientID: recipientID)
     }
 
     private static func optionalDisplayText(_ value: String?) -> String? {

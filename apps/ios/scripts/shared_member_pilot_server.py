@@ -71,6 +71,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "userTo": MEMBER,
             }])
         elif route == f'/api/mobile/v0/messages/{PARTNER["_id"]}':
+            # Lose the conversation connection after the first rejected reply.
+            # The pilot must read its saved copy until the member retries.
+            if self.send_attempts == 1:
+                self.log_message("Dropping the conversation connection for the draft recovery test.")
+                self.close_connection = True
+                return
             self._json(200, self.messages)
         else:
             self._json(404, {"message": "Fixture route not found."})
