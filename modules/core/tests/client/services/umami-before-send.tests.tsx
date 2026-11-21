@@ -5,7 +5,7 @@ import {
   UMAMI_BEFORE_SEND,
   createUmamiBeforeSend,
   scrubUmamiUrl as scrub,
-  type AnalyticsTracker,
+  startUmamiTracker,
   type UmamiPayload,
 } from '@trustroots/analytics/client';
 
@@ -68,6 +68,7 @@ function setGlobalPrivacyControl(value: unknown): void {
 afterEach(() => {
   document.head.querySelector('#tr-umami-tracker')?.remove();
   document.head.querySelector('script[data-before-send]')?.remove();
+  delete window.umami;
   delete (window.navigator as { globalPrivacyControl?: unknown })
     .globalPrivacyControl;
   delete (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND];
@@ -181,8 +182,6 @@ describe('umamiBeforeSend', () => {
   });
 });
 
-const tracker: AnalyticsTracker = { track: vi.fn() };
-
 function addTrackerTemplate(): HTMLTemplateElement {
   const template = document.createElement('template');
   template.id = 'tr-umami-tracker';
@@ -198,7 +197,7 @@ function hook() {
   ];
 }
 
-describe('AnalyticsProvider with a routeTemplate', () => {
+describe('startUmamiTracker', () => {
   afterEach(() => window.history.replaceState(null, '', '/'));
 
   it('scrubs the first page view the tracker sends when it activates', () => {
@@ -214,11 +213,7 @@ describe('AnalyticsProvider with a routeTemplate', () => {
       template.replaceWith(...nodes);
     });
 
-    render(
-      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
-        page
-      </AnalyticsProvider>,
-    );
+    startUmamiTracker(templateFor);
 
     expect(firstPageView).toHaveBeenCalledExactlyOnceWith(
       `${ORIGIN}/profile/:username`,
@@ -228,19 +223,8 @@ describe('AnalyticsProvider with a routeTemplate', () => {
   it('activates the tracker script once, keeping its attributes', () => {
     addTrackerTemplate();
 
-    const { rerender } = render(
-      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
-        page
-      </AnalyticsProvider>,
-    );
-    rerender(
-      <AnalyticsProvider
-        tracker={tracker}
-        routeTemplate={path => templateFor(path)}
-      >
-        page
-      </AnalyticsProvider>,
-    );
+    startUmamiTracker(templateFor);
+    startUmamiTracker(templateFor);
 
     const scripts = document.head.querySelectorAll('script[data-before-send]');
     expect(scripts).toHaveLength(1);
@@ -254,11 +238,7 @@ describe('AnalyticsProvider with a routeTemplate', () => {
   });
 
   it('exposes the hook under the name the script tag points to', () => {
-    render(
-      <AnalyticsProvider tracker={tracker} routeTemplate={templateFor}>
-        page
-      </AnalyticsProvider>,
-    );
+    startUmamiTracker(templateFor);
 
     expect(
       hook()?.('event', payload({ url: `${ORIGIN}/profile/member1` }))?.url,
@@ -266,10 +246,63 @@ describe('AnalyticsProvider with a routeTemplate', () => {
     expect(UMAMI_BEFORE_SEND).toBe('trUmamiBeforeSend');
   });
 
-  it('leaves the tracker inactive without a routeTemplate', () => {
+  it('queues early events even when the document has already loaded', async () => {
+    const readyState = vi
+      .spyOn(document, 'readyState', 'get')
+      .mockReturnValue('complete');
+    addTrackerTemplate();
+    const tracker = startUmamiTracker(templateFor);
+    const track = vi.fn();
+
+    tracker.track('signup_step_viewed', { step: 1 });
+    window.umami = { track };
+    tracker.track('signup_step_viewed', { step: 2 });
+
+    expect(track).not.toHaveBeenCalled();
+    document
+      .querySelector('script[data-before-send]')!
+      .dispatchEvent(new Event('load'));
+    await Promise.resolve();
+    readyState.mockRestore();
+
+    expect(track.mock.calls).toEqual([
+      ['signup_step_viewed', { step: 1 }],
+      ['signup_step_viewed', { step: 2 }],
+    ]);
+  });
+
+  it('drops pending events when the script fails to load', async () => {
+    addTrackerTemplate();
+    const tracker = startUmamiTracker(templateFor);
+
+    tracker.track('signup_step_viewed', { step: 1 });
+    document
+      .querySelector('script[data-before-send]')!
+      .dispatchEvent(new Event('error'));
+    await Promise.resolve();
+
+    const track = vi.fn();
+    window.umami = { track };
+    tracker.track('signin_succeeded');
+    expect(track).toHaveBeenCalledExactlyOnceWith(
+      'signin_succeeded',
+      undefined,
+    );
+  });
+
+  it('leaves a template without a tracker script inactive', () => {
+    const template = addTrackerTemplate();
+    template.content.replaceChildren();
+
+    startUmamiTracker(templateFor);
+
+    expect(document.querySelector('#tr-umami-tracker')).toBe(template);
+  });
+
+  it('leaves the tracker inactive when the app has not started it', () => {
     addTrackerTemplate();
 
-    render(<AnalyticsProvider tracker={tracker}>page</AnalyticsProvider>);
+    render(<AnalyticsProvider>page</AnalyticsProvider>);
 
     expect(hook()).toBeUndefined();
     expect(document.querySelector('#tr-umami-tracker')).not.toBeNull();

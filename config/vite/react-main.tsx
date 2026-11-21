@@ -1,6 +1,7 @@
 import React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { hydrateStart } from '@tanstack/react-start/client';
+import { startUmamiTracker } from '@trustroots/analytics/client';
 
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
@@ -15,11 +16,14 @@ enableVisibilityWatching();
 enableFaviconUpdater();
 
 void hydrateStart().then(router => {
+  const analyticsTracker = startUmamiTracker(pathname =>
+    routeTemplate(router, pathname),
+  );
   hydrateRoot(
     document,
     <AppProviders
       queryClient={router.options.context.queryClient}
-      routeTemplate={pathname => routeTemplate(router, pathname)}
+      analyticsTracker={analyticsTracker}
     >
       <ReactApp router={router} />
     </AppProviders>,

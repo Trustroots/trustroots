@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   AnalyticsProvider,
   type AnalyticsTracker,
-  type RouteTemplate,
 } from '@trustroots/analytics/client';
 
 import {
@@ -20,8 +19,6 @@ type AppProvidersProps = {
   analyticsTracker?: AnalyticsTracker;
   /** The router's client, so route loaders and pages share one cache. */
   queryClient?: QueryClient;
-  /** Names pages for Umami page views; without it the tracker stays off. */
-  routeTemplate?: RouteTemplate;
   children: ReactNode;
 };
 
@@ -29,7 +26,6 @@ export function AppProviders({
   bootstrapData,
   analyticsTracker,
   queryClient: routerQueryClient,
-  routeTemplate,
   children,
 }: AppProvidersProps) {
   const resolvedBootstrapData =
@@ -41,10 +37,7 @@ export function AppProviders({
 
   return (
     <AppBootstrapContext.Provider value={resolvedBootstrapData}>
-      <AnalyticsProvider
-        tracker={analyticsTracker}
-        routeTemplate={routeTemplate}
-      >
+      <AnalyticsProvider tracker={analyticsTracker}>
         <AnalyticsErrorEvents />
         <QueryClientProvider client={queryClient}>
           <AuthProvider initialUser={resolvedBootstrapData.user}>
