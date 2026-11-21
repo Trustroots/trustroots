@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useAnalytics } from '@trustroots/analytics/client';
@@ -119,12 +120,12 @@ export default function SearchPlaceInput({
       }`}
       ref={containerRef}
     >
-      <div className="input-group input-location">
+      <div data-slot="input-group" className="tw:input-group input-location">
         <label className="sr-only" htmlFor={id}>
           Search places
         </label>
-        <input
-          className="form-control input-lg"
+        <Input
+          fieldSize="lg"
           id={id}
           onChange={({ target: { value } }) => {
             suggestionRequestRef.current += 1;

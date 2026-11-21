@@ -30,9 +30,9 @@ export default function TribesPage({
     <>
       <TribesHeader isLoggedIn={!!user} />
 
-      <section className="container">
-        <div className="row">
-          <div className="col-xs-12">
+      <section className="tw:page-container">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12">
             <TribesList
               tribes={tribes}
               user={user}

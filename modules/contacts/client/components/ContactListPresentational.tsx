@@ -1,3 +1,5 @@
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 import React, { useState } from 'react';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
@@ -48,8 +50,8 @@ export default function ContactListPresentational({
 
   return (
     <div className="contacts-list">
-      <div className="row">
-        <div className="col-xs-12 col-sm-5">
+      <div className="tw:grid-row tw:mt-5 tw:mb-3">
+        <div className="tw:grid-col-12 tw:sm:grid-col-5">
           <h4 className="text-muted">
             {/* Confirmed contacts */}
             <span>
@@ -68,13 +70,12 @@ export default function ContactListPresentational({
           </h4>
         </div>
 
-        <div className="col-xs-12 col-sm-7">
+        <div className="tw:grid-col-12 tw:sm:grid-col-7">
           <div className="contacts-list-controls">
             <div className="form-group">
               <label htmlFor="contacts-sort">{t('Sort by') as string}</label>
-              <select
+              <Select
                 id="contacts-sort"
-                className="form-control"
                 value={sortBy}
                 onChange={event =>
                   setSortBy(event.target.value as 'date' | 'name')
@@ -84,17 +85,16 @@ export default function ContactListPresentational({
                   {t('Date added (newest first)') as string}
                 </option>
                 <option value="name">{t('Name (A–Z)') as string}</option>
-              </select>
+              </Select>
             </div>
             {contacts.length >= 6 && (
               <div className="form-group">
                 <label htmlFor="contacts-search" className="sr-only">
                   {t('Search contacts') as string}
                 </label>
-                <input
+                <Input
                   id="contacts-search"
                   type="text"
-                  className="form-control"
                   onChange={event => onFilterChange(event.target.value)}
                   placeholder={t('Search contacts') as string}
                 />

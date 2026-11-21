@@ -1,21 +1,21 @@
 const mobileAuthentication = require('../controllers/mobile-authentication.server.controller.cjs');
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
 const offers =
-  require('../../../offers/server/controllers/offers.server.controller.mjs').default;
+  require('../../../offers/server/controllers/offers.server.controller.mts').default;
 const tribes =
-  require('../../../tribes/server/controllers/tribes.server.controller.mjs').default;
+  require('../../../tribes/server/controllers/tribes.server.controller.mts').default;
 const userProfile =
-  require('../../../users/server/controllers/users.profile.server.controller.mjs').default;
+  require('../../../users/server/controllers/users.profile.server.controller.mts').default;
 const contacts =
-  require('../../../contacts/server/controllers/contacts.server.controller.mjs').default;
+  require('../../../contacts/server/controllers/contacts.server.controller.mts').default;
 const experiences =
-  require('../../../experiences/server/controllers/experiences.server.controller.mjs').default;
+  require('../../../experiences/server/controllers/experiences.server.controller.mts').default;
 const messages =
-  require('../../../messages/server/controllers/messages.server.controller.mjs').default;
+  require('../../../messages/server/controllers/messages.server.controller.mts').default;
 const support =
-  require('../../../support/server/controllers/support.server.controller.mjs').default;
+  require('../../../support/server/controllers/support.server.controller.mts').default;
 const userPassword =
-  require('../../../users/server/controllers/users.password.server.controller.mjs').default;
+  require('../../../users/server/controllers/users.password.server.controller.mts').default;
 const resourcePolicy = require('../middleware/mobile-resource-policy.server.middleware.cjs');
 const offersPolicy =
   require('../../../offers/server/policies/offers.server.policy.mts').default;
@@ -30,11 +30,11 @@ const experiencesPolicy =
 const messagesPolicy =
   require('../../../messages/server/policies/messages.server.policy.mts').default;
 const userBlock =
-  require('../../../users/server/controllers/users.block.server.controller.mjs').default;
+  require('../../../users/server/controllers/users.block.server.controller.mts').default;
 const userAvatar =
-  require('../../../users/server/controllers/users.avatar.server.controller.mjs').default;
+  require('../../../users/server/controllers/users.avatar.server.controller.mts').default;
 const unifiedPush =
-  require('../../../users/server/controllers/users.unified-push.server.controller.mjs').default;
+  require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
 module.exports = function (app) {
   app

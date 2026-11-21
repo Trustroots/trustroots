@@ -4,7 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import _ from 'lodash';
 import config from './../config.mts';
-import errorService from './../../modules/core/server/services/error.server.service.mjs';
+import errorService from './../../modules/core/server/services/error.server.service.mts';
 import express, {
   type Express,
   type Request,
@@ -14,16 +14,16 @@ import express, {
 import morgan from 'morgan';
 import { redactSupportRequestUrl } from '../../modules/support/shared/request-url.ts';
 import session from 'express-session';
-import csrfProtection from './csrf-protection.mjs';
-import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mjs';
+import csrfProtection from './csrf-protection.mts';
+import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mts';
 import { getPublicCharts } from '../../modules/statistics/server/controllers/public-charts.server.controller.mts';
 import mongoStore from 'connect-mongo';
 import compress from 'compression';
 import helmet from 'helmet';
 import nunjucks from 'nunjucks';
-import buildMetadata from './build-metadata.mjs';
+import buildMetadata from './build-metadata.mts';
 import path from 'path';
-import paginate from './../../modules/core/server/services/pagination.server.service.mjs';
+import paginate from './../../modules/core/server/services/pagination.server.service.mts';
 import { randomUUID } from 'node:crypto';
 import qs from 'qs';
 import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mts';
@@ -271,7 +271,7 @@ function initSession(app: Express, connection: Connection) {
  */
 async function initLastSeen(app: Express) {
   const { default: lastSeenController } =
-    await import('../../modules/users/server/controllers/users.lastseen.server.controller.mjs');
+    await import('../../modules/users/server/controllers/users.lastseen.server.controller.mts');
   app.use(lastSeenController);
 }
 

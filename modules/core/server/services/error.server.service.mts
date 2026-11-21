@@ -1,4 +1,4 @@
-import log from './../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 export type ValidationFailure = {
   message?: string;
   status?: number;

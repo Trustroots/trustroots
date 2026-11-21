@@ -72,10 +72,10 @@ export default function BottomNavigationSmall({
 
   return (
     <nav
-      className="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-view-navbar-mobile"
+      className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden profile-view-navbar-mobile"
       role="navigation"
     >
-      <div className="container">
+      <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
         <ul className="nav navbar-nav" role="tablist">
           {tabs.map(({ key, label, link, count }) => (
             <li

@@ -1,6 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import mongoose, { type Types } from 'mongoose';
-import log from '../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import type {
   UserServerModel,
   UserServerRecord,

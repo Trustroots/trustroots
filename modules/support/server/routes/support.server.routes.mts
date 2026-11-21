@@ -1,7 +1,7 @@
 import type { Express, RequestHandler } from 'express';
 
-import support from './../controllers/support.server.controller.mjs';
-import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
+import support from './../controllers/support.server.controller.mts';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

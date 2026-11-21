@@ -7,6 +7,7 @@ import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-s
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import { setViewer } from '@/testutils/client/auth.testutil';
+import { hoverTooltip } from '@/testutils/client/tooltip.testutil';
 
 vi.mock('@/modules/core/client/react-app/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
@@ -822,16 +823,12 @@ describe('<AdminAcquisitionStories />', () => {
     );
     fireEvent.blur(dateHeading);
 
-    fireEvent.mouseEnter(
+    await hoverTooltip(
       screen.getByLabelText(
         'Restricted matches: Suspended or shadowbanned accounts with a matching username or email identifier',
       ),
+      'Suspended or shadowbanned accounts with a matching username or email identifier',
     );
-    expect(
-      await screen.findByText(
-        'Suspended or shadowbanned accounts with a matching username or email identifier',
-      ),
-    ).toBeVisible();
     expect(screen.getByRole('table').querySelector('tbody')).toHaveTextContent(
       'Hidden',
     );

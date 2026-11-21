@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 
 interface SuspendedRequest {
   user?: { roles?: unknown };

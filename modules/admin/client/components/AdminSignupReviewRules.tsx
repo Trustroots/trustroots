@@ -1,3 +1,5 @@
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
 import { Button } from '@trustroots/ui/Button';
@@ -108,7 +110,7 @@ export default function AdminSignupReviewRules() {
   return (
     <>
       <AdminHeader />
-      <main className="container admin-page">
+      <main className="tw:page-container admin-page">
         <h1>Signup watchlist</h1>
         <p>
           Matching signups are allowed and flagged to alert staff for review.
@@ -134,10 +136,9 @@ export default function AdminSignupReviewRules() {
                       <label className="sr-only" htmlFor={`rule-kind-${index}`}>
                         Rule {index + 1} type
                       </label>
-                      <select
+                      <Select
                         id={`rule-kind-${index}`}
                         aria-label={`Rule ${index + 1} type`}
-                        className="form-control"
                         value={rule.kind}
                         disabled={saving}
                         onChange={event =>
@@ -149,7 +150,7 @@ export default function AdminSignupReviewRules() {
                         <option value="keyword">Keyword</option>
                         <option value="email">Email address</option>
                         <option value="domain">Email domain</option>
-                      </select>
+                      </Select>
                     </td>
                     <td>
                       <label
@@ -158,10 +159,9 @@ export default function AdminSignupReviewRules() {
                       >
                         Rule {index + 1} value
                       </label>
-                      <input
+                      <Input
                         id={`rule-value-${index}`}
                         aria-label={`Rule ${index + 1} value`}
-                        className="form-control"
                         maxLength={254}
                         value={rule.value}
                         disabled={saving}
@@ -186,9 +186,8 @@ export default function AdminSignupReviewRules() {
                     <label className="sr-only" htmlFor="new-rule-kind">
                       New rule type
                     </label>
-                    <select
+                    <Select
                       id="new-rule-kind"
-                      className="form-control"
                       value={newKind}
                       disabled={saving}
                       onChange={event =>
@@ -198,15 +197,14 @@ export default function AdminSignupReviewRules() {
                       <option value="keyword">Keyword</option>
                       <option value="email">Email address</option>
                       <option value="domain">Email domain</option>
-                    </select>
+                    </Select>
                   </td>
                   <td>
                     <label className="sr-only" htmlFor="new-rule-value">
                       New rule value
                     </label>
-                    <input
+                    <Input
                       id="new-rule-value"
-                      className="form-control"
                       maxLength={254}
                       value={newValue}
                       disabled={saving}

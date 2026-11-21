@@ -103,21 +103,21 @@ export default function ProfileEditPage({
 
   return (
     <>
-      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-edit-navbar-mobile">
-        <div className="container">
+      <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden profile-edit-navbar-mobile">
+        <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
           <ProfileEditNav activeTab={activeTab} variant="bottom" />
         </div>
       </nav>
 
-      <section className="container container-spacer profile-edit">
-        <div className="row">
-          <div className="col-sm-3 hidden-xs">
+      <section className="tw:page-container container-spacer profile-edit">
+        <div className="tw:grid-row">
+          <div className="tw:sm:grid-col-3 tw:max-sm:hidden">
             <ProfileEditSidebar
               activeTab={activeTab}
               username={user.username}
             />
           </div>
-          <div className="col-xs-12 col-sm-9">{children}</div>
+          <div className="tw:grid-col-12 tw:sm:grid-col-9">{children}</div>
         </div>
       </section>
     </>

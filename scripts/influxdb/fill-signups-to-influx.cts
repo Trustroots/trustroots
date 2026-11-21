@@ -25,13 +25,13 @@ const mongoose = require('mongoose') as LegacyMongoose;
 const argv = require('yargs/yargs')(process.argv.slice(2)).parseSync() as {
   dry?: unknown;
 };
-const mongooseHelper = require('./../../config/lib/mongoose.mjs')
+const mongooseHelper = require('./../../config/lib/mongoose.mts')
   .default as ConnectionHelper;
 const statService =
   require('./../../modules/stats/server/services/stats.server.service.mts')
     .default as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
 
-require('./../../modules/users/server/models/user.server.model.mjs');
+require('./../../modules/users/server/models/user.server.model.mts');
 
 const User = mongoose.model<CountUsers>('User');
 

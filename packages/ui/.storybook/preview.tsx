@@ -1,8 +1,7 @@
 import React from 'react';
 import type { Decorator, Preview } from '@storybook/react-vite';
 
-// The app's stylesheets in the app's order: Bootstrap, the global Less with
-// the `--tr-*` tokens, Tailwind with this package's theme, then module Less.
+// Render stories with the web application styles and design tokens.
 import '../../../config/vite/load-styles.ts';
 
 /** Sets the writing direction, so logical properties can be checked in RTL. */

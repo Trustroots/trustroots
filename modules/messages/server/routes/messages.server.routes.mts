@@ -1,6 +1,6 @@
 import type { Application } from 'express';
 import messagesPolicy from '../policies/messages.server.policy.mts';
-import messages from '../controllers/messages.server.controller.mjs';
+import messages from '../controllers/messages.server.controller.mts';
 
 function register(app: Application): void {
   app

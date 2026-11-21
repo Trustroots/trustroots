@@ -11,9 +11,9 @@ export default function Privacy() {
   return (
     <>
       <Board names="mountainforest">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <h2>{t('Privacy')}</h2>
@@ -22,10 +22,10 @@ export default function Privacy() {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
           <div
-            className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8"
+            className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8"
             itemScope
             itemType="http://schema.org/Article"
           >

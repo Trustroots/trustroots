@@ -39,7 +39,9 @@ describe('<ReactFooter />', () => {
   it('renders the admin footer variant', () => {
     const { container } = render(<ReactFooter build={build} variant="admin" />);
 
-    expect(container.querySelector('#tr-footer')).toHaveClass('container');
+    expect(container.querySelector('#tr-footer')).toHaveClass(
+      'tw:page-container',
+    );
     expect(screen.getByRole('link', { name: 'Volunteering' })).toHaveAttribute(
       'href',
       '/support?category=volunteering',

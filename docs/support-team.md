@@ -56,6 +56,28 @@ Replies to ordinary member-message notifications are outside this inbox's scope.
 For mailbox setup and the production cutover, see
 [support mail across environments](operations/support-mail-environments.md).
 
+## Reviewing Experience edit and removal requests
+
+If a report concerns an Experience that contains private details or other
+problematic content, use its profile link and the usernames to identify the
+record. Keep the reported details in the support thread.
+
+1. In **Experience changes** (`/admin/experience-changes`), search by member
+   username and find the specific Experience. Copy a link for the author or
+   profile owner, then send it privately to that member. The link expires
+   after seven days and requires the matching account.
+2. The author can propose an edit or request removal. The profile owner can
+   request removal. The Experience stays visible according to its existing
+   publication state while a request is pending.
+3. Review the request in **Pending requests**. A support member who issued the
+   link needs another eligible support member or an administrator to approve
+   it. Refer Experiences involving a support member's own profile to another
+   reviewer.
+4. Approval applies the proposed edit or removes the Experience from profile
+   lists, counts and individual Experience views. If material needs urgent
+   attention while a request is pending or before a link can be used, escalate
+   it to an administrator through the support team.
+
 ## Historical Zendesk statuses
 
 Only an administrator can import historical statuses. Prepare the reduced

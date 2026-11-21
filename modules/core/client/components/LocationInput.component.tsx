@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
@@ -140,9 +141,8 @@ export default function LocationInput({
 
   return (
     <div className="location-input">
-      <input
+      <Input
         type="text"
-        className="form-control"
         id={id}
         value={query}
         placeholder={placeholder}

@@ -3,11 +3,11 @@ import _ from 'lodash';
 import util from 'util';
 import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import emailService from '../../../core/server/services/email.server.service.mjs';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import emailService from '../../../core/server/services/email.server.service.mts';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import {
   prepareNewExperience,
   prepareSendingToClient,
@@ -90,12 +90,7 @@ interface ExperienceController {
   readMine: ExperienceHandler;
   readOne: ExperienceHandler;
   getCount: ExperienceHandler;
-  experienceById: (
-    req: ExperienceRequest,
-    res: ExperienceResponseWriter,
-    next: ExperienceNext,
-    id: string,
-  ) => unknown;
+  experienceById: ExperienceHandler;
 }
 
 const service = {} as ExperienceController;
@@ -753,18 +748,15 @@ function validateReadOne(id: string | undefined) {
 /**
  * Load an experience by id to request.experience
  */
-service.experienceById = async function experienceById(req, res, next, id) {
+service.experienceById = async function experienceById(req, res, next) {
   try {
-    // don't bother fetching an experience for non-public users or guests
-    if (!req.user || !req.user.public) return next();
-
     // validate
+    const id = req.params.experienceId;
     validate(validateReadOne, id);
 
     const selfId = req.user._id;
-
-    // find the experience by id
-    const experience = (await Experience.findById(id)
+    const experienceId = new mongoose.Types.ObjectId(id);
+    const experience = (await Experience.findById(experienceId)
       .populate({
         path: 'userFrom',
         select: userProfile.userMiniProfileFields,

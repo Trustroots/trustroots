@@ -311,23 +311,9 @@ function parseOptions(args: string[]): Map<string, string> {
 }
 
 export function discoverModelPaths(repoRoot: string): string[] {
-  // The source tree contains generated JavaScript siblings for many TypeScript
-  // models. Importing both registers the same Mongoose model twice and raises
-  // OverwriteModelError. Prefer source modules when paired, while retaining
-  // JavaScript-only model modules.
-  const candidates = globSync('modules/*/server/models/**/*.{mjs,mts}', {
-    cwd: repoRoot,
-  })
+  return globSync('modules/*/server/models/**/*.{cjs,mts}', { cwd: repoRoot })
     .filter(modelPath => !modelPath.endsWith('.types.mts'))
     .sort();
-  const selected = new Map<string, string>();
-  for (const modelPath of candidates) {
-    const moduleBase = modelPath.replace(/\.(?:mjs|mts)$/, '');
-    if (modelPath.endsWith('.mts') || !selected.has(moduleBase)) {
-      selected.set(moduleBase, modelPath);
-    }
-  }
-  return [...selected.values()].sort();
 }
 
 export async function loadModelChecks(

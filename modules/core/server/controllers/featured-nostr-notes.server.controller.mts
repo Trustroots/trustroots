@@ -10,8 +10,8 @@ import FeaturedNote, {
 } from '../models/featured-nostr-note.server.model.mts';
 import { findPublicNip05Usernames } from '../services/nostr-identity.server.service.mts';
 
-function isEventId(id: unknown) {
-  return typeof id === 'string' && /^[0-9a-f]{64}$/.test(id);
+function isEventId(id: string) {
+  return /^[0-9a-f]{64}$/.test(id);
 }
 
 function articleId(address: string) {

@@ -57,20 +57,20 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
 
   return (
     <nav
-      className="container tw:flex tw:min-h-[43px] tw:items-center"
+      className="tw:page-container tw:flex tw:min-h-[43px] tw:items-center"
       aria-label={t('Page navigation')}
     >
       <div className="header-brand tw:me-4 tw:shrink-0 tw:pt-1.5 tw:pb-1.25 tw:whitespace-nowrap">
-        <a href="/" className="hidden-xs">
+        <a href="/" className="tw:max-sm:hidden">
           <img
-            className="hidden-xs hidden-sm"
+            className="tw:max-md:hidden"
             src="/img/logo/horizontal-white.svg"
             alt="Trustroots"
             width="177"
             height="31"
           />
           <img
-            className="hidden-md hidden-lg"
+            className="tw:md:hidden"
             src="/img/tree-white.svg"
             alt="Trustroots"
             width="31"
@@ -79,9 +79,9 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </a>
       </div>
 
-      <ul className="header-nav hidden-xs tw:m-0 tw:flex tw:list-none tw:items-center tw:p-0">
+      <ul className="header-nav tw:max-sm:hidden tw:m-0 tw:flex tw:list-none tw:items-center tw:p-0">
         <NavigationDropdown
-          className="hidden-xs cursor-pointer"
+          className="tw:max-sm:hidden cursor-pointer"
           id="support-dropdown"
           label={t('Support')}
         >
@@ -116,7 +116,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </NavigationDropdown>
       </ul>
 
-      <ul className="header-nav nav-header-primary tw:m-0 tw:ms-auto tw:flex tw:list-none tw:items-center tw:p-0">
+      <ul className="header-nav nav-header-primary tw:m-0 tw:ms-auto tw:flex tw:list-none tw:items-center tw:p-0 tw:max-sm:w-full tw:max-sm:justify-between tw:max-sm:[&>li]:flex-1 tw:max-sm:[&>li]:text-center">
         {(user.roles?.includes('admin') ||
           user.roles?.includes('support-team') ||
           user.roles?.includes('welcome-team')) && (
@@ -133,8 +133,8 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
             onLinkClick={trackNav('admin')}
             className={
               currentPath === '/admin' || currentPath.startsWith('/admin/')
-                ? 'hidden-xs active'
-                : 'hidden-xs'
+                ? 'tw:max-sm:hidden active'
+                : 'tw:max-sm:hidden'
             }
           >
             Admin
@@ -148,7 +148,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           className={circles.length ? 'header-link-dropdown' : undefined}
           submenu={
             circles.length > 0 && (
-              <ul className="header-shortcut-list tw:navigation-panel hidden-xs">
+              <ul className="header-shortcut-list tw:navigation-panel tw:max-sm:hidden">
                 {circles.map(tribe => (
                   <li key={tribe._id}>
                     <a
@@ -164,12 +164,12 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           }
         >
           <Icon
-            className="visible-xs-block"
+            className="tw:mx-auto tw:block tw:sm:hidden"
             fixedWidth
             icon="tribes"
             size="lg"
           />
-          <span className="hidden-xs">{t('Circles')}</span>
+          <span className="tw:max-sm:hidden">{t('Circles')}</span>
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
@@ -178,7 +178,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           aria-label={t('Search hosts')}
           className="header-link-dropdown"
           submenu={
-            <ul className="header-shortcut-list tw:navigation-panel hidden-xs">
+            <ul className="header-shortcut-list tw:navigation-panel tw:max-sm:hidden">
               <li>
                 <a className="tw:navigation-panel-item" href="/search/members">
                   {t('Find member by name')}
@@ -188,12 +188,12 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           }
         >
           <Icon
-            className="visible-xs-block"
+            className="tw:mx-auto tw:block tw:sm:hidden"
             fixedWidth
             icon="search"
             size="lg"
           />
-          <span className="hidden-xs">{t('Search')}</span>
+          <span className="tw:max-sm:hidden">{t('Search')}</span>
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
@@ -202,19 +202,19 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           aria-label={t('Messages')}
         >
           <Icon
-            className="visible-xs-block"
+            className="tw:mx-auto tw:block tw:sm:hidden"
             fixedWidth
             icon="messages"
             size="lg"
           />
-          <span className="hidden-xs">{t('Messages')}</span>
+          <span className="tw:max-sm:hidden">{t('Messages')}</span>
           <UnreadCount />
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
           path="/offer/host"
           onLinkClick={trackNav('host')}
-          className="hidden-xs"
+          className="tw:max-sm:hidden"
         >
           {t('Host')}
         </MenuItem>
@@ -223,12 +223,12 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           path="https://nos.trustroots.org/"
           onLinkClick={trackNav('nostroots')}
           target="_blank"
-          className="hidden-xs"
+          className="tw:max-sm:hidden"
         >
           Nostroots
         </MenuItem>
         <NavigationDropdown
-          className="header-profile hidden-xs cursor-pointer"
+          className="header-profile tw:max-sm:hidden cursor-pointer"
           id="profile-dropdown"
           align="end"
           label={
@@ -237,7 +237,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
               <span aria-hidden="true">
                 <Avatar user={user} link={false} size={24} />
               </span>
-              <span className="visible-xs-inline" aria-hidden="true">
+              <span className="tw:inline tw:sm:hidden" aria-hidden="true">
                 <Icon icon="user" fixedWidth size="lg" />
                 {user.displayName}
               </span>
@@ -368,7 +368,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </NavigationDropdown>
         <MenuItem
           aria-label={t('My profile, info and support')}
-          className="visible-xs-block"
+          className="tw:block tw:sm:hidden"
           currentPath={currentPath}
           path="/navigation"
           onLinkClick={trackNav('menu')}

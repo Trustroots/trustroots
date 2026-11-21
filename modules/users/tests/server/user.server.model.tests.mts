@@ -1,5 +1,6 @@
 import should from 'should';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import config from '../../../../config/config.mts';
@@ -1161,5 +1162,29 @@ describe('User Model Unit Tests:', function () {
         findById.restore();
       }
     });
+  });
+});
+
+describe('User model module', function () {
+  it('registers the User model when imported', function () {
+    // The suite has already registered every model, so only a fresh process
+    // shows what importing this module alone does.
+    const modelUrl = import.meta
+      .resolve('../../server/models/user.server.model.mts');
+    const output = execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `await import(${JSON.stringify(modelUrl)});
+const { default: mongoose } = await import('mongoose');
+process.stdout.write(JSON.stringify(mongoose.modelNames()));`,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, NODE_OPTIONS: '' },
+      },
+    );
+    should(JSON.parse(output.split('\n').at(-1)!)).eql(['User']);
   });
 });

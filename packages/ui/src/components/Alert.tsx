@@ -14,12 +14,12 @@ const alertVariants = cva(
     variants: {
       intent: {
         danger:
-          'tw:border-(--bs-danger-border-subtle) tw:bg-(--bs-danger-bg-subtle) tw:text-(--bs-danger-text-emphasis)',
-        info: 'tw:border-(--bs-info-border-subtle) tw:bg-(--bs-info-bg-subtle) tw:text-(--bs-info-text-emphasis)',
+          'tw:border-(--tr-danger-border-subtle) tw:bg-(--tr-danger-bg-subtle) tw:text-(--tr-danger-text-emphasis)',
+        info: 'tw:border-(--tr-info-border-subtle) tw:bg-(--tr-info-bg-subtle) tw:text-(--tr-info-text-emphasis)',
         success:
-          'tw:border-(--bs-success-border-subtle) tw:bg-(--bs-success-bg-subtle) tw:text-(--bs-success-text-emphasis)',
+          'tw:border-(--tr-success-border-subtle) tw:bg-(--tr-success-bg-subtle) tw:text-(--tr-success-text-emphasis)',
         warning:
-          'tw:border-(--bs-warning-border-subtle) tw:bg-(--bs-warning-bg-subtle) tw:text-(--bs-warning-text-emphasis)',
+          'tw:border-(--tr-warning-border-subtle) tw:bg-(--tr-warning-bg-subtle) tw:text-(--tr-warning-text-emphasis)',
       },
     },
   },

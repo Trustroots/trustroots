@@ -71,6 +71,25 @@ prevent a duplicate experience from being created.
 - **WHEN** a member opens an experience form where an experience already exists
 - **THEN** the system displays the already-shared state instead of a duplicate form
 
+### Requirement: Experiences awaiting a reply on the owner's profile
+
+The web Experiences page SHALL group received Experiences with no reciprocal
+Experience for the signed-in profile owner.
+
+#### Scenario: An owner has pending and public Experiences awaiting a reply
+
+- **WHEN** an owner opens their Experiences page
+- **THEN** the page shows a single section of received Experiences awaiting a reply
+- **AND** pending cards appear first, ordered by the earliest publication deadline, with the existing countdown and reply action
+- **AND** public cards follow, ordered newest first, with their existing reply action
+- **AND** public totals include those cards
+- **AND** each Experience card appears once
+
+#### Scenario: A member visits someone else's Experiences page
+
+- **WHEN** a signed-in member opens another member's Experiences page
+- **THEN** the page follows the existing visibility rules and does not show the owner's reply section
+
 ### Requirement: Reference-thread access
 
 The system SHALL provide the supported reference-thread APIs when the
@@ -272,21 +291,14 @@ without originals SHALL explicitly display current values instead.
 - **WHEN** an administrator reviews a request after the live Experience changes
 - **THEN** the stored original values remain unchanged in the comparison
 
-### Requirement: Experiences awaiting a reply on the owner's profile
+### Requirement: Counts in the public Experience summary
 
-The web Experiences page SHALL group received Experiences with no reciprocal
-Experience for the signed-in profile owner.
+The web profile summary SHALL count public primary Experiences and omit
+attached replies and pending Experiences from its totals.
 
-#### Scenario: An owner has pending and public Experiences awaiting a reply
+#### Scenario: Public Experiences include unanswered and overlapping categories
 
-- **WHEN** an owner opens their Experiences page
-- **THEN** the page shows a single section of received Experiences awaiting a reply
-- **AND** pending cards appear first, ordered by the earliest publication deadline, with the existing countdown and reply action
-- **AND** public cards follow, ordered newest first, with their existing reply action
-- **AND** public totals include those cards
-- **AND** each Experience card appears once
-
-#### Scenario: A member visits someone else's Experiences page
-
-- **WHEN** a signed-in member opens another member's Experiences page
-- **THEN** the page follows the existing visibility rules and does not show the owner's reply section
+- **WHEN** the detailed summary displays recommendation and interaction counts
+- **THEN** missing answers are reported separately and are not counted as negative answers
+- **AND** a public Experience may contribute to multiple reported interaction counts
+- **AND** the existing gender breakdown counts other or unlisted values together when any of the displayed categories applies

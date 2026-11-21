@@ -14,7 +14,7 @@
  * Example:
  *  pnpm run ensure-indexes User
  */
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import type { Connection } from 'mongoose';
 let predefinedModel: string | undefined;
 if (process.argv[2]) {

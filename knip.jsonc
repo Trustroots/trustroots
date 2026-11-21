@@ -33,8 +33,6 @@
         // loads by path.
         "config/env/local.sample.js",
         ".devcontainer/local.js",
-        // TypeScript uses this sidecar for the types of logger.mjs.
-        "config/lib/logger.d.mts",
         // TanStack Start's client and router entries, named in
         // vite.config.mts relative to its srcDirectory.
         "config/vite/react-main.tsx",

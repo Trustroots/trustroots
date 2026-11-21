@@ -98,6 +98,10 @@ describe('<AdminCircles />', () => {
     const remove = await screen.findByRole('button', {
       name: 'Remove Sample Member',
     });
+    expect(screen.getByRole('link', { name: /Sample Member/ })).toHaveAttribute(
+      'href',
+      '/profile/sample-member',
+    );
     expect(getUserByUsernameMock).toHaveBeenLastCalledWith(
       'sample-member',
       expect.any(AbortSignal),
@@ -200,7 +204,7 @@ describe('<AdminCircles />', () => {
       target: { value: 'Cyclists' },
     });
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+      screen.getByRole('button', { name: 'Create circle' }).closest('form')!,
     );
     await waitFor(() => expect(saveCircleMock).toHaveBeenCalled());
     expect((saveCircleMock.mock.calls[0][0] as CircleFixture).label).toBe(
@@ -282,11 +286,107 @@ describe('circle editor navigation and preview', () => {
     render(<AdminCircles />);
     await screen.findByRole('button', { name: 'Walkers' });
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+      screen.getByRole('button', { name: 'Create circle' }).closest('form')!,
     );
     await waitFor(() =>
       expect(window.location.pathname).toBe('/admin/circles/walkers'),
     );
+  });
+
+  it('queues newer edits behind an in-progress save', async () => {
+    const circle = { ...selected, color: '345d5c' };
+    getCirclesMock.mockResolvedValue([circle]);
+    let finishFirstSave: (result: CircleFixture) => void = () => undefined;
+    saveCircleMock
+      .mockReturnValueOnce(new Promise(resolve => (finishFirstSave = resolve)))
+      .mockResolvedValueOnce({ ...circle, description: 'Latest description' });
+    visit('/admin/circles/walkers');
+    render(<AdminCircles />);
+    await screen.findByDisplayValue('Walkers');
+    const description = screen.getByLabelText('Description');
+    fireEvent.change(description, { target: { value: 'First description' } });
+    await waitFor(() => expect(saveCircleMock).toHaveBeenCalledTimes(1));
+    fireEvent.change(description, { target: { value: 'Latest description' } });
+    await act(async () => {
+      finishFirstSave({ ...circle, description: 'First description' });
+    });
+    expect(description).toHaveValue('Latest description');
+    expect(screen.getByRole('status')).toHaveTextContent('Saving…');
+    await screen.findByText('Circle saved.');
+    expect(saveCircleMock.mock.calls).toEqual([
+      [{ ...circle, description: 'First description' }, null],
+      [{ ...circle, description: 'Latest description' }, null],
+    ]);
+  });
+
+  it.each([false, true])(
+    'ignores a save that finishes after changing circles (failure: %s)',
+    async fails => {
+      const circle = { ...selected, color: '345d5c' };
+      const otherCircle = {
+        ...circle,
+        _id: 'runners-id',
+        slug: 'runners',
+        label: 'Runners',
+      };
+      getCirclesMock.mockResolvedValue([circle, otherCircle]);
+      let finishSave = () => {};
+      saveCircleMock.mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          finishSave = () => {
+            if (fails) reject(new Error('Unavailable'));
+            else resolve({ ...circle, description: 'A saved description' });
+          };
+        }),
+      );
+      visit('/admin/circles/walkers');
+      render(<AdminCircles />);
+      await screen.findByDisplayValue('Walkers');
+      fireEvent.change(screen.getByLabelText('Description'), {
+        target: { value: 'A saved description' },
+      });
+      const leave = new Event('beforeunload', { cancelable: true });
+      expect(window.dispatchEvent(leave)).toBe(false);
+      await waitFor(() => expect(saveCircleMock).toHaveBeenCalledOnce());
+
+      act(() => visit('/admin/circles/runners'));
+      await screen.findByDisplayValue('Runners');
+      await act(async () => {
+        finishSave();
+      });
+      expect(screen.getByLabelText('Description')).toHaveValue('');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    },
+  );
+
+  it('waits for valid edits and retains a failed save for retry', async () => {
+    const circle = { ...selected, color: '345d5c' };
+    getCirclesMock.mockResolvedValue([
+      circle,
+      { ...circle, _id: 'runners-id', slug: 'runners', label: 'Runners' },
+    ]);
+    saveCircleMock
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockResolvedValueOnce({ ...circle, label: 'Trail Walkers' });
+    visit('/admin/circles/walkers');
+    render(<AdminCircles />);
+    const name = await screen.findByDisplayValue('Walkers');
+    fireEvent.change(name, { target: { value: ' ' } });
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Changes are unsaved',
+    );
+    expect(saveCircleMock).not.toHaveBeenCalled();
+
+    fireEvent.change(name, { target: { value: 'Trail Walkers' } });
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not save circle.',
+    );
+    expect(name).toHaveValue('Trail Walkers');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry saving' }));
+    await screen.findByText('Circle saved.');
+    expect(saveCircleMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('button', { name: 'Trail Walkers' })).toBeVisible();
   });
 });
 
@@ -322,11 +422,9 @@ describe('circle form feedback and fields', () => {
       modified: '2026-10-19T12:00:00.000Z',
     };
     saveCircleMock.mockResolvedValue(saved);
+    visit('/admin/circles/walkers');
     render(<AdminCircles />);
-    fireEvent.click(
-      await screen.findByRole('button', { name: /^Walkers\s*Hidden$/ }),
-    );
-    expect(screen.getByAltText('Current circle')).toHaveAttribute(
+    expect(await screen.findByAltText('Current circle')).toHaveAttribute(
       'src',
       '/uploads-circle/walkers/120x120.jpg',
     );
@@ -342,9 +440,9 @@ describe('circle form feedback and fields', () => {
     fireEvent.change(screen.getByLabelText('Image'), {
       target: { files: [image] },
     });
-    fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
-    );
+    expect(
+      screen.queryByRole('button', { name: 'Create circle' }),
+    ).not.toBeInTheDocument();
     expect(await screen.findByText('Circle saved.')).toBeVisible();
     expect(saveCircleMock).toHaveBeenCalledWith(
       { ...circle, public: true, description: 'Updated circle' },
@@ -375,7 +473,7 @@ describe('circle form feedback and fields', () => {
     saveCircleMock.mockRejectedValueOnce(error);
     render(<AdminCircles />);
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+      screen.getByRole('button', { name: 'Create circle' }).closest('form')!,
     );
     expect(await screen.findByText(message)).toBeVisible();
   });
@@ -389,7 +487,7 @@ describe('circle form feedback and fields', () => {
     );
     render(<AdminCircles />);
     const form = screen
-      .getByRole('button', { name: 'Save circle' })
+      .getByRole('button', { name: 'Create circle' })
       .closest('form')!;
     fireEvent.submit(form);
     fireEvent.submit(form);
@@ -397,7 +495,25 @@ describe('circle form feedback and fields', () => {
     expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
     resolveSave({ label: 'Cyclists', public: true });
     expect(await screen.findByText('Circle saved.')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Save circle' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Create circle' })).toBeEnabled();
+  });
+
+  it('handles the creation response after the editor unmounts', async () => {
+    let finishSave: (result: CircleFixture) => void = () => undefined;
+    saveCircleMock.mockReturnValueOnce(
+      new Promise(resolve => {
+        finishSave = resolve;
+      }),
+    );
+    const { unmount } = render(<AdminCircles />);
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Create circle' }).closest('form')!,
+    );
+    unmount();
+    await act(async () => {
+      finishSave({ label: 'Walkers', public: true });
+    });
+    expect(saveCircleMock).toHaveBeenCalledOnce();
   });
 
   it('keeps the saved circle when the catalogue cannot be reloaded', async () => {
@@ -407,7 +523,7 @@ describe('circle form feedback and fields', () => {
     saveCircleMock.mockResolvedValue({ label: 'Cyclists', public: true });
     render(<AdminCircles />);
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+      screen.getByRole('button', { name: 'Create circle' }).closest('form')!,
     );
     expect(await screen.findByText('Circle saved.')).toBeVisible();
     expect(

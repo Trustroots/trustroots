@@ -1,11 +1,16 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { Input } from '@trustroots/ui/Input';
+import { Textarea } from '@trustroots/ui/Textarea';
+import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
 import { getUserByUsername } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import RichText from '@/modules/core/client/components/RichText';
+import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import { Button } from '@trustroots/ui/Button';
+
+const autosaveDelay = 500;
 
 const suggestedColours = [
   '1e3a8a',
@@ -58,6 +63,13 @@ function imageUrl(circle: AdminCircle) {
   }`;
 }
 
+function saveErrorMessage(error: unknown) {
+  return (
+    (error as { response?: { data?: { message?: string } } })?.response?.data
+      ?.message || 'Could not save circle.'
+  );
+}
+
 export default function AdminCircles() {
   const { circle: circleSlug } = useParams({ strict: false });
   const navigate = useNavigate();
@@ -71,12 +83,23 @@ export default function AdminCircles() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [savedRevision, setSavedRevision] = useState(0);
+  const [invalidDraft, setInvalidDraft] = useState(false);
   const [organiserUsername, setOrganiserUsername] = useState('');
   const [organiserError, setOrganiserError] = useState<string | null>(null);
   const [lookingUpOrganiser, setLookingUpOrganiser] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null);
+  const form = useRef<HTMLFormElement>(null);
   const saving = useRef(false);
+  const editorVersion = useRef(0);
   const organiserLookup = useRef<AbortController | null>(null);
+  const hasEdits = Boolean(
+    circle._id &&
+    (!circleSlug || circle.slug === circleSlug) &&
+    revision !== savedRevision,
+  );
+  const isAutosavePending = hasEdits && !error && !invalidDraft;
 
   async function loadCircles() {
     setCircles(await getCircles());
@@ -93,6 +116,9 @@ export default function AdminCircles() {
           : emptyCircle;
         setCircle(selected ? { ...selected } : emptyCircle);
         clearSelectedImage();
+        setRevision(0);
+        setSavedRevision(0);
+        setInvalidDraft(false);
         setMessage(null);
         setError(selected ? null : 'Circle not found.');
       })
@@ -101,16 +127,18 @@ export default function AdminCircles() {
       });
     return () => {
       active = false;
+      editorVersion.current += 1;
       organiserLookup.current?.abort();
     };
   }, [circleSlug]);
 
   function clearSelectedImage() {
     setImage(null);
-    imageInput.current!.value = '';
+    if (imageInput.current) imageInput.current.value = '';
   }
 
   function editCircle(selected: AdminCircle) {
+    editorVersion.current += 1;
     organiserLookup.current?.abort();
     organiserLookup.current = null;
     setLookingUpOrganiser(false);
@@ -118,6 +146,9 @@ export default function AdminCircles() {
     setOrganiserError(null);
     setCircle({ ...selected });
     clearSelectedImage();
+    setRevision(0);
+    setSavedRevision(0);
+    setInvalidDraft(false);
     setMessage(null);
     setError(null);
     void navigate({
@@ -153,6 +184,7 @@ export default function AdminCircles() {
             { _id, username, displayName },
           ],
         }));
+        markEdited();
         setOrganiserUsername('');
       }
     } catch (error) {
@@ -170,9 +202,72 @@ export default function AdminCircles() {
     }
   }
 
+  function markEdited() {
+    if (circle._id) setRevision(current => current + 1);
+    setMessage(null);
+    setError(null);
+    setInvalidDraft(false);
+  }
+
+  const saveEdits = useEffectEvent(async () => {
+    if (!form.current?.checkValidity() || circle.label.trim().length < 2) {
+      setInvalidDraft(true);
+      return;
+    }
+
+    const version = editorVersion.current;
+    saving.current = true;
+    setIsSaving(true);
+    try {
+      const saved = await saveCircle(circle, image);
+      if (editorVersion.current !== version) return;
+
+      setCircles(current =>
+        current.map(item => (item._id === saved._id ? saved : item)),
+      );
+      setCircle(current =>
+        current === circle
+          ? saved
+          : { ...current, image: saved.image, modified: saved.modified },
+      );
+      if (image) {
+        // The file input is disabled during upload to keep the selected file
+        // associated with the request. Text edits can continue in the meantime.
+        clearSelectedImage();
+      }
+      setSavedRevision(revision);
+      setMessage('Circle saved.');
+    } catch (requestError) {
+      if (editorVersion.current === version) {
+        setError(saveErrorMessage(requestError));
+      }
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
+    }
+  });
+
+  useEffect(() => {
+    if (!isAutosavePending || isSaving || lookingUpOrganiser) return;
+    const timer = window.setTimeout(() => void saveEdits(), autosaveDelay);
+    return () => window.clearTimeout(timer);
+  }, [isAutosavePending, isSaving, lookingUpOrganiser, revision]);
+
+  useEffect(() => {
+    if (!hasEdits) return;
+    function beforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [hasEdits]);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.current || organiserLookup.current) return;
+    if (circle._id || circleSlug || saving.current || organiserLookup.current) {
+      return;
+    }
     saving.current = true;
     setIsSaving(true);
     setMessage(null);
@@ -193,10 +288,7 @@ export default function AdminCircles() {
         setError('Circle saved, but the catalogue could not be reloaded.');
       }
     } catch (requestError) {
-      const apiMessage = (
-        requestError as { response?: { data?: { message?: string } } }
-      ).response?.data?.message;
-      setError(apiMessage || 'Could not save circle.');
+      setError(saveErrorMessage(requestError));
     } finally {
       saving.current = false;
       setIsSaving(false);
@@ -215,6 +307,7 @@ export default function AdminCircles() {
       ...current,
       [name]: nextValue,
     }));
+    markEdited();
   };
 
   const sortedCircles = [...circles].sort((left, right) => {
@@ -239,7 +332,7 @@ export default function AdminCircles() {
   return (
     <>
       <AdminHeader />
-      <div className="container admin-circles-page">
+      <div className="tw:page-container admin-circles-page">
         <div className="admin-circles-heading">
           <div>
             <h2>Circles</h2>
@@ -247,14 +340,16 @@ export default function AdminCircles() {
               Create and maintain the public circle catalogue.
             </p>
           </div>
-          <Button onClick={() => editCircle(emptyCircle)} type="button">
+          <Button
+            disabled={isSaving || isAutosavePending}
+            onClick={() => editCircle(emptyCircle)}
+            type="button"
+          >
             New circle
           </Button>
         </div>
-        {message && <p className="text-success">{message}</p>}
-        {error && <p className="text-danger">{error}</p>}
-        <div className="row">
-          <div className="col-md-7">
+        <div className="tw:grid-row">
+          <div className="tw:md:grid-col-7">
             <div className="table-responsive">
               <table className="table admin-circles-table" aria-label="Circles">
                 <thead>
@@ -306,6 +401,7 @@ export default function AdminCircles() {
                         <button
                           className="admin-circles-table__name"
                           onClick={() => editCircle(item)}
+                          disabled={isSaving || isAutosavePending}
                           type="button"
                         >
                           {imageUrl(item) ? (
@@ -340,7 +436,7 @@ export default function AdminCircles() {
               </table>
             </div>
           </div>
-          <div className="col-md-5">
+          <div className="tw:md:grid-col-5">
             {circle.slug && (
               <p>
                 <a href={`/circles/${encodeURIComponent(circle.slug)}`}>
@@ -348,11 +444,40 @@ export default function AdminCircles() {
                 </a>
               </p>
             )}
-            <form onSubmit={submit}>
+            <form onSubmit={submit} ref={form}>
+              <div role="status">
+                {circle._id && (isSaving || isAutosavePending)
+                  ? 'Saving…'
+                  : !hasEdits &&
+                    message && <span className="text-success">{message}</span>}
+              </div>
+              {invalidDraft && (
+                <p role="alert" className="text-danger">
+                  Changes are unsaved. Check the name, colour and attribution
+                  URL.
+                </p>
+              )}
+              {error && (
+                <div>
+                  <p role="alert" className="text-danger">
+                    {error}
+                  </p>
+                  {hasEdits && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      intent="primary"
+                      size="sm"
+                      onClick={() => setError(null)}
+                    >
+                      Retry saving
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="circle-label">Name</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-label"
                   name="label"
                   onChange={update}
@@ -366,8 +491,8 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-description">Description</label>
-                <textarea
-                  className="form-control"
+                <Textarea
+                  fieldSize="md"
                   id="circle-description"
                   name="description"
                   onChange={update}
@@ -384,31 +509,46 @@ export default function AdminCircles() {
               <fieldset className="form-group" disabled={isSaving}>
                 <legend>Circle organisers</legend>
                 {!!circle.organisers?.length && (
-                  <ul>
+                  <ul className="web-section-list admin-circle-organisers">
                     {circle.organisers.map(member => {
                       const name =
                         member.displayName ||
                         member.username ||
                         'Deleted member';
+                      const remove = (
+                        <Button
+                          variant="link"
+                          size="xs"
+                          type="button"
+                          aria-label={`Remove ${name}`}
+                          disabled={lookingUpOrganiser}
+                          onClick={() => {
+                            setCircle(current => ({
+                              ...current,
+                              organisers: current.organisers?.filter(
+                                organiser => organiser._id !== member._id,
+                              ),
+                            }));
+                            markEdited();
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      );
+                      const { username } = member;
                       return (
                         <li key={member._id}>
-                          {name}{' '}
-                          <Button
-                            variant="link"
-                            type="button"
-                            aria-label={`Remove ${name}`}
-                            disabled={lookingUpOrganiser}
-                            onClick={() =>
-                              setCircle(current => ({
-                                ...current,
-                                organisers: current.organisers?.filter(
-                                  organiser => organiser._id !== member._id,
-                                ),
-                              }))
-                            }
-                          >
-                            Remove
-                          </Button>
+                          {username ? (
+                            <MemberSearchCard
+                              user={{ ...member, username }}
+                              compact
+                              action={remove}
+                            />
+                          ) : (
+                            <div className="member-card-surface" data-compact>
+                              {name} {remove}
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -417,8 +557,7 @@ export default function AdminCircles() {
                 <label htmlFor="circle-organiser-username">
                   Organiser username
                 </label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-organiser-username"
                   aria-describedby="circle-organiser-help"
                   aria-invalid={Boolean(organiserError)}
@@ -447,11 +586,10 @@ export default function AdminCircles() {
                   Add organiser
                 </Button>
               </fieldset>
-              <div className="row">
-                <div className="col-sm-4 form-group">
+              <div className="tw:grid-row">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="circle-color">Colour</label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="circle-color"
                     list="circle-colours"
                     maxLength={6}
@@ -477,15 +615,16 @@ export default function AdminCircles() {
                     </p>
                   )}
                 </div>
-                <div className="col-sm-8 form-group">
+                <div className="tw:sm:grid-col-8 form-group">
                   <label htmlFor="circle-image">Image</label>
-                  <input
+                  <Input
                     accept="image/jpeg,image/png,image/gif"
-                    className="form-control"
                     id="circle-image"
-                    onChange={event =>
-                      setImage(event.currentTarget.files?.[0] || null)
-                    }
+                    disabled={isSaving}
+                    onChange={event => {
+                      setImage(event.currentTarget.files?.[0] || null);
+                      markEdited();
+                    }}
                     ref={imageInput}
                     type="file"
                   />
@@ -515,8 +654,7 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-attribution">Image attribution</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-attribution"
                   name="attribution"
                   onChange={update}
@@ -525,8 +663,7 @@ export default function AdminCircles() {
               </div>
               <div className="form-group">
                 <label htmlFor="circle-attribution-url">Attribution URL</label>
-                <input
-                  className="form-control"
+                <Input
                   id="circle-attribution-url"
                   name="attribution_url"
                   onChange={update}
@@ -534,13 +671,15 @@ export default function AdminCircles() {
                   value={circle.attribution_url || ''}
                 />
               </div>
-              <Button
-                intent="primary"
-                disabled={isSaving || lookingUpOrganiser}
-                type="submit"
-              >
-                {isSaving ? 'Saving…' : 'Save circle'}
-              </Button>
+              {!circle._id && !circleSlug && (
+                <Button
+                  intent="primary"
+                  disabled={isSaving || lookingUpOrganiser}
+                  type="submit"
+                >
+                  {isSaving ? 'Saving…' : 'Create circle'}
+                </Button>
+              )}
             </form>
           </div>
         </div>

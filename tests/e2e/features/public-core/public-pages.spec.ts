@@ -471,6 +471,12 @@ test.describe('public pages and unauthenticated flows', () => {
       }
 
       if (pagePath === '/safety') {
+        const sharingGuidance = page.getByRole('region', {
+          name: 'Sharing an Experience',
+        });
+        await expect(sharingGuidance).toContainText('after 14 days');
+        await expect(sharingGuidance).toContainText('private messages');
+        await captureSection(sharingGuidance, 'safety-sharing-an-experience');
         await expect(
           page.getByRole('navigation', { name: /safety page contents/i }),
         ).toBeVisible();

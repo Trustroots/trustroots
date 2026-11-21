@@ -9,6 +9,10 @@ type MemberCardUser = React.ComponentProps<typeof MemberIdentity>['user'] &
   Pick<UserProfile, 'username'> &
   Partial<Pick<UserProfile, 'locationLiving' | 'locationFrom' | 'tagline'>>;
 
+const cardClassName = 'member-search-card-frame member-card-surface tw:group';
+const stackClassName = 'tw:flex tw:flex-col tw:gap-[var(--member-card-gap)]';
+const profileClassName = `member-search-card ${stackClassName} tw:text-inherit tw:no-underline tw:[&:hover,&:focus-visible]:text-inherit tw:[&:hover,&:focus-visible]:no-underline tw:focus-visible:outline-3 tw:focus-visible:outline-solid tw:focus-visible:outline-offset-2 tw:focus-visible:outline-[rgb(72_130_97_/_35%)]`;
+
 function highlightMatches(value: string, query: string) {
   const terms = query.match(/[\p{L}\p{N}]+/gu) || [];
   const lowerValue = value.toLocaleLowerCase();
@@ -57,25 +61,20 @@ export default function MemberSearchCard({
   user,
   query = '',
   activityLabel,
+  action,
   compact = false,
 }: {
   user: MemberCardUser;
   query?: string;
   activityLabel?: string;
+  action?: React.ReactNode;
   compact?: boolean;
 }) {
   const { t } = useTranslation('search') as { t: (key: string) => string };
-  return (
-    <a
-      className={[
-        'member-search-card member-card-surface tw:group tw:flex tw:flex-col tw:gap-[var(--member-card-gap)] tw:text-inherit tw:no-underline',
-        'tw:transition-[border-color,box-shadow,transform] tw:duration-150 tw:ease-[ease]',
-        'tw:[&:hover,&:focus-visible]:text-inherit tw:[&:hover,&:focus-visible]:no-underline tw:[&:hover,&:focus-visible]:shadow-[0_5px_18px_rgb(26_68_47_/_10%)] tw:[&:hover,&:focus-visible]:[transform:translateY(-1px)]',
-        'tw:focus-visible:outline-3 tw:focus-visible:outline-solid tw:focus-visible:outline-offset-2 tw:focus-visible:outline-[rgb(72_130_97_/_35%)]',
-      ].join(' ')}
-      data-compact={compact || undefined}
-      href={`/profile/${encodeURIComponent(user.username)}`}
-    >
+  const profileHref = `/profile/${encodeURIComponent(user.username)}`;
+  const compactAttribute = compact || undefined;
+  const profile = (
+    <>
       <MemberIdentity
         className="member-search-card-identity"
         size={compact ? 36 : 64}
@@ -99,14 +98,43 @@ export default function MemberSearchCard({
             {highlightMatches(user.tagline, query)}
           </p>
         )}
-        {activityLabel && (
-          <div className="tw:mt-auto tw:pt-1.5 tw:group-data-[compact]:pt-0.5 tw:[&_[data-slot=badge]]:whitespace-normal">
-            <Badge variant="outline" intent="neutral">
-              {activityLabel}
-            </Badge>
-          </div>
-        )}
       </div>
+    </>
+  );
+  const activity = activityLabel && (
+    <Badge variant="outline" intent="neutral" className="tw:whitespace-normal">
+      {activityLabel}
+    </Badge>
+  );
+  const footer = (activity || action) && (
+    <div className="tw:mt-auto tw:flex tw:flex-wrap tw:items-center tw:gap-x-2 tw:gap-y-1">
+      {activity}
+      {action}
+    </div>
+  );
+
+  if (action) {
+    return (
+      <div
+        className={`${cardClassName} ${stackClassName}`}
+        data-compact={compactAttribute}
+      >
+        <a className={`${profileClassName} tw:flex-1`} href={profileHref}>
+          {profile}
+        </a>
+        {footer}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      className={`${cardClassName} ${profileClassName}`}
+      data-compact={compactAttribute}
+      href={profileHref}
+    >
+      {profile}
+      {footer}
     </a>
   );
 }

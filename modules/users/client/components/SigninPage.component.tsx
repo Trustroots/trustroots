@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { AuthPasswordInput } from './AuthPasswordInput';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -111,35 +113,35 @@ export default function SigninPage() {
   return (
     <BoardWithPhotoList
       names={['nordiclights', 'jungleroad']}
-      className="container container-fullscreen"
+      className="tw:page-container container-fullscreen"
     >
       <div className="middle-wrapper middle-wrapper-horizontal">
         <div className="middle-content">
-          <div className="row">
-            <div className="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 tw:sm:grid-offset-3 tw:sm:grid-col-6 tw:md:grid-offset-4 tw:md:grid-col-4">
               {errorMessage && (
                 <Alert intent="danger" role="alert">
                   {errorMessage}
                 </Alert>
               )}
               <form
-                className="form-auth"
+                className="tw:mb-5 tw:[&_[data-slot=input]]:border-0 tw:[&_[data-slot=input]]:shadow-[0_0_10px_#0000001a] tw:[&_[data-slot=input]:focus]:shadow-[0_0_10px_#0000001a]"
                 autoComplete="off"
                 onSubmit={handleSubmit}
               >
                 <fieldset>
                   <div className="form-group">
-                    <label htmlFor="username" className="lead">
+                    <label htmlFor="username" className="lead tw:mb-[5px]">
                       Email or username
                     </label>
-                    <input
+                    <Input
                       ref={usernameInput}
                       type="text"
                       autoCapitalize="off"
                       required
                       id="username"
                       name="username"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       placeholder="Email or username"
                       value={credentials.username}
                       disabled={isLoading}
@@ -149,40 +151,25 @@ export default function SigninPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="password" className="lead">
+                    <label htmlFor="password" className="lead tw:mb-[5px]">
                       Password
                     </label>
-                    <div className="input-group">
-                      <input
-                        required
-                        id="password"
-                        name="password"
-                        placeholder="Password"
-                        className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
-                        autoCapitalize="off"
-                        disabled={isLoading}
-                        value={credentials.password}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
-                      />
-                      <span className="input-group-btn">
-                        <Button
-                          size="lg"
-                          className="password-toggle"
-                          type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </Button>
-                      </span>
-                    </div>
+                    <AuthPasswordInput
+                      required
+                      visible={showPassword}
+                      onToggleVisibility={() =>
+                        setShowPassword(current => !current)
+                      }
+                      id="password"
+                      name="password"
+                      placeholder="Password"
+                      autoCapitalize="off"
+                      disabled={isLoading}
+                      value={credentials.password}
+                      onChange={event =>
+                        updateCredential('password', event.target.value)
+                      }
+                    />
                   </div>
                   <div className="form-group">
                     <Button size="lg" type="submit" disabled={isLoading}>
@@ -200,7 +187,7 @@ export default function SigninPage() {
                     <a href={forgotHref}>
                       Forgot?
                       {authError && (
-                        <span className="hidden-xs">
+                        <span className="tw:max-sm:hidden">
                           {' '}
                           Recover your password
                         </span>
@@ -209,7 +196,7 @@ export default function SigninPage() {
                   </div>
                 </fieldset>
               </form>
-              <div className="text-white hidden-xs">
+              <div className="text-white tw:max-sm:hidden">
                 <br />
                 <Button
                   variant="outline"
@@ -228,8 +215,8 @@ export default function SigninPage() {
             </div>
           </div>
 
-          <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
-            <div className="container">
+          <nav className="navbar navbar-default navbar-fixed-bottom tw:block tw:sm:hidden">
+            <div className="tw:page-container tw:flex tw:flex-wrap tw:items-center tw:justify-between tw:px-0">
               <ul
                 className="nav navbar-nav nav-justified"
                 aria-label="Profile actions"

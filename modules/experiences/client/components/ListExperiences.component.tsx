@@ -120,8 +120,8 @@ export default function ListExperiences({
       )}
       {otherPending.length > 0 && (
         <>
-          <div className="row">
-            <div className="col-xs-12 col-sm-6">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 tw:sm:grid-col-6">
               <h4 className="text-muted">
                 {t('Experiences pending publishing') as string}
               </h4>

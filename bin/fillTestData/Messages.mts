@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';

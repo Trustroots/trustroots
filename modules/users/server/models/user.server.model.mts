@@ -2,11 +2,11 @@ import { validLanguageLevels } from '../../shared/language-levels.ts';
 import _ from 'lodash';
 import textService from '../../../core/server/services/text.server.service.mts';
 import { readFileSync } from 'node:fs';
-import authenticationService from '../services/authentication.server.service.mjs';
-import passwordHashing from '../services/password-hashing.server.service.mjs';
+import authenticationService from '../services/authentication.server.service.mts';
+import passwordHashing from '../services/password-hashing.server.service.mts';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter } from 'mongoose';
-import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
+import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mts';
 import validator from 'validator';
 import type {
   UserServerDocument,
@@ -730,6 +730,4 @@ UserSchema.index(
   },
   { name: 'circle_discovery_member_seen' },
 );
-export function registerUserModel(): UserServerModel {
-  return mongoose.model<UserServerRecord, UserServerModel>('User', UserSchema);
-}
+mongoose.model<UserServerRecord, UserServerModel>('User', UserSchema);

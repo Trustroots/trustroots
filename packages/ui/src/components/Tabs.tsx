@@ -17,7 +17,7 @@ import { cn } from '#lib/cn';
 const tabsListVariants = cva('tw:flex tw:flex-wrap tw:ps-0 tw:mb-0', {
   variants: {
     variant: {
-      tabs: 'tw:border-x-0 tw:border-t-0 tw:border-b tw:border-solid tw:border-(--bs-border-color)',
+      tabs: 'tw:border-x-0 tw:border-t-0 tw:border-b tw:border-solid tw:border-(--tr-control-border)',
       pills: '',
     },
   },
@@ -31,16 +31,16 @@ const tabVariants = cva(
     // Bootstrap's `.nav-link` focus ring.
     'tw:focus-visible:outline-0 tw:focus-visible:shadow-[0_0_0_0.25rem_rgb(13_110_253/0.25)]',
     'tw:data-disabled:pointer-events-none tw:data-disabled:cursor-default',
-    'tw:data-disabled:not-data-active:text-(--bs-secondary-color)',
+    'tw:data-disabled:not-data-active:text-(--tr-secondary-text)',
   ],
   {
     variants: {
       variant: {
         tabs: [
           'tw:-mb-px tw:border tw:border-solid tw:border-transparent tw:rounded-t-md',
-          'tw:not-data-active:[&:hover,&:focus]:isolate tw:not-data-active:[&:hover,&:focus]:[border-color:var(--bs-secondary-bg)_var(--bs-secondary-bg)_var(--bs-border-color)]',
-          'tw:data-active:text-(--bs-emphasis-color) tw:data-active:[&:hover,&:focus]:text-(--bs-emphasis-color) tw:data-active:bg-(--bs-body-bg)',
-          'tw:data-active:[border-color:var(--bs-border-color)_var(--bs-border-color)_var(--bs-body-bg)]',
+          'tw:not-data-active:[&:hover,&:focus]:isolate tw:not-data-active:[&:hover,&:focus]:[border-color:var(--tr-secondary-bg)_var(--tr-secondary-bg)_var(--tr-control-border)]',
+          'tw:data-active:text-(--tr-emphasis-color) tw:data-active:[&:hover,&:focus]:text-(--tr-emphasis-color) tw:data-active:bg-(--tr-surface-bg)',
+          'tw:data-active:[border-color:var(--tr-control-border)_var(--tr-control-border)_var(--tr-surface-bg)]',
         ],
         // Bootstrap's default pill colour, which the step pills have shown
         // since the move to Bootstrap 5.

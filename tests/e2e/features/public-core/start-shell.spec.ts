@@ -1,5 +1,10 @@
 import type { Page } from '@playwright/test';
-import { captureSection, expect, test } from '../../support/fixtures.mts';
+import {
+  captureSection,
+  expect,
+  expectPresent,
+  test,
+} from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 
 function bootstrapUsername(page: Page) {
@@ -65,10 +70,18 @@ test.describe('app shell', () => {
     const errors = collectPageErrors(page);
     await signInViaApi(page, undefined, member!);
     await page.goto('/search');
+    const header = page.locator('#tr-header');
+    const profileMenu = header.getByRole('button', { name: 'Profile menu' });
+    const mobileMenu = header.getByRole('link', {
+      name: 'My profile, info and support',
+    });
     const map = page.locator('section.search');
     await expect(map).toBeVisible();
     await expectNoncedScripts(page);
     expect(await bootstrapUsername(page)).toBe(member!.username);
+    await expect(profileMenu).toBeVisible();
+    await expect(mobileMenu).toBeHidden();
+    await captureSection(header, 'shell-member-header-desktop');
     await captureSection(map, 'shell-search-map-desktop');
 
     await page.goto(`/profile/${other!.username}`);
@@ -78,6 +91,9 @@ test.describe('app shell', () => {
 
     await page.setViewportSize(mobile);
     await expect(profile).toBeVisible();
+    await expect(profileMenu).toBeHidden();
+    await expect(mobileMenu).toBeVisible();
+    await captureSection(header, 'shell-member-header-mobile');
     await captureSection(profile, 'shell-profile-mobile');
     await page.goto('/search');
     await expect(map).toBeVisible();
@@ -108,4 +124,59 @@ test.describe('app shell', () => {
     await captureSection(hero, 'shell-rtl-home-hero-mobile');
     expect(errors).toEqual([]);
   });
+});
+
+test('rules content follows the responsive grid in both reading directions', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await page.goto('/rules');
+  const section = page.locator('section.container-spacer');
+  const column = section.locator(':scope > div > div').first();
+
+  for (const { viewport, containerWidth, totalColumns } of [
+    { viewport: 390, containerWidth: undefined, totalColumns: 12 },
+    { viewport: 768, containerWidth: 750, totalColumns: 10 },
+    { viewport: 992, containerWidth: 970, totalColumns: 8 },
+    { viewport: 1280, containerWidth: 1170, totalColumns: 8 },
+  ]) {
+    await page.setViewportSize({ width: viewport, height: 844 });
+    const sectionBounds = await section.boundingBox();
+    const columnBounds = await column.boundingBox();
+    expectPresent(sectionBounds);
+    expectPresent(columnBounds);
+    if (containerWidth) {
+      expect(sectionBounds.width).toBeCloseTo(containerWidth, 0);
+    }
+    expect(columnBounds.width / sectionBounds.width).toBeCloseTo(
+      totalColumns / 12,
+      2,
+    );
+    expect(columnBounds.x + columnBounds.width / 2).toBeCloseTo(
+      sectionBounds.x + sectionBounds.width / 2,
+      0,
+    );
+    if (viewport === 390 || viewport === 1280) {
+      await captureSection(section, `rules-grid-${viewport}`);
+    }
+  }
+
+  await context.addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect
+    .poll(async () => {
+      const sectionBounds = await section.boundingBox();
+      const columnBounds = await column.boundingBox();
+      expectPresent(sectionBounds);
+      expectPresent(columnBounds);
+      return Math.abs(
+        columnBounds.x +
+          columnBounds.width / 2 -
+          (sectionBounds.x + sectionBounds.width / 2),
+      );
+    })
+    .toBeLessThan(1);
+  await captureSection(section, 'rules-grid-rtl');
 });

@@ -99,11 +99,11 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
 
   return (
     <section className="offers-list">
-      <div className="row">
-        <div className="col-xs-12 col-sm-10">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 tw:sm:grid-col-10">
           <h3>Your meetups</h3>
         </div>
-        <div className="col-xs-12 col-sm-2 text-right">
+        <div className="tw:grid-col-12 tw:sm:grid-col-2 text-right">
           <Button
             aria-label="Add new meet offer"
             intent="primary"
@@ -196,8 +196,8 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                 intent="primary"
                 render={<a href={`/search?offer=${offer._id}`} />}
               >
-                <span className="hidden-xs">See on big map</span>
-                <span className="visible-xs-inline">Big Map</span>
+                <span className="tw:max-sm:hidden">See on big map</span>
+                <span className="tw:inline tw:sm:hidden">Big Map</span>
               </Button>
               &nbsp;
               <Button

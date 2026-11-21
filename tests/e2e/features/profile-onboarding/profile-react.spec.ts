@@ -26,9 +26,10 @@ for (const viewport of [
     await page.goto(`/profile/${SEEDED_MEMBERS[1].username}`);
     if (viewport.width === 1280) {
       await captureSection(
-        page.locator('.profile-view .row.hidden-xs').filter({
-          has: page.locator('.profile-name'),
-        }),
+        page
+          .locator(".profile-view :is(.row, [class~='tw:grid-row']):visible")
+          .filter({ has: page.locator('.profile-name') })
+          .last(),
         'member-profile-heading-desktop',
       );
     }
@@ -65,6 +66,35 @@ for (const viewport of [
     await expect(modal).toBeHidden();
   });
 }
+
+test('profile shows how long ago the member registered', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.view-about', [
+    'The profile shows relative membership age and retains the exact date.',
+  ]);
+
+  const created = '2023-11-20T12:00:00.000Z';
+  await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  await page.clock.setFixedTime(new Date('2026-11-20T12:00:00.000Z'));
+  const member = SEEDED_MEMBERS[1];
+  await page.route(`**/api/users/${member.username}`, async route => {
+    const response = await route.fetch();
+    const profile = await response.json();
+    await route.fulfill({ response, json: { ...profile, created } });
+  });
+
+  await page.goto(`/profile/${member.username}`);
+  const membership = page.getByText(/^(?:Registered .+ ago|Member since .+)$/);
+  await captureSection(membership, 'profile-membership-age-desktop');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/profile/${member.username}/overview`);
+  await captureSection(membership, 'profile-membership-age-mobile');
+  await expect(membership).toHaveText('Registered 3 years ago');
+  await expect(membership).toHaveAttribute('datetime', created);
+});
 
 test('profile descriptions retain supported formatting in collapsed and expanded views', async ({
   page,
@@ -391,10 +421,10 @@ for (const width of [390, 480, 481, 600, 767]) {
       ).toBeVisible();
       if (width === 390 && member === SEEDED_MEMBERS[1]) {
         await expect(
-          page.locator('.profile-view .visible-xs-block .profile-name'),
+          page.locator('.profile-view .profile-name:visible'),
         ).toHaveCSS('margin-top', '0px');
         await captureSection(
-          page.locator('.profile-view .visible-xs-block').filter({
+          page.locator('.profile-view .member-identity:visible').filter({
             has: page.locator('.profile-name'),
           }),
           'member-profile-heading-mobile',

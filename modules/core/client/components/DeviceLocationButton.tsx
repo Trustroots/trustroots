@@ -1,3 +1,4 @@
+import { Button } from '@trustroots/ui/Button';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -62,9 +63,10 @@ export default function DeviceLocationButton({
 
   return (
     <div className="device-location-control">
-      <button
+      <Button
         type="button"
-        className="btn btn-default device-location-button"
+        variant="ghost"
+        className="device-location-button"
         disabled={isPending}
         aria-busy={isPending}
         aria-label={buttonLabel}
@@ -88,7 +90,7 @@ export default function DeviceLocationButton({
           <circle cx="12" cy="12" r="6" />
           <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
         </svg>
-      </button>
+      </Button>
       <span
         role="status"
         aria-live="polite"

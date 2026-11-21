@@ -1,3 +1,5 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Input } from '@trustroots/ui/Input';
 import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
 import isEqual from 'lodash/isEqual';
 import React, { useEffect, useRef, useState } from 'react';
@@ -299,9 +301,9 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   </h4>
                 </div>
                 <div className="panel-body">
-                  <textarea
+                  <Textarea
                     aria-labelledby="noOfferDescriptionLabel"
-                    className="form-control"
+                    fieldSize="md"
                     onChange={({ target: { value } }) =>
                       setOffer(current => ({
                         ...current,
@@ -342,11 +344,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   what help you need, whether it is optional or expected, and
                   what you offer your guests.
                 </p>
-                <textarea
+                <Textarea
                   aria-labelledby="offerDescriptionLabel"
                   aria-describedby="volunteering-description-help"
                   aria-required={offer.status !== 'no'}
-                  className="form-control offer-description"
+                  fieldSize="md"
+                  className="offer-description"
                   onChange={({ target: { value } }) =>
                     setOffer(current => ({ ...current, description: value }))
                   }
@@ -385,7 +388,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
                         How many guests can you accommodate?
                       </h4>
                     </legend>
-                    <div className="input-group input-group-stepper">
+                    <div
+                      data-slot="input-group"
+                      className="tw:input-group input-group-stepper"
+                    >
                       <span className="input-group-btn">
                         <Button
                           aria-hidden="true"
@@ -405,10 +411,11 @@ export default function OfferHostPage({ user }: HostPageProps) {
                           <i className="icon-minus"></i>
                         </Button>
                       </span>
-                      <input
+                      <Input
                         aria-labelledby="maxGuests"
                         aria-required="true"
-                        className="form-control input-lg input-plain text-center font-brand-regular"
+                        fieldSize="lg"
+                        className="input-plain text-center font-brand-regular"
                         max="99"
                         min="1"
                         onChange={({ target: { value } }) =>

@@ -4,7 +4,7 @@ import assert from 'assert/strict';
 import imported3 from './../../../../config/lib/express.mts';
 
 const headers =
-  imported3 as typeof import('../../../../config/lib/express.mjs').default & {
+  imported3 as typeof import('../../../../config/lib/express.mts').default & {
     initHelmetHeaders(app: import('express').Express): void;
   };
 

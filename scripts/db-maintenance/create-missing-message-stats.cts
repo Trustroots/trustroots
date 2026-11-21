@@ -36,13 +36,13 @@ const searchMessagesParam = {
 };
 
 const config = require('./../../config/config.mts').default;
-require('./../../config/lib/mongoose.mjs');
+require('./../../config/lib/mongoose.mts');
 const mongoose = require('mongoose') as LegacyMongoose;
-require('./../../modules/messages/server/models/message.server.model.mjs');
-require('./../../modules/messages/server/models/message-stat.server.model.mjs');
+require('./../../modules/messages/server/models/message.server.model.mts');
+require('./../../modules/messages/server/models/message-stat.server.model.mts');
 const Message = mongoose.model<HistoricalMessage>('Message');
 const messageStatService =
-  require('./../../modules/messages/server/services/message-stat.server.service.mjs')
+  require('./../../modules/messages/server/services/message-stat.server.service.mts')
     .default as {
     updateMessageStat(
       message: HistoricalMessage,

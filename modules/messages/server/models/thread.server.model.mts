@@ -1,5 +1,5 @@
 import mongoose, { type Types } from 'mongoose';
-import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mjs';
+import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mts';
 const service = {};
 
 export interface ThreadRecord {

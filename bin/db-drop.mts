@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import mongooseService from './../config/lib/mongoose.mjs';
+import mongooseService from './../config/lib/mongoose.mts';
 import type { Connection } from 'mongoose';
 if (process.env.NODE_ENV === 'production') {
   console.error('You cannot drop database in production mode!');

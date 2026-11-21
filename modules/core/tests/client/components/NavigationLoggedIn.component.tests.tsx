@@ -138,7 +138,7 @@ describe('<NavigationLoggedIn />', () => {
     );
     const admin = screen.getByRole('link', { name: 'Admin' });
     expect(admin).toHaveAttribute('href', '/admin');
-    expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
+    expect(admin.closest('li')).toHaveClass('active', 'tw:max-sm:hidden');
     const adminListItem = requireElement(admin.closest('li'));
     const circlesListItem = requireElement(
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
@@ -328,7 +328,7 @@ describe('<NavigationLoggedIn />', () => {
     const menu = requireElement(
       item.querySelector<HTMLElement>('.header-shortcut-list'),
     );
-    expect(menu).toHaveClass('hidden-xs');
+    expect(menu).toHaveClass('tw:max-sm:hidden');
     const links = within(menu).getAllByRole('link');
     expect(links.map(link => link.textContent)).toEqual(
       Array.from({ length: 10 }, (_, index) => `Circle ${11 - index}`),

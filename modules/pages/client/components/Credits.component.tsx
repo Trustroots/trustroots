@@ -5,15 +5,15 @@ export default function Credits() {
   return (
     <>
       <Board names="mountainforest">
-        <div className="container text-center">
+        <div className="tw:page-container text-center">
           <br />
           <br />
           <h2>Credits</h2>
         </div>
       </Board>
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8">
             <h1>Credits</h1>
             <p className="lead">
               Trustroots is made possible by a community of volunteers and the

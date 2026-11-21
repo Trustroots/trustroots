@@ -139,7 +139,7 @@ test('alerts and badges render supplied content and attributes', () => {
   );
   expect(screen.getByRole('alert')).toHaveTextContent('A warning');
   expect(screen.getByRole('alert')).toHaveClass(
-    'tw:bg-(--bs-warning-bg-subtle)',
+    'tw:bg-(--tr-warning-bg-subtle)',
     'extra',
   );
   expect(screen.getByTitle('Count')).toHaveClass(
@@ -155,7 +155,7 @@ test('alert does not require a class name', () => {
     </Alert>,
   );
   expect(screen.getByRole('alert')).toHaveClass(
-    'tw:bg-(--bs-warning-bg-subtle)',
+    'tw:bg-(--tr-warning-bg-subtle)',
   );
 });
 

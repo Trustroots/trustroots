@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import _ from 'lodash';
-import emailService from './../../../core/server/services/email.server.service.mjs';
+import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
-import log from './../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import type {

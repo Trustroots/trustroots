@@ -182,7 +182,7 @@ describe('<SiteFooter />', () => {
 
     expect(screen.getByRole('contentinfo')).toHaveClass(
       'site-footer-account',
-      'hidden-print',
+      'tw:print:hidden',
     );
     expect(
       screen.getByRole('link', {

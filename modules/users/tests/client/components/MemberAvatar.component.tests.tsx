@@ -51,6 +51,24 @@ describe('MemberAvatar', () => {
     ).toHaveAttribute('href', '/profile/forest-member');
   });
 
+  it('keeps accented letters together in a single-word name', () => {
+    render(<MemberAvatar user={{ ...member, displayName: 'E\u0301lan' }} />);
+    expect(screen.getByText('E\u0301L')).toBeInTheDocument();
+  });
+
+  it('keeps emoji code points intact without Intl.Segmenter', () => {
+    vi.stubGlobal(
+      'Intl',
+      Object.create(Intl, { Segmenter: { value: undefined } }),
+    );
+    try {
+      render(<MemberAvatar user={{ ...member, displayName: 'Example 🌻' }} />);
+      expect(screen.getByText('E🌻')).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it.each(providersWithoutImages)(
     'uses initials when the selected provider has no usable image: %j',
     data => {

@@ -1,3 +1,5 @@
+import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
 // External dependencies
 import React, {
   useCallback,
@@ -345,7 +347,7 @@ export default function AdminNewsletter() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Newsletter subscribers</h2>
         <p>
           Eligible recipients are members who are public, subscribed to the
@@ -389,8 +391,7 @@ export default function AdminNewsletter() {
           {usesTextLocation && (
             <div className="form-group" style={{ marginTop: '12px' }}>
               <label htmlFor="newsletter-location-text">Location name</label>
-              <input
-                className="form-control"
+              <Input
                 id="newsletter-location-text"
                 onChange={event =>
                   updateAudienceCriteria({ locationText: event.target.value })
@@ -406,11 +407,10 @@ export default function AdminNewsletter() {
           {usesHostingLocation && (
             <fieldset>
               <legend className="h4">Hosting area</legend>
-              <div className="row">
-                <div className="col-sm-4 form-group">
+              <div className="tw:grid-row">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-latitude">Latitude</label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="newsletter-location-latitude"
                     onChange={event =>
                       updateAudienceCriteria({ latitude: event.target.value })
@@ -421,12 +421,11 @@ export default function AdminNewsletter() {
                     value={audienceCriteria.latitude}
                   />
                 </div>
-                <div className="col-sm-4 form-group">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-longitude">
                     Longitude
                   </label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="newsletter-location-longitude"
                     onChange={event =>
                       updateAudienceCriteria({ longitude: event.target.value })
@@ -437,12 +436,11 @@ export default function AdminNewsletter() {
                     value={audienceCriteria.longitude}
                   />
                 </div>
-                <div className="col-sm-4 form-group">
+                <div className="tw:sm:grid-col-4 form-group">
                   <label htmlFor="newsletter-location-radius">
                     Radius (kilometres)
                   </label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="newsletter-location-radius"
                     min="0.1"
                     max="500"
@@ -462,8 +460,7 @@ export default function AdminNewsletter() {
             <label htmlFor="newsletter-audience-circles">
               Circles (optional)
             </label>
-            <select
-              className="form-control"
+            <Select
               id="newsletter-audience-circles"
               multiple
               onChange={onAudienceCirclesChange}
@@ -475,7 +472,7 @@ export default function AdminNewsletter() {
                   {circle.label}
                 </option>
               ))}
-            </select>
+            </Select>
             <p className="help-block">
               Select more than one circle with Ctrl/Command-click.
             </p>
@@ -529,9 +526,8 @@ export default function AdminNewsletter() {
           <label className="sr-only" htmlFor="newsletter-circle-id">
             Circle ID
           </label>
-          <input
+          <Input
             aria-label="Circle ID"
-            className="form-control"
             id="newsletter-circle-id"
             onChange={event => setCircleId(event.target.value)}
             placeholder="Circle ID"
@@ -564,9 +560,8 @@ export default function AdminNewsletter() {
             <label htmlFor="newsletter-recipient-file">
               Recipient file (CSV, JSONL, or NDJSON)
             </label>
-            <input
+            <Input
               accept=".csv,.jsonl,.ndjson,text/csv,application/x-ndjson,application/ndjson"
-              className="form-control"
               id="newsletter-recipient-file"
               name="newsletterCsv"
               onChange={event => onFileChange(event)}

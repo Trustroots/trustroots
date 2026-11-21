@@ -2,7 +2,7 @@ import 'should';
 import type { Express } from 'express';
 import mongoose from 'mongoose';
 import request, { type Agent } from 'supertest';
-import express from '../../../../config/lib/express.mjs';
+import express from '../../../../config/lib/express.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 

@@ -72,6 +72,8 @@ describe('connection history backfill service', function () {
     should(filter.connectionHistoryInitialised).deepEqual({ $ne: true });
     should(filter.extSitesBW).equal('FormerMember');
     should(filter.extSitesServas).equal('household/Family');
+    should(filter.extSitesCS).deepEqual({ $exists: false });
+    should(filter.nostrNpub).deepEqual({ $exists: false });
     should(filter.additionalProvidersData).deepEqual({
       github: { login: 'OldLogin' },
     });
@@ -176,11 +178,17 @@ describe('connection history backfill service', function () {
     };
     query.select.returns(query);
     query.lean.returns(query);
-    sinon.stub(User, 'find').returns(query as never);
+    const find = sinon.stub(User, 'find').returns(query as never);
     sinon.stub(User, 'findById').returns(lookupQuery(null) as never);
 
     (await service.backfillConnectionHistory(User)).should.equal(0);
 
+    sinon.assert.calledOnce(find);
+    should(find.firstCall.args).deepEqual([
+      {
+        connectionHistoryInitialised: { $ne: true },
+      },
+    ]);
     cursor.close.calledOnce.should.be.true();
   });
 });

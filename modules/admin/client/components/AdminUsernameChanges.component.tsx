@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -84,14 +85,13 @@ export default function AdminUsernameChanges() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Recent username changes</h2>
         <p>Review recorded old and new usernames for each member.</p>
         <p className="text-muted">Times in UTC.</p>
 
         <label htmlFor="username-change-range">Date range</label>
-        <select
-          className="form-control"
+        <Select
           id="username-change-range"
           onChange={event =>
             changeRange(event.target.value as AdminUsernameChangeRange)
@@ -100,7 +100,7 @@ export default function AdminUsernameChanges() {
         >
           <option value="90d">Last 90 days</option>
           <option value="all">All time</option>
-        </select>
+        </Select>
 
         {failed && <p role="alert">Could not load username change history.</p>}
         {loading && <p role="status">Loading username changes…</p>}

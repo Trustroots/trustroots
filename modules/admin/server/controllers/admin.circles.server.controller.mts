@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import sharp from 'sharp';
 
 import config from '../../../../config/config.mts';
-import log from '../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import errorService, {
   type ValidationFailure,
 } from '../../../core/server/services/error.server.service.mts';

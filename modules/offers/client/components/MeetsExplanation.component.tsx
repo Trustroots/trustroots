@@ -10,7 +10,7 @@ export default function MeetsExplanation() {
 
   return (
     <>
-      <Icon icon="users" size="3x" className="text-muted hidden-xs" />
+      <Icon icon="users" size="3x" className="text-muted tw:max-sm:hidden" />
       <p className="lead">
         <strong>
           {String(
