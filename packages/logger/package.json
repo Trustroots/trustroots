@@ -8,7 +8,7 @@
     "./log-redaction": "./log-redaction.mts"
   },
   "scripts": {
-    "lint": "eslint --ext .mjs,.mts .",
+    "lint": "oxlint . && oxfmt --check .",
     "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/log-redaction.unit.tests.mts"
   },
   "peerDependencies": {

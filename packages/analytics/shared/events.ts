@@ -23,11 +23,19 @@ export type OfferType = 'host' | 'meet';
 
 /** Sections of the profile editor that save on their own. */
 export type ProfileSection =
-  'about' | 'account' | 'locations' | 'networks' | 'photo';
+  | 'about'
+  | 'account'
+  | 'locations'
+  | 'networks'
+  | 'photo';
 
 /** Where a circle join or leave was started. */
 export type CircleSource =
-  'circle_page' | 'circles_list' | 'signup' | 'profile' | 'other';
+  | 'circle_page'
+  | 'circles_list'
+  | 'signup'
+  | 'profile'
+  | 'other';
 
 /** Search filters a member can change. */
 export type SearchFilter =
@@ -55,14 +63,19 @@ export type MessageGateReason = 'not_public' | 'profile_too_short';
  * the sign-in rate limit, or a server error or no response.
  */
 export type SigninFailureReason =
-  'credentials' | 'suspended' | 'rate_limited' | 'server';
+  | 'credentials'
+  | 'suspended'
+  | 'rate_limited'
+  | 'server';
 
 /** Why an email confirmation failed: a bad or expired link, or anything else. */
 export type EmailConfirmFailureReason = 'invalid_link' | 'server';
 
 /** Why saving a new password from a reset link failed. */
 export type PasswordResetFailureReason =
-  'invalid_link' | 'rate_limited' | 'server';
+  | 'invalid_link'
+  | 'rate_limited'
+  | 'server';
 
 /** Why sending a message failed: the rate limit, or anything else. */
 export type MessageSendFailureReason = 'rate_limited' | 'other';
@@ -72,7 +85,11 @@ export type SaveFailureReason = 'validation' | 'server';
 
 /** The categories of the support form. */
 export type SupportCategory =
-  'account' | 'report_member' | 'report_bug' | 'volunteering' | 'other';
+  | 'account'
+  | 'report_member'
+  | 'report_bug'
+  | 'volunteering'
+  | 'other';
 
 /** Navigation surfaces whose links are tracked. */
 export type NavigationSurface = 'top' | 'footer';

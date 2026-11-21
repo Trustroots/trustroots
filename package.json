@@ -42,7 +42,7 @@
     "i18n:check-placeholders": "node ./bin/check-i18n-placeholders.mts",
     "i18n": "pnpm run i18n:extract && pnpm run i18n:fix-weblate",
     "install-dependencies": "node ./bin/install-deps.mts",
-    "lint:watch": "nodemon --watch modules --watch config --watch bin --watch migrations --watch eslint.config.cjs --ext js,mjs,mts,cjs,cts,ts,tsx --exec 'pnpm run lint --cache --quiet'",
+    "lint:watch": "nodemon --watch modules --watch config --watch bin --watch migrations --watch oxlint.config.ts --ext js,mjs,mts,cjs,cts,ts,tsx --exec 'oxlint --quiet'",
     "lint:modules": "node ./scripts/ci/check-module-graph.mts",
     "lint:modules:test": "node --test ./scripts/ci/check-module-graph.test.mts",
     "lint:packages": "node ./scripts/ci/check-module-packages.mts",
@@ -53,12 +53,12 @@
     "test:affected": "node --test ./scripts/check-affected.test.mts",
     "modules:update-baseline": "node ./scripts/ci/check-module-graph.mts --update",
     "modules:update-packages": "node ./scripts/ci/check-module-packages.mts --update",
-    "lint": "pnpm run lint:boundaries && pnpm run lint:boundaries:test && eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx . && node --test scripts/ci/eslint-accessibility.test.mts",
-    "lint:report": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx --output-file ./eslint_report.json --format json .",
+    "lint": "pnpm run lint:boundaries && pnpm run lint:boundaries:test && oxlint && oxfmt --check && node --test scripts/ci/lint-accessibility.test.mts",
+    "lint:report": "oxlint --format github",
     "migrate-down": "migrate down",
     "migrate": "migrate up",
     "mongo:migration": "node ./scripts/db-migration/mongodb-upgrade.mts",
-    "reformat-files": "prettier --ignore-path .prettierignore --write",
+    "reformat-files": "oxfmt --no-error-on-unmatched-pattern",
     "preseed": "pnpm run check-environment",
     "prestart": "pnpm run check-environment",
     "seed:experiences": "node ./bin/fillTestData/Experiences.mts 10 0.8",
@@ -109,7 +109,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tooling/tsconfig/tests.json && tsc --noEmit -p tooling/tsconfig/contracts.json && tsc --noEmit -p tooling/tsconfig/contract-diagnostics.json && tsc --noEmit -p tooling/tsconfig/server.json && tsc --noEmit -p tooling/tsconfig/fixtures.json && tsc --noEmit -p tooling/tsconfig/scripts.json && tsc --noEmit -p tooling/tsconfig/e2e.json && tsc --noEmit -p tooling/tsconfig/server-tests.json && tsc --noEmit -p tooling/tsconfig/config.json && tsc --noEmit -p tooling/tsconfig/docs.json && tsc --noEmit -p packages/ui/tsconfig.storybook.json && pnpm run nostranslation:typecheck",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.mts",
     "ensure-circle-discovery-indexes": "node ./bin/db-maintenance/ensure-circle-discovery-indexes.mts",
-    "prepare": "husky install",
+    "prepare": "husky",
     "vite:server": "NODE_ENV=development vite --config vite.config.mts",
     "build:vite": "NODE_ENV=production vite build --config vite.config.mts",
     "start:vite": "pnpm run start",
@@ -197,9 +197,6 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@eslint/compat": "2.1.1",
-    "@eslint/eslintrc": "3.3.7",
-    "@eslint/js": "9.39.5",
     "@faker-js/faker": "10.6.0",
     "@playwright/test": "1.65.1",
     "@stryker-mutator/core": "10.1.1",
@@ -220,23 +217,12 @@
     "@types/sinon": "22.0.2",
     "@types/supertest": "7.2.1",
     "@types/yargs": "17.0.35",
-    "@typescript-eslint/eslint-plugin": "8.73.0",
-    "@typescript-eslint/parser": "8.73.0",
     "@vitejs/plugin-react": "6.3.0",
     "@vitest/coverage-v8": "5.1.0",
     "@wordpress/browserslist-config": "7.1.0",
     "agendash": "8.2.6",
     "autoprefixer": "10.6.2",
     "concurrently": "10.0.7",
-    "eslint": "9.39.5",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-import-resolver-typescript": "4.4.5",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-jest-dom": "5.10.2",
-    "eslint-plugin-jsx-a11y": "6.10.2",
-    "eslint-plugin-prettier": "5.5.7",
-    "eslint-plugin-react": "7.37.5",
-    "eslint-plugin-testing-library": "7.16.2",
     "husky": "9.1.7",
     "i18next-cli": "1.88.0",
     "istanbul-lib-coverage": "3.2.2",
@@ -246,8 +232,9 @@
     "less": "4.9.1",
     "lint-staged": "17.6.1",
     "nodemon": "3.1.14",
+    "oxfmt": "0.79.0",
+    "oxlint": "1.94.0",
     "postcss": "8.5.33",
-    "prettier": "3.10.1",
     "rtlcss": "4.3.0",
     "should": "13.2.3",
     "sinon": "22.1.0",
@@ -266,11 +253,11 @@
   "license": "AGPL",
   "lint-staged": {
     "*.{js,mjs,mts,cjs,cts,ts,tsx}": [
-      "pnpm run reformat-files",
-      "eslint"
+      "oxfmt --no-error-on-unmatched-pattern",
+      "oxlint"
     ],
     "*.{json,md,html,less,yml}": [
-      "pnpm run reformat-files"
+      "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
   "type": "module"

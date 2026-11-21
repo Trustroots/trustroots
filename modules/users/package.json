@@ -8,7 +8,7 @@
     "./shared/*": "./shared/*"
   },
   "scripts": {
-    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "lint": "oxlint . && oxfmt --check .",
     "test:client": "node ../../scripts/test-module.cts client users",
     "test:server": "node ../../scripts/test-module.cts server users"
   },

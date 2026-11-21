@@ -11,7 +11,8 @@ export interface ExperienceChangeProposal {
 }
 
 export type ExperienceChangeSubmission =
-  { kind: 'edit'; proposed: ExperienceChangeProposal } | { kind: 'remove' };
+  | { kind: 'edit'; proposed: ExperienceChangeProposal }
+  | { kind: 'remove' };
 
 /** The support-link endpoint omits private feedback for a recipient. */
 export interface ExperienceChangeAccess<Id = string> {
@@ -25,9 +26,13 @@ export interface ExperienceChangeAccess<Id = string> {
 
 export type ExperienceChangeRequestKind = 'edit' | 'remove';
 export type ExperienceChangeRequestStatus =
-  'pending' | 'processing' | 'approved' | 'rejected';
+  | 'pending'
+  | 'processing'
+  | 'approved'
+  | 'rejected';
 export type ExperienceChangeStoredRequestStatus =
-  ExperienceChangeRequestStatus | 'processing';
+  | ExperienceChangeRequestStatus
+  | 'processing';
 
 /** The create endpoint returns the stored request fields without read-mine normalisation. */
 export interface ExperienceChangeSubmissionResult<

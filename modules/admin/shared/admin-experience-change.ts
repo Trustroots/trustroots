@@ -13,7 +13,9 @@ export interface AdminExperienceChangeMember<Id = string> {
 }
 
 export type AdminExperienceChangeParticipant<Id = string> =
-  AdminExperienceChangeMember<Id> | Id | null;
+  | AdminExperienceChangeMember<Id>
+  | Id
+  | null;
 
 interface AdminExperienceChangeExperienceFields<
   Id = string,

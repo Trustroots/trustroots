@@ -82,45 +82,15 @@ jobs:
           done
       - name: Lint
         id: lint
-        # See https://eslint.org/docs/user-guide/command-line-interface#options
+        # The github format annotates the pull request and fails on errors.
         run: pnpm run lint:report
-        # Continue to the next step even if this fails
-        continue-on-error: true
-      - name: Set up reviewdog
-        uses: reviewdog/action-setup@4f5b515603ab893c46dee23b06b21a5c8ec365f2 # v1
-        continue-on-error: true
-        with:
-          reviewdog_version: v0.21.2
-      - name: Annotate existing ESLint results
-        continue-on-error: true
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          node - <<'NODE' > eslint_report.txt
-          const fs = require('node:fs');
-          const { ESLint } = require('eslint');
-          (async () => {
-            const formatter = await new ESLint().loadFormatter('stylish');
-            process.stdout.write(formatter.format(JSON.parse(fs.readFileSync('eslint_report.json', 'utf8'))));
-          })().catch(error => { console.error(error); process.exitCode = 1; });
-          NODE
-          reviewdog -f=eslint -name=eslint -reporter=github-annotations \
-            -filter-mode=file -fail-level=none < eslint_report.txt
-      - name: Enforce lint
-        if: always()
-        env:
-          LINT_OUTCOME: ${{ steps.lint.outcome }}
-        run: test "$LINT_OUTCOME" = success
+      - name: Check formatting
+        if: ${{ !cancelled() && steps.lint.outcome != 'skipped' }}
+        run: pnpm exec oxfmt --check
       - name: Check API input and request origins
         run: pnpm run test:boundaries
       - name: Check formatted content boundaries
         run: pnpm run test:content
-      - name: Upload ESLint report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: eslint_report.json
-          path: eslint_report.json
 
   module-graph:
     needs: changes

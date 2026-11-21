@@ -28,13 +28,11 @@ patchedDependencies:
 
 allowBuilds:
   '@parcel/watcher': true
-  'unrs-resolver': true
   '@swc/core': false
   'esbuild': false
 
 peerDependencyRules:
   ignoreMissing:
-    - eslint-import-resolver-webpack
     - webpack
 
 saveExact: true
