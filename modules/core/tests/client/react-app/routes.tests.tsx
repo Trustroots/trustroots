@@ -448,6 +448,17 @@ describe('React route ownership', () => {
       'river',
     );
   });
+  it('shows suspended members the suspended page without the site chrome', () => {
+    const route = findRoute('/suspended')!;
+    expect(route).toMatchObject({ footerHidden: true, headerHidden: true });
+    expect(getReactRouteAccessRedirect(route, null)).toBeNull();
+
+    renderRoute(route, null);
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Your account has been suspended.',
+    );
+  });
+
   it('keeps the React route table aligned with the shared ownership list', () => {
     expect(routes.map(route => route.path).sort()).toEqual(
       [...REACT_OWNED_PATHS].sort(),

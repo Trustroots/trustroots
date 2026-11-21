@@ -318,6 +318,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     title: 'Confirm email invalid',
   },
   {
+    path: '/suspended',
+    title: 'Account suspended',
+    footerHidden: true,
+    headerHidden: true,
+  },
+  {
     path: '/password/forgot',
     title: 'Reset password',
     ...ACCOUNT_ACCESS_FOOTER,
