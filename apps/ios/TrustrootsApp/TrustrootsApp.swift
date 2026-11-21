@@ -23,11 +23,17 @@ struct TrustrootsApp: App {
     private var appContent: some View {
 #if DEBUG
         if isSharedMemberPilotEnabled {
-            SharedComposeHost(session: session) {
-                isSharedMemberPilotEnabled = false
+            VStack(spacing: 0) {
+                if session.member != nil {
+                    OfflineSavedDataBanner(availability: .shared)
+                }
+
+                SharedComposeHost(session: session) {
+                    isSharedMemberPilotEnabled = false
+                }
+                .id(session.member?.username.lowercased() ?? "signed-out")
+                .ignoresSafeArea()
             }
-            .id(session.member?.username.lowercased() ?? "signed-out")
-            .ignoresSafeArea()
         } else {
             nativeAppContent
         }

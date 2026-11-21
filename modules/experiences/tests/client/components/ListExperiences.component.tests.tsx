@@ -64,6 +64,10 @@ describe('<ListExperiences />', () => {
       <ListExperiences
         profile={profile}
         authenticatedUser={authenticatedMember}
+        experienceAction={{
+          href: '/profile/member-one/experiences/new',
+          label: 'Share your experience',
+        }}
       />,
     );
 

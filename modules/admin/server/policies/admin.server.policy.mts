@@ -72,6 +72,10 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/support-members/:memberId',
           permissions: ['get'],
         },
+        {
+          resources: '/api/admin/user/change-role',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/notes', permissions: ['get', 'post'] },
       ],
     },
@@ -172,10 +176,6 @@ export const invokeRolesPolicies = () => {
         { resources: '/api/admin/user/unsuspend', permissions: ['post'] },
         {
           resources: '/api/admin/user/delete',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/user/change-role',
           permissions: ['post'],
         },
         {

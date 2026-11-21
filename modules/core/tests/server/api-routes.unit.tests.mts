@@ -24,9 +24,11 @@ type RouteChain = Record<
 interface RecorderApp {
   route(path: string): RouteChain;
   param(name: string, middleware: NamedHandler): void;
+  use(path: string, middleware: NamedHandler): void;
 }
 interface Recorder {
   app: RecorderApp;
+  middlewarePaths: string[];
   params: Array<{ name: string; middleware: NamedHandler }>;
   routes: RecordedRoute[];
 }
@@ -59,6 +61,7 @@ function controller<const T extends string>(
 function createAppRecorder(): Recorder {
   const routes: RecordedRoute[] = [];
   const params: Recorder['params'] = [];
+  const middlewarePaths: string[] = [];
 
   return {
     app: {
@@ -87,7 +90,11 @@ function createAppRecorder(): Recorder {
       param(name, middleware) {
         params.push({ name, middleware });
       },
+      use(path) {
+        middlewarePaths.push(path);
+      },
     },
+    middlewarePaths,
     params,
     routes,
   };
@@ -124,12 +131,12 @@ async function register(
   modulePath: string,
   stubs: Record<string, DependencyReplacements>,
 ) {
-  const { app, params, routes } = createAppRecorder();
+  const { app, middlewarePaths, params, routes } = createAppRecorder();
   const { default: registerRoutes } = await proxyquire<{
     default: RouteRegistrar;
   }>(new URL(modulePath, import.meta.url), stubs);
   registerRoutes(app);
-  return { params, routes };
+  return { middlewarePaths, params, routes };
 }
 
 describe('API route registrations', () => {
@@ -358,6 +365,7 @@ describe('API route registrations', () => {
       },
     );
 
+    assert.deepStrictEqual(tribeRoutes.middlewarePaths, ['/api/tribes']);
     assertHandlers(routeByPath(tribeRoutes.routes, '/api/tribes').get, [
       tribes.listTribes,
     ]);

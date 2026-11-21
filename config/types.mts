@@ -68,6 +68,7 @@ export interface Config {
       pool?: { requestTimeout?: number; maxRetries?: number };
     };
   };
+  experienceApiRequestsPerMinute: number;
   targetedRequestLimits: Record<
     string,
     { windowMs: number; ipLimit: number; identityLimit: number }

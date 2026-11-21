@@ -887,6 +887,26 @@ final class TrustrootsTests: XCTestCase {
         let otherMemberResponse = await cache.response(for: url)
         XCTAssertNil(otherMemberResponse)
     }
+
+    func testPilotDraftPersistsOnlyForItsServerAccountAndRecipient() throws {
+        let directory = URL.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = PilotMessageDraftStore(directory: directory)
+        let key = PilotMessageDraftStore.Key(server: "https://example.test", username: "Example-Member", recipientID: "partner-1")
+        let draft = "  An unsent reply.\nNext line."
+        try store.save(draft, for: key)
+
+        let reopened = PilotMessageDraftStore(directory: directory)
+        XCTAssertEqual(reopened.load(.init(server: key.server, username: "example-member", recipientID: key.recipientID)), draft)
+        XCTAssertEqual(reopened.load(.init(server: "https://other.example.test", username: key.username, recipientID: key.recipientID)), "")
+        XCTAssertEqual(reopened.load(.init(server: key.server, username: "other-member", recipientID: key.recipientID)), "")
+        XCTAssertEqual(reopened.load(.init(server: key.server, username: key.username, recipientID: "partner-2")), "")
+
+        try reopened.save(" \n", for: key)
+        XCTAssertEqual(store.load(key), "")
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: directory.path).isEmpty)
+        XCTAssertNoThrow(try reopened.save("", for: key))
+    }
 }
 
 private final class MobileAPIURLProtocol: URLProtocol {

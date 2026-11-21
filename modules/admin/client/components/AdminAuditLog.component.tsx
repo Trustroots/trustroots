@@ -37,6 +37,8 @@ export default function AdminAuditLog() {
   const [filters, setFilters] = useState<AuditLogFilters>({
     username: '',
     team: '',
+    action: '',
+    hideOwn: true,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -119,6 +121,32 @@ export default function AdminAuditLog() {
             <option value="welcome-team">Greeters</option>
             <option value="support-team">Support team</option>
           </Select>
+          <label htmlFor="audit-action">Action</label>
+          <Select
+            id="audit-action"
+            className="tw:w-auto tw:max-w-full"
+            value={filters.action}
+            onChange={event =>
+              setFilters({
+                ...filters,
+                action: event.target.value as AuditLogFilters['action'],
+              })
+            }
+          >
+            <option value="">All actions</option>
+            <option value="shadowban">Shadowban</option>
+            <option value="suspend">Suspend</option>
+          </Select>
+          <label>
+            <input
+              type="checkbox"
+              checked={filters.hideOwn}
+              onChange={event =>
+                setFilters({ ...filters, hideOwn: event.target.checked })
+              }
+            />{' '}
+            Don’t show my actions
+          </label>
         </div>
         {error && (
           <p role="alert">Could not load the audit log. Please try again.</p>

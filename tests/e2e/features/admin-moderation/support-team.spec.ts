@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import {
   createUser,
+  SEEDED_ADMIN,
   createIsolatedContext,
   registerViaApi,
   signInViaApi,
@@ -45,7 +46,7 @@ test('Support team can open a hidden member profile', async ({
       page.getByText('Hidden profile', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText(bio, { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Suspend' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Suspend' })).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Delete member' }),
     ).toHaveCount(0);
@@ -70,7 +71,7 @@ test('support can triage a report and investigate only its verified member pair'
   baseURL,
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.support-team', [
-    'Support can triage requests and inspect linked conversations and experiences without suspension authority.',
+    'Support can triage requests and inspect linked conversations and experiences.',
     'Support can search for a member from the top of the inbox.',
   ]);
   const context = await createIsolatedContext(browser, baseURL);
@@ -400,7 +401,7 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(page.getByText(noteText, { exact: true })).toBeVisible();
     const denied = await context.request.post('/api/admin/user/change-role', {
       headers: { 'X-Trustroots-Request': '1' },
-      data: { role: 'suspended', id: '111111111111111111111111' },
+      data: { role: 'shadowban', action: 'remove', id: targetId },
     });
     expect(denied.status()).toBe(403);
     expect(
@@ -826,6 +827,58 @@ test('administrators can apply historical statuses across rendered request varia
       });
       expect(collision?.zendeskTicketId).toBeUndefined();
     });
+  } finally {
+    await context.close();
+  }
+});
+
+test('support can shadowban and suspend members and administrators can filter both actions', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser();
+  const target = createUser();
+  try {
+    await registerViaApi(context.request, support);
+    await registerViaApi(context.request, target);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: support.username },
+          { $set: { roles: ['user', 'support-team'] } },
+        );
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto(`/admin/support/member/${target.username}`);
+    const controls = page.getByRole('group', { name: 'Moderation actions' });
+    for (const [label, role] of [
+      ['Shadowban', 'shadowban'],
+      ['Suspend', 'suspended'],
+    ]) {
+      await controls.getByRole('button', { name: label }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: label })
+        .click();
+      await expect(page.getByText(role, { exact: true })).toBeVisible();
+    }
+    await expect(controls).toHaveCount(0);
+    await signInViaApi(page, context.request, SEEDED_ADMIN);
+    await page.goto('/admin/audit-log');
+    await page.getByLabel('Performed by').selectOption(support.username);
+    await page.getByLabel('Team', { exact: true }).selectOption('support-team');
+    const rows = page.locator('.admin-audit-log-table tbody tr');
+    for (const [filter, role] of [
+      ['shadowban', 'shadowban'],
+      ['suspend', 'suspended'],
+    ]) {
+      await page.getByLabel('Action', { exact: true }).selectOption(filter);
+      await expect(rows).toHaveCount(1);
+      await expect(rows.first()).toContainText(`role: ${role}`);
+    }
   } finally {
     await context.close();
   }

@@ -81,6 +81,7 @@ describe('Experiences routes unit tests', () => {
   });
 
   it('shares a client limit across routes before loading experiences', async () => {
+    sinon.stub(config, 'experienceApiRequestsPerMinute').value(120);
     const app = buildApp(true);
     const client = request(app);
     const first = await client

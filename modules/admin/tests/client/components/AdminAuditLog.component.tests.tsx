@@ -117,6 +117,8 @@ describe('Compact audit log', () => {
     await waitFor(() =>
       expect(mockedApi.getAuditLog).toHaveBeenLastCalledWith({
         username: 'river',
+        action: '',
+        hideOwn: true,
         team: '',
       }),
     );
@@ -126,10 +128,28 @@ describe('Compact audit log', () => {
     await waitFor(() =>
       expect(mockedApi.getAuditLog).toHaveBeenLastCalledWith({
         username: 'river',
+        action: '',
+        hideOwn: true,
         team: 'welcome-team',
       }),
     );
     expect(await screen.findByText('Nothing found...')).toBeInTheDocument();
+    const ownActions = screen.getByRole('checkbox', {
+      name: 'Don’t show my actions',
+    });
+    expect(ownActions).toBeChecked();
+    fireEvent.change(screen.getByLabelText('Action'), {
+      target: { value: 'suspend' },
+    });
+    fireEvent.click(ownActions);
+    await waitFor(() =>
+      expect(mockedApi.getAuditLog).toHaveBeenLastCalledWith({
+        username: 'river',
+        action: 'suspend',
+        hideOwn: false,
+        team: 'welcome-team',
+      }),
+    );
   });
   it('handles list errors', async () => {
     mockedApi.getAuditLog.mockRejectedValue(new Error('Failed'));

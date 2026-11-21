@@ -179,6 +179,7 @@ describe('Admin policy unit tests', () => {
       'get /api/admin/support-flagged-members',
       'patch /api/admin/support-members/:memberId/flag',
       'get /api/admin/support-members/:memberId',
+      'post /api/admin/user/change-role',
       'get /api/admin/notes',
       'post /api/admin/notes',
     ];
@@ -213,7 +214,6 @@ describe('Admin policy unit tests', () => {
       'post /api/admin/user',
       'post /api/admin/user/unsuspend',
       'post /api/admin/user/delete',
-      'post /api/admin/user/change-role',
       'post /api/admin/users',
       'post /api/admin/users/by-role',
       'post /api/admin/users/by-last-ip-hash',

@@ -47,6 +47,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         XCTAssertTrue(element(labelled: "Temporary fixture delivery failure.", in: app).waitForExistence(timeout: 10))
         XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
+        app.buttons["Messages"].tap()
+        app.buttons["Open conversation"].tap()
+        XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
+        XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
+        XCTAssertTrue(app.buttons["Send reply"].isEnabled)
         app.buttons["Send reply"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
 
@@ -62,6 +71,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.buttons["Messages"].tap()
         app.buttons["Open conversation"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
+        XCTAssertTrue(draft.exists)
+        XCTAssertFalse(app.buttons["Send reply"].isEnabled)
 
         app.buttons["Back"].tap()
         app.buttons["Back"].tap()
@@ -188,5 +199,55 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         guard signOut.waitForExistence(timeout: 2) else { return }
         signOut.tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testShowsSavedProfileAndClearsOfflineBannerAfterLiveRequest() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--shared-member-pilot",
+            "-trustroots.apiServerURL",
+            fixtureURL.absoluteString,
+        ]
+        app.launch()
+        addTeardownBlock { [self] in signOutIfAlreadySignedIn(app) }
+        addTeardownBlock { [self] in try await setDroppedProfileResponse(false, at: fixtureURL) }
+        signOutIfAlreadySignedIn(app)
+        signIn(app)
+
+        let profile = element(labelled: "A test profile", in: app)
+        XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
+        let banner = app.descendants(matching: .any)["offline-saved-data"].firstMatch
+        XCTAssertFalse(banner.exists)
+
+        try await setDroppedProfileResponse(true, at: fixtureURL)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(banner.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(banner.label.hasPrefix("Offline — saved "))
+        let capture = XCTAttachment(data: app.screenshot().pngRepresentation, uniformTypeIdentifier: "public.png")
+        capture.name = "Compose pilot showing a cached profile"
+        capture.lifetime = .keepAlways
+        add(capture)
+
+        try await setDroppedProfileResponse(false, at: fixtureURL)
+        app.buttons["Messages"].tap()
+        XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10), app.debugDescription)
+        let bannerCleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: banner)
+        XCTAssertEqual(XCTWaiter.wait(for: [bannerCleared], timeout: 10), .completed, app.debugDescription)
+        app.buttons["Back"].tap()
+    }
+
+    private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {
+        var request = URLRequest(url: fixtureURL.appendingPathComponent("fixture/profile-connection"), timeoutInterval: 5)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(["drop": drop])
+        let (_, response) = try await URLSession.shared.data(for: request)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
 }
