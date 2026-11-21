@@ -8,8 +8,6 @@
  * and hashes. It sends nothing when the browser asks for Global Privacy
  * Control; the tracker itself already honours Do-Not-Track.
  */
-import { matchReactRoute } from '@/modules/core/shared/react-route-ownership.mts';
-
 /** The `window` property named by `data-before-send` in the page layout. */
 export const UMAMI_BEFORE_SEND = 'trUmamiBeforeSend';
 
@@ -20,18 +18,20 @@ export type UmamiPayload = {
   [field: string]: unknown;
 };
 
+/** The app route template for a path, or nothing for unknown paths. */
+export type RouteTemplate = (pathname: string) => string | undefined;
+
 const NOT_FOUND_TEMPLATE = '/not-found';
 const ABSOLUTE_URL = /^[a-z][a-z\d+.-]*:/i;
-
-function routeTemplate(pathname: string): string {
-  return matchReactRoute(pathname)?.policy.path ?? NOT_FOUND_TEMPLATE;
-}
 
 /**
  * Turn a page address into its route template. Same-site addresses keep their
  * shape (absolute or path-only); other sites keep only their origin.
  */
-export function scrubUmamiUrl(value: string | undefined): string | undefined {
+export function scrubUmamiUrl(
+  value: string | undefined,
+  routeTemplate: RouteTemplate,
+): string | undefined {
   if (!value) return value;
 
   const { origin } = window.location;
@@ -44,7 +44,7 @@ export function scrubUmamiUrl(value: string | undefined): string | undefined {
 
   if (url.origin !== origin) return url.origin;
 
-  const template = routeTemplate(url.pathname);
+  const template = routeTemplate(url.pathname) ?? NOT_FOUND_TEMPLATE;
   return ABSOLUTE_URL.test(value) ? `${origin}${template}` : template;
 }
 
@@ -55,28 +55,42 @@ function globalPrivacyControlEnabled(): boolean {
   );
 }
 
-export function umamiBeforeSend(
-  _type: string,
-  payload: UmamiPayload,
-): UmamiPayload | null {
-  if (globalPrivacyControlEnabled()) return null;
+export function createUmamiBeforeSend(routeTemplate: RouteTemplate) {
+  return function umamiBeforeSend(
+    _type: string,
+    payload: UmamiPayload,
+  ): UmamiPayload | null {
+    if (globalPrivacyControlEnabled()) return null;
 
-  const scrubbed = { ...payload };
-  if ('url' in payload) scrubbed.url = scrubUmamiUrl(payload.url);
-  if ('referrer' in payload) {
-    scrubbed.referrer = scrubUmamiUrl(payload.referrer);
-  }
-  return scrubbed;
+    const scrubbed = { ...payload };
+    if ('url' in payload) {
+      scrubbed.url = scrubUmamiUrl(payload.url, routeTemplate);
+    }
+    if ('referrer' in payload) {
+      scrubbed.referrer = scrubUmamiUrl(payload.referrer, routeTemplate);
+    }
+    return scrubbed;
+  };
 }
 
 /** Install the hook, then activate the tracker from the page template. */
-export function installUmamiBeforeSend(): void {
+export function installUmamiBeforeSend(
+  routeTemplate: RouteTemplate,
+): Promise<void> | undefined {
   (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND] =
-    umamiBeforeSend;
+    createUmamiBeforeSend(routeTemplate);
 
   const template =
     document.querySelector<HTMLTemplateElement>('#tr-umami-tracker');
-  if (template) {
-    template.replaceWith(template.content.cloneNode(true));
-  }
+  if (!template) return undefined;
+
+  const content = template.content.cloneNode(true) as DocumentFragment;
+  const script = content.querySelector('script');
+  if (!script) return undefined;
+  const settled = new Promise<void>(resolve => {
+    script.addEventListener('load', () => resolve(), { once: true });
+    script.addEventListener('error', () => resolve(), { once: true });
+  });
+  template.replaceWith(content);
+  return settled;
 }

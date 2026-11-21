@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminMongo from '@/modules/admin/client/components/AdminMongo.component';
-import { routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/mongo')(
-  routeOptions('/admin/mongo', AdminMongo),
-);
+export const Route = createFileRoute('/admin/mongo')({
+  staticData: { title: 'Admin - MongoDB diagnostics', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin'),
+  component: AdminMongo,
+});

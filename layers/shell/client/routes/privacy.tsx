@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import Privacy from '@/modules/pages/client/components/Privacy.component';
-import { routeOptions } from '../route-options';
 
-export const Route = createFileRoute('/privacy')(
-  routeOptions('/privacy', Privacy),
-);
+export const Route = createFileRoute('/privacy')({
+  staticData: { title: 'Privacy policy' },
+  component: Privacy,
+});

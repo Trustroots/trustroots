@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import SupportPage from '@/modules/support/client/components/SupportPage.component';
-import { routeOptions, withUser } from '../route-options';
+import { withUser } from '../route-options';
 
-export const Route = createFileRoute('/contact')(
-  routeOptions('/contact', withUser(SupportPage)),
-);
+export const Route = createFileRoute('/contact')({
+  staticData: { title: 'Contact us' },
+  component: withUser(SupportPage),
+});

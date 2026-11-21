@@ -8,17 +8,8 @@ import {
   createTestUser,
   signIn,
 } from '../../../../testutils/server/data.server.testutil.mts';
-import {
-  routeRequiresAuth,
-  userHasRequiredRole,
-} from '../../shared/react-route-ownership.mts';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.ts';
 
-routeRequiresAuth({ path: '/example', title: 'Example', requiresAuth: true });
-// @ts-expect-error Authentication policy flags are booleans.
-routeRequiresAuth({ path: '/example', title: 'Example', requiresAuth: 'yes' });
-// @ts-expect-error Roles are strings, including when provided as an array.
-userHasRequiredRole({ roles: [123] }, 'admin');
 // @ts-expect-error Support category keys are a closed set.
 void SUPPORT_CATEGORIES.unknownCategory;
 

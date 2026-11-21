@@ -1,11 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
-import { createRouter } from '@tanstack/react-router';
+import { createRouter, rootRouteId } from '@tanstack/react-router';
 
-import {
-  getReactRoutePolicy,
-  type ReactRoutePolicy,
-} from '@/modules/core/shared/react-route-ownership.mts';
 import { getBootstrapData } from './bootstrap';
+import { matchAppRoute } from './route-options';
 import { routeTree } from './routeTree.gen';
 
 export function parseLegacySearch(search: string): Record<string, string> {
@@ -32,20 +29,26 @@ export function stringifyLegacySearch(
 }
 
 export function createAppRouter() {
-  let shownPolicy: ReactRoutePolicy | null | undefined;
-  return createRouter({
+  let shownRouteId: string | null | undefined = null;
+  const router = createRouter({
     context: { queryClient: new QueryClient(), user: getBootstrapData().user },
     defaultPreload: 'intent',
+    defaultRemountDeps: ({ routeId, params, search }) =>
+      routeId === rootRouteId ? undefined : { params, search },
     parseSearch: parseLegacySearch,
     routeTree,
     // Scroll to the top when the page changes, unless it opts out. Query
     // and param changes on the same page keep their place.
     scrollRestoration: ({ location }) => {
-      const policy = getReactRoutePolicy(location.pathname);
-      const pageChanged = policy !== shownPolicy;
-      shownPolicy = policy;
-      return Boolean(location.hash) || (pageChanged && !policy?.noScrollingTop);
+      const match = matchAppRoute(router, location.pathname);
+      const pageChanged = match?.routeId !== shownRouteId;
+      shownRouteId = match?.routeId;
+      return (
+        Boolean(location.hash) ||
+        (pageChanged && !match?.staticData.noScrollingTop)
+      );
     },
     stringifySearch: stringifyLegacySearch,
   });
+  return router;
 }

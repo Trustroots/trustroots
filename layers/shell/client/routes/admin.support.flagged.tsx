@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import FlaggedMembers from '@/modules/admin/client/components/FlaggedMembers.component';
-import { routeOptions } from '../route-options';
-export const Route = createFileRoute('/admin/support/flagged')(
-  routeOptions('/admin/support/flagged', FlaggedMembers),
-);
+import { requireRole } from '../route-options';
+export const Route = createFileRoute('/admin/support/flagged')({
+  staticData: { title: 'Support - Flagged members', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin', 'support-team'),
+  component: FlaggedMembers,
+});
