@@ -42,7 +42,10 @@ import ContactList from '@/modules/contacts/client/components/ContactList.compon
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
-import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
+import ListExperiences, {
+  type ExperienceAction,
+} from '@/modules/experiences/client/components/ListExperiences.component';
+import { readMine } from '@/modules/experiences/client/api/experiences.api';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
@@ -163,7 +166,7 @@ function ProfileDesktopActions({
   contactResolved,
   onRemoveClick,
   profile,
-  referencesEnabled,
+  experienceAction,
 }: {
   isAdmin: boolean;
   isSelf: boolean;
@@ -171,7 +174,7 @@ function ProfileDesktopActions({
   contactResolved: boolean;
   onRemoveClick: () => void;
   profile: ResolvedUserProfile;
-  referencesEnabled: boolean;
+  experienceAction?: ExperienceAction;
 }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -197,16 +200,13 @@ function ProfileDesktopActions({
               {t('Send a message') as string}
             </Button>
           </li>
-          {referencesEnabled && (
+          {experienceAction && (
             <li>
               <Button
                 variant="link"
-                render={
-                  <a href={getProfileExperiencesPath(profile.username)} />
-                }
+                render={<a href={experienceAction.href} />}
               >
-                <i className="icon-plus-squared-alt" />
-                {t('Share your experience') as string}
+                {experienceAction.label}
               </Button>
             </li>
           )}
@@ -324,6 +324,67 @@ export default function ProfilePage({
       : { _id: '', username: '', displayName: '', $resolved: true };
   }, [data, isPending]);
   const isSelf = profile?._id === authUser?._id;
+  const viewedMemberId = profile?._id || '';
+  const profileUsernameForAction = profile?.username || username;
+  const canCheckSharedExperience =
+    canLoadReply &&
+    !experienceOnly &&
+    !isCreatingExperience &&
+    Boolean(viewedMemberId) &&
+    !isSelf;
+  const sharedExperience = useQuery({
+    queryKey: [
+      'profile',
+      username,
+      'shared-experience',
+      authUser._id,
+      viewedMemberId,
+    ],
+    enabled: canCheckSharedExperience,
+    queryFn: async () => {
+      const experience = await readMine({ userWith: viewedMemberId });
+      if (!experience) return null;
+      const author = experience.userFrom;
+      const authorId = typeof author === 'string' ? author : author._id;
+      return authorId === authUser._id ? experience._id : null;
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+  const experienceAction = useMemo<ExperienceAction | undefined>(() => {
+    if (
+      !referencesEnabled ||
+      !viewedMemberId ||
+      isSelf ||
+      isCreatingExperience ||
+      (canCheckSharedExperience &&
+        (sharedExperience.isPending || sharedExperience.isFetching))
+    ) {
+      return undefined;
+    }
+    if (sharedExperience.data) {
+      return {
+        label: t('View your experience'),
+        href: `/profile/${profileUsernameForAction}/experiences#${sharedExperience.data}`,
+      };
+    }
+    return {
+      label: t('Share your experience'),
+      href: getProfileExperiencesPath(profileUsernameForAction),
+    };
+  }, [
+    canCheckSharedExperience,
+    isCreatingExperience,
+    isSelf,
+    profileUsernameForAction,
+    referencesEnabled,
+    sharedExperience.data,
+    sharedExperience.isFetching,
+    sharedExperience.isPending,
+    t,
+    viewedMemberId,
+  ]);
   const isLoading =
     isPending || Boolean(profile?._id && !experienceOnly && !contact.$resolved);
 
@@ -467,7 +528,11 @@ export default function ProfilePage({
         );
       case 'experiences':
         return referencesEnabled ? (
-          <ListExperiences authenticatedUser={authUser} profile={profile} />
+          <ListExperiences
+            authenticatedUser={authUser}
+            profile={profile}
+            experienceAction={experienceAction}
+          />
         ) : null;
       case 'experiences-new':
         return referencesEnabled ? (
@@ -488,6 +553,7 @@ export default function ProfilePage({
   }, [
     authUser,
     contacts,
+    experienceAction,
     isSelf,
     profile,
     profileMinimumLength,
@@ -538,7 +604,7 @@ export default function ProfilePage({
           contact={contact}
           isResolved={contact.$resolved}
           onContactRemoved={removeContact}
-          referencesEnabled={referencesEnabled}
+          experienceAction={experienceAction}
           selfId={authUser._id}
           userId={profile?._id || ''}
           username={profile?.username || username}
@@ -681,7 +747,7 @@ export default function ProfilePage({
                             contactResolved={contact.$resolved}
                             onRemoveClick={() => setShowRemoveModal(true)}
                             profile={profile}
-                            referencesEnabled={referencesEnabled}
+                            experienceAction={experienceAction}
                           />
                         </div>
                       </div>

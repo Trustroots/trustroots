@@ -47,7 +47,10 @@ function renderNavigation(props: Partial<TopNavigationProps> = {}) {
       contact={{}}
       isResolved
       onContactRemoved={vi.fn<(...args: [contact: ContactRecord]) => void>()}
-      referencesEnabled
+      experienceAction={{
+        href: '/profile/alice/experiences/new',
+        label: 'Share your experience',
+      }}
       selfId="me"
       userId="alice-id"
       username="alice"
@@ -69,7 +72,7 @@ describe('<TopNavigationSmall />', () => {
         userId="me"
         selfId="me"
         username="river"
-        referencesEnabled={false}
+        experienceAction={undefined}
         isResolved={false}
         onContactRemoved={vi.fn()}
       />,
@@ -96,7 +99,7 @@ describe('<TopNavigationSmall />', () => {
   it('links own profile visitors to profile editing', () => {
     renderNavigation({
       contact: null,
-      referencesEnabled: false,
+      experienceAction: undefined,
       selfId: 'me',
       userId: 'me',
     });
@@ -146,7 +149,7 @@ describe('<TopNavigationSmall />', () => {
     renderNavigation({
       contact: null,
       isResolved: false,
-      referencesEnabled: false,
+      experienceAction: undefined,
     });
 
     expect(
