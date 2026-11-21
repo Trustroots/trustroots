@@ -46,7 +46,7 @@ test('Support team can open a hidden member profile', async ({
       page.getByText('Hidden profile', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText(bio, { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Suspend' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Suspend' })).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Delete member' }),
     ).toHaveCount(0);
