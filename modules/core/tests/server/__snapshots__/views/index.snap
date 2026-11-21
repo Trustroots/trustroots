@@ -1,0 +1,53 @@
+<meta charSet="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<title>Trustroots</title>
+<meta name="fragment" content="!"/>
+<link rel="dns-prefetch" href="//api.tiles.mapbox.com"/>
+<link rel="dns-prefetch" href="//gravatar.com"/>
+<meta name="description" content="Travellers &amp; &quot;hosts&quot;"/>
+<meta name="application-name" content="Trustroots"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#12b591"/>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/512.png" sizes="512x512"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/192.png" sizes="192x192"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/144.png" sizes="144x144"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/96.png" sizes="96x96"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/72.png" sizes="72x72"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/48.png" sizes="48x48"/>
+<link rel="icon shortcut" type="image/png" href="https://example.test/img/favicon@2x.png" sizes="32x32" id="favicon2x"/>
+<link rel="icon shortcut" type="image/png" href="https://example.test/img/favicon.png" sizes="16x16" id="favicon"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<link rel="apple-touch-icon-precomposed" sizes="152x152" href="https://example.test/img/icons/ios/Icon-76@2x.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="120x120" href="https://example.test/img/icons/ios/Icon-60@2x.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="76x76" href="https://example.test/img/icons/ios/Icon-76.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="60x60" href="https://example.test/img/icons/ios/Icon-60.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://example.test/img/icons/ios/Icon-72@2x.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://example.test/img/icons/ios/Icon@2x.png"/>
+<link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://example.test/img/icons/ios/Icon-72.png"/>
+<link rel="apple-touch-icon" sizes="57x57" href="https://example.test/img/icons/ios/Icon.png"/>
+<meta property="og:title" content="Trustroots"/>
+<meta property="og:description" content="Travellers &amp; &quot;hosts&quot;"/>
+<meta property="og:url" content="https://example.test/search"/>
+<meta property="og:image" content="https://example.test/img/og_image.jpg"/>
+<meta property="og:image:width" content="1400"/>
+<meta property="og:image:height" content="735"/>
+<meta property="og:site_name" content="Trustroots"/>
+<meta property="og:type" content="website"/>
+<meta property="og:locale" content="en_GB"/>
+<meta name="twitter:site" content="@example"/>
+<meta name="twitter:title" content="Trustroots"/>
+<meta name="twitter:description" content="Travellers &amp; &quot;hosts&quot;"/>
+<meta name="twitter:url" content="https://example.test/"/>
+<meta name="twitter:image" content="https://example.test/img/og_image.jpg"/>
+<meta name="msapplication-tap-highlight" content="no"/>
+<meta name="msapplication-TileColor" content="#FFFFFF"/>
+<meta name="msapplication-TileImage" content="https://example.test/img/icons/apple-touch-icon-144x144-precomposed.png"/>
+<base href="/"/>
+<template id="tr-umami-tracker">
+<script async src="https://stats.example.test/script.js?a&amp;b" data-website-id="site-&quot;1&quot;" data-do-not-track="true" data-performance="true" data-exclude-search="true" data-exclude-hash="true" data-before-send="trUmamiBeforeSend" nonce="test-nonce">
+</script>
+</template>
+<script nonce="test-nonce">var title = "Trustroots", settings = {"commit":"abc1234"}, env = "test", isNativeMobileApp = false, user = {"displayName":"\u003c/script\u003e\u003cb\u003e"};</script>

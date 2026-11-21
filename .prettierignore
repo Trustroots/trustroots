@@ -36,8 +36,6 @@ scripts/**
 !scripts/**/*.cts
 **/__snapshots__/
 .github/**/*.md
-# Nunjucks tags inside attributes; not parseable by Prettier 3
-modules/core/server/views/react-head.server.view.html
 
 # Generated docs assets
 docs/assets/js/
