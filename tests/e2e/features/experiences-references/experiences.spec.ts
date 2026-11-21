@@ -174,6 +174,7 @@ test.describe('seeded experience flows', () => {
         const visible = await request.get('/api/experiences', {
           params: { userTo: recipientId.toString() },
         });
+        await expect(visible).toBeOK();
         expect((await visible.json())[0].feedbackPublic).toBe(
           experience.feedbackPublic,
         );

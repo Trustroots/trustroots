@@ -18,7 +18,7 @@ function register(app: Express) {
   if (config.featureFlags.reference) {
     const experienceRateLimit = rateLimit({
       windowMs: 60_000,
-      limit: 120,
+      limit: config.experienceApiRequestsPerMinute,
       standardHeaders: 'draft-8',
       legacyHeaders: false,
       // Requests without a validated client address share one bucket.

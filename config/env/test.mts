@@ -32,6 +32,8 @@ const service = {
     subject: 'mailto:push-test@example.org',
     allowedHosts: ['ntfy.sh', 'fcm.googleapis.com'],
   },
+  // Browser journeys share a loopback address across the test suite.
+  experienceApiRequestsPerMinute: 10000,
   targetedRequestLimits: {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
