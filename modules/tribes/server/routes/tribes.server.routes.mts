@@ -36,7 +36,8 @@ function register(app: Express) {
   app
     .route('/api/tribes/:tribe')
     .all(routeHandler(tribesPolicy.isAllowed))
-    .get(routeHandler(tribes.getTribe));
+    .get(routeHandler(tribes.getTribe))
+    .patch(disableDiscoveryCaching, routeHandler(tribes.editTribe));
 
   // Finish by binding the tribes middleware
   app.param('tribe', parameterHandler(tribes.tribeBySlug));

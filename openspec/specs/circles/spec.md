@@ -3,9 +3,7 @@
 ## Purpose
 
 Help people discover Trustroots circles and manage their circle memberships.
-
 ## Requirements
-
 ### Requirement: Circle discovery
 
 The system SHALL make public circle catalogue entries, public circle details,
@@ -196,7 +194,7 @@ catalogue colours remain valid.
 ### Requirement: Circle editor navigation and preview
 
 The editor SHALL select a circle using `/admin/circles/{slug}` and link to its
-public page. Public circle pages SHALL link to their editor for users with the
+public page. Public circle pages SHALL link to the administrator editor for users with the
 admin role. Circle descriptions SHALL preserve safe links, and the editor SHALL
 show a sanitised live preview of the description.
 
@@ -215,11 +213,11 @@ show a sanitised live preview of the description.
 #### Scenario: Member views a circle
 
 - **WHEN** a user views a circle
-- **THEN** its edit link is visible only if the user has the admin role
+- **THEN** its administrator edit link is visible to users with the admin role
 
 ### Requirement: Circle organisers
 
-The system SHALL show linked organiser names on the web circle detail page to signed-in members who can view the circle and the listed profiles. The organiser designation SHALL grant no permissions and SHALL be independent of circle membership.
+The system SHALL show linked organiser names on the web circle detail page to signed-in members who can view the circle and the listed profiles. The organiser designation SHALL be independent of circle membership.
 
 #### Scenario: Signed-in member views a circle with organisers
 
@@ -296,3 +294,26 @@ empty result SHALL NOT be presented as a request failure.
 - **WHEN** circle member discovery succeeds with no members
 - **THEN** the screen presents its empty explanation as a status and does not
   show an error or retry action
+
+### Requirement: Automatic links in circle descriptions
+
+Circle pages and description previews SHALL turn plain web addresses into links while preserving supported formatting and existing safe links.
+
+#### Scenario: A description contains a bare domain
+
+- **WHEN** a reader opens a circle whose description contains a bare domain
+- **THEN** the address is a clickable HTTPS link
+
+### Requirement: Organiser circle editing
+
+The system SHALL let eligible signed-in organisers edit the name and description of a visible circle to which they are currently assigned. The system SHALL keep the circle URL stable and reserve other catalogue controls for administrators.
+
+#### Scenario: An assigned organiser edits their circle
+
+- **WHEN** an assigned organiser opens their circle and saves a valid name and description
+- **THEN** the updated details are visible at the same circle URL
+
+#### Scenario: A member lacks an active assignment
+
+- **WHEN** a member attempts to edit a circle without a current organiser assignment
+- **THEN** the system denies the update
