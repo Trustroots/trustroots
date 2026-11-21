@@ -235,6 +235,24 @@ describe('Controller: core', function () {
       });
     });
 
+    it('exposes the current user roles without the flagged role', async function () {
+      const res = mockResponse();
+      const user = new User({
+        username: 'alice',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        lastName: 'Example',
+        provider: 'local',
+        roles: ['user', 'flagged', 'admin'],
+      });
+      await coreController.renderIndex({ path: '/', user }, res, fail);
+      should(renderVars(res).user).deepEqual({
+        sanitized: true,
+        username: 'alice',
+        roles: ['user', 'admin'],
+      });
+    });
+
     it('exposes the current tribe when browsing a tribe page', async function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();

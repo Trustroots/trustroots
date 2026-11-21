@@ -146,6 +146,8 @@ test('Umami receives route templates instead of reset tokens', async ({
     }),
   );
   await page.goto('/password/reset/e2e-secret-token?from=mail#top');
+  // The app activates the tracker after hydration.
+  await page.waitForFunction(() => 'umamiSettings' in window);
 
   const sent = await page.evaluate(() => {
     const win = window as unknown as Record<string, unknown> & {
