@@ -36,32 +36,30 @@ const path = require('path') as typeof import('node:path');
 // Mutate exactly what the server coverage report measures, minus the files
 // stryker.server.config.mjs explains.
 const mutatePatterns = [
-  'modules/*/server/**/*.{mjs,mts}',
+  'modules/*/server/**/*.mts',
   'packages/analytics/server/**/*.mts',
   'packages/logger/**/*.mts',
   '!modules/*/tests/**',
   '!**/node_modules/**',
-  '!modules/*/server/**/*.model.{mjs,mts}',
+  '!modules/*/server/**/*.model.mts',
   '!modules/*/server/models/**',
-  '!modules/core/server/jobs/send-push-message.server.job.mjs',
-  '!modules/users/server/jobs/user-welcome-sequence-*.server.job.{mjs,mts}',
+  '!modules/users/server/jobs/user-welcome-sequence-*.server.job.mts',
   // Its guard stops rm -rf on the working directory. With the guard mutated
   // away, its own test deletes the Stryker sandbox and breaks every worker.
   '!modules/core/server/services/file-removal.server.service.mts',
 ];
 
 const included = [
-  /^modules\/[^/]+\/server\/.*\.m[jt]s$/,
+  /^modules\/[^/]+\/server\/.*\.mts$/,
   /^packages\/analytics\/server\/.*\.mts$/,
   /^packages\/logger\/.*\.mts$/,
 ];
 const excluded = [
   /^modules\/[^/]+\/tests\//,
   /(^|\/)node_modules\//,
-  /^modules\/[^/]+\/server\/.*\.model\.m[jt]s$/,
+  /^modules\/[^/]+\/server\/.*\.model\.mts$/,
   /^modules\/[^/]+\/server\/models\//,
-  /^modules\/core\/server\/jobs\/send-push-message\.server\.job\.mjs$/,
-  /^modules\/users\/server\/jobs\/user-welcome-sequence-[^/]*\.server\.job\.m[jt]s$/,
+  /^modules\/users\/server\/jobs\/user-welcome-sequence-[^/]*\.server\.job\.mts$/,
   /^modules\/core\/server\/services\/file-removal\.server\.service\.mts$/,
 ];
 
@@ -112,7 +110,7 @@ const weeklyShardTests: Record<string, string[]> = {
 // mutant runs scrypt-backed tests, which took its shard close to the limit.
 const ownShardSources = new Map([
   [
-    'modules/users/server/services/password-hashing.server.service',
+    'modules/users/server/services/password-hashing.server.service.mts',
     'users-password-hashing',
   ],
 ]);
@@ -168,8 +166,8 @@ function importedSources(
     const resolved = path.posix.normalize(
       path.posix.join(path.posix.dirname(testFile), specifier),
     );
-    const candidate = [resolved, `${resolved}.mts`, `${resolved}.mjs`].find(
-      file => mutable.has(file),
+    const candidate = [resolved, `${resolved}.mts`].find(file =>
+      mutable.has(file),
     );
     if (candidate) found.push(candidate);
   }
@@ -179,32 +177,34 @@ function importedSources(
 // A CI job has a time limit, and Stryker only saves its incremental results
 // when a run finishes, so a module whose run takes longer than the limit would
 // never get a result. Large modules are split into shards of at most this many
-// source files (a CommonJS .mjs shim counts with the .mts it re-exports).
+// source files.
 const MAX_SOURCES_PER_SHARD = 4;
 
 function splitShard(shard: Shard): Shard[] {
-  const sources = new Map<string, string[]>();
+  const sources: string[] = [];
   const own: Shard[] = [];
   for (const file of shard.files) {
-    const stem = file.replace(/\.m[jt]s$/, '');
-    const ownName = ownShardSources.get(stem);
+    const ownName = ownShardSources.get(file);
     if (ownName) {
       const existing = own.find(part => part.name === ownName);
       if (existing) existing.files.push(file);
       else own.push({ name: ownName, files: [file], reasons: shard.reasons });
       continue;
     }
-    sources.set(stem, [...(sources.get(stem) ?? []), file]);
+    sources.push(file);
   }
-  const groups = [...sources.values()];
   const parts: Shard[] = [];
-  if (groups.length <= MAX_SOURCES_PER_SHARD) {
-    if (groups.length) parts.push({ ...shard, files: groups.flat() });
+  if (sources.length <= MAX_SOURCES_PER_SHARD) {
+    if (sources.length) parts.push({ ...shard, files: sources });
   } else {
-    for (let start = 0; start < groups.length; start += MAX_SOURCES_PER_SHARD) {
+    for (
+      let start = 0;
+      start < sources.length;
+      start += MAX_SOURCES_PER_SHARD
+    ) {
       parts.push({
         name: `${shard.name}-${parts.length + 1}`,
-        files: groups.slice(start, start + MAX_SOURCES_PER_SHARD).flat(),
+        files: sources.slice(start, start + MAX_SOURCES_PER_SHARD),
         reasons: shard.reasons,
       });
     }

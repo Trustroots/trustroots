@@ -433,7 +433,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   return (
     <section className={`search${isSidebarOpen ? ' is-sidebar-open' : ''}`}>
-      <div className="visible-xs-block panel panel-default search-map-meta">
+      <div className="tw:block tw:sm:hidden panel panel-default search-map-meta">
         <ButtonGroup aria-label="Search settings" justified role="group">
           <ButtonGroup size="lg" role="group">
             <Button
@@ -463,7 +463,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       </div>
 
       {isPlaceSearchVisible && (
-        <div className="visible-xs-block panel panel-default search-map-place">
+        <div className="tw:block tw:sm:hidden panel panel-default search-map-place">
           <SearchPlaceInput
             onPlaceSearch={onPlaceSearch}
             searchQuery={searchQuery}
@@ -472,7 +472,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           <Button
             intent="primary"
             size="xl"
-            className="visible-xs-block search-sidebar-close"
+            className="tw:block tw:sm:hidden search-sidebar-close"
             onClick={() => setIsPlaceSearchVisible(false)}
             type="button"
           >
@@ -482,7 +482,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       )}
 
       {isUserPublic && (
-        <div className="search-sidebar-toggle hidden-xs">
+        <div className="search-sidebar-toggle tw:max-sm:hidden">
           <Button
             aria-label={
               isSidebarOpen ? 'Hide search filters' : 'Open search filters'
@@ -493,7 +493,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             type="button"
           >
             <i
-              className={`hidden-xs ${
+              className={`tw:max-sm:hidden ${
                 isSidebarOpen ? 'icon-left' : 'icon-right'
               }`}
             ></i>

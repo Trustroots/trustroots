@@ -6,6 +6,33 @@
 @source './components';
 @source './lib';
 
+:root {
+  --tr-dialog-radius: 0.5rem;
+  --tr-control-radius: 0.375rem;
+  --tr-border-width: 1px;
+  --tr-surface-border: rgba(0, 0, 0, 0.175);
+  --tr-control-border: #dee2e6;
+  --tr-surface-bg: #fff;
+  --tr-surface-text: #212529;
+  --tr-secondary-text: rgba(33, 37, 41, 0.75);
+  --tr-secondary-bg: #e9ecef;
+  --tr-emphasis-color: #000;
+  --tr-secondary-rgb: 108, 117, 125;
+  --tr-control-neutral: #6c757d;
+  --tr-danger-bg-subtle: #f8d7da;
+  --tr-danger-border-subtle: #f1aeb5;
+  --tr-danger-text-emphasis: #58151c;
+  --tr-warning-bg-subtle: #fff3cd;
+  --tr-warning-border-subtle: #ffe69c;
+  --tr-warning-text-emphasis: #664d03;
+  --tr-info-bg-subtle: #cff4fc;
+  --tr-info-border-subtle: #9eeaf9;
+  --tr-info-text-emphasis: #055160;
+  --tr-success-bg-subtle: #d1e7dd;
+  --tr-success-border-subtle: #a3cfbb;
+  --tr-success-text-emphasis: #0a3622;
+}
+
 /* Values owned by the app's Less variables, exposed as `--tr-*` tokens. */
 @theme inline {
   --color-brand-primary: var(--tr-brand-primary);
@@ -59,4 +86,24 @@
 
 @utility navigation-panel-divider {
   @apply tw:my-2 tw:border-0 tw:border-t tw:border-solid tw:border-black/17.5;
+}
+
+@utility input-group {
+  @apply tw:relative tw:flex tw:w-full tw:flex-wrap tw:items-stretch;
+
+  & > [data-slot='input'] {
+    @apply tw:relative tw:w-px tw:min-w-0 tw:flex-auto tw:focus:z-5;
+  }
+
+  & > :not(:first-child) {
+    @apply tw:-ms-px tw:rounded-s-none;
+  }
+
+  & > :not(:last-child) {
+    @apply tw:rounded-e-none;
+  }
+
+  & [data-slot='button'] {
+    @apply tw:relative tw:z-2 tw:focus:z-5;
+  }
 }

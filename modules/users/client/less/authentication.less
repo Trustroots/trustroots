@@ -1,43 +1,5 @@
 @import '~less/global-variables';
 
-.form-auth {
-  margin-bottom: 20px;
-  .form-control,
-  input {
-    border: 0;
-  }
-  input,
-  input:focus {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-  label.lead {
-    margin-bottom: 5px;
-  }
-
-  .input-group-btn {
-    display: flex;
-  }
-}
-
-[data-slot='button'][data-variant='solid'][data-intent='inverse'].password-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: @input-height-large;
-  height: @input-height-large;
-  padding: 0;
-  border: 0;
-  outline: none;
-  // z-index to cover `box-shadow` of the text input
-  z-index: 3;
-  &:hover {
-    background: #fff;
-  }
-  &:active {
-    box-shadow: none;
-  }
-}
-
 .board-nordiclights .signup-button {
   background: rgba(73, 54, 76, 0.3);
 }

@@ -10,9 +10,9 @@ export default function Contribute() {
   return (
     <>
       <Board names="forestpath">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <i className="icon-3x icon-heart-alt"></i>
@@ -24,9 +24,9 @@ export default function Contribute() {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-12 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-col-12 tw:md:grid-offset-2 tw:md:grid-col-8">
             <p className="lead">
               <Trans t={rawT} ns="pages">
                 Trustroots is a non-profit <a href="/foundation">foundation</a>{' '}

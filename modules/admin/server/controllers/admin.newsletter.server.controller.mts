@@ -5,8 +5,8 @@ import multer from 'multer';
 import mongoose, { type Types } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mts';
-import errorService from './../../../core/server/services/error.server.service.mjs';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
+import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 interface NewsletterUser {
   _id: Types.ObjectId;

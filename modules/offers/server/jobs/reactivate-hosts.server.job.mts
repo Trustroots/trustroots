@@ -1,7 +1,7 @@
-import emailService from './../../../core/server/services/email.server.service.mjs';
+import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
 import moment from 'moment';
-import log from './../../../../config/lib/logger.mjs';
+import log from '@trustroots/logger';
 import mongoose, { type Types } from 'mongoose';
 import type { OfferServerRecord } from '../models/offer.server.types.mts';
 

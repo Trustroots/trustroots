@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import { messageEmailFrequencies } from '../../shared/email-preferences';
 import type { UpdateProfileRequest } from '../../shared/profile';
 import React, { useEffect, useRef, useState } from 'react';
@@ -306,15 +307,14 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               <div className="form-group">
                 <label
                   htmlFor="email"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Email Address')}
                 </label>
-                <div className="col-sm-9">
-                  <input
+                <div className="tw:sm:grid-col-9">
+                  <Input
                     type="email"
                     id="email"
-                    className="form-control"
                     value={draftUser.email || ''}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setDraftUser(previous => ({
@@ -334,7 +334,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 </div>
               </div>
               <div className="form-group">
-                <div className="col-sm-push-3 col-sm-9">
+                <div className="tw:sm:grid-push-3 tw:sm:grid-col-9">
                   <Button
                     type="submit"
                     intent="primary"
@@ -378,16 +378,15 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               <div className="form-group">
                 <label
                   htmlFor="username"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Username')}
                 </label>
-                <div className="col-sm-9">
-                  <input
+                <div className="tw:sm:grid-col-9">
+                  <Input
                     type="text"
                     id="username"
                     disabled={draftUser.usernameUpdateAllowed === false}
-                    className="form-control"
                     value={draftUser.username || ''}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setDraftUser(previous => ({
@@ -411,7 +410,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 </div>
               </div>
               <div className="form-group">
-                <div className="col-sm-push-3 col-sm-9">
+                <div className="tw:sm:grid-push-3 tw:sm:grid-col-9">
                   <Button
                     intent="primary"
                     type="submit"
@@ -514,30 +513,27 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           <form onSubmit={handlePasswordSubmit} autoComplete="off">
             <div className="form-group">
               <label htmlFor="currentPassword">{t('Current password')}</label>
-              <input
+              <Input
                 type="password"
                 id="currentPassword"
-                className="form-control"
                 value={currentPassword}
                 onChange={event => setCurrentPassword(event.target.value)}
               />
             </div>
             <div className="form-group">
               <label htmlFor="newPassword">{t('New password')}</label>
-              <input
+              <Input
                 type="password"
                 id="newPassword"
-                className="form-control"
                 value={newPassword}
                 onChange={event => setNewPassword(event.target.value)}
               />
             </div>
             <div className="form-group">
               <label htmlFor="verifyPassword">{t('Verify password')}</label>
-              <input
+              <Input
                 type="password"
                 id="verifyPassword"
-                className="form-control"
                 value={verifyPassword}
                 onChange={event => setVerifyPassword(event.target.value)}
               />

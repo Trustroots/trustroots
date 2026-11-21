@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import mongoose from 'mongoose';
 import config from '../../config/config.mts';
-import mongooseService from '../../config/lib/mongoose.mjs';
+import mongooseService from '../../config/lib/mongoose.mts';
 
 try {
   const args = process.argv.slice(2);

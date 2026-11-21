@@ -11,10 +11,11 @@ import mongoose, {
 } from 'mongoose';
 import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
 
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import type { ValidationFailure } from '../../../core/server/services/error.server.service.mts';
-import log from '../../../../config/lib/logger.mjs';
-import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
+import errorService, {
+  type ValidationFailure,
+} from '../../../core/server/services/error.server.service.mts';
+import log from '@trustroots/logger';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mts';
 import {
   type AdminIdentity,
   getAdminIdentityIdentifiers,

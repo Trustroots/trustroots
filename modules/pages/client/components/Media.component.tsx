@@ -18,13 +18,13 @@ export default function Media() {
   return (
     <>
       <Board names="bokeh">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
-              <h2 className="visible-xs-block">{t('Media')}</h2>
-              <h2 className="hidden-xs">
+              <h2 className="tw:block tw:sm:hidden">{t('Media')}</h2>
+              <h2 className="tw:max-sm:hidden">
                 <img
                   src="/img/tree-white.svg"
                   alt="Trustroots"
@@ -45,9 +45,9 @@ export default function Media() {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-offset-1 tw:sm:grid-col-10 tw:md:grid-offset-2 tw:md:grid-col-8">
             <h3 id="in-media">{t('Trustroots in Media')}</h3>
 
             <h4 className="media-list-divider text-muted">2020</h4>

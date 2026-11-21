@@ -13,6 +13,9 @@ import Meta, { type ExperienceTagFilters } from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import type { Experience as ExperienceModel } from '../../../shared/experience';
 
+const feedbackClassName =
+  'tw:max-w-[600px] tw:whitespace-pre-wrap tw:[overflow-wrap:anywhere]';
+
 export default function Experience({
   experience,
   onReceiverProfile,
@@ -116,7 +119,7 @@ export default function Experience({
           <Meta interactions={interactions} recommend={recommend} />
         )}
         {feedbackPublic && (
-          <div className="tw:max-w-[600px]">{feedbackPublic}</div>
+          <div className={feedbackClassName}>{feedbackPublic}</div>
         )}
         {response && (
           <div className="tw:ms-5 tw:mt-5 tw:[border-top:1px_solid_#ccc] tw:pt-5 tw:[@media(max-width:480px)]:ms-2.5">
@@ -131,7 +134,7 @@ export default function Experience({
               recommend={response.recommend}
             />
             {response.feedbackPublic && (
-              <div className="tw:max-w-[600px]">{response.feedbackPublic}</div>
+              <div className={feedbackClassName}>{response.feedbackPublic}</div>
             )}
           </div>
         )}

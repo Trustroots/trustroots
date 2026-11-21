@@ -32,8 +32,10 @@ credential with the bounded browser used for confirmation and recovery flows.
 ## Run the shared Compose pilot journey
 
 Run the fixture in one terminal from `apps/ios`. Use a disposable iOS simulator
-for this test, which signs in with a fictional account and checks Keychain
-restoration after relaunch.
+for this test. It signs in with a fictional account, expires the access token
+before two relaunches, and checks that the pilot can restore and rotate the
+Keychain session each time. It also revokes a fresh session, checks that the
+pilot returns to sign-in and verifies that it stays signed out after relaunch.
 
 ```sh
 python3 scripts/shared_member_pilot_server.py --port 18765

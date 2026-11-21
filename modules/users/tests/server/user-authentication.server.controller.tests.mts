@@ -489,7 +489,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('returns 400 when resending the confirmation email fails', async () => {
       const controller = await stubControllerDependencies({
-        './../../../core/server/services/email.server.service.mjs': {
+        './../../../core/server/services/email.server.service.mts': {
           sendSignupEmailConfirmation: (user: unknown, cb: AuthCallback) =>
             cb(new Error('smtp down')),
         },
@@ -573,7 +573,7 @@ describe('Authentication controller OAuth unit tests', () => {
   describe('signup', () => {
     async function loadSignupController() {
       return await stubControllerDependencies({
-        './../../../core/server/services/email.server.service.mjs': {
+        './../../../core/server/services/email.server.service.mts': {
           sendSignupEmailConfirmation: (user: unknown, cb: AuthCallback) =>
             cb(),
         },
@@ -766,7 +766,7 @@ describe('Authentication controller OAuth unit tests', () => {
             callback(),
         );
       const controller = await stubControllerDependencies({
-        './../../../core/server/services/email.server.service.mjs': {
+        './../../../core/server/services/email.server.service.mts': {
           sendFlaggedSignupAlert,
           sendSignupEmailConfirmation: (
             user: unknown,
@@ -803,7 +803,7 @@ describe('Authentication controller OAuth unit tests', () => {
     it('continues signup when flagged-alert delivery fails', async () => {
       const { logs } = captureTelemetry();
       const controller = await stubControllerDependencies({
-        './../../../core/server/services/email.server.service.mjs': {
+        './../../../core/server/services/email.server.service.mts': {
           sendFlaggedSignupAlert: (
             user: unknown,
             matchedKeywords: string[],
@@ -845,7 +845,7 @@ describe('Authentication controller OAuth unit tests', () => {
     it('reports email confirmation delivery failures during signup', async () => {
       const error = new Error('Confirmation unavailable');
       const controller = await stubControllerDependencies({
-        './../../../core/server/services/email.server.service.mjs': {
+        './../../../core/server/services/email.server.service.mts': {
           sendSignupEmailConfirmation: (_user: unknown, cb: AuthCallback) =>
             cb(error),
         },

@@ -1,4 +1,9 @@
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 import type { ObjectId } from 'mongodb';
 
 import {
@@ -416,6 +421,14 @@ test.describe('admin acquisition feature coverage', () => {
     const visibility = page.getByRole('combobox', {
       name: 'Profile visibility',
     });
+    await captureSection(
+      checkbox.locator('..'),
+      'acquisition-unassigned-filter',
+    );
+    await captureSection(
+      visibility.locator('..'),
+      'acquisition-visibility-filter',
+    );
     const members = page.locator('tbody tr td:nth-child(2)');
     await expect(checkbox).not.toBeChecked();
     await expect(visibility).toHaveValue('all');

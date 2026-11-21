@@ -39,7 +39,7 @@ let unConfirmedUser: SignupReminderDocument;
 let _unConfirmedUser: SignupReminderUser;
 let confirmedUser: SignupReminderDocument;
 let _confirmedUser: SignupReminderUser;
-let userFinishSignupJobHandler: typeof import('./../../../server/jobs/user-finish-signup.server.job.mjs').default;
+let userFinishSignupJobHandler: typeof import('./../../../server/jobs/user-finish-signup.server.job.mts').default;
 
 function saveWithCallback(
   document: SignupReminderDocument,

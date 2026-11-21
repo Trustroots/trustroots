@@ -67,14 +67,13 @@ export default function Recommend({
           </ToggleGroupItem>
         </ToggleGroup>
         {recommend === 'no' && (
-          <div className="lead tw:my-[30px]">
+          <p className="tw:mt-3 tw:mb-0">
             {
               t(
-                "We're sad to hear you didn't have a great experience using Trustroots!",
+                'It’s okay to say no. You can describe what happened in your own words in the next step.',
               ) as string
             }
-            {' 😞'}
-          </div>
+          </p>
         )}
         <Report
           onChangeReport={onChangeReport}

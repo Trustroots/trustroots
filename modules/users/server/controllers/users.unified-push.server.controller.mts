@@ -6,7 +6,7 @@ import {
   register,
   unregister,
   default as pushService,
-} from './../services/unified-push.server.service.mjs';
+} from './../services/unified-push.server.service.mts';
 interface PushRequest extends Request {
   body: unknown;
   user: { _id: Types.ObjectId };

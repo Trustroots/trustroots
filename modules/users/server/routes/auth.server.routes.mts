@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
-import userPassword from './../controllers/users.password.server.controller.mjs';
-import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
+import userAuthentication from './../controllers/users.authentication.server.controller.mts';
+import userPassword from './../controllers/users.password.server.controller.mts';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
 
 /**
  * Module dependencies.

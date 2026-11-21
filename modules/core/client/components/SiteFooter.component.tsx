@@ -109,7 +109,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
     <footer
       id="tr-footer"
       role="contentinfo"
-      className={cn('container hidden-print', {
+      className={cn('tw:page-container tw:print:hidden', {
         'tw:[@media(max-width:767px)]:hidden': !showOnMobile,
         'site-footer-circle': variant === 'circle',
       })}
@@ -135,7 +135,10 @@ export default function SiteFooter({
 
   if (variant === 'account') {
     return (
-      <footer className="site-footer-account hidden-print" role="contentinfo">
+      <footer
+        className="site-footer-account tw:print:hidden"
+        role="contentinfo"
+      >
         <BuildLink build={build} />
       </footer>
     );
@@ -143,7 +146,7 @@ export default function SiteFooter({
 
   if (variant === 'home') {
     return (
-      <footer className="site-footer-home hidden-print" role="contentinfo">
+      <footer className="site-footer-home tw:print:hidden" role="contentinfo">
         <small>{FOOTER_DESCRIPTION}</small>
         <a
           href="/credits"

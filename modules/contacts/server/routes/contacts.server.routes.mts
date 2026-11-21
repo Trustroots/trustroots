@@ -1,7 +1,7 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import contactsPolicy from './../policies/contacts.server.policy.mts';
-import contacts from './../controllers/contacts.server.controller.mjs';
+import contacts from './../controllers/contacts.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 

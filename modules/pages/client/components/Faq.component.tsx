@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import type { PageTranslator } from '../types';
 import React, { useEffect, useRef, useState } from 'react';
 import Board from './PageBoard';
@@ -79,11 +80,13 @@ export default function Faq({ category, children }: FaqProps) {
   return (
     <>
       <Board className="faq-header" names={['happyhippies', 'guitarcamper']}>
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
-              <h2 className="visible-xs-block">{t('FAQ')}</h2>
-              <h2 className="hidden-xs">{t('Frequently Asked Questions')}</h2>
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
+              <h2 className="tw:block tw:sm:hidden">{t('FAQ')}</h2>
+              <h2 className="tw:max-sm:hidden">
+                {t('Frequently Asked Questions')}
+              </h2>
               {category === 'get-started' && <h3>{rawT('Get Started')}</h3>}
               {category === 'general' && (
                 <h3>{t('about the site & community')}</h3>
@@ -103,9 +106,9 @@ export default function Faq({ category, children }: FaqProps) {
         </div>
       </Board>
 
-      <section className="container">
-        <div className="row">
-          <div className="col-xs-12 col-sm-4 col-md-4">
+      <section className="tw:page-container">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:sm:grid-col-4 tw:md:grid-col-4">
             <div id="faq-sidebar" className="sidebar">
               <div className="panel panel-default">
                 <div className="panel-heading">
@@ -422,15 +425,14 @@ export default function Faq({ category, children }: FaqProps) {
 
             {/* .sidebar */}
           </div>
-          <div className="col-xs-12 col-sm-8 col-md-8">
+          <div className="tw:grid-col-12 tw:sm:grid-col-8 tw:md:grid-col-8">
             <div className="faq-filter form-group">
               <label htmlFor="faq-filter">
                 {t('Search all frequently asked questions')}
               </label>
-              <input
+              <Input
                 id="faq-filter"
                 type="search"
-                className="form-control"
                 value={filter}
                 onChange={event => setFilter(event.target.value)}
               />

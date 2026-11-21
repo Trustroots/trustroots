@@ -6,7 +6,7 @@
  */
 import mongoose, { type mongo } from 'mongoose';
 import config from '../../config/config.mts';
-import '../../modules/users/server/models/user.server.model.mjs';
+import '../../modules/users/server/models/user.server.model.mts';
 
 const User = mongoose.model('User');
 // Keep index options aligned with the MongoDB driver bundled by Mongoose.

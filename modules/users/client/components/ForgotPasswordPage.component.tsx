@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import Board from '@/modules/core/client/components/Board';
@@ -44,12 +45,12 @@ export default function ForgotPasswordPage() {
   return (
     <Board
       names="bokeh"
-      className="container container-spacer container-fullscreen"
+      className="tw:page-container container-spacer container-fullscreen"
     >
-      <div className="row">
-        <div className="col-xs-12 text-center">
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 text-center">
           <img
-            className="hidden-xs"
+            className="tw:max-sm:hidden"
             src="/img/tree-color.svg"
             alt="Trustroots"
             width="120"
@@ -57,7 +58,7 @@ export default function ForgotPasswordPage() {
             aria-hidden="true"
           />
           <img
-            className="visible-xs-inline-block"
+            className="tw:inline-block tw:sm:hidden"
             src="/img/tree-color.svg"
             alt="Trustroots"
             width="80"
@@ -66,25 +67,25 @@ export default function ForgotPasswordPage() {
           />
         </div>
       </div>
-      <div className="row">
-        <h3 className="col-xs-12 text-center">Restore your password</h3>
-        <div className="col-xs-offset-1 col-xs-10 col-sm-offset-4 col-sm-4 col-md-offset-5 col-md-2">
+      <div className="tw:grid-row">
+        <h3 className="tw:grid-col-12 text-center">Restore your password</h3>
+        <div className="tw:grid-offset-1 tw:grid-col-10 tw:sm:grid-offset-4 tw:sm:grid-col-4 tw:md:grid-offset-5 tw:md:grid-col-2">
           <br />
           <form
-            className="form-auth form-horizontal"
+            className="tw:mb-5 tw:[&_[data-slot=input]]:border-0 tw:[&_[data-slot=input]]:shadow-[0_0_10px_#0000001a] tw:[&_[data-slot=input]:focus]:shadow-[0_0_10px_#0000001a] form-horizontal"
             autoComplete="off"
             onSubmit={handleSubmit}
           >
             <fieldset>
               <div className="form-group text-center">
                 <label htmlFor="username">Email or username</label>
-                <input
+                <Input
                   ref={usernameInput}
                   type="text"
                   required
                   id="username"
                   name="username"
-                  className="form-control input-lg"
+                  fieldSize="lg"
                   value={credentials.username}
                   disabled={isLoading}
                   onChange={event =>

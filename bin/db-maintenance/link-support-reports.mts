@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import mongoose from 'mongoose';
 import config from '../../config/config.mts';
-import mongooseService from '../../config/lib/mongoose.mjs';
+import mongooseService from '../../config/lib/mongoose.mts';
 
 // Usage: NODE_ENV=production node bin/db-maintenance/link-support-reports.mts mappings.json ADMIN_ID [--apply]
 // The mappings are manually verified evidence, not matches against current usernames.
@@ -54,7 +54,7 @@ try {
   });
   await mongooseService.loadModels();
   const { linkHistoricalReport: untypedLinkHistoricalReport } =
-    await import('../../modules/support/server/services/report-link.server.service.mjs');
+    await import('../../modules/support/server/services/report-link.server.service.mts');
   // The service validates these exact fields before using the mapping.
   const linkHistoricalReport: LinkHistoricalReport =
     untypedLinkHistoricalReport;

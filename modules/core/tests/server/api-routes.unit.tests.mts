@@ -482,7 +482,6 @@ describe('API route registrations', () => {
       './../../../users/server/routes/users.server.routes.mts',
       { '../policies/users.server.policy': policy },
     );
-
     assert.strictEqual(routes.length, 18);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');

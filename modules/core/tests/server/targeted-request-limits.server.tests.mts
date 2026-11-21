@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import './../../server/models/request-limit.server.model.mts';
-import requestLimitService from './../../server/services/targeted-request-limits.server.service.mts';
+import * as requestLimitService from './../../server/services/targeted-request-limits.server.service.mts';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import config from './../../../../config/config.mts';

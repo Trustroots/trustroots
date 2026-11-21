@@ -245,6 +245,11 @@ relaunches. Both journeys used local fixture servers.
 The local iOS simulator linker reported that a bundled ICU data object targeted
 iOS Simulator 18.5 while the app targets 17.0. The pilot needs runtime checks on
 older supported iOS versions before it becomes a default destination.
+To test the exact deployment minimum, run the **iOS** GitHub Actions workflow
+with **Run on iOS 17.0** enabled. The workflow requests that runtime from Xcode
+if necessary, creates an iPhone 15 simulator and runs the same tests. It fails
+if the requested runtime is unavailable so the result cannot be mistaken for
+a run on a newer simulator.
 
 Continue the pilot alongside SwiftUI. The next decision should follow
 a device comparison with current native behaviour.
@@ -252,3 +257,30 @@ Allow the existing estimate of 3–6 engineering days for platform verification
 and corrections, then re-estimate the remaining feature work based on those
 results. A fallback also requires the native integrations and parity gates
 described above.
+
+## Shared request-adapter contract tests
+
+The shared member pilot's callback adapters have portable regression tests in
+`shared/src/commonTest`. They cover successful and failed requests, missing data,
+repeated native callbacks, cancellation and results supplied just before cancellation.
+A callback may arrive after the shared screen leaves composition; it must not
+deliver into the cancelled screen or throw when the native host completes twice.
+
+Run the same tests on the Android host JVM without an emulator:
+
+```sh
+cd apps/android
+./gradlew :shared:testAndroidHostTest
+```
+
+On an Apple Silicon Mac with a supported Xcode simulator, run them as Kotlin/Native:
+
+```sh
+./gradlew :shared:iosSimulatorArm64Test --device "$SIMULATOR_UDID"
+```
+
+The Android APK workflow runs the host suite before building, and the iOS workflow
+runs the native suite on its selected iPhone simulator before the native app tests.
+This adds common contract coverage without adding a desktop application target.
+It does not replace the existing Android and iOS member-journey device tests or
+establish Compose UI parity for #3232.

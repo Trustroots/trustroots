@@ -1,3 +1,6 @@
+import { Button } from '@trustroots/ui/Button';
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useState } from 'react';
 import {
   connectionUrl,
@@ -130,23 +133,23 @@ export function NetworkConnectionsPanel({ memberId }: { memberId: string }) {
               </table>
             )}
             <div aria-label="Connection history pagination">
-              <button
+              <Button
                 type="button"
-                className="btn btn-default"
+                variant="ghost"
                 disabled={page <= 1}
                 onClick={() => setPage(value => value - 1)}
               >
                 Previous
-              </button>{' '}
+              </Button>{' '}
               <span>Page {data.page}</span>{' '}
-              <button
+              <Button
                 type="button"
-                className="btn btn-default"
+                variant="ghost"
                 disabled={!data.hasNextPage}
                 onClick={() => setPage(value => value + 1)}
               >
                 Next
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -207,13 +210,12 @@ export function NetworkConnectionSearchPage() {
   }
 
   return (
-    <main className="container">
+    <main className="tw:page-container">
       <h1>Search external connections</h1>
       <form onSubmit={submit}>
         <div className="form-group">
           <label htmlFor="connection-network">Network</label>
-          <select
-            className="form-control"
+          <Select
             id="connection-network"
             value={network}
             onChange={event => setNetwork(event.target.value as Network)}
@@ -223,12 +225,11 @@ export function NetworkConnectionSearchPage() {
                 {item.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="form-group">
           <label htmlFor="connection-identifier">Identifier</label>
-          <input
-            className="form-control"
+          <Input
             id="connection-identifier"
             value={identifier}
             required
@@ -236,13 +237,13 @@ export function NetworkConnectionSearchPage() {
             onChange={event => setIdentifier(event.target.value)}
           />
         </div>
-        <button
-          className="btn btn-primary"
+        <Button
+          intent="primary"
           type="submit"
           disabled={pending || !identifier.trim()}
         >
           Search
-        </button>
+        </Button>
       </form>
       {validationError && (
         <p role="alert">
@@ -264,21 +265,21 @@ export function NetworkConnectionSearchPage() {
             ))}
           </ul>
           <div aria-label="Search results pagination">
-            <button
-              className="btn btn-default"
+            <Button
+              variant="ghost"
               disabled={page <= 1}
               onClick={() => setPage(value => value - 1)}
             >
               Previous
-            </button>{' '}
+            </Button>{' '}
             <span>Page {data.page}</span>{' '}
-            <button
-              className="btn btn-default"
+            <Button
+              variant="ghost"
               disabled={!data.hasNextPage}
               onClick={() => setPage(value => value + 1)}
             >
               Next
-            </button>
+            </Button>
           </div>
         </>
       )}

@@ -2,7 +2,7 @@ import should from 'should';
 import request from 'supertest';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import express from './../../../../config/lib/express.mts';
-import log from './../../../../config/lib/logger.mts';
+import log from '@trustroots/logger';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
 const User = mongoose.model<UserRecord>('User');

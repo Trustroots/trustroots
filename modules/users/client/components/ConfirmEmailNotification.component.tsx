@@ -7,7 +7,7 @@ export default function ConfirmEmailNotification() {
   };
 
   return (
-    <div className="row text-center">
+    <div className="tw:grid-row text-center">
       <em className="lead">
         {t(
           'Note that your profile will not be visible to others until you confirm your email.',

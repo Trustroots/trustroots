@@ -1,7 +1,7 @@
 /** Public roster of current Trustroots greeters. */
 import mongoose from 'mongoose';
 import type { Request, Response } from 'express';
-import errorService from './../../../core/server/services/error.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mts';
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 
 interface Greeter {

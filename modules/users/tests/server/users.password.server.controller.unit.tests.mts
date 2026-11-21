@@ -76,7 +76,7 @@ interface PasswordController {
 const controllerPath =
   '../../server/controllers/users.password.server.controller.mts';
 const emailServicePath =
-  '../../../core/server/services/email.server.service.mjs';
+  '../../../core/server/services/email.server.service.mts';
 
 function deferredResponse(): DeferredResponse {
   let resolveResponse: (response: DeferredResponse) => void = () => {};

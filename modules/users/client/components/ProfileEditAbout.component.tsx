@@ -1,3 +1,5 @@
+import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
 import React, { useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
@@ -120,14 +122,13 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="firstname"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('First name')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
+                  <Input
                     type="text"
-                    className="form-control"
                     id="firstname"
                     value={draftUser.firstName || ''}
                     onChange={event =>
@@ -139,14 +140,13 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="lastname"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Last name (optional)')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
+                  <Input
                     type="text"
-                    className="form-control"
                     id="lastname"
                     aria-describedby="lastNameHelp"
                     value={draftUser.lastName || ''}
@@ -164,14 +164,13 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="tagline"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('Short tagline')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
-                  <input
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
+                  <Input
                     type="text"
-                    className="form-control"
                     id="tagline"
                     value={draftUser.tagline || ''}
                     onChange={event =>
@@ -186,13 +185,12 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <div className="form-group">
                 <label
                   htmlFor="gender"
-                  className="col-sm-3 text-right control-label"
+                  className="tw:sm:grid-col-3 text-right control-label"
                 >
                   {t('I Am')}
                 </label>
-                <div className="col-sm-9 col-md-7 col-lg-6">
-                  <select
-                    className="form-control"
+                <div className="tw:sm:grid-col-9 tw:md:grid-col-7 tw:lg:grid-col-6">
+                  <Select
                     id="gender"
                     value={draftUser.gender || ''}
                     onChange={event =>
@@ -204,14 +202,14 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                     <option value="male">{t('Male')}</option>
                     <option value="non-binary">{t('Non-binary')}</option>
                     <option value="other">{t('Other')}</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="form-group">
-                <label className="col-sm-3 text-right control-label">
+                <label className="tw:sm:grid-col-3 text-right control-label">
                   {t('Birthdate')}
                 </label>
-                <div className="col-sm-9">
+                <div className="tw:sm:grid-col-9">
                   <BirthdateSelect
                     onChange={birthdate => updateDraft({ birthdate })}
                     value={draftUser.birthdate || ''}

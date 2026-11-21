@@ -181,7 +181,7 @@ async function loadController({
             cb();
           },
         },
-        '../../../../config/lib/logger': (...args: unknown[]) => {
+        '@trustroots/logger': (...args: unknown[]) => {
           local.logs.push(args);
         },
       },

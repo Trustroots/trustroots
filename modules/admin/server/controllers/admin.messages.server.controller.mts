@@ -2,12 +2,11 @@
 import _ from 'lodash';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type Types } from 'mongoose';
-import errorService from './../../../core/server/services/error.server.service.mjs';
-import type {
-  ErrorBody,
-  ValidationFailure,
+import errorService, {
+  type ErrorBody,
+  type ValidationFailure,
 } from './../../../core/server/services/error.server.service.mts';
-import MessagesController from './../../../messages/server/controllers/messages.server.controller.mjs';
+import MessagesController from './../../../messages/server/controllers/messages.server.controller.mts';
 import { findPairRecords } from '../services/admin-pair-records.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
 

@@ -45,7 +45,7 @@ const profileController = controllerModule as unknown as ProfileController;
 const User = mongoose.model<ProfilePushRecord>('User');
 
 const errorServicePath =
-  './../../../core/server/services/error.server.service.mjs';
+  './../../../core/server/services/error.server.service.mts';
 
 async function loadControllerWithEmptyErrorMessage() {
   sinon

@@ -3,7 +3,7 @@ import {
   type NotificationEmail,
 } from '../../../users/server/services/notification-email.server.service.mts';
 import type { Types } from 'mongoose';
-import { emailToken } from '../../../users/server/services/action-token.server.service.mjs';
+import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
 import _ from 'lodash';
 import path from 'path';
 import juice from 'juice';
@@ -14,11 +14,11 @@ import sanitizeHtml from 'sanitize-html';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
 import analyticsHandler from './../controllers/analytics.server.controller.mts';
 import textService from './text.server.service.mts';
-import renderModule from './../../../../config/lib/render.mjs';
-import agendaModule from './../../../../config/lib/agenda.mjs';
+import renderModule from './../../../../config/lib/render.mts';
+import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
-import logModule from './../../../../config/lib/logger.mjs';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
+import logModule from '@trustroots/logger';
+import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import categories from '../../../support/shared/categories.ts';
 type MailCallback<Result = import('agenda').Job> = (
   error?: Error | null,

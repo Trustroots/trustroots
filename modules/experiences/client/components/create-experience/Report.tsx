@@ -4,7 +4,6 @@ import React from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
-import Switch from '@/modules/core/client/components/Switch';
 import { Textarea } from '@trustroots/ui/Textarea';
 
 interface ReportProps {
@@ -29,13 +28,19 @@ export default function Report({
       <p>
         {
           t(
-            "It's extremely important you report anyone behaving against community rules or values to us.",
+            'You can send a separate private report if you have a safety concern or someone broke the community rules.',
           ) as string
         }
       </p>
-      <Switch isSmall checked={report} onChange={onChangeReport}>
+      <label className="tw:flex tw:items-start tw:gap-2 tw:text-inherit">
+        <input
+          type="checkbox"
+          checked={report}
+          onChange={onChangeReport}
+          className="tw:mt-1"
+        />
         {t('Privately report this person to the moderators') as string}
-      </Switch>
+      </label>
       {report && (
         <>
           <p>

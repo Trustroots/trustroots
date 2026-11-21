@@ -1,16 +1,17 @@
-import errorService from '../../../core/server/services/error.server.service.mjs';
-import paginationService from '../../../core/server/services/pagination.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import paginationService from '../../../core/server/services/pagination.server.service.mts';
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import moment from 'moment';
-import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import { findDiscoveryOfferLocations } from '../../../users/server/services/discovery-offers.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 
 interface TribeRecord {
   _id?: Types.ObjectId;
   slug?: string;
   label?: string;
   count?: number;
+  description?: string;
   public?: boolean;
   organiserIds?: Types.ObjectId[];
 }
@@ -82,6 +83,7 @@ interface TribeRequest {
   protocol?: string;
   originalUrl?: string;
   user?: UserRecord;
+  body?: { label?: unknown; description?: unknown };
   tribe?: TribeRecord | null;
 }
 
@@ -102,7 +104,10 @@ interface JsonResponse<Body> {
 }
 
 interface TribeDetailResponse extends JsonResponse<
-  TribeRecord & { organisers?: { username: string; displayName?: string }[] }
+  TribeRecord & {
+    canEdit?: true;
+    organisers?: { username: string; displayName?: string }[];
+  }
 > {
   set(key: string, value: string): this;
 }
@@ -124,6 +129,11 @@ const service = {} as {
   };
   listTribes(req: ListTribesRequest, res: PaginatedResponse): void;
   getTribe(
+    req: TribeRequest,
+    res: TribeDetailResponse,
+    next: Next,
+  ): Promise<unknown>;
+  editTribe(
     req: TribeRequest,
     res: TribeDetailResponse,
     next: Next,
@@ -228,7 +238,7 @@ service.listTribes = function (req, res) {
 service.getTribe = async function (req, res, next) {
   res.set('Cache-Control', 'private, no-store');
   const { tribe, user } = req;
-  if (!tribe?._id || !user?._id || !user.public) {
+  if (!tribe?._id || !user?._id) {
     return res.json(tribe || {});
   }
 
@@ -240,6 +250,10 @@ service.getTribe = async function (req, res, next) {
       .exec();
     const ids = assignment?.organiserIds;
     if (!ids?.length) return res.json(tribe);
+    const canEdit = mayEditCircle(user) && ids.some(id => id.equals(user._id!));
+    const detail = tribe instanceof Tribe ? tribe.toJSON() : tribe;
+    const editor = canEdit ? { canEdit: true as const } : {};
+    if (!user.public) return res.json({ ...detail, ...editor });
 
     const members = await User.find({
       _id: { $in: ids, $nin: user.blocked || [] },
@@ -262,9 +276,51 @@ service.getTribe = async function (req, res, next) {
         ? [{ username: member.username, displayName: member.displayName }]
         : [];
     });
-    const detail = tribe instanceof Tribe ? tribe.toJSON() : tribe;
-    return res.json({ ...detail, organisers });
+    return res.json({ ...detail, ...editor, organisers });
   } catch (error) {
+    return next(error);
+  }
+};
+
+function mayEditCircle(user: UserRecord | undefined) {
+  return (
+    userRolesService.hasRole(user, 'user') &&
+    !userRolesService.hasRestrictedMessagingRole(user)
+  );
+}
+
+/** Update the circle's editable details while the organiser assignment is current. */
+service.editTribe = async function (req, res, next) {
+  const { tribe, user, body } = req;
+  if (!tribe?._id || !user?._id || !mayEditCircle(user)) {
+    return errorService.sendForbidden(res);
+  }
+  const { label, description } = body ?? {};
+  if (
+    (label === undefined && description === undefined) ||
+    (label !== undefined && typeof label !== 'string') ||
+    (description !== undefined &&
+      (typeof description !== 'string' || description.length > 4000))
+  ) {
+    return errorService.sendBadRequest(res);
+  }
+
+  try {
+    // The assignment and visibility must still match at the time of the write.
+    const updated = await Tribe.findOneAndUpdate(
+      { _id: tribe._id, public: true, organiserIds: user._id },
+      // Mongoose omits undefined fields in updates, preserving omitted details.
+      { $set: { label, description, modified: new Date() } },
+      { returnDocument: 'after', runValidators: true },
+    )
+      .select(service.tribeFields)
+      .exec();
+    if (!updated) return errorService.sendForbidden(res);
+    return res.json(updated);
+  } catch (error) {
+    if (error instanceof mongoose.Error.ValidationError) {
+      return errorService.sendBadRequest(res, error);
+    }
     return next(error);
   }
 };

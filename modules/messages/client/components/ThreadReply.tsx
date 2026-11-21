@@ -208,9 +208,9 @@ export default function ThreadReply({
       {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
       <div
         id="message-reply-writing-area"
-        className="row message-reply-editor-row"
+        className="tw:grid-row message-reply-editor-row"
       >
-        <div className="col-xs-12">
+        <div className="tw:grid-col-12">
           {previewing ? (
             <section
               className="message-draft-preview"
@@ -258,7 +258,7 @@ export default function ThreadReply({
           )}
         </div>
       </div>
-      <div className="col-xs-2 col-sm-12 message-reply-actions">
+      <div className="tw:grid-col-2 tw:sm:grid-col-12 message-reply-actions">
         <Button
           ref={editButton}
           type="button"
@@ -269,7 +269,7 @@ export default function ThreadReply({
         >
           {previewing ? t('Edit') : t('Preview')}
         </Button>
-        <small className="text-muted hidden-xs">
+        <small className="text-muted tw:max-sm:hidden">
           {t('Highlight text to change its appearance. {{shortcut}} to send.', {
             shortcut: sendShortcut,
           })}
@@ -282,7 +282,7 @@ export default function ThreadReply({
           disabled={sending}
         >
           <i className="icon-send" />
-          <span className="hidden-xs">&nbsp;{t('Send')}</span>
+          <span className="tw:max-sm:hidden">&nbsp;{t('Send')}</span>
         </Button>
       </div>
     </form>

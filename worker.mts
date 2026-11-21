@@ -1,7 +1,7 @@
 /** Trustroots background worker entry point. */
-import mongooseService from './config/lib/mongoose.mjs';
-import worker from './config/lib/worker.mjs';
-import log from './config/lib/logger.mjs';
+import mongooseService from './config/lib/mongoose.mts';
+import worker from './config/lib/worker.mts';
+import log from '@trustroots/logger';
 import { startWorker } from './config/lib/start-worker.mts';
 
 startWorker(mongooseService, worker).catch(err => {

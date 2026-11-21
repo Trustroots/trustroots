@@ -1,3 +1,6 @@
+import { Textarea } from '@trustroots/ui/Textarea';
+import { Select } from '@trustroots/ui/Select';
+import { Input } from '@trustroots/ui/Input';
 import MemberFlag from './MemberFlag.component';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
@@ -406,8 +409,8 @@ function Conversation({
       )}
       <form className="support-inbox__composer" onSubmit={submitReply}>
         <label htmlFor="support-reply">Reply to requester</label>
-        <textarea
-          className="form-control"
+        <Textarea
+          fieldSize="md"
           id="support-reply"
           maxLength={20000}
           rows={5}
@@ -711,8 +714,8 @@ function RequestDetails({
       </dl>
       <div className="support-inbox__actions">
         <label htmlFor="support-request-status">Status</label>
-        <select
-          className="form-control support-inbox__status-select"
+        <Select
+          className="support-inbox__status-select"
           id="support-request-status"
           value={status}
           disabled={saving}
@@ -725,7 +728,7 @@ function RequestDetails({
               {SUPPORT_STATUS_LABELS[value]}
             </option>
           ))}
-        </select>
+        </Select>
         <Button intent="primary" disabled={saving} onClick={toggleStatus}>
           {status === 'solved' ? 'Reopen request' : 'Mark solved'}
         </Button>
@@ -849,8 +852,7 @@ function MemberSearch() {
     >
       <form onSubmit={submit}>
         <label htmlFor="support-member-search">Name, username or email</label>
-        <input
-          className="form-control"
+        <Input
           id="support-member-search"
           value={search}
           minLength={3}
@@ -884,7 +886,7 @@ export function SupportMemberSearchPage() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <h1>Member search</h1>
         <MemberSearch />
       </main>
@@ -914,7 +916,7 @@ export function SupportMemberPage({ id }: { id: string }) {
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="tw:page-container">
         <p>
           <a href="/admin/support">Support inbox</a>
         </p>
@@ -1024,7 +1026,7 @@ export default function SupportInbox() {
   return (
     <>
       <AdminHeader />
-      <main className="container support-inbox">
+      <main className="tw:page-container support-inbox">
         <header className="support-inbox__intro">
           <h1>Support inbox</h1>
           <p>
@@ -1042,8 +1044,7 @@ export default function SupportInbox() {
               <div className="support-inbox__filters">
                 <div>
                   <label htmlFor="support-status">Status</label>
-                  <select
-                    className="form-control"
+                  <Select
                     id="support-status"
                     value={location.status}
                     onChange={event => {
@@ -1060,12 +1061,11 @@ export default function SupportInbox() {
                       </option>
                     ))}
                     <option value="all">All</option>
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="support-category">Category</label>
-                  <select
-                    className="form-control"
+                  <Select
                     id="support-category"
                     value={location.category}
                     onChange={event => {
@@ -1080,14 +1080,13 @@ export default function SupportInbox() {
                         </option>
                       ),
                     )}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="support-request-search">
                     Search requests
                   </label>
-                  <input
-                    className="form-control"
+                  <Input
                     id="support-request-search"
                     type="search"
                     maxLength={SEARCH_LIMIT}

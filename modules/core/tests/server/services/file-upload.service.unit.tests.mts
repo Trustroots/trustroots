@@ -374,6 +374,9 @@ describe('file-upload.service unit tests', () => {
     const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
     const res = mockResponse(() => {
       res.statusCode.should.equal(422);
+      res.body!.message!.should.equal(
+        errorService.getErrorMessageByKey('unprocessable-entity'),
+      );
       fs.existsSync(filePath).should.equal(true);
       done();
     });
@@ -390,6 +393,9 @@ describe('file-upload.service unit tests', () => {
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(422);
+      res.body!.message!.should.equal(
+        errorService.getErrorMessageByKey('unprocessable-entity'),
+      );
       done();
     });
 

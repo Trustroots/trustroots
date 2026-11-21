@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import React, { useRef, useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
 import { useAuth } from '../../../core/client/react-app/auth';
@@ -159,8 +160,7 @@ export default function SupportStatusImport({
         The export itself must not be uploaded.
       </p>
       <label htmlFor="support-status-import-file">Reduced JSON manifest</label>
-      <input
-        className="form-control"
+      <Input
         id="support-status-import-file"
         type="file"
         accept=".json,application/json"
@@ -179,8 +179,7 @@ export default function SupportStatusImport({
       <label htmlFor="support-status-import-window">
         Submission-time matching window (minutes)
       </label>
-      <input
-        className="form-control"
+      <Input
         id="support-status-import-window"
         type="range"
         min={1}

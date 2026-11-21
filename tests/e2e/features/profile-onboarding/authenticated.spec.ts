@@ -371,27 +371,11 @@ test.describe('authenticated member flows', () => {
     await expect(warning).toBeVisible();
     await expect(warning).toHaveAttribute('data-intent', 'warning');
     await expect(warning).toHaveCSS('background-color', 'rgb(255, 243, 205)');
-    const comparison = await warning.evaluate(element => {
-      const legacy = document.createElement('div');
-      legacy.className = 'alert alert-warning';
-      element.parentElement!.append(legacy);
-      const properties = [
-        'color',
-        'backgroundColor',
-        'borderColor',
-        'borderRadius',
-        'padding',
-        'marginBottom',
-      ] as const;
-      const actual = getComputedStyle(element);
-      const original = getComputedStyle(legacy);
-      const matches = properties.every(
-        property => actual[property] === original[property],
-      );
-      legacy.remove();
-      return matches;
-    });
-    expect(comparison).toBe(true);
+    await expect(warning).toHaveCSS('color', 'rgb(102, 77, 3)');
+    await expect(warning).toHaveCSS('border-color', 'rgb(255, 230, 156)');
+    await expect(warning).toHaveCSS('border-radius', '6px');
+    await expect(warning).toHaveCSS('padding', '16px');
+    await expect(warning).toHaveCSS('margin-bottom', '16px');
   });
 
   test('an unexpected language response leaves the profile form editable', async ({
@@ -655,9 +639,9 @@ test.describe('authenticated member flows', () => {
     await page.goto(`/profile/${host.username}`);
 
     await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
-    await expect(page.locator('.row.hidden-xs .profile-username')).toHaveText(
-      `@${host.username}`,
-    );
+    await expect(
+      page.locator('.profile-view .profile-username:visible'),
+    ).toHaveText(`@${host.username}`);
   });
 
   test('profile edit locations page is reachable', async ({

@@ -14,6 +14,7 @@ eslint_report.json
 build/
 apps/android/build/
 apps/android/app/build/
+apps/shared/build/
 public/lib/
 public/dist/
 public/assets/

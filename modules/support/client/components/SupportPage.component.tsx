@@ -15,9 +15,9 @@ export default function SupportPage({ user }: SupportPageProps) {
   return (
     <>
       <Board names="forestpath">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 text-center">
+        <div className="tw:page-container">
+          <div className="tw:grid-row">
+            <div className="tw:grid-col-12 text-center">
               <br />
               <br />
               <h2>{t('Trustroots Support')}</h2>
@@ -26,12 +26,12 @@ export default function SupportPage({ user }: SupportPageProps) {
         </div>
       </Board>
 
-      <section className="container container-spacer">
-        <div className="row">
-          <div className="col-xs-12 col-md-8 col-lg-7">
+      <section className="tw:page-container container-spacer">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 tw:md:grid-col-8 tw:lg:grid-col-7">
             <SupportForm user={user} />
           </div>
-          <div className="col-xs-12 col-md-4 col-lg-5">
+          <div className="tw:grid-col-12 tw:md:grid-col-4 tw:lg:grid-col-5">
             <h3>{t('See also')}</h3>
             <ul className="list-unstyled lead">
               <li>

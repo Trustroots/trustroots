@@ -1,6 +1,6 @@
 // External dependencies
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import React, { Component, type ChangeEvent, type FormEvent } from 'react';
+import React, { useEffect, useId, useState, type FormEvent } from 'react';
 import { formatRoleLabel } from '../utils/role-label';
 
 // Internal dependencies
@@ -9,6 +9,8 @@ import AdminHeader from './AdminHeader.component';
 import AdminUserResultsTable from './AdminUserResultsTable.component';
 import { SEARCH_STRING_LIMIT, normalizeAdminQuery } from './userSearch.helpers';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
 
 interface MemberSort {
   column: string;
@@ -49,15 +51,6 @@ interface SearchUsersRouteProps extends SearchUsersProps {
   search: { role?: string; search?: string };
 }
 
-interface SearchUsersState {
-  role: string;
-  search: string;
-  sort: MemberSort;
-  userResults: MemberRecord[];
-  userResultsPagination: MemberList['pagination'];
-  userResultsSource: 'role' | 'search' | false;
-}
-
 const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
   column: 'username',
   direction: 'ascending',
@@ -74,114 +67,87 @@ const USER_LIST_ROLES = [
   'volunteer',
 ];
 
-export class SearchUsersContent extends Component<
-  SearchUsersRouteProps,
-  SearchUsersState
-> {
-  static defaultProps = {
-    showHeading: true,
-  };
+export function SearchUsersContent({
+  showHeading = true,
+  navigate,
+  search: initialSearch,
+}: SearchUsersRouteProps) {
+  const id = useId();
+  const [role, setRole] = useState('admin');
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState(DEFAULT_MEMBER_LIST_SORT);
+  const [results, setResults] = useState<
+    (MemberList & { source: 'role' | 'search' }) | null
+  >(null);
+  const normalizedSearch = normalizeAdminQuery(query);
 
-  constructor(props: SearchUsersRouteProps) {
-    super(props);
-    this.onSearchChange = this.onSearchChange.bind(this);
-    this.onRoleChange = this.onRoleChange.bind(this);
-    this.onPageChange = this.onPageChange.bind(this);
-    this.onSortChange = this.onSortChange.bind(this);
-    this.doSearch = this.doSearch.bind(this);
-    this.doListUsersByRole = this.doListUsersByRole.bind(this);
-    this.state = {
-      role: 'admin',
-      search: '',
-      sort: DEFAULT_MEMBER_LIST_SORT,
-      userResults: [],
-      userResultsPagination: null,
-      userResultsSource: false,
-    };
-  }
-
-  componentDidMount() {
-    const { role } = this.props.search;
-    if (role && USER_LIST_ROLES.includes(role)) {
-      this.setState({ role }, () => this.doListUsersByRole(null));
+  useEffect(() => {
+    const memberRole = initialSearch.role;
+    if (memberRole && USER_LIST_ROLES.includes(memberRole)) {
+      setRole(memberRole);
+      void loadRole(null, { role: memberRole });
       return;
     }
-    const search = normalizeAdminQuery(this.props.search.search);
-    if (search) {
-      this.setState({ search }, () => this.doSearch(null));
+    const queryFromUrl = normalizeAdminQuery(initialSearch.search);
+    if (queryFromUrl) {
+      setQuery(queryFromUrl);
+      void loadSearch(null, { query: queryFromUrl });
+    }
+  }, []);
+
+  function updateResults(memberList: MemberList, source: 'role' | 'search') {
+    setSort(memberList.sort);
+    setResults({ ...memberList, source });
+  }
+
+  function onPageChange(page: number) {
+    return results?.source === 'role'
+      ? loadRole(null, { page })
+      : loadSearch(null, { page });
+  }
+
+  function onSortChange(requestedSort: MemberSort) {
+    setSort(requestedSort);
+    if (results?.source === 'role') {
+      void loadRole(null, { page: 1, sort: requestedSort });
+    } else {
+      void loadSearch(null, { page: 1, sort: requestedSort });
     }
   }
 
-  onRoleChange(event: ChangeEvent<HTMLSelectElement>) {
-    const role = event.target.value;
-    this.setState({ role });
-  }
-
-  onSearchChange(event: ChangeEvent<HTMLInputElement>) {
-    const search = event.target.value;
-    this.setState({ search });
-  }
-
-  onPageChange(page: number) {
-    if (this.state.userResultsSource === 'role') {
-      return this.doListUsersByRole(null, { page });
-    }
-    return this.doSearch(null, { page });
-  }
-
-  onSortChange(sort: MemberSort) {
-    this.setState({ sort }, () => {
-      if (this.state.userResultsSource === 'role') {
-        this.doListUsersByRole(null, { page: 1, sort });
-      } else {
-        this.doSearch(null, { page: 1, sort });
-      }
-    });
-  }
-
-  async doListUsersByRole(
+  async function loadRole(
     event: FormEvent<HTMLFormElement> | null = null,
-    options: { page?: number; sort?: MemberSort } = {},
+    options: { page?: number; sort?: MemberSort; role?: string } = {},
   ) {
-    if (event) {
-      event.preventDefault();
-    }
-    const { role, sort } = this.state;
-    void this.props.navigate({
+    event?.preventDefault();
+    const requestedRole = options.role ?? role;
+    void navigate({
       hash: true,
       replace: Boolean(options.page || options.sort),
       search: (search: Record<string, string>) => ({
         ...search,
-        role,
+        role: requestedRole,
         search: undefined,
       }),
       to: '.',
     });
-    const memberList: MemberList = await listUsersByRole(role, {
+    const memberList: MemberList = await listUsersByRole(requestedRole, {
       page: options.page || 1,
       sort: options.sort || sort,
     });
-    this.setState({
-      sort: memberList.sort,
-      userResults: memberList.users,
-      userResultsPagination: memberList.pagination,
-      userResultsSource: 'role',
-    });
+    updateResults(memberList, 'role');
   }
 
-  async doSearch(
+  async function loadSearch(
     event: FormEvent<HTMLFormElement> | null = null,
-    options: { page?: number; sort?: MemberSort } = {},
+    options: { page?: number; sort?: MemberSort; query?: string } = {},
   ) {
-    if (event) {
-      event.preventDefault();
+    event?.preventDefault();
+    const search = normalizeAdminQuery(options.query ?? query);
+    if (search !== query) {
+      setQuery(search);
     }
-    const { sort } = this.state;
-    const search = normalizeAdminQuery(this.state.search);
-    if (search !== this.state.search) {
-      this.setState({ search });
-    }
-    void this.props.navigate({
+    void navigate({
       hash: true,
       replace: Boolean(options.page || options.sort),
       search: (current: Record<string, string>) => ({
@@ -196,80 +162,66 @@ export class SearchUsersContent extends Component<
         page: options.page || 1,
         sort: options.sort || sort,
       });
-      this.setState({
-        sort: memberList.sort,
-        userResults: memberList.users,
-        userResultsPagination: memberList.pagination,
-        userResultsSource: 'search',
-      });
+      updateResults(memberList, 'search');
     }
   }
 
-  render() {
-    const { showHeading } = this.props;
-    const { sort, userResults, userResultsPagination } = this.state;
-    const normalizedSearch = normalizeAdminQuery(this.state.search);
+  return (
+    <>
+      {showHeading && <h2>Search members</h2>}
 
-    return (
-      <>
-        {showHeading && <h2>Search members</h2>}
-
-        <div className="row">
-          <div className="col-xs-12 col-md-6">
-            <form onSubmit={this.doSearch} className="form-inline">
-              <label>
-                Name, username or email
-                <br />
-                <input
-                  className="form-control input-md"
-                  type="search"
-                  value={this.state.search}
-                  onChange={this.onSearchChange}
-                />
-              </label>
-              <Button
-                disabled={normalizedSearch.length < SEARCH_STRING_LIMIT}
-                type="submit"
-              >
-                Search
-              </Button>
-            </form>
-          </div>
-          <div className="col-xs-12 col-md-6">
-            <form
-              onSubmit={this.doListUsersByRole}
-              className="form-inline pull-right"
+      <div className="tw:grid-row">
+        <div className="tw:grid-col-12 tw:md:grid-col-6">
+          <form onSubmit={loadSearch} className="form-inline">
+            <label htmlFor={id}>
+              Name, username or email
+              <br />
+              <Input
+                id={id}
+                type="search"
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+              />
+            </label>
+            <Button
+              disabled={normalizedSearch.length < SEARCH_STRING_LIMIT}
+              type="submit"
             >
-              <select
-                name="role"
-                className="form-control input-md"
-                onChange={this.onRoleChange}
-                value={this.state.role}
-              >
-                {USER_LIST_ROLES.map(role => (
-                  <option value={role} key={role}>
-                    {formatRoleLabel(role)}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit">List users in role</Button>
-            </form>
-          </div>
+              Search
+            </Button>
+          </form>
         </div>
+        <div className="tw:grid-col-12 tw:md:grid-col-6">
+          <form onSubmit={loadRole} className="form-inline pull-right">
+            <Select
+              name="role"
+              aria-label="Role"
+              onChange={event => setRole(event.target.value)}
+              value={role}
+            >
+              {USER_LIST_ROLES.map(role => (
+                <option value={role} key={role}>
+                  {formatRoleLabel(role)}
+                </option>
+              ))}
+            </Select>
+            <Button type="submit">List users in role</Button>
+          </form>
+        </div>
+      </div>
 
-        <AdminUserResultsTable
-          onPageChange={this.onPageChange}
-          onSortChange={this.onSortChange}
-          pagination={userResultsPagination}
-          showPublicProfileLink
-          showUserState
-          showZendeskActions
-          sort={sort}
-          userResults={userResults}
-        />
-      </>
-    );
-  }
+      <AdminUserResultsTable
+        onPageChange={onPageChange}
+        onSortChange={onSortChange}
+        pagination={results?.pagination ?? null}
+        showPublicProfileLink
+        showUserState
+        showZendeskActions
+        sort={sort}
+        userResults={results?.users ?? []}
+      />
+    </>
+  );
 }
 
 export function AdminSearchUsersContent(props: SearchUsersProps) {
@@ -282,7 +234,7 @@ export default function AdminSearchUsers() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <AdminSearchUsersContent />
       </div>
     </>

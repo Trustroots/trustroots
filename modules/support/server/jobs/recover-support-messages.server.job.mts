@@ -57,7 +57,7 @@ export async function recoverSupportMessages(
       )
       .limit(100)
       .lean();
-    const agendaModule = await import('../../../../config/lib/agenda.mjs');
+    const agendaModule = await import('../../../../config/lib/agenda.mts');
     const agenda = agendaModule.default as import('agenda').Agenda;
     await Promise.all(
       pending.map(message => {

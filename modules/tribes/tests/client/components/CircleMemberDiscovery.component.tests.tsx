@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import CircleMemberDiscovery from '@/modules/tribes/client/components/CircleMemberDiscovery';
@@ -111,7 +111,17 @@ describe('<CircleMemberDiscovery />', () => {
 
     render(<CircleMemberDiscovery circle={circle} user={user} />);
 
-    expect(await screen.findByText('Active today')).toBeInTheDocument();
+    const activity = await screen.findByText('Active today');
+    const profile = screen.getByRole('link', { name: /Member known/ });
+    const card = profile.closest('.member-card-surface');
+    expect(card).toHaveAttribute('data-compact', 'true');
+    expect(card).toContainElement(activity);
+    expect(activity).toHaveAttribute('data-slot', 'badge');
+    const hosting = within(card as HTMLElement).getByRole('link', {
+      name: 'Hosting',
+    });
+    expect(hosting).toHaveAttribute('href', '/profile/known/accommodation');
+    expect(profile).not.toContainElement(hosting);
     expect(screen.getByText('Active this week')).toBeInTheDocument();
     expect(screen.getByText('Active this month')).toBeInTheDocument();
     expect(
@@ -119,13 +129,12 @@ describe('<CircleMemberDiscovery />', () => {
     ).toBeInTheDocument();
     expect(
       screen
-        .getAllByTestId('circle-member-accommodation')
+        .getAllByRole('link', { name: 'Hosting' })
         .map(link => link.getAttribute('href')),
     ).toEqual([
       '/profile/known/accommodation',
       '/profile/active/accommodation',
     ]);
-    expect(screen.getAllByTestId('circle-member-activity')).toHaveLength(4);
   });
 
   it('only reloads when the circle or signed-in member changes', async () => {

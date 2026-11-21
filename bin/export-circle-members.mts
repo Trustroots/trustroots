@@ -8,10 +8,10 @@
  */
 import fs from 'fs';
 import mongoose, { type Document } from 'mongoose';
-import mongooseService from './../config/lib/mongoose.mjs';
-import './../config/lib/express.mjs';
-import './../modules/users/server/models/user.server.model.mjs';
-import './../modules/tribes/server/models/tribe.server.model.mjs';
+import mongooseService from './../config/lib/mongoose.mts';
+import './../config/lib/express.mts';
+import './../modules/users/server/models/user.server.model.mts';
+import './../modules/tribes/server/models/tribe.server.model.mts';
 
 interface CircleRecord extends Document {
   label: string;

@@ -7,7 +7,7 @@ import { cn } from '#lib/cn';
 /*
  * Bootstrap 5.3 `.modal` geometry on Base UI's Dialog, with the app's own
  * overrides (a grey header with 10px vertical padding, a large title). The
- * colours and borders are Bootstrap's `--bs-*` variables, which the app's
+ * colours and borders are the shared surface tokens, which the app's
  * Bootstrap stylesheet defines on :root.
  *
  * Bootstrap's `.modal-dialog` and `.modal-content` are one element here, the
@@ -17,8 +17,8 @@ const popupVariants = cva(
   [
     'tw:relative tw:flex tw:w-auto tw:flex-col tw:outline-0',
     'tw:[--modal-margin:0.5rem] tw:m-(--modal-margin) tw:min-[576px]:[--modal-margin:1.75rem] tw:min-[576px]:mx-auto',
-    'tw:rounded-(--bs-border-radius-lg) tw:border-(length:--bs-border-width) tw:border-solid tw:border-(--bs-border-color-translucent)',
-    'tw:bg-(--bs-body-bg) tw:bg-clip-padding tw:text-(--bs-body-color)',
+    'tw:rounded-(--tr-dialog-radius) tw:border-(length:--tr-border-width) tw:border-solid tw:border-(--tr-surface-border)',
+    'tw:bg-(--tr-surface-bg) tw:bg-clip-padding tw:text-(--tr-surface-text)',
     // Bootstrap's fade: the dialog fades in and slides down 50px.
     'tw:[transition:opacity_0.15s_linear,translate_0.3s_ease-out] tw:motion-reduce:transition-none',
     'tw:data-starting-style:-translate-y-[50px] tw:data-starting-style:opacity-0 tw:data-ending-style:-translate-y-[50px] tw:data-ending-style:opacity-0',
@@ -128,7 +128,7 @@ export function ModalHeader({ closeLabel, children }: ModalHeaderProps) {
   return (
     <div
       data-slot="modal-header"
-      className="tw:flex tw:shrink-0 tw:items-center tw:rounded-t-[calc(var(--bs-border-radius-lg)-var(--bs-border-width))] tw:border-0 tw:border-b-(length:--bs-border-width) tw:border-solid tw:border-(--bs-border-color) tw:bg-(--tr-gray-lighter) tw:px-4 tw:py-2.5"
+      className="tw:flex tw:shrink-0 tw:items-center tw:rounded-t-[calc(var(--tr-dialog-radius)-var(--tr-border-width))] tw:border-0 tw:border-b-(length:--tr-border-width) tw:border-solid tw:border-(--tr-control-border) tw:bg-(--tr-gray-lighter) tw:px-4 tw:py-2.5"
     >
       {children}
       {closeLabel && (
@@ -185,7 +185,7 @@ export function ModalFooter({ children }: { children: ReactNode }) {
   return (
     <div
       data-slot="modal-footer"
-      className="tw:flex tw:shrink-0 tw:flex-wrap tw:items-center tw:justify-end tw:rounded-b-[calc(var(--bs-border-radius-lg)-var(--bs-border-width))] tw:border-0 tw:border-t-(length:--bs-border-width) tw:border-solid tw:border-(--bs-border-color) tw:p-3 tw:*:m-1"
+      className="tw:flex tw:shrink-0 tw:flex-wrap tw:items-center tw:justify-end tw:rounded-b-[calc(var(--tr-dialog-radius)-var(--tr-border-width))] tw:border-0 tw:border-t-(length:--tr-border-width) tw:border-solid tw:border-(--tr-control-border) tw:p-3 tw:*:m-1"
     >
       {children}
     </div>

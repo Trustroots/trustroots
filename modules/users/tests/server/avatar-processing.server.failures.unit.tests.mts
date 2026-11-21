@@ -205,7 +205,7 @@ describe('Avatar processing failure handling', () => {
             },
             fs: { promises: createFsProxy(fsHooks) },
             sharp: createBackend(options),
-            './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+            '@trustroots/logger': (...args: unknown[]) =>
               seen.logged.push(args),
           },
         )
@@ -391,9 +391,8 @@ describe('Avatar processing failure handling', () => {
           },
           fs: { promises: publicCleanupFs },
           sharp: unusedBackend,
-          './../../../../config/lib/logger.mjs': (
-            ...args: [unknown, string, ...unknown[]]
-          ) => logged.push(args),
+          '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
+            logged.push(args),
         },
       )
     ).default;
@@ -441,9 +440,8 @@ describe('Avatar processing failure handling', () => {
           },
           fs: { promises: privateCleanupFs },
           sharp: createBackend(),
-          './../../../../config/lib/logger.mjs': (
-            ...args: [unknown, string, ...unknown[]]
-          ) => logged.push(args),
+          '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
+            logged.push(args),
         },
       )
     ).default;
@@ -494,9 +492,8 @@ describe('Avatar processing failure handling', () => {
           },
           fs: { promises: createFsProxy({ chmod, rm }) },
           sharp: unusedBackend,
-          './../../../../config/lib/logger.mjs': (
-            ...args: [unknown, string, ...unknown[]]
-          ) => logged.push(args),
+          '@trustroots/logger': (...args: [unknown, string, ...unknown[]]) =>
+            logged.push(args),
         },
       )
     ).default;
@@ -655,8 +652,7 @@ describe('Avatar processing failure handling', () => {
         ),
         {
           './../../../../config/config.mts': config,
-          './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
-            seen.logged.push(args),
+          '@trustroots/logger': (...args: unknown[]) => seen.logged.push(args),
         },
       )
     ).default;

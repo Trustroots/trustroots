@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { htmlToText } from 'html-to-text';
-import mongooseService from './../../config/lib/mongoose.mjs';
+import mongooseService from './../../config/lib/mongoose.mts';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);

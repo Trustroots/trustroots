@@ -1,5 +1,5 @@
 import mongoose, { type Types } from 'mongoose';
-import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
+import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mts';
 const service = {};
 
 /**

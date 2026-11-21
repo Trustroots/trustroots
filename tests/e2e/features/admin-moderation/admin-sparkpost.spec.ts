@@ -22,7 +22,7 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
     'Admin reviews selected recovery recipients before queueing.',
     'Admin lists unconfirmed accounts behind the preview count.',
   ]);
-  useElementScreenshot(testInfo, 'main.container');
+  useElementScreenshot(testInfo, 'main');
   await signInViaApi(page, request, SEEDED_ADMIN);
   const date = new Date().toISOString().slice(0, 10);
   await page.route('**/api/admin/sparkpost/overview?*', route =>

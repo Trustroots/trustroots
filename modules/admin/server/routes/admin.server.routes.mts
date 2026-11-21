@@ -9,7 +9,7 @@ import {
   diagnostics,
   recover,
 } from '../controllers/admin.sparkpost.server.controller.mts';
-import adminCircles from '../controllers/admin.circles.server.controller.mjs';
+import adminCircles from '../controllers/admin.circles.server.controller.mts';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
 import adminMessages from './../controllers/admin.messages.server.controller.mts';
@@ -34,7 +34,7 @@ import adminNotes from './../controllers/admin.notes.server.controller.mts';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mts';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mts';
 import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
-import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
+import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mts';
 
 type RouteHandler = (...args: never[]) => unknown;
 

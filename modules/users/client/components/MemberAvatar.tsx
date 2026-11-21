@@ -29,14 +29,23 @@ function hasProfileImage(user: MemberAvatarUser): boolean {
   }
 }
 
+let graphemeSegmenter: Intl.Segmenter | undefined;
+
+function graphemes(word: string): string[] {
+  if (typeof Intl.Segmenter !== 'function') return Array.from(word);
+  graphemeSegmenter ??= new Intl.Segmenter();
+  return Array.from(graphemeSegmenter.segment(word), ({ segment }) => segment);
+}
+
 function initialsFor(user: MemberAvatarUser): string {
   const name = user.displayName?.trim() || user.username?.trim() || '?';
-  const parts = name.split(/\s+/).filter(Boolean);
-  return (
+  const parts = name.split(/\s+/);
+  const first = graphemes(parts[0]);
+  const initials =
     parts.length > 1
-      ? `${parts[0][0]}${parts[parts.length - 1][0]}`
-      : name.slice(0, 2)
-  ).toUpperCase();
+      ? first[0] + graphemes(parts[parts.length - 1])[0]
+      : first.slice(0, 2).join('');
+  return initials.toUpperCase();
 }
 
 function hueFor(user: MemberAvatarUser): number {

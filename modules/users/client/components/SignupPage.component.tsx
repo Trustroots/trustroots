@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
+import { AuthPasswordInput } from './AuthPasswordInput';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@trustroots/ui/cn';
@@ -343,7 +345,7 @@ export default function SignupPage() {
   const visibleSuggestedTribes = suggestedTribes.slice(0, suggestedTribesLimit);
 
   return (
-    <section className="container container-spacer">
+    <section className="tw:page-container container-spacer">
       {errorMessage && (
         <Alert className="tw:text-center" intent="danger" role="alert">
           {errorMessage}
@@ -358,8 +360,8 @@ export default function SignupPage() {
           void handleSubmitSignup();
         }}
       >
-        <div className="row">
-          <div className="col-xs-12 text-center">
+        <div className="tw:grid-row">
+          <div className="tw:grid-col-12 text-center">
             <h3>Join Trustroots</h3>
             {tribe?._id && step < 3 && (
               <p className="font-brand-light signup-tribe">
@@ -400,22 +402,25 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="row signup-form-steps">
+        <div className="tw:grid-row signup-form-steps">
           {step === 1 && (
             <div className="signup-form-step">
-              <div className="col-10 offset-1 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
+              <div className="tw:grid-col-10 tw:grid-offset-1 tw:sm:grid-col-8 tw:min-[576px]:grid-offset-2 tw:md:grid-col-6 tw:sm:grid-offset-3">
                 <div className="form-group">
-                  <label htmlFor="firstName" className="col-sm-4 control-label">
+                  <label
+                    htmlFor="firstName"
+                    className="tw:sm:grid-col-4 control-label"
+                  >
                     First Name
                   </label>
-                  <div className="col-sm-8">
-                    <input
+                  <div className="tw:sm:grid-col-8">
+                    <Input
                       ref={firstNameInput}
                       type="text"
                       required
                       id="firstName"
                       name="firstName"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.firstName}
                       disabled={isLoading}
                       onChange={event =>
@@ -425,16 +430,19 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="lastName" className="col-sm-4 control-label">
+                  <label
+                    htmlFor="lastName"
+                    className="tw:sm:grid-col-4 control-label"
+                  >
                     {t('Last name (optional)')}
                   </label>
-                  <div className="col-sm-8">
-                    <input
+                  <div className="tw:sm:grid-col-8">
+                    <Input
                       type="text"
                       id="lastName"
                       name="lastName"
                       aria-describedby="lastNameHelp"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.lastName}
                       disabled={isLoading}
                       onChange={event =>
@@ -449,16 +457,19 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="email" className="col-sm-4 control-label">
+                  <label
+                    htmlFor="email"
+                    className="tw:sm:grid-col-4 control-label"
+                  >
                     Email
                   </label>
-                  <div className="col-sm-8">
-                    <input
+                  <div className="tw:sm:grid-col-8">
+                    <Input
                       type="email"
                       required
                       id="email"
                       name="email"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       value={credentials.email}
                       disabled={isLoading}
                       onChange={event => {
@@ -480,22 +491,28 @@ export default function SignupPage() {
                     )}
                   </div>
                 </div>
-                <div
-                  className={cn('form-group', {
-                    'has-error': usernameErrorMessage,
-                  })}
-                >
-                  <label htmlFor="username" className="col-sm-4 control-label">
+                <div className="form-group">
+                  <label
+                    htmlFor="username"
+                    className="tw:sm:grid-col-4 control-label"
+                  >
                     Username
                   </label>
-                  <div className="col-sm-8">
-                    <input
+                  <div className="tw:sm:grid-col-8">
+                    <Input
                       type="text"
                       required
                       id="username"
                       name="username"
                       autoCapitalize="off"
-                      className="form-control input-lg"
+                      fieldSize="lg"
+                      aria-invalid={Boolean(usernameErrorMessage)}
+                      aria-describedby={
+                        usernameErrorMessage
+                          ? 'signup-username-error'
+                          : undefined
+                      }
+                      className="tw:aria-invalid:border-[#dc3545] tw:aria-invalid:shadow-[0_0_3px_white] tw:aria-invalid:focus:border-[#dc3545] tw:aria-invalid:focus:shadow-[0_0_3px_white]"
                       value={credentials.username}
                       disabled={isLoading}
                       onBlur={() => setUsernameDirty(true)}
@@ -504,46 +521,36 @@ export default function SignupPage() {
                       }
                     />
                     {usernameErrorMessage && (
-                      <p className="help-block">{usernameErrorMessage}</p>
+                      <p className="help-block" id="signup-username-error">
+                        {usernameErrorMessage}
+                      </p>
                     )}
                   </div>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="password" className="col-sm-4 control-label">
+                  <label
+                    htmlFor="password"
+                    className="tw:sm:grid-col-4 control-label"
+                  >
                     Password
                   </label>
-                  <div className="col-sm-8">
-                    <div className="input-group">
-                      <input
-                        required
-                        id="password"
-                        name="password"
-                        className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
-                        autoCapitalize="off"
-                        minLength={8}
-                        value={credentials.password}
-                        disabled={isLoading}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
-                      />
-                      <span className="input-group-btn">
-                        <Button
-                          size="lg"
-                          className="password-toggle"
-                          type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </Button>
-                      </span>
-                    </div>
+                  <div className="tw:sm:grid-col-8">
+                    <AuthPasswordInput
+                      required
+                      visible={showPassword}
+                      onToggleVisibility={() =>
+                        setShowPassword(current => !current)
+                      }
+                      id="password"
+                      name="password"
+                      autoCapitalize="off"
+                      minLength={8}
+                      value={credentials.password}
+                      disabled={isLoading}
+                      onChange={event =>
+                        updateCredential('password', event.target.value)
+                      }
+                    />
                     {credentials.password &&
                       credentials.password.length < 8 && (
                         <p className="help-block">
@@ -553,7 +560,7 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <div className="col-sm-8 offset-sm-4">
+                  <div className="tw:sm:grid-col-8 tw:min-[576px]:grid-offset-4">
                     <label htmlFor="ageConfirmed">
                       <input
                         type="checkbox"
@@ -571,7 +578,7 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group signup-newsletter">
-                  <div className="col-sm-8 offset-sm-4">
+                  <div className="tw:sm:grid-col-8 tw:min-[576px]:grid-offset-4">
                     <label className="signup-newsletter-label">
                       <input
                         type="checkbox"
@@ -589,7 +596,7 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <div className="col-8 col-sm-8 offset-sm-4 text-muted">
+                  <div className="tw:grid-col-8 tw:sm:grid-col-8 tw:min-[576px]:grid-offset-4 text-muted">
                     <p>
                       By signing up you agree to abide to our{' '}
                       <span className="d-inline d-sm-none">rules</span>
@@ -604,7 +611,7 @@ export default function SignupPage() {
                       everyone.
                     </p>
                   </div>
-                  <div className="col-4 d-block d-sm-none">
+                  <div className="tw:grid-col-4 d-block d-sm-none">
                     <Button
                       render={<a href="/rules" onClick={handleOpenRules} />}
                     >
@@ -614,17 +621,17 @@ export default function SignupPage() {
                 </div>
                 <div className="form-group">
                   <label
-                    className="col-sm-4 control-label"
+                    className="tw:sm:grid-col-4 control-label"
                     htmlFor="acquisitionStory"
                   >
                     How did you hear about us?
                   </label>
-                  <div className="col-sm-8">
-                    <input
+                  <div className="tw:sm:grid-col-8">
+                    <Input
                       type="text"
                       id="acquisitionStory"
                       name="acquisitionStory"
-                      className="form-control input-lg"
+                      fieldSize="lg"
                       maxLength={500}
                       value={credentials.acquisitionStory}
                       onChange={event =>
@@ -656,7 +663,7 @@ export default function SignupPage() {
 
           {step === 2 && (
             <div className="signup-form-step">
-              <div className="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4 signup-tribe-suggestions">
+              <div className="tw:grid-offset-1 tw:grid-col-10 tw:sm:grid-offset-2 tw:sm:grid-col-8 tw:md:grid-offset-3 tw:md:grid-col-6 tw:lg:grid-offset-4 tw:lg:grid-col-4 signup-tribe-suggestions">
                 {tribe?._id && (
                   <SignupTribePanel
                     tribe={tribe}
@@ -737,7 +744,7 @@ export default function SignupPage() {
 
           {step === 3 && user && (
             <div className="signup-form-step">
-              <div className="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4 text-center">
+              <div className="tw:grid-offset-2 tw:grid-col-8 tw:md:grid-offset-4 tw:md:grid-col-4 text-center">
                 <h3>Welcome to Trustroots!</h3>
                 <br />
                 <p className="lead">
@@ -765,14 +772,14 @@ export default function SignupPage() {
         </div>
 
         {step === 1 && (
-          <div className="row">
-            <div className="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
+          <div className="tw:grid-row">
+            <div className="text-center tw:grid-offset-2 tw:grid-col-8 tw:md:grid-offset-4 tw:md:grid-col-4">
               <br />
               <br />
               Already have an account? <a href="/signin">Login</a>
               <br />
               <br />
-              <p className="visible-xs-block">
+              <p className="tw:block tw:sm:hidden">
                 <Button variant="link" render={<a href="/" />}>
                   About Trustroots
                 </Button>

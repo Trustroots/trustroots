@@ -133,7 +133,7 @@ describe('Admin circles controller image publication', () => {
           'node:fs': { promises: fs },
           sharp,
           '../../../../config/config': config,
-          '../../../../config/lib/logger': log,
+          '@trustroots/logger': log,
           '../../../core/server/services/file-upload.service': {
             uploadFile: sinon.stub(),
           },

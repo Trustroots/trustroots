@@ -1,3 +1,4 @@
+import { Select } from '@trustroots/ui/Select';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Badge } from '@trustroots/ui/Badge';
@@ -94,7 +95,7 @@ export default function AdminThreads() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="tw:page-container">
         <h2>Threads</h2>
         {username && (
           <p>
@@ -105,10 +106,10 @@ export default function AdminThreads() {
           <p>Open a member’s threads from their account page.</p>
         )}
         {(requestedUsername || legacyId) && (
-          <label>
+          <label htmlFor="thread-vote">
             Filter by thread vote
-            <select
-              className="form-control"
+            <Select
+              id="thread-vote"
               value={voteFilter}
               onChange={event => {
                 const value = event.target.value;
@@ -129,7 +130,7 @@ export default function AdminThreads() {
               <option value="received-negative">Negative votes received</option>
               <option value="given-positive">Positive votes given</option>
               <option value="given-negative">Negative votes given</option>
-            </select>
+            </Select>
           </label>
         )}
         {loading && <p role="status">Loading threads…</p>}
