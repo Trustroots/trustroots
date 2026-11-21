@@ -32,12 +32,13 @@ languages. The build keeps other files in `public/assets`. `pnpm build` runs
 this Vite build for production images.
 
 For client-rendered pages Express reads the shell once and adds the page head
-(`react-index.server.view.html`: title, description, social preview tags,
+(`modules/core/server/views/index.mts`: title, description, social preview tags,
 Umami template and bootstrap data) and the request's CSP nonce on every
 script. In development it fetches the shell from the Vite server on each
 request instead, on the port Vite takes from `PORT` (3000 by default); set
-`TRUSTROOTS_VITE_URL` when Vite runs on another host. Express error pages keep the nunjucks layout and load
-only the stylesheet.
+`TRUSTROOTS_VITE_URL` when Vite runs on another host. Server errors use the
+static `modules/core/server/views/500.html` page. The app handles the suspended
+account and not-found pages.
 
 After building Vite, run `pnpm test:vite:production`. This browser smoke test
 serves the Start shell with Express's page head and locals to load the bundle

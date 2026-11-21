@@ -1,0 +1,13 @@
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/512.png" sizes="512x512"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/192.png" sizes="192x192"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/144.png" sizes="144x144"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/96.png" sizes="96x96"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/72.png" sizes="72x72"/>
+<link rel="icon" type="image/png" href="https://example.test/img/icons/android/48.png" sizes="48x48"/>
+<link rel="icon shortcut" type="image/png" href="https://example.test/img/favicon@2x.png" sizes="32x32" id="favicon2x"/>
+<link rel="icon shortcut" type="image/png" href="https://example.test/img/favicon.png" sizes="16x16" id="favicon"/>
+<meta property="og:image" content="https://example.test/img/og_image.jpg"/>
+<meta property="og:image:width" content="1400"/>
+<meta property="og:image:height" content="735"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://example.test/img/og_image.jpg"/>

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import winston from 'winston';
@@ -199,14 +200,14 @@ describe('Controller: core', function () {
         res,
         fail,
       );
-      res.rendered.should.equal('react-index.server.view.html');
+      res.rendered.should.equal('index');
       assert.deepStrictEqual(renderVars(res), { user: null });
     });
 
     it('marks the signup page as an invite', async function () {
       const res = mockResponse();
       await coreController.renderIndex({ path: '/signup' }, res, fail);
-      res.rendered.should.equal('react-index.server.view.html');
+      res.rendered.should.equal('index');
       should(renderVars(res).invite).be.true();
     });
 
@@ -214,7 +215,7 @@ describe('Controller: core', function () {
       for (const path of ['/about', '/admin', '/definitely-not-a-route']) {
         const res = mockResponse();
         await coreController.renderIndex({ path }, res, fail);
-        res.rendered.should.equal('react-index.server.view.html');
+        res.rendered.should.equal('index');
       }
     });
 
@@ -266,22 +267,30 @@ describe('Controller: core', function () {
   });
 
   describe('renderNotFound', function () {
+    const fail = (error: unknown) => {
+      throw error;
+    };
+
     it('returns a JSON not-found message', function () {
       const res = mockResponse('application/json');
-      coreController.renderNotFound({}, res);
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
       res.statusCode.should.equal(404);
       should(responseMessage(res)).equal('Not found.');
     });
 
-    it('renders an HTML view for text/html requests', function () {
+    it('sends the app with status 404 for text/html requests', async function () {
       const res = mockResponse('text/html');
-      coreController.renderNotFound({}, res);
-      res.rendered.should.equal('404.server.view.html');
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
+      await vi.waitFor(() =>
+        assert.match(String(res.body), /^<!DOCTYPE html>/),
+      );
+      res.statusCode.should.equal(404);
+      res.rendered.should.equal('index');
     });
 
     it('sends a plain message for other content types', function () {
       const res = mockResponse();
-      coreController.renderNotFound({}, res);
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
       should(res.body).equal('Not found.');
     });
   });

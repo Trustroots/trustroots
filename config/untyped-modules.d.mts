@@ -187,32 +187,6 @@ declare module 'multer' {
   export default multer;
 }
 
-declare module 'nunjucks' {
-  interface Environment {
-    addFilter(name: string, filter: (value: unknown) => string): void;
-  }
-  interface Renderer {
-    (
-      template: string,
-      context: object,
-      callback: (error: Error | null, result?: string) => void,
-    ): void;
-    (template: string, context?: object): string;
-  }
-  const nunjucks: {
-    configure(
-      path: string,
-      options: {
-        watch: boolean;
-        noCache: boolean;
-        express?: import('express').Express;
-      },
-    ): Environment;
-    render: Renderer;
-  };
-  export default nunjucks;
-}
-
 declare module 'morgan' {
   function morgan(format: string): import('express').RequestHandler;
   namespace morgan {
