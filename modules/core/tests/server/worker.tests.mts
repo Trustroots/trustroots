@@ -104,6 +104,16 @@ describe('Worker tests', function () {
     worker.start(workerOptions, done);
   });
 
+  it('registers and schedules Experience reply reminders', function () {
+    const jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('queue experience reply reminders');
+    jobNames.should.containEql('send experience reply reminder');
+    scheduledJobs.should.containEql({
+      name: 'queue experience reply reminders',
+      repeat: '30 minutes',
+    });
+  });
+
   it('will not retry with a non-network error', function () {
     const job: WorkerJob = {
       attrs: {
@@ -176,10 +186,6 @@ describe('Worker tests', function () {
 
   it('defines right number of repeating jobs', function () {
     scheduledJobs.length.should.equal(11);
-    scheduledJobs.should.containEql({
-      name: 'queue experience reply reminders',
-      repeat: '30 minutes',
-    });
     scheduledJobs.should.containEql({
       name: 'capture agenda storage',
       repeat: '0 3 * * *',
