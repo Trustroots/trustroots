@@ -8,7 +8,10 @@ export function getAdminUserHref(user: {
 }
 
 type AdminMessageMember =
-  { _id?: string; username?: string } | string | null | undefined;
+  | { _id?: string; username?: string }
+  | string
+  | null
+  | undefined;
 
 export function getAdminMessagesHref(
   user1: AdminMessageMember,

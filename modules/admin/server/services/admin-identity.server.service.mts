@@ -1,5 +1,7 @@
 type AdminIdentityLabel =
-  'Username identifier' | 'Email identifier' | 'Temporary email identifier';
+  | 'Username identifier'
+  | 'Email identifier'
+  | 'Temporary email identifier';
 
 export type AdminIdentity = {
   label: AdminIdentityLabel;

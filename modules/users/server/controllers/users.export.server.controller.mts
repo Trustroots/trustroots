@@ -81,7 +81,8 @@ type ContactMiddlewareResponse = Parameters<
   typeof contacts.contactListByUser
 >[1];
 type MiddlewareResponseBody =
-  ProfileResponseBody | Parameters<ContactMiddlewareResponse['send']>[0];
+  | ProfileResponseBody
+  | Parameters<ContactMiddlewareResponse['send']>[0];
 
 interface MiddlewareResponse {
   statusCode?: number;

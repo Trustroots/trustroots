@@ -14,7 +14,11 @@ type SupportRequestRecord = {
   sent?: Date;
   user?: import('mongoose').Types.ObjectId;
   category?:
-    'account' | 'reportMember' | 'reportBug' | 'volunteering' | 'other';
+    | 'account'
+    | 'reportMember'
+    | 'reportBug'
+    | 'volunteering'
+    | 'other';
 };
 const User =
   mongoose.model<

@@ -4,7 +4,9 @@
 
 Let Trustroots members connect their Nostr identity and discover community
 notes through Nostroots while preserving the privacy of non-public profiles.
+
 ## Requirements
+
 ### Requirement: Nostr public-key association
 
 The system SHALL let a member associate one valid Nostr public key (`npub`) with their profile, canonicalise the stored public-key value, and prevent the same public key from being associated with more than one member. Adding or replacing a non-empty key SHALL require a valid signed, fresh, single-use server challenge bound to the authenticated member and requested key. The editor SHALL support NIP-07, NIP-46 bunker signing and externally signed events without requesting private keys or publishing proofs. Existing unchanged keys and removal SHALL NOT require proof.

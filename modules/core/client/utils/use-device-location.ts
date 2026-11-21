@@ -6,7 +6,10 @@ import {
 
 export type DeviceLocation = { lat: number; lng: number };
 export type DeviceLocationError =
-  'denied' | 'unavailable' | 'timeout' | 'unsupported';
+  | 'denied'
+  | 'unavailable'
+  | 'timeout'
+  | 'unsupported';
 export type DeviceLocationStatus = 'idle' | 'pending' | 'error';
 
 type PositionError = Pick<GeolocationPositionError, 'code'>;

@@ -11,7 +11,8 @@ interface Volunteer {
   username: string;
 }
 type VolunteersResponse =
-  { volunteers: Volunteer[]; alumni: Volunteer[] } | { message: string };
+  | { volunteers: Volunteer[]; alumni: Volunteer[] }
+  | { message: string };
 const User = mongoose.model<UserServerRecord>('User');
 
 function filterAndCleanVolunteers(
