@@ -150,16 +150,12 @@ describe('Controller: core', function () {
 
   afterEach(function () {
     sinon.restore();
+    vi.unstubAllEnvs();
   });
   describe('renderIndex', function () {
-    const environment = { ...process.env };
     const fail = (error: unknown) => {
       throw error;
     };
-
-    afterEach(function () {
-      process.env = { ...environment };
-    });
 
     it('sends the Start shell with the rendered head and script nonces', async function () {
       const res = mockResponse();
@@ -180,17 +176,6 @@ describe('Controller: core', function () {
       await coreController.renderIndex({ path: '/' }, res, next);
       sinon.assert.calledOnceWithExactly(next, error);
       should(res.body).be.null();
-    });
-
-    it('passes shell loading errors to the next handler', async function () {
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      process.env.TRUSTROOTS_VITE_URL = 'http://127.0.0.1:9';
-      const res = mockResponse();
-      const next = sinon.spy();
-      await coreController.renderIndex({ path: '/' }, res, next);
-      sinon.assert.calledOnce(next);
-      res.rendered.should.equal('');
     });
 
     it('renders anonymous visitors with only an empty user', async function () {
@@ -286,6 +271,33 @@ describe('Controller: core', function () {
       );
       res.statusCode.should.equal(404);
       res.rendered.should.equal('index');
+    });
+
+    it('forwards shell loading errors from HTML requests to Express', async function () {
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      const error = new Error('shell failed to load');
+      sinon.stub(globalThis, 'fetch').rejects(error);
+      const res = mockResponse('text/html');
+      const next = sinon.spy();
+
+      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+
+      await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
+      res.rendered.should.equal('');
+      should(res.body).be.null();
+    });
+
+    it('forwards errors thrown while starting the HTML render', async function () {
+      const error = new Error('render setup failed');
+      const res = mockResponse('text/html');
+      sinon.stub(res, 'render').throws(error);
+      const next = sinon.spy();
+
+      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+
+      await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
+      should(res.body).be.null();
     });
 
     it('sends a plain message for other content types', function () {

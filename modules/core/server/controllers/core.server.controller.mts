@@ -63,7 +63,7 @@ const service = {
 /**
  * Render the main application page
  */
-function renderIndex(
+async function renderIndex(
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
@@ -98,12 +98,11 @@ function renderIndex(
     renderVars.invite = true;
   }
   // The client routes apply their own redirects and access rules.
-  return getStartShell().then(shell => {
-    res.render('index', renderVars, (error, head) => {
-      if (error) return next(error);
-      res.send(renderStartShell(shell, head, res.locals.nonce));
-    });
-  }, next);
+  const shell = await getStartShell();
+  res.render('index', renderVars, (error, head) => {
+    if (error) return next(error);
+    res.send(renderStartShell(shell, head, res.locals.nonce));
+  });
 }
 
 /**
@@ -118,7 +117,7 @@ function renderNotFound(
 ) {
   res.status(404).format({
     'text/html'() {
-      renderIndex(req, res, next);
+      void renderIndex(req, res, next).catch(next);
     },
     'application/json'() {
       res.json({
