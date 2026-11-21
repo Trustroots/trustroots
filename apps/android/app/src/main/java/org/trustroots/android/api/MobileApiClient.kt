@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import org.trustroots.shared.ui.PilotConnection
+import org.trustroots.shared.ui.PilotConnections
+import org.trustroots.shared.ui.PilotMapPin
+import org.trustroots.shared.ui.PilotNote
 
 data class MobileMember(
     val username: String,
@@ -689,6 +693,34 @@ class MobileApiClient(
             }
         }
 
+    internal suspend fun featuredNotes(): Result<List<PilotNote>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val notes = JSONArray(jsonRequest("/api/nostr/featured-notes", "GET").body)
+            notes.objects().map { note ->
+                PilotNote(
+                    content = note.getString("content"),
+                    authorUsername = note.optionalText("authorUsername"),
+                    publishedAt = note.getString("publishedAt"),
+                )
+            }
+        }
+    }
+
+    internal suspend fun dashboardConnections(session: MemberSession): Result<PilotConnections> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val connections = JSONObject(jsonRequest(
+                    "/api/tribes/discovery/connections", "GET",
+                    session = session, allowResponseCache = false,
+                ).body)
+                PilotConnections(
+                    recent = connections.optJSONArray("recent").objects().map(::parseDashboardConnection),
+                    pins = parseDashboardPins(connections.optJSONArray("hosts"), hosting = true) +
+                        parseDashboardPins(connections.optJSONArray("meetings"), hosting = false),
+                )
+            }
+        }
+
     suspend fun circleMemberships(session: MemberSession): Result<Set<String>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -884,6 +916,7 @@ internal fun mobileApiPath(path: String, method: String, body: String?): String 
         route == "/api/users/unified-push" || route == "/api/users/unified-push/test" -> route.replaceFirst("/api/", "/api/mobile/v0/")
         route.startsWith("/api/users/mini/") -> route.replaceFirst("/api/users/mini/", "/api/mobile/v0/members/")
         route.startsWith("/api/users/") -> route.replaceFirst("/api/users/", "/api/mobile/v0/profiles/")
+        route == "/api/tribes/discovery/connections" -> "/api/mobile/v0/connections"
         route.startsWith("/api/tribes") -> route.replaceFirst("/api/tribes", "/api/mobile/v0/circles")
         route.startsWith("/api/messages/") -> route.replaceFirst("/api/messages/", "/api/mobile/v0/messages/")
         route == "/api/messages" -> "/api/mobile/v0/messages"
@@ -943,6 +976,27 @@ private fun JSONObject.optionalText(key: String): String? =
 
 /** Public responses accept both MongoDB and serialised identity field names. */
 private fun JSONObject.optionalID(): String? = optionalText("_id") ?: optionalText("id")
+
+private fun JSONArray?.objects(): List<JSONObject> =
+    if (this == null) emptyList() else (0 until length()).mapNotNull { optJSONObject(it) }
+
+private fun parseDashboardConnection(member: JSONObject): PilotConnection {
+    val username = member.getString("username")
+    return PilotConnection(
+        username = username,
+        name = member.optionalText("displayName") ?: username,
+        activity = member.optionalText("activity"),
+    )
+}
+
+private fun parseDashboardPins(members: JSONArray?, hosting: Boolean): List<PilotMapPin> =
+    members.objects().mapNotNull { member ->
+        val location = member.optJSONArray("location") ?: return@mapNotNull null
+        val latitude = (location.opt(0) as? Number)?.toDouble() ?: return@mapNotNull null
+        val longitude = (location.opt(1) as? Number)?.toDouble() ?: return@mapNotNull null
+        if (latitude !in -85.0..85.0 || longitude !in -180.0..180.0) return@mapNotNull null
+        PilotMapPin(parseDashboardConnection(member), latitude, longitude, hosting)
+    }
 
 private fun JSONObject.optionalTimestamp(key: String): Long? =
     optionalText(key)?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }

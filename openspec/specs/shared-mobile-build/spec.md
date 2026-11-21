@@ -83,3 +83,66 @@ The host SHALL use its existing secure session and authenticated API client.
 - **WHEN** the API rejects a reply
 - **THEN** the shared conversation displays an error and retains the reply for
   intentional retry
+
+### Requirement: Shared pilot starts at a member dashboard
+
+The signed-in shared Compose pilot SHALL start at a dashboard on Android and
+iOS. It SHALL offer the shared profile and inbox journeys. Dashboard actions SHALL remain usable
+without profile, circle or local-event responses. Existing native app defaults
+SHALL remain unchanged during the pilot.
+
+#### Scenario: A saved member opens the shared pilot
+
+- **WHEN** a signed-in member opens the shared pilot
+- **THEN** Home offers My profile and Messages
+- **AND** opening profile or messages and going Back returns to Home
+- **AND** Exit shared pilot exits using the existing host callback
+
+#### Scenario: A member signs in from the shared pilot
+
+- **WHEN** sign-in succeeds and the host supplies the authenticated username
+- **THEN** the shared pilot displays Home using the existing secure session
+- **AND** Home renders even if discovery requests fail
+
+### Requirement: Shared dashboard shows homepage discovery
+
+The shared dashboard SHALL show the public featured Nostr feed and use the same connection discovery rules as the signed-in website. It SHALL preserve access to profile and messages when discovery is unavailable.
+
+#### Scenario: Dashboard has discovery data
+
+- **WHEN** featured notes and eligible connection data are available
+- **THEN** Home shows the featured notes and recently active connections in server order
+- **AND** the map distinguishes approximate hosting and meeting locations
+- **AND** the dashboard omits the Nostroots introduction
+
+#### Scenario: Discovery is unavailable
+
+- **WHEN** either discovery request fails
+- **THEN** the other section and core navigation remain independently usable
+
+### Requirement: Shared pilot provides bottom navigation
+
+The signed-in shared pilot SHALL provide persistent bottom tabs for Home,
+Messages and My profile.
+
+#### Scenario: Switch from a shared journey to Home
+
+- **GIVEN** a signed-in member is reading their inbox or profile
+- **WHEN** they select the Home tab
+- **THEN** the dashboard is displayed and the Home tab is selected
+
+### Requirement: Mobile apps can preview shared Home in the regular member shell
+
+Android and iOS debug builds SHALL offer an explicit launch option that starts signed-in
+members at shared Home within the regular app shell. The shell SHALL retain
+native Search and Messages tabs and access to Circles via Android Profile or
+iOS Menu.
+Shared Home SHALL use the host session and open connection profiles using native
+navigation.
+
+#### Scenario: Open a connection in the regular app shell
+
+- **GIVEN** a member launches the debug app with shared Home enabled
+- **WHEN** they open a connection from the Home dashboard
+- **THEN** the regular platform profile screen opens using the existing session
+- **AND** dismissing the profile returns to Home with the regular tab bar available

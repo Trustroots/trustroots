@@ -103,6 +103,7 @@
     <string name="screen_account">Account</string>
     <string name="screen_info_and_support">Info and support</string>
     <string name="screen_api_url">API: %1$s</string>
+    <string name="screen_destination_home">Home</string>
     <string name="screen_destination_circles">Circles</string>
     <string name="screen_destination_search">Search</string>
     <string name="screen_destination_messages">Messages</string>

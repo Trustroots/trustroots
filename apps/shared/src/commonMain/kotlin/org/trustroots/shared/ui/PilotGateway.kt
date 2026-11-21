@@ -13,8 +13,23 @@ data class PilotThread(val id: String, val partner: PilotPerson, val excerpt: St
 
 data class PilotMessage(val id: String, val author: String, val content: String, val outgoing: Boolean)
 
+data class PilotNote(val content: String, val authorUsername: String?, val publishedAt: String)
+
+data class PilotConnection(val username: String, val name: String, val activity: String?)
+
+data class PilotMapPin(
+    val connection: PilotConnection,
+    val latitude: Double,
+    val longitude: Double,
+    val hosting: Boolean,
+)
+
+data class PilotConnections(val recent: List<PilotConnection>, val pins: List<PilotMapPin>)
+
 /** The host owns authentication, transport and persistent drafts. Complete requests on the UI thread. */
 interface PilotGateway {
+    fun featuredNotes(completion: (List<PilotNote>?, String?) -> Unit)
+    fun connections(completion: (PilotConnections?, String?) -> Unit)
     fun signIn(username: String, password: String, completion: (String?) -> Unit)
     fun signOut(completion: (String?) -> Unit)
     fun profile(username: String, completion: (PilotProfile?, String?) -> Unit)

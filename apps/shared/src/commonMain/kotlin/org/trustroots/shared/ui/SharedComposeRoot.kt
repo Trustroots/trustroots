@@ -26,10 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 private sealed interface Destination {
+    data object Home : Destination
     data class Profile(val username: String) : Destination
     data object Inbox : Destination
     data class Conversation(val partner: PilotPerson, val memberId: String) : Destination
@@ -40,9 +42,10 @@ fun SharedComposeRoot(
     gateway: PilotGateway,
     username: String?,
     initialError: String?,
+    renderConnectionsMap: @Composable (List<PilotMapPin>) -> Unit = {},
     installBackHandler: @Composable (Boolean, () -> Unit) -> Unit = { _, _ -> },
 ) {
-    val start = username?.let { listOf(Destination.Profile(it)) }.orEmpty()
+    val start = username?.let { listOf(Destination.Home) }.orEmpty()
     var history by remember(username) { mutableStateOf<List<Destination>>(start) }
     var busy by remember(username) { mutableStateOf(false) }
     val destination = history.lastOrNull()
@@ -74,39 +77,62 @@ fun SharedComposeRoot(
                 if (history.size > 1) {
                     PilotButton("Back", enabled = !busy, onClick = goBack)
                 } else {
-                    PilotButton("Open native app", enabled = !busy, onClick = goBack)
+                    PilotButton("Exit shared pilot", enabled = !busy, onClick = goBack)
                 }
             }
-            key(destination) {
-                when (destination) {
-                    null -> SignIn(gateway, initialError, busy, beginAction, endAction)
-                    is Destination.Profile -> Profile(
-                        gateway = gateway,
-                        username = destination.username,
-                        isOwnProfile = destination.username == username,
-                        onInbox = { history = history + Destination.Inbox },
-                        onConversation = { partner, memberId ->
-                            history = history + Destination.Conversation(partner, memberId)
-                        },
-                        busy = busy,
-                        beginAction = beginAction,
-                        endAction = endAction,
-                    )
-                    Destination.Inbox -> Inbox(
-                        gateway = gateway,
-                        onProfile = { history = history + Destination.Profile(it) },
-                        onConversation = { partner, memberId ->
-                            history = history + Destination.Conversation(partner, memberId)
-                        },
-                    )
-                    is Destination.Conversation -> Conversation(
-                        gateway = gateway,
-                        partner = destination.partner,
-                        memberId = destination.memberId,
-                        busy = busy,
-                        beginAction = beginAction,
-                        endAction = endAction,
-                    )
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                key(destination) {
+                    when (destination) {
+                        null -> SignIn(gateway, initialError, busy, beginAction, endAction)
+                        Destination.Home -> MemberDashboard(
+                            accountKey = gateway,
+                            loadNotes = { awaitData(gateway::featuredNotes) },
+                            loadConnections = { awaitData(gateway::connections) },
+                            renderConnectionsMap = renderConnectionsMap,
+                            onConnection = { history = history + Destination.Profile(it) },
+                        )
+                        is Destination.Profile -> Profile(
+                            gateway = gateway,
+                            username = destination.username,
+                            isOwnProfile = destination.username == username,
+                            onConversation = { partner, memberId ->
+                                history = history + Destination.Conversation(partner, memberId)
+                            },
+                            busy = busy,
+                            beginAction = beginAction,
+                            endAction = endAction,
+                        )
+                        Destination.Inbox -> Inbox(
+                            gateway = gateway,
+                            onProfile = { history = history + Destination.Profile(it) },
+                            onConversation = { partner, memberId ->
+                                history = history + Destination.Conversation(partner, memberId)
+                            },
+                        )
+                        is Destination.Conversation -> Conversation(
+                            gateway = gateway,
+                            partner = destination.partner,
+                            memberId = destination.memberId,
+                            busy = busy,
+                            beginAction = beginAction,
+                            endAction = endAction,
+                        )
+                    }
+                }
+            }
+            if (username != null) {
+                val profile = Destination.Profile(username)
+                val selected = when (history.getOrNull(1)) {
+                    Destination.Inbox -> PilotTab.Messages
+                    profile -> PilotTab.Profile
+                    else -> PilotTab.Home
+                }
+                PilotNavigationBar(selected, enabled = !busy) { tab ->
+                    history = when (tab) {
+                        PilotTab.Home -> listOf(Destination.Home)
+                        PilotTab.Messages -> listOf(Destination.Home, Destination.Inbox)
+                        PilotTab.Profile -> listOf(Destination.Home, profile)
+                    }
                 }
             }
         }
@@ -167,10 +193,13 @@ private fun SignIn(
 }
 
 @Composable
-internal fun PilotForm(content: @Composable ColumnScope.() -> Unit) {
+internal fun PilotForm(
+    spacing: Dp = 12.dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing),
         content = content,
     )
 }
