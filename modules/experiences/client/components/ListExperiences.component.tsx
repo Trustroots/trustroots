@@ -79,7 +79,11 @@ export default function ListExperiences({
     return (
       <NoContentWithChildren
         icon="users"
-        message={t('No experiences yet.') as string}
+        message={
+          onReceiverProfile
+            ? t('No experiences received yet.')
+            : t('No experiences yet.')
+        }
       >
         {!onReceiverProfile && (
           <p>

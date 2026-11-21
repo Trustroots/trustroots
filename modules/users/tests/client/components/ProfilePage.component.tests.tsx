@@ -696,6 +696,21 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('New experience form')).toBeVisible();
   });
 
+  it('loads the private authored list only for the profile owner', async () => {
+    fetchProfile.mockResolvedValueOnce(authUser);
+    vi.mocked(experiencesApi.read).mockResolvedValueOnce([]);
+    renderPage(authUser, `/profile/${authUser.username}/experiences`, {
+      referencesEnabled: true,
+    });
+    expect(await screen.findByText('Experiences list')).toBeVisible();
+    await waitFor(() =>
+      expect(experiencesApi.read).toHaveBeenCalledWith({
+        userTo: authUser._id,
+        view: 'pending-authored',
+      }),
+    );
+  });
+
   it('shows contacts in common and tribes in common on the about tab', async () => {
     listContacts.mockResolvedValue([
       {
