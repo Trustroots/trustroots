@@ -15,6 +15,7 @@ import signupReminder from './templates/signup-reminder.tsx';
 import welcomeSequenceFirst from './templates/welcome-sequence-first.tsx';
 import welcomeSequenceSecond from './templates/welcome-sequence-second.tsx';
 import welcomeSequenceThird from './templates/welcome-sequence-third.tsx';
+import experienceReplyReminder from './text/experience-reply-reminder.ts';
 import flaggedSignupAlert from './text/flagged-signup-alert.ts';
 import messageThrottleAlert from './text/message-throttle-alert.ts';
 import supportRequest from './text/support-request.ts';
@@ -41,8 +42,9 @@ export const htmlEmails: Record<string, ComponentType<Props>> = {
   'welcome-sequence-third': welcomeSequenceThird,
 };
 
-/** Internal emails to the team, sent as plain text only. */
+/** Templates sent as plain text only. */
 export const textEmails: Record<string, (props: Props) => string> = {
+  'experience-reply-reminder': experienceReplyReminder,
   'flagged-signup-alert': flaggedSignupAlert,
   'message-throttle-alert': messageThrottleAlert,
   'support-request': supportRequest,

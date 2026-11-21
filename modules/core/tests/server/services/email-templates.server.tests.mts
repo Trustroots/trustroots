@@ -191,6 +191,15 @@ const emails: Record<string, Send> = {
       { _id: 'exp-1' },
       done,
     ),
+  'experience-reply-reminder': done =>
+    emailService.renderEmailAndSend(
+      'experience-reply-reminder',
+      emailService.addEmailBaseTemplateParams({
+        email: ada.email,
+        shareUrl: 'http://localhost:3000/profile/ben/experiences/new',
+      }),
+      done,
+    ),
   'message-throttle-alert': done =>
     emailService.renderEmailAndSend(
       'message-throttle-alert',
