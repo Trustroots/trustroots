@@ -4,6 +4,7 @@
     "allowJs": true,
     "checkJs": false,
     "erasableSyntaxOnly": true,
+    "jsx": "react-jsx",
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",

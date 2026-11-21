@@ -1,0 +1,21 @@
+Category: Other
+Reported member: someone
+
+Line one
+Line  & three
+
+
+-- 
+From username: ada_l
+Email: ada@example.test
+Authenticated: true
+Browser: Mozilla/5.0
+Code version: 2026-11-01 10:00 UTC (abc1234)
+Branch: feature/x
+
+Commit: <https://example.test/commit/abc1234>
+
+ID: 5f0c1a2b3c4d5e6f7a8b9c0d
+Signup confirmed: true
+Signup date: 2026-01-02
+Active email change: ada.tmp@example.test

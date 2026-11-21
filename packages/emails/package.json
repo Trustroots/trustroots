@@ -1,0 +1,27 @@
+{
+  "name": "@trustroots/emails",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "email dev --dir src/templates --port 3030",
+    "storybook": "storybook dev --port 6007 --no-open",
+    "build-storybook": "storybook build --output-dir storybook-static",
+    "lint": "eslint .",
+    "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/services/email-templates.server.tests.mts"
+  },
+  "dependencies": {
+    "oxc-transform": "0.159.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-email": "6.11.14"
+  },
+  "devDependencies": {
+    "@react-email/ui": "6.11.14",
+    "@storybook/react-vite": "10.6.7",
+    "storybook": "10.6.7"
+  }
+}

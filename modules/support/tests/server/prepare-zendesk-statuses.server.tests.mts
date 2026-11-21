@@ -42,7 +42,6 @@ async function renderedTemplate({
           username: 'fictional-member',
           authenticated: false,
         },
-        skipHtmlTemplate: true,
         sparkpostCampaign: 'support-request',
       },
       (error, rendered) => {

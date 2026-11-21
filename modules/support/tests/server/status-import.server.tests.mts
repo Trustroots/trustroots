@@ -103,7 +103,6 @@ describe('conservative support status import', () => {
             username: 'fictional-member',
             authenticated: 'no',
           },
-          skipHtmlTemplate: true,
           sparkpostCampaign: 'support-request',
         },
         (error, rendered) => {

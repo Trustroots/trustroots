@@ -8,6 +8,9 @@ type Options = {
   baseUrl: string;
   runUrl: string;
   testStatus: number;
+  marker?: string;
+  title?: string;
+  note?: string;
 };
 
 const pngs = (directory: string) =>
@@ -22,13 +25,11 @@ export function buildScreenshotComment({
   baseUrl,
   runUrl,
   testStatus,
+  marker = 'e2e-screenshots',
+  title = 'E2E screenshots',
+  note = 'The site header stays fixed to the top of the viewport. A full-page screenshot is stitched from scrolled slices, so that header can appear part-way down the image, over the page content.',
 }: Options) {
-  const lines = [
-    '<!-- e2e-screenshots -->',
-    '## E2E screenshots',
-    '',
-    `Run: \`${runUrl}\``,
-  ];
+  const lines = [`<!-- ${marker} -->`, `## ${title}`, '', `Run: \`${runUrl}\``];
   if (testStatus !== 0)
     lines.push(
       '',
@@ -41,11 +42,13 @@ export function buildScreenshotComment({
     return `${lines.join('\n')}\n`;
   }
 
-  lines.push(
-    '',
-    '_The site header stays fixed to the top of the viewport. A full-page screenshot is stitched from scrolled slices, so that header can appear part-way down the image, over the page content._',
-  );
+  lines.push('', `_${note}_`);
   const before = new Set(pngs(beforeDir));
+  if (before.size === 0)
+    lines.push(
+      '',
+      '_The base branch has no screenshots, so there is no baseline to compare against._',
+    );
   const diffsFile = path.join(diffDir, 'diffs.json');
   const diffs: Record<
     string,
@@ -54,11 +57,11 @@ export function buildScreenshotComment({
     ? JSON.parse(fs.readFileSync(diffsFile, 'utf8'))
     : {};
   for (const file of files) {
-    const title = file.replace(/\.png$/, '').replace(/_/g, ' ');
+    const name = file.replace(/\.png$/, '').replace(/_/g, ' ');
     const image = (side: string) =>
-      `<img width="300" alt="${title} ${side}" src="${baseUrl}/${side}/${encodeURIComponent(file)}">`;
+      `<img width="300" alt="${name} ${side}" src="${baseUrl}/${side}/${encodeURIComponent(file)}">`;
     const urlPath = path.join(afterDir, file.replace(/\.png$/, '.url'));
-    lines.push('', `### ${title}`);
+    lines.push('', `### ${name}`);
     if (fs.existsSync(urlPath))
       lines.push(
         '',
