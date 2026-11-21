@@ -26,7 +26,6 @@ Icon
 .Trashes
 
 # Env/development
-.eslintcache
 .nodemonignore
 node_modules
 /.tmp/
@@ -58,7 +57,6 @@ logs
 log
 *.log
 npm-debug.*
-eslint_report.json
 
 # Docs
 public/developers/api
