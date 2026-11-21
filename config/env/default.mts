@@ -186,6 +186,7 @@ const service = {
       database: 'trustroots',
     },
   },
+  experienceApiRequestsPerMinute: 120,
   // Set either limit to 0 to disable that counter dimension; windows use ms.
   targetedRequestLimits: {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 20, identityLimit: 3 },
