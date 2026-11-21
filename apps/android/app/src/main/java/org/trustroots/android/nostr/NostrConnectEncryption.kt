@@ -46,7 +46,7 @@ internal object NostrConnectEncryption {
         require(text.length in 1..maxPlaintext)
         val message = text.encodeToByteArray(throwOnInvalidSequence = true)
         try {
-            require(message.size in 1..maxPlaintext)
+            require(message.size <= maxPlaintext)
             val padded = ByteArray(2 + paddedLength(message.size))
             padded[0] = (message.size ushr 8).toByte()
             padded[1] = message.size.toByte()
@@ -75,13 +75,18 @@ internal object NostrConnectEncryption {
             require(MessageDigest.isEqual(tag, mac(hmac, nonce, ciphertext)))
             val padded = crypt(chacha, iv, ciphertext)
             try {
-                val length = ((padded[0].toInt() and 255) shl 8) or (padded[1].toInt() and 255)
-                require(length in 1..maxPlaintext && padded.size == 2 + paddedLength(length))
-                padded.decodeToString(2, 2 + length, throwOnInvalidSequence = true)
+                decodeAuthenticatedPlaintext(padded)
             } finally {
                 padded.fill(0)
             }
         }
+    }
+
+    internal fun decodeAuthenticatedPlaintext(padded: ByteArray): String {
+        require(padded.size >= 2)
+        val length = ((padded[0].toInt() and 255) shl 8) or (padded[1].toInt() and 255)
+        require(length in 1..maxPlaintext && padded.size == 2 + paddedLength(length))
+        return padded.decodeToString(2, 2 + length, throwOnInvalidSequence = true)
     }
 
     private fun paddedLength(length: Int): Int {
