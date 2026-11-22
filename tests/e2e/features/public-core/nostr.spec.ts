@@ -55,6 +55,33 @@ async function externalFormProof(
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
 test.describe('nostr NIP-05 .well-known endpoint', () => {
+  test('keeps NIP-05 available when author visibility reaches its allowance', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'NIP-05 has a separate allowance from author visibility.',
+    ]);
+    const headers = { '!~Passenger-Client-Address': '198.51.100.63' };
+    const lookup = '/api/nostr/author-visibility';
+    const params = { pubkey: getPublicKey(PUBLIC_MEMBER_KEY), profiles: '1' };
+    for (let count = 0; count < 120; count += 1) {
+      const response = await request.get(lookup, { headers, params });
+      await expect(response).toBeOK();
+      await response.dispose();
+    }
+    const limited = await request.get(lookup, { headers, params });
+    expect(limited.status()).toBe(429);
+    expect(limited.headers()['retry-after']).toMatch(/^\d+$/);
+    expect(limited.headers()['cache-control']).toBe('private, no-store');
+
+    const nip05 = await request.get('/.well-known/nostr.json', {
+      headers,
+      params: { name: 'samplelookup' },
+    });
+    await expect(nip05).toBeOK();
+    expect(nip05.headers()['access-control-allow-origin']).toBe('*');
+  });
+
   test('rejects a non-string username with a 400', async ({
     request,
   }, testInfo) => {

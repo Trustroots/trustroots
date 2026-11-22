@@ -4,10 +4,12 @@ import express, {
   type Request,
   type Response,
 } from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import request from 'supertest';
 import mockModule from './../../../../testutils/server/mock-module.mts';
 
 type TribeRequest = Request & { tribe?: { slug: string }; user?: unknown };
+const TEST_LOOKUP_LIMIT = 2;
 
 /** Mount the core routes on a bare app, with controllers that name themselves. */
 async function app(signedIn = false) {
@@ -38,6 +40,11 @@ async function app(signedIn = false) {
         req.tribe = { slug };
         next();
       },
+    },
+    'express-rate-limit': {
+      ipKeyGenerator,
+      rateLimit: (options: Parameters<typeof rateLimit>[0]) =>
+        rateLimit({ ...options, limit: TEST_LOOKUP_LIMIT }),
     },
   });
   const server = express();
@@ -86,6 +93,38 @@ describe('Core route table', function () {
       .expect(400);
     assert.deepEqual(response.body, { error: 'Valid username required.' });
     assert.equal(response.headers['access-control-allow-origin'], '*');
+  });
+
+  it('limits each public Nostr lookup independently and retains response headers', async function () {
+    const server = await app();
+    const client = request(server);
+    const header = '!~Passenger-Client-Address';
+    const address = '2001:db8:2::1';
+    const authorVisibility = '/api/nostr/author-visibility?profiles=1';
+    const nip05 = '/.well-known/nostr.json';
+    for (let count = 0; count < TEST_LOOKUP_LIMIT; count += 1) {
+      await client.get(authorVisibility).set(header, address).expect(400);
+    }
+    await client
+      .get(authorVisibility)
+      .set(header, '2001:db8:2::2')
+      .expect(429)
+      .expect('Retry-After', /^\d+$/)
+      .expect('Cache-Control', 'private, no-store');
+    await client.get(authorVisibility).set(header, '2001:db8:3::1').expect(400);
+
+    for (let count = 0; count < TEST_LOOKUP_LIMIT; count += 1) {
+      await client.get(nip05).set(header, address).expect(400);
+    }
+    await client
+      .get(nip05)
+      .set(header, address)
+      .expect(429)
+      .expect('Retry-After', /^\d+$/)
+      .expect('Access-Control-Allow-Origin', '*');
+
+    Object.defineProperty(server.request, 'ip', { value: undefined });
+    await client.get(nip05).expect(400);
   });
 
   it('answers unknown API, module, lib and developer paths with not found', async function () {
