@@ -73,7 +73,7 @@ function loadMiddleware(
       signin: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
-      passwordChange: { windowMs: 900_000, ipLimit: 0, identityLimit: 10 },
+      passwordChange: { windowMs: 900_000, ipLimit: 0, identityLimit: 3 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
@@ -147,9 +147,9 @@ describe('Targeted request limit middleware', function () {
           {
             name: 'ip-and-identity',
             value: JSON.stringify([address, 'fictional-member']),
-            limit: 10,
+            limit: 3,
           },
-          { name: 'member', value: 'fictional-member', limit: 10 },
+          { name: 'member', value: 'fictional-member', limit: 3 },
         ],
       })),
     );

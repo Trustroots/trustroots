@@ -48,7 +48,7 @@ const service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
-    passwordChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 10 },
+    passwordChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 3 },
     resendConfirmation: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,

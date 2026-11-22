@@ -233,7 +233,7 @@ test.describe.serial('account settings feature coverage', () => {
         ...change,
         currentPassword: `${member.password}Mistyped`,
       };
-      for (let count = 0; count < 9; count += 1) {
+      for (let count = 0; count < 2; count += 1) {
         const response = await request.post(browserPath, { data: incorrect });
         expect(response.status()).toBe(400);
       }

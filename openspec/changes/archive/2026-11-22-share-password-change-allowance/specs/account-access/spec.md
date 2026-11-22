@@ -2,7 +2,7 @@
 
 ### Requirement: Authenticated password-change allowance
 
-The system SHALL allow ten authenticated password-change requests per member per fifteen-minute window by default. The browser and mobile APIs SHALL share this allowance across sessions for the same member.
+The system SHALL allow three authenticated password-change requests per member per fifteen-minute window by default. The browser and mobile APIs SHALL share this allowance across sessions for the same member.
 
 #### Scenario: Member reaches the shared password-change allowance
 
