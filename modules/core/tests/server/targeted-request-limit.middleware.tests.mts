@@ -10,6 +10,7 @@ type Operation =
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
+  | 'passwordChange'
   | 'resendConfirmation'
   | 'avatarUpload';
 type Policy = {
@@ -72,6 +73,7 @@ function loadMiddleware(
       signin: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      passwordChange: { windowMs: 900_000, ipLimit: 0, identityLimit: 10 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
@@ -117,6 +119,40 @@ describe('Targeted request limit middleware', function () {
   before(async function () {
     ({ createTargetedRequestLimits, getRequestIdentity } =
       await import('../../server/middleware/targeted-request-limit.server.middleware.mts'));
+  });
+
+  it('counts password changes against the member across client addresses', async function () {
+    const calls: ConsumeOptions[] = [];
+    const middleware = loadMiddleware(
+      async options => {
+        calls.push(options);
+        return { allowed: true };
+      },
+      req => req.ip,
+    );
+    const addresses = ['198.51.100.23', '198.51.100.24'];
+    for (const ip of addresses) {
+      await middleware.passwordChange(
+        { ip, user: { id: 'fictional-member' } },
+        response(),
+        () => {},
+      );
+    }
+    assert.deepEqual(
+      calls,
+      addresses.map(address => ({
+        operation: 'passwordChange',
+        windowMs: 900_000,
+        dimensions: [
+          {
+            name: 'ip-and-identity',
+            value: JSON.stringify([address, 'fictional-member']),
+            limit: 10,
+          },
+          { name: 'member', value: 'fictional-member', limit: 10 },
+        ],
+      })),
+    );
   });
 
   it('counts signup by normalised recipient independently of client address', async function () {

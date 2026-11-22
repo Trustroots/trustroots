@@ -202,6 +202,62 @@ test.describe.serial('account settings feature coverage', () => {
     }
   });
 
+  test('browser and mobile share the password-change allowance', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.password-change', [
+      'Signed-in browser and mobile password changes share one allowance.',
+      'A refused password change leaves the current password valid.',
+    ]);
+    const member = createUser();
+    await registerViaApi(request, member);
+    const mobile = await createIsolatedContext(browser, baseURL);
+    try {
+      const signin = await mobile.request.post('/api/mobile/v0/auth/signin', {
+        data: { username: member.username, password: member.password },
+      });
+      await expect(signin).toBeOK();
+      const { accessToken } = (await signin.json()) as { accessToken: string };
+      const mobileHeaders = { Authorization: `Bearer ${accessToken}` };
+      const browserPath = '/api/users/password';
+      const mobilePath = '/api/mobile/v0/account/password';
+      const newPassword = `${member.password}Changed`;
+      const change = {
+        currentPassword: member.password,
+        newPassword,
+        verifyPassword: newPassword,
+      };
+      const incorrect = {
+        ...change,
+        currentPassword: `${member.password}Mistyped`,
+      };
+      for (let count = 0; count < 9; count += 1) {
+        const response = await request.post(browserPath, { data: incorrect });
+        expect(response.status()).toBe(400);
+      }
+      const mobileAttempt = await mobile.request.post(mobilePath, {
+        headers: mobileHeaders,
+        data: incorrect,
+      });
+      expect(mobileAttempt.status()).toBe(400);
+
+      const browserLimited = await request.post(browserPath, { data: change });
+      const mobileLimited = await mobile.request.post(mobilePath, {
+        headers: mobileHeaders,
+        data: change,
+      });
+      for (const response of [browserLimited, mobileLimited]) {
+        expect(response.status()).toBe(429);
+        expect(response.headers()['retry-after']).toMatch(/^[1-9]\d*$/);
+      }
+      await authenticateViaApi(request, member);
+    } finally {
+      await mobile.close();
+    }
+  });
+
   test('concurrent password changes cannot overwrite each other or lose a version increment', async ({
     browser,
     baseURL,

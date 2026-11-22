@@ -356,6 +356,7 @@ module.exports = function (app) {
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users/password'),
+      targetedRequestLimit.passwordChange,
       userPassword.changePassword,
     );
   app
