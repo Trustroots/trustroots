@@ -17,7 +17,7 @@ import ReportMember from '@/modules/support/client/components/ReportMember.compo
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
 import BlockedMemberBanner from '@/modules/users/client/components/BlockedMemberBanner.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
-import Activate from '@/modules/users/client/components/Activate';
+import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
@@ -131,7 +131,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     return (
       <section className="container-spacer">
         <MessageGateShown reason="not_public" />
-        <Activate />
+        <ActivateProfileNotice />
       </section>
     );
   }

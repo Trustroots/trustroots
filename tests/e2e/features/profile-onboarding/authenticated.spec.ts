@@ -1,6 +1,11 @@
 import path from 'node:path';
 import type { Request } from '@playwright/test';
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  test,
+  expect,
+} from '../../support/fixtures.mts';
 
 import {
   SEEDED_MEMBERS,
@@ -222,7 +227,7 @@ test.describe('authenticated member flows', () => {
     }
   });
 
-  test('inbox prompts an unconfirmed member to activate their profile', async ({
+  test('inbox and offer pages prompt an unconfirmed member to activate their profile', async ({
     browser,
     baseURL,
   }, testInfo) => {
@@ -244,6 +249,18 @@ test.describe('authenticated member flows', () => {
       await expect(
         page.getByText(/activate your profile by confirming your email/i),
       ).toBeVisible();
+
+      await page.goto('/offer/host');
+      const notice = page.getByRole('alertdialog', {
+        name: /activate your profile/i,
+      });
+      await expect(
+        notice.getByRole('heading', { name: /^(?:do not|don't) panic!$/i }),
+      ).toBeVisible();
+      await expect(
+        notice.getByRole('link', { name: /email settings/i }),
+      ).toHaveAttribute('href', '/profile/edit/account');
+      await captureSection(notice, 'offer-activation-notice');
     } finally {
       await context.close();
     }
