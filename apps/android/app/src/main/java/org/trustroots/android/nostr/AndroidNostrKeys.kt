@@ -11,6 +11,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import org.json.JSONArray
 import org.trustroots.shared.nostr.NostrAccountScope
 import org.json.JSONObject
 
@@ -28,7 +29,7 @@ internal class AndroidNostrKeys(
 ) {
     private val preferences = context.applicationContext.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
     private val account = scope.storageAccount
-    private val associatedData = account.encodeToByteArray()
+    private val pairingAccount = "nostranslation:$account"
 
     fun publicKey(): String? = withKey(use = NostrKeyCodec::npub)
     fun browserPublicKey(revision: Long): String? = withKey(revision, NostrEventSigner::publicKey)
@@ -48,20 +49,36 @@ internal class AndroidNostrKeys(
     fun import(input: String): String = insert(NostrKeyCodec.import(input))
 
     fun remove() = synchronized(lock) {
-        check(preferences.edit().remove(account).commit())
+        check(preferences.edit().remove(account).remove(pairingAccount).commit())
         keyRevision.incrementAndGet()
         Unit
+    }
+
+    fun loadPairings(revision: Long): JSONArray = synchronized(lock) {
+        check(revision == keyRevision.get() && preferences.contains(account))
+        val bytes = readEncrypted(pairingAccount) ?: return JSONArray()
+        try {
+            JSONArray(bytes.decodeToString())
+        } finally {
+            bytes.fill(0)
+        }
+    }
+
+    fun savePairings(revision: Long, pairings: JSONArray) = synchronized(lock) {
+        check(revision == keyRevision.get() && preferences.contains(account))
+        val bytes = pairings.toString().encodeToByteArray()
+        try {
+            writeEncrypted(pairingAccount, bytes)
+        } finally {
+            bytes.fill(0)
+        }
     }
 
     private fun insert(secret: ByteArray): String = try {
         synchronized(lock) {
             check(!preferences.contains(account))
             val npub = NostrKeyCodec.npub(secret)
-            val cipher = Cipher.getInstance(transformation)
-            cipher.init(Cipher.ENCRYPT_MODE, encryptionKey(create = true))
-            cipher.updateAAD(associatedData)
-            val record = cipher.iv + cipher.doFinal(secret)
-            check(preferences.edit().putString(account, Base64.encodeToString(record, Base64.NO_WRAP)).commit())
+            writeEncrypted(account, secret)
             keyRevision.incrementAndGet()
             npub
         }
@@ -71,17 +88,29 @@ internal class AndroidNostrKeys(
 
     private fun <T> withKey(expectedRevision: Long? = null, use: (ByteArray) -> T): T? = synchronized(lock) {
         if (expectedRevision != null && expectedRevision != keyRevision.get()) return null
-        val encoded = preferences.getString(account, null) ?: return null
-        val record = Base64.decode(encoded, Base64.NO_WRAP)
-        val cipher = Cipher.getInstance(transformation)
-        cipher.init(Cipher.DECRYPT_MODE, encryptionKey(create = false), GCMParameterSpec(128, record, 0, 12))
-        cipher.updateAAD(associatedData)
-        val secret = cipher.doFinal(record, 12, record.size - 12)
+        val secret = readEncrypted(account) ?: return null
         try {
             use(secret)
         } finally {
             secret.fill(0)
         }
+    }
+
+    private fun writeEncrypted(storageAccount: String, bytes: ByteArray) {
+        val cipher = Cipher.getInstance(transformation)
+        cipher.init(Cipher.ENCRYPT_MODE, encryptionKey(create = true))
+        cipher.updateAAD(storageAccount.encodeToByteArray())
+        val record = cipher.iv + cipher.doFinal(bytes)
+        check(preferences.edit().putString(storageAccount, Base64.encodeToString(record, Base64.NO_WRAP)).commit())
+    }
+
+    private fun readEncrypted(storageAccount: String): ByteArray? {
+        val encoded = preferences.getString(storageAccount, null) ?: return null
+        val record = Base64.decode(encoded, Base64.NO_WRAP)
+        val cipher = Cipher.getInstance(transformation)
+        cipher.init(Cipher.DECRYPT_MODE, encryptionKey(create = false), GCMParameterSpec(128, record, 0, 12))
+        cipher.updateAAD(storageAccount.encodeToByteArray())
+        return cipher.doFinal(record, 12, record.size - 12)
     }
 
     private fun encryptionKey(create: Boolean): SecretKey {

@@ -14,6 +14,7 @@ struct AccountView: View {
     @State private var isChangingPassword = false
     @State private var confirmation: String?
     @State private var errorMessage: String?
+    @State private var showNostranslationSigning = false
 
     private let api = TrustrootsAPI()
 
@@ -32,6 +33,7 @@ struct AccountView: View {
                         profileLoaded: profile != nil,
                         updateProfileLink: updateNostrProfile
                     )
+                    Button("Nostranslation signing") { showNostranslationSigning = true }
                     emailSection
                     passwordSection
                     signOutSection
@@ -41,6 +43,7 @@ struct AccountView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .task { await loadAccount() }
+        .sheet(isPresented: $showNostranslationSigning) { NostranslationSigningSheet() }
     }
 
     private var emailSection: some View {

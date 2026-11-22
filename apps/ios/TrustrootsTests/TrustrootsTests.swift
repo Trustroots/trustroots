@@ -4,6 +4,22 @@ import MapKit
 @testable import Trustroots
 
 final class TrustrootsTests: XCTestCase {
+    func testNostranslationConnectionLinkRequiresThePinnedClientAndRelay() {
+        let peer = String(repeating: "a", count: 64)
+        let valid = "nostrconnect://\(peer)?relay=wss%3A%2F%2Frelay.trustroots.org&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture"
+        XCTAssertEqual(NostranslationLink(valid)?.peer, peer)
+        XCTAssertEqual(NostranslationLink(valid)?.secret, "fixture")
+        for invalid in [
+            valid + "&secret=duplicate",
+            valid + "#fragment",
+            valid.replacingOccurrences(of: "relay.trustroots.org", with: "relay.example.test"),
+            valid.replacingOccurrences(of: "27235", with: "1"),
+            valid.replacingOccurrences(of: "nostrconnect", with: "https")
+        ] {
+            XCTAssertNil(NostranslationLink(invalid))
+        }
+    }
+
     func testMemberIdentityPrefersDisplayNameAndShowsHandleBelow() {
         let identity = MemberIdentityText(
             member: MiniMember(id: "member-1", username: "traveller", displayName: "A Traveller")

@@ -52,12 +52,14 @@ internal class NostrConnectRequest(val id: String, val eventId: String, val comm
 
 /** Encodes one confirmed pairing. Its caller owns relay I/O, deduplication and session checks. */
 internal class AndroidNostrConnectWire(
-    link: NostranslationConnectionLink,
+    private val peer: String,
     transportSecret: ByteArray,
+    private var pairingSecret: String? = null,
 ) : AutoCloseable {
+    constructor(link: NostranslationConnectionLink, transportSecret: ByteArray) :
+        this(link.clientPublicKey, transportSecret, link.secret)
+
     private val secret = transportSecret.copyOf()
-    private val peer = link.clientPublicKey
-    private var pairingSecret: String? = link.secret
     val transportPublicKey = NostrEventSigner.publicKey(secret)
     private val conversationKey = NostrConnectEncryption.conversationKey(secret, NostrEventSigner.decodeHex(peer, 32))
     private var closed = false
