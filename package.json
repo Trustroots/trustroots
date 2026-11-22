@@ -255,7 +255,7 @@
       "oxfmt --no-error-on-unmatched-pattern",
       "oxlint"
     ],
-    "*.{json,md,html,less,yml}": [
+    "*.{json,md,html,css,scss,less,yml}": [
       "oxfmt --no-error-on-unmatched-pattern"
     ]
   },
