@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
-import { routeOptions } from '../route-options';
+import { requireRole } from '../route-options';
 
-export const Route = createFileRoute('/admin/circles/$circle')(
-  routeOptions('/admin/circles/:circle', AdminCircles),
-);
+export const Route = createFileRoute('/admin/circles/$circle')({
+  staticData: { title: 'Admin - Circle', footerVariant: 'admin' },
+  beforeLoad: requireRole('admin'),
+  component: AdminCircles,
+});

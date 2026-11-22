@@ -20,13 +20,11 @@ import { getPublicCharts } from '../../modules/statistics/server/controllers/pub
 import mongoStore from 'connect-mongo';
 import compress from 'compression';
 import helmet from 'helmet';
-import nunjucks from 'nunjucks';
 import buildMetadata from './build-metadata.mts';
 import path from 'path';
 import paginate from './../../modules/core/server/services/pagination.server.service.mts';
 import { randomUUID } from 'node:crypto';
 import qs from 'qs';
-import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mts';
 interface ExpressSetup {
   initLocalVariables(app: Express): void;
   initMiddleware(app: Express): void;
@@ -211,17 +209,13 @@ function initMiddleware(app: Express) {
  * Configure view engine
  */
 function initViewEngine(app: Express) {
-  // Set Nunjucks as the template engine
-  // https://mozilla.github.io/nunjucks/
-  const templates = nunjucks.configure('./modules/core/server/views', {
-    express: app,
-    watch: false,
-    noCache: true,
+  // Each view is a module whose default export renders the page to HTML.
+  app.engine('mts', (file, locals, callback) => {
+    import(pathToFileURL(file).href)
+      .then(view => view.default(locals))
+      .then(html => callback(null, html), callback);
   });
-  templates.addFilter('jsonForScript', jsonForScript);
-
-  // app.engine('nunjucks', nunjucks);
-  app.set('view engine', 'html');
+  app.set('view engine', 'mts');
   app.set('views', './modules/core/server/views');
 }
 

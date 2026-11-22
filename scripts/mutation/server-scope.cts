@@ -38,6 +38,7 @@ const path = require('path') as typeof import('node:path');
 const mutatePatterns = [
   'modules/*/server/**/*.mts',
   'packages/analytics/server/**/*.mts',
+  'packages/emails/src/**/*.{ts,tsx}',
   'packages/logger/**/*.mts',
   '!modules/*/tests/**',
   '!**/node_modules/**',
@@ -52,6 +53,7 @@ const mutatePatterns = [
 const included = [
   /^modules\/[^/]+\/server\/.*\.mts$/,
   /^packages\/analytics\/server\/.*\.mts$/,
+  /^packages\/emails\/src\/.*\.tsx?$/,
   /^packages\/logger\/.*\.mts$/,
 ];
 const excluded = [

@@ -1,0 +1,23 @@
+Ada & "Bea" <Lov\elace>,
+
+We haven't heard from you since you signed up to Trustroots 3 days ago.
+
+Your profile will not be visible to others if you don't confirm your email address (ada.new@example.test).
+
+It's easy — just click on the link below.
+
+This is a reminder 1/3, after which we will stop sending you emails.
+
+Confirm now http://localhost:3000/confirm-email/email-token?signup=true&utm_source=transactional-email&utm_medium=email&utm_campaign=signup-reminder
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/confirm-email/email-token?signup=true
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=signup-reminder&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=signup-reminder&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

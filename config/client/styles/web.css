@@ -451,9 +451,6 @@ th {
   @apply tw:opacity-50;
 }
 
-.error-action {
-  @apply tw:inline-block tw:rounded-md tw:border tw:border-solid tw:border-transparent tw:px-3 tw:py-1.5 tw:text-center tw:text-base tw:leading-normal tw:align-middle tw:text-(--tr-surface-text) tw:no-underline;
-}
 .icon-link {
   @apply tw:inline-flex tw:items-center tw:gap-1.5;
 }

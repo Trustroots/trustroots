@@ -177,6 +177,7 @@ describe('day-11 Experience reply reminders', () => {
           `${https ? 'https' : 'http'}://${config.domain}/profile/${authorUsername}/experiences/new`,
         ),
       });
+      expect(email.html).toBeUndefined();
       expect(email.text).not.toContain('Sensitive feedback');
     },
   );

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import winston from 'winston';
@@ -26,7 +27,6 @@ type MockResponse = {
   rendered: string;
   renderVars: Record<string, unknown> | undefined;
   headers: Record<string, string>;
-  redirected: string;
   locals: { nonce: string };
   renderError: Error | null;
   status: (code: number) => MockResponse;
@@ -41,7 +41,6 @@ type MockResponse = {
     callback?: (error: Error | null, html: string) => void,
   ) => MockResponse;
   set: (key: string, value: string) => MockResponse;
-  redirect: (url: string) => MockResponse;
 };
 type Language = { value: string; label: string; deprecated: boolean };
 
@@ -105,7 +104,6 @@ function mockResponse(acceptType?: string): MockResponse {
     rendered: '',
     renderVars: undefined,
     headers: {},
-    redirected: '',
     locals: { nonce: 'test-nonce' },
     renderError: null,
 
@@ -139,10 +137,6 @@ function mockResponse(acceptType?: string): MockResponse {
       res.headers[key] = value;
       return res;
     },
-    redirect(url) {
-      res.redirected = url;
-      return res;
-    },
   };
   return res;
 }
@@ -156,16 +150,12 @@ describe('Controller: core', function () {
 
   afterEach(function () {
     sinon.restore();
+    vi.unstubAllEnvs();
   });
   describe('renderIndex', function () {
-    const environment = { ...process.env };
     const fail = (error: unknown) => {
       throw error;
     };
-
-    afterEach(function () {
-      process.env = { ...environment };
-    });
 
     it('sends the Start shell with the rendered head and script nonces', async function () {
       const res = mockResponse();
@@ -188,17 +178,6 @@ describe('Controller: core', function () {
       should(res.body).be.null();
     });
 
-    it('passes shell loading errors to the next handler', async function () {
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      process.env.TRUSTROOTS_VITE_URL = 'http://127.0.0.1:9';
-      const res = mockResponse();
-      const next = sinon.spy();
-      await coreController.renderIndex({ path: '/' }, res, next);
-      sinon.assert.calledOnce(next);
-      res.rendered.should.equal('');
-    });
-
     it('renders anonymous visitors with only an empty user', async function () {
       const res = mockResponse();
       await coreController.renderIndex(
@@ -206,34 +185,23 @@ describe('Controller: core', function () {
         res,
         fail,
       );
-      res.rendered.should.equal('react-index.server.view.html');
+      res.rendered.should.equal('index');
       assert.deepStrictEqual(renderVars(res), { user: null });
     });
 
     it('marks the signup page as an invite', async function () {
       const res = mockResponse();
       await coreController.renderIndex({ path: '/signup' }, res, fail);
-      res.rendered.should.equal('react-index.server.view.html');
+      res.rendered.should.equal('index');
       should(renderVars(res).invite).be.true();
     });
 
-    it('redirects legacy React routes to their replacement', async function () {
-      const res = mockResponse();
-      await coreController.renderIndex({ path: '/about' }, res, fail);
-      res.redirected.should.equal('/');
-    });
-
-    it('renders the React index for unknown paths', async function () {
-      const res = mockResponse();
-      res.redirect = function () {
-        throw new Error('should not redirect unknown paths');
-      };
-      await coreController.renderIndex(
-        { path: '/definitely-not-a-route' },
-        res,
-        fail,
-      );
-      res.rendered.should.equal('react-index.server.view.html');
+    it('renders the React index for redirecting, guarded and unknown paths', async function () {
+      for (const path of ['/about', '/admin', '/definitely-not-a-route']) {
+        const res = mockResponse();
+        await coreController.renderIndex({ path }, res, fail);
+        res.rendered.should.equal('index');
+      }
     });
 
     it('exposes a sanitized user profile when signed in', async function () {
@@ -253,6 +221,24 @@ describe('Controller: core', function () {
       });
     });
 
+    it('exposes the current user roles without the flagged role', async function () {
+      const res = mockResponse();
+      const user = new User({
+        username: 'alice',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        lastName: 'Example',
+        provider: 'local',
+        roles: ['user', 'flagged', 'admin'],
+      });
+      await coreController.renderIndex({ path: '/', user }, res, fail);
+      should(renderVars(res).user).deepEqual({
+        sanitized: true,
+        username: 'alice',
+        roles: ['user', 'admin'],
+      });
+    });
+
     it('exposes the current tribe when browsing a tribe page', async function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
@@ -266,22 +252,57 @@ describe('Controller: core', function () {
   });
 
   describe('renderNotFound', function () {
+    const fail = (error: unknown) => {
+      throw error;
+    };
+
     it('returns a JSON not-found message', function () {
       const res = mockResponse('application/json');
-      coreController.renderNotFound({}, res);
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
       res.statusCode.should.equal(404);
       should(responseMessage(res)).equal('Not found.');
     });
 
-    it('renders an HTML view for text/html requests', function () {
+    it('sends the app with status 404 for text/html requests', async function () {
       const res = mockResponse('text/html');
-      coreController.renderNotFound({}, res);
-      res.rendered.should.equal('404.server.view.html');
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
+      await vi.waitFor(() =>
+        assert.match(String(res.body), /^<!DOCTYPE html>/),
+      );
+      res.statusCode.should.equal(404);
+      res.rendered.should.equal('index');
+    });
+
+    it('forwards shell loading errors from HTML requests to Express', async function () {
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      const error = new Error('shell failed to load');
+      sinon.stub(globalThis, 'fetch').rejects(error);
+      const res = mockResponse('text/html');
+      const next = sinon.spy();
+
+      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+
+      await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
+      res.rendered.should.equal('');
+      should(res.body).be.null();
+    });
+
+    it('forwards errors thrown while starting the HTML render', async function () {
+      const error = new Error('render setup failed');
+      const res = mockResponse('text/html');
+      sinon.stub(res, 'render').throws(error);
+      const next = sinon.spy();
+
+      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+
+      await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
+      should(res.body).be.null();
     });
 
     it('sends a plain message for other content types', function () {
       const res = mockResponse();
-      coreController.renderNotFound({}, res);
+      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
       should(res.body).equal('Not found.');
     });
   });

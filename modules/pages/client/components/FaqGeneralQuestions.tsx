@@ -35,7 +35,7 @@ export default function FaqGeneralQuestions() {
           we introduce it to new communities. <br />
         </Trans>
         <br />
-        <a href="/faq/tribes">{t('Read more about circles')}</a>.
+        <a href="/faq/circles">{t('Read more about circles')}</a>.
       </div>
 
       <div className="faq-question" id="what-is-your-long-term-vision">

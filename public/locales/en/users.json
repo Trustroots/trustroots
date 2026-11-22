@@ -135,5 +135,7 @@
   "Use secure wss:// relay addresses.": "Use secure wss:// relay addresses.",
   "Invalid URL": "Invalid URL",
   "The signer returned an invalid authorisation URL.": "The signer returned an invalid authorisation URL.",
-  "Paste the signed event JSON from your signing tool.": "Paste the signed event JSON from your signing tool."
+  "Paste the signed event JSON from your signing tool.": "Paste the signed event JSON from your signing tool.",
+  "Your account has been suspended.": "Your account has been suspended.",
+  "Rules Of Trustroots": "Rules Of Trustroots"
 }

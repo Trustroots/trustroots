@@ -1,0 +1,8 @@
+{
+  "extends": "../../tooling/tsconfig/node.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": true,
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": [".storybook/*.ts", "src/**/*.ts", "src/**/*.tsx", "stories/*.tsx"]
+}

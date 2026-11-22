@@ -75,6 +75,9 @@ export default defineConfig({
         'modules/*/server/**/*.mts',
         'modules/mobile/server/**/*.cjs',
         'packages/analytics/server/**/*.mts',
+        // Coverage re-parses sources from disk and cannot read the JSX that
+        // the package's loader compiles; the snapshots and Stryker check them.
+        'packages/emails/src/**/*.ts',
         'packages/logger/**/*.mts',
       ],
       exclude: [

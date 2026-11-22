@@ -1,0 +1,17 @@
+Hi Ben Fictional!
+
+This is Dee from Trustroots Foundation. You signed up a little while ago, and I just wanted to check back.
+
+How has your experience with Trustroots been for you so far? I would be happy to hear any feedback. You can simply reply to this email.
+
+Like our Facebook page https://www.facebook.com/trustroots.org/?ref=welcome-email, join our Facebook group https://www.facebook.com/groups/trustroots/?ref=welcome-email and follow us on Twitter https://twitter.com/trustroots or Instagram https://www.instagram.com/trustroots/ — it would really help us out!
+
+Happy traveling!
+Dee
+
+Contact us http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-third-feedback&utm_content=email-support
+
+You are receiving this email because you have an active account http://localhost:3000/profile/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-third-feedback&utm_content=email-profile on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-third-feedback&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

@@ -644,7 +644,7 @@ describe('User signup and authentication CRUD tests', function () {
       })
       .catch(done);
   });
-  it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function (done) {
+  it('should invalidate sessions of authenticated user with "suspended" role and return JSON for API requests with a wildcard Accept header', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
@@ -662,7 +662,7 @@ describe('User signup and authentication CRUD tests', function () {
             // Load some json from API, get 403 suspended error
             agent
               .get('/api/users/' + confirmedUser.username)
-              .set('Accept', 'application/json')
+              .set('Accept', '*/*')
               .expect('Content-Type', /json/)
               .expect(403)
               .end(function (err, res) {
@@ -691,7 +691,7 @@ describe('User signup and authentication CRUD tests', function () {
           .catch(done);
       });
   });
-  it('should invalidate sessions of authenticated user with "suspended" role and return error page for text/html requests', function (done) {
+  it('should invalidate sessions of authenticated user with "suspended" role and redirect text/html requests to the suspended page', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
@@ -710,15 +710,13 @@ describe('User signup and authentication CRUD tests', function () {
             agent
               .get('/')
               .set('Accept', 'text/html')
-              .expect('Content-Type', 'text/html; charset=utf-8')
-              .expect(403)
-              .end(function (err, res) {
+              .expect(302)
+              .expect('Location', '/suspended')
+              .end(function (err) {
                 // Handle error
                 if (err) {
                   return done(err);
                 }
-                // Note how we check for `res.text` instead of `res.body`
-                res.text.should.containEql('Your account has been suspended.');
                 // Load some html again,
                 // get normal 200 since session is now destroyed
                 agent

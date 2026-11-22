@@ -4,6 +4,7 @@ node_modules/
 coverage/
 coverage-report/
 playwright-report/
+**/storybook-static/
 test-results/
 tests/e2e/.auth/
 tmp/
@@ -33,11 +34,8 @@ scripts/**
 !scripts/**/
 !scripts/**/*.mts
 !scripts/**/*.cts
-modules/core/server/views/email-templates/
-modules/core/server/views/email-templates-text/
+**/__snapshots__/
 .github/**/*.md
-# Nunjucks tags inside attributes; not parseable by Prettier 3
-modules/core/server/views/react-head.server.view.html
 
 # Generated docs assets
 docs/assets/js/

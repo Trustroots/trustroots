@@ -1,0 +1,17 @@
+Hi Ad'a!
+
+Ben http://localhost:3000/profile/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=experience-notification-second&utm_content=from-profile has shared also their experience with you. Both of your experiences are now public.
+
+See the experience http://localhost:3000/profile/ada_l/experiences?utm_source=transactional-email&utm_medium=email&utm_campaign=experience-notification-second&utm_content=see-experiences#exp-1
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/profile/ada_l/experiences#exp-1
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=transactional-email&utm_content=email-support.
+
+You are receiving this email because you have an active account http://localhost:3000/profile/ada_l?utm_source=transactional-email&utm_medium=email&utm_campaign=transactional-email&utm_content=email-profile on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=transactional-email&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

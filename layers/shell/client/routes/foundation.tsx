@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import Foundation from '@/modules/pages/client/components/Foundation.component';
-import { routeOptions, withUser } from '../route-options';
+import { withUser } from '../route-options';
 
-export const Route = createFileRoute('/foundation')(
-  routeOptions('/foundation', withUser(Foundation)),
-);
+export const Route = createFileRoute('/foundation')({
+  staticData: { title: 'Foundation' },
+  component: withUser(Foundation),
+});

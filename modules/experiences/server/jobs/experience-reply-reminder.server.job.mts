@@ -125,7 +125,6 @@ export async function sendExperienceReplyReminder(job: Job<ReminderData>) {
       email: recipient.email,
       username: recipient.username,
       shareUrl,
-      skipHtmlTemplate: true,
       sparkpostCampaign: campaign,
     }),
   );

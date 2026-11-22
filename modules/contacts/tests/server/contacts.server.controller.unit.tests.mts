@@ -299,19 +299,16 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(200);
 
       email.calledOnce.should.be.true();
-      const [sender, friend, , html, plain] = email.firstCall
-        .args as unknown as [
+      const [sender, friend, , html] = email.firstCall.args as unknown as [
         unknown,
         { _id: { equals(id: unknown): boolean }; email: string },
         unknown,
-        string,
         string,
       ];
       should(sender).equal(user1);
       friend._id.equals(user2._id).should.be.true();
       friend.email.should.equal(user2.email);
       should(html).equal('<b>Hi</b> friend');
-      should(plain).equal('Hi friend');
       // Only the fields the email needs are loaded
       should(
         (friend as unknown as { username?: string }).username,
@@ -330,26 +327,8 @@ describe('Contacts controller unit tests', () => {
 
         email.calledOnce.should.be.true();
         should(email.firstCall.args[3]).equal(false);
-        should(email.firstCall.args[4]).equal(false);
       });
     }
-
-    it('wraps long plain text messages at 80 columns', async () => {
-      const email = sinon.spy(emailService, 'sendConfirmContact');
-      const message = `<p>${'word '.repeat(40).trim()}</p>`;
-      await runHandler(res =>
-        contactsController.add(
-          { user: user1, body: { friendUserId: user2.id, message } },
-          res,
-        ),
-      );
-
-      const plain = email.firstCall.args[4] as string;
-      plain.split('\n').length.should.equal(3);
-      Math.max(...plain.split('\n').map(line => line.length)).should.be.below(
-        81,
-      );
-    });
 
     it('does not read the message back from the request body', async () => {
       const body: Record<string, unknown> = {
@@ -363,7 +342,7 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('accepts a sender document without a blocked list', async () => {
-      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(5, null);
+      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(4, null);
       const { res } = await runHandler(res =>
         contactsController.add(
           {
@@ -378,7 +357,7 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('accepts a recipient document without a blocked list', async () => {
-      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(5, null);
+      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(4, null);
       sinon
         .stub(mongoose.model('User'), 'findOne')
         .callThrough()
@@ -464,7 +443,7 @@ describe('Contacts controller unit tests', () => {
     it('cleans up the contact when email sending fails', async () => {
       sinon
         .stub(emailService, 'sendConfirmContact')
-        .callsArgWith(5, new Error('mail failed'));
+        .callsArgWith(4, new Error('mail failed'));
       const controller = contactsController;
 
       const { res } = await runHandler(res =>

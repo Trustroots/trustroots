@@ -16,7 +16,7 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
     path.join(routes, 'profile.edit.account.tsx'),
     `
     import Account from '../Account';
-    const options = routeOptions('/profile/edit/account', () => <Account />);
+    const options = { staticData: { title: 'Account' }, component: () => <Account /> };
     export const Route = createFileRoute('/profile/edit/account')(options);
   `,
   );
@@ -24,7 +24,7 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
     path.join(routes, 'faq.index.tsx'),
     `
     import Faq from '@/modules/pages/client/Faq';
-    export const Route = createFileRoute('/faq')(routeOptions('/faq', () => <Faq />));
+    export const Route = createFileRoute('/faq/')({ staticData: { title: 'FAQ' }, component: () => <Faq /> });
   `,
   );
   fs.writeFileSync(

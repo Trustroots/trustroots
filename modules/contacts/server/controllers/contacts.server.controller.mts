@@ -5,7 +5,6 @@ import emailService from '../../../core/server/services/email.server.service.mts
 import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import sanitizeHtml from 'sanitize-html';
-import * as htmlToText from 'html-to-text';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import type { ContactRecord } from '../models/contacts.server.model.mts';
 
@@ -156,12 +155,9 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   );
 
   let messageHTML: string | false = false;
-  let messagePlain: string | false = false;
   if (req.body.message) {
     const message = req.body.message as string;
     messageHTML = sanitizeHtml(message, textService.sanitizeOptions);
-    // Stryker disable next-line ObjectLiteral: html-to-text wraps at 80 columns by default, so an empty options object renders the same text
-    messagePlain = htmlToText.htmlToText(message, { wordwrap: 80 });
   }
   delete req.body.message;
 
@@ -214,7 +210,6 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
         friend,
         newContact,
         messageHTML,
-        messagePlain,
         (error?: Error | null) => {
           if (error) return reject(error);
           res.send({ message: 'An email was sent to your contact.' });

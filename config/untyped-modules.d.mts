@@ -129,10 +129,6 @@ declare module 'he' {
   export function decode(content: string): string;
 }
 
-declare module 'juice' {
-  export default function juice(html: string): string;
-}
-
 declare module 'qs' {
   const qs: {
     stringify(values: Record<string, unknown>): string;
@@ -189,32 +185,6 @@ declare module 'multer' {
     function memoryStorage(): object;
   }
   export default multer;
-}
-
-declare module 'nunjucks' {
-  interface Environment {
-    addFilter(name: string, filter: (value: unknown) => string): void;
-  }
-  interface Renderer {
-    (
-      template: string,
-      context: object,
-      callback: (error: Error | null, result?: string) => void,
-    ): void;
-    (template: string, context?: object): string;
-  }
-  const nunjucks: {
-    configure(
-      path: string,
-      options: {
-        watch: boolean;
-        noCache: boolean;
-        express?: import('express').Express;
-      },
-    ): Environment;
-    render: Renderer;
-  };
-  export default nunjucks;
 }
 
 declare module 'morgan' {
