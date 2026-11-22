@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.security.KeyStore
 import java.util.UUID
 import javax.crypto.AEADBadTagException
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,6 +117,26 @@ class AndroidNostrKeysTest {
         } finally {
             first.remove()
             second.remove()
+        }
+    }
+
+    @Test fun pairingsPersistForTheLocalKeyAndAreRemovedWithIt() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val scope = nostrAccountScope("https://example.test", "paired-${UUID.randomUUID()}")
+        val first = AndroidNostrKeys(context, scope)
+        try {
+            first.generate()
+            val revision = first.revision()
+            val pairings = JSONArray().put(JSONObject().put("transport", "fixture-secret"))
+            first.savePairings(revision, pairings)
+            assertEquals(pairings.toString(), AndroidNostrKeys(context, scope).loadPairings(revision).toString())
+
+            first.remove()
+            assertThrows(IllegalStateException::class.java) { first.savePairings(revision, pairings) }
+            first.generate()
+            assertEquals(0, first.loadPairings(first.revision()).length())
+        } finally {
+            first.remove()
         }
     }
 }
