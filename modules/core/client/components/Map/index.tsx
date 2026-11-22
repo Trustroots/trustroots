@@ -10,7 +10,7 @@ import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
 import LeafletMap from './LeafletMap';
 import usePageWheel from './use-page-wheel';
-import { getMapBoxToken, isWebGLSupported } from '../../utils/map';
+import useMapRenderer from './use-map-renderer';
 
 type MapProps = React.ComponentProps<typeof ReactMapGL> & {
   'aria-hidden'?: boolean;
@@ -41,8 +41,7 @@ export default function Map(props: MapProps) {
   const [mapStyle, setMapstyle] = useState<string | typeof MAP_STYLE_OSM>(
     MAP_STYLE_DEFAULT,
   );
-  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
-  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
+  const { mapboxToken, useWebGL } = useMapRenderer();
   const surfaceRef = useRef<HTMLDivElement>(null);
   usePageWheel(surfaceRef, useWebGL && !preferRaster);
   const [viewport, setViewport] = useState({

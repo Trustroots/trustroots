@@ -17,10 +17,7 @@ import type { SearchResultOffer } from './SearchSidebarResults.component';
 import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer';
 
 // Internal dependencies
-import {
-  getMapBoxToken,
-  isWebGLSupported,
-} from '@/modules/core/client/utils/map';
+import useMapRenderer from '@/modules/core/client/components/Map/use-map-renderer';
 import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
@@ -392,8 +389,7 @@ export default function SearchMap({
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
   // Mapbox GL v3 requires a token even for a third-party raster style.
   // Tokenless installations use Leaflet with OpenStreetMap tiles.
-  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
-  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
+  const { mapboxToken, useWebGL } = useMapRenderer();
   usePageWheel(gestureSurfaceRef, useWebGL);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState<MapboxMap | undefined>();
