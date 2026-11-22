@@ -30,17 +30,44 @@ class NostrProfileProofTest {
     @Test fun rejectsAnUnrelatedDestinationOrAChangedChallenge() {
         for (event in listOf(
             challenge(destination = "https://other.example.test/api/users"),
+            challenge(destination = "http://api.example.test/api/users"),
+            challenge(destination = "https:/api/users"),
+            challenge(destination = "https://member@api.example.test/api/users"),
             challenge(destination = "$origin:8443/api/users"),
             challenge(destination = "$origin/api/users?x=1"),
+            challenge(destination = "$origin/api/users#fragment"),
             challenge(destination = "$origin/api/mobile/v0/profile"),
             challenge(method = "POST"),
             challenge(nonce = "wrong"),
             challenge().put("created_at", now - 301),
             challenge().put("created_at", now + 31),
             challenge().put("kind", 1),
+            challenge().put("created_at", "1800000000"),
             challenge().put("content", "unrelated"),
+            challenge().put("tags", JSONArray()),
+            challenge().also { it.getJSONArray("tags").put(0, JSONArray().put("u")) },
+            challenge().also { it.getJSONArray("tags").getJSONArray(0).put(0, "other") },
+            challenge().also { it.getJSONArray("tags").getJSONArray(2).put(0, "other") },
         )) {
             assertThrows(IllegalArgumentException::class.java) { NostrProfileProof.sign(event, origin, secret, now) }
+        }
+    }
+
+    @Test fun rejectsNonStringChallengeTagNamesAndValues() {
+        for (index in 0..1) {
+            val event = challenge()
+            event.getJSONArray("tags").getJSONArray(0).put(index, 42)
+            assertThrows(IllegalStateException::class.java) { NostrProfileProof.sign(event, origin, secret, now) }
+        }
+    }
+
+    @Test fun acceptsMatchingExplicitPortsAndDefaultHttpPortOnLocalServers() {
+        for ((backend, destination) in listOf(
+            "$origin:443" to "$origin/api/users",
+            "http://localhost" to "http://localhost:80/api/users",
+        )) {
+            val proof = NostrProfileProof.sign(challenge(destination), backend, secret, now)
+            assertEquals(27235, proof.getInt("kind"))
         }
     }
 
