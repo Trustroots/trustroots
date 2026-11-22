@@ -7,6 +7,7 @@ import './../../server/models/request-limit.server.model.mts';
 type Operation =
   | 'signup'
   | 'support'
+  | 'contactRequest'
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
@@ -69,6 +70,7 @@ function loadMiddleware(
     targetedRequestLimits: {
       signup: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       support: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      contactRequest: { windowMs: 3_600_000, ipLimit: 0, identityLimit: 20 },
       signin: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },

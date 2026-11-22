@@ -4,6 +4,7 @@ import { consume as defaultConsume } from '../services/targeted-request-limits.s
 type Operation =
   | 'signup'
   | 'support'
+  | 'contactRequest'
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
@@ -157,6 +158,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
   return {
     signup: createLimiter('signup', 'recipient', deps),
     support: createLimiter('support', 'member', deps),
+    contactRequest: createLimiter('contactRequest', 'member', deps),
     signin: createLimiter('signin', 'account', deps),
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),

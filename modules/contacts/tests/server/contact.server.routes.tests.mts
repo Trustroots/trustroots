@@ -1,6 +1,8 @@
 import should from 'should';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import sinon from 'sinon';
+import config from '../../../../config/config.mts';
 import express from './../../../../config/lib/express.mts';
 import agenda from './../../../../config/lib/agenda.mts';
 import * as testutils from '../../../../testutils/server/server.testutil.mts';
@@ -519,6 +521,40 @@ describe('Contact CRUD tests', function () {
       });
     });
   });
+  it('refuses over-limit contact requests before storage or email delivery', async () => {
+    const sender = request.agent(app);
+    await sender
+      .post('/api/auth/signin')
+      .send({ username: user4.username, password: credentials.password })
+      .expect(200);
+    const sandbox = sinon.createSandbox();
+    try {
+      sandbox.useFakeTimers({ now: Date.now() + 60_000, toFake: ['Date'] });
+      sandbox.stub(config.targetedRequestLimits, 'contactRequest').value({
+        windowMs: 3_600_000,
+        ipLimit: 0,
+        identityLimit: 1,
+      });
+      await sender
+        .post('/api/contact')
+        .send({ friendUserId: user1Id })
+        .expect(200);
+      const sent = jobs.length;
+
+      await sender
+        .post('/api/contact')
+        .send({ friendUserId: user2Id })
+        .expect('Retry-After', /^[1-9]\d*$/)
+        .expect(429);
+      should.not.exist(
+        await Contact.exists({ userFrom: user4Id, userTo: user2Id }),
+      );
+      jobs.length.should.equal(sent);
+    } finally {
+      sandbox.restore();
+    }
+  });
+
   it('does not allow an unrelated user to confirm or delete a contact by id', async () => {
     await agent
       .post('/api/auth/signin')

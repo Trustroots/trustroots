@@ -9,6 +9,7 @@ import {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   SEEDED_SHADOW,
+  authenticateViaApi,
   createIsolatedContext,
   createUser,
   fetchUserIdByUsername,
@@ -118,6 +119,67 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const confirmed = await findContactByUsers(memberId, aliceId);
     expectPresent(confirmed);
     expect(confirmed.confirmed).toBe(true);
+  });
+
+  test('contact creation allowances are separate for each member', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'contacts.add', [
+      'Contact creation stops at each member’s allowance.',
+      'A refused request creates no pending relationship.',
+    ]);
+    const { alice, bob } = SEEDED_RELATIONSHIP_MEMBERS;
+    const aliceId = await fetchUserIdByUsername(request, alice.username);
+    const bobId = await fetchUserIdByUsername(request, bob.username);
+    const sender = createUser();
+    const otherSender = createUser();
+    const senderContext = await createIsolatedContext(browser, baseURL);
+    const otherContext = await createIsolatedContext(browser, baseURL);
+    try {
+      const { _id: senderId } = await registerViaApi(
+        senderContext.request,
+        sender,
+      );
+      await registerViaApi(otherContext.request, otherSender);
+      for (const [context, member] of [
+        [senderContext, sender],
+        [otherContext, otherSender],
+      ] as const) {
+        await updateUserByUsername(member.username, {
+          $set: { public: true },
+          $unset: { emailTemporary: 1, emailToken: 1 },
+        });
+        await authenticateViaApi(context.request, member);
+      }
+
+      const sendToAlice = () =>
+        senderContext.request.post('/api/contact', {
+          data: { friendUserId: aliceId },
+        });
+      await expect(await sendToAlice()).toBeOK();
+      for (let count = 1; count < 20; count += 1) {
+        const duplicate = await sendToAlice();
+        expect(duplicate.status()).toBe(409);
+        await duplicate.dispose();
+      }
+
+      const limited = await senderContext.request.post('/api/contact', {
+        data: { friendUserId: bobId },
+      });
+      expect(limited.status()).toBe(429);
+      expect(limited.headers()['retry-after']).toMatch(/^[1-9]\d*$/);
+      expect(await findContactByUsers(senderId, bobId)).toBeNull();
+      await expect(
+        await otherContext.request.post('/api/contact', {
+          data: { friendUserId: bobId },
+        }),
+      ).toBeOK();
+    } finally {
+      await senderContext.close();
+      await otherContext.close();
+    }
   });
 
   test('shadowbanned members cannot create visible contact requests', async ({

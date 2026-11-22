@@ -142,6 +142,7 @@ async function register(
 describe('API route registrations', () => {
   it('registers contacts routes with policy middleware and params', async () => {
     const policy = { isAllowed: handler('contactsPolicy.isAllowed') };
+    const limits = { contactRequest: handler('requestLimit.contactRequest') };
     const contacts = controller(
       [
         'add',
@@ -162,10 +163,15 @@ describe('API route registrations', () => {
       {
         '../controllers/contacts.server.controller': contacts,
         '../policies/contacts.server.policy': policy,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          limits,
       },
     );
 
-    assertHandlers(routeByPath(routes, '/api/contact').post, [contacts.add]);
+    assertHandlers(routeByPath(routes, '/api/contact').post, [
+      limits.contactRequest,
+      contacts.add,
+    ]);
     assertHandlers(routeByPath(routes, '/api/contact-by/:contactUserId').get, [
       contacts.get,
     ]);
