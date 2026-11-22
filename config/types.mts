@@ -69,6 +69,7 @@ export interface Config {
     };
   };
   experienceApiRequestsPerMinute: number;
+  offerSearchRequestsPerMinute: number;
   targetedRequestLimits: Record<
     string,
     { windowMs: number; ipLimit: number; identityLimit: number }

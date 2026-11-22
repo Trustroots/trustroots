@@ -991,12 +991,15 @@ test.describe('rendered search map feature coverage', () => {
   });
 
   test('turning Hosts off keeps meetup offers in the map request', async ({
+    context,
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
       'Hosts can be hidden while meetup offers remain included.',
+      'Offer searches retain the per-member request allowance when filters change.',
     ]);
 
+    await context.unroute('**/api/offers?**');
     await page.goto('/search');
 
     const mapContent = page.getByRole('group', { name: 'Map content' });
@@ -1004,9 +1007,9 @@ test.describe('rendered search map feature coverage', () => {
     const hostsCheckbox = hostsLabel.locator('input[type="checkbox"]');
     await expect(hostsCheckbox).toBeChecked();
 
-    const meetupOnlyRequest = page.waitForRequest(request => {
-      if (!request.url().includes('/api/offers?')) return false;
-      const rawFilters = new URL(request.url()).searchParams.get('filters');
+    const meetupOnlyResponse = page.waitForResponse(response => {
+      if (!response.url().includes('/api/offers?')) return false;
+      const rawFilters = new URL(response.url()).searchParams.get('filters');
       if (!rawFilters) return false;
       try {
         const { types } = JSON.parse(rawFilters);
@@ -1018,7 +1021,9 @@ test.describe('rendered search map feature coverage', () => {
 
     await hostsLabel.click();
     await expect(hostsCheckbox).not.toBeChecked();
-    await meetupOnlyRequest;
+    const response = await meetupOnlyResponse;
+    expect(response.ok()).toBeTruthy();
+    expect(response.headers()['ratelimit-policy']).toContain('q=180; w=60;');
   });
 
   test('clicking a Community Note marker opens its thread', async ({

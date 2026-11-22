@@ -4,6 +4,9 @@ const targetedRequestLimit =
   require('../../../core/server/middleware/targeted-request-limit.server.middleware.mts').default;
 const offers =
   require('../../../offers/server/controllers/offers.server.controller.mts').default;
+const {
+  getOfferSearchLimit,
+} = require('../../../offers/server/middleware/offer-search-limit.server.middleware.mts');
 const tribes =
   require('../../../tribes/server/controllers/tribes.server.controller.mts').default;
 const userProfile =
@@ -179,6 +182,7 @@ module.exports = function (app) {
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(offersPolicy.isAllowed, '/api/offers'),
+      getOfferSearchLimit(app),
       offers.list,
     )
     .post(
