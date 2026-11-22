@@ -54,34 +54,43 @@ function send(tracker: UmamiTracker, [name, data]: QueuedEvent): void {
 }
 
 /**
- * Create a tracker backed by the Umami script. Events sent before the script
- * has loaded are queued until the page `load` event; afterwards a missing
- * tracker means it is disabled, blocked or unavailable, and the event is
- * dropped.
+ * Queue events until the tracker script finishes loading. A tracker without
+ * a separate script lifecycle uses the page load event instead.
  */
-export function createUmamiTracker(): AnalyticsTracker {
+export function createUmamiTracker(
+  scriptSettled?: Promise<void>,
+): AnalyticsTracker {
   let queue: QueuedEvent[] = [];
   let waitingForLoad = false;
+  let waitingForScript = Boolean(scriptSettled);
 
   function flush(): void {
     waitingForLoad = false;
+    waitingForScript = false;
     const pending = queue;
     queue = [];
     const tracker = currentTracker();
     if (tracker) pending.forEach(event => send(tracker, event));
   }
 
+  void scriptSettled?.then(flush, flush);
+
   return {
     track(name, ...[data]) {
       const event: QueuedEvent = data === undefined ? [name] : [name, data];
-      const tracker = currentTracker();
+      const tracker = waitingForScript ? undefined : currentTracker();
       if (tracker) {
         send(tracker, event);
         return;
       }
-      if (document.readyState === 'complete') return;
+      if (
+        !waitingForScript &&
+        (scriptSettled || document.readyState === 'complete')
+      ) {
+        return;
+      }
       if (queue.length < MAX_QUEUED_EVENTS) queue.push(event);
-      if (!waitingForLoad) {
+      if (!scriptSettled && !waitingForLoad) {
         waitingForLoad = true;
         window.addEventListener('load', flush, { once: true });
       }

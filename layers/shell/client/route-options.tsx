@@ -1,20 +1,48 @@
-import type { RouteComponent } from '@tanstack/react-router';
+import { type AnyRouter, redirect } from '@tanstack/react-router';
 import React from 'react';
 
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { type AuthUser, useAuth } from '@/modules/core/client/react-app/auth';
 
-export type RoutePolicy = {
-  path: string;
+export type RouteChrome = {
   title: string;
   footerHidden?: boolean;
   footerVariant?: string;
   headerHidden?: boolean;
-  redirectTo?: string;
-  requiresAuth?: boolean;
-  requiresRole?: string;
-  [key: string]: unknown;
+  noScrollingTop?: boolean;
 };
+
+declare module '@tanstack/react-router' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- module augmentation needs an interface
+  interface StaticDataRouteOption extends Partial<RouteChrome> {}
+}
+
+type GuardOptions = {
+  context: { user: Pick<AuthUser, 'roles'> | null | undefined };
+  location: { href: string };
+};
+
+export function requireAuth({ context, location }: GuardOptions) {
+  if (!context.user) {
+    throw redirect({
+      href: `/signin?continue=true&returnTo=${encodeURIComponent(location.href)}`,
+    });
+  }
+}
+
+export function requireRole(...roles: string[]) {
+  return (options: GuardOptions) => {
+    requireAuth(options);
+    if (!roles.some(role => options.context.user?.roles?.includes(role))) {
+      throw redirect({ href: '/volunteering' });
+    }
+  };
+}
+
+export function redirectTo(href: string) {
+  return () => {
+    throw redirect({ href });
+  };
+}
 
 export function withUser(Component: React.ElementType) {
   return function RouteWithUser() {
@@ -23,18 +51,18 @@ export function withUser(Component: React.ElementType) {
   };
 }
 
-// Options for a route, with the policy for its path.
-export function routeOptions(path: string, component?: RouteComponent) {
-  const route = (REACT_ROUTE_POLICIES as RoutePolicy[]).find(
-    policy => policy.path === path,
-  )!;
-  return {
-    component,
-    head: () => ({ meta: [{ title: `${route.title} - Trustroots` }] }),
-    remountDeps: ({ params, search }: Record<'params' | 'search', object>) => ({
-      params,
-      search,
-    }),
-    staticData: route,
-  };
+// The app route for a path; unknown paths only partly match.
+export function matchAppRoute(router: AnyRouter, pathname: string) {
+  const matches = router.matchRoutes(pathname);
+  const match = matches[matches.length - 1];
+  return match?.staticData?.title && !matches.some(m => m._notFound)
+    ? match
+    : undefined;
+}
+
+// The route's path in `/profile/:username` form.
+export function routeTemplate(router: AnyRouter, pathname: string) {
+  return matchAppRoute(router, pathname)
+    ?.fullPath.replace(/(.)\/$/, '$1')
+    .replace(/\$(\w+)/g, ':$1');
 }

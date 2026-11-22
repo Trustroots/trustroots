@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
-import { routeOptions } from '../route-options';
 
-export const Route = createFileRoute('/confirm-email-invalid')(
-  routeOptions('/confirm-email-invalid', ConfirmEmailInvalidPage),
-);
+export const Route = createFileRoute('/confirm-email-invalid')({
+  staticData: { title: 'Confirm email invalid' },
+  component: ConfirmEmailInvalidPage,
+});
