@@ -1,5 +1,6 @@
 import type { DecodedResult } from 'nostr-tools/nip19';
 import type { Application } from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import _ from 'lodash';
 import core from './../controllers/core.server.controller.mts';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
@@ -9,6 +10,7 @@ import mongoose from 'mongoose';
 import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';
 import { listFeaturedNotes } from '../controllers/featured-nostr-notes.server.controller.mts';
 import { publicNip05MemberFilter } from '../services/nostr-identity.server.service.mts';
+import { getClientIpAddress } from '../services/client-ip.server.service.mts';
 
 /**
  * Module dependencies.
@@ -21,6 +23,19 @@ type NostrUserRecord = {
   email?: string;
   roles: string[];
 };
+
+function createNostrLookupLimit() {
+  return rateLimit({
+    windowMs: 60_000,
+    limit: 120,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    // Stryker disable next-line StringLiteral: the fallback label does not change the shared bucket's quota
+    keyGenerator: req => ipKeyGenerator(getClientIpAddress(req) ?? 'unknown'),
+    message: { error: 'Too many Nostr lookups. Please try again shortly.' },
+  });
+}
+
 export default function (app: Application) {
   const redirect = function (src: string, dst: string) {
     app.route(src).get(function (req, res) {
@@ -60,12 +75,16 @@ export default function (app: Application) {
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/map-default-location').get(getMapDefaultLocation);
   app.route('/api/nostr/featured-notes').get(listFeaturedNotes);
-  app.route('/api/nostr/author-visibility').get(function (req, res) {
-    const profilesRequested = req.query.profiles === '1';
+  const authorVisibility = app.route('/api/nostr/author-visibility');
+  authorVisibility.get((req, res, next) => {
+    if (req.query.profiles === '1')
+      res.set('Cache-Control', 'private, no-store');
+    next();
+  }, createNostrLookupLimit());
+  authorVisibility.get(function (req, res) {
     const includeProfiles =
-      profilesRequested &&
+      req.query.profiles === '1' &&
       Boolean((req as typeof req & { user?: unknown }).user);
-    if (profilesRequested) res.set('Cache-Control', 'private, no-store');
     const User = mongoose.model<NostrUserRecord>('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
@@ -150,10 +169,14 @@ export default function (app: Application) {
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
-  app.route('/.well-known/nostr.json').get(function (req, res) {
+  const nip05 = app.route('/.well-known/nostr.json');
+  nip05.get((_req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    next();
+  }, createNostrLookupLimit());
+  nip05.get(function (req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
     const User = mongoose.model<NostrUserRecord>('User');
-    res.set('Access-Control-Allow-Origin', '*');
     const rawName = req.query.name;
     if (!authenticationService.isLegacyUsernameLookupValid(rawName)) {
       return res.status(400).send({
