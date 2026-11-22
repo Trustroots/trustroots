@@ -45,7 +45,6 @@ type CoreResponse = {
     handlers: Record<string, () => void> & { default: () => void },
   ): unknown;
   locals: { nonce: string };
-  render(view: string, variables?: BootstrapVariables): unknown;
   render(
     view: string,
     variables: BootstrapVariables,
@@ -64,7 +63,7 @@ const service = {
 /**
  * Render the main application page
  */
-function renderIndex(
+async function renderIndex(
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
@@ -99,22 +98,26 @@ function renderIndex(
     renderVars.invite = true;
   }
   // The client routes apply their own redirects and access rules.
-  return getStartShell().then(shell => {
-    res.render('react-index.server.view.html', renderVars, (error, head) => {
-      if (error) return next(error);
-      res.send(renderStartShell(shell, head, res.locals.nonce));
-    });
-  }, next);
+  const shell = await getStartShell();
+  res.render('index', renderVars, (error, head) => {
+    if (error) return next(error);
+    res.send(renderStartShell(shell, head, res.locals.nonce));
+  });
 }
 
 /**
  * Render the server not found responses
- * Performs content-negotiation on the Accept HTTP header
+ * Performs content-negotiation on the Accept HTTP header; browsers get the
+ * app, whose router shows its not-found page.
  */
-function renderNotFound(_req: unknown, res: CoreResponse) {
+function renderNotFound(
+  req: IndexRequest,
+  res: CoreResponse,
+  next: (error: unknown) => void,
+) {
   res.status(404).format({
     'text/html'() {
-      res.render('404.server.view.html');
+      void renderIndex(req, res, next).catch(next);
     },
     'application/json'() {
       res.json({

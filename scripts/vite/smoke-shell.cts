@@ -104,7 +104,7 @@ async function main() {
     }
     getStartShell().then(shell => {
       res.render(
-        'react-index.server.view.html',
+        'index',
         { user: null, nonce: 'vite-smoke' },
         (error, head) => {
           if (error) return next(error);
