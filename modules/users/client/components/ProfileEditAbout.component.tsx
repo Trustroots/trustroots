@@ -1,6 +1,6 @@
 import { Input } from '@trustroots/ui/Input';
 import { Select } from '@trustroots/ui/Select';
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
@@ -8,59 +8,27 @@ import BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.co
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import ProfileEditLanguages from './ProfileEditLanguages.component';
 import ProfileEditPage from './ProfileEditPage.component';
-import { update } from '../api/users.api';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
-import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import type { UserProfile } from '../types';
-import { readApiError } from '../utils/api-error';
+import useProfileSectionForm from '../utils/use-profile-section-form';
 
 export default function ProfileEditAbout({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth();
-  const { track } = useAnalytics();
   const { profileMinimumLength = 140 } = useSettings();
-  const [draftUser, setDraftUser] = useState({ ...user });
-  const [hasChanges, setHasChanges] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
-
-  function updateDraft(changes: Partial<UserProfile>) {
-    setDraftUser(previous => ({ ...previous, ...changes }));
-    setHasChanges(true);
-  }
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatusMessage('');
-
-    try {
-      const savedUser = await update({
-        firstName: draftUser.firstName,
-        lastName: draftUser.lastName,
-        tagline: draftUser.tagline,
-        description: draftUser.description,
-        gender: draftUser.gender,
-        birthdate: draftUser.birthdate,
-        languages: draftUser.languages,
-        languageLevels: draftUser.languageLevels,
-      });
-      setUser(current => ({ ...current, ...savedUser }));
-      setDraftUser({ ...savedUser });
-      setHasChanges(false);
-      setStatusMessage(t('Profile updated.'));
-      track('profile_section_saved', { section: 'about' });
-    } catch (error: unknown) {
-      track('profile_save_failed', {
-        section: 'about',
-        reason: saveFailureReason(error),
-      });
-      const { message } = readApiError(error);
-      setStatusMessage(message || t('Something went wrong. Please try again!'));
-    }
-  }
+  const { draftUser, hasChanges, statusMessage, updateDraft, handleSubmit } =
+    useProfileSectionForm(user, 'about', draftUser => ({
+      firstName: draftUser.firstName,
+      lastName: draftUser.lastName,
+      tagline: draftUser.tagline,
+      description: draftUser.description,
+      gender: draftUser.gender,
+      birthdate: draftUser.birthdate,
+      languages: draftUser.languages,
+      languageLevels: draftUser.languageLevels,
+    }));
 
   const descriptionLength = plainTextLength(draftUser.description || '');
 
