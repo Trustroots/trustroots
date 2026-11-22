@@ -1,11 +1,11 @@
 import assert from 'assert/strict';
 import { Types } from 'mongoose';
 import {
-  prepareNewOffer,
+  prepareNewOfferInput,
   prepareOfferMutationResponse,
   prepareOfferPayload,
   prepareOfferSearchResults,
-  prepareOfferUpdate,
+  prepareOfferUpdateInput,
 } from '../../server/services/offer-payload.server.service.mts';
 const { ObjectId } = Types;
 
@@ -82,7 +82,7 @@ describe('Offer API payload construction', () => {
       user: 'ignored-member-id',
       locationFuzzy: [12.1, 34.1],
     };
-    assert.deepEqual(prepareNewOffer(request as never), {
+    assert.deepEqual(prepareNewOfferInput(request), {
       type: 'meet',
       status: 'maybe',
       description: 'A fictional offer.',
@@ -92,7 +92,7 @@ describe('Offer API payload construction', () => {
       validUntil: '2026-02-01T12:00:00.000Z',
       showOnlyInMyCircles: true,
     });
-    assert.deepEqual(prepareOfferUpdate(request as never), {
+    assert.deepEqual(prepareOfferUpdateInput(request), {
       status: 'maybe',
       description: 'A fictional offer.',
       noOfferDescription: 'A fictional availability note.',
@@ -101,10 +101,10 @@ describe('Offer API payload construction', () => {
       validUntil: '2026-02-01T12:00:00.000Z',
       showOnlyInMyCircles: true,
     });
-    assert.deepEqual(prepareOfferUpdate({ location: [12, 34] }), {
+    assert.deepEqual(prepareOfferUpdateInput({ location: [12, 34] }), {
       location: [12, 34],
     });
-    assert.deepEqual(prepareOfferUpdate({ status: 'yes' }), {
+    assert.deepEqual(prepareOfferUpdateInput({ status: 'yes' }), {
       status: 'yes',
     });
   });
@@ -117,12 +117,9 @@ describe('Offer API payload construction', () => {
         location: [12, 34] as [number, number],
         meetingStatus,
       };
+      assert.equal(prepareNewOfferInput(request).meetingStatus, meetingStatus);
       assert.equal(
-        prepareNewOffer(request as never).meetingStatus,
-        meetingStatus,
-      );
-      assert.equal(
-        prepareOfferUpdate(request as never).meetingStatus,
+        prepareOfferUpdateInput(request).meetingStatus,
         meetingStatus,
       );
       assert.equal(
@@ -152,15 +149,18 @@ describe('Offer API payload construction', () => {
         location: [12, 34] as [number, number],
         volunteering,
       };
-      assert.equal(prepareNewOffer(request).volunteering, volunteering);
-      assert.equal(prepareOfferUpdate(request).volunteering, volunteering);
+      assert.equal(prepareNewOfferInput(request).volunteering, volunteering);
+      assert.equal(prepareOfferUpdateInput(request).volunteering, volunteering);
       assert.equal(
         prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
           .volunteering,
         volunteering,
       );
     }
-    assert.equal(Object.hasOwn(prepareOfferUpdate({}), 'volunteering'), false);
+    assert.equal(
+      Object.hasOwn(prepareOfferUpdateInput({}), 'volunteering'),
+      false,
+    );
   });
 
   it('returns search results as GeoJSON with longitude before latitude', () => {
