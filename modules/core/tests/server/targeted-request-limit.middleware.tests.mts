@@ -309,6 +309,28 @@ describe('Targeted request limit middleware', function () {
     res.statusCode.should.equal(503);
   });
 
+  it('limits avatar uploads per member when IP limiting is disabled', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => undefined,
+      { avatarUpload: { ipLimit: 0 } },
+    );
+    await middleware.avatarUpload(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(options, {
+      operation: 'avatarUpload',
+      windowMs: 60_000,
+      dimensions: [{ name: 'member', value: 'fictional-member', limit: 2 }],
+    });
+  });
+
   it('limits data exports per member when a client address is unavailable', async function () {
     let options: ConsumeOptions | undefined;
     const middleware = loadMiddleware(
