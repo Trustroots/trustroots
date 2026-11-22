@@ -129,10 +129,6 @@ declare module 'he' {
   export function decode(content: string): string;
 }
 
-declare module 'juice' {
-  export default function juice(html: string): string;
-}
-
 declare module 'qs' {
   const qs: {
     stringify(values: Record<string, unknown>): string;

@@ -101,4 +101,4 @@ trustroots.tar.gz*
 /docs/assets/js/
 
 # Storybook build output
-packages/ui/storybook-static/
+packages/*/storybook-static/

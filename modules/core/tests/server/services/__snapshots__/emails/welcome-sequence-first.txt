@@ -1,0 +1,17 @@
+Hi Ada & "Bea" <Lov\elace>!
+
+This is Dee from the Trustroots Foundation. Trustroots is an open, transparent, fun, and international sharing community. We believe in a world where people can trust each other.
+
+Please take a few minutes to fill out your profile http://localhost:3000/profile/edit?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-first. That is the foundation of your experience in Trustroots.
+
+If you have any issues using Trustroots, check our frequently asked questions http://localhost:3000/faq?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-first or simply reply this email.
+
+Happy trails!
+Dee
+
+Contact us http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-first&utm_content=email-support
+
+You are receiving this email because you have an active account http://localhost:3000/profile/ada_l?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-first&utm_content=email-profile on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=welcome-sequence-first&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

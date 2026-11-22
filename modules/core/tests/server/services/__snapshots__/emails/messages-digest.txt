@@ -1,0 +1,14 @@
+You have unread conversations on Trustroots.
+
+ * Ben <B> & Co http://localhost:3000/messages/ben (3 unread)
+ * Cy's http://localhost:3000/messages/cy%20d (1 unread)
+
+Unsubscribe from unread-message emails http://localhost:3000/email/unsubscribe/5f0c1a2b3c4d5e6f7a8b9c0d.messages.b04f2d44486b30a6062e3b66a0f7eaebbf6a53e02dcd2bded3018d311d3cf20f
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-digest&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-digest&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

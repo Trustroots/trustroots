@@ -1,0 +1,5 @@
+Internal-only signup safety review alert.
+
+The new signup matched: scam, crypto 
+Member: Ada & "Bea"  (@ada_l)
+Admin profile: <http://localhost:3000/admin/user?id=5f0c1a2b3c4d5e6f7a8b9c0d>

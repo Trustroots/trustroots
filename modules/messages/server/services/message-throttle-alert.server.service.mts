@@ -35,7 +35,6 @@ async function notify(
           from: 'Trustroots Support <' + config.supportEmail + '>',
           email: config.supportEmail,
           subject: 'Member reached the messaging recipient limit',
-          skipHtmlTemplate: true,
           sparkpostCampaign: 'message-throttle-alert',
           username: user.username,
           adminProfileUrl:

@@ -1,0 +1,25 @@
+Hey Ada & "Bea" <Lov\elace>!
+
+Someone (probably you) requested removing your Trustroots account.
+
+If you did not request this, just ignore this email. We'll keep your account safe.
+
+Are you sure you want to delete your profile? Deletion is permanent once you confirm it and cannot be undone.
+
+This link opens a final confirmation page. Your account will not be deleted unless you confirm there. The link is valid for 24 hours.
+
+Review account deletion http://localhost:3000/remove/remove-token?utm_source=transactional-email&utm_medium=email&utm_campaign=remove-profile
+
+You may copy/paste this link into your browser:
+
+http://localhost:3000/remove/remove-token
+
+Changed your mind? Cancel account deletion http://localhost:3000/profile/edit/account#remove in Account settings to invalidate this confirmation link and keep your account.
+
+This is an automated email. Please don’t reply directly.
+Need help? Contact the Trustroots team http://localhost:3000/support?utm_source=transactional-email&utm_medium=email&utm_campaign=remove-profile&utm_content=email-support.
+
+You are receiving this email because you have an active account on Trustroots.
+
+Trustroots Foundation http://localhost:3000/?utm_source=transactional-email&utm_medium=email&utm_campaign=remove-profile&utm_content=email-footer
+Carpenter Court 1 Maple Road, Bramhall, Stockport, Cheshire, United Kingdom, SK7 2DH

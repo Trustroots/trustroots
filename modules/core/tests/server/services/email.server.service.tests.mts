@@ -1,7 +1,6 @@
 import should from 'should';
 import sinon from 'sinon';
 import imported2 from './../../../../../config/lib/agenda.mts';
-import * as nunjucksModule from 'nunjucks';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import imported6 from './../../../../../config/config.mts';
@@ -11,15 +10,6 @@ interface AgendaAdapter {
   now(type: string, data: EmailPayload): Promise<unknown>;
 }
 const agenda = imported2 as AgendaAdapter;
-type RenderCallback = (error: Error | null, rendered?: string) => void;
-type RenderFunction = (
-  templatePath: string,
-  params: Record<string, unknown>,
-  callback: RenderCallback,
-) => void;
-const nunjucks = nunjucksModule as unknown as {
-  Environment: { prototype: { render: RenderFunction } };
-};
 
 const config =
   imported6 as typeof import('../../../../../config/config.mts').default;
@@ -99,14 +89,12 @@ interface EmailService {
     friend: object,
     contact: object,
     html: string,
-    text: string,
     callback: Done,
   ): void;
 }
 type DependencyStubs = {
   '../../../../config/lib/agenda'?: { now: typeof agenda.now };
   '../../../../config/config'?: Partial<typeof config>;
-  '../../../../config/lib/render'?: RenderFunction;
 };
 
 let emailService: EmailService;
@@ -141,9 +129,6 @@ describe('Service: email', function () {
           sandbox.stub(config, key).value(overrides[key]);
       }
     }
-    const render = stubs['../../../../config/lib/render'];
-    if (render)
-      sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
     return imported7 as EmailService;
   }
 
@@ -400,9 +385,7 @@ describe('Service: email', function () {
           userFrom.displayName + ' wrote you from Trustroots',
         );
         job(0).data.text.should.containEql(
-          'You have one unread message from ' +
-            userFrom.displayName +
-            ' at Trustroots.',
+          'You have one unread message from ' + userFrom.displayName + ' http',
         );
         notification.messages.forEach(function (notification) {
           job(0).data.text.should.containEql(notification.content);
@@ -991,32 +974,26 @@ describe('Service: email', function () {
   });
 
   it('passes render failures to renderEmail callbacks', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/render': (templatePath, params, callback) =>
-        callback(new Error('render failed')),
-    });
+    const service = loadEmailService();
 
     service.renderEmail(
-      'reset-password',
+      'no-such-email',
       { subject: 'test', name: 'test', email: 'test@test.com' },
       function (err) {
-        err!.message.should.equal('render failed');
+        err!.message.should.equal('Unknown email: no-such-email');
         done();
       },
     );
   });
 
   it('passes render failures to renderEmailAndSend callbacks without scheduling jobs', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/render': (templatePath, params, callback) =>
-        callback(new Error('render failed')),
-    });
+    const service = loadEmailService();
 
     service.renderEmailAndSend(
-      'reset-password',
+      'no-such-email',
       { subject: 'test', name: 'test', email: 'test@test.com' },
       function (err) {
-        err!.message.should.equal('render failed');
+        err!.message.should.equal('Unknown email: no-such-email');
         jobs.length.should.equal(0);
         done();
       },
@@ -1036,17 +1013,9 @@ describe('Service: email', function () {
       _id: 'somecontactid',
     };
     const messageHTML = '<span>nice custom message</span>';
-    const messageText = 'plain message';
 
     beforeEach(function (done) {
-      emailService.sendConfirmContact(
-        user,
-        friend,
-        contact,
-        messageHTML,
-        messageText,
-        done,
-      );
+      emailService.sendConfirmContact(user, friend, contact, messageHTML, done);
     });
 
     it('contains the contact confirm url', function () {
@@ -1065,7 +1034,6 @@ describe('Service: email', function () {
         friend,
         contact,
         messageHTML,
-        messageText,
         function (err) {
           if (err) return done(err);
           jobs.length.should.equal(0);

@@ -246,7 +246,6 @@ function generateSupportRequest(done: Done) {
       replyTo: config.supportEmail,
       subject: 'Support request',
       request: 'Lorem ipsum dolor sit amet?',
-      skipHtmlTemplate: true, // Don't render html template for this email
     },
     done,
   );

@@ -43,6 +43,10 @@ export default {
   test: {
     ...config.test,
     ...(shardTests?.length && { include: shardTests }),
+    setupFiles: [
+      './tooling/stryker/sandbox-packages.mts',
+      ...(config.test?.setupFiles ?? []),
+    ],
     exclude: [
       ...(config.test?.exclude ?? ['**/node_modules/**']),
       ...sourceChecks,
