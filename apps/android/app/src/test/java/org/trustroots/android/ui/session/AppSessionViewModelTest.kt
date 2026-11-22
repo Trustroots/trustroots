@@ -120,6 +120,7 @@ class AppSessionViewModelTest {
         assertTrue(model.canSignFor(first, origin))
         assertFalse(model.canSignFor(first, otherOrigin))
         assertFalse(model.canSignFor(first.copy(accessToken = null), origin))
+        assertFalse(model.canSignFor(first.copy(member = MobileMember("other-member", "Other Member")), origin))
 
         model.onEvent(AppSessionEvent.BackendChanged(otherOrigin))
         assertFalse(model.canSignFor(first, origin))
@@ -131,6 +132,21 @@ class AppSessionViewModelTest {
         assertTrue(model.canSignFor(second, otherOrigin))
         model.onEvent(AppSessionEvent.SignedOut(AppSessionSource.from(second, otherOrigin)))
         assertFalse(model.canSignFor(second, otherOrigin))
+    }
+
+    @Test
+    fun browserSigningStaysPausedWhenRestorationCompletesForThePreviousBackend() = withScope { scope ->
+        val origin = "https://one.example.test"
+        val otherOrigin = "https://two.example.test"
+        val restored = CompletableDeferred<MemberSession?>()
+        val member = session().copy(accessToken = "first-token")
+        val model = settledModel(scope, FakeOperations().apply { loadAction = { restored.await() } }, origin)
+        model.onEvent(AppSessionEvent.BackendChanged(otherOrigin))
+        restored.complete(member)
+
+        assertEquals(member, model.state.value.session)
+        assertFalse(model.canSignFor(member, origin))
+        assertFalse(model.canSignFor(member, otherOrigin))
     }
 
     @Test
