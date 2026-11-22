@@ -159,7 +159,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
           data: { friendUserId: aliceId },
         });
       await expect(await sendToAlice()).toBeOK();
-      for (let count = 1; count < 20; count += 1) {
+      for (let count = 1; count < 12; count += 1) {
         const duplicate = await sendToAlice();
         expect(duplicate.status()).toBe(409);
         await duplicate.dispose();

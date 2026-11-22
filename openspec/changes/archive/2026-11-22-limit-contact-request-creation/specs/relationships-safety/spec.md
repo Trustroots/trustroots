@@ -2,7 +2,7 @@
 
 ### Requirement: Contact request creation allowance
 
-The system SHALL allow twenty contact request creation attempts per authorised member per hourly window by default. Confirming and removing contacts SHALL remain available independently of this allowance.
+The system SHALL allow twelve contact request creation attempts per authorised member per hourly window by default. Confirming and removing contacts SHALL remain available independently of this allowance.
 
 #### Scenario: Member reaches the contact request creation allowance
 
