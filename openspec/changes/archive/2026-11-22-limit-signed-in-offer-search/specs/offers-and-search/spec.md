@@ -2,7 +2,7 @@
 
 ### Requirement: Signed-in offer search allowance
 
-The system SHALL allow 180 offer searches per member per minute by default in each API process. Browser and mobile searches SHALL share the same member allowance in that process.
+The system SHALL allow 60 offer searches per member per minute by default in each API process. Browser and mobile searches SHALL share the same member allowance in that process.
 
 #### Scenario: Member reaches the offer search allowance
 

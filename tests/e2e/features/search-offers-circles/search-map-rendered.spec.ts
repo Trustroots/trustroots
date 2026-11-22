@@ -1023,7 +1023,7 @@ test.describe('rendered search map feature coverage', () => {
     await expect(hostsCheckbox).not.toBeChecked();
     const response = await meetupOnlyResponse;
     expect(response.ok()).toBeTruthy();
-    expect(response.headers()['ratelimit-policy']).toContain('q=180; w=60;');
+    expect(response.headers()['ratelimit-policy']).toContain('q=60; w=60;');
   });
 
   test('clicking a Community Note marker opens its thread', async ({
