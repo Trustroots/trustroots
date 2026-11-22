@@ -3,7 +3,9 @@
 ## Purpose
 
 Allow members to maintain their approximate location and independently offer ongoing meetings or accommodation, with shared privacy controls and accurate discovery.
+
 ## Requirements
+
 ### Requirement: Independent availability and shared location
 
 Members SHALL be able to select Yes, Maybe, or No for meeting availability independently of hosting. A missing or stored unanswered preference SHALL leave all choices unselected. Both the owner profile and offer editor SHALL use the same labelled radio control. Existing saved locations SHALL support immediate profile updates with visible errors on failure. Members without a saved location SHALL be directed to the location section of the editor. Meetings SHALL share the existing fuzzy location and privacy controls. Dated meetups SHALL retain independent locations and expiry dates.

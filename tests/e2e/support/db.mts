@@ -111,7 +111,9 @@ export type UserTestUpdate = {
 };
 
 type ActionTokenField =
-  'emailToken' | 'resetPasswordToken' | 'removeProfileToken';
+  | 'emailToken'
+  | 'resetPasswordToken'
+  | 'removeProfileToken';
 
 const mongoHost = process.env.DB_1_PORT_27017_TCP_ADDR || '127.0.0.1';
 const mongoUri =

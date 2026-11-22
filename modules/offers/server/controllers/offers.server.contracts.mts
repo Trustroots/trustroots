@@ -36,7 +36,10 @@ export type OfferSanitiseRecord = Omit<
   'user' | 'location'
 > & {
   user?:
-    Types.ObjectId | string | OfferMember<Types.ObjectId | string, Date> | null;
+    | Types.ObjectId
+    | string
+    | OfferMember<Types.ObjectId | string, Date>
+    | null;
   location: OfferServerRecord['location'];
   locationFuzzy?: OfferServerRecord['locationFuzzy'];
 };
@@ -46,7 +49,10 @@ export type OfferSanitisedPayload = Omit<
   'user' | 'location' | 'status'
 > & {
   user?:
-    Types.ObjectId | string | OfferMember<Types.ObjectId | string, Date> | null;
+    | Types.ObjectId
+    | string
+    | OfferMember<Types.ObjectId | string, Date>
+    | null;
   location?: OfferServerRecord['location'];
   status?: OfferPayload<Types.ObjectId | string, Date>['status'];
 };

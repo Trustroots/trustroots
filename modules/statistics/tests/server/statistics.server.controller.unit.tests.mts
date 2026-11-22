@@ -546,7 +546,8 @@ describe('Statistics controller unit tests', () => {
       );
       const userDoc = required(
         (await User.findById(saved._id)) as
-          import('mongoose').HydratedDocument<StatisticsUser> | null,
+          | import('mongoose').HydratedDocument<StatisticsUser>
+          | null,
       );
       userDoc.public = true;
       userDoc.additionalProvidersData = { github: { id: '123' } };
@@ -576,7 +577,8 @@ describe('Statistics controller unit tests', () => {
         );
         const userDoc = required(
           (await User.findById(saved._id)) as
-            import('mongoose').HydratedDocument<StatisticsUser> | null,
+            | import('mongoose').HydratedDocument<StatisticsUser>
+            | null,
         );
         userDoc.public = true;
 
@@ -657,7 +659,8 @@ describe('Statistics controller unit tests', () => {
       );
       const userDoc = required(
         (await User.findById(saved._id)) as
-          import('mongoose').HydratedDocument<StatisticsUser> | null,
+          | import('mongoose').HydratedDocument<StatisticsUser>
+          | null,
       );
       userDoc.seen = new Date();
       await userDoc.save();
@@ -691,7 +694,8 @@ describe('Statistics controller unit tests', () => {
       );
       const userDoc = required(
         (await User.findById(saved._id)) as
-          import('mongoose').HydratedDocument<StatisticsUser> | null,
+          | import('mongoose').HydratedDocument<StatisticsUser>
+          | null,
       );
       userDoc.languages = ['eng', 'fin'];
       await userDoc.save();

@@ -4,7 +4,9 @@
 
 Present consistent site navigation, media resources, and deployed-code
 information across Trustroots pages.
+
 ## Requirements
+
 ### Requirement: Shared site footer
 
 The system SHALL provide a consistent footer across the main site and
