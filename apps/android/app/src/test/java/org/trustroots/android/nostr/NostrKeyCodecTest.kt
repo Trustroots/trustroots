@@ -22,12 +22,22 @@ class NostrKeyCodecTest {
     @Test fun rejectsZeroOrderInvalidChecksumMixedCaseAndNonCanonicalPadding() {
         for (input in listOf(
             "0".repeat(64),
+            "nsec1",
+            "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d",
             "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
+            "nsec1!qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgl",
             "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgq",
             "Nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgl",
             "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xpt74d",
         )) {
             assertThrows(IllegalArgumentException::class.java) { NostrKeyCodec.import(input) }
+        }
+    }
+
+    @Test fun rejectsInvalidRawScalarsBeforeEncodingOrDerivingPublicKeys() {
+        for (secret in listOf(ByteArray(31), ByteArray(32))) {
+            assertThrows(IllegalArgumentException::class.java) { NostrKeyCodec.nsec(secret) }
+            assertThrows(IllegalArgumentException::class.java) { NostrKeyCodec.publicKey(secret) }
         }
     }
 

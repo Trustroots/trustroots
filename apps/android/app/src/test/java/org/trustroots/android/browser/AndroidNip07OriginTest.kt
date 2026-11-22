@@ -15,7 +15,7 @@ class AndroidNip07OriginTest {
 
     @Test fun rejectsLookalikesAndNonstandardOrigins() {
         for (url in listOf(
-            null, "about:blank", "https://nottrustroots.org", "https://trustroots.org.example.test",
+            null, "about:blank", "https://[invalid", "https://nottrustroots.org", "https://trustroots.org.example.test",
             "https://trustroots.org@evil.test", "https://user@trustroots.org",
             "http://hitchwiki.org", "https://hitchwiki.org:8080",
         )) {

@@ -95,6 +95,25 @@ class AndroidNip07JourneyTest {
             assertTrue(verifier.verifySignature(decodeHex(event.getString("sig"))))
 
             eval(web, """
+                window.nostr.signEvent({kind: 'invalid'}).then(
+                  () => window.invalidEventResult = 'signed',
+                  error => window.invalidEventResult = error.message
+                );
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.invalidEventResult)") == "true" }
+            assertEquals("This Nostr request could not be completed.", JSONTokener(eval(web, "window.invalidEventResult")).nextValue())
+
+            keys.remove()
+            eval(web, """
+                window.nostr.getPublicKey().then(
+                  () => window.removedKeyResult = 'returned a key',
+                  error => window.removedKeyResult = error.message
+                );
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.removedKeyResult)") == "true" }
+            assertEquals("Create or import a local Nostr key in Account.", JSONTokener(eval(web, "window.removedKeyResult")).nextValue())
+
+            eval(web, """
                 window.addEventListener('message', event => { window.frameDecision = event.data; });
                 const frame = document.createElement('iframe');
                 frame.src = '/frame';
