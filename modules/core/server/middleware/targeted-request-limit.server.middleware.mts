@@ -8,7 +8,8 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'dataExport';
 interface LimitRequest {
   get?: (header: string) => string | undefined;
   ip?: string;
@@ -162,6 +163,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     resetPassword: createLimiter('resetPassword', 'token', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
+    dataExport: createLimiter('dataExport', 'member', deps),
     getRequestIdentity,
   };
 }

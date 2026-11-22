@@ -63,7 +63,7 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
-    .get(userExport.download);
+    .get(targetedRequestLimit.dataExport, userExport.download);
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)

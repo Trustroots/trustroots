@@ -58,6 +58,7 @@ const service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
+    dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },
   },
   featureFlags: {
     reference: true,
