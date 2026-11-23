@@ -15,6 +15,7 @@ import should from 'should';
 import request from 'supertest';
 import moment from 'moment';
 import mongoose, { type HydratedDocument } from 'mongoose';
+import config from '../../../../config/config.mts';
 import express from './../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
@@ -238,6 +239,46 @@ describe('Offer search tests', function () {
     offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
+  it('shares the offer search allowance across browser and mobile for each member', async function () {
+    const originalLimit = config.offerSearchRequestsPerMinute;
+    let limitedApp: TestExpressApp;
+    try {
+      config.offerSearchRequestsPerMinute = 2;
+      limitedApp = await express.init(mongoose.connection);
+    } finally {
+      config.offerSearchRequestsPerMinute = originalLimit;
+    }
+
+    const browser = request.agent(limitedApp);
+    await utils.signIn(credentials, browser);
+    const signin = await request(limitedApp)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const query = testLocations.Europe.queryBoundingBox;
+    const webPath = '/api/offers' + query;
+    const mobilePath = '/api/mobile/v0/offers' + query;
+    const token = `Bearer ${signin.body.accessToken}`;
+
+    await request(limitedApp).get(webPath).expect(403);
+    await request(limitedApp).get(mobilePath).expect(401);
+    await browser.get(webPath).expect(200);
+    await request(limitedApp)
+      .get(mobilePath)
+      .set('Authorization', token)
+      .expect(200);
+    await browser.get(webPath).expect(429).expect('Retry-After', /^\d+$/);
+    await request(limitedApp)
+      .get(mobilePath)
+      .set('Authorization', token)
+      .expect(429)
+      .expect('Retry-After', /^\d+$/);
+
+    const otherBrowser = request.agent(limitedApp);
+    await utils.signIn(credentials2, otherBrowser);
+    await otherBrowser.get(webPath).expect(200);
+  });
+
   it('saves volunteering on hosting offers and preserves it when updates omit it', async function () {
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),

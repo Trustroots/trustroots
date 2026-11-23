@@ -266,6 +266,7 @@ describe('API route registrations', () => {
 
   it('registers offers routes with list, create, read, update, delete, and params', async () => {
     const policy = { isAllowed: handler('offersPolicy.isAllowed') };
+    const searchLimit = handler('offerSearchLimit');
     const offers = controller(
       [
         'create',
@@ -285,13 +286,19 @@ describe('API route registrations', () => {
       {
         '../controllers/offers.server.controller': offers,
         '../policies/offers.server.policy': policy,
+        '../middleware/offer-search-limit.server.middleware': {
+          getOfferSearchLimit: (() => searchLimit) as NamedHandler,
+        },
       },
     );
 
     assertHandlers(routeByPath(routes, '/api/offers-by/:offerUserId').get, [
       offers.listOffersByUser,
     ]);
-    assertHandlers(routeByPath(routes, '/api/offers').get, [offers.list]);
+    assertHandlers(routeByPath(routes, '/api/offers').get, [
+      searchLimit,
+      offers.list,
+    ]);
     assertHandlers(routeByPath(routes, '/api/offers').post, [offers.create]);
     assertHandlers(routeByPath(routes, '/api/offers/:offerId').get, [
       offers.getOffer,
