@@ -2,6 +2,7 @@
 <resources>
     <string name="nostranslation_signing">Nostranslation signing</string>
     <string name="nostranslation_paste_link">Nostranslation connection link</string>
+    <string name="nostranslation_scan_qr">Scan Nostranslation QR code</string>
     <string name="nostranslation_review_link">Review connection</string>
     <string name="nostranslation_pair">Pair with Nostranslation</string>
     <string name="nostranslation_connection_details">Allow %1$s to request review signatures through %2$s?</string>

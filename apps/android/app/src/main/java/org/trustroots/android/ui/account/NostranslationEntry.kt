@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.account
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +24,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
 import org.trustroots.android.R
 import org.trustroots.android.browser.BrowserNostrSession
@@ -55,15 +58,27 @@ private fun NostranslationDialog(
     var input by remember { mutableStateOf("") }
     var pairing by remember { mutableStateOf<NostranslationConnectionLink?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var scanning by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis() / 1000) }
     val failed = stringResource(R.string.nostranslation_action_failed)
     val invalid = stringResource(R.string.nostranslation_invalid_link)
+    val scanPrompt = stringResource(R.string.nostranslation_scan_qr)
+
+    fun reviewLink(link: String) {
+        pairing = NostranslationConnectionLink.parse(link)
+        error = if (pairing == null) invalid else null
+    }
+
+    val scanner = rememberLauncherForActivityResult(ScanContract()) { result ->
+        scanning = false
+        result.contents?.let(::reviewLink)
+    }
 
     DisposableEffect(signer) {
         runCatching(signer::start).onFailure { error = failed }
         onDispose(signer::close)
     }
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP, onEvent = close)
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!scanning) close() }
     LaunchedEffect(signer) {
         while (true) {
             now = System.currentTimeMillis() / 1000
@@ -121,11 +136,18 @@ private fun NostranslationDialog(
                         label = { Text(stringResource(R.string.nostranslation_paste_link)) },
                         singleLine = true,
                     )
+                    TextButton(onClick = { reviewLink(input) }, enabled = input.isNotBlank()) {
+                        Text(stringResource(R.string.nostranslation_review_link))
+                    }
                     TextButton(onClick = {
-                        error = null
-                        pairing = NostranslationConnectionLink.parse(input)
-                        if (pairing == null) error = invalid
-                    }, enabled = input.isNotBlank()) { Text(stringResource(R.string.nostranslation_review_link)) }
+                        val options = ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                            .setPrompt(scanPrompt).setBeepEnabled(false).setBarcodeImageEnabled(false)
+                        scanning = true
+                        runCatching { scanner.launch(options) }.onFailure {
+                            scanning = false
+                            error = failed
+                        }
+                    }) { Text(scanPrompt) }
                     signer.connectedClients.forEach { peer ->
                         Text(stringResource(R.string.nostranslation_client, peer.take(12)))
                         TextButton(onClick = { runCatching { signer.revoke(peer) }.onFailure { error = failed } }) {
