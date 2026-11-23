@@ -107,7 +107,10 @@ export interface OfferSearchFeatureCollection {
 
 export type PlaceHostSort = 'name' | 'activity' | 'experiences';
 export type PlaceHostActivity =
-  'past-month' | 'past-six-months' | 'past-two-years' | 'older';
+  | 'past-month'
+  | 'past-six-months'
+  | 'past-two-years'
+  | 'older';
 
 export interface PlaceHostResult<Id = string, Timestamp = string> {
   _id: Id;

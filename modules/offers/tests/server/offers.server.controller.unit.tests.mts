@@ -747,7 +747,7 @@ describe('Offers controller unit tests', () => {
       (await search()).should.eql([]);
     });
 
-    it('lists city hosts for a viewer without a blocked list', async () => {
+    it('lists city hosts without a blocked list and ignores a non-text offset', async () => {
       const host = await createOffer(stranger._id, {
         location: [16, 26],
         status: 'yes',
@@ -758,7 +758,7 @@ describe('Offers controller unit tests', () => {
           offersController.list(
             {
               user: { _id: owner._id, blocked },
-              query: { ...validCoords, view: 'place-hosts' },
+              query: { ...validCoords, view: 'place-hosts', offset: 2 },
             },
             res,
           ),

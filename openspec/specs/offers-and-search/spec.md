@@ -4,7 +4,9 @@
 
 Help members find community offers and manage their own hosting and meeting
 offers.
+
 ## Requirements
+
 ### Requirement: Map search
 
 The system SHALL let signed-in members search for offers on a map by location,
