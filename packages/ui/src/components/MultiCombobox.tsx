@@ -56,7 +56,7 @@ export function MultiCombobox<T extends Option>({
               key={option.value}
               className="tw:inline-flex tw:items-center tw:gap-1 tw:rounded-sm tw:bg-gray-100 tw:ps-2 tw:text-sm"
             >
-              {option.label}
+              <span>{option.label}</span>
               <Combobox.ChipRemove
                 aria-label={removeLabel(option)}
                 className="tw:min-h-7 tw:min-w-7 tw:rounded-sm tw:border-0 tw:bg-transparent tw:hover:bg-gray-200 tw:focus-visible:outline-2"
