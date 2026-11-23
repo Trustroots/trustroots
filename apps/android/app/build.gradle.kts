@@ -246,6 +246,7 @@ dependencies {
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("org.unifiedpush.android:connector:3.3.5")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     releaseImplementation("org.unifiedpush.android:embedded-fcm-distributor:3.1.0")
     implementation("androidx.webkit:webkit:1.17.1")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
