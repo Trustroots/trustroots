@@ -155,6 +155,14 @@ describe('User profile CRUD tests', function () {
     );
     const profile = await agent.get(`/api/users/${user.username}`).expect(200);
     assert.equal(profile.body.safetyPageVisited, undefined);
+
+    const secondMember = request.agent(app);
+    await secondMember
+      .post('/api/auth/signin')
+      .send({ username: user2.username, password: _user2.password })
+      .expect(200);
+    await secondMember.put(path).set('X-Trustroots-Request', '1').expect(204);
+    assert.equal(await readVisit(user2._id), true);
   });
 
   it('clears a confirmed missing Gravatar in the background after a profile view', async () => {
