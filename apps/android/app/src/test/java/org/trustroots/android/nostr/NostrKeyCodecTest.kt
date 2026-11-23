@@ -20,12 +20,13 @@ class NostrKeyCodecTest {
     }
 
     @Test fun rejectsZeroOrderInvalidChecksumMixedCaseAndNonCanonicalPadding() {
+        val validNsec = NostrKeyCodec.nsec(ByteArray(32).apply { this[31] = 1 })
         for (input in listOf(
             "0".repeat(64),
             "nsec1",
             "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d",
             "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
-            "nsec1!qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgl",
+            validNsec.replaceRange(5, 6, "!"),
             "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgq",
             "Nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsmhltgl",
             "nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3xpt74d",
