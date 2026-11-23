@@ -519,7 +519,7 @@ describe('Messages controller unit tests', () => {
       it(`rejects multiple ${field} query values`, async () => {
         const res = deferredResponse();
         messagesController.sync(
-          { user, query: { [field]: ['2020-01-01', '2020-02-01'] } },
+          { user, query: { [field]: ['2020', '0', '1'] } },
           res,
         );
         await res.waitForResponse();

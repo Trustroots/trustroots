@@ -166,7 +166,14 @@ export default function (
   slugFields: string | string[],
   overrides?: Partial<SlugOptions>,
 ) {
-  const options: SlugOptions = { ...defaultOptions, ...overrides };
+  const options: SlugOptions = {
+    ...defaultOptions,
+    ...Object.fromEntries(
+      Object.entries(overrides ?? {}).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ),
+  };
 
   if (typeof slugFields === 'string' && slugFields.indexOf(' ') > -1) {
     slugFields = slugFields.split(' ');

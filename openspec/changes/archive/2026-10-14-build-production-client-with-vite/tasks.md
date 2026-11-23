@@ -1,3 +1,0 @@
-- [x] Point `pnpm build` at the Vite production build.
-- [x] Keep `pnpm build:webpack` available.
-- [x] Lock the script choice with the existing development-script test.

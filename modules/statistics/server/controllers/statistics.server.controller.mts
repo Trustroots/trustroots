@@ -1011,7 +1011,8 @@ export const collectStatistics = function (
   const validCollections = ['mobileAppInit'];
   const updateMsg =
     'You should update Trustroots app or otherwise it will not continue functioning.';
-  const statsInput = req.body?.stats;
+  const statsInput =
+    req.body && Object.hasOwn(req.body, 'stats') ? req.body.stats : undefined;
   if (typeof statsInput !== 'object' || statsInput === null) {
     return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `stats`.',
