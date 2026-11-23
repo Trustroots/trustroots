@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
+import appendField from 'append-field';
 
 import config from './../../../../config/config.mts';
 import * as errorService from './error.server.service.mts';
@@ -14,12 +15,11 @@ export interface UploadedFile {
   mimetype: string;
   originalname: string;
   path?: string;
-  fields?: Record<string, string>;
 }
 type UploadBody = Readable & { headers: IncomingHttpHeaders };
 type UploadRequest = UploadBody & {
+  body?: Record<string, unknown>;
   file?: Partial<UploadedFile>;
-  body?: Record<string, string>;
 };
 interface UploadResponse {
   status(code: number): { send(body: { message: string }): unknown };
@@ -74,6 +74,14 @@ export async function readUpload(
   uploadField: string,
   maxUploadSize: number,
 ): Promise<UploadedFile | undefined> {
+  return (await parseUpload(req, uploadField, maxUploadSize))?.file;
+}
+
+async function parseUpload(
+  req: UploadBody,
+  uploadField: string,
+  maxUploadSize: number,
+) {
   const contentType = req.headers['content-type'] ?? '';
   const mediaType = contentType.split(';', 1)[0]!.trim().toLowerCase();
   if (mediaType !== 'multipart/form-data') {
@@ -122,14 +130,12 @@ export async function readUpload(
   if (!file) return undefined;
   if (file.size > maxUploadSize) throw uploadError('LIMIT_FILE_SIZE');
   return {
-    buffer: Buffer.from(await file.arrayBuffer()),
-    mimetype: file.type,
-    originalname: file.name,
-    fields: Object.fromEntries(
-      entries.filter(
-        (entry): entry is [string, string] => !(entry[1] instanceof File),
-      ),
-    ),
+    entries,
+    file: {
+      buffer: Buffer.from(await file.arrayBuffer()),
+      mimetype: file.type,
+      originalname: file.name,
+    },
   };
 }
 
@@ -160,12 +166,13 @@ export const uploadFile = async (
       message: errorService.getErrorMessageByKey('unsupported-media-type'),
     });
   try {
-    const file = await readUpload(req, uploadField, maxUploadSize);
-    if (!file) {
+    const parsed = await parseUpload(req, uploadField, maxUploadSize);
+    if (!parsed) {
       return res.status(422).send({
         message: errorService.getErrorMessageByKey('unprocessable-entity'),
       });
     }
+    const { entries, file } = parsed;
     // Browsers send application/octet-stream when File.type is empty.
     // Let the content detector below validate these files by their bytes.
     if (
@@ -178,6 +185,10 @@ export const uploadFile = async (
     if (!validMimeTypes.includes(await detectMimeType(file.buffer))) {
       return unsupported();
     }
+    const fields: Record<string, unknown> = Object.create(null);
+    for (const [name, value] of entries) {
+      if (typeof value === 'string') appendField(fields, name, value);
+    }
     const uploadDirectory = path.resolve(config.uploadTmpDir || os.tmpdir());
     const uploadPath = path.join(
       uploadDirectory,
@@ -185,9 +196,8 @@ export const uploadFile = async (
     );
     await fs.promises.mkdir(uploadDirectory, { recursive: true });
     await fs.promises.writeFile(uploadPath, file.buffer, { mode: 0o600 });
-    const { fields, ...upload } = file;
     req.body = fields;
-    req.file = { ...upload, path: uploadPath };
+    req.file = { ...file, path: uploadPath };
   } catch (error) {
     const code = (error as UploadError).code;
     if (code === 'LIMIT_FILE_SIZE') {
