@@ -758,19 +758,48 @@ jobs:
         with:
           source: ./docs
           destination: ./_site
+      - name: Find coverage from a successful main Tests run
+        id: previous-coverage
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const created = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+            const pages = github.paginate.iterator(github.rest.actions.listWorkflowRuns, {
+              ...context.repo,
+              workflow_id: 'test.yml',
+              branch: 'main',
+              status: 'success',
+              created: `>=${created.toISOString()}`,
+              per_page: 100,
+            });
+            for await (const { data: runs } of pages) {
+              for (const run of runs) {
+                if (run.head_repository?.id !== context.payload.repository.id ||
+                    !['push', 'workflow_dispatch'].includes(run.event)) continue;
+
+                const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+                  ...context.repo,
+                  run_id: run.id,
+                  name: 'coverage-report',
+                });
+                const artifact = data.artifacts.find(item => !item.expired);
+                if (artifact) {
+                  core.setOutput('artifact-id', artifact.id);
+                  return;
+                }
+              }
+            }
       - name: Restore previous coverage report
         env:
           GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.previous-coverage.outputs.artifact-id }}
         run: |
           cp -r _site site
           mkdir -p site/coverage
-          artifact_id=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=coverage-report&per_page=100" \
-            --jq 'first(.artifacts[] | select(.expired == false)).id // empty' || true)
-          if [ -n "$artifact_id" ]; then
-            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
-              > coverage-report.zip || true
-            unzip -q -o coverage-report.zip -d site/coverage || true
+          if [ -n "$ARTIFACT_ID" ]; then
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+              > coverage-report.zip
+            unzip -q -o coverage-report.zip -d site/coverage
           fi
           if [ ! -s site/coverage/index.html ]; then
             cat > site/coverage/index.html <<'HTML'
@@ -818,7 +847,8 @@ jobs:
       needs.client.result == 'success' &&
       needs.server.result == 'success' &&
       (needs.e2e.result == 'success' || needs.e2e.result == 'failure')
-    needs: [client, server, e2e]
+    # Publish fresh coverage after the docs job restores the previous report.
+    needs: [client, server, e2e, pages]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
