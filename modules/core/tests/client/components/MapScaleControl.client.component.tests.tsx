@@ -14,21 +14,26 @@ vi.mock('react-map-gl/mapbox', () => ({
 }));
 
 describe('<MapScaleControl />', () => {
-  it('renders the scale control inside the styled wrapper', () => {
+  it('renders a metric scale control at the bottom left', () => {
     render(<MapScaleControl />);
 
     const scaleControl = screen.getByTestId('scale-control');
 
     expect(scaleControl).toBeInTheDocument();
-    expect(
-      scaleControl.closest('.map-scale-control-container'),
-    ).toBeInTheDocument();
     expect(mockScaleControl).toHaveBeenCalledWith(
       expect.objectContaining({
         unit: 'metric',
         maxWidth: 100,
         position: 'bottom-left',
       }),
+    );
+  });
+
+  it('places the scale above the map style picker when shown', () => {
+    render(<MapScaleControl showMapStyles />);
+
+    expect(mockScaleControl).toHaveBeenCalledWith(
+      expect.objectContaining({ style: { marginBottom: 56 } }),
     );
   });
 });

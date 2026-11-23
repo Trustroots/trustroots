@@ -22,6 +22,7 @@ vi.mock('leaflet', () => ({
     circleMarker: vi.fn(() => ({
       addTo: vi.fn(() => mockMarker),
     })),
+    control: { scale: vi.fn(() => ({ addTo: vi.fn() })) },
     map: vi.fn(() => mockMap),
     tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
   },
