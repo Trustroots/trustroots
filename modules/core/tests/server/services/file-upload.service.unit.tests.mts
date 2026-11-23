@@ -1,175 +1,111 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { randomBytes } from 'node:crypto';
-import sinon, { type SinonStub } from 'sinon';
-import multerImport from 'multer';
+import { Readable } from 'node:stream';
+import sinon from 'sinon';
 import config from './../../../../../config/config.mts';
-import * as uploadService from './../../../server/services/file-upload.service.mts';
+import {
+  readUpload,
+  uploadFile,
+  type UploadedFile,
+} from './../../../server/services/file-upload.service.mts';
 import errorService from './../../../server/services/error.server.service.mts';
 import 'should';
-import express from 'express';
-import request from 'supertest';
 
-/**
- * Unit tests for the file upload service.
- */
+const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00]);
+const validMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
-type UploadedFile = { path: string; size?: number; mimetype?: string };
-type UploadRequest = { file?: UploadedFile; [key: string]: unknown };
-type MockResponse = {
-  statusCode: number;
-  body: { message?: string; size?: number } | null;
-  status(code: number): MockResponse;
-  send(body?: { message?: string; size?: number }): MockResponse | void;
+type Part = {
+  name: string;
+  content?: Buffer | string;
+  filename?: string;
+  type?: string;
 };
-type UploadError = Error | { code?: string };
-type UploadCallback = (error?: UploadError | null) => void;
-type UploadMiddleware = (
-  req: UploadRequest,
-  res: MockResponse,
-  callback: UploadCallback,
-) => void;
-type MulterOptions = {
-  fileFilter: (
-    req: UploadRequest,
-    file: UploadedFile,
-    callback: (error?: Error | null, accept?: boolean) => void,
-  ) => void;
-  storage: {
-    getDestination: (
-      req: unknown,
-      file: unknown,
-      callback: (error: Error | null, destination: string) => void,
-    ) => void;
-  };
-  limits: { fileSize: number; files: number; fields: number; parts: number };
+type TestRequest = Readable & {
+  headers: Record<string, string>;
+  file?: Partial<UploadedFile>;
 };
-const multer = multerImport as unknown as {
-  (): { single(field: string): UploadMiddleware };
-  prototype: object;
-};
-const multerPrototype = Object.getPrototypeOf(multer());
-let singleStub: SinonStub;
 
-const temporaryUploadDirectories: string[] = [];
-
-function createTempDirectory(
-  prefix = path.join(os.tmpdir(), 'trustroots-upload-test-'),
-): string {
-  const directory = fs.mkdtempSync(prefix);
-  temporaryUploadDirectories.push(directory);
-  return directory;
-}
-
-function writeTempFile(
-  buffer: Buffer,
-  directory = config.uploadTmpDir,
-): string {
-  const filePath = path.join(directory, randomBytes(16).toString('hex'));
-  fs.writeFileSync(filePath, buffer);
-  return filePath;
-}
-
-function mockResponse(done?: () => void): MockResponse {
-  const res: MockResponse = {
-    statusCode: 200,
-    body: null,
-    status(code: number) {
-      res.statusCode = code;
-      return res;
+function multipart(parts: Part[], extraHeaders = {}): TestRequest {
+  const boundary = '----fictional-boundary';
+  const chunks: Buffer[] = [];
+  for (const { name, content = '', filename, type } of parts) {
+    const disposition = `form-data; name="${name}"${
+      filename === undefined ? '' : `; filename="${filename}"`
+    }`;
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: ${disposition}\r\n${
+          type ? `Content-Type: ${type}\r\n` : ''
+        }\r\n`,
+      ),
+      Buffer.from(content),
+      Buffer.from('\r\n'),
+    );
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+  const body = Buffer.concat(chunks);
+  return Object.assign(Readable.from([body]), {
+    headers: {
+      'content-type': `multipart/form-data; boundary=${boundary}`,
+      'content-length': String(body.length),
+      ...extraHeaders,
     },
-    send(body?: { message?: string; size?: number }) {
-      res.body = body ?? null;
-      if (done) {
-        done();
-      }
-      return res;
-    },
-  };
-  return res;
-}
-
-function loadUploadFileWithStubbedMulter(
-  reqFile: UploadedFile | null,
-  multerError?: UploadError,
-): typeof uploadService.uploadFile {
-  singleStub.callsFake(
-    () =>
-      ((req: UploadRequest, _res: MockResponse, callback: UploadCallback) => {
-        if (multerError) return callback(multerError);
-        if (reqFile) req.file = reqFile;
-        callback(null);
-      }) as UploadMiddleware,
-  );
-  return uploadService.uploadFile;
-}
-
-function loadUploadFileWithFileFilter(
-  file: Partial<UploadedFile>,
-  reqFile: UploadedFile,
-  configOverrides: Partial<typeof config> = {},
-) {
-  let capturedMulterOptions: MulterOptions | undefined;
-  Object.assign(config, configOverrides);
-  singleStub.callsFake(function (this: MulterOptions) {
-    capturedMulterOptions = this as MulterOptions;
-    const options = this as MulterOptions;
-    return ((
-      req: UploadRequest,
-      _res: MockResponse,
-      callback: UploadCallback,
-    ) => {
-      options.fileFilter(
-        req,
-        file as UploadedFile,
-        (err?: UploadError | null) => {
-          if (err) return callback(err);
-          req.file = reqFile;
-          callback(null);
-        },
-      );
-    }) as UploadMiddleware;
   });
-  return {
-    getMulterOptions: () => capturedMulterOptions,
-    uploadFile: uploadService.uploadFile,
-  };
+}
+const image = (content: Buffer, type = 'image/png', name = 'avatar') => ({
+  name,
+  content,
+  filename: 'photo.png',
+  type,
+});
+
+function run(req: TestRequest, maxUploadSize?: number, field = 'avatar') {
+  return new Promise<{
+    status?: number;
+    message?: string;
+    passed: boolean;
+  }>(resolve => {
+    const res = {
+      status(code: number) {
+        return {
+          send(body: { message: string }) {
+            resolve({ status: code, message: body.message, passed: false });
+          },
+        };
+      },
+    };
+    uploadFile(
+      validMimeTypes,
+      field,
+      req,
+      res,
+      () => resolve({ passed: true }),
+      maxUploadSize,
+    );
+  });
 }
 
 describe('file-upload.service unit tests', () => {
-  const validMimeTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'application/pdf',
-  ];
-  const uploadField = 'avatar';
-
+  let uploadDirectory: string;
+  let originalTmpDir: unknown;
   let originalFallback: string | undefined;
-  let originalConfig: Record<string, unknown>;
 
   beforeEach(() => {
-    singleStub = sinon.stub(multerPrototype, 'single');
+    uploadDirectory = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'trustroots-upload-test-'),
+    );
+    originalTmpDir = config.uploadTmpDir;
+    config.uploadTmpDir = uploadDirectory;
     originalFallback = process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    originalConfig = { ...config };
-    process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
-    config.uploadTmpDir = createTempDirectory();
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
   });
 
   afterEach(() => {
-    temporaryUploadDirectories
-      .splice(0)
-      .forEach(directory =>
-        fs.rmSync(directory, { recursive: true, force: true }),
-      );
     sinon.restore();
-    Object.keys(config).forEach(key => {
-      if (!Object.prototype.hasOwnProperty.call(originalConfig, key)) {
-        Reflect.deleteProperty(config, key);
-      }
-    });
-    Object.assign(config, originalConfig);
+    fs.rmSync(uploadDirectory, { recursive: true, force: true });
+    config.uploadTmpDir = originalTmpDir as string;
     if (originalFallback === undefined) {
       delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
     } else {
@@ -177,371 +113,221 @@ describe('file-upload.service unit tests', () => {
     }
   });
 
-  it('maps unsupported media type errors from multer', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'UNSUPPORTED_MEDIA_TYPE',
-    });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('unsupported-media-type'),
-      );
-      done();
+  describe('readUpload', () => {
+    it('returns the uploaded file with its name and declared type', async () => {
+      const req = multipart([{ name: 'note', content: 'hello' }, image(png)]);
+      const file = (await readUpload(req, 'avatar', 1024))!;
+      file.buffer.equals(png).should.be.true();
+      file.mimetype.should.equal('image/png');
+      file.originalname.should.equal('photo.png');
     });
 
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('maps file size limit errors from multer', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'LIMIT_FILE_SIZE',
-    });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(413);
-      res.body!.message!.should.containEql('Image too big');
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('accepts a file above the general limit using the larger avatar limit', async () => {
-    singleStub.restore();
-
-    const app = express();
-    const photo = Buffer.alloc(11 * 1024 * 1024);
-    Buffer.from([0xff, 0xd8, 0xff]).copy(photo);
-    config.maxUploadSize = 10 * 1024 * 1024;
-    app.post('/photo', ((
-      req: { file: UploadedFile },
-      res: import('express').Response,
-    ) => {
-      uploadService.uploadFile(
-        validMimeTypes,
+    it('resolves to undefined when the request has no file', async () => {
+      const result = await readUpload(
+        multipart([{ name: 'note', content: 'hello' }]),
         'avatar',
-        req,
-        res,
-        () => {
-          res.send({ size: req.file.size });
-        },
-        20 * 1024 * 1024,
+        1024,
       );
-    }) as never);
-    const response = await request(app)
-      .post('/photo')
-      .attach('avatar', photo, {
-        filename: 'camera-photo.jpg',
-        contentType: 'image/jpeg',
-      })
-      .expect(200);
-    response.body.size.should.equal(photo.length);
-  });
-
-  it('maps generic multer errors to the default message', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'UNKNOWN_ERROR',
+      (result === undefined).should.be.true();
     });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(400);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('default'),
+
+    it('accepts a file of exactly the maximum size', async () => {
+      const file = await readUpload(
+        multipart([image(Buffer.alloc(100, 1))]),
+        'avatar',
+        100,
       );
-      done();
+      file!.buffer.length.should.equal(100);
     });
 
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('maps unexpected field errors from multer', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'LIMIT_UNEXPECTED_FILE',
+    it('rejects a file one byte over the maximum', async () => {
+      await readUpload(
+        multipart([image(Buffer.alloc(101, 1))]),
+        'avatar',
+        100,
+      ).should.be.rejectedWith({ code: 'LIMIT_FILE_SIZE' });
     });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(400);
-      res.body!.message!.should.equal(
-        'Missing "avatar" field from the API call.',
+
+    it('rejects a declared length far over the maximum without reading it', async () => {
+      const req = multipart([image(png)], { 'content-length': '999999999' });
+      await readUpload(req, 'avatar', 100).should.be.rejectedWith({
+        code: 'LIMIT_FILE_SIZE',
+      });
+      (req.readableFlowing === null).should.be.true();
+    });
+
+    it('stops reading a body that outgrows its declared length', async () => {
+      const req = multipart([image(Buffer.alloc(200 * 1024, 1))], {
+        'content-length': '10',
+      });
+      await readUpload(req, 'avatar', 100).should.be.rejectedWith({
+        code: 'LIMIT_FILE_SIZE',
+      });
+    });
+
+    it('rejects files in unexpected fields and more than one file', async () => {
+      await readUpload(
+        multipart([image(png, 'image/png', 'other')]),
+        'avatar',
+        1024,
+      ).should.be.rejectedWith({ code: 'LIMIT_UNEXPECTED_FILE' });
+      await readUpload(
+        multipart([image(png), image(png)]),
+        'avatar',
+        1024,
+      ).should.be.rejectedWith({ code: 'LIMIT_UNEXPECTED_FILE' });
+    });
+
+    it('rejects more parts than the limit', async () => {
+      const fields = Array.from({ length: 11 }, (_, index) => ({
+        name: `field${index}`,
+        content: 'x',
+      }));
+      await readUpload(
+        multipart([...fields, image(png)]),
+        'avatar',
+        1024,
+      ).should.be.rejectedWith({ code: 'LIMIT_UNEXPECTED_FILE' });
+      const result = await readUpload(
+        multipart([...fields.slice(1), image(png)]),
+        'avatar',
+        1024,
       );
-      done();
+      result!.buffer.equals(png).should.be.true();
     });
 
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('rejects multer files without a mime type before magic-byte validation', done => {
-    const { uploadFile } = loadUploadFileWithFileFilter(
-      {},
-      { path: '/tmp/not-used' },
-    );
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('unsupported-media-type'),
-      );
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('accepts multer files with supported mime types before magic-byte validation', done => {
-    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
-    const { getMulterOptions, uploadFile } = loadUploadFileWithFileFilter(
-      { mimetype: 'image/jpeg' },
-      { path: filePath },
-      {
-        uploadTmpDir: '',
-      },
-    );
-
-    uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
-      try {
-        const options = getMulterOptions()!;
-        options.storage.getDestination({}, {}, (err, destination) => {
-          if (err) throw err;
-          destination.should.equal(os.tmpdir());
-        });
-        options.limits.fileSize.should.be.a.Number();
-        options.limits.files.should.equal(1);
-        options.limits.fields.should.equal(10);
-        options.limits.parts.should.equal(11);
-        done();
-      } catch (err) {
-        done(err);
+    it('resolves to undefined for requests that are not multipart', async () => {
+      for (const headers of [{ 'content-type': 'application/json' }, {}]) {
+        const req = Object.assign(Readable.from(['{}']), { headers });
+        const result = await readUpload(req as never, 'avatar', 1024);
+        (result === undefined).should.be.true();
       }
     });
+
+    it('rejects multipart bodies that cannot be parsed', async () => {
+      const req = Object.assign(Readable.from([Buffer.from('broken')]), {
+        headers: { 'content-type': 'multipart/form-data; boundary=missing' },
+      });
+      await readUpload(req as never, 'avatar', 1024).should.be.rejectedWith({
+        code: 'INVALID_MULTIPART',
+      });
+    });
   });
 
-  const validationCases: Array<[string, Buffer, number]> = [
-    ['a valid image', Buffer.from([0xff, 0xd8, 0xff, 0x00]), 200],
-    ['disguised non-image content', Buffer.from('not an image'), 415],
-  ];
-  for (const [description, bytes, expectedStatus] of validationCases) {
-    it(`validates ${description} by its bytes when the browser omits the MIME type`, done => {
-      const filePath = writeTempFile(bytes);
-      const { uploadFile } = loadUploadFileWithFileFilter(
-        { mimetype: 'application/octet-stream' },
-        { path: filePath },
-      );
-      const res = mockResponse();
-      const finish = () => {
-        try {
-          res.statusCode.should.equal(expectedStatus);
-          done();
-        } catch (err) {
-          done(err);
-        }
-      };
-      res.send = finish;
-      uploadFile(validMimeTypes, uploadField, {}, res, finish);
+  describe('uploadFile', () => {
+    it('stores a valid image in the upload directory and continues', async () => {
+      const req = multipart([image(png)]);
+      const result = await run(req);
+      result.passed.should.be.true();
+      const stored = req.file!.path!;
+      path.dirname(stored).should.equal(path.resolve(uploadDirectory));
+      path.basename(stored).should.match(/^[a-f0-9]{32}$/);
+      fs.readFileSync(stored).equals(png).should.be.true();
+      (fs.statSync(stored).mode & 0o777).should.equal(0o600);
     });
-  }
 
-  it('removes temporary files after content validation declines an upload', done => {
-    const filePath = writeTempFile(Buffer.from('Sample text document'));
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
+    it('falls back to the system temp directory without a configured one', async () => {
+      config.uploadTmpDir = '';
+      const req = multipart([image(png)]);
+      await run(req);
+      path.dirname(req.file!.path!).should.equal(os.tmpdir());
+      fs.rmSync(req.file!.path!);
+    });
+
+    it('lets the bytes decide when the browser sends no or a generic type', async () => {
+      for (const type of ['application/octet-stream', undefined]) {
+        const req = multipart([image(jpeg, type as string)]);
+        const result = await run(req);
+        result.passed.should.be.true(String(type));
+      }
+    });
+
+    it('uses its own detector on request and for content file-type does not know', async () => {
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      for (const content of [png, jpeg, Buffer.from('GIF89a')]) {
+        (
+          await run(multipart([image(content, 'image/png')]))
+        ).passed.should.be.true();
+      }
+      delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+      (
+        await run(multipart([image(Buffer.from('GIF89a'), 'image/gif')]))
+      ).passed.should.be.true();
+    });
+
+    it('recognises only the full JPEG and PNG signatures as images', async () => {
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      for (const content of [
+        Buffer.from([0xff, 0xd8, 0x00]),
+        Buffer.from([0x89, 0x41, 0x42, 0x43]),
+      ]) {
+        (await run(multipart([image(content)]))).status!.should.equal(415);
+      }
+    });
+
+    it('rejects declared types outside the list even when the bytes are an image', async () => {
+      const result = await run(multipart([image(png, 'image/webp')]));
+      result.status!.should.equal(415);
+      result.message!.should.equal(
         errorService.getErrorMessageByKey('unsupported-media-type'),
       );
-      fs.existsSync(filePath).should.equal(false);
-      done();
+      fs.readdirSync(uploadDirectory).should.be.empty();
     });
-    uploadFile(validMimeTypes, uploadField, {}, res, () =>
-      done(new Error('Unexpected accepted file')),
-    );
-  });
 
-  it('rejects requests without an uploaded file', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null);
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(422);
-      res.body!.message!.should.equal(
+    it('rejects content that is not an accepted image whatever its declared type', async () => {
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      for (const content of [
+        Buffer.from('%PDF-1.4'),
+        Buffer.from('<?xml version="1.0"?><svg></svg>'),
+        Buffer.from('<svg></svg>'),
+        Buffer.from('plain text'),
+      ]) {
+        (await run(multipart([image(content)]))).status!.should.equal(415);
+      }
+      delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+      (
+        await run(multipart([image(Buffer.from('plain text'), 'image/png')]))
+      ).status!.should.equal(415);
+      fs.readdirSync(uploadDirectory).should.be.empty();
+    });
+
+    it('answers 422 when no file was sent', async () => {
+      const result = await run(multipart([{ name: 'note', content: 'x' }]));
+      result.status!.should.equal(422);
+      result.message!.should.equal(
         errorService.getErrorMessageByKey('unprocessable-entity'),
       );
-      done();
     });
 
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('leaves files outside the upload directory untouched', done => {
-    const sibling = createTempDirectory(`${config.uploadTmpDir}-sibling-`);
-    const filePath = writeTempFile(
-      Buffer.from('Sample text document'),
-      sibling,
-    );
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(422);
-      res.body!.should.eql({ message: 'Unprocessable Entity.' });
-      fs.existsSync(filePath).should.equal(true);
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () =>
-      done(new Error('Unexpected accepted file')),
-    );
-  });
-
-  it('rejects the configured directory itself as an upload', done => {
-    config.uploadTmpDir = path.parse(config.uploadTmpDir).root;
-    const uploadFile = loadUploadFileWithStubbedMulter({
-      path: config.uploadTmpDir,
-    });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(422);
-      res.body!.should.eql({ message: 'Unprocessable Entity.' });
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () =>
-      done(new Error('Unexpected accepted directory')),
-    );
-  });
-
-  it('accepts or rejects files by their detected content', async () => {
-    const cases: Array<[string, Buffer, boolean, number]> = [
-      // [label, bytes, use the fallback detector, expected status]
-      ['jpeg', Buffer.from([0xff, 0xd8, 0xff, 0x00]), true, 200],
-      ['png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a]), true, 200],
-      ['gif', Buffer.from('GIF89a'), true, 200],
-      ['pdf', Buffer.from('%PDF-1.4'), true, 200],
-      [
-        'svg',
-        Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
-        true,
-        415,
-      ],
-      [
-        'file-type jpeg',
-        Buffer.from([
-          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
-        ]),
-        false,
-        200,
-      ],
-      ['file-type unknown', Buffer.from('not a supported file'), false, 415],
-    ];
-    for (const [label, bytes, fallback, status] of cases) {
-      if (fallback) process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
-      else delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-      (await detectedStatus(bytes, validMimeTypes)).should.equal(status, label);
-    }
-  });
-
-  it('rejects files when fallback detection cannot read the file', done => {
-    const uploadFile = loadUploadFileWithStubbedMulter({
-      path: path.join(config.uploadTmpDir, 'missing-upload-file'),
-    });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  function detectedStatus(bytes: Buffer, allowed: string[]): Promise<number> {
-    const filePath = writeTempFile(bytes);
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    return new Promise(resolve => {
-      const res = mockResponse(() => resolve(res.statusCode));
-      uploadFile(allowed, uploadField, {}, res, () => resolve(200));
-    });
-  }
-
-  const webp = Buffer.concat([
-    Buffer.from('RIFF', 'ascii'),
-    Buffer.from([0x24, 0, 0, 0]),
-    Buffer.from('WEBPVP8 ', 'ascii'),
-    Buffer.alloc(32),
-  ]);
-
-  it('only treats the full JPEG and PNG signatures as images', async () => {
-    for (const bytes of [
-      [0xff, 0xd8, 0x00, 0x00],
-      [0xff, 0x00, 0xff, 0x00],
-      [0x00, 0xd8, 0xff, 0x00],
-      [0x00, 0x00, 0xff, 0x00],
-    ]) {
-      (await detectedStatus(Buffer.from(bytes), ['image/jpeg'])).should.equal(
-        415,
+    it('answers 413 with the limit in megabytes for oversized files', async () => {
+      const result = await run(
+        multipart([image(Buffer.alloc(1024 * 1024 + 1, 1))]),
+        1024 * 1024,
       );
-    }
-    (
-      await detectedStatus(Buffer.from([0x89, 0x50, 0x4e, 0x58]), ['image/png'])
-    ).should.equal(415);
-    (
-      await detectedStatus(Buffer.from('\x00PNG', 'latin1'), ['image/png'])
-    ).should.equal(415);
-  });
-
-  it('recognises SVG documents with or without an XML declaration', async () => {
-    const svg = ['image/svg+xml'];
-    for (const text of [
-      '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
-      '  \n<svg></svg>',
-      '<?xml version="1.0"?>\n<svg></svg>',
-      '<?xml?><svg></svg>',
-    ]) {
-      (await detectedStatus(Buffer.from(text, 'utf8'), svg)).should.equal(
-        200,
-        text,
+      result.status!.should.equal(413);
+      result.message!.should.equal(
+        'Image too big. Please maximum 1.00 Mb files.',
       );
-    }
-    for (const text of [
-      'Sample text document',
-      'Notes about <svg> files',
-      'Notes <?xml?><svg></svg>',
-    ]) {
-      (await detectedStatus(Buffer.from(text, 'utf8'), svg)).should.equal(
-        415,
-        text,
-      );
-    }
-  });
-
-  it('reports unrecognised content as a generic binary', async () => {
-    (
-      await detectedStatus(Buffer.from('Sample text document'), [
-        'application/octet-stream',
-      ])
-    ).should.equal(200);
-  });
-
-  it('uses the file-type detector unless the fallback is requested', async () => {
-    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    (await detectedStatus(webp, ['image/webp'])).should.equal(200);
-    process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'false';
-    (await detectedStatus(webp, ['image/webp'])).should.equal(200);
-    process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
-    (await detectedStatus(webp, ['image/webp'])).should.equal(415);
-  });
-
-  it('falls back to its own detector for content file-type does not know', async () => {
-    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    (
-      await detectedStatus(Buffer.from('<svg></svg>', 'utf8'), [
-        'image/svg+xml',
-      ])
-    ).should.equal(200);
-  });
-
-  it('rejects declared MIME types outside the allowed list even when the bytes are an image', done => {
-    const { uploadFile } = loadUploadFileWithFileFilter(
-      { mimetype: 'text/plain' },
-      { path: writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00])) },
-    );
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('unsupported-media-type'),
-      );
-      done();
     });
-    uploadFile(validMimeTypes, uploadField, {}, res, () =>
-      done(new Error('Unexpected accepted file')),
-    );
+
+    it('accepts a file above the general limit using the larger limit it is given', async () => {
+      const big = Buffer.concat([png, Buffer.alloc(config.maxUploadSize + 1)]);
+      (await run(multipart([image(big)]), big.length)).passed.should.be.true();
+    });
+
+    it('answers 400 naming the field when the file is in another one', async () => {
+      const result = await run(multipart([image(png, 'image/png', 'other')]));
+      result.status!.should.equal(400);
+      result.message!.should.equal('Missing "avatar" field from the API call.');
+    });
+
+    it('answers 400 with the default message for malformed bodies', async () => {
+      const req = Object.assign(Readable.from([Buffer.from('broken')]), {
+        headers: { 'content-type': 'multipart/form-data; boundary=missing' },
+      });
+      const result = await run(req as never);
+      result.status!.should.equal(400);
+      result.message!.should.equal(errorService.getErrorMessageByKey());
+    });
   });
 });
