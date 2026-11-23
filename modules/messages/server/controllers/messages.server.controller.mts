@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
-import moment from 'moment';
+import { isAfter, sub } from 'date-fns';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -478,7 +478,7 @@ service.inbox = function (req, res) {
  */
 async function recentRecipientCount(userId: Types.ObjectId): Promise<number> {
   const { duration } = config.limits.messagesToIndividualsThrottle;
-  const timeLimit = moment().subtract(moment.duration(duration)).toDate();
+  const timeLimit = sub(new Date(), duration);
 
   // Count how many persons this user has already written within the limit
   const writtenTo = await Message.distinct('userTo', {
@@ -894,33 +894,33 @@ service.sync = function (req, res) {
   let dateTo;
   const queryDate = {};
   if (_.has(req, 'query.dateFrom')) {
-    dateFrom = moment(queryParams.dateFrom as Parameters<typeof moment>[0]);
+    dateFrom = new Date(queryParams.dateFrom as string);
 
     // Validate `dateFrom`
-    if (!dateFrom.isValid()) {
+    if (Number.isNaN(dateFrom.getTime())) {
       return res.status(400).send({
         message: 'Invalid `dateFrom`.',
       });
     }
 
     // Append dateFrom to date query
-    _.set(queryDate, 'created.$gt', dateFrom.toDate());
+    _.set(queryDate, 'created.$gt', dateFrom);
   }
   if (_.has(req, 'query.dateTo')) {
-    dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
+    dateTo = new Date(queryParams.dateTo as string);
     // Validate `dateTo`
-    if (!dateTo.isValid()) {
+    if (Number.isNaN(dateTo.getTime())) {
       return res.status(400).send({
         message: 'Invalid `dateTo`.',
       });
     }
 
     // Append dateTo to date query
-    _.set(queryDate, 'created.$lt', dateTo.toDate());
+    _.set(queryDate, 'created.$lt', dateTo);
   }
 
   // Validate correct order of dates
-  if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+  if (dateFrom && dateTo && isAfter(dateFrom, dateTo)) {
     return res.status(400).send({
       message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
     });

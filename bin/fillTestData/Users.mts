@@ -3,7 +3,7 @@ import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
 import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
-import moment from 'moment';
+import { subDays, subHours, subSeconds } from 'date-fns';
 import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mts';
 import './../../modules/offers/server/models/offer.server.model.mts';
@@ -318,11 +318,13 @@ function addUsers(max: number, adminUsers: string[] = []) {
               user.avatarUploaded = false;
               user.avatarSource = 'none';
               user.welcomeSequenceStep = 3;
-              user.seen = moment()
-                .subtract(Math.random() * 365, 'd')
-                .subtract(Math.random() * 24, 'h')
-                .subtract(Math.random() * 3600, 's')
-                .toDate();
+              user.seen = subSeconds(
+                subHours(
+                  subDays(new Date(), Math.random() * 365),
+                  Math.random() * 24,
+                ),
+                Math.random() * 3600,
+              );
               // 0-4 random languages
               user.languages = [...Array(random(4))].map(() =>
                 faker.helpers.objectKey(languages),

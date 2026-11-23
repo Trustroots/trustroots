@@ -1,6 +1,6 @@
 import { initReactI18next } from 'react-i18next';
 import i18n, { type FormatFunction } from 'i18next';
-import moment from 'moment';
+import { timeAgo } from '../../modules/core/shared/time-ago.mts';
 import { languageCookie, localeBackend } from './i18n-resources';
 
 const isTest = process.env.NODE_ENV === 'test';
@@ -53,8 +53,6 @@ export function loadRtlCSS(): Promise<void> {
  * @param {string} format - a code that defines what to do with the string
  *    allowed values for Date:
  *      - fromNow - how long time has passed since the Date
- *      - age - amount of finished years since the Date
- *      - {format} - i.e. YYYYMMdd - format string to apply on the Date object
  * @param {string} languageCode - the ietf language code (learn more @/config/client/i18n-languages)
  * @returns {string|any} - the formatted value
  *                         or the original value, if the value type or format not recognized)
@@ -66,12 +64,7 @@ function format(
 ): unknown {
   const locale = languageCode || 'en';
   if (value instanceof Date) {
-    moment.locale(locale);
-    if (format === 'fromNow') return moment(value).fromNow();
-    if (format === 'age') {
-      return moment().diff(moment(value), 'years');
-    }
-    return moment(value).format(format);
+    return format === 'fromNow' ? timeAgo(value, locale) : value;
   }
 
   if (typeof value === 'number' && format === 'number') {
@@ -101,8 +94,6 @@ i18n.on('languageChanged', async (languageCode: string) => {
   if (direction === 'rtl') {
     await loadRtlCSS();
   }
-
-  moment.locale(languageCode);
 });
 
 i18n

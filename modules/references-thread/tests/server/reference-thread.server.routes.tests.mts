@@ -1,6 +1,6 @@
 import should from 'should';
 import request from 'supertest';
-import moment from 'moment';
+import { differenceInHours, sub } from 'date-fns';
 import mongoose from 'mongoose';
 import express from './../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
@@ -264,13 +264,9 @@ describe('Reference Thread CRUD tests', function () {
         referenceThread.thread = threadId;
 
         // Set date to past for reference to be saved directly to the DB:
-        referenceThread.created = moment()
-          .subtract(
-            moment.duration({
-              hours: 24,
-            }),
-          )
-          .toDate();
+        referenceThread.created = sub(new Date(), {
+          hours: 24,
+        });
 
         // Save 1st new reference ("yes") directly to the DB:
         new ReferenceThread(referenceThread).save().then(
@@ -325,9 +321,10 @@ describe('Reference Thread CRUD tests', function () {
                     referenceThreadFindRes[1].reference.should.equal('yes');
 
                     // Dates should have ~24h difference (when rounded, there might be a few seconds extra due time it takes to run tests)
-                    moment()
-                      .diff(referenceThreadFindRes[1].created, 'hours')
-                      .should.equal(24);
+                    differenceInHours(
+                      new Date(),
+                      referenceThreadFindRes[1].created,
+                    ).should.equal(24);
 
                     // Read reference
                     agent

@@ -13,7 +13,7 @@ import type { OfferServerRecord } from '../../server/models/offer.server.types.m
 import _ from 'lodash';
 import should from 'should';
 import request from 'supertest';
-import moment from 'moment';
+import { addDays, sub } from 'date-fns';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import config from '../../../../config/config.mts';
 import express from './../../../../config/lib/express.mts';
@@ -198,7 +198,7 @@ describe('Offer search tests', function () {
     offerMeet = new Offer({
       type: 'meet',
       description: '<p>Dinner party!</p>',
-      validUntil: moment().add(30, 'day').toDate(),
+      validUntil: addDays(new Date(), 30),
       updated: new Date(),
       location: [52.49898120929888, 13.41832995414744],
     });
@@ -710,7 +710,7 @@ describe('Offer search tests', function () {
   });
   it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
     // Set date to past
-    offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
+    offerMeet.validUntil = sub(new Date(), { minutes: 1 });
     offerMeet
       .save()
       .then(() => {
@@ -1092,11 +1092,9 @@ describe('Offer search tests', function () {
   });
   describe('Search offers by "seen" filter', function () {
     it('should be able to get list of offers from an area filtered by last seen', function (done) {
-      user2.seen = moment()
-        .subtract({
-          months: 2,
-        })
-        .toDate();
+      user2.seen = sub(new Date(), {
+        months: 2,
+      });
       user2
         .save()
         .then(() => {

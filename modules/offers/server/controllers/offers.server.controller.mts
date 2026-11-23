@@ -8,7 +8,7 @@ import tribes from './../../../tribes/server/controllers/tribes.server.controlle
 import textService from './../../../core/server/services/text.server.service.mts';
 import log from '@trustroots/logger';
 import sanitizeHtml from 'sanitize-html';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import mongoose, {
   type CallbackError,
   type PipelineStage,
@@ -91,7 +91,7 @@ function normaliseEndpointExpiry(
     type,
     validUntil,
     config.limits.maxOfferValidFromNow,
-    moment().toDate(),
+    new Date(),
   );
 }
 
@@ -599,7 +599,7 @@ async function list(req: OfferRequest, res: OfferResponse) {
     query.push({
       $match: {
         'user.seen': {
-          $gte: moment().subtract(seenDuration).toDate(),
+          $gte: sub(new Date(), seenDuration),
         },
       },
     });

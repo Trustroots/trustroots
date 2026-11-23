@@ -212,7 +212,7 @@ const service = {
     // otherwise 'long'
     longMessageMinimumLength: 170,
     messagesToIndividualsThrottle: {
-      // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
+      // date-fns `Duration` object literal
       duration: {
         minutes: 60,
       },
@@ -224,7 +224,7 @@ const service = {
     // How many signup reminders to process at once
     maxProcessSignupReminders: 50,
     // How long we should wait before trying to reactivate "no" hosts?
-    // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
+    // date-fns `Duration` object literal
     timeToReactivateHosts: {
       days: 90,
     },

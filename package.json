@@ -133,6 +133,7 @@
   },
   "dependencies": {
     "@agendajs/mongo-backend": "4.0.5",
+    "@date-fns/utc": "2.1.1",
     "@tanstack/react-query": "5.107.1",
     "@tanstack/react-router": "1.170.46",
     "@tanstack/react-start": "1.169.5",
@@ -145,6 +146,7 @@
     "axios": "1.21.1",
     "compression": "1.8.2",
     "connect-mongo": "6.0.0",
+    "date-fns": "4.4.0",
     "dompurify": "3.4.18",
     "express": "5.3.0",
     "express-rate-limit": "8.7.4",
@@ -164,7 +166,6 @@
     "maxmind": "5.1.0",
     "medium-editor": "5.23.3",
     "migrate": "2.1.0",
-    "moment": "2.31.0",
     "mongodb": "7.8.0",
     "mongoose": "9.12.2",
     "multer": "2.5.0",
