@@ -1,5 +1,4 @@
 import { validLanguageLevels } from '../../shared/language-levels.ts';
-import _ from 'lodash';
 import textService from '../../../core/server/services/text.server.service.mts';
 import { readFileSync } from 'node:fs';
 import authenticationService from '../services/authentication.server.service.mts';
@@ -265,7 +264,7 @@ const UserSchema = new Schema<
     type: [
       {
         type: String,
-        enum: _.keys(languages),
+        enum: Object.keys(languages),
       },
     ],
     default: [],

@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-import _ from 'lodash';
 import mongoose, {
   type QueryFilter,
   type HydratedDocument,
@@ -177,10 +176,6 @@ const ADMIN_CHANGEABLE_ROLES = [
   'volunteer-alumni',
   'volunteer',
 ] as const;
-type AdminChangeableRole = (typeof ADMIN_CHANGEABLE_ROLES)[number];
-function isChangeableRole(value: unknown): value is AdminChangeableRole {
-  return ADMIN_CHANGEABLE_ROLES.some(role => role === value);
-}
 
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
@@ -258,24 +253,25 @@ function obfuscateTokens(user: UserDocument | null | undefined) {
   // Mongo object to regular object
   const _user = user.toObject();
   // Historical MongoDB fields may remain until the maintenance script runs.
-  _.unset(_user, 'lastIpAddress');
+  Reflect.deleteProperty(_user, 'lastIpAddress');
 
-  [
-    // 'emailToken', // Needed to generate email reset links visible at dashboard
-    'removeProfileToken',
-    'resetPasswordToken',
-    // Arrays just to speed up lodash operations. That's what lodash does internally anyway
-    ['additionalProvidersData', 'facebook', 'accessToken'],
-    ['additionalProvidersData', 'facebook', 'refreshToken'],
-    ['additionalProvidersData', 'github', 'accessToken'],
-    ['additionalProvidersData', 'github', 'refreshToken'],
-    ['additionalProvidersData', 'twitter', 'token'],
-    ['additionalProvidersData', 'twitter', 'tokenSecret'],
-  ].forEach(path => {
-    if (_.has(_user, path)) {
-      _.set(_user, path, '(Hidden from admins.)');
+  const hide = (holder: object | undefined, key: string) => {
+    if (holder && Object.hasOwn(holder, key)) {
+      Reflect.set(holder, key, '(Hidden from admins.)');
     }
-  });
+  };
+  // 'emailToken' is needed to generate email reset links visible at dashboard
+  hide(_user, 'removeProfileToken');
+  hide(_user, 'resetPasswordToken');
+  const providers = _user.additionalProvidersData as
+    | Record<string, object | undefined>
+    | undefined;
+  hide(providers?.facebook, 'accessToken');
+  hide(providers?.facebook, 'refreshToken');
+  hide(providers?.github, 'accessToken');
+  hide(providers?.github, 'refreshToken');
+  hide(providers?.twitter, 'token');
+  hide(providers?.twitter, 'tokenSecret');
 
   return _user;
 }
@@ -425,20 +421,17 @@ interface MemberListOptions {
   };
 }
 
-function getMemberListOptions(body: unknown): MemberListOptions | null {
-  const page = _.get(body, ['page'], 1);
-  const sortColumn = _.get(
-    body,
-    ['sort', 'column'],
-    DEFAULT_ADMIN_MEMBER_SORT.column,
-  );
-  const sortDirection = _.get(
-    body,
-    ['sort', 'direction'],
-    DEFAULT_ADMIN_MEMBER_SORT.direction,
-  );
+function getMemberListOptions(
+  body: AdminListRequest['body'],
+): MemberListOptions | null {
+  const { page = 1, sort } = body ?? {};
+  const {
+    column: sortColumn = DEFAULT_ADMIN_MEMBER_SORT.column,
+    direction: sortDirection = DEFAULT_ADMIN_MEMBER_SORT.direction,
+  } = sort ?? {};
 
   if (
+    typeof page !== 'number' ||
     !Number.isInteger(page) ||
     page < 1 ||
     typeof sortColumn !== 'string' ||
@@ -446,7 +439,7 @@ function getMemberListOptions(body: unknown): MemberListOptions | null {
       ADMIN_MEMBER_SORT_FIELDS,
       sortColumn,
     ) ||
-    !['ascending', 'descending'].includes(sortDirection)
+    (sortDirection !== 'ascending' && sortDirection !== 'descending')
   ) {
     return null;
   }
@@ -455,7 +448,7 @@ function getMemberListOptions(body: unknown): MemberListOptions | null {
     page,
     sort: {
       column: sortColumn as AdminMemberSortColumn,
-      direction: sortDirection as 'ascending' | 'descending',
+      direction: sortDirection,
     },
   };
 }
@@ -510,8 +503,8 @@ async function sendMemberList(
  */
 /** @esmNamed */
 export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
-  const query = _.get(req, ['body', 'search']);
-  const search = typeof query === 'string' ? _.trim(query) : query;
+  const query = req.body?.search;
+  const search = typeof query === 'string' ? query.trim() : query;
   const searchLength = search
     ? Reflect.get(Object(search), 'length')
     : undefined;
@@ -541,7 +534,7 @@ export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
  */
 /** @esmNamed */
 export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
-  const role = _.get(req, ['body', 'role']);
+  const role = req.body?.role;
 
   // Allowed roles to query
   if (!isListableRole(role)) {
@@ -563,7 +556,7 @@ export const listUsersByLastIpHash = (
   req: AdminListRequest,
   res: AdminResponse,
 ) => {
-  const ipHash = _.get(req, ['body', 'ipHash']);
+  const ipHash = req.body?.ipHash;
 
   if (typeof ipHash !== 'string' || !/^[a-f0-9]{64}$/.test(ipHash)) {
     return res.status(400).send({
@@ -587,9 +580,9 @@ export const getUser = async (
   req: AdminRequest,
   res: AdminResponse,
 ): Promise<unknown> => {
-  const userId = req.userIdFromUsername || _.get(req, ['body', 'id']);
+  const userId = req.userIdFromUsername || req.body?.id;
 
-  if (!userId && _.get(req, ['body', 'username'])) {
+  if (!userId && req.body?.username) {
     return res.status(404).send({
       message: errorService.getErrorMessageByKey('not-found'),
     });
@@ -783,10 +776,13 @@ export const changeRole = async (
   req: AdminRequest,
   res: AdminResponse,
 ): Promise<unknown> => {
-  const userId = _.get(req, ['body', 'id']);
-  const roleValue = _.get(req, ['body', 'role']);
+  const userId = req.body?.id;
+  const roleValue = req.body?.role;
+  const role = ADMIN_CHANGEABLE_ROLES.find(
+    candidate => candidate === roleValue,
+  );
 
-  const actionValue = _.get(req, ['body', 'action'], 'add');
+  const { action: actionValue = 'add' } = req.body ?? {};
   const isSupportOnly =
     req.user?.roles?.includes('support-team') &&
     !req.user.roles.includes('admin');
@@ -800,7 +796,7 @@ export const changeRole = async (
       .send({ message: 'This role change is restricted to administrators.' });
   }
   if (
-    !isChangeableRole(roleValue) ||
+    !role ||
     (actionValue !== 'add' && actionValue !== 'remove') ||
     (actionValue === 'remove' &&
       !['welcome-team', 'support-team', 'shadowban'].some(
@@ -811,7 +807,6 @@ export const changeRole = async (
       message: 'Invalid role.',
     });
   }
-  const role = roleValue as AdminChangeableRole;
   const action: 'add' | 'remove' = actionValue;
 
   // Check that the search string is provided
@@ -843,7 +838,7 @@ export const changeRole = async (
           message: 'This role change is restricted to administrators.',
         });
       }
-      const nextRoles = currentRoles.filter(existingRole => {
+      const nextRoles: string[] = currentRoles.filter(existingRole => {
         if (action === 'remove') return existingRole !== role;
         if (
           (role === 'volunteer' && existingRole === 'volunteer-alumni') ||
@@ -941,7 +936,7 @@ export const usernameToUserId = async (
   res: Partial<AdminResponse>,
   next: AdminNext,
 ): Promise<unknown> => {
-  const username = _.get(req, ['body', 'username']);
+  const username = req.body?.username;
 
   if (
     username !== undefined &&
@@ -953,7 +948,7 @@ export const usernameToUserId = async (
 
   // Get userID based on provided username
   if (username) {
-    const user = await User.findOne({ username }).setOptions(
+    const user = await User.findOne({ username: String(username) }).setOptions(
       // Stryker disable next-line ObjectLiteral,BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise
       { sanitizeFilter: true },
     );

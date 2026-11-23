@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
-import omit from 'lodash/omit';
 import type { Photo } from '../services/photos.service';
 
 export type PhotoCredit = Photo & { imageUrl?: string };
@@ -36,11 +35,14 @@ export default function BoardCredits({
 
   useEffect(
     () =>
-      onClientEvent('photoCreditsRemoved', (_scope, photo) =>
+      onClientEvent('photoCreditsRemoved', (_scope, photo) => {
+        const removed = Object.keys(photo as PhotoCreditEvent);
         setPhotoCredits(current =>
-          omit(current, Object.keys(photo as PhotoCreditEvent)),
-        ),
-      ),
+          Object.fromEntries(
+            Object.entries(current).filter(([key]) => !removed.includes(key)),
+          ),
+        );
+      }),
     [],
   );
 

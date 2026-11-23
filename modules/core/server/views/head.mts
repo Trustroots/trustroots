@@ -1,5 +1,5 @@
 import { createElement as h, Fragment, type ReactNode } from 'react';
-import _ from 'lodash';
+import * as he from 'he';
 import { plainText } from '../services/text.server.service.mts';
 
 /**
@@ -62,7 +62,7 @@ export function Head(locals: PageLocals): ReactNode {
         id: 'tr-umami-tracker',
         // React would hoist a script element out of the template.
         dangerouslySetInnerHTML: {
-          __html: `<script async src="${_.escape(umami.scriptSrc)}" data-website-id="${_.escape(umami.websiteId)}" data-do-not-track="true" data-performance="true" data-exclude-search="true" data-exclude-hash="true" data-before-send="trUmamiBeforeSend" nonce="${_.escape(locals.nonce)}"></script>`,
+          __html: `<script async src="${he.escape(umami.scriptSrc)}" data-website-id="${he.escape(umami.websiteId)}" data-do-not-track="true" data-performance="true" data-exclude-search="true" data-exclude-hash="true" data-before-send="trUmamiBeforeSend" nonce="${he.escape(locals.nonce)}"></script>`,
         },
       }),
     h('link', { rel: 'dns-prefetch', href: '//api.tiles.mapbox.com' }),

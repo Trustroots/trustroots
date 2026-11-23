@@ -1,7 +1,6 @@
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
 import { readFileSync } from 'node:fs';
-import _ from 'lodash';
 import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
@@ -72,7 +71,8 @@ function addOfferFilterHelpers(filters: object): OfferFilters {
       const value = Reflect.get(filters, filterType);
       return (
         Object.hasOwn(filters, filterType) &&
-        _.isObject(value) &&
+        typeof value === 'object' &&
+        value !== null &&
         Object.keys(value).length > 0
       );
     },
@@ -223,8 +223,8 @@ function sanitizeOffer(
 function isValidCoordinate(coordinate: unknown): boolean {
   const regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
   return (
-    !_.isUndefined(coordinate) &&
-    _.isFinite(parseFloat(String(coordinate))) &&
+    coordinate !== undefined &&
+    Number.isFinite(parseFloat(String(coordinate))) &&
     regexp.test(String(coordinate))
   );
 }
@@ -356,7 +356,7 @@ function update(
   }
   // Host offers get `undefined`, which `prepareOfferUpdateInput` leaves out
   body.validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
-  const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
+  const updatedOffer = Object.assign(offer, prepareOfferUpdateInput(body));
   updatedOffer.updated = new Date();
   updatedOffer.set('reactivateReminderSent', undefined);
   updatedOffer.save().then(
@@ -403,11 +403,11 @@ async function list(req: OfferRequest, res: OfferResponse) {
     'northEastLat',
     'northEastLng',
   ];
-  const isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
+  const isCoordinatesValid = coordinateKeys.every(function (coordinateKey) {
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
     // Stryker disable next-line BooleanLiteral: `false` and `true` both stringify to text that is not a number, so a missing coordinate fails validation either way
-    let coordinate = _.get(req.query!, coordinateKey, false);
+    let coordinate = Reflect.get(req.query!, coordinateKey) ?? false;
 
     // Trim string coordinates
     // This is because when using `+` in front of a coordinate,
@@ -539,10 +539,7 @@ async function list(req: OfferRequest, res: OfferResponse) {
   // Stryker disable next-line LogicalOperator: the two checks only disagree for an empty array, which leaves no valid types and adds no stage
   if (filters.hasArrayFilter('types') && isUnknownArray(typesFilter)) {
     // Accept only valid values, ignore the rest
-    // @link https://lodash.com/docs/#filter
-    const filterTypes = _.filter(typesFilter, function (type: unknown) {
-      return isValidOfferType(type);
-    });
+    const filterTypes = typesFilter.filter(isValidOfferType);
 
     // If we still have types left, apply the filter
     if (filterTypes.length) {
@@ -621,15 +618,11 @@ async function list(req: OfferRequest, res: OfferResponse) {
     );
 
     // Above json `languages` object contains language names, but we need just keys.
-    languages = _.keys(languages);
+    languages = Object.keys(languages);
 
     // Accept only valid language codes, ignore the rest
-    // @link https://lodash.com/docs/#filter
-    const filterLanguages = _.filter(
-      languageFilter,
-      function (language: unknown) {
-        return _.includes(languages, language);
-      },
+    const filterLanguages = languageFilter.filter((language: unknown) =>
+      languages.includes(language),
     );
 
     // If we still have languages left, apply the filter
@@ -825,11 +818,9 @@ function offersByUserId(
   };
   // The 3rd parameter sets max limit for array length,
   // ensuring users can't send insanely long arrays for our queries
-  const requestedTypes = _.split(
-    String(requestQuery.types),
-    ',',
-    enumValues?.length ?? 0,
-  ).filter(isValidOfferType);
+  const requestedTypes = String(requestQuery.types)
+    .split(',', enumValues?.length ?? 0)
+    .filter(isValidOfferType);
   if (requestedTypes.length > 0) {
     query.type = { $in: requestedTypes };
   }
@@ -842,7 +833,7 @@ function offersByUserId(
       }
 
       // Sanitize offers
-      req.offers = _.map(offers, function (offer) {
+      req.offers = offers.map(function (offer) {
         return sanitizeOffer(offer, req.user);
       });
       next();

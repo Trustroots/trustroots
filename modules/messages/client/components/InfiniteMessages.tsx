@@ -25,8 +25,7 @@ import React, {
   type ReactNode,
   type Ref,
 } from 'react';
-import last from 'lodash/last';
-import debounce from 'lodash/debounce';
+import { debounce } from '../../../core/client/utils/debounce';
 
 const debounceWait = 20;
 
@@ -49,7 +48,7 @@ export default function InfiniteMessages({
   const [scrollFromBottom, setScrollFromBottom] = useState<number | null>(null);
   const [lastChildKey, setLastChildKey] = useState(
     () =>
-      (last(React.Children.toArray(children)) as React.ReactElement | undefined)
+      (React.Children.toArray(children).pop() as React.ReactElement | undefined)
         ?.key,
   );
 
@@ -95,7 +94,7 @@ export default function InfiniteMessages({
       const newScrollHeight = ref.current.scrollHeight;
 
       const key = (
-        last(React.Children.toArray(children)) as React.ReactElement | undefined
+        React.Children.toArray(children).pop() as React.ReactElement | undefined
       )?.key;
       if (key !== lastChildKey) {
         // last child is different

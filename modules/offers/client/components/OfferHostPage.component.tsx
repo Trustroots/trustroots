@@ -1,7 +1,11 @@
 import { Textarea } from '@trustroots/ui/Textarea';
 import { Input } from '@trustroots/ui/Input';
-import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
-import isEqual from 'lodash/isEqual';
+import {
+  deepEqual,
+  useBlocker,
+  useLocation,
+  useSearch,
+} from '@tanstack/react-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
@@ -62,14 +66,14 @@ export default function OfferHostPage({ user }: HostPageProps) {
   const [loadError, setLoadError] = useState(false);
 
   function hasUnsavedChanges() {
-    return !isEqual(offer, savedOffer.current);
+    return !deepEqual(offer, savedOffer.current);
   }
 
   useBlocker({
     shouldBlockFn: ({ current, next }) =>
       hasUnsavedChanges() &&
       (current.pathname !== next.pathname ||
-        !isEqual(current.search, next.search)) &&
+        !deepEqual(current.search, next.search)) &&
       !window.confirm('Leave without saving your hosting offer changes?'),
     enableBeforeUnload: hasUnsavedChanges,
   });
