@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
-import yargs from 'yargs';
+import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
 import moment from 'moment';
 import mongoose, { type Document, type Types } from 'mongoose';
@@ -99,64 +99,24 @@ const languages = parseLanguages(
     ),
   ),
 );
-/**
- * Required dependencies
- */
-
-/**
- * Configure the script usage using yargs to obtain parameters and enforce usage.
- */
-const argv = yargs(process.argv.slice(2))
-  .usage('$0 <numberOfUsers>')
-  .command('$0 <numberOfUsers>', 'Seed database with users and offers')
-  .positional('numberOfUsers', {
-    describe: 'Number of users to add',
-    type: 'number',
-  })
-  .array('userNames')
-  .boolean('debug')
-  .boolean('limit')
-  .describe('userNames', 'List of admin usernames')
-  .describe('debug', 'Enable extra database output (default=false)')
-  .describe(
-    'limit',
-    'If users already exist in the database, only add up to the number of users (default=false)',
-  )
-  .example('node $0 1000', 'Adds 1000 randomly seeded users to the database')
-  .example(
-    'node $0 100 --userNames admin1 admin2 admin3 --',
-    "Adds 100 randomly seeded users including usernames: admin1, admin2, and admin3 all using the password 'password123'",
-  )
-  .example(
-    'node $0 100 --debug',
-    'Adds 100 randomly seeded users to the database with debug database output',
-  )
-  .example(
-    'node $0 100 --limit',
-    'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)',
-  )
-  .check(function (arguments_) {
-    if (
-      typeof arguments_.numberOfUsers !== 'number' ||
-      arguments_.numberOfUsers < 1
-    ) {
-      throw new Error('Error: Number of users should be greater than 0');
-    }
-    return true;
-  })
-  .strict()
-  .parseSync();
-
-const numberOfUsers = argv.numberOfUsers;
-if (typeof numberOfUsers !== 'number') {
-  throw new Error('Error: Number of users should be greater than 0');
-}
-const adminUserNames = argv.userNames?.map(userName => {
-  if (typeof userName !== 'string') {
-    throw new Error('Admin usernames must be strings');
-  }
-  return userName;
+const {
+  operands,
+  values,
+  userNames: adminUserNames,
+} = parseSeedArgs(process.argv.slice(2), {
+  description: 'Seed database with users and offers',
+  positionals: ['numberOfUsers'],
+  flags: {
+    limit: 'Add only enough users to reach the requested count',
+  },
+  example: '100 --userNames admin1 admin2 admin3',
+  acceptsUserNames: true,
 });
+const numberOfUsers = readSeedNumber(
+  operands[0],
+  'Number of users should be greater than 0',
+  1,
+);
 
 /**
  * Globals
@@ -262,8 +222,8 @@ function addOffer(
 function addUsers(max: number, adminUsers: string[] = []) {
   let index = 0;
   let numAdminUsers: number;
-  const debug = argv.debug === true;
-  const limit = argv.limit === true;
+  const debug = values.debug === true;
+  const limit = values.limit === true;
   numAdminUsers = adminUsers.length;
   const printWarning = function printWarning() {
     console.log('Generating ' + max + ' users...');
