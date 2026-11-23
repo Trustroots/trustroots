@@ -501,10 +501,22 @@ describe('API route registrations', () => {
 
   it('registers users routes behind the users policy', async () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const avatar = controller(
+      [
+        'avatarUploadField',
+        'avatarUpload',
+        'getAvatar',
+        'userForAvatarByUserId',
+      ],
+      'avatar',
+    );
 
     const { params, routes } = await register(
       './../../../users/server/routes/users.server.routes.mts',
-      { '../policies/users.server.policy': policy },
+      {
+        '../controllers/users.avatar.server.controller': avatar,
+        '../policies/users.server.policy': policy,
+      },
     );
     assert.strictEqual(routes.length, 19);
 
@@ -528,9 +540,18 @@ describe('API route registrations', () => {
       [unifiedPush.test],
     );
     assert.deepStrictEqual(
+      routeByPath(routes, '/api/users-avatar').post.slice(1),
+      [avatar.avatarUploadField, avatar.avatarUpload],
+    );
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/users/:avatarUserId/avatar').get,
+      [avatar.getAvatar],
+    );
+    assert.deepStrictEqual(
       params.map(param => param.name),
       ['userId', 'username', 'avatarUserId'],
     );
+    assert.strictEqual(params[2]?.middleware, avatar.userForAvatarByUserId);
   });
 
   it('registers blocked-user routes', async () => {
