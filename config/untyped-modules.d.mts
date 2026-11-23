@@ -1,3 +1,11 @@
+declare module 'append-field' {
+  export default function appendField(
+    fields: Record<string, unknown>,
+    name: string,
+    value: string,
+  ): void;
+}
+
 declare module 'passport' {
   interface AuthenticationInfo {
     message?: string;

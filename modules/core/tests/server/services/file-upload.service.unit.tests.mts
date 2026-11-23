@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,6 +25,7 @@ type Part = {
 };
 type TestRequest = Readable & {
   headers: Record<string, string>;
+  body?: Record<string, unknown>;
   file?: Partial<UploadedFile>;
 };
 
@@ -240,10 +242,22 @@ describe('file-upload.service unit tests', () => {
   });
 
   describe('uploadFile', () => {
-    it('stores a valid image in the upload directory and continues', async () => {
-      const req = multipart([image(png)]);
-      const result = await run(req);
+    it('passes multipart fields and the validated image to the next handler', async () => {
+      const req = multipart([
+        { name: 'label', content: 'Example circle' },
+        { name: 'organiserIds[]', content: 'example-one' },
+        image(png, 'image/png', 'image'),
+        { name: 'organiserIds[]', content: 'example-two' },
+      ]);
+      const result = await run(req, undefined, 'image');
       result.passed.should.be.true();
+      assert.deepEqual(
+        { ...req.body },
+        {
+          label: 'Example circle',
+          organiserIds: ['example-one', 'example-two'],
+        },
+      );
       const stored = req.file!.path!;
       path.dirname(stored).should.equal(path.resolve(uploadDirectory));
       path.basename(stored).should.match(/^[a-f0-9]{32}$/);
@@ -256,9 +270,9 @@ describe('file-upload.service unit tests', () => {
         { name: 'label', content: 'Hosts' },
         { name: 'public', content: 'true' },
         image(png),
-      ]) as TestRequest & { body?: unknown };
+      ]);
       await run(req);
-      req.body!.should.eql({ label: 'Hosts', public: 'true' });
+      assert.deepEqual({ ...req.body }, { label: 'Hosts', public: 'true' });
     });
 
     it('falls back to the system temp directory without a configured one', async () => {
