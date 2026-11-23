@@ -893,10 +893,11 @@ service.sync = function (req, res) {
   let dateTo;
   const created: { $gt?: Date; $lt?: Date } = {};
   if (Object.hasOwn(queryParams, 'dateFrom')) {
-    dateFrom = moment(queryParams.dateFrom as Parameters<typeof moment>[0]);
+    const input = queryParams.dateFrom;
+    dateFrom = typeof input === 'string' ? moment(String(input)) : null;
 
     // Validate `dateFrom`
-    if (!dateFrom.isValid()) {
+    if (!dateFrom?.isValid()) {
       return res.status(400).send({
         message: 'Invalid `dateFrom`.',
       });
@@ -906,9 +907,10 @@ service.sync = function (req, res) {
     created.$gt = dateFrom.toDate();
   }
   if (Object.hasOwn(queryParams, 'dateTo')) {
-    dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
+    const input = queryParams.dateTo;
+    dateTo = typeof input === 'string' ? moment(String(input)) : null;
     // Validate `dateTo`
-    if (!dateTo.isValid()) {
+    if (!dateTo?.isValid()) {
       return res.status(400).send({
         message: 'Invalid `dateTo`.',
       });

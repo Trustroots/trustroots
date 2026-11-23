@@ -188,7 +188,8 @@ const Message = mongoose.model<MessageRecord>('Message');
 const ReferenceThread =
   mongoose.model<ReferenceThreadRecord>('ReferenceThread');
 let publicStatisticsCache:
-  { expiresAt: number; statistics: PublicStatistics } | undefined;
+  | { expiresAt: number; statistics: PublicStatistics }
+  | undefined;
 
 function connectionPercentage(
   count: number,

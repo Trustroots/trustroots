@@ -176,10 +176,6 @@ const ADMIN_CHANGEABLE_ROLES = [
   'volunteer-alumni',
   'volunteer',
 ] as const;
-type AdminChangeableRole = (typeof ADMIN_CHANGEABLE_ROLES)[number];
-function isChangeableRole(value: unknown): value is AdminChangeableRole {
-  return ADMIN_CHANGEABLE_ROLES.some(role => role === value);
-}
 
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
@@ -428,12 +424,14 @@ interface MemberListOptions {
 function getMemberListOptions(
   body: AdminListRequest['body'],
 ): MemberListOptions | null {
-  const page = body?.page ?? 1;
-  const sortColumn = body?.sort?.column ?? DEFAULT_ADMIN_MEMBER_SORT.column;
-  const sortDirection =
-    body?.sort?.direction ?? DEFAULT_ADMIN_MEMBER_SORT.direction;
+  const { page = 1, sort } = body ?? {};
+  const {
+    column: sortColumn = DEFAULT_ADMIN_MEMBER_SORT.column,
+    direction: sortDirection = DEFAULT_ADMIN_MEMBER_SORT.direction,
+  } = sort ?? {};
 
   if (
+    typeof page !== 'number' ||
     !Number.isInteger(page) ||
     page < 1 ||
     typeof sortColumn !== 'string' ||
@@ -441,7 +439,7 @@ function getMemberListOptions(
       ADMIN_MEMBER_SORT_FIELDS,
       sortColumn,
     ) ||
-    !['ascending', 'descending'].includes(sortDirection)
+    (sortDirection !== 'ascending' && sortDirection !== 'descending')
   ) {
     return null;
   }
@@ -450,7 +448,7 @@ function getMemberListOptions(
     page,
     sort: {
       column: sortColumn as AdminMemberSortColumn,
-      direction: sortDirection as 'ascending' | 'descending',
+      direction: sortDirection,
     },
   };
 }
@@ -780,8 +778,11 @@ export const changeRole = async (
 ): Promise<unknown> => {
   const userId = req.body?.id;
   const roleValue = req.body?.role;
+  const role = ADMIN_CHANGEABLE_ROLES.find(
+    candidate => candidate === roleValue,
+  );
 
-  const actionValue = req.body?.action ?? 'add';
+  const { action: actionValue = 'add' } = req.body ?? {};
   const isSupportOnly =
     req.user?.roles?.includes('support-team') &&
     !req.user.roles.includes('admin');
@@ -795,7 +796,7 @@ export const changeRole = async (
       .send({ message: 'This role change is restricted to administrators.' });
   }
   if (
-    !isChangeableRole(roleValue) ||
+    !role ||
     (actionValue !== 'add' && actionValue !== 'remove') ||
     (actionValue === 'remove' &&
       !['welcome-team', 'support-team', 'shadowban'].some(
@@ -806,7 +807,6 @@ export const changeRole = async (
       message: 'Invalid role.',
     });
   }
-  const role = roleValue as AdminChangeableRole;
   const action: 'add' | 'remove' = actionValue;
 
   // Check that the search string is provided
@@ -838,7 +838,7 @@ export const changeRole = async (
           message: 'This role change is restricted to administrators.',
         });
       }
-      const nextRoles = currentRoles.filter(existingRole => {
+      const nextRoles: string[] = currentRoles.filter(existingRole => {
         if (action === 'remove') return existingRole !== role;
         if (
           (role === 'volunteer' && existingRole === 'volunteer-alumni') ||
@@ -948,7 +948,7 @@ export const usernameToUserId = async (
 
   // Get userID based on provided username
   if (username) {
-    const user = await User.findOne({ username }).setOptions(
+    const user = await User.findOne({ username: String(username) }).setOptions(
       // Stryker disable next-line ObjectLiteral,BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise
       { sanitizeFilter: true },
     );

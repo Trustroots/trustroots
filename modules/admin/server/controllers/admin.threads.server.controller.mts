@@ -54,7 +54,11 @@ export const getThreads = async (
   const userId = req.userIdFromUsername || req.body?.userId;
 
   // Check that provided ID is valid
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+  if (
+    (typeof userId !== 'string' &&
+      !(userId instanceof mongoose.Types.ObjectId)) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  )
     return errorService.sendInvalidId(res);
 
   Thread.aggregate<ThreadResult>([

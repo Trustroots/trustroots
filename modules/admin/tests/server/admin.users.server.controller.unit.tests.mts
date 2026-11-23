@@ -944,8 +944,12 @@ describe('Admin users controller unit tests', () => {
         body,
       )}`, async () => {
         const res = mockResponse();
-        await adminUsers.changeRole({ body }, res);
+        await adminUsers.changeRole(
+          { body: { ...body, id: String(new mongoose.Types.ObjectId()) } },
+          res,
+        );
         res.statusCode.should.equal(400);
+        responseField(res, 'message').should.equal('Invalid role.');
       });
     }
 

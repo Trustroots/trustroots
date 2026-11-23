@@ -57,7 +57,8 @@ export default function (app: Application) {
   redirect('/faq/tribes', '/faq/circles');
   redirect('/tribes', '/circles');
   app.route('/tribes/:tribe').get(function (req, res) {
-    const tribe = req.tribe?.slug;
+    const tribe = (req as typeof req & { tribe?: { slug?: string } }).tribe
+      ?.slug;
     const route = tribe ? '/circles/' + tribe : '/circles';
     res.redirect(301, route);
   });
