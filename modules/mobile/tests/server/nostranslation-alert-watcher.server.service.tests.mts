@@ -147,6 +147,10 @@ describe('Nostranslation relay watcher', () => {
 
   it('claims a replayed review once when two workers see the same event', async () => {
     const session = await registerMember();
+    await User.collection.updateOne(
+      { username: 'reviewwatcher' },
+      { $unset: { authVersion: '' } },
+    );
     await MobileSession.collection.updateOne(
       { _id: session },
       { $unset: { authVersion: '' } },
@@ -157,6 +161,8 @@ describe('Nostranslation relay watcher', () => {
       headers: {},
     });
     const create = vi.spyOn(Claims, 'create');
+    const lookup = vi.spyOn(MobileSession, 'findOne');
+    const log = vi.spyOn(winston, 'log');
     watchNostranslationAlerts();
     watchNostranslationAlerts();
     const { event, frame } = signedFrame();
@@ -165,6 +171,15 @@ describe('Nostranslation relay watcher', () => {
       expect(create).toHaveBeenCalledTimes(2);
       expect(delivery).toHaveBeenCalledOnce();
     });
+    await Promise.allSettled(create.mock.results.map(result => result.value));
+    await new Promise<void>(resolve => setImmediate(resolve));
+    expect(lookup.mock.results[0]?.value.projection()).toEqual({
+      authVersion: 1,
+    });
+    expect(log).not.toHaveBeenCalledWith(
+      'error',
+      '[Worker] Nostranslation alert dispatch failed.',
+    );
     expect(
       await Claims.countDocuments({ _id: recipient + ':' + event.id }),
     ).toBe(1);
@@ -332,6 +347,7 @@ describe('Nostranslation relay watcher', () => {
 
   it('skips a delivery if the mobile session is revoked after the claim', async () => {
     const session = await registerMember();
+    const log = vi.spyOn(winston, 'log');
     const update = vi
       .spyOn(Claims, 'create')
       .mockImplementationOnce(async () => {
@@ -341,7 +357,15 @@ describe('Nostranslation relay watcher', () => {
         );
         return new Claims();
       });
-    const lookup = vi.spyOn(MobileSession, 'findOne');
+    let completedLookups = 0;
+    const find = MobileSession.findOne.bind(MobileSession);
+    const lookup = vi
+      .spyOn(MobileSession, 'findOne')
+      .mockImplementation(filter =>
+        find(filter).post(() => {
+          completedLookups += 1;
+        }),
+      );
     watchNostranslationAlerts();
     FixtureSocket.instances[0]!.message(signedFrame().frame);
     await vi.waitFor(() => {
@@ -355,14 +379,21 @@ describe('Nostranslation relay watcher', () => {
     });
     FixtureSocket.instances[0]!.message(signedFrame().frame);
     await vi.waitFor(() => {
-      expect(lookup).toHaveBeenCalledTimes(3);
+      expect(completedLookups).toBe(3);
     });
     expect(update).toHaveBeenCalledOnce();
     expect(webPush.sendNotification).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalledWith(
+      'error',
+      '[Worker] Nostranslation alert dispatch failed.',
+    );
   });
 
   it('does not deliver to a destination that was removed after the claim', async () => {
     await registerMember();
+    const registered = await Registrations.findById(recipient).lean();
+    const otherRecipient = getPublicKey(generateSecretKey());
+    await Registrations.create({ ...registered, _id: otherRecipient });
     const lookup = vi.spyOn(Registrations, 'findOne');
     vi.spyOn(Claims, 'create').mockImplementationOnce(async () => {
       await Registrations.deleteOne({ _id: recipient });
@@ -373,7 +404,7 @@ describe('Nostranslation relay watcher', () => {
     await vi.waitFor(() => {
       expect(lookup).toHaveBeenCalledTimes(2);
     });
-    expect(await Registrations.countDocuments()).toBe(0);
+    expect(await Registrations.distinct('_id')).toEqual([otherRecipient]);
     expect(webPush.sendNotification).not.toHaveBeenCalled();
   });
 

@@ -7,6 +7,15 @@ import type { TranslationPushDestination } from './nostranslation-alert-registra
 
 const alert = { type: 'nostranslation-review' };
 
+export function isTranslationDestinationGone(
+  platform: TranslationPushDestination['platform'],
+  error: unknown,
+): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const status: unknown = Reflect.get(error, 'statusCode');
+  return status === 410 || (status === 404 && platform === 'android');
+}
+
 function apnsConfiguration() {
   const teamId = process.env.TRUSTROOTS_APNS_TEAM_ID;
   const keyId = process.env.TRUSTROOTS_APNS_KEY_ID;

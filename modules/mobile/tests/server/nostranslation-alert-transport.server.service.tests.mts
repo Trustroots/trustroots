@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import config from '../../../../config/config.mts';
 import { webPush } from '../../../users/server/services/web-push.server.transport.mts';
 import {
+  isTranslationDestinationGone,
   sendTranslationAlert,
   translationAlertConfiguration,
 } from '../../server/services/nostranslation-alert-transport.server.service.mts';
@@ -65,17 +66,42 @@ describe('Nostranslation alert transport', () => {
     vi.spyOn(http2, 'connect').mockImplementation(() => {
       throw new Error('Unexpected APNs request in the test.');
     });
-    vi.stubEnv('TRUSTROOTS_APNS_TEAM_ID', undefined);
-    vi.stubEnv('TRUSTROOTS_APNS_KEY_ID', undefined);
-    vi.stubEnv('TRUSTROOTS_APNS_TOPIC', undefined);
-    vi.stubEnv('TRUSTROOTS_APNS_PRIVATE_KEY', undefined);
-    vi.stubEnv('TRUSTROOTS_APNS_SANDBOX', undefined);
+    vi.stubEnv('TRUSTROOTS_APNS_TEAM_ID', '');
+    vi.stubEnv('TRUSTROOTS_APNS_KEY_ID', '');
+    vi.stubEnv('TRUSTROOTS_APNS_TOPIC', '');
+    vi.stubEnv('TRUSTROOTS_APNS_PRIVATE_KEY', '');
+    vi.stubEnv('TRUSTROOTS_APNS_SANDBOX', '');
   });
 
   afterEach(() => {
     Object.assign(config.webPush, pushConfiguration);
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+  });
+
+  it('classifies expired destinations by platform and numeric provider status', () => {
+    expect(isTranslationDestinationGone('android', { statusCode: 404 })).toBe(
+      true,
+    );
+    expect(isTranslationDestinationGone('android', { statusCode: 410 })).toBe(
+      true,
+    );
+    expect(isTranslationDestinationGone('ios', { statusCode: 404 })).toBe(
+      false,
+    );
+    expect(isTranslationDestinationGone('ios', { statusCode: 410 })).toBe(true);
+    for (const error of [
+      null,
+      undefined,
+      410,
+      'gone',
+      new Error('No provider status.'),
+      { statusCode: '410' },
+      { statusCode: 503 },
+      Object.assign(() => {}, { statusCode: 410 }),
+    ]) {
+      expect(isTranslationDestinationGone('android', error)).toBe(false);
+    }
   });
 
   it('reports capabilities and only sends a live alert to a valid Android registration', async () => {
@@ -123,9 +149,9 @@ describe('Nostranslation alert transport', () => {
     'TRUSTROOTS_APNS_KEY_ID',
     'TRUSTROOTS_APNS_TOPIC',
     'TRUSTROOTS_APNS_PRIVATE_KEY',
-  ])('disables APNs delivery when %s is missing', async field => {
+  ])('disables APNs delivery when %s is empty', async field => {
     stubApns();
-    vi.stubEnv(field, undefined);
+    vi.stubEnv(field, '');
     expect(translationAlertConfiguration().ios).toBe(false);
     await sendTranslationAlert(device, fiveMinutesLater);
     expect(http2.connect).not.toHaveBeenCalled();
@@ -189,7 +215,7 @@ describe('Nostranslation alert transport', () => {
       },
     });
 
-    vi.stubEnv('TRUSTROOTS_APNS_SANDBOX', undefined);
+    vi.stubEnv('TRUSTROOTS_APNS_SANDBOX', '');
     const next = captureRequest();
     const sameToken = sendTranslationAlert(device, fiveMinutesLater);
     next.stream.emit('response', { ':status': 200 });

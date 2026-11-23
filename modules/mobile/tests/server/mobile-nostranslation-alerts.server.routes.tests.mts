@@ -14,6 +14,7 @@ import {
 import config from '../../../../config/config.mts';
 import express from '../../../../config/lib/express.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
+import translationAlerts from '../../server/controllers/mobile-nostranslation-alerts.server.controller.cjs';
 
 const path = '/api/mobile/v0/nostranslation/alerts';
 const secret = generateSecretKey();
@@ -52,6 +53,25 @@ describe('Mobile Nostranslation alert registrations', () => {
       password: 'strong-fixture-password',
       provider: 'local',
       roles: ['user'],
+    });
+  });
+
+  it('returns a validation error if an unregister handler has no request body', async () => {
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
+    await translationAlerts.unregister(
+      {
+        mobileUser: { _id: new mongoose.Types.ObjectId() },
+        mobileSession: {
+          _id: new mongoose.Types.ObjectId(),
+          refreshExpiresAt: new Date(),
+        },
+      },
+      { status },
+    );
+    expect(status).toHaveBeenCalledExactlyOnceWith(400);
+    expect(json).toHaveBeenCalledExactlyOnceWith({
+      message: 'Invalid transport key.',
     });
   });
 
