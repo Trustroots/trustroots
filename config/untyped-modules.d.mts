@@ -187,19 +187,6 @@ declare module 'multer' {
   export default multer;
 }
 
-declare module 'morgan' {
-  function morgan(format: string): import('express').RequestHandler;
-  namespace morgan {
-    function token(
-      name: string,
-      callback: (
-        request: import('node:http').IncomingMessage & { originalUrl?: string },
-      ) => string,
-    ): typeof morgan;
-  }
-  export default morgan;
-}
-
 declare module 'compression' {
   export default function compression(options: {
     filter(

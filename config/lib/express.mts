@@ -11,8 +11,7 @@ import express, {
   type Response,
   type NextFunction,
 } from 'express';
-import morgan from 'morgan';
-import { redactSupportRequestUrl } from '../../modules/support/shared/request-url.ts';
+import logDevelopmentRequest from './development-request-log.mts';
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mts';
 import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mts';
@@ -171,11 +170,7 @@ function initMiddleware(app: Express) {
 
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {
-    // Enable logger (morgan)
-    morgan.token('url', req =>
-      redactSupportRequestUrl(req.originalUrl || req.url || ''),
-    );
-    app.use(morgan('dev'));
+    app.use(logDevelopmentRequest);
 
     // Disable views cache
     app.set('view cache', false);
