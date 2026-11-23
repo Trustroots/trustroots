@@ -1,9 +1,13 @@
+import { generateKeyPairSync } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import http2, { type ClientHttp2Session } from 'node:http2';
 import mongoose from 'mongoose';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import winston from 'winston';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
 import { webPush } from '../../../users/server/services/web-push.server.transport.mts';
+import type { TranslationPushDestination } from '../../server/services/nostranslation-alert-registration.server.service.mts';
 import { watchNostranslationAlerts } from '../../server/services/nostranslation-alert-watcher.server.service.mts';
 
 const author = generateSecretKey();
@@ -15,7 +19,7 @@ const destination = {
   publicKey:
     'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
   auth: 'abcdefghijklmnopqrstuv',
-};
+} as const;
 const Registrations = mongoose.model('NostranslationAlertRegistration');
 const Claims = mongoose.model('NostranslationAlertClaim');
 const User = mongoose.model('User');
@@ -50,7 +54,10 @@ function signedFrame(signingKey = author) {
   return { event, frame: JSON.stringify(['EVENT', subscription, event]) };
 }
 
-async function registerMember(authVersion = 0) {
+async function registerMember(
+  authVersion = 0,
+  pushDestination: TranslationPushDestination = destination,
+) {
   const user = await User.create({
     public: true,
     firstName: 'Review',
@@ -77,7 +84,7 @@ async function registerMember(authVersion = 0) {
     user: user._id,
     session: session._id,
     author: getPublicKey(author),
-    destination,
+    destination: pushDestination,
     expiresAt,
   });
   return session._id;
@@ -97,6 +104,7 @@ describe('Nostranslation relay watcher', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     await clearDatabase();
   });
 
@@ -262,6 +270,48 @@ describe('Nostranslation relay watcher', () => {
       destination: replacement,
     });
     expect(webPush.sendNotification).toHaveBeenCalledOnce();
+  });
+
+  it('keeps an APNs destination when a 404 reports a provider-side failure', async () => {
+    const ios = { platform: 'ios', token: 'ab'.repeat(32) } as const;
+    await registerMember(0, ios);
+    const { privateKey } = generateKeyPairSync('ec', {
+      namedCurve: 'prime256v1',
+    });
+    vi.stubEnv('TRUSTROOTS_APNS_TEAM_ID', 'fixture-team');
+    vi.stubEnv('TRUSTROOTS_APNS_KEY_ID', 'fixture-key');
+    vi.stubEnv('TRUSTROOTS_APNS_TOPIC', 'org.trustroots.fixture');
+    vi.stubEnv(
+      'TRUSTROOTS_APNS_PRIVATE_KEY',
+      privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+    );
+    const stream = Object.assign(new EventEmitter(), {
+      resume: vi.fn(),
+      end: vi.fn(),
+    });
+    const session = Object.assign(new EventEmitter(), {
+      setTimeout: vi.fn(),
+      request: vi.fn(() => stream),
+      close: vi.fn(),
+    });
+    vi.spyOn(http2, 'connect').mockReturnValue(
+      session as unknown as ClientHttp2Session,
+    );
+    const log = vi.spyOn(winston, 'log');
+    watchNostranslationAlerts();
+    FixtureSocket.instances[0]!.message(signedFrame().frame);
+    await vi.waitFor(() => expect(stream.end).toHaveBeenCalledOnce());
+    stream.emit('response', { ':status': 404 });
+    stream.emit('close');
+    await vi.waitFor(() =>
+      expect(log).toHaveBeenCalledWith(
+        'error',
+        '[Worker] Nostranslation alert dispatch failed.',
+      ),
+    );
+    expect(await Registrations.findById(recipient).lean()).toMatchObject({
+      destination: ios,
+    });
   });
 
   it.each([404, 410])(
