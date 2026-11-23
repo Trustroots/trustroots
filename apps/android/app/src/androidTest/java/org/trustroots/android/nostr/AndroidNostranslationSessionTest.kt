@@ -2,6 +2,7 @@ package org.trustroots.android.nostr
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ class AndroidNostranslationSessionTest {
         var timestamp = 1_800_000_000L
         val job = Job()
         val scope = CoroutineScope(Dispatchers.Unconfined + job)
-        val relay = RecordingRelay()
+        val relay = RecordingNostranslationRelay()
         try {
             keys.generate()
             val localPublicKey = requireNotNull(keys.browserPublicKey(keys.revision()))
@@ -133,35 +134,37 @@ class AndroidNostranslationSessionTest {
             keys.remove()
         }
     }
+}
 
-    private class RecordingRelay : WebSocket.Factory {
-        val frames = mutableListOf<JSONArray>()
-        var cancelled = false
-            private set
-        private lateinit var socket: WebSocket
-        private lateinit var listener: WebSocketListener
+internal class RecordingNostranslationRelay : WebSocket.Factory {
+    val frames = mutableListOf<JSONArray>()
+    var cancelled = false
+        private set
+    private lateinit var socket: WebSocket
+    private lateinit var listener: WebSocketListener
 
-        override fun newWebSocket(request: Request, listener: WebSocketListener): WebSocket {
-            frames.clear()
-            cancelled = false
-            this.listener = listener
-            socket = object : WebSocket {
-                override fun request() = request
-                override fun queueSize() = 0L
-                override fun send(text: String): Boolean = frames.add(JSONArray(text))
-                override fun send(bytes: ByteString) = false
-                override fun close(code: Int, reason: String?) = true
-                override fun cancel() { cancelled = true }
-            }
-            return socket
+    override fun newWebSocket(request: Request, listener: WebSocketListener): WebSocket {
+        frames.clear()
+        cancelled = false
+        this.listener = listener
+        socket = object : WebSocket {
+            override fun request() = request
+            override fun queueSize() = 0L
+            override fun send(text: String): Boolean = frames.add(JSONArray(text))
+            override fun send(bytes: ByteString) = false
+            override fun close(code: Int, reason: String?) = true
+            override fun cancel() { cancelled = true }
         }
-
-        fun open() {
-            val response = Response.Builder().request(socket.request()).protocol(Protocol.HTTP_1_1)
-                .code(101).message("Switching Protocols").build()
-            listener.onOpen(socket, response)
-        }
-
-        fun receive(frame: JSONArray) = listener.onMessage(socket, frame.toString())
+        return socket
     }
+
+    fun open() {
+        val response = Response.Builder().request(socket.request()).protocol(Protocol.HTTP_1_1)
+            .code(101).message("Switching Protocols").build()
+        listener.onOpen(socket, response)
+    }
+
+    fun receive(frame: JSONArray) = listener.onMessage(socket, frame.toString())
+
+    fun fail() = listener.onFailure(socket, IOException("Fixture relay disconnected."), null)
 }
