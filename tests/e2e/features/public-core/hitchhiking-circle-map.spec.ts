@@ -133,32 +133,20 @@ test('keeps a chosen map view between the two circles', async ({ page }) => {
       },
     }),
   );
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: {
-        getCurrentPosition: (success: PositionCallback) =>
-          success({
-            coords: { latitude: 34, longitude: -17 },
-          } as GeolocationPosition),
-      },
-    });
-  });
   await page.goto('/circles/hitchhikers');
-  await page.getByRole('button', { name: 'Use my location' }).click();
-  await expect
-    .poll(() => page.evaluate(() => sessionStorage.getItem('circle-map-view')))
-    .not.toBeNull();
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect.poll(() => savedView(page)).not.toBeNull();
   const view = await savedView(page);
+  expectPresent(view);
   await page.goto('/circles/hackers');
   await expect(page.locator('.circle-location-map')).toBeVisible();
   expect(await savedView(page)).toEqual(view);
   await page.getByRole('button', { name: 'Zoom in' }).click();
   await expect.poll(() => savedView(page)).not.toEqual(view);
   const [latitude, longitude, zoom] = (await savedView(page))!;
-  expect(latitude).toBeCloseTo(34, 3);
-  expect(longitude).toBeCloseTo(-17, 3);
-  expect(zoom).toBeCloseTo(view![2] + 1, 3);
+  expect(latitude).toBeCloseTo(view[0], 3);
+  expect(longitude).toBeCloseTo(view[1], 3);
+  expect(zoom).toBeCloseTo(view[2] + 1, 3);
 });
 
 test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
@@ -222,6 +210,7 @@ test('hitchhiking map uses explicit device location and GeoIP fallback on failur
   );
   await expect(page.getByRole('status')).toContainText('approximate');
   await expect.poll(() => defaultLocationRequests).toBe(1);
+  expect(await savedView(page)).toBeNull();
 });
 
 test('ride popups link named hitchhikers to Maps accounts and leave Anonymous unlinked', async ({
