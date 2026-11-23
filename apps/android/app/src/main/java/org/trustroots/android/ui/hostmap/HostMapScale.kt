@@ -67,7 +67,7 @@ internal fun HostMapScaleBar(scale: HostMapScale) {
     Column(
         Modifier.testTag("hostMapScale")
             .shadow(3.dp, shape)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f), shape)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f), shape)
             .padding(horizontal = 8.dp, vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
