@@ -42,9 +42,14 @@ vi.mock(
     }: {
       onChangeLanguages: (languages: string[]) => void;
     }) => (
-      <button type="button" onClick={() => onChangeLanguages(['eng', 'fra'])}>
-        Set spoken languages
-      </button>
+      <>
+        <button type="button" onClick={() => onChangeLanguages(['eng', 'fra'])}>
+          Set spoken languages
+        </button>
+        <button type="button" onClick={() => onChangeLanguages([])}>
+          Clear spoken languages
+        </button>
+      </>
     ),
   }),
 );
@@ -91,6 +96,8 @@ describe('<SearchUsers />', () => {
 
     expect(searchButton).toBeDisabled();
     expect(clearButton).toBeDisabled();
+    fireEvent.submit(input.closest('form')!);
+    expect(mockSearchUsers).not.toHaveBeenCalled();
 
     fireEvent.change(input, { target: { value: 'al' } });
 
@@ -151,6 +158,9 @@ describe('<SearchUsers />', () => {
       expect(mockSearchUsers).toHaveBeenCalledWith('traveler', defaults),
     );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledTimes(2));
   });
 
   it('shows empty results when the search response has no users array', async () => {
@@ -322,6 +332,22 @@ it('shares the submitted query and filters while preserving the existing URL sta
   expect(input).toHaveValue('');
   expect(new URLSearchParams(window.location.search).has('search')).toBe(false);
   expect(screen.getByRole('checkbox', { name: 'Hosts' })).toBeChecked();
+
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Hosts' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Offers volunteering' }),
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Online in the past 6 months' }),
+  );
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Example circle' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Clear spoken languages' }),
+  );
+  expect(
+    Object.fromEntries(new URLSearchParams(window.location.search)),
+  ).toEqual({ source: 'map' });
 });
 
 it('restores the query and filters when navigating through search history', async () => {
