@@ -215,6 +215,38 @@ describe('Mobile Nostranslation alert registrations', () => {
       return finalizeEvent(response.body.event, secret);
     };
     const proof = await newChallenge();
+    for (const change of [
+      { endpoint: 'https://ntfy.sh/other-translation-fixture' },
+      { auth: 'abcdefghijklmnopqrstuw' },
+    ]) {
+      await request(app)
+        .put(path)
+        .set('Authorization', auth)
+        .send({
+          ...androidRegistration,
+          destination: { ...androidRegistration.destination, ...change },
+          proof,
+        })
+        .expect(400);
+    }
+    for (const [name, value] of [
+      ['u', 'https://example.test' + path],
+      ['method', 'POST'],
+      ['payload', '0'.repeat(64)],
+    ] as const) {
+      const wrongBinding = finalizeEvent(
+        {
+          ...proof,
+          tags: proof.tags.map(tag => (tag[0] === name ? [name, value] : tag)),
+        },
+        secret,
+      );
+      await request(app)
+        .put(path)
+        .set('Authorization', auth)
+        .send({ ...androidRegistration, proof: wrongBinding })
+        .expect(400);
+    }
     for (const invalidProof of [
       { ...proof, sig: '0'.repeat(128) },
       finalizeEvent(
