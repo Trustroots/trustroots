@@ -2,6 +2,7 @@ import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import offersPolicy from './../policies/offers.server.policy.mts';
 import offers from './../controllers/offers.server.controller.mts';
+import { getOfferSearchLimit } from '../middleware/offer-search-limit.server.middleware.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 
@@ -24,7 +25,7 @@ function register(app: Express) {
   app
     .route('/api/offers')
     .all(routeHandler(offersPolicy.isAllowed))
-    .get(routeHandler(offers.list))
+    .get(getOfferSearchLimit(app), routeHandler(offers.list))
     .post(routeHandler(offers.create));
   app
     .route('/api/offers/:offerId')

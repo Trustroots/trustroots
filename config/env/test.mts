@@ -37,6 +37,7 @@ const service = {
   targetedRequestLimits: {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
+    contactRequest: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 12 },
     signin: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     forgotPassword: {
       windowMs: 60 * 60 * 1000,
@@ -48,6 +49,7 @@ const service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
+    passwordChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 3 },
     resendConfirmation: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,
@@ -58,6 +60,7 @@ const service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
+    dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },
   },
   featureFlags: {
     reference: true,
