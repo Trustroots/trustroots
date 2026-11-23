@@ -188,6 +188,16 @@ conditional database operation that only matches a valid, unexpired token.
 - **WHEN** a reset token has already been consumed by another request
 - **THEN** the system rejects the reset without changing the password
 
+### Requirement: Authenticated password-change allowance
+
+The system SHALL allow three authenticated password-change requests per member per fifteen-minute window by default. The browser and mobile APIs SHALL share this allowance across sessions for the same member.
+
+#### Scenario: Member reaches the shared password-change allowance
+
+- **WHEN** a member requests a password change after exhausting their allowance across either client
+- **THEN** the system returns HTTP 429 with a `Retry-After` header before checking the current password or writing credentials
+- **AND** the existing password remains valid
+
 ### Requirement: Account-wide session revocation after credential changes
 
 The system SHALL validate the authentication version stored in each Passport
@@ -804,3 +814,13 @@ Members SHALL be able to cancel an existing account's pending email change from 
 
 - **WHEN** an old link or account settings request tries to cancel a superseded or confirmed change
 - **THEN** the request fails without changing the current or newer pending address
+
+### Requirement: Member data export allowance
+
+The system SHALL allow five data export requests per member per hour by default. The allowance SHALL be shared across sessions and client addresses for the same member.
+
+#### Scenario: Member reaches the export allowance
+
+- **WHEN** an authenticated member requests an export after using their hourly allowance
+- **THEN** the system returns HTTP 429 with a `Retry-After` header before assembling the export
+- **AND** another member on the same network can still use their own allowance

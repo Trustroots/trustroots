@@ -1,5 +1,6 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
 import contactsPolicy from './../policies/contacts.server.policy.mts';
 import contacts from './../controllers/contacts.server.controller.mts';
 
@@ -20,7 +21,10 @@ function register(app: Express) {
   app
     .route('/api/contact')
     .all(routeHandler(contactsPolicy.isAllowed))
-    .post(routeHandler(contacts.add));
+    .post(
+      routeHandler(targetedRequestLimit.contactRequest),
+      routeHandler(contacts.add),
+    );
   app
     .route('/api/contact-by/:contactUserId')
     .all(routeHandler(contactsPolicy.isAllowed))

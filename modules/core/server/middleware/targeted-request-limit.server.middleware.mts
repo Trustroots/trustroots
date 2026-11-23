@@ -4,11 +4,14 @@ import { consume as defaultConsume } from '../services/targeted-request-limits.s
 type Operation =
   | 'signup'
   | 'support'
+  | 'contactRequest'
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
+  | 'passwordChange'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'dataExport';
 interface LimitRequest {
   get?: (header: string) => string | undefined;
   ip?: string;
@@ -157,11 +160,14 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
   return {
     signup: createLimiter('signup', 'recipient', deps),
     support: createLimiter('support', 'member', deps),
+    contactRequest: createLimiter('contactRequest', 'member', deps),
     signin: createLimiter('signin', 'account', deps),
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
+    passwordChange: createLimiter('passwordChange', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
+    dataExport: createLimiter('dataExport', 'member', deps),
     getRequestIdentity,
   };
 }

@@ -63,7 +63,7 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
-    .get(userExport.download);
+    .get(targetedRequestLimit.dataExport, userExport.download);
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
@@ -115,7 +115,7 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users/password')
     .all(usersPolicy.isAllowed)
-    .post(userPassword.changePassword);
+    .post(targetedRequestLimit.passwordChange, userPassword.changePassword);
   app
     .route('/api/users/:username')
     .all(usersPolicy.isAllowed)
