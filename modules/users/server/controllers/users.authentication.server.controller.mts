@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { pick } from '../lib/pick.server.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
 import userProfile from './users.profile.server.controller.mts';
@@ -197,7 +197,7 @@ service.signup = function (req, res) {
     });
     const body = validatedSignupBody!;
     const user = new User(
-      _.pick(body, [
+      pick(body, [
         'firstName',
         'lastName',
         'username',
@@ -503,7 +503,7 @@ service.removeOAuthProvider = function (req, res) {
   // Return error if no provider or wrong provider
   if (
     !req.params!.provider ||
-    !_.includes(['github', 'facebook', 'twitter'], req.params!.provider)
+    !['github', 'facebook', 'twitter'].includes(req.params!.provider)
   ) {
     return res.status(400).send({
       message: 'No provider defined.',

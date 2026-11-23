@@ -3,7 +3,6 @@
 // Reformat JSON structure to be suitable for Weblate.
 // Context https://github.com/Trustroots/trustroots/issues/1487#issuecomment-636060326
 import dependency0 from 'fs';
-import _ from 'lodash';
 const { readFileSync, writeFileSync } = dependency0;
 const filenames = process.argv.slice(2);
 if (filenames.length === 0) {
@@ -19,11 +18,13 @@ for (const filename of filenames) {
   const result = convert(Object(parsed));
   writeFileSync(filename, JSON.stringify(result, null, 2) + '\n', 'utf8');
 }
+const isObject = (value: unknown): value is object =>
+  typeof value === 'object' && value !== null;
 function convert(obj: object): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (let key of Object.keys(obj)) {
     let value = readProperty(obj, key);
-    if (_.isObject(value) && Object.keys(value).length > 1) {
+    if (isObject(value) && Object.keys(value).length > 1) {
       /* for plurals we receive something like:
            {
              "foo": {
@@ -44,7 +45,7 @@ function convert(obj: object): Record<string, unknown> {
       }
     } else {
       // For the rest we just de-nest all the keys all the way down
-      while (_.isObject(value)) {
+      while (isObject(value)) {
         const keys = Object.keys(value);
         const firstKey = keys[0];
         value =

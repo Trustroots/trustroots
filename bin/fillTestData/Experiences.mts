@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
 import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
@@ -101,7 +100,7 @@ const experienceGenerator = {
   created: () =>
     moment()
       .subtract({
-        days: _.random(14),
+        days: Math.floor(Math.random() * 15),
       })
       .toDate(),
   feedbackPublic: () => faker.lorem.sentences(),

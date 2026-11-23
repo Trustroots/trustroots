@@ -6,7 +6,6 @@ import React, {
   type HTMLAttributes,
 } from 'react';
 import { cn } from '@trustroots/ui/cn';
-import isArray from 'lodash/isArray';
 
 import { selectPhoto } from '../services/photos.service';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
@@ -66,7 +65,7 @@ export default function Board({
     return () => {
       broadcastClientEvent('photoCreditsRemoved', photoObject);
     };
-  }, [isArray(names) ? names.join(' ') : names]);
+  }, [Array.isArray(names) ? names.join(' ') : names]);
 
   if (photo) {
     if (style) {

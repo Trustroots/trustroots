@@ -2,7 +2,6 @@
  * Unit tests for the volunteers controller.
  */
 import assert from 'node:assert/strict';
-import lodash from 'lodash';
 import mongoose from 'mongoose';
 import sinon, { type SinonStub } from 'sinon';
 import 'should';
@@ -82,8 +81,8 @@ async function loadController(execHandler: ExecHandler) {
     FakeQuery
   >;
   find.returns(query);
-  const shuffle = sinon.stub(lodash, 'shuffle').callsFake(users => users);
-  void shuffle;
+  // A constant comparator result keeps the order of the shuffled lists
+  sinon.stub(Math, 'random').returns(0.5);
   const controller =
     await import('../../server/controllers/pages.volunteers.server.controller.mts');
 

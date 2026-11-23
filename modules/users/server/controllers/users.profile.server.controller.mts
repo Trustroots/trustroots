@@ -11,7 +11,7 @@ import getContactHandlerModule from './../../../contacts/server/controllers/cont
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mts';
 import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mts';
-import _ from 'lodash';
+import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
@@ -280,9 +280,7 @@ service.update = function (req, res) {
         // Stryker disable next-line MethodExpression: npubEncode reads upper- and lowercase hex alike
         req.body.nostrNpub = nip19.npubEncode(result.data.toLowerCase());
       }
-    } catch (err) {
-      // Stryker disable next-line CallExpression: _.noop does nothing
-      _.noop(err);
+    } catch {
       return res.status(400).send({
         message:
           'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
@@ -880,7 +878,10 @@ service.userByUsername = function (req, res, next, username) {
         (err, stats) => {
           // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
           if (!err)
-            _.assign(req.profile, _.pick(stats!, ['replyRate', 'replyTime']));
+            Object.assign(
+              req.profile,
+              pick(stats!, ['replyRate', 'replyTime']),
+            );
           resolve();
         },
       );
@@ -982,9 +983,7 @@ function sanitizeProfile(
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   // Stryker disable next-line ConditionalExpression,EqualityOperator: rejecting from an empty member list leaves it empty, so the length test decides nothing
   if (profile.member && profile.member.length > 0) {
-    profile.member = _.reject(profile.member, function (o) {
-      return !o.tribe;
-    });
+    profile.member = profile.member.filter(o => o.tribe);
     if (!authenticatedUser) {
       profile.member.forEach(membership => {
         delete membership.joinReason;
@@ -1058,21 +1057,24 @@ function sanitizeProfile(
     delete profile.extSitesHitchwikiMaps;
     delete profile.extSitesHitchwiki;
     delete profile.nostrNpub;
-  } else if (_.isObject(profile.additionalProvidersData)) {
+  } else if (
+    typeof profile.additionalProvidersData === 'object' &&
+    profile.additionalProvidersData !== null
+  ) {
     const providerIdentityFields = {
       facebook: ['id'],
       github: ['login'],
       twitter: ['screen_name'],
     };
     const sanitizedProviders: Record<string, unknown> = {};
-    _.forEach(providerIdentityFields, function (fields, provider) {
-      if (_.has(profile.additionalProvidersData, provider)) {
-        sanitizedProviders[provider] = _.pick(
-          profile.additionalProvidersData[provider],
+    for (const [provider, fields] of Object.entries(providerIdentityFields)) {
+      if (Object.hasOwn(profile.additionalProvidersData, provider)) {
+        sanitizedProviders[provider] = pick(
+          Reflect.get(profile.additionalProvidersData, provider),
           fields,
         );
       }
-    });
+    }
     profile.additionalProvidersData = sanitizedProviders;
   }
 
@@ -1208,7 +1210,7 @@ function changeTribeMembership(
       // Stryker disable next-line BooleanLiteral: Mongoose ignores the legacy safe option
       { safe: true, new: true },
     ).exec();
-    const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+    const pickedTribe = pick(tribe, tribesHandler.tribeFields.split(' '));
     const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
     statService.stat(
       {
@@ -1345,18 +1347,12 @@ function isUserMemberOfTribe(
   user: UserServerDocument,
   tribeId: string,
 ): boolean {
-  // Stryker disable next-line ConditionalExpression,BlockStatement: _.find over a missing or empty member list also gives false
+  // Stryker disable next-line ConditionalExpression,BlockStatement: `some` over a missing or empty member list also gives false
   if (!user.member || !user.member.length) {
     return false;
   }
 
-  // `_.find` iterates over elements of collection, returning the first element
-  // predicate returns truthy for. Otherwise returns undefined.
-  return Boolean(
-    _.find(user.member, function (membership) {
-      return membership.tribe.equals(tribeId);
-    }),
-  );
+  return user.member.some(membership => membership.tribe.equals(tribeId));
 }
 
 function getMemberSearchOfferStages(
@@ -1437,7 +1433,7 @@ function getMemberSearchOfferStages(
  */
 service.search = async function (req, res, next) {
   // check that the search string is provided
-  if (!_.has(req.query, 'search')) {
+  if (!Object.hasOwn(req.query!, 'search')) {
     return next();
   }
 

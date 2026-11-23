@@ -5,7 +5,6 @@ import type {
   CountUsers,
   LegacyMongoose,
 } from '../legacy-cli-contracts.d.cts';
-const _ = require('lodash') as typeof import('lodash');
 const moment = require('moment') as typeof import('moment');
 const mongooseService = require('./../../config/lib/mongoose.mts')
   .default as ConnectionHelper;
@@ -104,10 +103,10 @@ async function fillMembers(): Promise<void> {
     }
 
     // Set prev counters
-    prevDayOfYear = _.clone(group._id.dayOfYear);
-    prevDay = _.clone(group._id.day);
-    prevMonth = _.clone(group._id.month);
-    prevYear = _.clone(group._id.year);
+    prevDayOfYear = group._id.dayOfYear;
+    prevDay = group._id.day;
+    prevMonth = group._id.month;
+    prevYear = group._id.year;
 
     dates.push(group);
   }

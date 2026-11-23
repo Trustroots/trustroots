@@ -1,7 +1,6 @@
 import type { Connection } from 'mongoose';
 import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import _ from 'lodash';
 import config from './../config.mts';
 import errorService from './../../modules/core/server/services/error.server.service.mts';
 import express, {
@@ -132,7 +131,7 @@ function initLocalVariables(app: Express) {
     res.locals.canonicalUrl = res.locals.hostPort + req.path;
 
     // Native mobile app wrapper loads the site with `?app` URL query argument.
-    res.locals.isNativeMobileApp = _.has(req, ['query', 'app']);
+    res.locals.isNativeMobileApp = Object.hasOwn(req.query, 'app');
     next();
   });
 }

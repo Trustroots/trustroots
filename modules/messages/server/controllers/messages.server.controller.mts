@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
@@ -901,8 +900,8 @@ service.sync = function (req, res) {
   // Validate and construct date filters
   let dateFrom;
   let dateTo;
-  const queryDate = {};
-  if (_.has(req, 'query.dateFrom')) {
+  const created: { $gt?: Date; $lt?: Date } = {};
+  if (Object.hasOwn(queryParams, 'dateFrom')) {
     dateFrom = moment(queryParams.dateFrom as Parameters<typeof moment>[0]);
 
     // Validate `dateFrom`
@@ -913,9 +912,9 @@ service.sync = function (req, res) {
     }
 
     // Append dateFrom to date query
-    _.set(queryDate, 'created.$gt', dateFrom.toDate());
+    created.$gt = dateFrom.toDate();
   }
-  if (_.has(req, 'query.dateTo')) {
+  if (Object.hasOwn(queryParams, 'dateTo')) {
     dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
     // Validate `dateTo`
     if (!dateTo.isValid()) {
@@ -925,7 +924,7 @@ service.sync = function (req, res) {
     }
 
     // Append dateTo to date query
-    _.set(queryDate, 'created.$lt', dateTo.toDate());
+    created.$lt = dateTo.toDate();
   }
 
   // Validate correct order of dates
@@ -958,10 +957,10 @@ service.sync = function (req, res) {
 
   // Filter only by user or also by date?
   // Stryker disable next-line ConditionalExpression: an empty date filter inside $and matches every document, so always taking this branch gives the same results
-  if (_.has(queryDate, 'created')) {
+  if (Object.keys(created).length > 0) {
     // Construct query with date limits
     messageQuery = {
-      $and: [queryUsers, queryDate],
+      $and: [queryUsers, { created }],
     };
   } else {
     // Construct query without date limit
@@ -984,24 +983,23 @@ service.sync = function (req, res) {
     let userIds: string[] = [];
 
     // Re-group messages by users
-    const groupedMessages = _.groupBy(messages, function (row) {
+    const groupedMessages = new Map<string, typeof messages>();
+    for (const row of messages) {
       // Collect user id
       userIds.push(row.userTo.toString());
       userIds.push(row.userFrom.toString());
 
       // Determines key of the group
-      if (row.userTo === user!._id) {
-        return row.userFrom;
-      }
-      return row.userTo;
-    });
+      const key = String(row.userTo === user!._id ? row.userFrom : row.userTo);
+      groupedMessages.set(key, [...(groupedMessages.get(key) ?? []), row]);
+    }
 
     // Ensure we have only one of each user ids
-    userIds = _.uniq(userIds);
+    userIds = [...new Set(userIds)];
     const users = await User.find({ _id: { $in: userIds } })
       .select(userMiniService.userMiniProfileFields)
       .exec();
-    return { messages: groupedMessages, users };
+    return { messages: Object.fromEntries(groupedMessages), users };
   }
   collect().then(
     data => res.json(data),

@@ -1,6 +1,5 @@
 import { createRequire } from 'node:module';
 
-import _ from 'lodash';
 import fs from 'fs';
 import { globSync } from 'node:fs';
 import defaultAssets from './assets/default.mts';
@@ -32,6 +31,23 @@ const requireLocalConfig = createRequire(import.meta.url);
 /**
  * Get files by glob patterns
  */
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const mergeDeep = <T extends object>(target: T, source: object): T => {
+  for (const [key, value] of Object.entries(source)) {
+    const current = Reflect.get(target, key);
+    Reflect.set(
+      target,
+      key,
+      isPlainObject(value) && isPlainObject(current)
+        ? mergeDeep(current, value)
+        : value,
+    );
+  }
+  return target;
+};
+
 const getGlobbedPaths = function (
   globPatterns: string | string[],
   excludes?: string | string[],
@@ -43,23 +59,22 @@ const getGlobbedPaths = function (
   let output: string[] = [];
 
   // If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob
-  if (_.isArray(globPatterns)) {
+  if (Array.isArray(globPatterns)) {
     globPatterns.forEach(function (globPattern) {
-      output = _.union(output, getGlobbedPaths(globPattern, excludes));
+      output = [
+        ...new Set([...output, ...getGlobbedPaths(globPattern, excludes)]),
+      ];
     });
-  } else if (_.isString(globPatterns)) {
+  } else if (typeof globPatterns === 'string') {
     if (urlRegex.test(globPatterns)) {
       output.push(globPatterns);
     } else {
       let files = globSync(globPatterns).sort();
       if (excludes) {
         files = files.map(function (file) {
-          if (_.isArray(excludes)) {
-            for (const i in excludes) {
-              if (_.has(excludes, i)) {
-                const exclude = excludes[i];
-                if (exclude !== undefined) file = file.replace(exclude, '');
-              }
+          if (Array.isArray(excludes)) {
+            for (const exclude of excludes) {
+              file = file.replace(exclude, '');
             }
           } else {
             file = file.replace(excludes, '');
@@ -67,7 +82,7 @@ const getGlobbedPaths = function (
           return file;
         });
       }
-      output = _.union(output, files);
+      output = [...new Set([...output, ...files])];
     }
   }
   return output;
@@ -128,8 +143,8 @@ const initGlobalConfig = function () {
    * and lastly merge/override that with any local repository configuration that exists
    * in local.js
    */
-  const config = _.merge(
-    _.extend(defaultConfig, environmentConfigByName[environment]),
+  const config = mergeDeep(
+    Object.assign(defaultConfig, environmentConfigByName[environment]),
     (!process.env.TRUSTROOTS_SKIP_LOCAL_CONFIG &&
       fs.existsSync('./config/env/local.js') &&
       (requireLocalConfig('./env/local.js') as DeepPartial<Config>)) ||
