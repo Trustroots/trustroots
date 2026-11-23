@@ -10,7 +10,6 @@ import type {
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
 import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
-import _ from 'lodash';
 import should from 'should';
 import request from 'supertest';
 import moment from 'moment';
@@ -694,13 +693,12 @@ describe('Offer search tests', function () {
                 // Set assertions
                 offersGetRes.body.features.should.have.lengthOf(3);
                 // Count different offer types
-                // This produces `{'host': 2, 'meet': 1}`
-                const count = _.countBy(
-                  offersGetRes.body.features,
-                  offer => offer.properties.type,
+                const types = offersGetRes.body.features.map(
+                  (offer: { properties: { type: string } }) =>
+                    offer.properties.type,
                 );
-                count.host.should.equal(2);
-                count.meet.should.equal(1);
+                types.filter(type => type === 'host').should.have.lengthOf(2);
+                types.filter(type => type === 'meet').should.have.lengthOf(1);
                 // Call the assertion callback
                 return done();
               });
@@ -826,13 +824,12 @@ describe('Offer search tests', function () {
                   // Set assertions
                   offersGetRes.body.features.should.have.lengthOf(3);
                   // Count different offer types
-                  // This produces `{'host': 2, 'meet': 1}`
-                  const count = _.countBy(
-                    offersGetRes.body.features,
-                    offer => offer.properties.type,
+                  const types = offersGetRes.body.features.map(
+                    (offer: { properties: { type: string } }) =>
+                      offer.properties.type,
                   );
-                  count.host.should.equal(2);
-                  count.meet.should.equal(1);
+                  types.filter(type => type === 'host').should.have.lengthOf(2);
+                  types.filter(type => type === 'meet').should.have.lengthOf(1);
                   // Call the assertion callback
                   return done();
                 });

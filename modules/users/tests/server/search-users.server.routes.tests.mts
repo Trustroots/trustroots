@@ -1,7 +1,6 @@
 import importedDependency0 from './../../server/controllers/users.profile.server.controller.mts';
 import { promisify } from 'node:util';
 import request from 'supertest';
-import _ from 'lodash';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import should from 'should';
@@ -82,7 +81,7 @@ describe('Search users: GET /users?search=string', function () {
           emailToken: 'initial email token',
           password: user.password || '******password',
           provider: 'local',
-          public: _.has(user, 'public') ? user.public : true,
+          public: Object.hasOwn(user, 'public') ? user.public : true,
           gender: 'non-binary',
           locationFrom: user.locationFrom || 'Wonderland',
           locationLiving: user.locationLiving || 'Sampleton',
@@ -637,8 +636,10 @@ describe('Search users: GET /users?search=string', function () {
             const expectedFields = userHandler.userSearchProfileFields
               .split(' ')
               .concat(['_id']);
-            const actualFields = _.keys(foundUsers[0]);
-            const unexpectedFields = _.difference(actualFields, expectedFields);
+            const actualFields = Object.keys(foundUsers[0]);
+            const unexpectedFields = actualFields.filter(
+              field => !expectedFields.includes(field),
+            );
             should(unexpectedFields).eql(['score']);
             cb();
           })(step1!);

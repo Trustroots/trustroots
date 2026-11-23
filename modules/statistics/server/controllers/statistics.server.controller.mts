@@ -2,7 +2,6 @@ import { promisify } from 'node:util';
 /**
  * Module dependencies.
  */
-import _ from 'lodash';
 import moment from 'moment';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
@@ -139,7 +138,7 @@ interface StatisticsRequest {
   statistics?: StatisticsAccumulator;
 }
 interface CollectionRequest {
-  body?: unknown;
+  body?: { collection?: unknown; stats?: Record<string, unknown> | null };
 }
 interface StatisticsControllerService {
   clearPublicStatisticsCache(): void;
@@ -189,8 +188,7 @@ const Message = mongoose.model<MessageRecord>('Message');
 const ReferenceThread =
   mongoose.model<ReferenceThreadRecord>('ReferenceThread');
 let publicStatisticsCache:
-  | { expiresAt: number; statistics: PublicStatistics }
-  | undefined;
+  { expiresAt: number; statistics: PublicStatistics } | undefined;
 
 function connectionPercentage(
   count: number,
@@ -1008,12 +1006,13 @@ export const collectStatistics = function (
   req: CollectionRequest,
   res: JsonResponse<{ message: string }>,
 ): JsonResponse<{ message: string }> | void {
-  const collection = String(_.get(req, 'body.collection'));
+  const collection = String(req.body?.collection);
   const validCollections = ['mobileAppInit'];
   const updateMsg =
     'You should update Trustroots app or otherwise it will not continue functioning.';
-  const statsInput = _.get(req, 'body.stats');
-  if (!_.has(req, 'body.stats') || !_.isObject(statsInput)) {
+  const statsInput =
+    req.body && Object.hasOwn(req.body, 'stats') ? req.body.stats : undefined;
+  if (typeof statsInput !== 'object' || statsInput === null) {
     return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `stats`.',
     });
@@ -1023,7 +1022,7 @@ export const collectStatistics = function (
       message: 'Missing or invalid `collection`.',
     });
   }
-  const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+  const appVersion = String(statsInput.version ?? 'unknown');
   const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
 
   // Object for statistics
@@ -1037,15 +1036,13 @@ export const collectStatistics = function (
       version: appVersion,
       // Device year class, e.g. "2012"
       // @link https://github.com/facebook/device-year-class
-      deviceYearClass: String(
-        _.get(req, 'body.stats.deviceYearClass', 'unknown'),
-      ),
+      deviceYearClass: String(statsInput.deviceYearClass ?? 'unknown'),
     },
     meta: {
       // Device OS (e.g. "android")
-      os: String(_.get(req, 'body.stats.os', 'unknown')),
+      os: String(statsInput.os ?? 'unknown'),
       // Expo SDK version
-      expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown')),
+      expoVersion: String(statsInput.expoVersion ?? 'unknown'),
     },
   };
 

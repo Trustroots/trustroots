@@ -3,7 +3,6 @@ import type {
   TestExpressApp,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-import _ from 'lodash';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import should from 'should';
@@ -111,12 +110,18 @@ describe('Read a single experience by experience id', () => {
         .split(' ')
         .slice(2)
         .filter(field => field !== 'avatarVersion');
+      const pickUserFields = (user: object) =>
+        Object.fromEntries(
+          userFields
+            .filter(field => field in user)
+            .map(field => [field, Reflect.get(user, field)]),
+        );
       const userFromExp = {
-        ..._.pick(users[1], userFields),
+        ...pickUserFields(users[1]),
         _id: users[1]._id.toString(),
       };
       const userToExp = {
-        ..._.pick(users[2], userFields),
+        ...pickUserFields(users[2]),
         _id: users[2]._id.toString(),
       };
       should(body).eql({

@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
 import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
@@ -160,7 +159,7 @@ function seedThreads(numThreads: number, maxMessages: number) {
                 for (let i = 0; i < users.length; i++) {
                   randomUsers[i] = i;
                 }
-                randomUsers = _.shuffle(randomUsers);
+                randomUsers = [...randomUsers].sort(() => Math.random() - 0.5);
                 if (userTo) {
                   message.userTo = userTo;
                 } else {

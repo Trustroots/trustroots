@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import trshell from './trshell.mts';
-import _ from 'lodash';
 import type { HydratedDocument } from 'mongoose';
 import type {
   AdminId,
@@ -43,7 +42,7 @@ const showMessage = function (id: AdminId) {
       _error: Error | null,
       docs: Array<HydratedDocument<AdminMessageRecord>>,
     ) {
-      _.map(docs, async function (m) {
+      docs.map(async function (m) {
         const stuff = [await findUser(m.userFrom), await findUser(m.userTo)];
         const [from, to] = await Promise.all(stuff);
         if (from == null || to == null) return;
@@ -65,7 +64,7 @@ const showThread = async function (id: AdminId) {
       _error: Error | null,
       docs: Array<HydratedDocument<AdminThreadRecord>>,
     ) {
-      await _.map(docs, function (t) {
+      await docs.map(function (t) {
         showMessage(t.message);
       });
       trshell.weAreDone();
@@ -81,7 +80,7 @@ const showBadRefs = function () {
       _error: Error | null,
       docs: Array<HydratedDocument<AdminReferenceThreadRecord>>,
     ) {
-      _.map(docs, async function (rt) {
+      docs.map(async function (rt) {
         showThread(rt.thread);
       });
     },
