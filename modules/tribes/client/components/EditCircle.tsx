@@ -102,7 +102,11 @@ export default function EditCircle({
                   <h3 className="tw:mt-0 tw:text-base">
                     {t('Description preview')}
                   </h3>
-                  <RichText content={draft.description} allowLinks />
+                  <RichText
+                    content={draft.description}
+                    allowLinks
+                    allowMarkdownLinks
+                  />
                 </section>
               )}
               {error && <p role="alert">{error}</p>}

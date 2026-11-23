@@ -246,10 +246,14 @@ test.describe('admin circles feature coverage', () => {
     ]);
 
     const label = `E2E Circle ${Date.now()}`;
+    const markdown =
+      ' See [the field guide](https://example.test/field-guide).';
     const description =
-      'Read <a href="https://example.test/circle-info" onclick="alert(1)">the circle guide</a>. <a href="javascript:alert(1)">unsafe link</a>';
+      'Read <a href="https://example.test/circle-info" onclick="alert(1)">the circle guide</a>. <a href="javascript:alert(1)">unsafe link</a>' +
+      markdown;
     const persistedDescription =
-      'Read <a href="https://example.test/circle-info">the circle guide</a>. ';
+      'Read <a href="https://example.test/circle-info">the circle guide</a>. ' +
+      markdown;
     const circleSlug = label.toLowerCase().replaceAll(' ', '-');
     const smallPng = await sharp({
       create: {
@@ -275,6 +279,9 @@ test.describe('admin circles feature coverage', () => {
     await expect(
       preview.getByRole('link', { name: 'the circle guide' }),
     ).toHaveAttribute('href', 'https://example.test/circle-info');
+    await expect(
+      preview.getByRole('link', { name: 'the field guide' }),
+    ).toHaveAttribute('href', 'https://example.test/field-guide');
     await expect(
       preview.getByRole('link', { name: 'unsafe link' }),
     ).toHaveCount(0);
@@ -329,6 +336,9 @@ test.describe('admin circles feature coverage', () => {
     await expect(
       page.getByRole('link', { name: 'the circle guide' }),
     ).toHaveAttribute('href', 'https://example.test/circle-info');
+    await expect(
+      page.getByRole('link', { name: 'the field guide' }),
+    ).toHaveAttribute('href', 'https://example.test/field-guide');
     await expect(page.getByRole('link', { name: 'unsafe link' })).toHaveCount(
       0,
     );
