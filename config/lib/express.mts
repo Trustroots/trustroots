@@ -1,4 +1,3 @@
-import { FEATURED_NOTE_RELAYS } from '../../modules/core/shared/featured-nostr-notes.mts';
 import type { Connection } from 'mongoose';
 import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -19,7 +18,7 @@ import validateApiInput from '../../modules/core/server/middleware/api-input.ser
 import { getPublicCharts } from '../../modules/statistics/server/controllers/public-charts.server.controller.mts';
 import mongoStore from 'connect-mongo';
 import compress from 'compression';
-import helmet from 'helmet';
+import { securityHeaders } from './security-headers.mts';
 import buildMetadata from './build-metadata.mts';
 import path from 'path';
 import paginate from './../../modules/core/server/services/pagination.server.service.mts';
@@ -32,7 +31,7 @@ interface ExpressSetup {
   initSession(app: Express, connection: Connection): void;
   initLastSeen(app: Express): Promise<void>;
   initModulesConfiguration(app: Express, db?: Connection): Promise<void>;
-  initHelmetHeaders(app: Express): void;
+  initSecurityHeaders(app: Express): void;
   initModulesClientRoutes(app: Express): void;
   denyAvatarStagingRequests(
     req: Request,
@@ -51,7 +50,7 @@ const service: ExpressSetup = {
   initSession,
   initLastSeen,
   initModulesConfiguration,
-  initHelmetHeaders,
+  initSecurityHeaders,
   initModulesClientRoutes,
   denyAvatarStagingRequests,
   initModulesServerPolicies,
@@ -278,154 +277,15 @@ async function initModulesConfiguration(app: Express, db?: Connection) {
 }
 
 /**
- * Configure Helmet headers configuration
- * https://helmetjs.github.io/docs/
+ * Set the security headers and the per-request CSP nonce
  */
-function initHelmetHeaders(app: Express) {
-  /*
-   * Content Security Policy (CSP)
-   *
-   * By default, directives are wide open. If you don't set a specific policy
-   * for a directive, let's say `font-src`, then that directive behaves by
-   * default as though you'd specified `*` as the valid source
-   * (for example, you could load fonts from anywhere, without restriction).
-   *
-   * @link https://helmetjs.github.io/docs/csp/
-   * @link https://developers.google.com/web/fundamentals/security/csp/
-   * @link https://content-security-policy.com/
-   */
+function initSecurityHeaders(app: Express) {
+  app.disable('x-powered-by');
   app.use((req, res, next) => {
     res.locals.nonce = randomUUID();
-    const cspMiddleware = helmet.contentSecurityPolicy({
-      directives: {
-        defaultSrc: ["'self'"],
-        // Defines the origins from which scripts can be loaded.
-        scriptSrc: [
-          // Only the development bundle uses eval-based source maps.
-          ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
-          "'self'",
-          'https://1p.trustroots.org',
-          // Umami analytics
-          // Use `nonce` for `<script>` tags
-          // Nonce is generated above at `initLocalVariables()` middleware
-          // @link https://github.com/helmetjs/helmet/wiki/Conditionally-using-middleware
-          `'nonce-${res.locals.nonce}'`,
-        ],
-        // Specifies the origins that can serve web fonts.
-        fontSrc: [
-          "'self'",
-          'data:', // Inline fonts (`src: url('data:...')`)
-        ],
-        // Defines the origins from which stylesheets can be loaded.
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        // Defines the origins from which images can be loaded.
-        imgSrc: [
-          "'self'",
-          // Official radio artwork used for links to broadcaster websites.
-          'https://somafm.com/img/',
-          'https://radioparadise.com/apple-touch-icon.png',
-          '*.twitter.com',
-          '*.gstatic.com',
-          '*.googleusercontent.com',
-          // Google CDN. Android app related.
-          'gravatar.com',
-          // Gravatar (WordPress.com)
-          'i0.wp.com',
-          // Gravatar (WordPress.com)
-          'i1.wp.com',
-          // Gravatar (WordPress.com)
-          'i2.wp.com',
-          // Gravatar (WordPress.com)
-          'data:',
-          // Inline images (`<img src="data:...">`) + maplibre-gl
-          'blob:', // maplibre-gl workers and images
-        ],
-        // Limits the origins that you can connect to
-        // (via XHR, WebSockets, and EventSource).
-        // If not allowed the browser emulates a 400 HTTP status code.
-        connectSrc: [
-          "'self'",
-          'https://api.mapbox.com', // Geocoding
-          'https://tiles.openfreemap.org', // Map style, tiles and fonts
-          ...FEATURED_NOTE_RELAYS,
-          'wss://relay.maps.hitchwiki.org',
-          'wss:', // Member-selected NIP-46 signer relays.
-          'https://1p.trustroots.org', // Umami analytics
-        ],
-        // Allows control over Flash and other plugins.
-        objectSrc: ["'none'"],
-        // Allows control of media elements, e.g. HTML5 `<audio>`, `<video>`.
-        // Radio station URLs can redirect to HTTPS streaming CDN hosts.
-        mediaSrc: ["'self'", 'https:'],
-        // Lists valid endpoints for submission from `<form>` tags.
-        formAction: ["'self'"],
-        // specifies the sources that can embed the current page.
-        // This directive applies to these tags:
-        // `<frame>`, `<iframe>`, `<embed>`, `<applet>`
-        frameAncestors: ["'none'"],
-        // Defines valid sources for web workers and nested browsing contexts
-        // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: ["'self'", 'blob:'],
-        workerSrc: ["'self'", 'blob:'],
-        // Restricts the URLs that can appear in a page's `<base>` element.
-        baseUri: ["'self'"],
-        // Browsers report CSP violations to this path using `POST` method
-        // See `modules/core/server/routes/core.server.routes.js`
-        // Note: If you’re using a CSRF module like csurf, you might have problems
-        // handling these violations without a valid CSRF token. The fix is to put
-        // your CSP report route above csurf middleware.
-        reportUri: '/api/report-csp-violation',
-      },
-      // Switch the header to `Content-Security-Policy-Report-Only`
-      // by settings this `true`.
-      //
-      // This instructs browsers to report violations to the `reportUri`
-      // (if specified) but it will not block any resources from loading.
-      //
-      // You could also use function here:
-      // `function (req, res) { return true; }`
-      reportOnly: process.env.NODE_ENV === 'development',
-    });
-
-    cspMiddleware(req, res, next);
+    res.set(securityHeaders(res.locals.nonce));
+    next();
   });
-
-  // X-Frame protection
-  // @link https://helmetjs.github.io/docs/frameguard/
-  // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
-  app.use(helmet.frameguard());
-
-  // Adds some small XSS protections
-  // @link https://helmetjs.github.io/docs/xss-filter/
-  app.use(helmet.xssFilter());
-
-  // Keep clients from sniffing the MIME type
-  // @link https://helmetjs.github.io/docs/dont-sniff-mimetype/
-  app.use(helmet.noSniff());
-
-  // Sets X-Download-Options for IE8+
-  // @link https://helmetjs.github.io/docs/ienoopen/
-  app.use(helmet.ieNoOpen());
-
-  // Remove the X-Powered-By header
-  app.disable('x-powered-by');
-  // Also possible from Helmet:
-  // @link https://helmetjs.github.io/docs/hide-powered-by/
-  // app.use(helmet.hidePoweredBy());
-
-  // HTTP Strict Transport Security
-  // This only works if your site actually has HTTPS.
-  // It won't tell users on HTTP to switch to HTTPS,
-  // it will just tell HTTPS users to stick around
-  // @link https://helmetjs.github.io/docs/hsts/
-  const hstsOptions = {
-    maxAge: 15778476,
-    // 6 months in seconds. Must be at least 18 weeks to be approved by Google
-    includeSubDomains: false,
-    // Must be enabled to be approved by Google
-    force: true,
-  };
-  app.use(helmet.hsts(hstsOptions));
 }
 
 /**
@@ -524,8 +384,8 @@ async function init(
   // Initialize Express view engine
   this.initViewEngine(app);
 
-  // Initialize Helmet security headers
-  this.initHelmetHeaders(app);
+  // Initialize security headers
+  this.initSecurityHeaders(app);
 
   // The aggregate chart response is public and independent of browser sessions.
   app.get('/api/statistics/charts', getPublicCharts);

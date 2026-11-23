@@ -70,7 +70,7 @@ export default function (app: Application) {
   // Note: If you’re using a CSRF module like csurf, you might have problems
   // handling these violations without a valid CSRF token. The fix is to put
   // your CSP report route above csurf middleware.
-  // See `config/lib/express.js` and `initHelmetHeaders()` for more
+  // See `config/lib/security-headers.mts` and `initSecurityHeaders()` for more
   app.route('/api/report-csp-violation').post(core.receiveCSPViolationReport);
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/map-default-location').get(getMapDefaultLocation);
