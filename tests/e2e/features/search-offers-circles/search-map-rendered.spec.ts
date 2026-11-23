@@ -1371,12 +1371,25 @@ test.describe('rendered search map feature coverage', () => {
         name: 'Search results',
         exact: true,
       });
-      const list = results.getByRole('list', { name: 'City hosts' });
+      const list = results.getByRole('table', { name: 'City hosts' });
       const rows = list.getByRole('button');
       await expect(rows.first()).toHaveAccessibleName(/Aster Host/);
-      await expect(rows.first()).toContainText('1 public Experience');
-      await expect(rows.first()).toContainText('Age 35');
-      await expect(rows.first()).toContainText('Active in the past month');
+      await expect(
+        list.getByRole('columnheader', { name: 'Public Experiences' }),
+      ).toBeVisible();
+      const firstHost = list.getByRole('row').nth(1);
+      await expect(
+        firstHost.getByRole('cell', { name: '1', exact: true }),
+      ).toBeVisible();
+      await expect(firstHost).toContainText('Age 35');
+      await expect(
+        firstHost.getByRole('cell', { name: 'Past month', exact: true }),
+      ).toBeVisible();
+      await expect
+        .poll(() =>
+          list.evaluate(table => table.scrollWidth - table.clientWidth),
+        )
+        .toBeLessThanOrEqual(0);
       await captureSection(results, `city-host-results-${screen}`);
       const sort = results.getByLabel('Sort hosts');
       await sort.selectOption('experiences');

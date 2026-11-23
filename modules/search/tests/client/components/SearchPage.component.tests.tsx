@@ -598,9 +598,9 @@ describe('<SearchPage />', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Sample Harbour' }),
     );
-    const list = await screen.findByRole('list', { name: 'City hosts' });
-    expect(list).toHaveTextContent('Age 35 · Near the city centre');
-    expect(list).toHaveTextContent('1 public Experience');
+    const list = await screen.findByRole('table', { name: 'City hosts' });
+    expect(list).toHaveTextContent('Age 35 · Near the centre');
+    expect(within(list).getByRole('cell', { name: '1' })).toBeInTheDocument();
     expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
       expect.objectContaining({
         northEastLat: 45,
@@ -631,7 +631,7 @@ describe('<SearchPage />', () => {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
     expect(
-      await screen.findByRole('list', { name: 'City hosts' }),
+      await screen.findByRole('table', { name: 'City hosts' }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Sort hosts')).toHaveValue('activity');
     expect(
@@ -669,6 +669,8 @@ describe('<SearchPage />', () => {
           {
             ...host,
             _id: 'another-host',
+            status: undefined,
+            volunteering: true,
             user: { _id: 'member-2', username: 'another-host' },
           },
         ],
@@ -685,9 +687,9 @@ describe('<SearchPage />', () => {
     );
     expect(screen.getByText('Loading hosts…')).toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
-    const list = await screen.findByRole('list', { name: 'City hosts' });
-    expect(list).toHaveTextContent('0 public Experiences');
-    expect(list).toHaveTextContent(/About \d+ km from the city centre/);
+    const list = await screen.findByRole('table', { name: 'City hosts' });
+    expect(within(list).getByRole('cell', { name: '0' })).toBeInTheDocument();
+    expect(list).toHaveTextContent(/About \d+ km from centre/);
     fireEvent.click(screen.getByRole('button', { name: 'Load more hosts' }));
     expect(
       await screen.findByRole('button', { name: 'Loading hosts…' }),
@@ -697,6 +699,7 @@ describe('<SearchPage />', () => {
     expect(
       await within(list).findByRole('button', { name: /another-host/ }),
     ).toBeInTheDocument();
+    expect(within(list).getByText('Offers volunteering')).toBeInTheDocument();
     expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
       expect.objectContaining({ offset: 30 }),
       expect.any(AbortSignal),
@@ -715,13 +718,13 @@ describe('<SearchPage />', () => {
       screen.getByRole('button', { name: 'Results in this map area' }),
     );
     expect(
-      screen.queryByRole('list', { name: 'City hosts' }),
+      screen.queryByRole('table', { name: 'City hosts' }),
     ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'Hosts in Sample Harbour' }),
     );
     expect(
-      await screen.findByRole('list', { name: 'City hosts' }),
+      await screen.findByRole('table', { name: 'City hosts' }),
     ).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'Active in the past six months' }),
@@ -793,7 +796,7 @@ describe('<SearchPage />', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /^Hosts$/ }));
       expect(
-        await screen.findByRole('list', { name: 'City hosts' }),
+        await screen.findByRole('table', { name: 'City hosts' }),
       ).toBeInTheDocument();
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     },

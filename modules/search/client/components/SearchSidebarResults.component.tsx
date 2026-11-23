@@ -136,39 +136,81 @@ export function OfferDescription({
 }
 
 const activityLabels: Record<PlaceHostActivity, string> = {
-  'past-month': 'Active in the past month',
-  'past-six-months': 'Active in the past six months',
-  'past-two-years': 'Active in the past two years',
-  older: 'No recent activity',
+  'past-month': 'Past month',
+  'past-six-months': 'Past 6 months',
+  'past-two-years': 'Past 2 years',
+  older: 'Longer ago',
 };
 
-function CityHostDetails({
+function CityHostRow({
   host,
   city,
+  translateStatus,
+  onSelect,
 }: {
   host: PlaceHostResult;
   city: CityResults['city'];
+  translateStatus: (key: string) => string;
+  onSelect: () => void;
 }) {
-  const { age } = host;
+  const { hosting } = getAvailability(host, translateStatus);
+  const name = host.user.displayName || host.user.username;
   const kilometres = Math.round(
     latLng(city.centre.lat, city.centre.lng).distanceTo(
       latLng(...host.location),
     ) / 1000,
   );
+
   return (
-    <span className="tw:mt-2 tw:grid tw:gap-0.5 tw:text-sm">
-      <span>
-        {age ? `Age ${age} · ` : ''}
-        {kilometres === 0
-          ? 'Near the city centre'
-          : `About ${kilometres} km from the city centre`}
-      </span>
-      <span>{activityLabels[host.activity]}</span>
-      <span>
-        {host.experienceCount} public{' '}
-        {host.experienceCount === 1 ? 'Experience' : 'Experiences'}
-      </span>
-    </span>
+    <tr className="tw:relative tw:border-t tw:border-(--tr-control-border) tw:hover:bg-(--tr-success-bg-subtle) tw:focus-within:bg-(--tr-success-bg-subtle)">
+      <td className="tw:px-2.5 tw:py-2.5">
+        <button
+          aria-label={
+            hosting
+              ? `Open hosting offer from ${name} · ${hosting.label}`
+              : `Open hosting offer from ${name}`
+          }
+          className="tw:block tw:w-full tw:cursor-pointer tw:border-0 tw:bg-transparent tw:p-0 tw:text-left tw:after:absolute tw:after:inset-0"
+          data-result-id={host._id}
+          onClick={onSelect}
+          type="button"
+        >
+          <MemberIdentity size={32} user={host.user} />
+        </button>
+        <div className="tw:mt-1.5 tw:flex tw:flex-wrap tw:gap-1">
+          {hosting ? (
+            <Badge
+              variant="solid"
+              intent={hosting.intent}
+              className="tw:whitespace-normal"
+            >
+              {hosting.label}
+            </Badge>
+          ) : (
+            <span className="tw:text-xs">Hosting</span>
+          )}
+          {host.volunteering === true && (
+            <Badge
+              variant="outline"
+              intent="info"
+              className="tw:whitespace-normal"
+            >
+              Offers volunteering
+            </Badge>
+          )}
+        </div>
+        <div className="tw:mt-1 tw:text-xs tw:text-(--tr-secondary-text)">
+          {host.age ? `Age ${host.age} · ` : ''}
+          {kilometres === 0
+            ? 'Near the centre'
+            : `About ${kilometres} km from centre`}
+        </div>
+      </td>
+      <td className="tw:px-1.5 tw:text-xs">{activityLabels[host.activity]}</td>
+      <td className="tw:px-2 tw:text-center tw:font-semibold tw:tabular-nums">
+        {host.experienceCount}
+      </td>
+    </tr>
   );
 }
 
@@ -198,9 +240,9 @@ export default function SearchSidebarResults({
   const cityList = cityResults?.active ? cityResults : undefined;
   const cityQuery = cityList?.query;
   const cityOffers = cityQuery?.data?.pages.flatMap(page => page.offers) ?? [];
-  const listedOffers = cityList
-    ? Array.from(new Map(cityOffers.map(host => [host._id, host])).values())
-    : offers;
+  const cityRows = Array.from(
+    new Map(cityOffers.map(host => [host._id, host])).values(),
+  );
 
   const renderResultButton = (
     resultId: string,
@@ -256,12 +298,52 @@ export default function SearchSidebarResults({
         </div>
       )}
 
-      {showList && listedOffers.length > 0 && (
-        <ul
-          aria-label={cityList ? 'City hosts' : 'Visible search results'}
-          className="search-result-list"
-        >
-          {listedOffers.map(item => {
+      {showList && cityList && cityRows.length > 0 && (
+        <div className="member-card-surface tw:mx-2.5 tw:mb-3 tw:overflow-hidden tw:p-0!">
+          <table
+            aria-label="City hosts"
+            className="tw:w-full tw:table-fixed tw:text-sm"
+          >
+            <thead className="tw:bg-(--tr-secondary-bg) tw:text-xs tw:text-text">
+              <tr>
+                <th scope="col" className="tw:px-2.5 tw:py-2 tw:text-left">
+                  Host
+                </th>
+                <th
+                  scope="col"
+                  className="tw:w-[22%] tw:px-1.5 tw:py-2 tw:text-left"
+                >
+                  Last active
+                </th>
+                <th
+                  scope="col"
+                  className="tw:w-24 tw:px-1 tw:py-2 tw:text-center tw:whitespace-nowrap"
+                >
+                  <span className="sr-only">Public </span>Experiences
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {cityRows.map(host => (
+                <CityHostRow
+                  key={host._id}
+                  host={host}
+                  city={cityList.city}
+                  translateStatus={translateStatus}
+                  onSelect={() => {
+                    selectedResultId.current = host._id;
+                    cityList.onSelectHost(host._id);
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showList && !cityList && offers.length > 0 && (
+        <ul aria-label="Visible search results" className="search-result-list">
+          {offers.map(item => {
             const { hosting, meetingLabel, showHosting } = getAvailability(
               item,
               translateStatus,
@@ -282,10 +364,7 @@ export default function SearchSidebarResults({
             return renderResultButton(
               item._id!,
               resultName,
-              () =>
-                cityList
-                  ? cityList.onSelectHost(item._id!)
-                  : onOfferSelect(item),
+              () => onOfferSelect(item),
               <span>
                 <MemberIdentity size={32} user={item.user} />
                 <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-1">
@@ -307,9 +386,6 @@ export default function SearchSidebarResults({
                     </Badge>
                   )}
                 </span>
-                {cityList && 'activity' in item && (
-                  <CityHostDetails host={item} city={cityList.city} />
-                )}
               </span>,
               true,
             );
@@ -318,7 +394,7 @@ export default function SearchSidebarResults({
       )}
 
       {showList && cityQuery?.isPending && <p role="status">Loading hosts…</p>}
-      {showList && cityQuery?.isSuccess && listedOffers.length === 0 && (
+      {showList && cityQuery?.isSuccess && cityRows.length === 0 && (
         <p role="status">
           No hosts match these filters in {cityList?.city.name}.
         </p>

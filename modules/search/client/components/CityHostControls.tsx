@@ -33,10 +33,20 @@ export default function CityHostControls({
 }: CityResults) {
   const sortId = useId();
   return (
-    <div className="tw:mx-2.5 tw:mb-3 tw:grid tw:gap-2">
-      {active && <h2 className="tw:m-0 tw:text-lg">Hosts in {city.name}</h2>}
+    <div
+      className="member-card-surface tw:mx-2.5 tw:mb-3 tw:grid tw:gap-2"
+      data-compact
+    >
+      {active && (
+        <h2 className="tw:m-0 tw:text-lg tw:font-semibold">
+          Hosts in {city.name}
+        </h2>
+      )}
       <Button
         type="button"
+        intent="primary"
+        variant="soft"
+        size="sm"
         onClick={() => onViewChange(!active)}
         className="tw:justify-self-start"
       >
