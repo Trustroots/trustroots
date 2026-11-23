@@ -195,7 +195,7 @@ importers:
     dependencies:
       '@agendajs/mongo-backend':
         specifier: 4.0.5
-        version: 4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)
+        version: 4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)
       '@tanstack/react-query':
         specifier: 5.108.2
         version: 5.108.2(@types/react@19.3.0)(react@19.3.1)
@@ -231,7 +231,7 @@ importers:
         version: 1.8.2(supports-color@5.5.0)
       connect-mongo:
         specifier: 6.0.0
-        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)
+        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)
       dompurify:
         specifier: 3.4.18
         version: 3.4.18
@@ -293,8 +293,8 @@ importers:
         specifier: 2.31.0
         version: 2.31.0
       mongodb:
-        specifier: 7.9.1
-        version: 7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
+        specifier: 7.8.0
+        version: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
       mongoose:
         specifier: 9.12.3
         version: 9.12.3(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
@@ -5585,33 +5585,6 @@ packages:
       socks:
         optional: true
 
-  mongodb@7.9.1:
-    resolution: {integrity: sha512-OWtk/bcf8tx4Qe6lB8OsMksOwGGhC2FH+zl5UNwE+L7uz2VQDhCcnJThAvInEaBrEDaSsUWlMRbuFR4/TjF44w==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      '@aws-sdk/credential-providers': ^3.806.0
-      '@mongodb-js/zstd': ^7.0.0
-      gcp-metadata: ^7.0.1
-      kerberos: ^7.0.0
-      mongodb-client-encryption: ^7.2.0
-      snappy: ^7.3.2
-      socks: ^2.8.6
-    peerDependenciesMeta:
-      '@aws-sdk/credential-providers':
-        optional: true
-      '@mongodb-js/zstd':
-        optional: true
-      gcp-metadata:
-        optional: true
-      kerberos:
-        optional: true
-      mongodb-client-encryption:
-        optional: true
-      snappy:
-        optional: true
-      socks:
-        optional: true
-
   mongoose@9.12.3:
     resolution: {integrity: sha512-b94dToHZfATLkZPsJqjq7h4XdrGq29+aNHHAxzwGEnAMj4phdjd4PrR0Xfy+LJNmKuR7mukzEWsuKC+4qrjdug==}
     engines: {node: '>=20.19.0'}
@@ -7145,11 +7118,11 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agendajs/mongo-backend@4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)':
+  '@agendajs/mongo-backend@4.0.5(agenda@6.2.8(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0)':
     dependencies:
       agenda: 6.2.8(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)
-      mongodb: 7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
+      mongodb: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
     transitivePeerDependencies:
       - supports-color
 
@@ -10392,12 +10365,12 @@ snapshots:
       semver: 7.8.6
       uint8array-extras: 1.6.0
 
-  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0):
+  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11))(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       express-session: 1.19.0(supports-color@5.5.0)
       kruptein: 3.0.8
-      mongodb: 7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
+      mongodb: 7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11)
     transitivePeerDependencies:
       - supports-color
 
@@ -11716,15 +11689,6 @@ snapshots:
       whatwg-url: 14.2.0
 
   mongodb@7.8.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11):
-    dependencies:
-      '@mongodb-js/saslprep': 1.6.1
-      bson: 7.3.3
-      mongodb-connection-string-url: 7.0.2
-    optionalDependencies:
-      '@aws-sdk/credential-providers': 3.1151.0
-      socks: 2.8.11
-
-  mongodb@7.9.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.11):
     dependencies:
       '@mongodb-js/saslprep': 1.6.1
       bson: 7.3.3
