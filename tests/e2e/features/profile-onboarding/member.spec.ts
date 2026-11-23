@@ -22,7 +22,7 @@ import {
 } from '../../support/helpers.mts';
 
 import { findOffersByUser, updateUserByUsername } from '../../support/db.mts';
-import { disableWebGL, routeRasterMapTiles } from '../../support/maps.mts';
+import { disableWebGL } from '../../support/maps.mts';
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -255,7 +255,6 @@ test.describe('confirmed member flows', () => {
 
   test('another host accommodation page shows hosting details', async ({
     page,
-    context,
   }, testInfo) => {
     useElementScreenshot(testInfo, '.offer-view');
     annotateFeature(testInfo, 'profile.view-accommodation', [
@@ -263,7 +262,6 @@ test.describe('confirmed member flows', () => {
       'Hosting details from seeded offer/profile are visible.',
     ]);
 
-    await routeRasterMapTiles(context, { includeMapbox: true });
     await page.goto(`/profile/${portland.username}/accommodation`);
 
     await expect(page.getByText(SEEDED_OFFER.hostingStatus)).toBeVisible();
@@ -275,45 +273,43 @@ test.describe('confirmed member flows', () => {
     const box = await map.boundingBox();
     expectPresent(box);
     expect(box.height).toBe(220);
-    await expect(map.locator('.mapboxgl-canvas')).toHaveCount(0);
-    await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
-    await expect(map.locator('.leaflet-overlay-pane path')).toBeVisible();
+    await expect(map.locator('.maplibregl-canvas')).toBeVisible();
+    await expect(map.locator('.maplibregl-marker')).toHaveCount(1);
   });
 
-  for (const webglAvailable of [true, false]) {
-    test(`profile hosting map loads raster tiles with WebGL ${webglAvailable ? 'available' : 'unavailable'}`, async ({
-      page,
-      context,
-    }, testInfo) => {
-      annotateFeature(testInfo, 'profile.view-accommodation', [
-        'Approximate hosting location loads raster tiles independently of WebGL.',
-        'The location marker and zoom controls remain usable.',
-      ]);
-      if (!webglAvailable) await disableWebGL(page);
-      await routeRasterMapTiles(context, { includeMapbox: true });
-      await page.goto(`/profile/${portland.username}/accommodation`);
-      expect(
-        await page.evaluate(() =>
-          Boolean(document.createElement('canvas').getContext('webgl')),
-        ),
-      ).toBe(webglAvailable);
-      const map = page.locator('.offer-view .offer-location');
-      await expect(map).toBeVisible();
-      await expect(map.locator('.mapboxgl-canvas')).toHaveCount(0);
-      await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
-      await expect(map.locator('.leaflet-overlay-pane path')).toBeVisible();
-      await map.locator('.leaflet-control-zoom-in').click();
-      await expect
-        .poll(() =>
-          map
-            .locator('.leaflet-tile-loaded')
-            .evaluateAll(tiles =>
-              tiles.some(tile => /\/12\//.test((tile as HTMLImageElement).src)),
-            ),
-        )
-        .toBe(true);
-    });
-  }
+  test('profile hosting map zooms with WebGL available', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-accommodation', [
+      'The location marker and zoom controls remain usable.',
+    ]);
+    await page.goto(`/profile/${portland.username}/accommodation`);
+    const map = page.locator('.offer-view .offer-location');
+    await expect(map.locator('.maplibregl-canvas')).toBeVisible();
+    await expect(map.locator('.maplibregl-marker')).toHaveCount(1);
+    await expect(map).toHaveAttribute('data-map-zoom', '11');
+    // The decorative map is aria-hidden, so its controls have no accessible role.
+    await map.locator('.maplibregl-ctrl-zoom-in').click();
+    await expect(map).toHaveAttribute('data-map-zoom', '12');
+  });
+
+  test('profile hosting map shows a notice with WebGL unavailable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-accommodation', [
+      'Without WebGL2 a notice replaces the approximate hosting location map.',
+    ]);
+    await disableWebGL(page);
+    await page.goto(`/profile/${portland.username}/accommodation`);
+    const notice = page.locator('.offer-view .offer-location');
+    await expect(notice).toHaveText(
+      'This browser cannot show the map because WebGL is not available.',
+    );
+    await expect(page.locator('.maplibregl-canvas')).toHaveCount(0);
+    const box = await notice.boundingBox();
+    expectPresent(box);
+    expect(box.height).toBe(220);
+  });
 
   test('profile actions link to messaging and experiences', async ({
     page,

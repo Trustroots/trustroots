@@ -266,12 +266,12 @@ const config: PlaywrightTestConfig = defineConfig({
       },
     },
     {
-      // Firefox CI has no usable Mapbox GL/WebGL canvas, so cover wheel zoom via
-      // the Leaflet raster path. Chromium search-map-rendered covers Mapbox.
+      // Firefox CI has no usable WebGL canvas, so check its map notice there.
+      // Chromium search-map-rendered covers the MapLibre map.
       name: 'search-map-wheel-firefox',
       testMatch:
         /features\/search-offers-circles\/search-map-rendered\.spec\.ts/,
-      grep: /raster fallback map/,
+      grep: /shows a notice when WebGL is unavailable/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
         ['search-map-rendered'],

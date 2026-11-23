@@ -38,13 +38,13 @@ export function securityHeaders(
       'i1.wp.com',
       'i2.wp.com',
       'data:',
-      'blob:', // mapbox-gl
+      'blob:', // maplibre-gl
     ],
     'connect-src': [
       "'self'",
       'https://api.mapbox.com',
       'https://events.mapbox.com',
-      'https://fonts.openmaptiles.org',
+      'https://tiles.openfreemap.org', // Map style, tiles and fonts
       'https://tile.openstreetmap.org',
       ...FEATURED_NOTE_RELAYS,
       'wss://relay.maps.hitchwiki.org',

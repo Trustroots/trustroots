@@ -10,7 +10,6 @@ import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefau
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
-import { getOfferHexColor } from '../utils/markers';
 import type {
   MapBounds,
   MapPoint,
@@ -31,11 +30,9 @@ interface OfferMapProps {
   children?: React.ReactNode;
   'aria-describedby'?: string;
   className: string;
-  fallbackMarker?: { color: string; location: [number, number] };
   height: number | string;
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
-  preferRaster: boolean;
   scrollZoom: boolean;
   width: string;
   zoom: number;
@@ -61,7 +58,7 @@ export default function OfferLocationEditor({
     useState<MapDefaultLocation | null>(null);
   const [approximateLocation, stopDefaultLocation] =
     useMapDefaultLocation(!location);
-  // A new centre asks Leaflet to move, so retain the same tuple while only UI
+  // A new centre asks the map to move, so retain the same tuple while only UI
   // state (such as feedback or the search query) changes.
   const mapLocation = useMemo<[number, number]>(() => {
     const approximate = deviceApproximateLocation ?? approximateLocation;
@@ -154,7 +151,7 @@ export default function OfferLocationEditor({
       handleMapInteraction();
       return;
     }
-    // Preserve the live Leaflet zoom when a gesture chooses the first location.
+    // Preserve the live map zoom when a gesture chooses the first location.
     selectLocation(nextLocation, mapZoom);
   }
 
@@ -207,18 +204,7 @@ export default function OfferLocationEditor({
           <TypedMap
             aria-describedby="offerLocation"
             className="offer-location"
-            fallbackMarker={
-              location
-                ? {
-                    color: getOfferHexColor({ offerType, offerStatus }),
-                    location,
-                  }
-                : undefined
-            }
             height="100%"
-            // Some Chromium configurations initialise WebGL but fail to draw
-            // vector map detail. Raster tiles keep location selection usable.
-            preferRaster
             location={mapLocation}
             onLocationChange={handleMapLocationChange}
             scrollZoom

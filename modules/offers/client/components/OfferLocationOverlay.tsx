@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Marker, useMap } from 'react-map-gl/mapbox';
+import { Marker, useMap } from '@vis.gl/react-maplibre';
 
 import { getOfferHexColor, zoomToPixelMeters } from '../utils/markers';
 

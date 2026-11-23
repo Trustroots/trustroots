@@ -1,11 +1,8 @@
-import { getMapBoxToken } from '../../utils/map';
-import osmStyle from './osm.json';
+import { setWorkerUrl } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 
-export const MAP_STYLE_MAPBOX_OUTDOORS = 'mapbox://styles/mapbox/outdoors-v11';
-export const MAP_STYLE_MAPBOX_SATELLITE =
-  'mapbox://styles/mapbox/satellite-streets-v11';
-export const MAP_STYLE_MAPBOX_STREETS = 'mapbox://styles/mapbox/streets-v11';
-export const MAP_STYLE_OSM = osmStyle;
-export const MAP_STYLE_DEFAULT = getMapBoxToken()
-  ? MAP_STYLE_MAPBOX_STREETS
-  : MAP_STYLE_OSM;
+// MapLibre resolves its worker next to its own module at runtime, which the
+// bundle does not emit; every map imports this file, so point it here.
+setWorkerUrl(workerUrl);
+
+export const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';

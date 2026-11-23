@@ -1,19 +1,24 @@
-import L from 'leaflet';
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import { createPortal } from 'react-dom';
-import { getRasterMapTiles } from '@/modules/core/client/utils/map';
+import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+import ReactMapGL, {
+  Marker,
+  NavigationControl,
+  Popup,
+  type MapRef,
+} from '@vis.gl/react-maplibre';
+import { useTranslation } from 'react-i18next';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { MAP_STYLE } from '@/modules/core/client/components/Map/constants';
+import MapUnavailable from '@/modules/core/client/components/Map/MapUnavailable';
+import { isWebGLSupported } from '@/modules/core/client/utils/map';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import './circle-location-map.less';
 
 const VIEW_KEY = 'circle-map-view';
+const EXTERNAL_URL = /^https?:\/\//i;
+const ACCOMMODATION_URL =
+  /^\/profile\/(?:[A-Za-z0-9._~-]|%[A-F0-9]{2})+\/accommodation$/;
 
-function readView(viewKey = VIEW_KEY): [number, number, number] | null {
+function readView(viewKey = VIEW_KEY) {
   try {
     const view = JSON.parse(sessionStorage.getItem(viewKey) || 'null');
     return Array.isArray(view) &&
@@ -21,9 +26,9 @@ function readView(viewKey = VIEW_KEY): [number, number, number] | null {
       view.every(Number.isFinite) &&
       Math.abs(view[0]) <= 85 &&
       Math.abs(view[1]) <= 180 &&
-      view[2] >= 3 &&
+      view[2] >= 1 &&
       view[2] <= 24
-      ? (view as [number, number, number])
+      ? { latitude: view[0], longitude: view[1], zoom: view[2] }
       : null;
   } catch {
     return null;
@@ -45,64 +50,63 @@ export interface CircleLocation {
   link?: { url: string; label: string };
 }
 
-export function locationPopup(location: CircleLocation): HTMLElement {
-  const root = document.createElement('div');
-  root.className = 'circle-location-popup';
-  const title = document.createElement(
-    location.popupHeading == null ? 'strong' : 'div',
+function ExternalLink({ url, label }: { url: string; label: string }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      {label}
+    </a>
   );
-  if (location.popupHeading == null) title.textContent = location.name;
-  root.append(title);
-  if (location.facts?.length) {
-    const facts = document.createElement('dl');
-    location.facts.forEach(({ label, value }) => {
-      const term = document.createElement('dt');
-      const definition = document.createElement('dd');
-      term.textContent = label;
-      if (typeof value === 'string') {
-        definition.textContent = value;
-      } else {
-        value.forEach((item, index) => {
-          if (index) definition.append(', ');
-          if (item.url && /^https?:\/\//i.test(item.url)) {
-            const link = document.createElement('a');
-            link.href = item.url;
-            link.textContent = item.label;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            definition.append(link);
-          } else {
-            definition.append(item.label);
-          }
-        });
-      }
-      facts.append(term, definition);
-    });
-    root.append(facts);
-  }
-  location.details.forEach(detail => {
-    const paragraph = document.createElement('p');
-    paragraph.textContent = detail;
-    root.append(paragraph);
-  });
-  if (
-    location.link &&
-    (/^https?:\/\//i.test(location.link.url) ||
-      /^\/profile\/(?:[A-Za-z0-9._~-]|%[A-F0-9]{2})+\/accommodation$/.test(
-        location.link.url,
-      ))
-  ) {
-    const link = document.createElement('a');
-    link.className = 'circle-location-popup-action';
-    link.href = location.link.url;
-    link.textContent = location.link.label;
-    if (/^https?:\/\//i.test(location.link.url)) {
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-    }
-    root.append(link);
-  }
-  return root;
+}
+
+export function LocationPopup({ location }: { location: CircleLocation }) {
+  const { link } = location;
+  const external = link && EXTERNAL_URL.test(link.url);
+  return (
+    <div className="circle-location-popup tw:flex tw:max-w-[300px] tw:min-w-40 tw:flex-col tw:items-start tw:gap-2 tw:leading-normal tw:wrap-anywhere">
+      {location.popupHeading == null ? (
+        <strong className="tw:text-[15px]">{location.name}</strong>
+      ) : (
+        <div>{location.popupHeading}</div>
+      )}
+      {!!location.facts?.length && (
+        <dl className="tw:m-0 tw:grid tw:grid-cols-[auto_minmax(0,1fr)] tw:gap-x-3.5 tw:gap-y-1">
+          {location.facts.map(({ label, value }) => (
+            <React.Fragment key={label}>
+              <dt className="tw:font-normal tw:text-muted">{label}</dt>
+              <dd className="tw:m-0">
+                {typeof value === 'string'
+                  ? value
+                  : value.map((item, index) => (
+                      <React.Fragment key={index}>
+                        {index > 0 && ', '}
+                        {item.url && EXTERNAL_URL.test(item.url) ? (
+                          <ExternalLink url={item.url} label={item.label} />
+                        ) : (
+                          item.label
+                        )}
+                      </React.Fragment>
+                    ))}
+              </dd>
+            </React.Fragment>
+          ))}
+        </dl>
+      )}
+      {location.details.map(detail => (
+        <p key={detail} className="tw:m-0 tw:text-xs tw:text-muted">
+          {detail}
+        </p>
+      ))}
+      {link && (external || ACCOMMODATION_URL.test(link.url)) && (
+        <a
+          className="tw:rounded-md tw:bg-[#edf6f2] tw:px-2.5 tw:py-1.5 tw:font-semibold tw:underline tw:hover:bg-[#dceee5] tw:focus-visible:bg-[#dceee5]"
+          href={link.url}
+          {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
+        >
+          {link.label}
+        </a>
+      )}
+    </div>
+  );
 }
 
 interface Props {
@@ -125,175 +129,53 @@ interface Props {
 
 export default function CircleLocationMap(props: Props) {
   const Heading = props.headingAs ?? 'h3';
-  const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
-  const openLocation = useRef<string | null>(null);
-  const initialViewSet = useRef(false);
+  const { t } = useTranslation('core');
+  const [webGL] = useState(isWebGLSupported);
+  const [savedView] = useState(() => readView(props.viewKey));
+  const mapRef = useRef<MapRef>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const initialViewSet = useRef(Boolean(savedView));
   const fittingResults = useRef(false);
-  const [popupHeading, setPopupHeading] = useState<{
-    container: HTMLElement;
-    content: ReactNode;
-    popup: L.Popup;
-    autoPan: boolean;
-    focusAction: boolean;
-  } | null>(null);
-  useLayoutEffect(() => {
-    if (!popupHeading) return;
-    const { popup, autoPan, container, focusAction } = popupHeading;
-    const previousAutoPan = popup.options.autoPan;
-    // Leaflet initially positions the popup before React adds its heading.
-    popup.options.autoPan = autoPan;
-    popup.update();
-    popup.options.autoPan = previousAutoPan;
-    if (focusAction) container.parentElement?.querySelector('a')?.focus();
-  }, [popupHeading]);
+  const focusAction = useRef(false);
+  const [loaded, setLoaded] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = props.locations.find(({ id }) => id === selectedId);
+
   useEffect(() => {
-    const element = container.current!;
-    const minimumZoom = () =>
-      Math.max(
-        3,
-        Math.ceil(
-          Math.log2(
-            Math.max(element.clientWidth, element.clientHeight, 1) / 256,
-          ),
-        ),
-      );
-    const map = L.map(element, {
-      scrollWheelZoom: true,
-      touchZoom: true,
-      bounceAtZoomLimits: false,
-      minZoom: minimumZoom(),
-      maxBounds: [
-        [-85, -180],
-        [85, 180],
-      ],
-      maxBoundsViscosity: 1,
-    });
-    const savedView = readView(props.viewKey);
-    map.setView(
-      savedView ? [savedView[0], savedView[1]] : [20, 0],
-      savedView ? savedView[2] : minimumZoom(),
-    );
-    L.control.scale({ imperial: false }).addTo(map);
-    initialViewSet.current = Boolean(savedView);
-    // Preserve any view chosen while the initial relay results are loading.
-    map.on('movestart', () => {
-      initialViewSet.current = true;
-    });
-    map.on('moveend', () => {
-      if (fittingResults.current) return;
-      const { lat, lng } = map.getCenter();
-      try {
-        sessionStorage.setItem(
-          props.viewKey || VIEW_KEY,
-          JSON.stringify([lat, lng, map.getZoom()]),
-        );
-      } catch {
-        // Maps remain usable when session storage is unavailable.
-      }
-    });
-    map.on('resize', () => map.setMinZoom(minimumZoom()));
-    const tiles = getRasterMapTiles();
-    L.tileLayer(tiles.url, tiles.options).addTo(map);
-    mapRef.current = map;
-    markersRef.current = L.layerGroup().addTo(map);
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current = null;
-      initialViewSet.current = false;
-    };
-  }, [props.viewKey]);
-  useEffect(() => {
-    const markers = markersRef.current!;
-    const selected = openLocation.current;
-    markers.clearLayers();
-    props.locations.forEach(location => {
-      const content = locationPopup(location);
-      const heading = content.firstElementChild as HTMLElement;
-      let focusAction = false;
-      const marker = L.circleMarker([location.latitude, location.longitude], {
-        radius: 8,
-        color: '#fff',
-        weight: 2,
-        fillColor: location.markerColor ?? props.markerColor ?? '#488261',
-        fillOpacity: 1,
-      })
-        .bindPopup(content)
-        .on('popupopen', (event: L.PopupEvent) => {
-          openLocation.current = location.id;
-          if (location.popupHeading != null) {
-            const { popup } = event;
-            setPopupHeading({
-              container: heading,
-              content: location.popupHeading,
-              popup,
-              autoPan: popup.options.autoPan !== false,
-              focusAction,
-            });
-          }
-        })
-        .on('popupclose', () => {
-          openLocation.current = null;
-          if (location.popupHeading != null) {
-            setPopupHeading(null);
-          }
-        })
-        .addTo(markers);
-      if (location.popupHeading != null) {
-        const element = marker.getElement();
-        element?.setAttribute('tabindex', '0');
-        element?.setAttribute('role', 'button');
-        element?.setAttribute('aria-label', location.name);
-        element?.addEventListener('keydown', event => {
-          if (
-            event instanceof KeyboardEvent &&
-            (event.key === 'Enter' || event.key === ' ')
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            if (marker.isPopupOpen()) {
-              content.querySelector('a')?.focus();
-            } else {
-              focusAction = true;
-              marker.openPopup();
-              focusAction = false;
-            }
-          }
-        });
-      }
-      if (selected === location.id) {
-        const popup = marker.getPopup()!;
-        // Refresh the selected popup without undoing the visitor's map position.
-        popup.options.autoPan = false;
-        marker.openPopup();
-        popup.options.autoPan = true;
-      }
-    });
-  }, [props.locations, props.markerColor]);
+    if (selected && focusAction.current) {
+      popupRef.current?.querySelector('a')?.focus();
+    }
+    focusAction.current = false;
+  }, [selected]);
   useEffect(() => {
     // Fit the initial batch once. Streaming updates must not keep panning the
     // map or interrupt someone exploring it.
     if (
+      loaded &&
       props.state !== 'loading' &&
       props.locations.length &&
       !initialViewSet.current
     ) {
       initialViewSet.current = true;
       fittingResults.current = true;
+      const longitudes = props.locations.map(({ longitude }) => longitude);
+      const latitudes = props.locations.map(({ latitude }) => latitude);
       mapRef.current!.fitBounds(
-        L.latLngBounds(
-          props.locations.map(
-            location =>
-              [location.latitude, location.longitude] as [number, number],
-          ),
-        ),
-        { padding: [24, 24], maxZoom: 8, animate: false },
+        [
+          [Math.min(...longitudes), Math.min(...latitudes)],
+          [Math.max(...longitudes), Math.max(...latitudes)],
+        ],
+        { padding: 24, maxZoom: 8, animate: false },
       );
       fittingResults.current = false;
     }
-  }, [props.locations, props.state]);
+  }, [loaded, props.locations, props.state]);
+
+  const jumpTo = (latitude: number, longitude: number, zoom: number) => {
+    initialViewSet.current = true;
+    mapRef.current?.jumpTo({ center: [longitude, latitude], zoom });
+  };
+
   return (
     <section
       className={`circle-location-map-panel${
@@ -306,29 +188,119 @@ export default function CircleLocationMap(props: Props) {
         <p>{props.description}</p>
       </div>
       <div className="circle-location-map-frame">
-        <div
-          className="circle-location-map tw:map-scale"
-          ref={container}
-          role="application"
-          aria-label={props.mapLabel}
-        />
-        <DeviceLocationButton
-          onRequest={() => {
-            initialViewSet.current = true;
-          }}
-          onLocation={({ lat, lng }) => {
-            initialViewSet.current = true;
-            mapRef.current?.setView([lat, lng], 13, { animate: false });
-          }}
-          onApproximateLocation={({ latitude, longitude, zoom }) => {
-            initialViewSet.current = true;
-            mapRef.current?.setView([latitude, longitude], zoom, {
-              animate: false,
-            });
-          }}
-        />
-        {popupHeading &&
-          createPortal(popupHeading.content, popupHeading.container)}
+        {webGL ? (
+          <>
+            <div
+              className="circle-location-map tw:overflow-hidden"
+              role="application"
+              aria-label={props.mapLabel}
+            >
+              <ReactMapGL
+                ref={mapRef}
+                mapStyle={MAP_STYLE}
+                initialViewState={
+                  savedView ?? { latitude: 20, longitude: 0, zoom: 1 }
+                }
+                minZoom={1}
+                maxBounds={[-180, -85, 180, 85]}
+                dragRotate={false}
+                style={{ width: '100%', height: '100%' }}
+                onLoad={() => setLoaded(true)}
+                // MapLibre reports marker clicks after the popup has opened,
+                // so its own closeOnClick would close it straight away.
+                onClick={event => {
+                  if (
+                    !(event.originalEvent.target as Element).closest(
+                      '.maplibregl-marker',
+                    )
+                  ) {
+                    setSelectedId(null);
+                  }
+                }}
+                // Preserve any view chosen while the initial results are loading.
+                onMoveStart={() => {
+                  initialViewSet.current = true;
+                }}
+                onMoveEnd={event => {
+                  if (fittingResults.current) return;
+                  const { latitude, longitude, zoom } = event.viewState;
+                  try {
+                    sessionStorage.setItem(
+                      props.viewKey || VIEW_KEY,
+                      JSON.stringify([latitude, longitude, zoom]),
+                    );
+                  } catch {
+                    // Maps remain usable when session storage is unavailable.
+                  }
+                }}
+              >
+                <NavigationControl showCompass={false} />
+                {props.locations.map(location => (
+                  <Marker
+                    key={location.id}
+                    latitude={location.latitude}
+                    longitude={location.longitude}
+                    anchor="center"
+                  >
+                    <button
+                      type="button"
+                      aria-label={location.name}
+                      className="tw:block tw:size-4 tw:cursor-pointer tw:rounded-full tw:border-2 tw:border-white tw:p-0"
+                      style={{
+                        backgroundColor:
+                          location.markerColor ??
+                          props.markerColor ??
+                          '#488261',
+                      }}
+                      onClick={event => {
+                        // Keyboard activation moves focus into the popup.
+                        focusAction.current = event.detail === 0;
+                        setSelectedId(location.id);
+                        if (selectedId === location.id && focusAction.current) {
+                          popupRef.current?.querySelector('a')?.focus();
+                        }
+                      }}
+                    />
+                  </Marker>
+                ))}
+                {selected && (
+                  <Popup
+                    latitude={selected.latitude}
+                    longitude={selected.longitude}
+                    anchor="bottom"
+                    offset={10}
+                    maxWidth="none"
+                    closeButton={false}
+                    closeOnClick={false}
+                  >
+                    <div ref={popupRef} className="tw:flex tw:items-start">
+                      <LocationPopup location={selected} />
+                      <button
+                        type="button"
+                        aria-label={t('Close popup')}
+                        className="tw:-mt-1 tw:-mr-2 tw:ml-1 tw:size-8 tw:shrink-0 tw:cursor-pointer tw:rounded-full tw:border-0 tw:bg-transparent tw:p-0 tw:text-2xl tw:leading-none tw:hover:bg-[#edf6f2] tw:focus-visible:bg-[#edf6f2]"
+                        onClick={() => setSelectedId(null)}
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    </div>
+                  </Popup>
+                )}
+              </ReactMapGL>
+            </div>
+            <DeviceLocationButton
+              onRequest={() => {
+                initialViewSet.current = true;
+              }}
+              onLocation={({ lat, lng }) => jumpTo(lat, lng, 13)}
+              onApproximateLocation={({ latitude, longitude, zoom }) =>
+                jumpTo(latitude, longitude, zoom)
+              }
+            />
+          </>
+        ) : (
+          <MapUnavailable className="circle-location-map" />
+        )}
       </div>
       <div className="circle-location-map-footer">
         {props.legend}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {
   act,
   fireEvent,
@@ -12,10 +11,10 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 import { OpenLocationCode } from 'open-location-code';
 import type { Event as NostrEvent } from 'nostr-tools';
-import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
+import { featureId } from '@/modules/search/client/utils/feature-id';
 import type {
   getOffer,
   queryOffers,
@@ -118,7 +117,6 @@ type MockMapProps = {
   height: string;
   location?: [number, number];
   mapStyle?: string;
-  mapboxAccessToken?: string;
   interactiveLayerIds?: string[];
   onClick: (event: { features?: MockMapFeature[] }) => void;
   onMouseMove: (event: { features?: MockMapFeature[] }) => void;
@@ -136,11 +134,8 @@ type MockSourceProps = {
 };
 
 const mockIsWebGLSupported = vi.fn();
-const mockGetMapBoxToken = vi.mocked(getMapBoxToken);
-vi.mock('@/modules/core/client/utils/map', async () => ({
-  ...(await vi.importActual('@/modules/core/client/utils/map')),
+vi.mock('@/modules/core/client/utils/map', () => ({
   isWebGLSupported: () => mockIsWebGLSupported(),
-  getMapBoxToken: vi.fn(() => 'test-token'),
 }));
 
 type MockNostrEvent = Partial<NostrEvent> & { authorPubkey?: string };
@@ -221,13 +216,6 @@ vi.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
   ],
 }));
 
-let mockMapStyle: string | typeof MAP_STYLE_OSM = 'mock-map-style';
-const mockSetMapStyle = vi.fn();
-vi.mock('@/modules/search/client/hooks/use-persistent-map-style', () => ({
-  __esModule: true,
-  default: () => [mockMapStyle, mockSetMapStyle],
-}));
-
 vi.mock('@/modules/core/client/components/Map/MapNavigationControl', () => {
   return {
     default: function MockMapNavigationControl() {
@@ -244,14 +232,6 @@ vi.mock('@/modules/core/client/components/Map/MapScaleControl', () => {
   };
 });
 
-vi.mock('@/modules/core/client/components/Map/MapStyleControl', () => {
-  return {
-    default: function MockMapStyleControl() {
-      return <button type="button">Map style</button>;
-    },
-  };
-});
-
 vi.mock('@/modules/search/client/components/SearchMapNoContent', () => {
   return {
     default: function MockSearchMapNoContent() {
@@ -259,14 +239,6 @@ vi.mock('@/modules/search/client/components/SearchMapNoContent', () => {
     },
   };
 });
-
-const mockLeafletSearchMap = vi.fn();
-vi.mock('@/modules/search/client/components/LeafletSearchMap', () => ({
-  default: vi.fn(props => {
-    mockLeafletSearchMap(props);
-    return <div data-testid="leaflet-search-map" />;
-  }),
-}));
 
 const mockFitBounds = vi.fn();
 const mockMap = {
@@ -291,7 +263,7 @@ const mockSource = {
   getClusterLeaves: vi.fn(),
 };
 let mockSourceInstance: typeof mockSource | null = mockSource;
-vi.mock('react-map-gl/mapbox', async () => {
+vi.mock('@vis.gl/react-maplibre', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   type MockReactMapGLProps = MockMapProps & {
@@ -305,7 +277,7 @@ vi.mock('react-map-gl/mapbox', async () => {
       }));
       return React.createElement(
         'div',
-        { 'data-testid': 'react-map-gl/mapbox' },
+        { 'data-testid': '@vis.gl/react-maplibre' },
         children,
       );
     },
@@ -347,6 +319,8 @@ vi.mock('react-map-gl/mapbox', async () => {
   };
 });
 
+const flushPromises = () => act(async () => {});
+
 function renderSearchMap(props: SearchMapRenderProps = {}) {
   const defaultProps: SearchMapProps = {
     filters: '{}',
@@ -384,7 +358,12 @@ function clickMapFeatures(features: MockMapFeature[]) {
 
 function clickOfferPin(id: string) {
   clickMapFeatures([
-    { id, layer: { id: 'unclustered-point' }, source: 'offers' },
+    {
+      id,
+      layer: { id: 'unclustered-point' },
+      properties: { id },
+      source: 'offers',
+    },
   ]);
 }
 
@@ -476,7 +455,7 @@ const DATELINE_OFFER_FEATURES: OfferSearchFeature[] = [
 ];
 
 function moveMap(viewState: Record<string, number>) {
-  fireEvent.pointerDown(screen.getByTestId('react-map-gl/mapbox'));
+  fireEvent.pointerDown(screen.getByTestId('@vis.gl/react-maplibre'));
   mockMapProps.onMove({ viewState });
 }
 
@@ -509,9 +488,7 @@ beforeEach(() => {
   mockSetPersistentMapLocation.mockClear();
   mockApproximateLocation = null;
   mockHasSavedLocation = true;
-  mockGetMapBoxToken.mockReturnValue('test-token');
   mockIsWebGLSupported.mockReturnValue(true);
-  mockLeafletSearchMap.mockClear();
   mockSourcePropsById = {};
   mockLayerPropsById = {};
   mockPersistentMapLocation = {
@@ -519,7 +496,6 @@ beforeEach(() => {
     longitude: 9.14055555556,
     zoom: 2,
   };
-  mockMapStyle = 'mock-map-style';
   analytics.track.mockClear();
   mockFitBounds.mockReturnValue({
     center: { lat: 52, lng: 13 },
@@ -535,9 +511,7 @@ beforeEach(() => {
     moveMap({ latitude: center[1], longitude: center[0], zoom });
   });
   mockMapInstance = mockMap;
-  mockSource.getClusterExpansionZoom.mockImplementation((clusterId, done) =>
-    done(null, 18),
-  );
+  mockSource.getClusterExpansionZoom.mockResolvedValue(18);
   mockSource.getClusterLeaves.mockReset();
   mockSourceInstance = mockSource;
   mockMap.getSource.mockImplementation(() => mockSourceInstance);
@@ -557,27 +531,17 @@ beforeEach(() => {
 });
 
 describe('Search', () => {
-  it.each([true, false])(
-    'uses an approximate initial viewport without persisting it (WebGL: %s)',
-    webgl => {
-      mockHasSavedLocation = false;
-      mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
-      mockIsWebGLSupported.mockReturnValue(webgl);
-      renderSearchMap({ location: {} });
-      if (webgl) {
-        expect(mockMapProps.latitude).toBe(34);
-        expect(mockMapProps.longitude).toBe(-17);
-      } else {
-        expect(
-          mockLeafletSearchMap.mock.calls.slice(-1)[0][0].viewport,
-        ).toEqual(mockApproximateLocation);
-      }
-      expect(
-        screen.getByRole('link', { name: 'Data credits' }),
-      ).toBeInTheDocument();
-      expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
-    },
-  );
+  it('uses an approximate initial viewport without persisting it', () => {
+    mockHasSavedLocation = false;
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
+    renderSearchMap({ location: {} });
+    expect(mockMapProps.latitude).toBe(34);
+    expect(mockMapProps.longitude).toBe(-17);
+    expect(
+      screen.getByRole('link', { name: 'Data credits' }),
+    ).toBeInTheDocument();
+    expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+  });
 
   it('keeps recent saved positions ahead of approximate locations', () => {
     mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
@@ -586,39 +550,35 @@ describe('Search', () => {
     expect(mockMapProps.latitude).toBe(mockPersistentMapLocation.latitude);
   });
 
-  it.each([true, false])(
-    'stops GeoIP and forwards precise and approximate device locations with WebGL %s',
-    webgl => {
-      mockHasSavedLocation = false;
-      mockIsWebGLSupported.mockReturnValue(webgl);
-      const onDeviceLocationRequest = vi.fn();
-      const onDeviceLocation = vi.fn();
-      const onApproximateLocation = vi.fn();
-      renderSearchMap({
-        onDeviceLocationRequest,
-        onDeviceLocation,
-        onApproximateLocation,
-      });
-      mockStopDefaultLocation.mockClear();
+  it('stops GeoIP and forwards precise and approximate device locations', () => {
+    mockHasSavedLocation = false;
+    const onDeviceLocationRequest = vi.fn();
+    const onDeviceLocation = vi.fn();
+    const onApproximateLocation = vi.fn();
+    renderSearchMap({
+      onDeviceLocationRequest,
+      onDeviceLocation,
+      onApproximateLocation,
+    });
+    mockStopDefaultLocation.mockClear();
 
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Mock precise location' }),
-      );
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Mock approximate location' }),
-      );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock precise location' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock approximate location' }),
+    );
 
-      expect(mockDefaultLocation).toHaveBeenCalledWith(true);
-      expect(mockStopDefaultLocation).toHaveBeenCalled();
-      expect(onDeviceLocationRequest).toHaveBeenCalledTimes(2);
-      expect(onDeviceLocation).toHaveBeenCalledWith({ lat: 0, lng: 0 });
-      expect(onApproximateLocation).toHaveBeenCalledWith({
-        latitude: 12,
-        longitude: 23,
-        zoom: 5,
-      });
-    },
-  );
+    expect(mockDefaultLocation).toHaveBeenCalledWith(true);
+    expect(mockStopDefaultLocation).toHaveBeenCalled();
+    expect(onDeviceLocationRequest).toHaveBeenCalledTimes(2);
+    expect(onDeviceLocation).toHaveBeenCalledWith({ lat: 0, lng: 0 });
+    expect(onApproximateLocation).toHaveBeenCalledWith({
+      latitude: 12,
+      longitude: 23,
+      zoom: 5,
+    });
+  });
 
   it('does not reapply GeoIP after a member clears a later explicit destination', () => {
     mockHasSavedLocation = false;
@@ -638,59 +598,24 @@ describe('Search', () => {
     expect(mockMapProps.latitude).toBe(12);
   });
 
-  it.each([undefined, {}, { northEast: { lat: 35, lng: -16 } }])(
-    'does not persist initial raster map notifications with incomplete bounds %j',
-    locationBounds => {
-      mockIsWebGLSupported.mockReturnValue(false);
-      mockHasSavedLocation = false;
-      renderSearchMap({ locationBounds });
-      const props = mockLeafletSearchMap.mock.calls.slice(-1)[0][0];
-      act(() =>
-        props.onMapChange({
-          latitude: 34,
-          longitude: -17,
-          zoom: 6,
-          bounds: {
-            northEast: { lat: 35, lng: -16 },
-            southWest: { lat: 33, lng: -18 },
-          },
-        }),
-      );
-      expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
-      act(() => props.onInteraction?.());
-      expect(mockStopDefaultLocation).toHaveBeenCalled();
-    },
-  );
-
-  it('persists the viewport fitted to an explicit raster place search', () => {
-    mockIsWebGLSupported.mockReturnValue(false);
-    const bounds = {
-      northEast: { lat: 35, lng: -16 },
-      southWest: { lat: 33, lng: -18 },
-    };
-    renderSearchMap({ locationBounds: bounds });
+  it('does not persist camera changes the member did not make', () => {
+    renderSearchMap();
     act(() =>
-      mockLeafletSearchMap.mock.calls
-        .slice(-1)[0][0]
-        .onMapChange({ latitude: 34, longitude: -17, zoom: 6, bounds }, true),
+      mockMapProps.onMove({
+        viewState: { latitude: 34, longitude: -17, zoom: 6 },
+      }),
     );
-    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith({
-      latitude: 34,
-      longitude: -17,
-      zoom: 6,
-    });
-    mockSetPersistentMapLocation.mockClear();
-    act(() =>
-      mockLeafletSearchMap.mock.calls
-        .slice(-1)[0][0]
-        .onMapChange({ latitude: 34, longitude: -17, zoom: 6, bounds }, false),
-    );
+    expect(mockMapProps.latitude).toBe(34);
     expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+    expect(mockStopDefaultLocation).not.toHaveBeenCalled();
   });
+
   it('initialises the loaded map without touch rotation and fetches visible offers', async () => {
     mockPersistentMapLocation.zoom = 8;
     renderSearchMap();
-    expect(mockMapProps.mapboxAccessToken).toBe('test-token');
+    expect(mockMapProps.mapStyle).toBe(
+      'https://tiles.openfreemap.org/styles/liberty',
+    );
     await act(async () => mockMapProps.onLoad());
     expect(mockMap.touchZoomRotate.disableRotation).toHaveBeenCalled();
     expect(mockQueryOffers).toHaveBeenCalled();
@@ -774,96 +699,31 @@ describe('Search', () => {
     'Mozilla/5.0 CriOS/140.0.0.0 Mobile Safari/604.1',
     '',
   ])(
-    'selects Mapbox by WebGL2 support regardless of user agent %s',
+    'selects MapLibre by WebGL2 support regardless of user agent %s',
     userAgent => {
       const currentUserAgent = vi
         .spyOn(navigator, 'userAgent', 'get')
         .mockReturnValue(userAgent);
       renderSearchMap();
-      expect(screen.getByTestId('react-map-gl/mapbox')).toBeInTheDocument();
-      expect(
-        screen.queryByTestId('leaflet-search-map'),
-      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('@vis.gl/react-maplibre')).toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
       expect(mockIsWebGLSupported).toHaveBeenCalled();
       currentUserAgent.mockRestore();
     },
   );
 
-  it('uses the Leaflet renderer when WebGL is unavailable', async () => {
+  it('shows a notice instead of the map when WebGL is unavailable', () => {
     mockIsWebGLSupported.mockReturnValue(false);
-    const feature: OfferSearchFeature = {
-      type: 'Feature',
-      properties: { id: 'fallback-offer', offer: null },
-      geometry: { type: 'Point', coordinates: [13, 52] },
-    };
-    mockQueryOffers.mockResolvedValue({
-      type: 'FeatureCollection',
-      features: [feature],
-    });
 
     renderSearchMap();
 
-    expect(screen.getByTestId('leaflet-search-map')).toBeInTheDocument();
-    expect(screen.queryByTestId('react-map-gl/mapbox')).not.toBeInTheDocument();
-    expect(mockLeafletSearchMap).toHaveBeenCalledWith(
-      expect.objectContaining({
-        communityNotes: expect.objectContaining({ features: [] }),
-        offers: expect.objectContaining({ features: [] }),
-        onCommunityNoteClick: expect.any(Function),
-        onMapChange: expect.any(Function),
-        onOfferClick: expect.any(Function),
-      }),
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'This browser cannot show the map because WebGL is not available.',
     );
-
-    const mapState = {
-      bounds: {
-        northEast: { lat: 53, lng: 14 },
-        southWest: { lat: 51, lng: 12 },
-      },
-      latitude: 52,
-      longitude: 13,
-      zoom: 6,
-    };
-
-    act(() => {
-      mockLeafletSearchMap.mock.calls[0][0].onInteraction?.();
-      mockLeafletSearchMap.mock.calls[0][0].onMapChange(mapState);
-    });
-
-    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith({
-      latitude: 52,
-      longitude: 13,
-      zoom: 6,
-    });
-    await waitFor(() =>
-      expect(mockQueryOffers).toHaveBeenCalledWith({
-        filters: '{}',
-        northEastLat: 54.666666666666664,
-        northEastLng: 15.666666666666666,
-        southWestLat: 49.333333333333336,
-        southWestLng: 10.333333333333334,
-      }),
-    );
-    await waitFor(() =>
-      expect(mockLeafletSearchMap).toHaveBeenLastCalledWith(
-        expect.objectContaining({ offers: { features: [feature] } }),
-      ),
-    );
-  });
-
-  it('passes selected location bounds directly to the Leaflet renderer', () => {
-    const locationBounds = {
-      northEast: { lat: 52.6755, lng: 13.7611 },
-      southWest: { lat: 52.3383, lng: 13.0884 },
-    };
-    mockIsWebGLSupported.mockReturnValue(false);
-
-    renderSearchMap({ locationBounds });
-
-    expect(mockLeafletSearchMap).toHaveBeenCalledWith(
-      expect.objectContaining({ bounds: locationBounds }),
-    );
-    expect(mockFitBounds).not.toHaveBeenCalled();
+    expect(
+      screen.queryByTestId('@vis.gl/react-maplibre'),
+    ).not.toBeInTheDocument();
+    expect(mockQueryOffers).not.toHaveBeenCalled();
   });
 
   it('stores viewport changes without persisting map dimensions', () => {
@@ -899,7 +759,9 @@ describe('Search', () => {
       deltaY: -50,
     });
 
-    act(() => screen.getByTestId('react-map-gl/mapbox').dispatchEvent(pinch));
+    act(() =>
+      screen.getByTestId('@vis.gl/react-maplibre').dispatchEvent(pinch),
+    );
 
     expect(pinch.defaultPrevented).toBe(true);
     expect(mockMapProps.zoom).toBe(2.5);
@@ -908,7 +770,7 @@ describe('Search', () => {
     );
 
     act(() =>
-      screen.getByTestId('react-map-gl/mapbox').dispatchEvent(
+      screen.getByTestId('@vis.gl/react-maplibre').dispatchEvent(
         new WheelEvent('wheel', {
           bubbles: true,
           cancelable: true,
@@ -932,7 +794,7 @@ describe('Search', () => {
     expect(mockFitBounds).toHaveBeenCalled();
 
     act(() =>
-      screen.getByTestId('react-map-gl/mapbox').dispatchEvent(
+      screen.getByTestId('@vis.gl/react-maplibre').dispatchEvent(
         new WheelEvent('wheel', {
           bubbles: true,
           cancelable: true,
@@ -949,7 +811,7 @@ describe('Search', () => {
 
   it('leaves ordinary wheel input to the map and clamps pinch zoom', () => {
     renderSearchMap();
-    const map = screen.getByTestId('react-map-gl/mapbox');
+    const map = screen.getByTestId('@vis.gl/react-maplibre');
     const wheel = new WheelEvent('wheel', {
       bubbles: true,
       cancelable: true,
@@ -1042,19 +904,6 @@ describe('Search', () => {
     consoleError.mockRestore();
   });
 
-  it.each([MAP_STYLE_OSM, 'mapbox://styles/trustroots/custom'])(
-    'uses Leaflet without a token even when WebGL is supported (style %o)',
-    style => {
-      mockGetMapBoxToken.mockReturnValue(undefined);
-      mockMapStyle = style;
-      renderSearchMap();
-      expect(screen.getByTestId('leaflet-search-map')).toBeInTheDocument();
-      expect(
-        screen.queryByTestId('react-map-gl/mapbox'),
-      ).not.toBeInTheDocument();
-    },
-  );
-
   it('queries public offers inside the visible map bounds', async () => {
     mockPersistentMapLocation = {
       ...mockPersistentMapLocation,
@@ -1113,8 +962,10 @@ describe('Search', () => {
     act(() => mockMapProps.onMoveEnd());
     await waitFor(() => expect(mockQueryOffers).toHaveBeenCalledTimes(3));
     await waitFor(() =>
-      expect(mockSourceProps.data).toEqual(
-        expect.objectContaining({ features: DATELINE_OFFER_FEATURES }),
+      expect(mockSourceProps.data.features).toEqual(
+        DATELINE_OFFER_FEATURES.map(feature =>
+          expect.objectContaining(feature),
+        ),
       ),
     );
     expect(analytics.track).toHaveBeenCalledTimes(1);
@@ -1188,10 +1039,12 @@ describe('Search', () => {
     expect(mockSourceProps.data.features).toEqual([
       {
         type: 'Feature',
+        id: featureId('new'),
         geometry: { type: 'Point', coordinates: [13, 52] },
         properties: { id: 'new' },
       },
     ]);
+    expect(mockSourceProps).not.toHaveProperty('promoteId');
     expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['new']);
   });
 
@@ -1351,6 +1204,21 @@ describe('Search', () => {
       },
     );
     await waitFor(() => expect(onOfferOpen).toHaveBeenCalledWith(offer));
+  });
+
+  it('opens the offer named by the pin rather than its numeric map feature id', async () => {
+    renderSearchMap();
+
+    clickMapFeatures([
+      {
+        id: featureId('offer-1'),
+        layer: { id: 'unclustered-point' },
+        properties: { id: 'offer-1' },
+        source: 'offers',
+      },
+    ]);
+
+    await waitFor(() => expect(mockGetOffer).toHaveBeenCalledWith('offer-1'));
   });
 
   it('clears the selected pin and ignores its pending details after device navigation', async () => {
@@ -1542,15 +1410,13 @@ describe('Search', () => {
     );
   });
 
-  it('zooms to clusters using the cluster expansion zoom', () => {
+  it('zooms to clusters using the cluster expansion zoom', async () => {
     renderSearchMap();
 
     clickOfferCluster(123);
+    await flushPromises();
 
-    expect(mockSource.getClusterExpansionZoom).toHaveBeenCalledWith(
-      123,
-      expect.any(Function),
-    );
+    expect(mockSource.getClusterExpansionZoom).toHaveBeenCalledWith(123);
     expect(mockMapProps.latitude).toBe(60);
     expect(mockMapProps.longitude).toBe(24);
     expect(mockMapProps.zoom).toBe(12);
@@ -1568,7 +1434,7 @@ describe('Search', () => {
     expect(mockMapProps.longitude).toBe(24);
   });
 
-  it('ignores clusters without an expansion id or expansion zoom', () => {
+  it('ignores clusters without an expansion id or expansion zoom', async () => {
     renderSearchMap();
 
     clickMapFeatures([
@@ -1581,11 +1447,12 @@ describe('Search', () => {
 
     expect(mockSource.getClusterExpansionZoom).not.toHaveBeenCalled();
 
-    mockSource.getClusterExpansionZoom.mockImplementationOnce(
-      (clusterId, done) => done(new Error('missing zoom')),
+    mockSource.getClusterExpansionZoom.mockRejectedValueOnce(
+      new Error('missing zoom'),
     );
 
     clickOfferCluster(123);
+    await flushPromises();
 
     expect(mockMapProps.zoom).toBe(2);
   });
@@ -1662,9 +1529,12 @@ describe('Search', () => {
         1,
       ),
     );
+    expect(mockSourcePropsById['community-notes']).not.toHaveProperty(
+      'promoteId',
+    );
     expect(mockSourcePropsById['community-notes'].data.features[0]).toEqual(
       expect.objectContaining({
-        id: 'note-valid',
+        id: featureId('note-valid'),
         properties: expect.objectContaining({
           authorPubkey: 'author-pubkey',
           content: 'A valid map note',
@@ -1720,7 +1590,7 @@ describe('Search', () => {
         .content,
     ).toBe('Visible note');
     expect(mockSourcePropsById['community-notes'].data.features[0].id).toBe(
-      'note-visible',
+      featureId('note-visible'),
     );
     expect(mockFilterCommunityNotesByAuthorVisibility).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -2167,7 +2037,7 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(5);
   });
 
-  it('opens overlapping Community Notes instead of repeatedly zooming', () => {
+  it('opens overlapping Community Notes instead of repeatedly zooming', async () => {
     const onCommunityNoteOpen = vi.fn();
     const makeLeaf = (id: string, content: string, createdAt: number) => ({
       properties: {
@@ -2180,27 +2050,19 @@ describe('Search', () => {
         tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
       },
     });
-    mockSource.getClusterLeaves.mockImplementation(
-      (clusterId, limit, offset, done) => {
-        done(null, [
-          makeLeaf('note-older', 'Older note', 1700000000),
-          makeLeaf('note-newer', 'Newer note', 1700000100),
-        ]);
-      },
-    );
+    mockSource.getClusterLeaves.mockResolvedValue([
+      makeLeaf('note-older', 'Older note', 1700000000),
+      makeLeaf('note-newer', 'Newer note', 1700000100),
+    ]);
 
     renderCommunityNotesMap({
       onCommunityNoteOpen,
     });
 
     clickCommunityNoteCluster({ clusterId: 7, pointCount: 2 });
+    await flushPromises();
 
-    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(
-      7,
-      2,
-      0,
-      expect.any(Function),
-    );
+    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(7, 2, 0);
     expect(onCommunityNoteOpen).toHaveBeenCalledWith({
       notes: [
         expect.objectContaining({ id: 'note-older', content: 'Older note' }),
@@ -2211,64 +2073,53 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(2);
   });
 
-  it('uses zero leaves when a community cluster omits its point count', () => {
-    mockSource.getClusterLeaves.mockImplementation(
-      (clusterId, limit, offset, done) =>
-        done(null, [
-          {
-            properties: {
-              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
-            },
-          },
-        ]),
-    );
+  it('uses zero leaves when a community cluster omits its point count', async () => {
+    mockSource.getClusterLeaves.mockResolvedValue([
+      {
+        properties: {
+          tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+        },
+      },
+    ]);
     renderCommunityNotesMap();
 
     clickCommunityNoteCluster({ clusterId: 12 });
+    await flushPromises();
 
-    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(
-      12,
-      0,
-      0,
-      expect.any(Function),
-    );
+    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(12, 0, 0);
   });
 
-  it('zooms Community Note clusters whose leaves have different locations', () => {
-    mockSource.getClusterLeaves.mockImplementation(
-      (clusterId, limit, offset, done) => {
-        done(null, [
-          {
-            properties: {
-              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
-            },
-          },
-          {
-            properties: {
-              tags: JSON.stringify([
-                ['l', '8FVC9G8F+5W', 'open-location-code'],
-              ]),
-            },
-          },
-        ]);
+  it('zooms Community Note clusters whose leaves have different locations', async () => {
+    mockSource.getClusterLeaves.mockResolvedValue([
+      {
+        properties: {
+          tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+        },
       },
-    );
+      {
+        properties: {
+          tags: JSON.stringify([['l', '8FVC9G8F+5W', 'open-location-code']]),
+        },
+      },
+    ]);
 
     renderCommunityNotesMap();
 
     clickCommunityNoteCluster({ clusterId: 8, pointCount: 2 });
+    await flushPromises();
 
     expect(mockMapProps.zoom).toBe(5);
   });
 
-  it('falls back to zooming when cluster leaves cannot be read', () => {
-    mockSource.getClusterLeaves.mockImplementation(
-      (clusterId, limit, offset, done) => done(new Error('source unavailable')),
+  it('falls back to zooming when cluster leaves cannot be read', async () => {
+    mockSource.getClusterLeaves.mockRejectedValue(
+      new Error('source unavailable'),
     );
 
     renderCommunityNotesMap();
 
     clickCommunityNoteCluster({ clusterId: 9, pointCount: 2 });
+    await flushPromises();
 
     expect(mockMapProps.zoom).toBe(5);
   });
@@ -2282,23 +2133,19 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(5);
   });
 
-  it('does not require a note handler for overlapping Community Notes', () => {
-    mockSource.getClusterLeaves.mockImplementation(
-      (clusterId, limit, offset, done) => {
-        done(null, [
-          {
-            properties: {
-              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
-            },
-          },
-        ]);
+  it('does not require a note handler for overlapping Community Notes', async () => {
+    mockSource.getClusterLeaves.mockResolvedValue([
+      {
+        properties: {
+          tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+        },
       },
-    );
+    ]);
     renderCommunityNotesMapWithoutOpenHandler();
 
-    expect(() => {
-      clickCommunityNoteCluster({ clusterId: 11, pointCount: 1 });
-    }).not.toThrow();
+    clickCommunityNoteCluster({ clusterId: 11, pointCount: 1 });
+    await flushPromises();
+    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(11, 1, 0);
   });
 
   it('starts from the default location zoom when the persisted zoom is missing', () => {
@@ -2421,17 +2268,14 @@ describe('Search', () => {
     consoleError.mockRestore();
   });
 
-  it('uses the OSM cluster count layer when the persisted map style is OSM', () => {
-    mockMapStyle = JSON.parse(JSON.stringify(MAP_STYLE_OSM));
-
+  it('uses a font from the map style for cluster counts', () => {
     renderCommunityNotesMap();
 
-    expect(mockMapProps.mapStyle).toEqual(MAP_STYLE_OSM);
     expect(mockLayerPropsById['cluster-count'].layout['text-font']).toEqual([
-      'Open Sans Bold',
+      'Noto Sans Bold',
     ]);
     expect(
       mockLayerPropsById['community-notes-cluster-count'].layout['text-font'],
-    ).toEqual(['Open Sans Semibold']);
+    ).toEqual(['Noto Sans Bold']);
   });
 });
