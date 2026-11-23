@@ -500,10 +500,17 @@ export default function AdminCircles() {
                   rows={4}
                   value={circle.description || ''}
                 />
-                <p className="help-block">Up to 4000 characters.</p>
+                <p className="help-block">
+                  Up to 4000 characters. Add a link with{' '}
+                  <code>[Link text](https://example.org/)</code>.
+                </p>
                 <section aria-label="Description preview">
                   <h3>Description preview</h3>
-                  <RichText content={circle.description || ''} allowLinks />
+                  <RichText
+                    content={circle.description || ''}
+                    allowLinks
+                    allowMarkdownLinks
+                  />
                 </section>
               </div>
               <fieldset className="form-group" disabled={isSaving}>

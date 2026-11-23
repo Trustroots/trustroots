@@ -172,6 +172,7 @@ export default function TribeDetailPage({
                     className="lead tribe-meta"
                     content={tribe.description}
                     allowLinks
+                    allowMarkdownLinks
                   />
                 )}
                 {!user && (
