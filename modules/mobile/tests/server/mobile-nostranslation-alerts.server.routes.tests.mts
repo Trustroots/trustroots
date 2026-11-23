@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import mongoose from 'mongoose';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import request from 'supertest';
@@ -94,11 +95,21 @@ describe('Mobile Nostranslation alert registrations', () => {
   it('binds proof to the mobile session, transport key and device, then consumes it once', async () => {
     const auth = await signIn();
     const otherSession = await signIn();
+    config.https = false;
     const challenge = await request(app)
       .post(path + '/challenge')
       .set('Authorization', auth)
       .send(registration)
       .expect(200);
+    const digest = createHash('sha256')
+      .update(`64:${author}64:${transport}3:ios64:${destination.token}`)
+      .digest('hex');
+    expect(challenge.body.event.tags).toEqual([
+      ['u', 'http://' + config.domain + path],
+      ['method', 'PUT'],
+      ['challenge', expect.stringMatching(/^[a-f0-9]{64}$/)],
+      ['payload', digest],
+    ]);
     const proof = finalizeEvent(challenge.body.event, secret);
     const data = { ...registration, proof };
 
@@ -247,6 +258,8 @@ describe('Mobile Nostranslation alert registrations', () => {
         .send({ ...androidRegistration, proof: wrongBinding })
         .expect(400);
     }
+    const challenges = mongoose.model('NostranslationAlertChallenge');
+    const consume = vi.spyOn(challenges, 'findOneAndDelete');
     for (const invalidProof of [
       { ...proof, sig: '0'.repeat(128) },
       finalizeEvent(
@@ -274,10 +287,12 @@ describe('Mobile Nostranslation alert registrations', () => {
         .send({ ...androidRegistration, proof: invalidProof })
         .expect(400);
     }
+    expect(consume).not.toHaveBeenCalled();
     const nonce = proof.tags.find(tag => tag[0] === 'challenge')![1];
-    await mongoose
-      .model('NostranslationAlertChallenge')
-      .updateOne({ _id: { $eq: nonce } }, { $set: { expiresAt: new Date(0) } });
+    await challenges.updateOne(
+      { _id: { $eq: nonce } },
+      { $set: { expiresAt: new Date(0) } },
+    );
     await request(app)
       .put(path)
       .set('Authorization', auth)
@@ -332,31 +347,40 @@ describe('Mobile Nostranslation alert registrations', () => {
     });
   });
 
-  it('returns a server error on a database failure and still consumes the submitted proof', async () => {
-    const auth = await signIn();
-    const challenge = await request(app)
-      .post(path + '/challenge')
-      .set('Authorization', auth)
-      .send(registration)
-      .expect(200);
-    const rows = mongoose.model('NostranslationAlertRegistration');
-    vi.spyOn(rows, 'updateOne').mockRejectedValueOnce(
-      new Error('Database unavailable.'),
-    );
-    const data = {
-      ...registration,
-      proof: finalizeEvent(challenge.body.event, secret),
-    };
-    await request(app)
-      .put(path)
-      .set('Authorization', auth)
-      .send(data)
-      .expect(500);
-    await request(app)
-      .put(path)
-      .set('Authorization', auth)
-      .send(data)
-      .expect(400);
-    expect(await rows.findById(transport)).toBeNull();
-  });
+  it.each([
+    Object.assign(new Error('External failure with a reused error code.'), {
+      code: 11000,
+    }),
+    new mongoose.mongo.MongoServerError({
+      message: 'Database unavailable.',
+      code: 91,
+    }),
+  ])(
+    'returns a server error and consumes the proof after %s',
+    async failure => {
+      const auth = await signIn();
+      const challenge = await request(app)
+        .post(path + '/challenge')
+        .set('Authorization', auth)
+        .send(registration)
+        .expect(200);
+      const rows = mongoose.model('NostranslationAlertRegistration');
+      vi.spyOn(rows, 'updateOne').mockRejectedValueOnce(failure);
+      const data = {
+        ...registration,
+        proof: finalizeEvent(challenge.body.event, secret),
+      };
+      await request(app)
+        .put(path)
+        .set('Authorization', auth)
+        .send(data)
+        .expect(500);
+      await request(app)
+        .put(path)
+        .set('Authorization', auth)
+        .send(data)
+        .expect(400);
+      expect(await rows.findById(transport)).toBeNull();
+    },
+  );
 });
