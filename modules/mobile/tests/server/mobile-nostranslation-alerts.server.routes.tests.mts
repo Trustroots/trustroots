@@ -175,13 +175,13 @@ describe('Mobile Nostranslation alert registrations', () => {
         .post(path + '/challenge')
         .set('Authorization', auth)
         .send(invalid)
-        .expect(400);
+        .expect(400, { message: 'Invalid notification registration.' });
     }
     await request(app)
       .put(path)
       .set('Authorization', auth)
       .send(registration)
-      .expect(400);
+      .expect(400, { message: 'Invalid notification registration proof.' });
     await request(app)
       .delete(path)
       .set('Authorization', auth)

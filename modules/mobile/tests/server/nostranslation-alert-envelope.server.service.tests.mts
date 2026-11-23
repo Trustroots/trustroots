@@ -55,6 +55,20 @@ describe('Nostranslation alert relay envelopes', () => {
     }
   });
 
+  it('accepts a valid frame at the size and clock skew limits', () => {
+    const event = envelope({ created_at: now + 30 });
+    const payload = frame(event).padEnd(32_768);
+    expect(
+      readTranslationAlertEnvelope(payload, connection, now),
+    ).toMatchObject({
+      eventId: event.id,
+      expiresAt: new Date((now + 90) * 1000),
+    });
+    expect(
+      readTranslationAlertEnvelope(payload + ' ', connection, now),
+    ).toBeUndefined();
+  });
+
   it('rejects malformed and out-of-scope relay traffic', () => {
     for (const rejected of [
       'x'.repeat(32_769),
