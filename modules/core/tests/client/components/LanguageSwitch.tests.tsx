@@ -23,6 +23,24 @@ afterEach(() => vi.clearAllMocks());
 
 beforeEach(() => i18n.changeLanguage('en'));
 
+it('updates document direction and loads the RTL stylesheet for Arabic', async () => {
+  try {
+    await i18n.changeLanguage('ar');
+    expect(document.documentElement).toHaveAttribute('lang', 'ar');
+    expect(document.documentElement).toHaveAttribute('dir', 'rtl');
+    const stylesheet = document.getElementById('rtl-style');
+    expect(stylesheet).toHaveAttribute(
+      'href',
+      expect.stringContaining('react-main.rtl.css'),
+    );
+    stylesheet?.dispatchEvent(new Event('load'));
+  } finally {
+    document.getElementById('rtl-style')?.remove();
+    await i18n.changeLanguage('en');
+  }
+  expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+});
+
 describe('default presentation', () => {
   it('opens a modal with language options and search', () => {
     render(<LanguageSwitch />);
