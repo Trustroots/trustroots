@@ -33,10 +33,7 @@ const requireChatAccount: RequestHandler = (req: ChatRequest, res, next) => {
   if (!user) return sendError(res, 401, 'Sign in to use circle chat.');
   if (user.roles.some(role => role === 'suspended' || role === 'shadowban'))
     return sendError(res, 403, 'Circle chat is unavailable for this account.');
-  if (
-    typeof req.params.room !== 'string' ||
-    !Object.hasOwn(chatTopics, req.params.room)
-  )
+  if (!Object.hasOwn(chatTopics, req.params.room as string))
     return sendError(res, 404, 'Chat room not found.');
   next();
 };
@@ -68,9 +65,11 @@ const postChat: RequestHandler = async (req: ChatRequest, res) => {
     );
 
   const room = req.params.room as ChatRoom;
-  const content =
-    typeof req.body?.content === 'string' ? req.body.content.trim() : '';
-  const channel: unknown = req.body?.channel;
+  const { content: rawContent, channel } = (req.body ?? {}) as {
+    content?: unknown;
+    channel?: unknown;
+  };
+  const content = typeof rawContent === 'string' ? rawContent.trim() : '';
   if (!content || content.length > MAX_CHAT_LENGTH)
     return sendError(res, 400, 'Enter a chat message of up to 500 characters.');
   if (

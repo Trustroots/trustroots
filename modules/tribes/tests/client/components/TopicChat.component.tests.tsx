@@ -104,6 +104,7 @@ it('posts as a keyless member and recognises attribution only from the Trustroot
 });
 
 it('uses the matching member signer when linked', async () => {
+  vi.mocked(http.get).mockRejectedValueOnce(new Error('offline'));
   vi.mocked(useCircleSigner).mockReturnValue({
     signer: { publicKey: getPublicKey(memberKey), sign },
     connecting: false,
@@ -118,6 +119,9 @@ it('uses the matching member signer when linked', async () => {
     roomName: 'volunteering',
     user: { ...member, nostrNpub: nip19.npubEncode(getPublicKey(memberKey)) },
   });
+  expect(
+    await screen.findByText('Circle chat is temporarily unavailable.'),
+  ).toBeVisible();
   fireEvent.change(screen.getByLabelText('Message'), {
     target: { value: 'Fictional chat' },
   });
@@ -130,6 +134,27 @@ it('uses the matching member signer when linked', async () => {
     }),
   );
   expect(http.post).not.toHaveBeenCalled();
+});
+
+it('recognises a server-signed post when chat history is unavailable', async () => {
+  vi.mocked(http.get).mockRejectedValueOnce(new Error('offline'));
+  const post = chatTemplate('hackers', 'Fictional chat');
+  post.tags.push([CHAT_ATTRIBUTION_TAG, member.username]);
+  vi.mocked(http.post).mockResolvedValueOnce({
+    data: finalizeEvent(post, serviceKey),
+  });
+
+  openChat({ roomName: 'hackers', user: member });
+  expect(
+    await screen.findByText('Circle chat is temporarily unavailable.'),
+  ).toHaveAttribute('role', 'status');
+  fireEvent.change(screen.getByLabelText('Message'), {
+    target: { value: 'Fictional chat' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(
+    await screen.findByText('fictional-member via Trustroots'),
+  ).toBeVisible();
 });
 
 it('keeps the draft when a server send fails', async () => {

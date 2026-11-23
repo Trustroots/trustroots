@@ -14,8 +14,11 @@ import {
 import { withCircleChatRelay } from '../../shared/circle-chat-relay.ts';
 
 function exportSigner() {
-  const key = nip19.decode(process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC || '');
-  if (key.type !== 'nsec') throw new Error('Circle chat signer is unavailable');
+  const encoded = process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC;
+  const key = encoded && nip19.decode(encoded);
+  if (!key || key.type !== 'nsec') {
+    throw new Error('Circle chat signer is unavailable');
+  }
   const { data } = key;
   return {
     publicKey: getPublicKey(data),
