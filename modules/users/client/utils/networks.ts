@@ -11,6 +11,18 @@ export function warmshowersProfileLink(id: string): string {
   return `https://app.warmshowers.org/profiles/${encodeURIComponent(id)}`;
 }
 
+export function couchsurfingProfileLink(handle: string): string {
+  return `https://www.couchsurfing.com/people/${encodeURIComponent(handle.trim())}`;
+}
+
+export function hitchwikiMapsProfileLink(handle: string): string {
+  return `https://maps.hitchwiki.org/account/${encodeURIComponent(handle.trim())}`;
+}
+
+export function hitchwikiProfileLink(handle: string): string {
+  return `https://hitchwiki.org/en/User:${encodeURIComponent(handle.trim())}`;
+}
+
 /**
  * Check if there are additional accounts
  */

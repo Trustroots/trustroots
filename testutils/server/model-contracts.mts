@@ -49,6 +49,8 @@ export interface UserRecord {
   extSitesCS?: string;
   extSitesWS?: string;
   extSitesServas?: string;
+  extSitesHitchwikiMaps?: string;
+  extSitesHitchwiki?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
   avatarVersion?: string;

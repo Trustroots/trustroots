@@ -33,6 +33,8 @@ describe('Service: profile-response', function () {
     _id: 'fictional-user-id',
     username: 'fictional-member',
     extSitesServas: 'household/fictional-host',
+    extSitesHitchwikiMaps: 'fictional-hiker',
+    extSitesHitchwiki: 'fictional-editor',
     displayName: 'Fictional Member',
     firstName: 'Fictional',
     lastName: 'Member',
@@ -65,6 +67,8 @@ describe('Service: profile-response', function () {
     );
     esmService.profileQueryFields.should.containEql('avatarVersion');
     esmService.profileQueryFields.should.containEql('extSitesServas');
+    esmService.profileQueryFields.should.containEql('extSitesHitchwikiMaps');
+    esmService.profileQueryFields.should.containEql('extSitesHitchwiki');
     esmService.profileQueryFields.should.not.containEql('lastIpHash');
     esmService.profileQueryFields.should.not.containEql('lastIpAddress');
     esmService.profileQueryFields.should.not.containEql('pushRegistration');
@@ -112,6 +116,8 @@ describe('Service: profile-response', function () {
       extSitesCS: 'fictional-cs',
       extSitesWS: 'fictional-ws',
       extSitesServas: 'household/fictional-host',
+      extSitesHitchwikiMaps: 'fictional-hiker',
+      extSitesHitchwiki: 'fictional-editor',
       nostrNpub: 'fictional-npub',
       avatarSource: 'gravatar',
       avatarUploaded: false,
@@ -136,6 +142,8 @@ describe('Service: profile-response', function () {
       extSitesCS: 'fictional-cs',
       extSitesWS: 'fictional-ws',
       extSitesServas: 'household/fictional-host',
+      extSitesHitchwikiMaps: 'fictional-hiker',
+      extSitesHitchwiki: 'fictional-editor',
       nostrNpub: 'fictional-npub',
       avatarSource: 'gravatar',
       avatarUploaded: false,
@@ -149,6 +157,8 @@ describe('Service: profile-response', function () {
 
     response.username.should.equal('fictional-member');
     response.extSitesServas!.should.equal('household/fictional-host');
+    response.extSitesHitchwikiMaps!.should.equal('fictional-hiker');
+    response.extSitesHitchwiki!.should.equal('fictional-editor');
     response.avatarVersion!.should.equal('0123456789abcdef0123456789abcdef');
     const providerIdentities = response.additionalProvidersData!;
     providerIdentities.facebook!.id!.should.equal('fictional-facebook-id');

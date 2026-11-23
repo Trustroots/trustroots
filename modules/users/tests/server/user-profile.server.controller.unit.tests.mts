@@ -2338,6 +2338,8 @@ describe('Profile controller unit tests', () => {
       profile.extSitesCouchers = 'fictional-member';
       profile.extSitesWS = 'fictional-member';
       profile.extSitesServas = 'household/fictional-host';
+      profile.extSitesHitchwikiMaps = 'fictional-hiker';
+      profile.extSitesHitchwiki = 'fictional-editor';
       profile.nostrNpub =
         'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq0l7z9';
       profile.additionalProvidersData = {
@@ -2356,6 +2358,8 @@ describe('Profile controller unit tests', () => {
       (sanitized.extSitesCouchers === undefined).should.be.true();
       (sanitized.extSitesWS === undefined).should.be.true();
       (sanitized.extSitesServas === undefined).should.be.true();
+      (sanitized.extSitesHitchwikiMaps === undefined).should.be.true();
+      (sanitized.extSitesHitchwiki === undefined).should.be.true();
       (sanitized.nostrNpub === undefined).should.be.true();
     });
 

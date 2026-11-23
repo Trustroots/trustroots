@@ -8,15 +8,26 @@ import {
   getNetworkName,
   hasConnectedAdditionalSocialAccounts,
   socialAccountLink,
+  hitchwikiMapsProfileLink,
+  hitchwikiProfileLink,
   warmshowersProfileLink,
 } from '../utils/networks';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import LanguageList from './LanguageList';
 import ProfileNostrBadge from './ProfileNostrBadge.component';
+import CouchsurfingProfileAction from './CouchsurfingProfileAction';
 import type { UserProfile } from '../types';
 
 const PUBLIC_PROVIDER_NAMES = ['facebook', 'github', 'twitter'] as const;
 
+const HITCHWIKI_NETWORKS = [
+  { name: 'Hitchwiki', field: 'extSitesHitchwiki', href: hitchwikiProfileLink },
+  {
+    name: 'Hitchwiki Maps',
+    field: 'extSitesHitchwikiMaps',
+    href: hitchwikiMapsProfileLink,
+  },
+] as const;
 function npubToHex(npub: string): string | null {
   try {
     const { type, data } = nip19.decode(npub);
@@ -28,8 +39,10 @@ function npubToHex(npub: string): string | null {
 
 export default function ProfileViewBasics({
   profile,
+  canOpenCouchsurfing = false,
 }: {
   profile: UserProfile & { seen?: string };
+  canOpenCouchsurfing?: boolean;
 }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -149,14 +162,15 @@ export default function ProfileViewBasics({
         aria-describedby="profile-networks"
       >
         {profile.nostrNpub && (
-          <li className="social-profile">
+          <li className="social-profile" title={getNetworkName('nostr')}>
             <img
               className="social-profile-icon nostroots-logo"
               src="/img/external/nostroots-logo.png"
               alt=""
             />
             <a
-              rel="noopener"
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-profile-handle"
               href={`https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
                 nostrIdentifier,
@@ -179,19 +193,25 @@ export default function ProfileViewBasics({
               network,
             ),
           ).map(network => {
+            const href = socialAccountLink(
+              network,
+              profile.additionalProvidersData?.[network] || {},
+            );
             return (
               network !== 'facebook' && (
-                <li className="social-profile" key={network}>
+                <li
+                  className="social-profile"
+                  key={network}
+                  title={getNetworkName(network)}
+                >
                   <i
                     className={`social-profile-icon icon-fw icon-lg icon-${network}`}
                   />
                   <a
-                    rel="noopener"
+                    target={href === '#' ? undefined : '_blank'}
+                    rel="noopener noreferrer"
                     className="social-profile-handle"
-                    href={socialAccountLink(
-                      network,
-                      profile.additionalProvidersData?.[network] || {},
-                    )}
+                    href={href}
                   >
                     {getNetworkName(network)}
                   </a>
@@ -201,13 +221,13 @@ export default function ProfileViewBasics({
           })}
         {/* Couchers.org */}
         {profile.extSitesCouchers && (
-          <li className="social-profile">
+          <li className="social-profile" title="Couchers.org">
             <i className="social-profile-icon icon-fw icon-lg icon-couchers"></i>
             <a
-              rel="noopener"
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-profile-handle"
               href={`https://couchers.org/user/${profile.extSitesCouchers}`}
-              title="Couchers.org"
             >
               CO: {profile.extSitesCouchers}
             </a>
@@ -216,13 +236,13 @@ export default function ProfileViewBasics({
 
         {/* BeWelcome */}
         {profile.extSitesBW && (
-          <li className="social-profile">
+          <li className="social-profile" title="BeWelcome">
             <i className="social-profile-icon icon-fw icon-lg icon-bw"></i>
             <a
-              rel="noopener"
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-profile-handle"
               href={`https://www.bewelcome.org/members/${profile.extSitesBW}`}
-              title="BeWelcome"
             >
               BW: {profile.extSitesBW}
             </a>
@@ -231,17 +251,28 @@ export default function ProfileViewBasics({
 
         {/* Couchsurfing */}
         {profile.extSitesCS && (
-          <li className="social-profile">
-            <span className="social-profile-handle" title="Couchsurfing">
-              CS: {profile.extSitesCS}
-            </span>
+          <li className="social-profile" title="Couchsurfing">
+            {canOpenCouchsurfing ? (
+              <CouchsurfingProfileAction
+                handle={profile.extSitesCS}
+                className="social-profile-handle tw:p-0"
+                variant="link"
+              >
+                CS: {profile.extSitesCS}
+              </CouchsurfingProfileAction>
+            ) : (
+              <span className="social-profile-handle">
+                CS: {profile.extSitesCS}
+              </span>
+            )}
           </li>
         )}
         {profile.extSitesServas && (
-          <li className="social-profile">
+          <li className="social-profile" title="Servas">
             <i className="social-profile-icon icon-fw icon-lg icon-link"></i>
             <a
-              rel="noopener"
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-profile-handle"
               href={`https://servas.org/${profile.extSitesServas}`}
             >
@@ -249,11 +280,31 @@ export default function ProfileViewBasics({
             </a>
           </li>
         )}
+        {HITCHWIKI_NETWORKS.map(({ name, field, href }) => {
+          const handle = profile[field];
+          return (
+            handle && (
+              <li className="social-profile" title={name} key={field}>
+                <i className="social-profile-icon icon-fw icon-lg icon-link"></i>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-profile-handle"
+                  href={href(handle)}
+                >
+                  {name}: {handle}
+                </a>
+              </li>
+            )
+          );
+        })}
         {/* WarmShowers */}
         {profile.extSitesWS && (
-          <li className="social-profile">
+          <li className="social-profile" title="Warmshowers">
             <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
             <a
+              target="_blank"
+              rel="noopener noreferrer"
               className="social-profile-handle"
               href={warmshowersProfileLink(profile.extSitesWS)}
             >
@@ -317,7 +368,9 @@ export default function ProfileViewBasics({
         profile.extSitesBW ||
         profile.extSitesCS ||
         profile.extSitesWS ||
-        profile.extSitesServas) &&
+        profile.extSitesServas ||
+        profile.extSitesHitchwiki ||
+        profile.extSitesHitchwikiMaps) &&
         renderSocialNetworks(profile)}
     </div>
   );

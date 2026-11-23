@@ -489,7 +489,11 @@ export default function ProfilePage({
         return (
           <>
             <AvatarNameMobile profile={profile} isSelf={isSelf} />
-            <ProfileOverview profile={profile} isSelf={isSelf} />
+            <ProfileOverview
+              profile={profile}
+              isSelf={isSelf}
+              canOpenCouchsurfing={Boolean(authUser.extSitesCS?.trim())}
+            />
             {!isSelf && (
               <div className="profile-flags">
                 <ReportMemberButton username={profile.username} />
@@ -695,7 +699,11 @@ export default function ProfilePage({
               ) : (
                 <>
                   <div className="tw:sm:grid-col-3 tw:max-sm:hidden">
-                    <ProfileOverview profile={profile} isSelf={isSelf} />
+                    <ProfileOverview
+                      profile={profile}
+                      isSelf={isSelf}
+                      canOpenCouchsurfing={Boolean(authUser.extSitesCS?.trim())}
+                    />
                     {!isSelf && (
                       <div className="profile-flags">
                         <ReportMemberButton username={profile.username} />
