@@ -191,6 +191,7 @@ const service = {
   targetedRequestLimits: {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 20, identityLimit: 3 },
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10, identityLimit: 10 },
+    contactRequest: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 12 },
     signin: { windowMs: 15 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
     forgotPassword: { windowMs: 60 * 60 * 1000, ipLimit: 30, identityLimit: 5 },
     resetPassword: { windowMs: 60 * 60 * 1000, ipLimit: 60, identityLimit: 10 },

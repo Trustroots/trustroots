@@ -7,6 +7,7 @@ import './../../server/models/request-limit.server.model.mts';
 type Operation =
   | 'signup'
   | 'support'
+  | 'contactRequest'
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
@@ -70,6 +71,7 @@ function loadMiddleware(
     targetedRequestLimits: {
       signup: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       support: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      contactRequest: { windowMs: 3_600_000, ipLimit: 0, identityLimit: 12 },
       signin: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
@@ -119,6 +121,27 @@ describe('Targeted request limit middleware', function () {
   before(async function () {
     ({ createTargetedRequestLimits, getRequestIdentity } =
       await import('../../server/middleware/targeted-request-limit.server.middleware.mts'));
+  });
+
+  it('limits contact requests per member when a client address is unavailable', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => undefined,
+    );
+    await middleware.contactRequest(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(options, {
+      operation: 'contactRequest',
+      windowMs: 3_600_000,
+      dimensions: [{ name: 'member', value: 'fictional-member', limit: 12 }],
+    });
   });
 
   it('counts signup by normalised recipient independently of client address', async function () {
