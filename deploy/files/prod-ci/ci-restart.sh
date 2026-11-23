@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Restart Passenger and background worker (PM2 running worker.js)
+# Restart Passenger and background worker (PM2 running worker.mjs)
 
 # Restart Passenger
 cd /srv
