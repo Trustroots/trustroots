@@ -10,7 +10,8 @@ import type {
 } from '../../../shared/experience';
 
 export type ExperienceTag =
-  keyof ExperienceInteractions | Exclude<ExperienceRecommendation, 'unknown'>;
+  | keyof ExperienceInteractions
+  | Exclude<ExperienceRecommendation, 'unknown'>;
 
 export type ExperienceTagFilters = {
   interaction: keyof ExperienceInteractions | '';
