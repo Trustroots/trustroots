@@ -27,20 +27,28 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.delay
+import okhttp3.WebSocket
 import org.trustroots.android.R
+import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.browser.BrowserNostrSession
 import org.trustroots.android.nostr.AndroidNostranslationSession
 import org.trustroots.android.nostr.NostranslationConnectionLink
 import org.trustroots.android.nostr.nostrAccountScope
 
 @Composable
-internal fun NostranslationEntry(backend: String, username: String, activeSession: BrowserNostrSession?, enabled: Boolean) {
+internal fun NostranslationEntry(
+    backend: String,
+    username: String,
+    activeSession: BrowserNostrSession?,
+    enabled: Boolean,
+    sockets: WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
+) {
     var open by remember(activeSession) { mutableStateOf(false) }
     TextButton(onClick = { open = true }, enabled = enabled && activeSession != null) {
         Text(stringResource(R.string.nostranslation_signing))
     }
     if (open && enabled && activeSession != null) {
-        NostranslationDialog(backend, username, activeSession) { open = false }
+        NostranslationDialog(backend, username, activeSession, sockets) { open = false }
     }
 }
 
@@ -49,11 +57,12 @@ private fun NostranslationDialog(
     backend: String,
     username: String,
     activeSession: BrowserNostrSession,
+    sockets: WebSocket.Factory,
     close: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val signer = remember(activeSession) {
-        AndroidNostranslationSession(nostrAccountScope(backend, username), activeSession.keys, scope, activeSession::isActive)
+        AndroidNostranslationSession(nostrAccountScope(backend, username), activeSession.keys, scope, activeSession::isActive, sockets)
     }
     var input by remember { mutableStateOf("") }
     var pairing by remember { mutableStateOf<NostranslationConnectionLink?>(null) }
