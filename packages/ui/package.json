@@ -21,6 +21,7 @@
     "./Textarea": "./src/components/Textarea.tsx",
     "./Input": "./src/components/Input.tsx",
     "./Select": "./src/components/Select.tsx",
+    "./MultiCombobox": "./src/components/MultiCombobox.tsx",
     "./Modal": "./src/components/Modal.tsx",
     "./NavigationDropdown": "./src/components/NavigationDropdown.tsx",
     "./intent": "./src/lib/intent.ts",

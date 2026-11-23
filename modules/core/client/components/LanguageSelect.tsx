@@ -1,9 +1,8 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import AsyncSelect from 'react-select/async';
-import type { OnChangeValue } from 'react-select';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ComponentProps } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
+import { MultiCombobox } from '@trustroots/ui/MultiCombobox';
 
 // Internal dependencies
 import { useLanguagesQuery, type LanguageOption } from '../api/languages.api';
@@ -21,12 +20,13 @@ function filterLanguagesByLabel(
   );
 }
 
-type LanguageSelectProps = {
+type LanguageSelectProps = Pick<
+  ComponentProps<'input'>,
+  'aria-label' | 'aria-labelledby' | 'placeholder'
+> & {
   excludeDeprecated?: boolean;
   preSelectedLanguages?: string[];
-  placeholder?: string;
   onChangeLanguages?: (languages: string[]) => void;
-  [key: string]: unknown;
 };
 
 export default function LanguageSelect({
@@ -41,6 +41,7 @@ export default function LanguageSelect({
     format: 'array',
   });
   const [selected, setSelected] = useState<LanguageOption[]>([]);
+  const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
     if (data && preSelectedLanguages?.length) {
@@ -51,46 +52,35 @@ export default function LanguageSelect({
     }
   }, [data]);
 
-  const filteredLanguages = (inputValue: string): Promise<LanguageOption[]> =>
-    new Promise(resolve => {
-      if (!inputValue || inputValue.length < INPUT_MIN_LENGTH) {
-        return resolve([]);
-      }
-
-      const languages = data || [];
-      const options = excludeDeprecated
-        ? languages.filter(language => !language.deprecated)
-        : languages;
-      resolve(filterLanguagesByLabel(options, inputValue));
-    });
-
-  const onChange = (selectedOptions: OnChangeValue<LanguageOption, true>) => {
-    if (onChangeLanguages) {
-      const languageCodes =
-        selectedOptions && selectedOptions.length
-          ? selectedOptions.map(({ value }) => value)
-          : [];
-      onChangeLanguages(languageCodes);
-    }
-    setSelected(selectedOptions ? [...selectedOptions] : []);
-  };
+  const languages = data ?? [];
+  const options = excludeDeprecated
+    ? languages.filter(language => !language.deprecated)
+    : languages;
+  const canSearch = inputValue.length >= INPUT_MIN_LENGTH;
+  const filtered = canSearch ? filterLanguagesByLabel(options, inputValue) : [];
 
   return (
     <>
-      <AsyncSelect
-        isDisabled={!data || isError}
-        isLoading={isLoading}
-        isMulti
+      <MultiCombobox
+        items={options}
+        filteredItems={filtered}
+        disabled={!data || isError}
         value={selected}
-        loadingMessage={() => t('Loading…')}
-        noOptionsMessage={({ inputValue }) => {
-          return inputValue?.length >= INPUT_MIN_LENGTH
-            ? t('No languages found; try typing something else.')
-            : t('Start typing a language…');
+        inputValue={inputValue}
+        onInputValueChange={setInputValue}
+        onValueChange={value => {
+          setSelected(value);
+          onChangeLanguages?.(value.map(option => option.value));
         }}
-        placeholder={placeholder || t('Select…')}
-        onChange={onChange}
-        loadOptions={filteredLanguages}
+        emptyMessage={
+          canSearch
+            ? t('No languages found; try typing something else.')
+            : t('Start typing a language…')
+        }
+        removeLabel={option =>
+          t('Remove {{language}}', { language: option.label })
+        }
+        placeholder={isLoading ? t('Loading…') : placeholder || t('Select…')}
         {...props}
       />
       {isError && (

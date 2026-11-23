@@ -1,6 +1,11 @@
 import path from 'node:path';
 import type { Request } from '@playwright/test';
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  test,
+  expect,
+} from '../../support/fixtures.mts';
 
 import {
   SEEDED_MEMBERS,
@@ -488,6 +493,7 @@ test.describe('authenticated member flows', () => {
     const languageInput = page.locator(
       'input[aria-label="Add languages you speak."]',
     );
+    await languageInput.click();
     await languageInput.fill('Middle English');
     await expect(
       page.getByText('No languages found; try typing something else.'),
@@ -496,6 +502,25 @@ test.describe('authenticated member flows', () => {
     await expect(
       page.getByText('English', { exact: true }).last(),
     ).toBeVisible();
+
+    await languageInput.fill('Limburgish');
+    const suggestion = page.getByRole('option', {
+      name: 'Limburgish',
+      exact: true,
+    });
+    await expect(suggestion).toBeVisible();
+    await captureSection(
+      page.getByRole('listbox'),
+      'profile-language-suggestions',
+    );
+    await suggestion.click();
+    const languageField = page
+      .locator('.form-group')
+      .filter({ has: languageInput });
+    await expect(
+      languageField.getByText('Limburgish', { exact: true }),
+    ).toBeVisible();
+    await captureSection(languageField, 'profile-language-selection');
 
     const rejected = await page.request.put('/api/users', {
       data: { languages: ['enm'] },
