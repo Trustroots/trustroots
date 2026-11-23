@@ -1,5 +1,7 @@
 const mobileAuthentication = require('../controllers/mobile-authentication.server.controller.cjs');
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
+const targetedRequestLimit =
+  require('../../../core/server/middleware/targeted-request-limit.server.middleware.mts').default;
 const offers =
   require('../../../offers/server/controllers/offers.server.controller.mts').default;
 const tribes =
@@ -361,6 +363,7 @@ module.exports = function (app) {
     .post(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      targetedRequestLimit.support,
       support.supportRequest,
     );
 };

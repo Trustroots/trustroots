@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@trustroots/contacts": "workspace:*",
+    "@trustroots/core": "workspace:*",
     "@trustroots/experiences": "workspace:*",
     "@trustroots/messages": "workspace:*",
     "@trustroots/offers": "workspace:*",

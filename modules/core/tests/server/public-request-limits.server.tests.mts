@@ -139,4 +139,43 @@ describe('Signup and support request allowances', () => {
     assert.equal(await mongoose.model('SupportRequest').countDocuments(), 1);
     assert.equal(jobs.length, queued);
   });
+
+  it('shares authenticated support allowance between mobile and browser requests', async () => {
+    config.targetedRequestLimits.support = {
+      windowMs: 60000,
+      ipLimit: 10,
+      identityLimit: 1,
+    };
+    const [credentials] = utils.generateUsers(1, { public: true });
+    await utils.saveUsers([credentials]);
+    const mobilePath = '/api/mobile/v0/support';
+    const body = { message: 'A fictional mobile support enquiry.' };
+    const counters = mongoose.model('RequestLimit');
+    const countBeforeAuthentication = await counters.countDocuments();
+    await request(app).post(mobilePath).send(body).expect(401);
+    assert.equal(await counters.countDocuments(), countBeforeAuthentication);
+
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send({ username: credentials.username, password: credentials.password })
+      .expect(200);
+    await request(app)
+      .post(mobilePath)
+      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .set('!~Passenger-Client-Address', '198.51.100.41')
+      .send(body)
+      .expect(200);
+    const queued = jobs.length;
+
+    const agent = request.agent(app);
+    await utils.signIn(credentials, agent);
+    const response = await agent
+      .post('/api/support')
+      .set('!~Passenger-Client-Address', '198.51.100.42')
+      .send(body)
+      .expect(429);
+    assert.match(response.headers['retry-after'], /^\d+$/);
+    assert.equal(await mongoose.model('SupportRequest').countDocuments(), 1);
+    assert.equal(jobs.length, queued);
+  });
 });

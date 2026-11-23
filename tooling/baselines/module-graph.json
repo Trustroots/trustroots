@@ -32,6 +32,7 @@
     ],
     "mobile": [
       "contacts",
+      "core",
       "experiences",
       "messages",
       "offers",
