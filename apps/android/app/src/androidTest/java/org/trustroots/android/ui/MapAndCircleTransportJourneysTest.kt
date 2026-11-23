@@ -11,6 +11,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -332,15 +334,7 @@ class MapAndCircleTransportJourneysTest {
             val loading = compose.onAllNodes(
                 SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo),
             ).fetchSemanticsNodes().isNotEmpty()
-            val dynamicError = compose.onAllNodes(
-                SemanticsMatcher("non-empty text outside the screen's fixed labels") { node ->
-                    (!node.config.contains(SemanticsProperties.Role) || node.config[SemanticsProperties.Role] != Role.Tab) &&
-                        node.config.contains(SemanticsProperties.Text) &&
-                        node.config[SemanticsProperties.Text]
-                            .any { it.text.isNotBlank() && it.text !in knownLabels }
-                },
-            ).fetchSemanticsNodes().isNotEmpty()
-            !loading && dynamicError && local.requests.any(requestMatches)
+            !loading && hasDynamicText(knownLabels) && local.requests.any(requestMatches)
         }
     }
 
@@ -350,7 +344,7 @@ class MapAndCircleTransportJourneysTest {
                         node.config.contains(SemanticsProperties.Text) &&
                 node.config[SemanticsProperties.Text]
                     .any { it.text.isNotBlank() && it.text !in knownLabels }
-        },
+        } and !hasAnyAncestor(hasTestTag("hostMapScale")),
     ).fetchSemanticsNodes().isNotEmpty()
 
     private fun assertMatchingRequests(
