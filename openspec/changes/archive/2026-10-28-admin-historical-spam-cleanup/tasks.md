@@ -1,4 +1,0 @@
-- [x] Add bounded review and deletion APIs using existing eligibility rules.
-- [x] Add administrator screen and navigation.
-- [x] Add anonymous permission, stale-preview, deletion and UI/e2e coverage.
-- [x] Run required checks and update living requirements.

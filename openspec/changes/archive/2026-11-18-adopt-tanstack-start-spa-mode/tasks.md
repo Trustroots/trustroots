@@ -1,6 +1,0 @@
-- [x] Build the client with the TanStack Start Vite plugin in SPA mode, keeping the code-based route tree.
-- [x] Give the Start server bundle a shell-only router so it never imports browser-only page modules.
-- [x] Serve the prerendered shell from Express with the page head, bootstrap data and script nonces.
-- [x] Fetch the shell from the Vite development server in development.
-- [x] Run the RTL stylesheet plugin for the client build only.
-- [x] Update the Vite smoke tests, end-to-end build, server and client tests, and documentation.
