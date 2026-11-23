@@ -126,7 +126,12 @@ describe('Mobile Nostranslation alert registrations', () => {
       .send(data)
       .expect(400);
     const rows = mongoose.model('NostranslationAlertRegistration');
-    expect(await rows.countDocuments()).toBe(1);
+    expect(await rows.findById(transport).lean()).toMatchObject({
+      _id: transport,
+      author,
+      destination,
+      expiresAt: expect.any(Date),
+    });
     await request(app)
       .delete(path)
       .set('Authorization', otherSession)
@@ -171,5 +176,76 @@ describe('Mobile Nostranslation alert registrations', () => {
       .set('Authorization', auth)
       .send({ transport: { $ne: '' } })
       .expect(400);
+  });
+
+  it('registers a valid Android destination only with the original, unexpired challenge', async () => {
+    const auth = await signIn();
+    const androidRegistration = {
+      ...registration,
+      destination: {
+        platform: 'android',
+        endpoint: 'https://ntfy.sh/translation-fixture',
+        publicKey:
+          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+        auth: 'abcdefghijklmnopqrstuv',
+      },
+    };
+    const newChallenge = async () => {
+      const response = await request(app)
+        .post(path + '/challenge')
+        .set('Authorization', auth)
+        .send(androidRegistration)
+        .expect(200);
+      return finalizeEvent(response.body.event, secret);
+    };
+    const proof = await newChallenge();
+    for (const invalidProof of [
+      { ...proof, sig: '0'.repeat(128) },
+      finalizeEvent(
+        {
+          ...proof,
+          tags: proof.tags.map(tag =>
+            tag[0] === 'challenge' ? ['unknown', tag[1]!] : tag,
+          ),
+        },
+        secret,
+      ),
+      finalizeEvent(
+        {
+          ...proof,
+          tags: proof.tags.map(tag =>
+            tag[0] === 'challenge' ? ['challenge', 'invalid'] : tag,
+          ),
+        },
+        secret,
+      ),
+    ]) {
+      await request(app)
+        .put(path)
+        .set('Authorization', auth)
+        .send({ ...androidRegistration, proof: invalidProof })
+        .expect(400);
+    }
+    const nonce = proof.tags.find(tag => tag[0] === 'challenge')![1];
+    await mongoose
+      .model('NostranslationAlertChallenge')
+      .updateOne({ _id: { $eq: nonce } }, { $set: { expiresAt: new Date(0) } });
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send({ ...androidRegistration, proof })
+      .expect(400);
+
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send({ ...androidRegistration, proof: await newChallenge() })
+      .expect(204);
+    expect(
+      await mongoose
+        .model('NostranslationAlertRegistration')
+        .findById(transport)
+        .lean(),
+    ).toMatchObject({ destination: androidRegistration.destination });
   });
 });
