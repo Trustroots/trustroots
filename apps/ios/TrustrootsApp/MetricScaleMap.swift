@@ -36,7 +36,7 @@ struct MetricScaleMap<Content: View>: View {
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
                         .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
                         .padding(8)
                         .allowsHitTesting(false)
