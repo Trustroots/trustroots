@@ -80,7 +80,6 @@ trustroots.tar.gz*
 
 # Test coverage output
 /coverage/
-/coverage-report/
 
 # Mutation testing output
 /.stryker-tmp/

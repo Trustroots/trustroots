@@ -52,21 +52,12 @@ write_status() {
   node ./scripts/e2e/summarize-results.js
 }
 
-generate_coverage_report() {
-  if [ "${TRUSTROOTS_E2E_SKIP_COVERAGE_REPORT:-false}" = "true" ]; then
-    return 0
-  fi
-
-  node ./scripts/coverage/generate-report.cts >/dev/null 2>&1 || true
-}
-
 exit_with_status() {
   local status="$1"
   local exit_code="$2"
   local message="$3"
 
   write_status "$status" "$exit_code" "$message"
-  generate_coverage_report
   exit "$exit_code"
 }
 
@@ -373,7 +364,6 @@ fi
 summarize_status="$?"
 set -e
 
-generate_coverage_report
 
 # Prefer the Playwright exit code when tests failed. Otherwise honour the
 # summariser, which fails the run when required feature scenarios are missing.
