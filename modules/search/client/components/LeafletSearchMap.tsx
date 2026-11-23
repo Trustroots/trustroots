@@ -362,7 +362,7 @@ export default function LeafletSearchMap({
 
   return (
     <div
-      className="search-map leaflet-search-map"
+      className="search-map leaflet-search-map tw:map-scale"
       data-testid="leaflet-search-map"
       data-map-zoom={viewport.zoom}
       data-map-latitude={viewport.latitude}

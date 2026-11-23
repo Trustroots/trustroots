@@ -19,9 +19,10 @@ struct MetricScaleMap<Content: View>: View {
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if let scale {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(spacing: 3) {
                             Text(scale.label)
-                                .font(.caption2)
+                                .font(.caption2.weight(.semibold))
+                                .monospacedDigit()
                                 .accessibilityIdentifier("map-distance-scale")
                             Path { path in
                                 path.move(to: .zero)
@@ -29,13 +30,14 @@ struct MetricScaleMap<Content: View>: View {
                                 path.addLine(to: CGPoint(x: scale.width, y: 4))
                                 path.addLine(to: CGPoint(x: scale.width, y: 0))
                             }
-                            .stroke(.primary, lineWidth: 1)
+                            .stroke(.primary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                             .frame(width: scale.width, height: 5)
                             .accessibilityHidden(true)
                         }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
                         .padding(8)
                         .allowsHitTesting(false)
                     }

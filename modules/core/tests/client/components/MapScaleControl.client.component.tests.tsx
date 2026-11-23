@@ -33,7 +33,7 @@ describe('<MapScaleControl />', () => {
     render(<MapScaleControl showMapStyles />);
 
     expect(mockScaleControl).toHaveBeenCalledWith(
-      expect.objectContaining({ style: { marginBottom: 56 } }),
+      expect.objectContaining({ style: { marginBottom: 62 } }),
     );
   });
 });
