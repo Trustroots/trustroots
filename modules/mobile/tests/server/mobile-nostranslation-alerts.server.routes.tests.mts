@@ -1,7 +1,15 @@
 import mongoose from 'mongoose';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import request from 'supertest';
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import config from '../../../../config/config.mts';
 import express from '../../../../config/lib/express.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
@@ -16,6 +24,7 @@ const User = mongoose.model('User');
 
 let app: Awaited<ReturnType<typeof express.init>>;
 const initialFlag = config.featureFlags.nostranslationAlerts;
+const initialHttps = config.https;
 
 async function signIn() {
   const response = await request(app)
@@ -47,6 +56,8 @@ describe('Mobile Nostranslation alert registrations', () => {
 
   afterEach(async () => {
     config.featureFlags.nostranslationAlerts = initialFlag;
+    config.https = initialHttps;
+    vi.restoreAllMocks();
     await clearDatabase();
   });
 
@@ -176,6 +187,11 @@ describe('Mobile Nostranslation alert registrations', () => {
       .set('Authorization', auth)
       .send({ transport: { $ne: '' } })
       .expect(400);
+    await request(app)
+      .delete(path)
+      .set('Authorization', auth)
+      .send({ transport: 'invalid' })
+      .expect(400, { message: 'Invalid transport key.' });
   });
 
   it('registers a valid Android destination only with the original, unexpired challenge', async () => {
@@ -247,5 +263,68 @@ describe('Mobile Nostranslation alert registrations', () => {
         .findById(transport)
         .lean(),
     ).toMatchObject({ destination: androidRegistration.destination });
+  });
+
+  it('preserves another member’s destination when a conflicting proof is submitted', async () => {
+    const auth = await signIn();
+    config.https = true;
+    const challenge = await request(app)
+      .post(path + '/challenge')
+      .set('Authorization', auth)
+      .send(registration)
+      .expect(200);
+    expect(challenge.body.event.tags).toContainEqual([
+      'u',
+      'https://' + config.domain + path,
+    ]);
+    const rows = mongoose.model('NostranslationAlertRegistration');
+    const owner = new mongoose.Types.ObjectId();
+    await rows.create({
+      _id: transport,
+      user: owner,
+      session: new mongoose.Types.ObjectId(),
+      author,
+      destination,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send({
+        ...registration,
+        proof: finalizeEvent(challenge.body.event, secret),
+      })
+      .expect(400);
+    expect(await rows.findById(transport).lean()).toMatchObject({
+      user: owner,
+    });
+  });
+
+  it('returns a server error on a database failure and still consumes the submitted proof', async () => {
+    const auth = await signIn();
+    const challenge = await request(app)
+      .post(path + '/challenge')
+      .set('Authorization', auth)
+      .send(registration)
+      .expect(200);
+    const rows = mongoose.model('NostranslationAlertRegistration');
+    vi.spyOn(rows, 'updateOne').mockRejectedValueOnce(
+      new Error('Database unavailable.'),
+    );
+    const data = {
+      ...registration,
+      proof: finalizeEvent(challenge.body.event, secret),
+    };
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send(data)
+      .expect(500);
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send(data)
+      .expect(400);
+    expect(await rows.findById(transport)).toBeNull();
   });
 });
