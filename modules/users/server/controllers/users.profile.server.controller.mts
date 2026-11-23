@@ -140,6 +140,14 @@ service.userListingProfileFields =
 service.userSearchProfileFields =
   service.userMiniProfileFields + ' gender locationFrom locationLiving tagline';
 
+service.recordSafetyPageVisit = async function (req, res) {
+  await User.updateOne(
+    { _id: req.user._id },
+    { $set: { safetyPageVisited: true } },
+  );
+  return res.status(204).send(undefined);
+};
+
 /**
  * Update user profile
  */

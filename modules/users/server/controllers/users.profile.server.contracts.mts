@@ -120,6 +120,10 @@ export interface UserProfileController {
   userListingProfileFields: string;
   userSearchProfileFields: string;
   update(req: ProfileRequest, res: ProfileResponse): unknown;
+  recordSafetyPageVisit(
+    req: AuthenticatedProfileRequest,
+    res: ProfileResponse,
+  ): unknown;
   getProfileRemovalStatus(req: ProfileRequest, res: ProfileResponse): unknown;
   cancelProfileRemoval(req: ProfileRequest, res: ProfileResponse): unknown;
   initializeRemoveProfile(req: ProfileRequest, res: ProfileResponse): unknown;

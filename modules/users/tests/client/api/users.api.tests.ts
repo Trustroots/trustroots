@@ -3,6 +3,7 @@ import axios, { type AxiosResponse } from 'axios';
 import {
   cancelProfileRemoval,
   getProfileRemovalStatus,
+  recordSafetyPageVisit,
   changePassword,
   nostrChallenge,
   fetch,
@@ -49,6 +50,12 @@ describe('users api', () => {
     expect(axiosMock.put).toHaveBeenCalledWith('/api/users', {
       description: 'Hi there',
     });
+  });
+
+  it('records a safety page visit for the authenticated user', async () => {
+    axiosMock.put.mockResolvedValueOnce(response(undefined));
+    await recordSafetyPageVisit();
+    expect(axiosMock.put).toHaveBeenCalledWith('/api/users/me/safety-visit');
   });
 
   it('fetches a user by username', async () => {

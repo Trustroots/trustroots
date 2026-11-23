@@ -45,6 +45,11 @@ export default function (app: RouteApplication) {
     .put(userProfile.update);
 
   app
+    .route('/api/users/me/safety-visit')
+    .all(usersPolicy.isAllowed)
+    .put(userProfile.recordSafetyPageVisit);
+
+  app
     .route('/api/users/removal/pending')
     .all(usersPolicy.isAllowed)
     .get(userProfile.getProfileRemovalStatus)

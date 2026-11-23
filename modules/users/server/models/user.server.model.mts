@@ -419,6 +419,7 @@ const UserSchema = new Schema<
   seen: {
     type: Date,
   },
+  safetyPageVisited: { type: Boolean, select: false },
   // Keyed identifier of the current client address; no history is kept.
   lastIpHash: {
     type: String,

@@ -69,6 +69,10 @@ function invokeRolesPolicies() {
           permissions: ['get', 'put', 'delete'],
         },
         {
+          resources: '/api/users/me/safety-visit',
+          permissions: ['put'],
+        },
+        {
           resources: '/api/users/export',
           permissions: ['get'],
         },
