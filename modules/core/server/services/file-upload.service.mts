@@ -14,9 +14,13 @@ export interface UploadedFile {
   mimetype: string;
   originalname: string;
   path?: string;
+  fields?: Record<string, string>;
 }
 type UploadBody = Readable & { headers: IncomingHttpHeaders };
-type UploadRequest = UploadBody & { file?: Partial<UploadedFile> };
+type UploadRequest = UploadBody & {
+  file?: Partial<UploadedFile>;
+  body?: Record<string, string>;
+};
 interface UploadResponse {
   status(code: number): { send(body: { message: string }): unknown };
 }
@@ -121,6 +125,11 @@ export async function readUpload(
     buffer: Buffer.from(await file.arrayBuffer()),
     mimetype: file.type,
     originalname: file.name,
+    fields: Object.fromEntries(
+      entries.filter(
+        (entry): entry is [string, string] => !(entry[1] instanceof File),
+      ),
+    ),
   };
 }
 
@@ -176,7 +185,9 @@ export const uploadFile = async (
     );
     await fs.promises.mkdir(uploadDirectory, { recursive: true });
     await fs.promises.writeFile(uploadPath, file.buffer, { mode: 0o600 });
-    req.file = { ...file, path: uploadPath };
+    const { fields, ...upload } = file;
+    req.body = fields;
+    req.file = { ...upload, path: uploadPath };
   } catch (error) {
     const code = (error as UploadError).code;
     if (code === 'LIMIT_FILE_SIZE') {

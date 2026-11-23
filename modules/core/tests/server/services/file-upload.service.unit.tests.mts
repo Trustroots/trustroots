@@ -251,6 +251,16 @@ describe('file-upload.service unit tests', () => {
       (fs.statSync(stored).mode & 0o777).should.equal(0o600);
     });
 
+    it('exposes the text fields of the form as req.body, like multer did', async () => {
+      const req = multipart([
+        { name: 'label', content: 'Hosts' },
+        { name: 'public', content: 'true' },
+        image(png),
+      ]) as TestRequest & { body?: unknown };
+      await run(req);
+      req.body!.should.eql({ label: 'Hosts', public: 'true' });
+    });
+
     it('falls back to the system temp directory without a configured one', async () => {
       config.uploadTmpDir = '';
       const req = multipart([image(png)]);
