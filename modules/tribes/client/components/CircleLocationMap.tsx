@@ -136,6 +136,7 @@ export default function CircleLocationMap(props: Props) {
   const popupRef = useRef<HTMLDivElement>(null);
   const initialViewSet = useRef(Boolean(savedView));
   const fittingResults = useRef(false);
+  const viewUsesLocation = useRef(false);
   const focusAction = useRef(false);
   const [loaded, setLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -173,6 +174,8 @@ export default function CircleLocationMap(props: Props) {
 
   const jumpTo = (latitude: number, longitude: number, zoom: number) => {
     initialViewSet.current = true;
+    // Panning or zooming after a location jump can still reveal that location.
+    viewUsesLocation.current = true;
     mapRef.current?.jumpTo({ center: [longitude, latitude], zoom });
   };
 
@@ -221,13 +224,14 @@ export default function CircleLocationMap(props: Props) {
                 onMoveStart={() => {
                   initialViewSet.current = true;
                 }}
-                onMoveEnd={event => {
-                  if (fittingResults.current) return;
-                  const { latitude, longitude, zoom } = event.viewState;
+                onMoveEnd={({ target: map }) => {
+                  if (fittingResults.current || viewUsesLocation.current)
+                    return;
+                  const [longitude, latitude] = map.getCenter().toArray();
                   try {
                     sessionStorage.setItem(
                       props.viewKey || VIEW_KEY,
-                      JSON.stringify([latitude, longitude, zoom]),
+                      JSON.stringify([latitude, longitude, map.getZoom()]),
                     );
                   } catch {
                     // Maps remain usable when session storage is unavailable.
