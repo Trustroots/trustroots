@@ -118,6 +118,19 @@ describe('Nostranslation alert transport', () => {
     expect(deliver).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    'TRUSTROOTS_APNS_TEAM_ID',
+    'TRUSTROOTS_APNS_KEY_ID',
+    'TRUSTROOTS_APNS_TOPIC',
+    'TRUSTROOTS_APNS_PRIVATE_KEY',
+  ])('disables APNs delivery when %s is missing', async field => {
+    stubApns();
+    vi.stubEnv(field, undefined);
+    expect(translationAlertConfiguration().ios).toBe(false);
+    await sendTranslationAlert(device, fiveMinutesLater);
+    expect(http2.connect).not.toHaveBeenCalled();
+  });
+
   it('signs requests and reuses the APNs token until it expires', async () => {
     stubApns();
     vi.stubEnv('TRUSTROOTS_APNS_SANDBOX', 'true');
@@ -201,12 +214,53 @@ describe('Nostranslation alert transport', () => {
     );
   });
 
+  it.each([
+    ['TRUSTROOTS_APNS_TEAM_ID', 'reconfigured-team'],
+    ['TRUSTROOTS_APNS_KEY_ID', 'reconfigured-key'],
+    [
+      'TRUSTROOTS_APNS_PRIVATE_KEY',
+      generateKeyPairSync('ec', {
+        namedCurve: 'prime256v1',
+      })
+        .privateKey.export({ type: 'pkcs8', format: 'pem' })
+        .toString(),
+    ],
+  ])(
+    'reissues the APNs token immediately if %s changes',
+    async (field, replacement) => {
+      stubApns();
+      const first = captureRequest();
+      const original = sendTranslationAlert(device, fiveMinutesLater);
+      first.stream.emit('response', { ':status': 200 });
+      await original;
+
+      vi.stubEnv(field, replacement);
+      const next = captureRequest();
+      const reissued = sendTranslationAlert(device, fiveMinutesLater);
+      next.stream.emit('response', { ':status': 200 });
+      await reissued;
+      expect(next.session.request.mock.calls[0]![0].authorization).not.toBe(
+        first.session.request.mock.calls[0]![0].authorization,
+      );
+    },
+  );
+
   it('reports rejected, prematurely closed and timed-out APNs requests', async () => {
     stubApns();
     const rejected = captureRequest();
     const response = sendTranslationAlert(device, fiveMinutesLater);
     rejected.stream.emit('response', { ':status': 410 });
-    await expect(response).rejects.toMatchObject({ statusCode: 410 });
+    await expect(response).rejects.toMatchObject({
+      statusCode: 410,
+      message: 'APNs rejected delivery.',
+    });
+
+    const failed = captureRequest();
+    const broken = sendTranslationAlert(device, fiveMinutesLater);
+    const error = new Error('HTTP/2 stream reset.');
+    failed.stream.emit('error', error);
+    failed.stream.emit('close');
+    await expect(broken).rejects.toBe(error);
 
     const closed = captureRequest();
     const interrupted = sendTranslationAlert(device, fiveMinutesLater);
