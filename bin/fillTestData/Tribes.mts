@@ -1,5 +1,5 @@
 import mongooseService from './../../config/lib/mongoose.mts';
-import yargs from 'yargs';
+import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document } from 'mongoose';
 import config from './../../config/config.mts';
@@ -18,49 +18,19 @@ interface SeedCircleRecord extends Document {
   attribution_url: string;
   description: string;
 }
-/**
- * Required dependencies
- */
-
-/**
- * Configure the script usage using yargs to obtain parameters and enforce usage.
- */
-const argv = yargs(process.argv.slice(2))
-  .usage('$0 <numberOfCircles>')
-  .command('$0 <numberOfCircles>', 'Seed database with circles')
-  .positional('numberOfCircles', {
-    describe: 'Number of circles to add',
-    type: 'number',
-  })
-  .boolean('debug')
-  .boolean('limit')
-  .describe('debug', 'Enable extra database output (default=false)')
-  .describe(
-    'limit',
-    'If circles already exist in the database, only add up to the number of circles (default=false)',
-  )
-  .example('node $0 1000', 'Adds 1000 randomly seeded circles to the database')
-  .example(
-    'node $0 100 --debug',
-    'Adds 100 randomly seeded circles to the database with debug database output',
-  )
-  .example(
-    'node $0 100 --limit',
-    'Adds up to 100 randomly seeded circles to the database (eg. If 20 circles already exist, 80 circles will be added)',
-  )
-  .check(function (argv) {
-    if (typeof argv.numberOfCircles !== 'number' || argv.numberOfCircles < 1) {
-      throw new Error('Error: Number of circles should be greater than 0');
-    }
-    return true;
-  })
-  .strict()
-  .parseSync();
-
-const numberOfCircles = argv.numberOfCircles;
-if (typeof numberOfCircles !== 'number') {
-  throw new Error('Error: Number of circles should be greater than 0');
-}
+const { operands, values } = parseSeedArgs(process.argv.slice(2), {
+  description: 'Seed database with circles',
+  positionals: ['numberOfCircles'],
+  flags: {
+    limit: 'Add only enough circles to reach the requested count',
+  },
+  example: '100 --limit',
+});
+const numberOfCircles = readSeedNumber(
+  operands[0],
+  'Number of circles should be greater than 0',
+  1,
+);
 
 /**
  * Seeds an individual circle with fake data. Circle names are appended with circleIndex
@@ -93,8 +63,8 @@ function seedCircle(circle: SeedCircleRecord, circleIndex: number) {
  */
 function seedCircles(max: number) {
   let index = 0;
-  const debug = argv.debug === true;
-  const limit = argv.limit === true;
+  const debug = values.debug === true;
+  const limit = values.limit === true;
 
   // Display number of circles to add
   console.log('Generating ' + max + ' circles...');
