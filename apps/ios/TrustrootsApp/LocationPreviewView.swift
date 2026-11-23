@@ -12,8 +12,10 @@ struct LocationPreviewView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let coordinate {
-                Map(position: $position) {
-                    Marker(location, coordinate: coordinate)
+                MetricScaleMap {
+                    Map(position: $position) {
+                        Marker(location, coordinate: coordinate)
+                    }
                 }
             } else if let errorMessage {
                 ContentUnavailableView("Location unavailable", systemImage: "mappin.slash", description: Text(errorMessage))

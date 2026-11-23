@@ -277,6 +277,46 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.buttons["Back"].tap()
     }
 
+    @MainActor
+    func testShowsMetricScaleOnNativeMap() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--shared-member-pilot",
+            "--shared-home",
+            "-trustroots.apiServerURL",
+            "http://127.0.0.1:\(port)",
+            "-AppleLocale",
+            "en_US",
+        ]
+        app.launch()
+        addTeardownBlock { [self] in
+            app.terminate()
+            app.launch()
+            signOutIfAlreadySignedIn(app)
+        }
+        signOutIfAlreadySignedIn(app)
+        signIn(app)
+
+        let exitPilot = app.buttons["Exit shared pilot"]
+        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
+        exitPilot.tap()
+        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10), app.debugDescription)
+        let search = app.buttons["Search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+
+        let scale = app.staticTexts["map-distance-scale"]
+        XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(scale.label.hasSuffix(" km") || scale.label.hasSuffix(" m"), scale.label)
+
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "iOS map distance scale"
+        capture.lifetime = .keepAlways
+        add(capture)
+    }
+
     private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {
         var request = URLRequest(url: fixtureURL.appendingPathComponent("fixture/profile-connection"), timeoutInterval: 5)
         request.httpMethod = "PUT"

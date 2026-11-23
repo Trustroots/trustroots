@@ -8,6 +8,7 @@ import ReactMapGL, {
 import { useTranslation } from 'react-i18next';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MAP_STYLE } from '@/modules/core/client/components/Map/constants';
+import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapUnavailable from '@/modules/core/client/components/Map/MapUnavailable';
 import { isWebGLSupported } from '@/modules/core/client/utils/map';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
@@ -191,7 +192,7 @@ export default function CircleLocationMap(props: Props) {
         {webGL ? (
           <>
             <div
-              className="circle-location-map tw:overflow-hidden"
+              className="circle-location-map tw:map-scale tw:overflow-hidden"
               role="application"
               aria-label={props.mapLabel}
             >
@@ -235,6 +236,7 @@ export default function CircleLocationMap(props: Props) {
                 }}
               >
                 <NavigationControl showCompass={false} />
+                <MapScaleControl />
                 {props.locations.map(location => (
                   <Marker
                     key={location.id}

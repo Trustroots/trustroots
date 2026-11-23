@@ -63,6 +63,9 @@ test('circle map stays still without dragging and preserves its view as live pla
   );
   await page.goto('/circles/hackers');
   const map = page.locator('.circle-location-map');
+  await expect(map.locator('.maplibregl-ctrl-scale')).toHaveText(
+    /\d\s*(?:m|km)$/,
+  );
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 SpaceAPI-reported places',
   );

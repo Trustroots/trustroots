@@ -54,6 +54,7 @@ class HostMapJourneyTest {
         }
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         compose.onNodeWithTag("mapStatistics").assertIsDisplayed()
+        compose.onNodeWithTag("hostMapScale").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android_host_map")
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithTag("openFilters").assertIsDisplayed()

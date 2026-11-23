@@ -39,6 +39,7 @@ vi.mock('@vis.gl/react-maplibre', async () => {
     ),
     Marker: ({ children }: { children: React.ReactNode }) => children,
     NavigationControl: () => null,
+    ScaleControl: () => null,
     Popup: ({ children }: { children: React.ReactNode }) =>
       React.createElement('div', { role: 'dialog' }, children),
   };

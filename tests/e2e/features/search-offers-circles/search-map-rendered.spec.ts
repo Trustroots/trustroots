@@ -488,13 +488,18 @@ test.describe('rendered search map feature coverage', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
       'Zoom controls operate on the current MapLibre renderer.',
+      'The metric distance scale changes with the viewport.',
     ]);
     await page.goto('/search');
     await waitForSearchMap(page);
     const initialZoom = await readMapZoom(page);
     expectPresent(initialZoom, 'initial map zoom should be stored');
+    const scale = page.locator('.search-map .maplibregl-ctrl-scale');
+    await expect(scale).toHaveText(/\d\s*(?:m|km)$/);
+    const initialScale = await scale.textContent();
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
     await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom + 1, 4);
+    await expect(scale).not.toHaveText(initialScale!);
     await page.getByRole('button', { name: 'Zoom out', exact: true }).click();
     await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom, 1);
   });

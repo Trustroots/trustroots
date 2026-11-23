@@ -27,3 +27,13 @@ The system SHALL render its React maps with a single installed MapLibre GL JS ve
 - **WHEN** a member opens map search, an offer-location map or a circle map without WebGL2
 - **THEN** the system shows a notice where the map would be, explaining that WebGL is not available
 - **AND** the rest of the page remains usable
+
+### Requirement: Visible metric map scale
+
+Web maps rendered with MapLibre and native app maps SHALL show a metric distance scale by default. The bar SHALL reflect the current map viewport.
+
+#### Scenario: Member estimates a distance on the map
+
+- **WHEN** a member opens a rendered map in a browser or in the Android or iOS app
+- **THEN** a scale bar shows the distance its length represents in metres or kilometres
+- **AND** the scale updates when the viewport changes

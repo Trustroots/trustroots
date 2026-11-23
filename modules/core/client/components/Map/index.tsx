@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMapGL, { type ViewStateChangeEvent } from '@vis.gl/react-maplibre';
+import { cn } from '@trustroots/ui/cn';
 
 // Internal dependencies
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -57,7 +58,7 @@ export default function Map(props: MapProps) {
   return (
     <div
       ref={surfaceRef}
-      className={className}
+      className={cn(className, 'tw:map-scale')}
       aria-hidden={props['aria-hidden']}
       data-map-latitude={viewport.latitude}
       data-map-longitude={viewport.longitude}
