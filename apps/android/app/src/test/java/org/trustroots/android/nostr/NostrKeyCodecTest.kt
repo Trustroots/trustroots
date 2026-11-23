@@ -47,4 +47,14 @@ class NostrKeyCodecTest {
         assertArrayEquals(first, NostrKeyCodec.import(NostrKeyCodec.nsec(first)))
         assertNotEquals(NostrKeyCodec.npub(first), NostrKeyCodec.npub(second))
     }
+
+    @Test fun retriesGenerationUntilTheRandomScalarIsValid() {
+        var draws = 0
+        val generated = NostrKeyCodec.generate { bytes ->
+            bytes.fill(0)
+            if (++draws == 2) bytes[31] = 1
+        }
+        assertEquals(2, draws)
+        assertArrayEquals(ByteArray(32).apply { this[31] = 1 }, generated)
+    }
 }

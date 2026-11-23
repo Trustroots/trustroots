@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -45,17 +47,30 @@ import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.nostrAccountScope
 
 @Composable
-internal fun NostrKeyEntry(api: MobileApiClient, session: MemberSession, enabled: Boolean) {
+internal fun NostrKeyEntry(
+    api: MobileApiClient,
+    session: MemberSession,
+    enabled: Boolean,
+    credentialPrompt: (Context, String, String) -> Intent? = ::deviceCredentialPrompt,
+) {
     var open by remember { mutableStateOf(false) }
     TextButton(onClick = { open = true }, enabled = enabled) { Text(stringResource(R.string.nostr_key)) }
-    if (open && enabled) NostrKeyDialog(api, session, onClose = { open = false })
+    if (open && enabled) NostrKeyDialog(api, session, credentialPrompt, onClose = { open = false })
 }
 
 private enum class KeyConfirmation { REMOVE_LOCAL, REPLACE_PROFILE, UNLINK_PROFILE }
 
 @Suppress("DEPRECATION") // System credential activity also supports API 26–29.
+private fun deviceCredentialPrompt(context: Context, title: String, message: String): Intent? =
+    context.getSystemService(KeyguardManager::class.java)?.createConfirmDeviceCredentialIntent(title, message)
+
 @Composable
-private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose: () -> Unit) {
+private fun NostrKeyDialog(
+    api: MobileApiClient,
+    session: MemberSession,
+    credentialPrompt: (Context, String, String) -> Intent?,
+    onClose: () -> Unit,
+) {
     val context = LocalContext.current
     val store = remember(context, api.backendURL, session.member.username) {
         AndroidNostrKeys(context, nostrAccountScope(api.backendURL, session.member.username))
@@ -73,7 +88,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
     var foregroundVersion by remember { mutableStateOf(0) }
     val title = stringResource(R.string.nostr_key)
     val backupLabel = stringResource(R.string.nostr_backup)
-    val keyguard = context.getSystemService(KeyguardManager::class.java)
+    val controlsEnabled = !busy && !awaitingCredential
 
     LaunchedEffect(store) {
         withContext(Dispatchers.IO) { runCatching(store::publicKey) }.fold(
@@ -197,7 +212,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                 if (linked?.isSuccess == true && session.accessToken != null) {
                     val current = linked.getOrNull()
                     if (npub != null && npub != current) {
-                        TextButton(enabled = !busy && !awaitingCredential, onClick = {
+                        TextButton(enabled = controlsEnabled, onClick = {
                             if (current == null) updateProfile(npub)
                             else confirmation = KeyConfirmation.REPLACE_PROFILE
                         }) {
@@ -205,7 +220,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                         }
                     }
                     if (current != null) {
-                        TextButton(enabled = !busy && !awaitingCredential, onClick = {
+                        TextButton(enabled = controlsEnabled, onClick = {
                             confirmation = KeyConfirmation.UNLINK_PROFILE
                         }) { Text(stringResource(R.string.nostr_unlink_profile)) }
                     }
@@ -220,9 +235,9 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                         }) { Text(stringResource(R.string.nostr_copy_public)) }
                         val backup = secret
                         if (backup == null) {
-                            TextButton(enabled = !busy && !awaitingCredential, onClick = {
+                            TextButton(enabled = controlsEnabled, onClick = {
                                 error = null
-                                val prompt = keyguard?.createConfirmDeviceCredentialIntent(title, backupLabel)
+                                val prompt = credentialPrompt(context, title, backupLabel)
                                 if (prompt == null) {
                                     error = R.string.nostr_device_lock_required
                                 } else {
@@ -235,7 +250,7 @@ private fun NostrKeyDialog(api: MobileApiClient, session: MemberSession, onClose
                             Text(backup)
                             TextButton(onClick = { secret = null }) { Text(stringResource(R.string.nostr_hide_secret)) }
                         }
-                        TextButton(enabled = !busy && !awaitingCredential, onClick = { confirmation = KeyConfirmation.REMOVE_LOCAL; secret = null }) {
+                        TextButton(enabled = controlsEnabled, onClick = { confirmation = KeyConfirmation.REMOVE_LOCAL; secret = null }) {
                             Text(stringResource(R.string.nostr_remove))
                         }
                     }

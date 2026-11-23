@@ -21,7 +21,11 @@ internal fun nostrAccountScope(backend: String, username: String): NostrAccountS
     return NostrAccountScope(origin, username)
 }
 
-internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
+internal class AndroidNostrKeys(
+    context: Context,
+    scope: NostrAccountScope,
+    private val keyAlias: String = "org.trustroots.android.nostr-identities",
+) {
     private val preferences = context.applicationContext.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
     private val account = scope.storageAccount
     private val associatedData = account.encodeToByteArray()
@@ -82,11 +86,11 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
 
     private fun encryptionKey(create: Boolean): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (store.getKey(alias, null) as? SecretKey)?.let { return it }
+        (store.getKey(keyAlias, null) as? SecretKey)?.let { return it }
         check(create)
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
             init(
-                KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                KeyGenParameterSpec.Builder(keyAlias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build(),
@@ -98,7 +102,6 @@ internal class AndroidNostrKeys(context: Context, scope: NostrAccountScope) {
     private companion object {
         val lock = Any()
         val keyRevision = AtomicLong()
-        const val alias = "org.trustroots.android.nostr-identities"
         const val transformation = "AES/GCM/NoPadding"
     }
 }

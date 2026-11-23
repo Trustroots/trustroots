@@ -1,8 +1,16 @@
 package org.trustroots.android.nostr
 
+import android.app.Activity
 import android.app.KeyguardManager
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
@@ -16,6 +24,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.core.app.ActivityOptionsCompat
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -214,6 +223,88 @@ class NostrKeyJourneyTest {
             } finally {
                 keys.remove()
             }
+        }
+    }
+
+    @Test fun backupRequiresCredentialApprovalAndHidesTheSecretWhenRequested() {
+        val username = "test-backup-key-member"
+        val remoteKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+        val profile = JSONObject().put("username", username).put("nostrNpub", remoteKey)
+        LocalTransportFixture {
+            LocalTransportFixture.Response(JSONObject().put("profile", profile).toString())
+        }.use { fixture ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val scope = nostrAccountScope(fixture.baseURL, username)
+            val keys = AndroidNostrKeys(context, scope)
+            val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+            val registry = CredentialResultRegistry()
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = registry
+            }
+            val enabled = mutableStateOf(true)
+            try {
+                val localKey = keys.import("0".repeat(63) + "2")
+                val backup = requireNotNull(keys.backup())
+                val record = requireNotNull(preferences.getString(scope.storageAccount, null))
+                val api = MobileApiClient(fixture.baseURL)
+                val session = MemberSession("", MobileMember(username, "Test Member"))
+                compose.setContent {
+                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                        NostrKeyEntry(api, session, enabled.value) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                    }
+                }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText(remoteKey)
+                awaitText(localKey)
+                compose.onNodeWithText("Replace profile key").assertDoesNotExist()
+                compose.onNodeWithText("Unlink profile key").assertDoesNotExist()
+                val reveal = compose.onNodeWithText("Back up private key")
+                reveal.performScrollTo().performClick()
+                compose.onNodeWithText("Remove local key").assertIsNotEnabled()
+                compose.runOnIdle { registry.respond(Activity.RESULT_CANCELED) }
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle {
+                    check(preferences.edit().putString(scope.storageAccount, "AA==").commit())
+                    registry.respond(Activity.RESULT_OK)
+                }
+                awaitText("The local Nostr key could not be accessed.")
+                compose.onNodeWithText(backup).assertDoesNotExist()
+                check(preferences.edit().putString(scope.storageAccount, record).commit())
+
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle { registry.respond(Activity.RESULT_OK) }
+                awaitText(backup)
+                compose.onNodeWithText("Hide private key").performScrollTo().performClick()
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
+                compose.runOnIdle { enabled.value = false }
+                compose.onNodeWithText("Nostr key").assertIsNotEnabled()
+                compose.onNodeWithText("Copy public key").assertDoesNotExist()
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
+    private class CredentialResultRegistry : ActivityResultRegistry() {
+        private var pendingCode: Int? = null
+
+        override fun <I, O> onLaunch(
+            requestCode: Int,
+            contract: ActivityResultContract<I, O>,
+            input: I,
+            options: ActivityOptionsCompat?,
+        ) {
+            assertEquals("trustroots.test.CREDENTIAL", (input as Intent).action)
+            pendingCode = requestCode
+        }
+
+        fun respond(status: Int) {
+            val requestCode = requireNotNull(pendingCode)
+            pendingCode = null
+            check(dispatchResult(requestCode, status, null))
         }
     }
 

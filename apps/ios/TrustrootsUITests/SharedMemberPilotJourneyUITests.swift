@@ -74,7 +74,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
         element(labelled: "Messages", in: app).tap()
-        app.buttons["Open conversation"].tap()
+        openConversation(in: app, draft: draft)
         XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
         XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
         XCTAssertTrue(app.buttons["Send reply"].isEnabled)
@@ -94,7 +94,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
         app.buttons["Back"].tap()
         element(labelled: "Messages", in: app).tap()
-        app.buttons["Open conversation"].tap()
+        openConversation(in: app, draft: draft)
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
         XCTAssertTrue(draft.exists)
         XCTAssertFalse(app.buttons["Send reply"].isEnabled)
@@ -240,6 +240,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func element(labelled label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func openConversation(in app: XCUIApplication, draft: XCUIElement) {
+        let open = app.buttons["Open conversation"]
+        XCTAssertTrue(open.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(open, in: app)
+        open.tap()
+        if !draft.waitForExistence(timeout: 3), open.isHittable {
+            open.tap()
+        }
+        XCTAssertTrue(draft.waitForExistence(timeout: 15), app.debugDescription)
     }
 
     private func signIn(_ app: XCUIApplication) {

@@ -11,9 +11,11 @@ internal object NostrKeyCodec {
     private val curve = CustomNamedCurves.getByName("secp256k1")
     private val random = SecureRandom()
 
-    fun generate(): ByteArray {
+    fun generate(): ByteArray = generate(random::nextBytes)
+
+    internal fun generate(fillBytes: (ByteArray) -> Unit): ByteArray {
         val secret = ByteArray(32)
-        do random.nextBytes(secret) while (!valid(secret))
+        do fillBytes(secret) while (!valid(secret))
         return secret
     }
 
@@ -25,8 +27,10 @@ internal object NostrKeyCodec {
             else -> {
                 require(trimmed == value || trimmed == trimmed.uppercase())
                 require(value.length == 63 && value.startsWith("nsec1"))
-                val digits = value.drop(5).map { alphabet.indexOf(it) }
-                require(digits.all { it >= 0 } && checksum(expand("nsec") + digits) == 1)
+                val digits = value.drop(5).map { character ->
+                    alphabet.indexOf(character).also { require(it >= 0) }
+                }
+                require(checksum(expand("nsec") + digits) == 1)
                 val converted = convert(digits.dropLast(6), 5, 8, false)
                 require(digits.dropLast(6) == convert(converted, 8, 5, true))
                 converted.map(Int::toByte).toByteArray()
@@ -87,6 +91,7 @@ internal object NostrKeyCodec {
                 add((accumulator ushr bits) and mask)
             }
         }
-        if (pad && bits > 0) add((accumulator shl (to - bits)) and mask)
+        // Encoding a 32-byte key always leaves one bit for the final digit.
+        if (pad) add((accumulator shl (to - bits)) and mask)
     }
 }
