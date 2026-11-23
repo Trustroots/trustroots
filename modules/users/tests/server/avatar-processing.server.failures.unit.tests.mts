@@ -243,6 +243,17 @@ describe('Avatar processing failure handling', () => {
     seen.logged.should.be.empty();
   }
 
+  it('accepts single-frame avatars at the pixel limit and defines each output size', async () => {
+    const { avatarSizes, validateDimensions } =
+      await import('../../server/services/avatar-processing.server.dimensions.mts');
+    assert.deepStrictEqual(avatarSizes, [2048, 1024, 512, 256, 128, 64, 32]);
+    for (const format of ['gif', 'jpeg', 'png'] as const) {
+      assert.doesNotThrow(() =>
+        validateDimensions({ format, width: 10000, height: 4000, pages: 1 }),
+      );
+    }
+  });
+
   it('rejects unsupported owner identifiers before creating public files', async () => {
     const { inputPath, service } = await makeService();
     for (const userId of ['../outside', `x${validUserId}`, `${validUserId}x`]) {
