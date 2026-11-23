@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import type { IncomingMessage } from 'node:http';
 import path from 'node:path';
 import mongoose from 'mongoose';
 import sharp from 'sharp';
@@ -480,7 +481,7 @@ export const update = async (req: CircleRequest, res: CircleResponse) => {
 };
 
 export const processImageUpload = (
-  req: CircleRequest & { is(type: string): unknown },
+  req: CircleRequest & IncomingMessage & { is(type: string): unknown },
   res: CircleResponse,
   next: () => void,
 ) => {
