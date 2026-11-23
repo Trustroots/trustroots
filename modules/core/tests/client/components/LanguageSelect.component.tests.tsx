@@ -109,7 +109,10 @@ it('follows controlled language selections as they load, change and clear', () =
 
   mockQuery({ data: languages });
   rerender(
-    <LanguageSelect selectedLanguages={['eng']} onChangeLanguages={onChangeLanguages} />,
+    <LanguageSelect
+      selectedLanguages={['eng']}
+      onChangeLanguages={onChangeLanguages}
+    />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'Remove English' }));
   expect(onChangeLanguages).toHaveBeenLastCalledWith([]);

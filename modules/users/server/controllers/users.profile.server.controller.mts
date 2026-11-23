@@ -1355,7 +1355,9 @@ function getMemberSearchOfferStages(
   query: Record<string, unknown>,
   user: UserServerDocument,
 ): mongoose.PipelineStage[] {
-  const types = typeof query.types === 'string' ? query.types.split(',') : [];
+  const types = new Set(
+    typeof query.types === 'string' ? query.types.split(',') : undefined,
+  );
   const volunteering = query.volunteering === 'true';
   const availability: mongoose.PipelineStage.Match['$match'][] = [];
   const activeStatus = {
@@ -1364,10 +1366,10 @@ function getMemberSearchOfferStages(
       { status: { $exists: false } },
     ],
   };
-  if (types.includes('host')) {
+  if (types.has('host')) {
     availability.push({ type: 'host', ...activeStatus });
   }
-  if (types.includes('meet')) {
+  if (types.has('meet')) {
     availability.push(
       { type: 'meet', ...activeStatus },
       { type: 'host', meetingStatus: { $in: ['yes', 'maybe'] } },
@@ -1411,7 +1413,7 @@ function getMemberSearchOfferStages(
           },
           {
             'member.tribe': {
-              $in: _.map(user.member, ({ tribe }) => tribe).filter(Boolean),
+              $in: _.compact(_.map(user.member, ({ tribe }) => tribe)),
             },
             searchOffers: { $elemMatch: offerConditions },
           },
