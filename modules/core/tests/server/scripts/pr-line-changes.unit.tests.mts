@@ -472,8 +472,11 @@ describe('PR line-change summaries', () => {
         'utf8',
       ),
     ) as WorkflowFile;
-    assert.ok(workflow.on.pull_request_target);
+    // Line counts refresh from completed Tests runs and manual backfill only.
+    // Avoid pull_request_target so PR code never runs with write tokens.
+    assert.equal(workflow.on.pull_request_target, undefined);
     assert.ok(workflow.on.workflow_run);
+    assert.ok(workflow.on.workflow_dispatch);
     for (const job of Object.values(workflow.jobs)) {
       const checkout = job.steps[0];
       const checkoutWith = checkout?.with;
@@ -490,6 +493,10 @@ describe('PR line-change summaries', () => {
     assert.match(
       workflow.jobs.backfill.if!,
       /workflow_dispatch.*refs\/heads\/main/,
+    );
+    assert.match(
+      workflow.jobs['completed-tests'].if!,
+      /workflow_run[\s\S]*test\.yml/,
     );
     const tests = yaml.load(
       fs.readFileSync(path.join(root, '.github/workflows/test.yml'), 'utf8'),
