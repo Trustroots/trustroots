@@ -15,6 +15,8 @@ const service = {
   geoip: { databasePath: process.env.TRUSTROOTS_GEOIP_DATABASE_PATH || '' },
   featureFlags: {
     reference: true,
+    nostranslationAlerts:
+      process.env.TRUSTROOTS_NOSTRANSLATION_ALERTS === 'true',
   },
   app: {
     title: 'Trustroots',

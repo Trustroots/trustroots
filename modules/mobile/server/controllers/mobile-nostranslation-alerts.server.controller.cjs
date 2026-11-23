@@ -1,0 +1,50 @@
+const config = require('../../../../config/config.mts').default;
+const {
+  newTranslationAlertChallenge,
+  registerTranslationAlert,
+  unregisterTranslationAlert,
+} = require('../services/nostranslation-alert-registration.server.service.mts');
+
+function registrationScope(req) {
+  return {
+    user: req.mobileUser._id,
+    session: req.mobileSession._id,
+    refreshExpiresAt: req.mobileSession.refreshExpiresAt,
+  };
+}
+
+exports.challenge = async function (req, res) {
+  if (!config.featureFlags.nostranslationAlerts) return res.sendStatus(404);
+  const event = await newTranslationAlertChallenge(
+    registrationScope(req),
+    req.body,
+  );
+  if (!event)
+    return res
+      .status(400)
+      .json({ message: 'Invalid notification registration.' });
+  return res.json({ event });
+};
+
+exports.register = async function (req, res) {
+  if (!config.featureFlags.nostranslationAlerts) return res.sendStatus(404);
+  const accepted = await registerTranslationAlert(
+    registrationScope(req),
+    req.body,
+  );
+  if (!accepted)
+    return res
+      .status(400)
+      .json({ message: 'Invalid notification registration proof.' });
+  return res.status(204).end();
+};
+
+exports.unregister = async function (req, res) {
+  const accepted = await unregisterTranslationAlert(
+    registrationScope(req),
+    req.body?.transport,
+  );
+  if (!accepted)
+    return res.status(400).json({ message: 'Invalid transport key.' });
+  return res.status(204).end();
+};
