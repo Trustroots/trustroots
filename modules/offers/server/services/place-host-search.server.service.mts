@@ -55,7 +55,7 @@ export async function listPlaceHosts(
   query: Record<string, unknown>,
 ): Promise<PlaceHostPage<Types.ObjectId, Date>> {
   const offset = typeof query.offset === 'string' ? Number(query.offset) : 0;
-  const start = Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+  const start = Number.isSafeInteger(offset) ? Math.max(offset, 0) : 0;
   const byExperience = query.sort === 'experiences';
   const nameOrder = { sortName: 1, 'user.username': 1, _id: 1 } as const;
   const now = moment();
