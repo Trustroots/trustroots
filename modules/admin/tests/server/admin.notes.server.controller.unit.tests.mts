@@ -20,6 +20,7 @@ type MockResponse = {
   body: unknown;
   status(code: number): MockResponse;
   send(body: unknown): MockResponse;
+  json(body: unknown): MockResponse;
   waitForResponse(): Promise<MockResponse>;
 };
 type CallbackQuery<T> = {
@@ -53,6 +54,9 @@ function mockResponse(): MockResponse {
       res.body = body;
       resolveResponse(res);
       return res;
+    },
+    json(body) {
+      return res.send(body);
     },
     waitForResponse: () => promise,
   };

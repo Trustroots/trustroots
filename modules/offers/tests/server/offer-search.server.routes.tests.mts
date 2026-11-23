@@ -993,7 +993,7 @@ describe('Offer search tests', function () {
                 // Set assertions
                 offersGetRes.body.features.should.have.lengthOf(3);
                 // Count different offer types
-                const types = offersGetRes.body.features.map(
+                const types: string[] = offersGetRes.body.features.map(
                   (offer: { properties: { type: string } }) =>
                     offer.properties.type,
                 );
@@ -1124,7 +1124,7 @@ describe('Offer search tests', function () {
                   // Set assertions
                   offersGetRes.body.features.should.have.lengthOf(3);
                   // Count different offer types
-                  const types = offersGetRes.body.features.map(
+                  const types: string[] = offersGetRes.body.features.map(
                     (offer: { properties: { type: string } }) =>
                       offer.properties.type,
                   );

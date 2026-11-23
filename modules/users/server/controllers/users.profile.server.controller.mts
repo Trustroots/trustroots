@@ -870,7 +870,11 @@ service.userByUsername = function (req, res, next, username) {
         .send({ message: errorService.getErrorMessageByKey('not-found') });
       return;
     }
-    req.profile = service.sanitizeProfile(profile, authenticatedUser);
+    const sanitizedProfile = service.sanitizeProfile(
+      profile,
+      authenticatedUser,
+    )!;
+    req.profile = sanitizedProfile;
     await new Promise<void>(resolve => {
       messageStatService.readFormattedMessageStatsOfUser(
         profile._id,
@@ -879,7 +883,7 @@ service.userByUsername = function (req, res, next, username) {
           // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
           if (!err)
             Object.assign(
-              req.profile,
+              sanitizedProfile,
               pick(stats!, ['replyRate', 'replyTime']),
             );
           resolve();

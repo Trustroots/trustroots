@@ -257,10 +257,11 @@ function validateCreate(req: ExperienceRequest) {
 
   // Values of interactions must be boolean
   const allowedInteractions = ['met', 'guest', 'host'] as const;
+  const providedInteractions = req.body.interactions ?? {};
   allowedInteractions.forEach(function (interaction) {
     if (
-      Object.hasOwn(req.body.interactions ?? {}, interaction) &&
-      typeof req.body.interactions[interaction] !== 'boolean'
+      Object.hasOwn(providedInteractions, interaction) &&
+      typeof providedInteractions[interaction] !== 'boolean'
     ) {
       valid = false;
       interactionErrors[interaction] = 'boolean expected';

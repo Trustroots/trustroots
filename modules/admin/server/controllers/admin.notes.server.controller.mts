@@ -22,6 +22,7 @@ interface NoteRequest {
 interface NoteResponse {
   status(code: number): NoteResponse;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 
 type ObjectIdInput =
@@ -117,7 +118,7 @@ export const getNotes = async (
         select: 'username displayname',
       })
       .exec();
-    res.send(items || []);
+    res.json(items || []);
   } catch (err) {
     return errorService.sendBadRequest(res, err);
   }
