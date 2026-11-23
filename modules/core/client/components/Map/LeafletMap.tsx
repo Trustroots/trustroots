@@ -3,6 +3,7 @@ import L from 'leaflet';
 import React, { useEffect, useRef } from 'react';
 
 import { addRasterMapTiles } from '../../utils/map';
+import { cn } from '@trustroots/ui/cn';
 
 type Coordinate = [number, number];
 type LeafletMapProps = {
@@ -126,7 +127,7 @@ export default function LeafletMap({
   return (
     <div
       aria-hidden={ariaHidden}
-      className={className}
+      className={cn(className, 'tw:map-scale')}
       data-testid="leaflet-map"
       data-map-latitude={location?.[0]}
       data-map-longitude={location?.[1]}

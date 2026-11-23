@@ -307,7 +307,7 @@ export default function CircleLocationMap(props: Props) {
       </div>
       <div className="circle-location-map-frame">
         <div
-          className="circle-location-map"
+          className="circle-location-map tw:map-scale"
           ref={container}
           role="application"
           aria-label={props.mapLabel}

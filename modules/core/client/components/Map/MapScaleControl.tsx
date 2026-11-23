@@ -11,7 +11,7 @@ export default function MapScaleControl({
       position="bottom-left"
       maxWidth={100}
       unit="metric"
-      style={showMapStyles ? { marginBottom: 56 } : undefined}
+      style={showMapStyles ? { marginBottom: 62 } : undefined}
     />
   );
 }

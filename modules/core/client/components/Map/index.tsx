@@ -7,6 +7,7 @@ import './map.less';
 import { MAP_STYLE_DEFAULT, MAP_STYLE_OSM } from './constants';
 import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
+import { cn } from '@trustroots/ui/cn';
 import MapStyleControl from './MapStyleControl';
 import LeafletMap from './LeafletMap';
 import usePageWheel from './use-page-wheel';
@@ -82,7 +83,7 @@ export default function Map(props: MapProps) {
   return (
     <div
       ref={surfaceRef}
-      className={className}
+      className={cn(className, 'tw:map-scale')}
       aria-hidden={props['aria-hidden']}
       style={{ width, height }}
     >

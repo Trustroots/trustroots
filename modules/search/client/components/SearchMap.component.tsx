@@ -1193,7 +1193,7 @@ export default function SearchMap({
 
   return (
     <div
-      className="search-map"
+      className="search-map tw:map-scale"
       data-map-zoom={viewport.zoom}
       data-map-latitude={viewport.latitude}
       data-map-longitude={viewport.longitude}
