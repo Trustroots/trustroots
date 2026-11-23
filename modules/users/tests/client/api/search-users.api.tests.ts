@@ -51,3 +51,34 @@ it('scopes a member query to confirmed contacts when requested', async () => {
     { timeout: 10000 },
   );
 });
+
+it('sends member filters with the text query', async () => {
+  axiosMock.get.mockResolvedValueOnce(response([]));
+  await searchUsers('Exampleville', {
+    connectionsOnly: true,
+    types: ['host', 'meet'],
+    volunteering: true,
+    onlineRecently: true,
+    tribes: ['55df2def94b599e21d251c05'],
+    languages: ['en', 'fr'],
+  });
+  expect(axiosMock.get).toHaveBeenCalledWith(
+    '/api/users?search=Exampleville&connectionsOnly=true&types=host%2Cmeet&volunteering=true&onlineRecently=true&tribes=55df2def94b599e21d251c05&languages=en%2Cfr',
+    { timeout: 10000 },
+  );
+});
+
+it('omits inactive member filters', async () => {
+  axiosMock.get.mockResolvedValueOnce(response([]));
+  await searchUsers('Exampleville', {
+    connectionsOnly: false,
+    types: [],
+    volunteering: false,
+    onlineRecently: false,
+    tribes: [],
+    languages: [],
+  });
+  expect(axiosMock.get).toHaveBeenCalledWith('/api/users?search=Exampleville', {
+    timeout: 10000,
+  });
+});

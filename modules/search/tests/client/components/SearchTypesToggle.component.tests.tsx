@@ -16,7 +16,6 @@ describe('SearchTypesToggle', () => {
 
     const hostsToggle = screen.getByRole('checkbox', { name: 'Hosts' });
     expect(hostsToggle).toBeChecked();
-    expect(hostsToggle.nextElementSibling).toHaveClass('toggle');
 
     fireEvent.click(hostsToggle);
 
@@ -46,5 +45,22 @@ describe('SearchTypesToggle', () => {
     expect(screen.getByRole('checkbox', { name: 'Hosts' })).toBeDisabled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
     expect(onChange).toHaveBeenLastCalledWith(['host', 'meet']);
+  });
+
+  it('shows in-view counts for enabled layers, including zero results', () => {
+    render(
+      <SearchTypesToggle
+        counts={{ host: 0, meet: 4 }}
+        onChange={vi.fn()}
+        types={['host']}
+      />,
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Hosts' }),
+    ).toHaveAccessibleDescription('Map results 0');
+    expect(
+      screen.getByRole('checkbox', { name: 'Meetings' }),
+    ).not.toHaveAccessibleDescription();
   });
 });

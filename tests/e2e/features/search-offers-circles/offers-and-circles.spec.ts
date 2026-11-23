@@ -1557,9 +1557,11 @@ test('connections search includes positive Experiences and respects negative one
 }, testInfo) => {
   annotateFeature(testInfo, 'search.map', [
     'Map search can show only eligible connections with visible offers.',
+    'A shared map URL restores filters and shows the resulting marker counts.',
   ]);
   annotateFeature(testInfo, 'search.members', [
     'Member search can find eligible connections without offers.',
+    'A shared member search URL restores the query and availability filters.',
   ]);
   const viewer = createUser();
   const meetingMember = createUser({ firstName: 'Rowan', lastName: 'Reed' });
@@ -1645,6 +1647,16 @@ test('connections search includes positive Experiences and respects negative one
     await page.goto('/search');
     const filter = page.getByRole('checkbox', { name: 'My connections only' });
     await filter.check({ timeout: 5000 });
+    await expect(page).toHaveURL(url => url.searchParams.has('filters'));
+    await page.evaluate(
+      key => window.localStorage.removeItem(key),
+      `search.filters.${viewerId}`,
+    );
+    await page.reload();
+    await expect(filter).toBeChecked();
+    await expect(
+      page.getByRole('checkbox', { name: 'Meetings', exact: true }),
+    ).toHaveAccessibleDescription('Map results 1');
     await page.getByRole('tab', { name: 'Results' }).click();
     const results = page.getByRole('list', { name: 'Visible search results' });
     await expect(
@@ -1683,6 +1695,24 @@ test('connections search includes positive Experiences and respects negative one
     await expect(
       cards.filter({ hasText: '@' + excludedMember.username }),
     ).toBeVisible();
+
+    const meetings = page.getByRole('checkbox', {
+      name: 'Meetings',
+      exact: true,
+    });
+    await meetings.check();
+    await expect(page).toHaveURL(
+      url =>
+        url.searchParams.get('search') === place &&
+        url.searchParams.get('types') === 'meet',
+    );
+    await page.reload();
+    await expect(meetings).toBeChecked();
+    await expect(
+      page.getByRole('textbox', { name: 'Search members' }),
+    ).toHaveValue(place);
+    await expect(cards).toHaveCount(1);
+    await expect(cards.first()).toContainText('@' + meetingMember.username);
   } finally {
     await context.close();
     await withE2eDb(async db => {

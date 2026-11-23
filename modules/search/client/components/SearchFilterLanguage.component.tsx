@@ -24,7 +24,7 @@ export default function SearchFilterLanguage({
         aria-labelledby="filter-languages"
         onChangeLanguages={onChangeLanguages}
         placeholder={String(t('Select languages…'))}
-        preSelectedLanguages={preSelectedLanguages}
+        selectedLanguages={preSelectedLanguages}
       ></LanguageSelect>
     </QueryClientProvider>
   );

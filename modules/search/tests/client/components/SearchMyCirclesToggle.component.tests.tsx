@@ -49,8 +49,6 @@ describe('SearchMyCirclesToggle', () => {
     const toggle = await screen.findByRole('checkbox', {
       name: /show only members from my circles/i,
     });
-    expect(toggle.nextElementSibling).toHaveClass('toggle');
-
     fireEvent.click(toggle);
 
     expect(onChange).toHaveBeenCalledWith(['tribe-1', 'tribe-2']);

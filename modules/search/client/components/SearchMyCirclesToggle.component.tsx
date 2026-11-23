@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { listMemberships } from '@/modules/tribes/client/api/tribes.api';
+import SearchFilterSwitch from './SearchFilterSwitch.component';
 
 interface SearchMyCirclesToggleProps {
   selectedTribeIds: string[];
@@ -74,22 +75,17 @@ export default function SearchMyCirclesToggle({
 
   return (
     <div className="form-group">
-      <label className="tr-switch">
-        <input
-          checked={isEnabled}
-          onChange={() => {
-            const nextEnabled = !isEnabled;
-            setIsEnabled(nextEnabled);
-
-            if (nextEnabled) {
-              onChange(userTribeIds);
-            }
-          }}
-          type="checkbox"
-        />
-        <div className="toggle"></div>
+      <SearchFilterSwitch
+        checked={isEnabled}
+        onChange={checked => {
+          setIsEnabled(checked);
+          if (checked) {
+            onChange(userTribeIds);
+          }
+        }}
+      >
         {label}
-      </label>
+      </SearchFilterSwitch>
     </div>
   );
 }

@@ -1351,6 +1351,78 @@ function isUserMemberOfTribe(
   );
 }
 
+function getMemberSearchOfferStages(
+  query: Record<string, unknown>,
+  user: UserServerDocument,
+): mongoose.PipelineStage[] {
+  const types = typeof query.types === 'string' ? query.types.split(',') : [];
+  const volunteering = query.volunteering === 'true';
+  const availability: mongoose.PipelineStage.Match['$match'][] = [];
+  const activeStatus = {
+    $or: [
+      { status: { $in: ['yes', 'maybe'] } },
+      { status: { $exists: false } },
+    ],
+  };
+  if (types.includes('host')) {
+    availability.push({ type: 'host', ...activeStatus });
+  }
+  if (types.includes('meet')) {
+    availability.push(
+      { type: 'meet', ...activeStatus },
+      { type: 'host', meetingStatus: { $in: ['yes', 'maybe'] } },
+    );
+  }
+  if (!availability.length && !volunteering) {
+    return [];
+  }
+
+  const offerConditions = {
+    $and: [
+      {
+        $or: [
+          { validUntil: { $gte: new Date() } },
+          { validUntil: { $exists: false } },
+        ],
+      },
+      ...(availability.length ? [{ $or: availability }] : []),
+      ...(volunteering
+        ? [{ type: 'host', volunteering: true, ...activeStatus }]
+        : []),
+    ],
+  };
+
+  return [
+    {
+      $lookup: {
+        from: 'offers',
+        localField: '_id',
+        foreignField: 'user',
+        as: 'searchOffers',
+      },
+    },
+    {
+      $match: {
+        $or: [
+          {
+            searchOffers: {
+              $elemMatch: { ...offerConditions, showOnlyInMyCircles: false },
+            },
+          },
+          {
+            'member.tribe': {
+              $in: (user.member ?? [])
+                .map(({ tribe }) => tribe)
+                .filter(Boolean),
+            },
+            searchOffers: { $elemMatch: offerConditions },
+          },
+        ],
+      },
+    },
+  ];
+}
+
 /*
  * This middleware sends response with an array of found users
  * We assume that req.query.search exists
@@ -1381,6 +1453,18 @@ service.search = async function (req, res, next) {
   }
   const user = req.user!;
   const blocked = user.blocked || [];
+  const tribes =
+    typeof req.query.tribes === 'string'
+      ? req.query.tribes.split(',').filter(Boolean)
+      : [];
+  if (tribes.some(tribe => !mongoose.Types.ObjectId.isValid(tribe))) {
+    return errorService.sendInvalidId(res);
+  }
+  const languages =
+    typeof req.query.languages === 'string'
+      ? req.query.languages.split(',').filter(Boolean)
+      : [];
+
   let connectionIds: mongoose.Types.ObjectId[] | undefined;
   if (req.query.connectionsOnly === 'true') {
     try {
@@ -1390,36 +1474,78 @@ service.search = async function (req, res, next) {
     }
   }
 
-  // perform the search
-  User.find(
-    {
-      $and: [
-        {
-          public: true,
-        },
-        // only public users
-        {
-          _id: { $nin: blocked, ...(connectionIds && { $in: connectionIds }) },
-        },
-        // remove ones that I blocked
-        {
-          roles: {
-            $nin: ['suspended', 'shadowban'],
-          },
-        },
-        {
-          $text: {
-            $search: String(req.query.search).trim(),
-          },
-        },
-      ],
-    },
-    {
-      score: {
-        $meta: 'textScore',
+  const memberMatch = {
+    $and: [
+      {
+        public: true,
       },
+      // only public users
+      {
+        _id: { $nin: blocked, ...(connectionIds && { $in: connectionIds }) },
+      },
+      // remove ones that I blocked
+      {
+        roles: {
+          $nin: ['suspended', 'shadowban'],
+        },
+      },
+      {
+        $text: {
+          $search: String(req.query.search).trim(),
+        },
+      },
+      ...(tribes.length
+        ? [
+            {
+              'member.tribe': {
+                $in: tribes.map(tribe => new mongoose.Types.ObjectId(tribe)),
+              },
+            },
+          ]
+        : []),
+      ...(languages.length ? [{ languages: { $in: languages } }] : []),
+      ...(req.query.onlineRecently === 'true'
+        ? [{ seen: { $gte: moment().subtract(6, 'months').toDate() } }]
+        : []),
+    ],
+  };
+  const limit = Math.min(
+    (req.query.limit || config.limits.paginationLimit) as number,
+    50,
+  );
+  const offerStages = getMemberSearchOfferStages(req.query, user);
+  if (offerStages.length) {
+    try {
+      const users = await User.aggregate<Omit<UserServerRecord, 'blocked'>>([
+        { $match: { ...memberMatch, blocked: { $ne: user._id } } },
+        ...offerStages,
+        { $sort: { score: { $meta: 'textScore' } } },
+        { $skip: req.skip },
+        { $limit: limit },
+        {
+          $project: {
+            ...Object.fromEntries(
+              service.userSearchProfileFields
+                .split(' ')
+                .map(field => [field, 1]),
+            ),
+            score: { $meta: 'textScore' },
+          },
+        },
+      ])
+        .option({ maxTimeMS: 2000 })
+        .exec();
+      return res.send(users);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  User.find(memberMatch, {
+    score: {
+      $meta: 'textScore',
     },
-  )
+  })
     // select only the right profile properties
     .select(service.userSearchProfileFields + ' blocked')
     .sort({
@@ -1428,12 +1554,7 @@ service.search = async function (req, res, next) {
       },
     })
     // limit the amount of found users
-    .limit(
-      Math.min(
-        (req.query.limit || config.limits.paginationLimit) as number,
-        50,
-      ),
-    )
+    .limit(limit)
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
     .maxTimeMS(2000)
