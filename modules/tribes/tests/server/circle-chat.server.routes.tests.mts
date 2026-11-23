@@ -24,7 +24,7 @@ function chatApp(account?: { nostrNpub?: string; roles?: string[] }) {
     if (account) {
       Object.assign(req, {
         user: {
-          _id: accountId,
+          _id: req.get('X-Test-Account-Id') ?? accountId,
           username: 'fictional-member',
           roles: ['user'],
           ...account,
@@ -162,7 +162,10 @@ describe('Circle chat API', () => {
       .expect(429, {
         message: 'Too many chat messages. Please try again shortly.',
       });
-    await chatApp({}).post(path).expect(400);
+    await app
+      .post(path)
+      .set('X-Test-Account-Id', 'another-fictional-account')
+      .expect(400);
     vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', '');
     try {
       await app.get(path).expect(503);

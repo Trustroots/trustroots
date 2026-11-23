@@ -38,15 +38,6 @@ const requireChatAccount: RequestHandler = (req: ChatRequest, res, next) => {
   next();
 };
 
-const postLimit = rateLimit({
-  windowMs: 60_000,
-  limit: 12,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  keyGenerator: (req: ChatRequest) => req.user!._id.toString(),
-  message: { message: 'Too many chat messages. Please try again shortly.' },
-});
-
 const getChat: RequestHandler = async (req, res) => {
   try {
     res.json(await readCircleChat(req.params.room as ChatRoom));
@@ -94,6 +85,14 @@ const postChat: RequestHandler = async (req: ChatRequest, res) => {
 };
 
 export function registerCircleChat(app: Express) {
+  const postLimit = rateLimit({
+    windowMs: 60_000,
+    limit: 12,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (req: ChatRequest) => req.user!._id.toString(),
+    message: { message: 'Too many chat messages. Please try again shortly.' },
+  });
   app
     .route('/api/tribes/chat/:room')
     .all(requireChatAccount)

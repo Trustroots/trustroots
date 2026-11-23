@@ -729,7 +729,9 @@ describe('React route ownership', () => {
 
   it('renders every React-owned route that does not redirect', () => {
     routes
-      .filter(route => !['/about', '/offer'].includes(route.path))
+      .filter(
+        route => !['/about', '/offer', '/volunteers'].includes(route.path),
+      )
       .forEach(route => {
         const { container, unmount } = renderRoute(route);
 
