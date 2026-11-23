@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
-import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import type {
   PolicyNext,
@@ -231,7 +230,7 @@ export const isAllowed = (
   next: PolicyNext,
 ) => {
   // Check for user roles
-  const roles = _.get(req, ['user', 'roles'], ['guest']);
+  const roles = req.user?.roles ?? ['guest'];
   aclInstance.areAnyRolesAllowed(
     roles,
     req.route.path,

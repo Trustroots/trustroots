@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import should from 'should';
-import _ from 'lodash';
 import sinon from 'sinon';
 import config from './../../../../config/config.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
@@ -43,7 +42,7 @@ describe('Integration of the MessageStat service', function () {
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
     });
     user2 = utils.createTestUser({
       email: 'user2@test.com',
@@ -88,7 +87,7 @@ describe('Integration of the MessageStat service', function () {
       },
       body: {
         userTo: String(user2._id),
-        content: _.repeat('.', config.limits.longMessageMinimumLength - 1),
+        content: '.'.repeat(config.limits.longMessageMinimumLength - 1),
       },
     };
     const res = new Res();

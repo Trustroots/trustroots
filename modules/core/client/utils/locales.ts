@@ -1,4 +1,3 @@
-import sortBy from 'lodash/sortBy';
 import locales from '@/config/shared/locales.json';
 
 export type Locale = {
@@ -22,7 +21,7 @@ const getSearchableFields = ({ label, code, english }: Locale): string[] =>
 export function getLocales(): Locale[] {
   if (process.env.NODE_ENV === 'production') {
     const filteredLocales = localeList.filter(({ production }) => production);
-    return sortBy(filteredLocales, 'label');
+    return filteredLocales.sort((a, b) => a.label.localeCompare(b.label));
   }
 
   return localeList;

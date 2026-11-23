@@ -1,6 +1,5 @@
 // External dependencies
 import React, { useEffect, useState } from 'react';
-import keyBy from 'lodash/keyBy';
 import { useTranslation } from 'react-i18next';
 
 // Internal dependencies
@@ -31,9 +30,8 @@ function TribesInCommon({
 
   useEffect(() => {
     // user will have a filled out tribe details, otherUser won't...
-    const byId = keyBy(
-      user.member.map(membership => membership.tribe),
-      tribe => tribe._id,
+    const byId = Object.fromEntries(
+      user.member.map(({ tribe }) => [tribe._id, tribe]),
     );
     const tribesInCommon = otherUser.memberIds
       .filter(id => byId[id])

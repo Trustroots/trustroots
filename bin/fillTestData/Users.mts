@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
 import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
@@ -353,7 +352,9 @@ function addUsers(max: number, adminUsers: string[] = []) {
                 for (let i = 0; i < tribes.length; i++) {
                   randomTribes[i] = i;
                 }
-                randomTribes = _.shuffle(randomTribes);
+                randomTribes = [...randomTribes].sort(
+                  () => Math.random() - 0.5,
+                );
 
                 // Add the tribes using the random indecies
                 for (let j = 0; j < userNumTribes; j++) {

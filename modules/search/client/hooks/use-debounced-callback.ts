@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react';
-import debounce from 'lodash/debounce';
+import { debounce } from '../../../core/client/utils/debounce';
 
 type DebounceOptions = {
   maxWait?: number;
 };
 
-export default function useDebouncedCallback<Args extends unknown[], Result>(
-  callback: (...args: Args) => Result,
+export default function useDebouncedCallback<Args extends unknown[]>(
+  callback: (...args: Args) => unknown,
   wait: number,
   options: DebounceOptions = {},
 ) {
@@ -15,7 +15,11 @@ export default function useDebouncedCallback<Args extends unknown[], Result>(
 
   const debounced = useMemo(
     () =>
-      debounce((...args: Args) => callbackRef.current(...args), wait, options),
+      debounce(
+        (...args: Args) => void callbackRef.current(...args),
+        wait,
+        options.maxWait,
+      ),
     [wait, options.maxWait],
   );
 

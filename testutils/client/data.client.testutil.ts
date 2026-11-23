@@ -1,5 +1,3 @@
-import range from 'lodash/range';
-
 import {
   generateClientUser,
   generateId,
@@ -33,7 +31,7 @@ export function generateThreads(
   count: number,
   users: { userFrom?: FixtureMessageUser; userTo?: FixtureMessageUser } = {},
 ): FixtureThread[] {
-  return range(count).map(() => generateThread(users));
+  return Array.from({ length: count }, () => generateThread(users));
 }
 
 export function generateMessage(

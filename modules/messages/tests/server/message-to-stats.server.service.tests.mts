@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import _ from 'lodash';
 import sinon from 'sinon';
 import winston from 'winston';
 import config from './../../../../config/config.mts';
@@ -121,8 +120,8 @@ describe('Message to stats server service Unit Tests:', function () {
     let longMessage: MessageDocument;
     beforeEach(async function () {
       // creating content for short & long message
-      const shortMsgContent = _.repeat('.', longMessageMinimumLength - 1);
-      const longMsgContent = _.repeat('.', longMessageMinimumLength);
+      const shortMsgContent = '.'.repeat(longMessageMinimumLength - 1);
+      const longMsgContent = '.'.repeat(longMessageMinimumLength);
       const delay = () => new Promise<void>(resolve => setTimeout(resolve, 2));
       // Preserve the sequential timestamps used by the original waterfall.
       await delay();

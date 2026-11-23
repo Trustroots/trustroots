@@ -2,7 +2,6 @@
  * Local fork of mongoose-url-slugs 1.0.2, patched for Mongoose 8
  * compatibility (removed callback-based .exec() and .findOne() calls).
  */
-import _ from 'lodash';
 import type {
   Schema,
   SchemaDefinition,
@@ -167,7 +166,7 @@ export default function (
   slugFields: string | string[],
   overrides?: Partial<SlugOptions>,
 ) {
-  const options: SlugOptions = _.merge({}, defaultOptions, overrides);
+  const options: SlugOptions = { ...defaultOptions, ...overrides };
 
   if (typeof slugFields === 'string' && slugFields.indexOf(' ') > -1) {
     slugFields = slugFields.split(' ');

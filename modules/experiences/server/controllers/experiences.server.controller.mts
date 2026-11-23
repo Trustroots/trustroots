@@ -1,5 +1,4 @@
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import _ from 'lodash';
 import util from 'util';
 import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
@@ -260,9 +259,8 @@ function validateCreate(req: ExperienceRequest) {
   const allowedInteractions = ['met', 'guest', 'host'] as const;
   allowedInteractions.forEach(function (interaction) {
     if (
-      _.has(req, ['body', 'interactions', interaction]) &&
-      // Stryker disable next-line OptionalChaining: _.has above is only true when interactions is a non-nullish object
-      typeof req.body.interactions?.[interaction] !== 'boolean'
+      Object.hasOwn(req.body.interactions ?? {}, interaction) &&
+      typeof req.body.interactions[interaction] !== 'boolean'
     ) {
       valid = false;
       interactionErrors[interaction] = 'boolean expected';
@@ -270,7 +268,7 @@ function validateCreate(req: ExperienceRequest) {
   });
 
   // Value of userTo must exist and be a UserId
-  if (!_.has(req, ['body', 'userTo'])) {
+  if (!Object.hasOwn(req.body, 'userTo')) {
     valid = false;
     details.userTo = 'missing';
   } else if (!isValidObjectId(req.body.userTo)) {
@@ -278,7 +276,7 @@ function validateCreate(req: ExperienceRequest) {
     details.userTo = 'userId expected';
   }
 
-  if (_.has(req, ['body', 'feedbackPublic'])) {
+  if (Object.hasOwn(req.body, 'feedbackPublic')) {
     req.body.feedbackPublic = plainText(req.body.feedbackPublic, false);
     const { feedbackPublic } = req.body;
     if (
@@ -298,11 +296,13 @@ function validateCreate(req: ExperienceRequest) {
     'feedbackPublic',
   ];
   const fields = Object.keys(req.body);
-  const unexpectedFields = _.difference(fields, allowedFields);
+  const unexpectedFields = fields.filter(
+    field => !allowedFields.includes(field),
+  );
   const interactions = Object.keys(req.body.interactions || {});
-  const unexpectedInteractions = _.difference(
-    interactions,
-    allowedInteractions,
+  const unexpectedInteractions = interactions.filter(
+    interaction =>
+      !(allowedInteractions as readonly string[]).includes(interaction),
   );
   if (unexpectedFields.length > 0 || unexpectedInteractions.length > 0) {
     valid = false;

@@ -1,5 +1,4 @@
 import Influx from 'influx';
-import _ from 'lodash';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
 
@@ -7,6 +6,13 @@ type Callback = (error?: Error | null) => void;
 type ClientCallback = (error: Error | null, client?: Influx.InfluxDB) => void;
 type Fields = Record<string, unknown> & { time?: unknown };
 type Tags = Record<string, unknown>;
+const isPlainObject = (value: unknown) => {
+  const prototype =
+    typeof value === 'object' && value !== null
+      ? Object.getPrototypeOf(value)
+      : undefined;
+  return prototype === Object.prototype || prototype === null;
+};
 type Point = {
   fields: Fields;
   tags: Tags;
@@ -26,11 +32,11 @@ type StatObject = {
  */
 const getClient = function (callback: ClientCallback) {
   // Check that influxdb is enabled and that we have a host and database value.
-  const enabled = _.get(config, 'influxdb.enabled');
-  const host = _.get(config, 'influxdb.options.host');
-  const database = _.get(config, 'influxdb.options.database');
+  const enabled = config.influxdb.enabled;
+  const host = config.influxdb.options.host;
+  const database = config.influxdb.options.database;
   const isNotConfigured =
-    enabled !== true || _.isUndefined(host) || _.isUndefined(database);
+    enabled !== true || host === undefined || database === undefined;
   if (isNotConfigured) {
     return callback(new Error('No InfluxDB configured.'));
   }
@@ -83,7 +89,7 @@ const writeMeasurement = function (
   callback: Callback,
 ) {
   let errorMessage: string;
-  if (!measurementName || !_.isString(measurementName)) {
+  if (!measurementName || typeof measurementName !== 'string') {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
     // Log the failure
     if (process.env.NODE_ENV !== 'test') {
@@ -91,7 +97,7 @@ const writeMeasurement = function (
     }
     return callback(new Error(errorMessage));
   }
-  if (!_.isPlainObject(fields)) {
+  if (!isPlainObject(fields)) {
     errorMessage = 'InfluxDB Service: no `fields` defined. #ghugGJ';
     // Log the failure
     if (process.env.NODE_ENV !== 'test') {
@@ -101,7 +107,7 @@ const writeMeasurement = function (
     }
     return callback(new Error(errorMessage));
   }
-  if (!_.isPlainObject(tags)) {
+  if (!isPlainObject(tags)) {
     errorMessage = 'InfluxDB Service: no `tags` defined. #ghj3ig';
     // Log the failure
     if (process.env.NODE_ENV !== 'test') {
@@ -121,7 +127,7 @@ const writeMeasurement = function (
   // deal with the time
   if (fields.time) {
     // Validate time: it should always be a `Date` object
-    if (!_.isDate(fields.time)) {
+    if (!(fields.time instanceof Date)) {
       errorMessage =
         'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
       // Log the failure
@@ -216,7 +222,7 @@ const writeMeasurement = function (
  */
 const stat = function (stat: StatObject, callback: Callback) {
   // when influxdb is disabled, log info and finish without error
-  const enabled = _.get(config, 'influxdb.enabled');
+  const enabled = config.influxdb.enabled;
   if (!enabled) {
     return callback();
   }
@@ -243,7 +249,7 @@ const stat = function (stat: StatObject, callback: Callback) {
   // We will move the time (optional) from (influx) IPoint.fields to
   // IPoint.timestamp in the writeMeasurement function.
   // Meta field exists separately for historical reasons; we used to support "Stathat" service which couldn't handle string data.
-  const fields = _.extend({}, meta, values, counts, timeExtend);
+  const fields = { ...meta, ...values, ...counts, ...timeExtend };
   writeMeasurement(name, fields, tags, callback);
 };
 
