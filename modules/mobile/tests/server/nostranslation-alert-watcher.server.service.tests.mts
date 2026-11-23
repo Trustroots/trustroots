@@ -79,6 +79,7 @@ async function registerMember(authVersion = 0) {
     destination,
     expiresAt,
   });
+  return session._id;
 }
 
 describe('Nostranslation relay watcher', () => {
@@ -130,7 +131,11 @@ describe('Nostranslation relay watcher', () => {
   });
 
   it('claims a replayed review once when two workers see the same event', async () => {
-    await registerMember();
+    const session = await registerMember();
+    await MobileSession.collection.updateOne(
+      { _id: session },
+      { $unset: { authVersion: '' } },
+    );
     const delivery = vi.mocked(webPush.sendNotification).mockResolvedValue({
       statusCode: 201,
       body: '',
@@ -161,5 +166,80 @@ describe('Nostranslation relay watcher', () => {
       expect(await Registrations.findById(recipient)).toBeNull();
     });
     expect(webPush.sendNotification).toHaveBeenCalledOnce();
+  });
+
+  it('skips a delivery if the mobile session is revoked after the claim', async () => {
+    const session = await registerMember();
+    const update = vi
+      .spyOn(Claims, 'create')
+      .mockImplementationOnce(async () => {
+        await MobileSession.updateOne(
+          { _id: session },
+          { revokedAt: new Date() },
+        );
+        return new Claims();
+      });
+    const lookup = vi.spyOn(MobileSession, 'findOne');
+    watchNostranslationAlerts();
+    FixtureSocket.instances[0]!.message(signedFrame().frame);
+    await vi.waitFor(() => {
+      expect(update).toHaveBeenCalledOnce();
+      expect(lookup).toHaveBeenCalledTimes(2);
+    });
+    expect(
+      await MobileSession.collection.findOne({ _id: session }),
+    ).toMatchObject({
+      revokedAt: expect.any(Date),
+    });
+    FixtureSocket.instances[0]!.message(signedFrame().frame);
+    await vi.waitFor(() => {
+      expect(lookup).toHaveBeenCalledTimes(3);
+    });
+    expect(update).toHaveBeenCalledOnce();
+    expect(webPush.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it('can claim a replay after a temporary database write failure', async () => {
+    await registerMember();
+    const create = vi
+      .spyOn(Claims, 'create')
+      .mockRejectedValueOnce(new Error('Database unavailable.'));
+    vi.mocked(webPush.sendNotification).mockResolvedValue({
+      statusCode: 201,
+      body: '',
+      headers: {},
+    });
+    watchNostranslationAlerts();
+    const socket = FixtureSocket.instances[0]!;
+    const { frame, event } = signedFrame();
+    socket.message(frame);
+    await vi.waitFor(() => {
+      expect(create).toHaveBeenCalledOnce();
+    });
+    expect(webPush.sendNotification).not.toHaveBeenCalled();
+    socket.message(frame);
+    await vi.waitFor(() => {
+      expect(webPush.sendNotification).toHaveBeenCalledOnce();
+    });
+    expect(
+      await Claims.countDocuments({ _id: recipient + ':' + event.id }),
+    ).toBe(1);
+  });
+
+  it('keeps a destination registered on a temporary delivery failure', async () => {
+    await registerMember();
+    vi.mocked(webPush.sendNotification).mockRejectedValue(
+      new Error('Service unavailable.'),
+    );
+    watchNostranslationAlerts();
+    const { frame, event } = signedFrame();
+    FixtureSocket.instances[0]!.message(frame);
+    await vi.waitFor(() => {
+      expect(webPush.sendNotification).toHaveBeenCalledOnce();
+    });
+    expect(await Registrations.findById(recipient)).not.toBeNull();
+    expect(
+      await Claims.countDocuments({ _id: recipient + ':' + event.id }),
+    ).toBe(1);
   });
 });
