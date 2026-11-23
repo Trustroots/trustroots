@@ -179,9 +179,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             .completed,
             "The input should be visible and enabled.\n\(app.debugDescription)"
         )
-        field.tap()
-        // Compose exposes its inputs as text views. Send keys to that input,
-        // rather than whichever element the application still considers focused.
+        // Compose exposes the full field as a text view. Focus its leading text area.
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
         field.typeText(text)
         let entered = XCTNSPredicateExpectation(
             predicate: NSPredicate { object, _ in
