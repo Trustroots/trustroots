@@ -8,6 +8,7 @@ type Operation =
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
+  | 'passwordChange'
   | 'resendConfirmation'
   | 'avatarUpload'
   | 'dataExport';
@@ -163,6 +164,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     signin: createLimiter('signin', 'account', deps),
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
+    passwordChange: createLimiter('passwordChange', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     dataExport: createLimiter('dataExport', 'member', deps),
