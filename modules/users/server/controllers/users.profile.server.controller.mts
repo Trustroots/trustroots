@@ -1411,9 +1411,7 @@ function getMemberSearchOfferStages(
           },
           {
             'member.tribe': {
-              $in: (user.member ?? [])
-                .map(({ tribe }) => tribe)
-                .filter(Boolean),
+              $in: _.map(user.member, ({ tribe }) => tribe).filter(Boolean),
             },
             searchOffers: { $elemMatch: offerConditions },
           },
@@ -1455,14 +1453,14 @@ service.search = async function (req, res, next) {
   const blocked = user.blocked || [];
   const tribes =
     typeof req.query.tribes === 'string'
-      ? req.query.tribes.split(',').filter(Boolean)
+      ? String(req.query.tribes).split(',').filter(Boolean)
       : [];
   if (tribes.some(tribe => !mongoose.Types.ObjectId.isValid(tribe))) {
     return errorService.sendInvalidId(res);
   }
   const languages =
     typeof req.query.languages === 'string'
-      ? req.query.languages.split(',').filter(Boolean)
+      ? String(req.query.languages).split(',').filter(Boolean)
       : [];
 
   let connectionIds: mongoose.Types.ObjectId[] | undefined;
@@ -1535,7 +1533,7 @@ service.search = async function (req, res, next) {
       ])
         .option({ maxTimeMS: 2000 })
         .exec();
-      return res.send(users);
+      return res.json(users);
     } catch (error) {
       return next(error);
     }

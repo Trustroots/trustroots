@@ -124,7 +124,14 @@ vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
-    default: () => <div data-testid="circles-toggle" />,
+    default: ({ onChange }: { onChange: (tribes: string[]) => void }) => (
+      <button
+        type="button"
+        onClick={() => onChange(['665100000000000000000002'])}
+      >
+        Select example circle
+      </button>
+    ),
   }),
 );
 
@@ -532,6 +539,14 @@ describe('<SearchPage />', () => {
       expect(searchMapProps.filters).toContain('tribe-cyclists'),
     );
     expect(tribesApi.get).toHaveBeenCalledWith('cyclists');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select example circle' }),
+    );
+    expect(searchMapProps.filters).toContain('665100000000000000000002');
+    expect(new URLSearchParams(window.location.search).has('tribe')).toBe(
+      false,
+    );
   });
 
   it('initialises the map location from a location query param', async () => {
@@ -557,10 +572,35 @@ describe('<SearchPage />', () => {
     );
   });
 
-  it('loads an offer from the route params and tracks preview analytics', async () => {
+  it('keeps the map usable when a legacy circle cannot be loaded', async () => {
+    window.history.pushState({}, '', '/search?tribe=missing-circle');
+    const lookup = Promise.reject(new Error('Circle not found'));
+    tribesApi.get.mockReturnValue(lookup);
+
+    renderSearchPage();
+    await act(async () => {
+      await lookup.catch(() => undefined);
+    });
+
+    expect(tribesApi.get).toHaveBeenCalledWith('missing-circle');
+    expect(JSON.parse(searchMapProps.filters).tribes).toEqual([]);
+  });
+
+  it('prioritises a shared offer over the shared place viewport', async () => {
     const offerId = '665100000000000000000001';
-    window.history.pushState({}, '', `/search?offer=${offerId}`);
+    window.history.pushState(
+      {},
+      '',
+      `/search?offer=${offerId}&location=Exampleville`,
+    );
     offersApi.getOffer.mockResolvedValue(mockOffer);
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: 'Exampleville' },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
 
     renderSearchPage();
 
@@ -571,6 +611,11 @@ describe('<SearchPage />', () => {
     expect(
       await screen.findByRole('link', { name: /host person/i }),
     ).toBeInTheDocument();
+    expect(locationApi.locatePlace).toHaveBeenCalled();
+    expect(searchMapProps.location).toMatchObject({
+      lat: mockOffer.location![0],
+      lng: mockOffer.location![1],
+    });
     expect(analytics.track).toHaveBeenCalledWith('search_offer_previewed');
   });
 
@@ -797,12 +842,36 @@ describe('<SearchPage />', () => {
     });
   });
 
-  it('writes selected places to the URL and clears the place query on request', async () => {
+  it.each([
+    'default',
+    'pending legacy circle',
+    'resolved legacy circle',
+    'shared filters',
+  ])('writes and clears a selected place with %s', async scenario => {
     window.localStorage.setItem(
       'search.filters.user-1',
       JSON.stringify({ connectionsOnly: true }),
     );
+    const params = new URLSearchParams();
+    if (scenario !== 'default') params.set('tribe', 'cyclists');
+    if (scenario === 'shared filters') {
+      params.set('filters', JSON.stringify({ connectionsOnly: true }));
+    }
+    if (scenario === 'pending legacy circle') {
+      tribesApi.get.mockReturnValue(new Promise(() => {}));
+    }
+    if (scenario === 'resolved legacy circle') {
+      tribesApi.get.mockResolvedValue(
+        sampleTribe('tribe-cyclists', 'cyclists'),
+      );
+    }
+    window.history.replaceState({}, '', `/search?${params}`);
     renderSearchPage();
+    if (scenario === 'resolved legacy circle') {
+      await waitFor(() =>
+        expect(searchMapProps.filters).toContain('tribe-cyclists'),
+      );
+    }
     const title = 'Exampleville, Example County';
     locationApi.fetchLocationSuggestions.mockResolvedValue([
       { id: 'place-1', trTitle: title },
@@ -819,9 +888,18 @@ describe('<SearchPage />', () => {
     expect(new URL(window.location.href).searchParams.get('location')).toBe(
       title,
     );
-    expect(
-      JSON.parse(new URL(window.location.href).searchParams.get('filters')!),
-    ).toMatchObject({ connectionsOnly: true });
+    const selectedParams = new URLSearchParams(window.location.search);
+    if (scenario === 'pending legacy circle') {
+      expect(selectedParams.get('tribe')).toBe('cyclists');
+      expect(selectedParams.has('filters')).toBe(false);
+    } else {
+      expect(JSON.parse(selectedParams.get('filters')!)).toMatchObject({
+        connectionsOnly: true,
+        ...(scenario === 'resolved legacy circle' && {
+          tribes: ['tribe-cyclists'],
+        }),
+      });
+    }
     expect(searchMapProps.location).toEqual({ lat: 12, lng: 34, zoom: 10 });
 
     fireEvent.click(
