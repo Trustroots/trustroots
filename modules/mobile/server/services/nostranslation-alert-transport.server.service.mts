@@ -21,6 +21,14 @@ function apnsConfiguration() {
 }
 
 type ApnsConfiguration = NonNullable<ReturnType<typeof apnsConfiguration>>;
+
+export function translationAlertConfiguration() {
+  const android = unifiedPush.pushConfiguration();
+  return {
+    androidVapidKey: android.enabled ? android.publicKey : null,
+    ios: Boolean(apnsConfiguration()),
+  };
+}
 let cachedToken:
   | { configuration: ApnsConfiguration; timestamp: number; token: string }
   | undefined;

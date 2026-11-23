@@ -4,6 +4,9 @@ const {
   registerTranslationAlert,
   unregisterTranslationAlert,
 } = require('../services/nostranslation-alert-registration.server.service.mts');
+const {
+  translationAlertConfiguration,
+} = require('../services/nostranslation-alert-transport.server.service.mts');
 
 function registrationScope(req) {
   return {
@@ -24,6 +27,14 @@ exports.challenge = async function (req, res) {
       .status(400)
       .json({ message: 'Invalid notification registration.' });
   return res.json({ event });
+};
+
+exports.configuration = function (_req, res) {
+  return res.json(
+    config.featureFlags.nostranslationAlerts
+      ? translationAlertConfiguration()
+      : { androidVapidKey: null, ios: false },
+  );
 };
 
 exports.register = async function (req, res) {

@@ -36,6 +36,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserNostrSession
 import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.account.NostranslationEntry
@@ -47,6 +50,8 @@ class NostranslationEntryJourneyTest {
     @Test fun reviewsAPairingThenApprovesAndDeniesSignaturesBeforeRevokingTheClient() {
         val backend = "https://example.test"
         val username = "pair-${UUID.randomUUID()}"
+        val api = MobileApiClient(backend)
+        val memberSession = MemberSession("", MobileMember(username, "Fixture Member"))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val account = nostrAccountScope(backend, username)
         val keys = AndroidNostrKeys(context, account)
@@ -60,7 +65,7 @@ class NostranslationEntryJourneyTest {
         var now = 1_800_000_000L
         try {
             keys.generate()
-            compose.setContent { NostranslationEntry(backend, username, session.value, true, relay) { now } }
+            compose.setContent { NostranslationEntry(api, memberSession, session.value, true, relay) { now } }
             val entry = compose.onNodeWithText("Nostranslation signing")
             entry.assertIsNotEnabled()
             compose.runOnIdle { session.value = BrowserNostrSession(keys) { true } }
@@ -213,6 +218,8 @@ class NostranslationEntryJourneyTest {
     @Test fun reviewsAScannedLinkAndExplainsWhenTheLocalKeyIsMissing() {
         val backend = "https://example.test"
         val username = "scan-${UUID.randomUUID()}"
+        val api = MobileApiClient(backend)
+        val memberSession = MemberSession("", MobileMember(username, "Fixture Member"))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
         val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = 1 })
@@ -234,7 +241,7 @@ class NostranslationEntryJourneyTest {
                     LocalActivityResultRegistryOwner provides owner,
                     LocalLifecycleOwner provides lifecycleOwner,
                 ) {
-                    NostranslationEntry(backend, username, session, true, relay)
+                    NostranslationEntry(api, memberSession, session, true, relay)
                 }
             }
             compose.onNodeWithText("Nostranslation signing").performClick()
@@ -280,7 +287,9 @@ class NostranslationEntryJourneyTest {
             keys.savePairings(revision, JSONArray().put(JSONObject()))
             val session = BrowserNostrSession(keys) { true }
             val relay = RecordingNostranslationRelay()
-            compose.setContent { NostranslationEntry(backend, username, session, enabled.value, relay) }
+            val api = MobileApiClient(backend)
+            val member = MemberSession("", MobileMember(username, "Fixture Member"))
+            compose.setContent { NostranslationEntry(api, member, session, enabled.value, relay) }
 
             val entry = compose.onNodeWithText("Nostranslation signing")
             val done = compose.onNodeWithText("Done")

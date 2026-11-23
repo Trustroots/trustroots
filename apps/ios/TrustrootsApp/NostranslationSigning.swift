@@ -1,6 +1,8 @@
 import Foundation
+import CryptoKit
 import SwiftUI
 import TrustrootsShared
+import UserNotifications
 import VisionKit
 
 struct NostranslationLink {
@@ -293,9 +295,12 @@ final class NostranslationSigner: ObservableObject {
 }
 
 struct NostranslationSigningSheet: View {
+    let serverURLString: String
+    var openedFromAlert = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var identity = NostrIdentityManager.shared
+    @ObservedObject private var alerts = NostranslationDeviceAlerts.shared
     @StateObject private var signer = NostranslationSigner()
     @State private var input = ""
     @State private var link: NostranslationLink?
@@ -342,6 +347,15 @@ struct NostranslationSigningSheet: View {
                             Button("Revoke client", role: .destructive) { perform { try signer.revoke(client) } }
                         }
                     }
+                    Section("Review alerts") {
+                        Button(alerts.enabled ? "Disable review alerts" : "Enable review alerts") {
+                            Task { await alerts.setEnabled(!alerts.enabled, server: serverURLString) }
+                        }
+                        if let status = alerts.status { Text(status).foregroundStyle(.secondary) }
+                    }
+                }
+                if openedFromAlert && signer.reviews.isEmpty {
+                    Text("If the request has expired, retry in Nostranslation.")
                 }
                 if let error = signer.error { Text(error).foregroundStyle(.secondary) }
             }
@@ -350,6 +364,7 @@ struct NostranslationSigningSheet: View {
         }
         .onAppear { perform { try signer.start() } }
         .onDisappear { signer.stop() }
+        .onChange(of: signer.clients) { _, _ in alerts.reconcile(server: serverURLString) }
         .sheet(isPresented: $showScanner) {
             NavigationStack {
                 NostranslationQRScanner { input in
@@ -385,6 +400,171 @@ struct NostranslationSigningSheet: View {
         signer.error = nil
         do { try action() }
         catch { signer.error = "This action could not be completed. Check your local Nostr key and try again." }
+    }
+}
+
+@MainActor
+final class NostranslationDeviceAlerts: ObservableObject {
+    static let shared = NostranslationDeviceAlerts()
+    @Published private(set) var deviceToken: String?
+    @Published private(set) var alertAccount: String?
+    @Published private(set) var status: String?
+    private let identity = NostrIdentityManager.shared
+    private let store = NostrKeyStore()
+    private let defaults = UserDefaults.standard
+    private let api = TrustrootsAPI()
+    private var syncTask: Task<Void, Never>?
+    private var currentServer: String?
+    var enabled: Bool {
+        guard let account = identity.accountScope?.storageAccount else { return false }
+        return defaults.bool(forKey: account + ":translation-alerts")
+    }
+
+    func setEnabled(_ enable: Bool, server: String) async {
+        guard let account = identity.accountScope?.storageAccount else { return }
+        let revision = identity.revision
+        if enable {
+            do {
+                guard try await api.translationAlertsAvailable(serverURLString: server), identity.isCurrent(revision) else {
+                    status = "Review alerts are unavailable on this server."
+                    return
+                }
+                guard try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) else {
+                    status = "Review alerts are disabled in Settings."
+                    return
+                }
+            } catch {
+                status = "Review alerts could not be enabled."
+                return
+            }
+            guard identity.isCurrent(revision) else { return }
+        }
+        defaults.set(enable, forKey: account + ":translation-alerts")
+        if enable { defaults.set(account, forKey: "nostranslation.notification-account") }
+        else { defaults.removeObject(forKey: "nostranslation.notification-account") }
+        status = nil
+        reconcile(server: server)
+    }
+
+    func registerDeviceToken(_ data: Data) {
+        deviceToken = data.map { String(format: "%02x", $0) }.joined()
+        if let currentServer { reconcile(server: currentServer) }
+    }
+
+    func registrationFailed() { status = "Review alerts could not be enabled." }
+
+    func captureAlert() {
+        alertAccount = defaults.string(forKey: "nostranslation.notification-account")
+    }
+
+    func clearAlert() { alertAccount = nil }
+
+    func reconcile(server: String) {
+        currentServer = server
+        syncTask?.cancel()
+        guard let account = identity.accountScope?.storageAccount else {
+            UIApplication.shared.unregisterForRemoteNotifications()
+            deviceToken = nil
+            return
+        }
+        if enabled { defaults.set(account, forKey: "nostranslation.notification-account") }
+        let revision = identity.revision
+        if enabled && deviceToken == nil {
+            UIApplication.shared.registerForRemoteNotifications()
+            return
+        }
+        let token = enabled ? deviceToken : nil
+        syncTask = Task {
+            do {
+                try await sync(server: server, account: account, revision: revision, token: token)
+                try ensureCurrent(revision)
+                status = token == nil ? nil : "Review alerts are enabled."
+            } catch is CancellationError {
+                return
+            } catch {
+                if identity.isCurrent(revision) { status = "Review alerts could not be updated." }
+            }
+        }
+    }
+
+    private func sync(server: String, account: String, revision: Int64, token: String?) async throws {
+        let priorKey = account + ":translation-alert-transports"
+        let previous = Set(defaults.stringArray(forKey: priorKey) ?? [])
+        var active = Set<String>()
+        if let token,
+           let data = try store.read(account: NostrIdentityManager.pairingAccount(account)) {
+            let clients = try JSONDecoder().decode([NostranslationSigner.Client].self, from: Data(data.utf8))
+            for client in clients {
+                try ensureCurrent(revision)
+                guard identity.publicKey == client.signingKey else { continue }
+                let transport = try NostrCrypto.publicKey(secret: client.transportSecret)
+                let registration: [String: Any] = [
+                    "author": client.peer, "transport": transport,
+                    "destination": ["platform": "ios", "token": token]
+                ]
+                let fields = [client.peer, transport, "ios", token]
+                let binding = fields.map { "\($0.utf8.count):\($0)" }.joined()
+                let digest = SHA256.hash(data: Data(binding.utf8)).map { String(format: "%02x", $0) }.joined()
+                try await api.registerTranslationAlert(serverURLString: server, registration: registration) { event in
+                    try self.ensureCurrent(revision)
+                    return try Self.signChallenge(event, server: server, digest: digest, secret: client.transportSecret)
+                }
+                active.insert(transport)
+                defaults.set(Array(previous.union(active)), forKey: priorKey)
+            }
+        }
+        for removed in previous.subtracting(active) {
+            try ensureCurrent(revision)
+            try await api.unregisterTranslationAlert(serverURLString: server, transport: removed)
+        }
+        try ensureCurrent(revision)
+        defaults.set(Array(active), forKey: priorKey)
+    }
+
+    private func ensureCurrent(_ revision: Int64) throws {
+        try Task.checkCancellation()
+        guard identity.isCurrent(revision) else { throw NostrIdentityError.inactiveSession }
+    }
+
+    private static func signChallenge(_ event: [String: Any], server: String, digest: String, secret: String) throws -> [String: Any] {
+        let now = Int(Date().timeIntervalSince1970)
+        guard event["kind"] as? Int == 27235,
+              let created = event["created_at"] as? Int, (now - 120...now + 30).contains(created),
+              event["content"] as? String == "", let tags = event["tags"] as? [[String]], tags.count == 4,
+              let base = TrustrootsAPIConfiguration(baseURLString: server)?.baseURL else { throw NostrIdentityError.invalidKey }
+        var values: [String: String] = [:]
+        for tag in tags {
+            guard tag.count == 2, values[tag[0]] == nil else { throw NostrIdentityError.invalidKey }
+            values[tag[0]] = tag[1]
+        }
+        guard values["u"] == base.appendingPathComponent("api/mobile/v0/nostranslation/alerts").absoluteString,
+              values["method"] == "PUT", values["payload"] == digest,
+              let nonce = values["challenge"], nonce.wholeMatch(of: #/[a-f0-9]{64}/#) != nil else {
+            throw NostrIdentityError.invalidKey
+        }
+        return try NIP07Bridge.sign(event: event, secret: secret)
+    }
+}
+
+@MainActor
+final class NostranslationNotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NostranslationDeviceAlerts.shared.registerDeviceToken(deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NostranslationDeviceAlerts.shared.registrationFailed()
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        if response.notification.request.content.userInfo["type"] as? String == "nostranslation-review" {
+            NostranslationDeviceAlerts.shared.captureAlert()
+        }
     }
 }
 
