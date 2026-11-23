@@ -133,11 +133,28 @@ test('keeps a chosen map view between the two circles', async ({ page }) => {
       },
     }),
   );
+  await page.addInitScript(() => {
+    window.__deviceLocationRequests = 0;
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(success: PositionCallback) {
+          window.__deviceLocationRequests! += 1;
+          success({
+            coords: { latitude: 34, longitude: -17 },
+          } as GeolocationPosition);
+        },
+      },
+    });
+  });
   await page.goto('/circles/hitchhikers');
   await page.getByRole('button', { name: 'Zoom in' }).click();
   await expect.poll(() => savedView(page)).not.toBeNull();
   const view = await savedView(page);
   expectPresent(view);
+  await page.getByRole('button', { name: 'Use my location' }).click();
+  expect(await page.evaluate(() => window.__deviceLocationRequests)).toBe(1);
+  expect(await savedView(page)).toEqual(view);
   await page.goto('/circles/hackers');
   await expect(page.locator('.circle-location-map')).toBeVisible();
   expect(await savedView(page)).toEqual(view);

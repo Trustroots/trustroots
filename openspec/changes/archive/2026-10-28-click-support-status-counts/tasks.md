@@ -1,3 +1,0 @@
-- [x] Add accessible status count controls and selected styling.
-- [x] Test URL/filter preservation, page reset and browser interaction.
-- [x] Run checks and update living requirements.
