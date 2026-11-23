@@ -2,6 +2,7 @@ const mobileAuthentication = require('../controllers/mobile-authentication.serve
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
 const targetedRequestLimit =
   require('../../../core/server/middleware/targeted-request-limit.server.middleware.mts').default;
+const translationAlerts = require('../controllers/mobile-nostranslation-alerts.server.controller.cjs');
 const offers =
   require('../../../offers/server/controllers/offers.server.controller.mts').default;
 const {
@@ -45,6 +46,20 @@ const unifiedPush =
   require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
 module.exports = function (app) {
+  app.post(
+    '/api/mobile/v0/nostranslation/alerts/challenge',
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    translationAlerts.challenge,
+  );
+  app
+    .route('/api/mobile/v0/nostranslation/alerts')
+    .all(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+    )
+    .put(translationAlerts.register)
+    .delete(translationAlerts.unregister);
   app
     .route('/api/mobile/v0/users/unified-push')
     .all(
