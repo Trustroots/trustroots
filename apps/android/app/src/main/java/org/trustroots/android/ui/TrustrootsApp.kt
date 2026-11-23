@@ -69,6 +69,8 @@ import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.nostrAccountScope
 import org.trustroots.android.api.secureApiBaseURL
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.NostranslationAlerts
+import org.trustroots.android.ui.account.NostranslationDialog
 import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalArtworkBearerToken
@@ -178,6 +180,12 @@ internal fun TrustrootsApp(
                 )
             }
         } else {
+            val translationAPI = remember(apiBaseUrl, sessionStore) { MobileApiClient(apiBaseUrl, sessionStore = sessionStore) }
+            val translationAccount = nostrAccountScope(translationAPI.backendURL, session.member.username).storageAccount
+            val translationAlert by NostranslationAlerts.openRequested.collectAsState()
+            LaunchedEffect(translationAccount, session.sessionId) {
+                NostranslationAlerts.reconcile(context, translationAPI, session)
+            }
             val nostrSession = remember(session.member.username, session.sessionId, apiBaseUrl, sessionViewModel) {
                 val scope = nostrAccountScope(secureApiBaseURL(apiBaseUrl), session.member.username)
                 BrowserNostrSession(AndroidNostrKeys(context.applicationContext, scope)) {
@@ -189,6 +197,11 @@ internal fun TrustrootsApp(
                 LocalBrowserNostrSession provides nostrSession,
             ) {
               key(session.member.username) {
+                if (translationAlert == translationAccount) {
+                    NostranslationDialog(translationAPI, session, nostrSession, openedFromAlert = true) {
+                        NostranslationAlerts.openRequested.value = null
+                    }
+                }
                 val activeSession = session
                 val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
                 val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))

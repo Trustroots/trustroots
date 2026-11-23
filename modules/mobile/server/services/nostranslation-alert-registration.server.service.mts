@@ -75,9 +75,21 @@ export function alertRegistrations() {
 }
 
 function digest(record: Registration): string {
+  const { destination } = record;
+  const fields =
+    destination.platform === 'ios'
+      ? [destination.platform, destination.token]
+      : [
+          destination.platform,
+          destination.endpoint,
+          destination.publicKey,
+          destination.auth,
+        ];
   return createHash('sha256')
     .update(
-      JSON.stringify([record.author, record.transport, record.destination]),
+      [record.author, record.transport, ...fields]
+        .map(field => Buffer.byteLength(field, 'utf8') + ':' + field)
+        .join(''),
     )
     .digest('hex');
 }

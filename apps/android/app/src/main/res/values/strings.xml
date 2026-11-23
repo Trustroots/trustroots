@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="nostranslation_signing">Nostranslation signing</string>
+    <string name="nostranslation_enable_alerts">Enable review alerts</string>
+    <string name="nostranslation_disable_alerts">Disable review alerts</string>
+    <string name="nostranslation_alerts_unavailable">Review alerts could not be enabled. Check notification settings and try again.</string>
+    <string name="nostranslation_alerts_ready">Review alerts are enabled.</string>
+    <string name="nostranslation_review_waiting">A translation review is ready for your approval.</string>
+    <string name="nostranslation_no_pending_review">If the request has expired, retry in Nostranslation.</string>
     <string name="nostranslation_paste_link">Nostranslation connection link</string>
     <string name="nostranslation_scan_qr">Scan Nostranslation QR code</string>
     <string name="nostranslation_review_link">Review connection</string>

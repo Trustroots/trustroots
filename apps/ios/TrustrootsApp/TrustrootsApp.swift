@@ -2,7 +2,11 @@ import SwiftUI
 
 @main
 struct TrustrootsApp: App {
+    @UIApplicationDelegateAdaptor(NostranslationNotificationDelegate.self) private var notificationDelegate
     @StateObject private var session = MemberSessionStore()
+    @ObservedObject private var translationAlerts = NostranslationDeviceAlerts.shared
+    @ObservedObject private var nostrIdentity = NostrIdentityManager.shared
+    @State private var showTranslationRequest = false
     @State private var isSharedMemberPilotEnabled = Self.sharedMemberPilotLaunchArgumentEnabled
 
     var body: some Scene {
@@ -15,6 +19,19 @@ struct TrustrootsApp: App {
                 NotificationCenter.default.publisher(for: .trustrootsAuthenticationRequired)
             ) { _ in
                 session.invalidateSession()
+            }
+            .onChange(of: nostrIdentity.revision, initial: true) { _, _ in
+                translationAlerts.reconcile(server: session.serverURLString)
+                if !nostrIdentity.isActive { showTranslationRequest = false }
+            }
+            .onChange(of: translationAlerts.alertAccount, initial: true) { _, account in
+                if let account, account == nostrIdentity.accountScope?.storageAccount, translationAlerts.enabled {
+                    showTranslationRequest = true
+                }
+                translationAlerts.clearAlert()
+            }
+            .sheet(isPresented: $showTranslationRequest) {
+                NostranslationSigningSheet(serverURLString: session.serverURLString, openedFromAlert: true)
             }
         }
     }

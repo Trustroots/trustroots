@@ -355,13 +355,26 @@ object MessageAlerts {
 }
 
 class MessagePushService : PushService() {
-    override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) = MessageAlerts.onEndpoint(this, endpoint)
-    override fun onMessage(message: PushMessage, instance: String) = MessageAlerts.show(this, message)
+    override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) {
+        if (instance == NostranslationAlerts.instance) NostranslationAlerts.onEndpoint(this, endpoint)
+        else MessageAlerts.onEndpoint(this, endpoint)
+    }
+    override fun onMessage(message: PushMessage, instance: String) {
+        if (instance == NostranslationAlerts.instance) NostranslationAlerts.show(this, message)
+        else MessageAlerts.show(this, message)
+    }
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
+        if (instance == NostranslationAlerts.instance) {
+            NostranslationAlerts.registrationFailed()
+            return
+        }
         MessageAlerts.status.value = getString(R.string.message_alerts_registration_error)
         MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(
             R.string.message_alerts_registration_error,
         )
     }
-    override fun onUnregistered(instance: String) = MessageAlerts.onDistributorUnregistered(this)
+    override fun onUnregistered(instance: String) {
+        if (instance == NostranslationAlerts.instance) NostranslationAlerts.registrationFailed()
+        else MessageAlerts.onDistributorUnregistered(this)
+    }
 }
