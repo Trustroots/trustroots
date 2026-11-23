@@ -1,482 +1,122 @@
-import sinon from 'sinon';
 import 'should';
-import policy from './../../server/policies/users.server.policy.mts';
-import type {
-  PolicyResponse,
-  PolicyRule,
-} from '../../../../modules/core/server/services/policy-types.server.mts';
+import policy, {
+  isSupportProfileRead,
+} from '../../server/policies/users.server.policy.mts';
+import {
+  assertGrants,
+  policyRequest,
+  policyResponse,
+} from '../../../../testutils/server/route-grants.server.testutil.mts';
 
-let policyModule: typeof import('../../server/policies/users.server.policy.mts');
-before(async function () {
-  policyModule =
-    await import('./../../server/policies/users.server.policy.mts');
-});
+const profilePath = '/api/users/:username';
+const avatarPath = '/api/users/:avatarUserId/avatar';
 
-function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub<[PolicyRule[]], void>(),
-    areAnyRolesAllowed: sinon.stub<
-      [
-        string[],
-        string,
-        string,
-        (error: Error | null, allowed: boolean) => void,
-      ],
-      void
-    >(),
+function decide({
+  roles,
+  path = profilePath,
+  method = 'GET',
+  viewerPublic = false,
+  profilePublic = false,
+  ownProfile = false,
+}: {
+  roles?: string[];
+  path?: string;
+  method?: string;
+  viewerPublic?: boolean;
+  profilePublic?: boolean;
+  ownProfile?: boolean;
+}) {
+  const req = {
+    ...policyRequest('user', path, method),
+    profile: { _id: { equals: () => ownProfile }, public: profilePublic },
   };
-
-  const { _acl } = policyModule;
-  sinon.stub(_acl, 'allow').callsFake(mockAcl.allow);
-  sinon
-    .stub(_acl, 'areAnyRolesAllowed')
-    .callsFake(
-      mockAcl.areAnyRolesAllowed as unknown as typeof _acl.areAnyRolesAllowed,
-    );
-  return { policy, mockAcl };
+  req.user!.roles = roles;
+  req.user!.public = viewerPublic;
+  const res = policyResponse();
+  let permitted = false;
+  policy.isAllowed(req, res, () => {
+    permitted = true;
+  });
+  return permitted ? 200 : res.statusCode;
 }
-
-interface MockPolicyResponse extends PolicyResponse {
-  statusCode: number;
-  body: unknown;
-}
-
-function mockResponse(): MockPolicyResponse {
-  const res: MockPolicyResponse = {
-    statusCode: 200,
-    body: null,
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-    send(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-  };
-  return res;
-}
-
-function messageBody(response: MockPolicyResponse): string {
-  if (
-    typeof response.body !== 'object' ||
-    response.body === null ||
-    !('message' in response.body) ||
-    typeof response.body.message !== 'string'
-  ) {
-    throw new Error('Expected a policy message');
-  }
-  return response.body.message;
-}
-
-const noProfileUserId = { valueOf: () => 'anonymous-test-user' };
 
 describe('Users policy unit tests', () => {
-  afterEach(() => sinon.restore());
-
-  const grants: [string, string[]][] = [
-    ['/api/users', ['get', 'put', 'delete']],
-    ['/api/users/export', ['get']],
-    ['/api/users/removal/pending', ['get', 'delete']],
-    ['/api/users/nostr/challenge', ['post']],
-    ['/api/users/remove/:token', ['delete']],
-    ['/api/users/:username', ['get']],
-    ['/api/users/:avatarUserId/avatar', ['get']],
-    ['/api/users-avatar', ['post']],
-    ['/api/users/mini/:userId', ['get']],
-    ['/api/users/password', ['post']],
-    ['/api/users/accounts/:provider', ['delete']],
-    ['/api/users/memberships', ['get']],
-    ['/api/users/memberships/:tribeId', ['post', 'delete']],
-    ['/api/users/push/registrations', ['post']],
-    ['/api/users/push/registrations/:token', ['delete']],
-    ['/api/users/unified-push', ['get', 'post', 'delete']],
-    ['/api/users/unified-push/test', ['post']],
-    ['/api/blocked-users', ['get']],
-    ['/api/blocked-users/:username', ['put', 'delete']],
-  ];
-
-  // Assert inside a test: grants registered from a hook are credited to no
-  // test, so their mutants would never run.
-  it('registers the administrator profile read and member grants', () => {
-    const { policy, mockAcl } = loadPolicy();
-    policy.invokeRolesPolicies();
-    mockAcl.allow.firstCall.args[0].should.deepEqual([
-      {
-        roles: ['admin'],
-        allows: [
-          '/api/users',
-          '/api/users/:username',
-          '/api/users/:avatarUserId/avatar',
-          '/api/users/mini/:userId',
-          '/api/users/password',
-          '/api/users/accounts/:provider',
-          '/api/users/memberships',
-          '/api/users/memberships/:tribeId',
-        ].map(resources => ({
-          resources,
-          permissions: [
-            '/api/users/:username',
-            '/api/users/:avatarUserId/avatar',
-          ].includes(resources)
-            ? ['get']
-            : [],
-        })),
-      },
-      {
-        roles: ['user'],
-        allows: grants.map(([resources, permissions]) => ({
-          resources,
-          permissions,
-        })),
-      },
-      {
-        roles: ['support-team'],
-        allows: [{ resources: '/api/users/:username', permissions: ['get'] }],
-      },
+  it('grants exactly the documented permissions per role', () => {
+    assertGrants(policy.isAllowed, [
+      'user GET /api/users',
+      'user PUT /api/users',
+      'user DELETE /api/users',
+      `user GET ${profilePath}`,
+      `admin GET ${profilePath}`,
+      `support-team GET ${profilePath}`,
+      `user GET ${avatarPath}`,
+      `admin GET ${avatarPath}`,
+      'user GET /api/users/mini/:userId',
+      'user POST /api/users/password',
+      'user DELETE /api/users/accounts/:provider',
+      'user GET /api/users/memberships',
+      'user POST /api/users/memberships/:tribeId',
+      'user DELETE /api/users/memberships/:tribeId',
+      'user GET /api/users/export',
+      'user GET /api/users/removal/pending',
+      'user DELETE /api/users/removal/pending',
+      'user POST /api/users/nostr/challenge',
+      'user DELETE /api/users/remove/:token',
+      'user POST /api/users-avatar',
+      'user POST /api/users/push/registrations',
+      'user DELETE /api/users/push/registrations/:token',
+      'user GET /api/users/unified-push',
+      'user POST /api/users/unified-push',
+      'user DELETE /api/users/unified-push',
+      'user POST /api/users/unified-push/test',
+      'user GET /api/blocked-users',
+      'user PUT /api/blocked-users/:username',
+      'user DELETE /api/blocked-users/:username',
     ]);
   });
 
-  describe('grants for signed-in users', () => {
-    const decide = (roles: string[], path: string, method: string) => {
-      const res = mockResponse();
-      let status = 0;
-      policyModule.isAllowed(
-        {
-          user: { _id: noProfileUserId, public: true, roles },
-          route: { path },
-          method,
-        },
-        res,
-        () => (status = 200),
-      );
-      return status || res.statusCode;
-    };
-    before(() => policyModule.invokeRolesPolicies());
-
-    for (const [path, allowed] of grants) {
-      it(`${path} allows exactly ${allowed.join(', ')}`, () => {
-        for (const method of ['GET', 'POST', 'PUT', 'DELETE']) {
-          const expected = allowed.includes(method.toLowerCase()) ? 200 : 403;
-          decide(['user'], path, method).should.equal(expected);
-          const adminExpected =
-            path === '/api/users/:username' && method === 'GET' ? 200 : 403;
-          const avatarGrant =
-            path === '/api/users/:avatarUserId/avatar' && method === 'GET';
-          decide(['admin'], path, method).should.equal(
-            avatarGrant ? 200 : adminExpected,
-          );
-          decide(['support-team'], path, method).should.equal(adminExpected);
-        }
-      });
-    }
-  });
-
-  it('recognises only support-team profile reads', () => {
+  it('recognises only support-team GET requests to the username profile route', () => {
     const user = { roles: ['support-team'] };
-    const route = { path: '/api/users/:username' };
-    policyModule
-      .isSupportProfileRead({ user, route, method: 'GET' })
-      .should.be.true();
+    const route = { path: profilePath };
+    isSupportProfileRead({ user, route, method: 'GET' }).should.be.true();
     for (const request of [
       { user, method: 'GET' },
-      { user, route: { path: '/api/users/export' }, method: 'GET' },
+      { user, route: { path: avatarPath }, method: 'GET' },
       { user, route, method: 'PUT' },
       { route, method: 'GET' },
       { user: {}, route, method: 'GET' },
       { user: { roles: ['admin'] }, route, method: 'GET' },
     ]) {
-      policyModule.isSupportProfileRead(request).should.be.false();
-    }
-  });
-
-  it('checks profile visibility before authorising other staff requests', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const profilePath = '/api/users/:username';
-    const avatarPath = '/api/users/:avatarUserId/avatar';
-    const profile = { _id: { equals: () => false }, public: false };
-    for (const [roles, path, method, allowed] of [
-      [['support-team'], profilePath, 'GET', true],
-      [['admin'], avatarPath, 'GET', true],
-      [['admin'], profilePath, 'PUT', false],
-      [['admin'], avatarPath, 'PUT', false],
-      [['admin'], '/api/users/export', 'GET', false],
-      [undefined, profilePath, 'GET', false],
-      [undefined, avatarPath, 'GET', false],
-    ] as const) {
-      const next = sinon.spy();
-      const res = mockResponse();
-      policy.isAllowed(
-        {
-          user: {
-            _id: noProfileUserId,
-            public: false,
-            roles: roles && [...roles],
-          },
-          profile,
-          route: { path },
-          method,
-        },
-        res,
-        next,
-      );
-      res.statusCode.should.equal(allowed ? 200 : 404);
-      next.calledOnce.should.equal(allowed);
-    }
-  });
-
-  it('calls next when ACL allows the request', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
-
-    policy.isAllowed(
-      {
-        user: { _id: noProfileUserId, public: true, roles: ['user'] },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    mockAcl.areAnyRolesAllowed
-      .calledWith(['user'], '/api/users/:username', 'get')
-      .should.be.true();
-    next.calledOnce.should.be.true();
-  });
-
-  it('checks guest permissions when there is no signed-in user', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-
-    policy.isAllowed(
-      {
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      mockResponse(),
-      () => {},
-    );
-
-    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
-  });
-
-  it('refuses unauthenticated member data exports', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const response = mockResponse();
-
-    policy.isAllowed(
-      {
-        route: { path: '/api/users/export' },
-        method: 'GET',
-      },
-      response,
-      () => {},
-    );
-
-    response.statusCode.should.equal(403);
-    messageBody(response).should.equal('Forbidden.');
-  });
-
-  it('allows profile owners past public-profile prechecks', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
-    const ownId = { equals: sinon.stub().returns(true) };
-
-    policy.isAllowed(
-      {
-        user: { _id: ownId, public: false, roles: ['user'] },
-        profile: { _id: ownId, public: false },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    next.calledOnce.should.be.true();
-  });
-
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: { _id: noProfileUserId, public: true, roles: ['user'] },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(500);
-    messageBody(res).should.equal('Unexpected authorization error');
-    done();
-  });
-
-  it('returns 404 for hidden profiles viewed by another user', done => {
-    const { policy } = loadPolicy();
-    const profileId = { equals: () => false };
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: { _id: { equals: () => true }, public: true, roles: ['user'] },
-        profile: { _id: profileId, public: false },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(404);
-    messageBody(res).should.equal('Not found.');
-    done();
-  });
-
-  it('checks administrator authorisation for a hidden profile read', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
-
-    policy.isAllowed(
-      {
-        user: { _id: noProfileUserId, public: false, roles: ['admin'] },
-        profile: { _id: { equals: () => false }, public: false },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    mockAcl.areAnyRolesAllowed
-      .calledWith(['admin'], '/api/users/:username', 'get')
-      .should.be.true();
-    next.calledOnce.should.be.true();
-  });
-
-  it('recognises only support GET requests to the username profile route', () => {
-    const { isSupportProfileRead } = policyModule;
-    const route = { path: '/api/users/:username' };
-    const user = { roles: ['support-team'] };
-
-    isSupportProfileRead({ route, method: 'GET', user }).should.be.true();
-    for (const request of [
-      { method: 'GET', user },
-      {
-        route: { path: '/api/users/:avatarUserId/avatar' },
-        method: 'GET',
-        user,
-      },
-      { route, method: 'PUT', user },
-      { route, method: 'GET' },
-      { route, method: 'GET', user: {} },
-      { route, method: 'GET', user: { roles: ['user'] } },
-    ]) {
       isSupportProfileRead(request).should.be.false();
     }
   });
 
+  it('hides unpublished profiles from other members with 404', () => {
+    decide({ roles: ['user'], viewerPublic: true }).should.equal(404);
+  });
+
+  it('refuses unpublished members browsing other profiles with 403', () => {
+    decide({ roles: ['user'], profilePublic: true }).should.equal(403);
+  });
+
+  it('lets members past the visibility checks on their own profile', () => {
+    decide({ roles: ['user'], ownProfile: true }).should.equal(200);
+  });
+
   it('applies the hidden profile exceptions only to the intended staff reads', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const profile = { _id: { equals: () => false }, public: false };
-    const usernamePath = '/api/users/:username';
-    const avatarPath = '/api/users/:avatarUserId/avatar';
-    const cases = [
-      {
-        roles: ['support-team'],
-        path: usernamePath,
-        method: 'GET',
-        status: 200,
-      },
-      { roles: ['admin'], path: avatarPath, method: 'GET', status: 200 },
-      { roles: ['support-team'], path: avatarPath, method: 'GET', status: 404 },
-      {
-        roles: ['support-team'],
-        path: usernamePath,
-        method: 'PUT',
-        status: 404,
-      },
-      { roles: ['admin'], path: usernamePath, method: 'PUT', status: 404 },
-      { roles: ['admin'], path: avatarPath, method: 'POST', status: 404 },
-      {
-        roles: ['admin'],
-        path: '/api/users/mini/:userId',
-        method: 'GET',
-        status: 404,
-      },
-      { roles: undefined, path: usernamePath, method: 'GET', status: 404 },
-    ];
-    for (const { roles, path, method, status } of cases) {
-      const res = mockResponse();
-      const next = sinon.stub();
-      policy.isAllowed(
-        {
-          user: { _id: noProfileUserId, public: false, roles },
-          profile,
-          route: { path },
-          method,
-        },
-        res,
-        next,
-      );
-      res.statusCode.should.equal(status);
-      next.called.should.equal(status === 200);
+    for (const [roles, path, method, status] of [
+      [['support-team'], profilePath, 'GET', 200],
+      [['admin'], profilePath, 'GET', 200],
+      [['admin'], avatarPath, 'GET', 200],
+      [['support-team'], avatarPath, 'GET', 404],
+      [['support-team'], profilePath, 'PUT', 404],
+      [['admin'], profilePath, 'PUT', 404],
+      [['admin'], avatarPath, 'POST', 404],
+      [['admin'], '/api/users/mini/:userId', 'GET', 404],
+      [undefined, profilePath, 'GET', 404],
+      [undefined, avatarPath, 'GET', 404],
+    ] as const) {
+      decide({ roles: roles && [...roles], path, method }).should.equal(status);
     }
-  });
-
-  it('returns 403 when a non-public user browses another profile', done => {
-    const { policy } = loadPolicy();
-    const profileId = { equals: () => false };
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: { _id: { equals: () => true }, public: false, roles: ['user'] },
-        profile: { _id: profileId, public: true },
-        route: { path: '/api/users/:username' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    messageBody(res).should.equal('Forbidden.');
-    done();
-  });
-
-  it('returns 403 JSON when the user is not allowed', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: { _id: noProfileUserId, public: true, roles: ['guest'] },
-        route: { path: '/api/users/:username' },
-        method: 'PUT',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    messageBody(res).should.equal('Forbidden.');
-    done();
   });
 });

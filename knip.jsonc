@@ -81,7 +81,6 @@
         "server/models/**/*.{mjs,mts}",
         "server/routes/**/*.{mjs,mts}",
         "server/config/*.{mjs,mts}",
-        "server/policies/*.{mjs,mts}",
         // The root Vitest configs run these, but Knip attributes a
         // plugin's entries to the workspace that holds the config.
         "tests/client/**/*.tests.{js,jsx,ts,tsx}",

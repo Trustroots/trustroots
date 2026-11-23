@@ -39,7 +39,6 @@ interface ExpressSetup {
     res: Response,
     next: NextFunction,
   ): unknown;
-  initModulesServerPolicies(app?: Express): Promise<void>;
   initModulesServerRoutes(app: Express): Promise<void>;
   initErrorRoutes(app: Express): void;
   init(connection: Connection): Promise<Express>;
@@ -54,7 +53,6 @@ const service: ExpressSetup = {
   initHelmetHeaders,
   initModulesClientRoutes,
   denyAvatarStagingRequests,
-  initModulesServerPolicies,
   initModulesServerRoutes,
   initErrorRoutes,
   init,
@@ -466,19 +464,6 @@ function denyAvatarStagingRequests(
 }
 
 /**
- * Configure the modules ACL policies
- */
-async function initModulesServerPolicies() {
-  // Globbing policy files
-  for (const policyPath of config.files.server.policies) {
-    const { default: policy } = await import(
-      pathToFileURL(path.resolve(policyPath)).href
-    );
-    policy.invokeRolesPolicies();
-  }
-}
-
-/**
  * Configure the modules server routes
  */
 async function initModulesServerRoutes(app: Express) {
@@ -549,9 +534,6 @@ async function init(
 
   // Initialize Modules configuration
   await this.initModulesConfiguration(app);
-
-  // Initialize modules server authorization policies
-  await this.initModulesServerPolicies(app);
 
   // Initialize last seen middleware
   await this.initLastSeen(app);

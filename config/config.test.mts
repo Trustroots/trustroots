@@ -91,7 +91,6 @@ function load(
             models: string[];
             routes: string[];
             configs: string[];
-            policies: string[];
           };
         };
         db: { uri: string };

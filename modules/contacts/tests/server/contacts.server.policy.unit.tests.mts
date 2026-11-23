@@ -1,170 +1,70 @@
-import sinon from 'sinon';
 import 'should';
-let policyModule: typeof import('../../server/policies/contacts.server.policy.mts');
-before(async function () {
-  policyModule =
-    await import('../../server/policies/contacts.server.policy.mts');
-});
+import policy from '../../server/policies/contacts.server.policy.mts';
+import {
+  assertGrants,
+  policyRequest,
+  policyResponse,
+} from '../../../../testutils/server/route-grants.server.testutil.mts';
 
-type PolicyResponseDouble = {
-  statusCode: number;
-  body: { message: string } | null;
-  status(code: number): PolicyResponseDouble;
-  json(body: { message: string }): PolicyResponseDouble;
-  send(body: { message: string }): PolicyResponseDouble;
-};
-
-function loadPolicy() {
-  const implementation = policyModule;
-  const mockAcl = implementation._acl;
-  const allow = sinon.stub(mockAcl, 'allow');
-  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
+function contactRequest(userFrom: string, userTo: string) {
+  const party = (id: string) => ({
+    _id: { equals: (other: unknown) => other === id },
+  });
   return {
-    policy: implementation.default,
-    mockAcl: { allow, areAnyRolesAllowed },
+    ...policyRequest('user', '/api/contact/:contactId', 'DELETE'),
+    contact: { userFrom: party(userFrom), userTo: party(userTo) },
   };
-}
-
-function mockResponse() {
-  const res: PolicyResponseDouble = {
-    statusCode: 200,
-    body: null,
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-    send(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-  };
-  return res;
 }
 
 describe('Contacts policy unit tests', () => {
-  afterEach(() => sinon.restore());
-
-  it('registers admin and user contact policies', () => {
-    const { policy, mockAcl } = loadPolicy();
-
-    policy.invokeRolesPolicies();
-
-    mockAcl.allow.calledOnce.should.be.true();
-    mockAcl.allow.firstCall.args[0].should.deepEqual([
-      {
-        roles: ['admin'],
-        allows: [
-          { resources: '/api/contact', permissions: [] },
-          { resources: '/api/contact-by/:contactUserId', permissions: ['get'] },
-          { resources: '/api/contact/:contactId', permissions: ['get'] },
-          { resources: '/api/contacts/:listUserId', permissions: ['get'] },
-          {
-            resources: '/api/contacts/:listUserId/common',
-            permissions: ['get'],
-          },
-        ],
-      },
-      {
-        roles: ['user'],
-        allows: [
-          { resources: '/api/contact', permissions: ['post'] },
-          { resources: '/api/contact-by/:contactUserId', permissions: ['get'] },
-          {
-            resources: '/api/contact/:contactId',
-            permissions: ['get', 'put'],
-          },
-          { resources: '/api/contacts/:listUserId', permissions: ['get'] },
-          {
-            resources: '/api/contacts/:listUserId/common',
-            permissions: ['get'],
-          },
-        ],
-      },
+  it('grants exactly the documented permissions per role', () => {
+    assertGrants(policy.isAllowed, [
+      'user POST /api/contact',
+      'user GET /api/contact-by/:contactUserId',
+      'admin GET /api/contact-by/:contactUserId',
+      'user GET /api/contact/:contactId',
+      'user PUT /api/contact/:contactId',
+      'admin GET /api/contact/:contactId',
+      'user GET /api/contacts/:listUserId',
+      'admin GET /api/contacts/:listUserId',
+      'user GET /api/contacts/:listUserId/common',
+      'admin GET /api/contacts/:listUserId/common',
     ]);
   });
 
-  it('allows contact parties to manipulate their connection', () => {
-    const { policy, mockAcl } = loadPolicy();
-    const userId = {
-      valueOf: () => 'user-id',
-    };
-    const userFromId = {
-      equals: sinon.stub().returns(true),
-    };
-    const next = sinon.stub();
-
-    policy.isAllowed(
-      {
-        user: { _id: userId, public: true, roles: ['user'] },
-        route: { path: '/api/contact/:contactId' },
-        method: 'PUT',
-        contact: {
-          userFrom: { _id: userFromId },
-          userTo: { _id: { equals: sinon.stub().returns(false) } },
-        },
-      },
-      mockResponse(),
-      next,
-    );
-
-    userFromId.equals.calledWith('user-id').should.be.true();
-    mockAcl.areAnyRolesAllowed.called.should.be.false();
-    next.calledOnce.should.be.true();
+  it('lets either party of a contact delete it', () => {
+    for (const req of [
+      contactRequest('member-id', 'other-id'),
+      contactRequest('other-id', 'member-id'),
+    ]) {
+      let permitted = false;
+      policy.isAllowed(req, policyResponse(), () => {
+        permitted = true;
+      });
+      permitted.should.be.true();
+    }
   });
 
-  it('calls next when ACL allows the request', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
+  it('refuses deletion to members outside the contact', () => {
+    const res = policyResponse();
 
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/contact-by/:contactUserId' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
+    policy.isAllowed(contactRequest('one-id', 'two-id'), res, () => {
+      throw new Error('A third member deleted a contact');
+    });
 
-    mockAcl.areAnyRolesAllowed
-      .calledWith(['user'], '/api/contact-by/:contactUserId', 'get')
-      .should.be.true();
-    next.calledOnce.should.be.true();
+    res.statusCode.should.equal(403);
   });
 
-  it('returns 403 for unpublished users', done => {
-    const { policy } = loadPolicy();
-    const res = mockResponse();
-    let nextCalled = false;
+  it('returns 403 for unpublished users', () => {
+    const req = policyRequest('user', '/api/contacts/:listUserId', 'GET');
+    req.user!.public = false;
+    const res = policyResponse();
 
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: false,
-          roles: ['user'],
-        },
-        route: { path: '/api/contacts/:listUserId' },
-        method: 'GET',
-      },
-      res,
-      () => {
-        nextCalled = true;
-      },
-    );
+    policy.isAllowed(req, res, () => {
+      throw new Error('An unpublished member reached contacts');
+    });
 
     res.statusCode.should.equal(403);
     res.body!.should.deepEqual({ message: 'Forbidden.' });
-    nextCalled.should.be.false();
-    done();
   });
 });
