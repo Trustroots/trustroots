@@ -40,6 +40,10 @@ internal data class HostMapScale(val metres: Double, val pixels: Float) {
             val start = projection.fromPixels(left, y, null)
             val end = projection.fromPixels(left + maxPixels, y, null)
             val distance = GeoPoint(start).distanceToAsDouble(GeoPoint(end))
+            return forDistance(distance, maxPixels)
+        }
+
+        fun forDistance(distance: Double, maxPixels: Int): HostMapScale? {
             if (!distance.isFinite() || distance <= 0) return null
 
             val magnitude = 10.0.pow(floor(log10(distance)))
@@ -54,7 +58,8 @@ internal data class HostMapScale(val metres: Double, val pixels: Float) {
 }
 
 @Composable
-internal fun HostMapScaleBar(scale: HostMapScale) {
+internal fun HostMapScaleBar(scale: HostMapScale?) {
+    if (scale == null) return
     val width = with(LocalDensity.current) { scale.pixels.toDp() }
     val kilometres = scale.metres >= 1000
     val distance = if (kilometres) scale.metres / 1000 else scale.metres

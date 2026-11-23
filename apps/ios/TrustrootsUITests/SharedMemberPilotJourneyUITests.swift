@@ -284,6 +284,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "--shared-member-pilot",
+            "--shared-home",
             "-trustroots.apiServerURL",
             "http://127.0.0.1:\(port)",
             "-AppleLocale",
@@ -298,9 +299,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
-        let openNativeApp = app.buttons["Open native app"]
-        XCTAssertTrue(openNativeApp.waitForExistence(timeout: 15))
-        openNativeApp.tap()
+        let exitPilot = app.buttons["Exit shared pilot"]
+        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
+        exitPilot.tap()
+        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10), app.debugDescription)
         let search = app.buttons["Search"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
         search.tap()
