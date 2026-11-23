@@ -2,14 +2,14 @@ import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
-import moment from 'moment';
+import { milliseconds, sub, type Duration } from 'date-fns';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 interface Reminder {
   order: number;
-  timing: moment.DurationInputArg1;
+  timing: Duration;
 }
 interface ReminderMessage {
   [key: string]: unknown;
@@ -73,17 +73,12 @@ const Message = mongoose.model<MessageRecord>('Message');
 const User = mongoose.model<ReminderUser>('User');
 function run(_job: unknown, agendaDone: Done): void {
   // read timing of notifications from config
-  // we expect an array of momentjs objects
+  // we expect an array of duration objects
   // i.e. [{ minutes: 10 }, { hours: 24 }]
   const remindersConfig = config.limits.unreadMessageReminders;
 
   // sort the config from the earliest to the latest
-  const sortedConfig = _.sortBy(
-    remindersConfig as moment.DurationInputArg1[],
-    function (timeSinceMessage: moment.DurationInputArg1) {
-      return moment.duration(timeSinceMessage).asMilliseconds();
-    },
-  );
+  const sortedConfig = _.sortBy(remindersConfig as Duration[], milliseconds);
 
   /*
    * we run the reminders from the last to the first.
@@ -98,12 +93,10 @@ function run(_job: unknown, agendaDone: Done): void {
    * this case shouldn't happen too often
    */
   const remappedConfig = _.reverse(
-    sortedConfig.map(
-      (value: moment.DurationInputArg1, index: number): Reminder => ({
-        order: index,
-        timing: value,
-      }),
-    ),
+    sortedConfig.map((value: Duration, index: number): Reminder => ({
+      order: index,
+      timing: value,
+    })),
   );
 
   // for every config, send the appropriate notifications
@@ -118,7 +111,7 @@ function run(_job: unknown, agendaDone: Done): void {
  * Send the reminders about unread messages to various services
  * @param {Object} reminder - configuration for nth reminder
  * @param {Object} reminder.timing - How much time must pass (since the last unread message) to send the nth reminder.
- * A time object as momentjs would expect it, i.e. { 'minutes': 10 }
+ * A duration object, i.e. { 'minutes': 10 }
  * @param {number} reminder.order - Order of the reminder. The reminder is nth.
  * We start counting from 0. i.e. 3rd reminder has reminder.order: 2
  */
@@ -127,10 +120,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   const reminderOrder = reminder.order;
   // Wait until the newest pending message in each conversation has aged
   // past the delay so a burst of messages produces one reminder.
-  // Has to be a JS Date object, not a Moment object
-  const createdTimeAgo = moment()
-    .subtract(moment.duration(timePassed))
-    .toDate();
+  const createdTimeAgo = sub(new Date(), timePassed);
   const pending = { read: false, notificationCount: { $lte: reminderOrder } };
 
   // Find all the unread messages which fit the reminder config requirements
@@ -234,7 +224,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // we just wrap it to function for clearer organisation
     const isTooLate = (function () {
       const tooLate = config.limits.unreadMessageRemindersTooLate;
-      const tooOld = moment().subtract(moment.duration(tooLate)).toDate();
+      const tooOld = sub(new Date(), tooLate);
       return notification.latestCreated < tooOld;
     })();
     if (isThreadReplied || isTooLate) {

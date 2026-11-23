@@ -1,4 +1,4 @@
-import moment from 'moment';
+import { add, addDays, endOfDay } from 'date-fns';
 import 'should';
 
 import normaliseOfferExpiry from './../../server/services/offer-expiry.server.service.mts';
@@ -8,7 +8,7 @@ describe('Offer expiry service', () => {
   const maxValidFromNow = { days: 30 };
 
   it('uses the configured maximum age for missing, invalid, and out-of-range dates', () => {
-    const fallback = moment(now).add(maxValidFromNow).toDate();
+    const fallback = add(now, maxValidFromNow);
 
     [
       undefined,
@@ -26,14 +26,14 @@ describe('Offer expiry service', () => {
   });
 
   it('uses the thirty-day range bound when the configured maximum is absent', () => {
-    const validUntil = moment(now).add(30, 'days').toDate();
+    const validUntil = addDays(now, 30);
     const expiry = normaliseOfferExpiry('meet', validUntil, undefined, now);
 
     expiry!.should.deepEqual(validUntil);
   });
 
   it('accepts an expiry on the last day of the allowed range', () => {
-    const lastDay = moment(now).add(maxValidFromNow).endOf('day').toDate();
+    const lastDay = endOfDay(add(now, maxValidFromNow));
 
     normaliseOfferExpiry(
       'meet',

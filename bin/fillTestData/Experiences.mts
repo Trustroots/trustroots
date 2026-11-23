@@ -4,7 +4,7 @@ import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mts';
-import moment from 'moment';
+import { subDays } from 'date-fns';
 
 interface SeedUser extends Document {
   _id: Types.ObjectId;
@@ -98,12 +98,7 @@ const experienceGenerator = {
   },
   public: (to = Number.NaN) =>
     Math.random() < 0.9 && !profileType.receivedPrivate(to),
-  created: () =>
-    moment()
-      .subtract({
-        days: _.random(14),
-      })
-      .toDate(),
+  created: () => subDays(new Date(), _.random(14)),
   feedbackPublic: () => faker.lorem.sentences(),
 };
 

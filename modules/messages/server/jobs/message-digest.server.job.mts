@@ -1,6 +1,6 @@
 import mongoose, { type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
-import moment from 'moment';
+import { milliseconds } from 'date-fns';
 import { sendMessageDigest } from '../../../core/server/services/email.server.service.mts';
 import userRoles from '../../../users/server/services/user-roles.server.service.mts';
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
@@ -39,15 +39,12 @@ export async function queueMessageDigests(now = new Date()) {
     .cursor();
   const minimumAge = Math.min(
     ...config.limits.unreadMessageReminders.map(interval =>
-      moment.duration(interval).asMilliseconds(),
+      milliseconds(interval),
     ),
   );
   const cutoff = new Date(now.getTime() - minimumAge);
   const earliest = new Date(
-    now.getTime() -
-      moment
-        .duration(config.limits.unreadMessageRemindersTooLate)
-        .asMilliseconds(),
+    now.getTime() - milliseconds(config.limits.unreadMessageRemindersTooLate),
   );
   for await (const recipient of recipients) {
     if (!recipient.email || userRoles.hasRestrictedMessagingRole(recipient))

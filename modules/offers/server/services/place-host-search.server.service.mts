@@ -1,4 +1,4 @@
-import moment from 'moment';
+import { differenceInYears, subMonths } from 'date-fns';
 import type { PipelineStage, Types } from 'mongoose';
 import {
   userMiniProjection,
@@ -58,7 +58,7 @@ export async function listPlaceHosts(
   const start = Number.isSafeInteger(offset) ? Math.max(offset, 0) : 0;
   const byExperience = query.sort === 'experiences';
   const nameOrder = { sortName: 1, 'user.username': 1, _id: 1 } as const;
-  const now = moment();
+  const now = new Date();
 
   const results = await aggregate([
     ...offerStages,
@@ -99,28 +99,19 @@ export async function listPlaceHosts(
             branches: [
               {
                 case: {
-                  $gte: [
-                    '$user.seen',
-                    now.clone().subtract(1, 'month').toDate(),
-                  ],
+                  $gte: ['$user.seen', subMonths(now, 1)],
                 },
                 then: 'past-month',
               },
               {
                 case: {
-                  $gte: [
-                    '$user.seen',
-                    now.clone().subtract(6, 'months').toDate(),
-                  ],
+                  $gte: ['$user.seen', subMonths(now, 6)],
                 },
                 then: 'past-six-months',
               },
               {
                 case: {
-                  $gte: [
-                    '$user.seen',
-                    now.clone().subtract(24, 'months').toDate(),
-                  ],
+                  $gte: ['$user.seen', subMonths(now, 24)],
                 },
                 then: 'past-two-years',
               },
@@ -137,7 +128,7 @@ export async function listPlaceHosts(
     .map(({ user: { birthdate, ...user }, ...offer }) => ({
       ...offer,
       user,
-      ...(birthdate && { age: now.diff(birthdate, 'years') }),
+      ...(birthdate && { age: differenceInYears(now, birthdate) }),
     }));
 
   if (results.length > pageSize) {

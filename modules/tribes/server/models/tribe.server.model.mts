@@ -1,7 +1,7 @@
 import textService from '../../../core/server/services/text.server.service.mts';
 import config from '../../../../config/config.mts';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import moment from 'moment';
+import { isAfter, subDays } from 'date-fns';
 import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mts';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mts';
 import urlslugs from '../../../../config/lib/mongoose-url-slugs.mts';
@@ -152,10 +152,9 @@ const TribeSchema = new Schema<TribeRecord>({
 TribeSchema.set('toJSON', { getters: true });
 
 TribeSchema.virtual('new').get(function (this: TribeDocument) {
-  const newLimit = moment().subtract(60, 'day');
   return (
     typeof this.created !== 'undefined' &&
-    moment(this.created).isAfter(newLimit)
+    isAfter(this.created, subDays(new Date(), 60))
   );
 });
 

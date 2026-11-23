@@ -5,7 +5,7 @@ import {
 import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
 import _ from 'lodash';
-import moment from 'moment';
+import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
 import sanitizeHtml from 'sanitize-html';
@@ -456,7 +456,7 @@ function sendSupportRequest(
 function sendSignupEmailReminder(
   user: MailUser & {
     publicReminderCount?: number;
-    created?: import('moment').MomentInput;
+    created?: Date | string | number;
   },
   callback: MailCallback,
 ) {
@@ -486,7 +486,7 @@ function sendSignupEmailReminder(
     // This email is a reminder number `n` to this user
     reminderCountMax: config.limits.maxSignupReminders,
     // Max n of reminders system sends
-    timeAgo: moment(user.created).fromNow(), // A string, e.g. `3 days ago`
+    timeAgo: timeAgo(new Date(user.created ?? Date.now())), // A string, e.g. `3 days ago`
   });
 
   // This will be the last reminder, mention that at the email subject line

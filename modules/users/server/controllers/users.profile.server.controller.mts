@@ -26,7 +26,7 @@ import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
-import moment from 'moment';
+import { addMonths, isAfter, subMonths } from 'date-fns';
 import * as nip19 from 'nostr-tools/nip19';
 import {
   consumeProof,
@@ -898,11 +898,11 @@ service.userByUsername = function (req, res, next, username) {
 function isUsernameUpdateAllowed(
   user: Pick<UserServerRecord, 'usernameUpdated' | 'created'>,
 ) {
-  const allowedDate = moment(user.usernameUpdated || user.created).add(
+  const allowedDate = addMonths(
+    (user.usernameUpdated || user.created) as Date,
     3,
-    'months',
   );
-  return moment().isSameOrAfter(allowedDate);
+  return !isAfter(allowedDate, new Date());
 }
 
 // Some responses sanitize another member's public profile, while authenticated
@@ -1513,7 +1513,7 @@ service.search = async function (req, res, next) {
         : []),
       ...(languages.length ? [{ languages: { $in: languages } }] : []),
       ...(req.query.onlineRecently === 'true'
-        ? [{ seen: { $gte: moment().subtract(6, 'months').toDate() } }]
+        ? [{ seen: { $gte: subMonths(new Date(), 6) } }]
         : []),
     ],
   };

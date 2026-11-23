@@ -1,7 +1,7 @@
 import should from 'should';
 import request from 'supertest';
 import mongoose from 'mongoose';
-import moment from 'moment';
+import { subMonths } from 'date-fns';
 import sinon from 'sinon';
 import { setTimeout as delay } from 'node:timers/promises';
 import config from './../../../../config/config.mts';
@@ -1332,9 +1332,7 @@ describe('User profile CRUD tests', function () {
         });
     });
     it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
+      const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
           $set: {
@@ -1370,9 +1368,7 @@ describe('User profile CRUD tests', function () {
         .catch(done);
     });
     it('should not be able to change username if username was changed within previous 3 months', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
+      const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
           $set: {
@@ -1426,9 +1422,7 @@ describe('User profile CRUD tests', function () {
         .catch(done);
     });
     it('should be able to change username if username was changed more than 3 months ago', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
+      const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
           $set: {
@@ -1460,9 +1454,10 @@ describe('User profile CRUD tests', function () {
                   res.body.username.should.equal(user2.username);
                   User.findById(user._id)
                     .then((user: UserDocument | null) => {
-                      const threeMonthsAgo = moment(user!.usernameUpdated)
-                        .subtract(3, 'months')
-                        .toDate();
+                      const threeMonthsAgo = subMonths(
+                        user!.usernameUpdated,
+                        3,
+                      );
                       user!
                         .updateOne({
                           $set: {
@@ -1534,7 +1529,7 @@ describe('User profile CRUD tests', function () {
           agent
             .put('/api/users')
             .send({
-              usernameUpdated: moment().subtract(3, 'months').toDate(),
+              usernameUpdated: subMonths(new Date(), 3),
             })
             .expect(200)
             .end(function (err: Error | null) {

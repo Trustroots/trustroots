@@ -1,4 +1,4 @@
-import moment from 'moment';
+import { addDays } from 'date-fns';
 import type {
   OfferDocument,
   OfferModel,
@@ -233,7 +233,7 @@ describe('Offers controller unit tests', () => {
       created.location.should.eql([10, 20]);
     });
 
-    it('preserves numeric moment-compatible expiry input', async () => {
+    it('preserves numeric expiry input', async () => {
       const validUntil = Date.now() + 5 * 24 * 60 * 60 * 1000;
       const { res } = await runHandler(res =>
         offersController.create(
@@ -512,7 +512,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('updates the optional offer fields accepted by the endpoint', async () => {
-      const validUntil = moment().add(5, 'days').toISOString();
+      const validUntil = addDays(new Date(), 5).toISOString();
       const { res } = await runHandler(res =>
         offersController.update(
           {
@@ -580,7 +580,7 @@ describe('Offers controller unit tests', () => {
       const offerReq = populatedOffer(
         await Offer.findById(hostOffer._id).populate('user', '_id'),
       );
-      const validUntil = moment().add(10, 'days').toISOString();
+      const validUntil = addDays(new Date(), 10).toISOString();
 
       const { res } = await runHandler(res =>
         offersController.update(

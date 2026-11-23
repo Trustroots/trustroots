@@ -1,5 +1,4 @@
 import React from 'react';
-import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
@@ -35,7 +34,7 @@ export default function ThreadMessages({
   messages,
   onFetchMore,
 }: ThreadMessagesProps) {
-  const { t } = useTranslation('messages');
+  const { t, i18n } = useTranslation('messages');
   return (
     <InfiniteMessages component={MessagesContainer} onFetchMore={onFetchMore}>
       <Alert intent="warning" role="note">
@@ -57,7 +56,12 @@ export default function ThreadMessages({
         <div className="divider divider-first text-muted">
           <small>
             {t('Conversation started {{ date }}', {
-              date: moment(messages[0].created).format('LL'),
+              date: new Date(messages[0].created).toLocaleDateString(
+                i18n.language,
+                {
+                  dateStyle: 'long',
+                },
+              ),
             })}
           </small>
         </div>

@@ -1,10 +1,10 @@
-import moment from 'moment';
+import { add, endOfDay, isValid, startOfDay, type Duration } from 'date-fns';
 
 /**
  * Normalise an offer expiry using the rules shared by offer creation and updates.
  *
  * @param type Offer type ("host" or "meet")
- * @param validUntil Raw input supplied by the request and interpreted by moment
+ * @param validUntil Raw input supplied by the request, coerced with `new Date()`
  * @param maxValidFromNow Maximum age accepted for an expiry
  * @param now Current time used for range checks and fallback
  * @returns The normalised expiry, or undefined for host offers
@@ -12,8 +12,8 @@ import moment from 'moment';
 function normaliseOfferExpiry(
   type: unknown,
   validUntil: unknown,
-  maxValidFromNow: moment.DurationInputArg1 | undefined,
-  now: moment.MomentInput,
+  maxValidFromNow: Duration | undefined,
+  now: Date | string | number,
 ): Date | undefined {
   if (type === 'host') {
     return undefined;
@@ -21,25 +21,19 @@ function normaliseOfferExpiry(
   const maximumAge = maxValidFromNow || {
     days: 30,
   };
-  // moment's JavaScript API has always coerced arbitrary raw request values.
-  const parsedValidUntil = moment(validUntil as moment.MomentInput);
+  // The JavaScript Date API coerces arbitrary raw request values.
+  const parsedValidUntil = new Date(validUntil as string);
   // Stryker disable next-line StringLiteral: validUntilEndOfDay is always the last millisecond of a day, so it is at or after `now` exactly when it is at or after the start of that day
-  const minDate = moment(now).startOf('day');
-  const maxDate = moment(now)
-    .add(maximumAge)
-    // Add one extra day just to accommodate oddities from timezones
-    .endOf('day');
-  if (validUntil && parsedValidUntil.isValid()) {
-    // Stryker disable next-line StringLiteral: comparing the exact time with the limits instead of the end of its day gives the same answer, because the lower limit is the start and the upper limit the end of a day
-    const validUntilEndOfDay = parsedValidUntil.clone().endOf('day');
-    if (
-      validUntilEndOfDay.isSameOrAfter(minDate) &&
-      validUntilEndOfDay.isSameOrBefore(maxDate)
-    ) {
-      return parsedValidUntil.toDate();
+  const minDate = startOfDay(now);
+  // Add one extra day just to accommodate oddities from timezones
+  const maxDate = endOfDay(add(now, maximumAge));
+  if (validUntil && isValid(parsedValidUntil)) {
+    const validUntilEndOfDay = endOfDay(parsedValidUntil);
+    if (validUntilEndOfDay >= minDate && validUntilEndOfDay <= maxDate) {
+      return parsedValidUntil;
     }
   }
-  return moment(now).add(maximumAge).toDate();
+  return add(now, maximumAge);
 }
 
 export default normaliseOfferExpiry;
