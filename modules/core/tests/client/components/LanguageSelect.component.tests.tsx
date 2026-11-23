@@ -101,6 +101,27 @@ it('prompts for a longer query and matches labels without accents', async () => 
   ).toBeVisible();
 });
 
+it('follows controlled language selections as they load, change and clear', () => {
+  const onChangeLanguages = vi.fn();
+  mockQuery({ isLoading: true });
+  const { rerender } = render(<LanguageSelect selectedLanguages={['eng']} />);
+  expect(screen.queryByRole('button', { name: 'Remove English' })).toBeNull();
+
+  mockQuery({ data: languages });
+  rerender(
+    <LanguageSelect selectedLanguages={['eng']} onChangeLanguages={onChangeLanguages} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Remove English' }));
+  expect(onChangeLanguages).toHaveBeenLastCalledWith([]);
+  expect(screen.getByRole('button', { name: 'Remove English' })).toBeVisible();
+
+  rerender(<LanguageSelect selectedLanguages={['fin']} />);
+  expect(screen.getByRole('button', { name: 'Remove Finnish' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Remove English' })).toBeNull();
+  rerender(<LanguageSelect selectedLanguages={[]} />);
+  expect(screen.queryByRole('button', { name: 'Remove Finnish' })).toBeNull();
+});
+
 it('hides deprecated choices in the profile', async () => {
   render(<LanguageSelect excludeDeprecated />);
   search('Middle');

@@ -184,5 +184,6 @@ OfferSchema.index({
 OfferSchema.index({
   locationFuzzy: '2d',
 });
+OfferSchema.index({ user: 1 });
 mongoose.model<OfferServerRecord>('Offer', OfferSchema);
 export default service;

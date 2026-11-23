@@ -6,9 +6,6 @@ export const Route = createFileRoute('/search/')({
   staticData: { title: 'Search', footerHidden: true },
   beforeLoad: requireAuth,
   component: withUser(SearchPage),
-  // Selecting an offer updates the URL without resetting the map viewport.
-  remountDeps: ({ params, search }) => ({
-    params,
-    search: { ...search, offer: undefined },
-  }),
+  // Search state updates the URL while keeping the live map mounted.
+  remountDeps: () => undefined,
 });

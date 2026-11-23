@@ -4,12 +4,13 @@ import {
   DEFAULT_FILTERS,
   getSearchFilters,
   normalizeTypes,
+  readSearchFiltersParam,
   setSearchFilter,
   setSearchFilters,
 } from '@/modules/search/client/utils/search-filters';
 
 describe('search-filters utils', () => {
-  it('counts connections, circles, languages and leaving out hosts as narrowing filters', () => {
+  it('counts connections, circles, languages and either single offer type as narrowing filters', () => {
     expect(countNarrowingFilters({})).toBe(0);
     expect(countNarrowingFilters(DEFAULT_FILTERS)).toBe(0);
     expect(
@@ -20,7 +21,7 @@ describe('search-filters utils', () => {
         types: ['meet'],
       }),
     ).toBe(4);
-    expect(countNarrowingFilters({ types: [{ id: 'host' }] })).toBe(0);
+    expect(countNarrowingFilters({ types: [{ id: 'host' }] })).toBe(1);
     expect(countNarrowingFilters({ volunteering: true })).toBe(1);
     expect(countNarrowingFilters({ volunteering: false })).toBe(0);
   });
@@ -95,6 +96,45 @@ describe('search-filters utils', () => {
     // Cached input can be malformed at runtime despite the typed helper API.
     expect(invokeMalformed(normalizeTypes, null)).toEqual(['meet']);
     expect(normalizeTypes([{ id: 'meet' }])).toEqual(['meet']);
+  });
+
+  it('reads only supported fields from a map filter URL', () => {
+    expect(
+      readSearchFiltersParam(
+        JSON.stringify({
+          types: ['host', null, 'unknown'],
+          tribes: ['abc', 'a'.repeat(24)],
+          languages: ['en', 5],
+          seen: { months: 24 },
+          communityNotes: false,
+          connectionsOnly: true,
+          volunteering: true,
+          unknown: true,
+        }),
+      ),
+    ).toEqual({
+      types: ['host'],
+      tribes: ['a'.repeat(24)],
+      languages: ['en'],
+      seen: { months: 24 },
+      communityNotes: false,
+      connectionsOnly: true,
+      volunteering: true,
+    });
+  });
+
+  it('rejects malformed filter URLs and defaults missing fields', () => {
+    expect(readSearchFiltersParam()).toBeNull();
+    expect(readSearchFiltersParam('{invalid')).toBeNull();
+    expect(readSearchFiltersParam('[]')).toBeNull();
+    expect(readSearchFiltersParam('null')).toBeNull();
+    expect(readSearchFiltersParam('{}')).toEqual({
+      ...DEFAULT_FILTERS,
+      connectionsOnly: false,
+    });
+    expect(
+      readSearchFiltersParam('{"types":["meet"],"volunteering":true}'),
+    ).toMatchObject({ types: ['meet'], volunteering: false });
   });
 
   it('uses defaults when local storage is unavailable', () => {

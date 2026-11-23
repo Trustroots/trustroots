@@ -731,6 +731,7 @@ describe('<SearchPage />', () => {
   });
 
   it('updates sidebar filters from the filters panel', () => {
+    window.history.replaceState({}, '', '/search?other=1#existing');
     renderSearchPage();
 
     fireEvent.click(screen.getByRole('button', { name: /types toggle/i }));
@@ -746,6 +747,89 @@ describe('<SearchPage />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /language filter/i }));
     expect(searchMapProps.filters).toContain('"fi"');
+    const { searchParams, hash } = new URL(window.location.href);
+    expect(hash).toBe('#existing');
+    expect(searchParams.get('other')).toBe('1');
+    expect(JSON.parse(searchParams.get('filters')!)).toMatchObject({
+      types: ['meet'],
+      communityNotes: false,
+      seen: { months: 24 },
+      languages: ['fi'],
+    });
+  });
+
+  it('restores a shared filter URL and updates the same map on history navigation', () => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ types: ['meet'], communityNotes: true }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.set(
+      'filters',
+      JSON.stringify({
+        types: ['host'],
+        communityNotes: false,
+        connectionsOnly: true,
+        volunteering: true,
+      }),
+    );
+    window.history.replaceState({}, '', url);
+    renderSearchPage();
+
+    const connections = screen.getByRole('checkbox', {
+      name: 'My connections only',
+    });
+    expect(connections).toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['host'],
+      communityNotes: false,
+      volunteering: true,
+    });
+
+    act(() => {
+      window.history.replaceState({}, '', '/search');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(connections).not.toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['meet'],
+      communityNotes: true,
+    });
+  });
+
+  it('writes selected places to the URL and clears the place query on request', async () => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ connectionsOnly: true }),
+    );
+    renderSearchPage();
+    const title = 'Exampleville, Example County';
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: title },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
+
+    fireEvent.change(screen.getByLabelText('Search places'), {
+      target: { value: 'Exampleville' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: title }));
+    expect(new URL(window.location.href).searchParams.get('location')).toBe(
+      title,
+    );
+    expect(
+      JSON.parse(new URL(window.location.href).searchParams.get('filters')!),
+    ).toMatchObject({ connectionsOnly: true });
+    expect(searchMapProps.location).toEqual({ lat: 12, lng: 34, zoom: 10 });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Clear location search' }),
+    );
+    expect(new URL(window.location.href).searchParams.has('location')).toBe(
+      false,
+    );
   });
 
   it('keeps the map position when previewing an offer without recentering', async () => {
