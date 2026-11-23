@@ -1,5 +1,5 @@
 import { createPrivateKey, sign } from 'node:crypto';
-import { connect } from 'node:http2';
+import http2 from 'node:http2';
 import config from '../../../../config/config.mts';
 import unifiedPush from '../../../users/server/services/unified-push.server.service.mts';
 import { webPush } from '../../../users/server/services/web-push.server.transport.mts';
@@ -66,7 +66,7 @@ function sendApns(
 ): Promise<void> {
   const token = providerToken(configuration);
   return new Promise((resolve, reject) => {
-    const session = connect(configuration.host);
+    const session = http2.connect(configuration.host);
     session.on('error', reject);
     session.setTimeout(5000, () =>
       session.destroy(new Error('APNs connection timed out.')),
