@@ -7,6 +7,7 @@ import {
   getOffers,
   getOffer,
   queryOffers,
+  queryPlaceHosts,
   updateOffer,
 } from '@/modules/offers/client/api/offers.api';
 import type {
@@ -104,6 +105,19 @@ describe('offers api', () => {
     expect(mockedAxios.get).toHaveBeenCalledWith(
       '/api/offers?northEastLat=1&type=host',
     );
+  });
+
+  it('requests city host results with the abort signal', async () => {
+    const { signal } = new AbortController();
+    const page = { offers: [], nextOffset: 30 };
+    const params = { northEastLat: 42, sort: 'activity', offset: 0 };
+    mockedAxios.get.mockResolvedValueOnce({ data: page });
+
+    await expect(queryPlaceHosts(params, signal)).resolves.toBe(page);
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/offers', {
+      params: { ...params, view: 'place-hosts' },
+      signal,
+    });
   });
 
   it('queries offers with no arguments', async () => {

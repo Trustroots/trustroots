@@ -1,4 +1,5 @@
 import type { MockedFunction } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import {
   act,
@@ -285,7 +286,15 @@ function renderSearchPage(
     public: true,
   },
 ) {
-  return render(<SearchPage user={user} />, { wrapper: analytics.wrapper });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SearchPage user={user} />
+    </QueryClientProvider>,
+    { wrapper: analytics.wrapper },
+  );
 }
 
 function openResultsWithVisibleOfferIds(offerIds: string[]) {
@@ -555,6 +564,271 @@ describe('<SearchPage />', () => {
     expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledWith(
       'Helsinki Finland',
     );
+  });
+
+  it('queries city bounds, keeps filters and restores the list after opening an offer', async () => {
+    const feature = {
+      id: 'place.sample-harbour',
+      trTitle: 'Sample Harbour',
+      center: [22, 44],
+      bbox: [21, 43, 23, 45],
+    };
+    locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    offersApi.queryPlaceHosts.mockResolvedValue({
+      offers: [
+        {
+          ...mockOffer,
+          type: 'host',
+          age: 35,
+          activity: 'past-month',
+          experienceCount: 1,
+          location: [44, 22],
+        },
+      ],
+    });
+    renderSearchPage();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: 'Sample Harbour' },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Sample Harbour' }),
+    );
+    const list = await screen.findByRole('list', { name: 'City hosts' });
+    expect(list).toHaveTextContent('Age 35 · Near the city centre');
+    expect(list).toHaveTextContent('1 public Experience');
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        northEastLat: 45,
+        northEastLng: 23,
+        southWestLat: 43,
+        southWestLng: 21,
+        sort: 'name',
+      }),
+      expect.any(AbortSignal),
+    );
+
+    fireEvent.change(screen.getByLabelText('Sort hosts'), {
+      target: { value: 'activity' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Can host only' }));
+    await waitFor(() =>
+      expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+        expect.objectContaining({ sort: 'activity', canHost: true }),
+        expect.any(AbortSignal),
+      ),
+    );
+    const host = await screen.findByRole('button', {
+      name: /open hosting offer from Host Person/i,
+    });
+    fireEvent.click(host);
+    expect(
+      await screen.findByRole('link', { name: /Host Person/ }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    expect(
+      await screen.findByRole('list', { name: 'City hosts' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Sort hosts')).toHaveValue('activity');
+    expect(
+      screen.getByRole('checkbox', { name: 'Can host only' }),
+    ).toBeChecked();
+  });
+
+  it('handles unavailable city pages and offers while keeping the list usable', async () => {
+    const feature = {
+      id: 'place.sample-harbour',
+      trTitle: 'Sample Harbour',
+      center: [22, 44],
+    };
+    const host = {
+      ...mockOffer,
+      type: 'host' as const,
+      activity: 'past-six-months' as const,
+      experienceCount: 0,
+    };
+    locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    let rejectNextPage!: (error: Error) => void;
+    const nextPage = new Promise<never>((_resolve, reject) => {
+      rejectNextPage = reject;
+    });
+    offersApi.queryPlaceHosts
+      .mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce({ offers: [host], nextOffset: 30 })
+      .mockReturnValueOnce(nextPage)
+      .mockResolvedValueOnce({
+        offers: [
+          {
+            ...host,
+            _id: 'another-host',
+            user: { _id: 'member-2', username: 'another-host' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ offers: [] });
+    offersApi.getOffer.mockRejectedValueOnce(new Error('Offer unavailable'));
+    renderSearchPage();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: feature.trTitle },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: feature.trTitle }),
+    );
+    expect(screen.getByText('Loading hosts…')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    const list = await screen.findByRole('list', { name: 'City hosts' });
+    expect(list).toHaveTextContent('0 public Experiences');
+    expect(list).toHaveTextContent(/About \d+ km from the city centre/);
+    fireEvent.click(screen.getByRole('button', { name: 'Load more hosts' }));
+    expect(
+      await screen.findByRole('button', { name: 'Loading hosts…' }),
+    ).toBeDisabled();
+    await act(async () => rejectNextPage(new Error('Connection lost')));
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(
+      await within(list).findByRole('button', { name: /another-host/ }),
+    ).toBeInTheDocument();
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 30 }),
+      expect.any(AbortSignal),
+    );
+
+    fireEvent.click(
+      within(list).getByRole('button', {
+        name: /open hosting offer from Host Person/i,
+      }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This offer could not be opened',
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Results in this map area' }),
+    );
+    expect(
+      screen.queryByRole('list', { name: 'City hosts' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Hosts in Sample Harbour' }),
+    );
+    expect(
+      await screen.findByRole('list', { name: 'City hosts' }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Active in the past six months' }),
+    );
+    expect(
+      await screen.findByText(
+        'No hosts match these filters in Sample Harbour.',
+      ),
+    ).toBeInTheDocument();
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        filters: expect.stringContaining('"months":24'),
+      }),
+      expect.any(AbortSignal),
+    );
+  });
+
+  it.each([false, true])(
+    'ignores a city preview that settles after closing the mobile pane (fails: %s)',
+    async fails => {
+      window.innerWidth = 390;
+      const feature = {
+        id: 'place.sample-harbour',
+        trTitle: 'Sample Harbour',
+        center: [22, 44],
+      };
+      locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+      locationApi.locatePlace.mockReturnValue({
+        data: { lat: 44, lng: 22 },
+        type: 'center',
+      });
+      offersApi.queryPlaceHosts.mockResolvedValue({
+        offers: [
+          {
+            ...mockOffer,
+            type: 'host',
+            activity: 'past-month',
+            experienceCount: 2,
+          },
+        ],
+      });
+
+      let finish!: () => void;
+      offersApi.getOffer.mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () => {
+              if (fails) reject(new Error('Offer unavailable'));
+              else resolve(mockOffer);
+            };
+          }),
+      );
+      renderSearchPage();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Search places' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+        target: { value: feature.trTitle },
+      });
+      fireEvent.click(
+        await screen.findByRole('button', { name: feature.trTitle }),
+      );
+      fireEvent.click(
+        await screen.findByRole('button', {
+          name: /open hosting offer from Host Person/i,
+        }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Back to map' }));
+      await act(async () => finish());
+
+      fireEvent.click(screen.getByRole('button', { name: /^Hosts$/ }));
+      expect(
+        await screen.findByRole('list', { name: 'City hosts' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    },
+  );
+
+  it('keeps a deep-linked offer when the URL also specifies a city', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/search?location=Sample+Harbour&offer=${mockOffer._id}`,
+    );
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      {
+        id: 'place.sample-harbour',
+        trTitle: 'Sample Harbour',
+        center: [22, 44],
+      },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    offersApi.queryPlaceHosts.mockResolvedValue({ offers: [] });
+
+    renderSearchPage();
+    expect(
+      await screen.findByRole('link', { name: /Host Person/ }),
+    ).toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.get('offer')).toBe(
+      mockOffer._id,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Hosts in Sample Harbour' }),
+    ).toBeInTheDocument();
   });
 
   it('loads an offer from the route params and tracks preview analytics', async () => {

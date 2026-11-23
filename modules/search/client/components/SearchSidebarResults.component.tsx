@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
+import { latLng } from 'leaflet';
 import { useTranslation } from 'react-i18next';
 import { match, P } from 'ts-pattern';
 import { Badge } from '@trustroots/ui/Badge';
@@ -9,9 +10,12 @@ import { rememberOutreachSource } from '@trustroots/analytics/client';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
+import CityHostControls, { type CityResults } from './CityHostControls';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
 import type {
   MeetingStatus,
+  PlaceHostActivity,
+  PlaceHostResult,
   OfferStatus,
   OfferType,
 } from '@/modules/offers/shared/offer';
@@ -65,6 +69,7 @@ export interface CommunityNoteSummary {
 }
 
 interface SearchSidebarResultsProps {
+  cityResults?: CityResults;
   communityNote?: CommunityNoteSummary | null;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
@@ -130,7 +135,45 @@ export function OfferDescription({
   );
 }
 
+const activityLabels: Record<PlaceHostActivity, string> = {
+  'past-month': 'Active in the past month',
+  'past-six-months': 'Active in the past six months',
+  'past-two-years': 'Active in the past two years',
+  older: 'No recent activity',
+};
+
+function CityHostDetails({
+  host,
+  city,
+}: {
+  host: PlaceHostResult;
+  city: CityResults['city'];
+}) {
+  const { age } = host;
+  const kilometres = Math.round(
+    latLng(city.centre.lat, city.centre.lng).distanceTo(
+      latLng(...host.location),
+    ) / 1000,
+  );
+  return (
+    <span className="tw:mt-2 tw:grid tw:gap-0.5 tw:text-sm">
+      <span>
+        {age ? `Age ${age} · ` : ''}
+        {kilometres === 0
+          ? 'Near the city centre'
+          : `About ${kilometres} km from the city centre`}
+      </span>
+      <span>{activityLabels[host.activity]}</span>
+      <span>
+        {host.experienceCount} public{' '}
+        {host.experienceCount === 1 ? 'Experience' : 'Experiences'}
+      </span>
+    </span>
+  );
+}
+
 export default function SearchSidebarResults({
+  cityResults,
   communityNote,
   isLoadingOffer,
   offer,
@@ -152,6 +195,12 @@ export default function SearchSidebarResults({
   const selectedAvailability = offer && getAvailability(offer, translateStatus);
   const selectedResultId = useRef<string | undefined>(undefined);
   const showList = !offer && !isLoadingOffer && !communityNote;
+  const cityList = cityResults?.active ? cityResults : undefined;
+  const cityQuery = cityList?.query;
+  const cityOffers = cityQuery?.data?.pages.flatMap(page => page.offers) ?? [];
+  const listedOffers = cityList
+    ? Array.from(new Map(cityOffers.map(host => [host._id, host])).values())
+    : offers;
 
   const renderResultButton = (
     resultId: string,
@@ -181,10 +230,18 @@ export default function SearchSidebarResults({
   return (
     <section
       aria-label="Search results"
-      aria-busy={Boolean(isLoadingOffers || isLoadingOffer)}
+      aria-busy={Boolean(
+        (cityQuery ? cityQuery.isFetching : isLoadingOffers) || isLoadingOffer,
+      )}
       className="search-sidebar-results"
     >
-      {showList && (
+      {showList && cityResults && <CityHostControls {...cityResults} />}
+      {showList && cityResults?.offerError && (
+        <p role="alert">
+          This offer could not be opened. Try again or choose another host.
+        </p>
+      )}
+      {showList && !cityList && (
         <p role="status" className="sr-only">
           Offers in this map area: {offers.length}. Community note threads:{' '}
           {communityNoteThreads.length}.
@@ -199,9 +256,12 @@ export default function SearchSidebarResults({
         </div>
       )}
 
-      {showList && offers.length > 0 && (
-        <ul aria-label="Visible search results" className="search-result-list">
-          {offers.map(item => {
+      {showList && listedOffers.length > 0 && (
+        <ul
+          aria-label={cityList ? 'City hosts' : 'Visible search results'}
+          className="search-result-list"
+        >
+          {listedOffers.map(item => {
             const { hosting, meetingLabel, showHosting } = getAvailability(
               item,
               translateStatus,
@@ -222,7 +282,10 @@ export default function SearchSidebarResults({
             return renderResultButton(
               item._id!,
               resultName,
-              () => onOfferSelect(item),
+              () =>
+                cityList
+                  ? cityList.onSelectHost(item._id!)
+                  : onOfferSelect(item),
               <span>
                 <MemberIdentity size={32} user={item.user} />
                 <span className="tw:flex tw:flex-wrap tw:items-center tw:gap-1">
@@ -244,6 +307,9 @@ export default function SearchSidebarResults({
                     </Badge>
                   )}
                 </span>
+                {cityList && 'activity' in item && (
+                  <CityHostDetails host={item} city={cityList.city} />
+                )}
               </span>,
               true,
             );
@@ -251,7 +317,38 @@ export default function SearchSidebarResults({
         </ul>
       )}
 
-      {showList && communityNoteThreads.length > 0 && (
+      {showList && cityQuery?.isPending && <p role="status">Loading hosts…</p>}
+      {showList && cityQuery?.isSuccess && listedOffers.length === 0 && (
+        <p role="status">
+          No hosts match these filters in {cityList?.city.name}.
+        </p>
+      )}
+      {showList && cityQuery?.isError && (
+        <p role="alert">
+          Hosts could not be loaded.{' '}
+          <Button
+            type="button"
+            onClick={() => {
+              if (cityQuery.isFetchNextPageError)
+                void cityQuery.fetchNextPage();
+              else void cityQuery.refetch();
+            }}
+          >
+            Try again
+          </Button>
+        </p>
+      )}
+      {showList && cityQuery?.hasNextPage && !cityQuery.isError && (
+        <Button
+          type="button"
+          disabled={cityQuery.isFetching}
+          onClick={() => void cityQuery.fetchNextPage()}
+        >
+          {cityQuery.isFetchingNextPage ? 'Loading hosts…' : 'Load more hosts'}
+        </Button>
+      )}
+
+      {showList && !cityList && communityNoteThreads.length > 0 && (
         <ul
           aria-label="Visible community note results"
           className="search-result-list"
@@ -278,21 +375,24 @@ export default function SearchSidebarResults({
         </ul>
       )}
 
-      {showList && offers.length === 0 && communityNoteThreads.length === 0 && (
-        <section
-          aria-label="Search results: no results are visible in this map area."
-          aria-live="polite"
-          className="content-empty text-muted text-center"
-        >
-          <br />
-          <br />
-          <em>
-            {isLoadingOffers
-              ? 'Loading visible offers…'
-              : 'No results are visible in this map area.'}
-          </em>
-        </section>
-      )}
+      {showList &&
+        !cityList &&
+        offers.length === 0 &&
+        communityNoteThreads.length === 0 && (
+          <section
+            aria-label="Search results: no results are visible in this map area."
+            aria-live="polite"
+            className="content-empty text-muted text-center"
+          >
+            <br />
+            <br />
+            <em>
+              {isLoadingOffers
+                ? 'Loading visible offers…'
+                : 'No results are visible in this map area.'}
+            </em>
+          </section>
+        )}
 
       {!offer && isLoadingOffer && (
         <div

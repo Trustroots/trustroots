@@ -8,6 +8,12 @@ export interface MapBounds {
   southWest: MapPoint;
 }
 
+export interface CitySearch {
+  name: string;
+  bounds: MapBounds;
+  centre: MapPoint;
+}
+
 export interface Geolocation {
   bbox?: Array<string | number>;
   center?: Array<string | number>;
@@ -88,6 +94,32 @@ export function getCenter(geolocation?: Geolocation | null): MapPoint | false {
     lng: Number(coords[0]),
     lat: Number(coords[1]),
   };
+}
+
+export function getCitySearch(
+  feature: Geolocation & { id: string; trTitle?: string },
+): CitySearch | undefined {
+  if (!feature.id.startsWith('place.') || !feature.trTitle) return undefined;
+
+  const centre = getCenter(feature);
+  if (!centre || !Number.isFinite(centre.lat) || !Number.isFinite(centre.lng)) {
+    return undefined;
+  }
+
+  // The geocoder can return a centre without an extent. Use an area of
+  // roughly 22 km across in that case, regardless of the map zoom.
+  const longitudeMargin =
+    0.1 / Math.max(0.1, Math.cos((centre.lat * Math.PI) / 180));
+  const bounds =
+    (feature.bbox && getBounds(feature)) ||
+    getBoundsObject(
+      Math.min(90, centre.lat + 0.1),
+      Math.min(180, centre.lng + longitudeMargin),
+      Math.max(-90, centre.lat - 0.1),
+      Math.max(-180, centre.lng - longitudeMargin),
+    );
+
+  return { name: feature.trTitle, bounds, centre };
 }
 
 export function shortTitle(geolocation: Geolocation): string {

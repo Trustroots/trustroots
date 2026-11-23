@@ -279,6 +279,160 @@ describe('Offer search tests', function () {
     await otherBrowser.get(webPath).expect(200);
   });
 
+  it('lists eligible hosts with coarse activity and only visible public Experiences', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    await User.updateOne(
+      { _id: user2Id },
+      {
+        $set: {
+          displayName: 'Aster Host',
+          seen: moment().subtract(2, 'months').toDate(),
+          birthdate: moment()
+            .subtract(30, 'years')
+            .subtract(1, 'month')
+            .toDate(),
+        },
+      },
+    );
+    await User.updateOne(
+      { _id: user3Id },
+      { $set: { displayName: 'Briar Host' } },
+    );
+    await Offer.updateOne({ _id: offer3Id }, { $set: { status: 'maybe' } });
+    await offerMeet.save();
+
+    await mongoose.connection.collection('experiences').insertMany([
+      { userFrom: user1._id, userTo: user3Id, public: true },
+      {
+        userFrom: user2Id,
+        userTo: user3Id,
+        public: true,
+        removedAt: new Date(),
+      },
+      { userFrom: user3Id, userTo: user2Id, public: false },
+      {
+        userFrom: new mongoose.Types.ObjectId(),
+        userTo: user2Id,
+        public: true,
+      },
+    ]);
+
+    const cityUrl =
+      '/api/offers' +
+      testLocations.Europe.queryBoundingBox +
+      '&view=place-hosts';
+    const { body: byName } = await requestResult(
+      agent.get(cityUrl).expect(200),
+    );
+    byName.offers
+      .map((offer: { _id: string }) => offer._id)
+      .should.deepEqual([offer2Id.toString(), offer3Id.toString()]);
+    byName.offers[0].should.containEql({
+      activity: 'past-six-months',
+      experienceCount: 0,
+      age: 30,
+    });
+    byName.offers[0].user.should.not.have.property('birthdate');
+    byName.offers[0].user.should.not.have.property('seen');
+    byName.offers[0].location.should.deepEqual(offer2.locationFuzzy);
+    byName.offers[1].should.containEql({
+      activity: 'past-month',
+      experienceCount: 1,
+    });
+
+    for (const sort of ['experiences', 'activity']) {
+      const { body } = await requestResult(
+        agent.get(cityUrl + '&sort=' + sort).expect(200),
+      );
+      body.offers
+        .map((offer: { _id: string }) => offer._id)
+        .should.deepEqual([offer3Id.toString(), offer2Id.toString()]);
+    }
+    const { body: filtered } = await requestResult(
+      agent.get(cityUrl + '&canHost=true').expect(200),
+    );
+    filtered.offers
+      .map((offer: { _id: string }) => offer._id)
+      .should.deepEqual([offer2Id.toString()]);
+
+    await User.updateOne(
+      { _id: user2Id },
+      { $set: { seen: moment().subtract(1, 'year').toDate() } },
+    );
+    await User.updateOne(
+      { _id: user3Id },
+      { $set: { seen: moment().subtract(3, 'years').toDate() } },
+    );
+    const { body: older } = await requestResult(agent.get(cityUrl).expect(200));
+    older.offers
+      .map((offer: { activity: string }) => offer.activity)
+      .should.deepEqual(['past-two-years', 'older']);
+    const { body: withinTwoYears } = await requestResult(
+      agent
+        .get(cityUrl)
+        .query({ filters: JSON.stringify({ seen: { months: 24 } }) })
+        .expect(200),
+    );
+    withinTwoYears.offers
+      .map((offer: { _id: string }) => offer._id)
+      .should.deepEqual([offer2Id.toString()]);
+
+    await User.updateOne(
+      { _id: user3Id },
+      { $addToSet: { blocked: user1._id } },
+    );
+    const { body: blocked } = await requestResult(
+      agent.get(cityUrl).expect(200),
+    );
+    blocked.offers
+      .map((offer: { _id: string }) => offer._id)
+      .should.deepEqual([offer2Id.toString()]);
+
+    await User.updateOne(
+      { _id: user1._id },
+      { $addToSet: { blocked: user2Id } },
+    );
+    const { body: blockedByViewer } = await requestResult(
+      agent.get(cityUrl).expect(200),
+    );
+    blockedByViewer.offers.should.deepEqual([]);
+  });
+
+  it('paginates city hosts in stable order', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    await mongoose.connection.collection('offers').insertMany(
+      Array.from({ length: 30 }, () => ({
+        user: user2Id,
+        type: 'host',
+        status: 'yes',
+        showOnlyInMyCircles: false,
+        locationFuzzy: testLocations.Europe.location,
+      })),
+    );
+    const ids = (body: { offers: Array<{ _id: string }> }) =>
+      body.offers.map(offer => offer._id);
+    const cityUrl =
+      '/api/offers' +
+      testLocations.Europe.queryBoundingBox +
+      '&view=place-hosts';
+    const { body: page1 } = await requestResult(
+      agent.get(cityUrl + '&offset=invalid').expect(200),
+    );
+    ids(page1).should.have.length(30);
+    page1.nextOffset.should.equal(30);
+    const { body: page2 } = await requestResult(
+      agent.get(cityUrl + '&offset=' + page1.nextOffset).expect(200),
+    );
+    ids(page2).should.have.length(2);
+    ids(page2).should.containEql(offer3Id.toString());
+    new Set([...ids(page1), ...ids(page2)]).size.should.equal(32);
+    page2.should.not.have.property('nextOffset');
+  });
+
   it('saves volunteering on hosting offers and preserves it when updates omit it', async function () {
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),

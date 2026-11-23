@@ -5,7 +5,12 @@ import { useAnalytics } from '@trustroots/analytics/client';
 import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
-import type { MapBounds, MapPoint } from '../utils/location';
+import {
+  getCitySearch,
+  type CitySearch,
+  type MapBounds,
+  type MapPoint,
+} from '../utils/location';
 
 interface PlaceSuggestion {
   id: string;
@@ -20,6 +25,7 @@ interface SearchPlaceInputProps {
   onPlaceSearch: (
     data: MapBounds | MapPoint,
     type: 'bounds' | 'center',
+    city?: CitySearch,
   ) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -103,7 +109,9 @@ export default function SearchPlaceInput({
 
     if (located) {
       track('search_place_selected', { source });
-      onPlaceSearch(located.data, located.type);
+      const city = getCitySearch(feature);
+      if (city) onPlaceSearch(located.data, located.type, city);
+      else onPlaceSearch(located.data, located.type);
     }
 
     /* istanbul ignore next -- search suggestions always include display titles. */

@@ -138,13 +138,15 @@ export async function useMapRouteFixtures(
     geocoding = 'berlin.json',
   } = fixtures;
 
-  await context.route('**/api/offers?**', route =>
-    route.fulfill({
+  await context.route('**/api/offers?**', route => {
+    const view = new URL(route.request().url()).searchParams.get('view');
+    if (view === 'place-hosts') return route.fulfill({ json: { offers: [] } });
+    return route.fulfill({
       contentType: 'application/json',
       path: fixturePath('offers', offers),
       status: 200,
-    }),
-  );
+    });
+  });
 
   await context.route(/.*\/api\/offers\/[a-f0-9]{24}.*/, route =>
     route.fulfill({
