@@ -27,7 +27,7 @@ class AndroidNostranslationSessionTest {
         val keys = AndroidNostrKeys(context, account)
         val clientKey = ByteArray(32).apply { this[31] = 1 }
         val peer = NostrEventSigner.publicKey(clientKey)
-        val timestamp = 1_800_000_000L
+        var timestamp = 1_800_000_000L
         val job = Job()
         val scope = CoroutineScope(Dispatchers.Unconfined + job)
         val relay = RecordingRelay()
@@ -63,13 +63,17 @@ class AndroidNostranslationSessionTest {
                     .put(JSONArray().put("payload").put("a".repeat(64)))
                 val review = JSONObject().put("kind", 27235).put("content", "")
                     .put("tags", tags).put("created_at", timestamp)
-                val rpc = JSONObject().put("id", "fixture-review").put("method", "sign_event")
-                    .put("params", JSONArray().put(review.toString()))
-                val event = NostrEventSigner.sign(JSONObject().put("kind", 24133)
-                    .put("created_at", timestamp).put("tags", JSONArray().put(JSONArray().put("p").put(transport)))
-                    .put("content", NostrConnectEncryption.encrypt(rpc.toString(), secret)), clientKey)
-                val input = JSONArray().put("EVENT").put(subscription).put(event)
+                fun reviewFrame(id: String): JSONArray {
+                    review.put("created_at", timestamp)
+                    val rpc = JSONObject().put("id", id).put("method", "sign_event")
+                        .put("params", JSONArray().put(review.toString()))
+                    val event = NostrEventSigner.sign(JSONObject().put("kind", 24133)
+                        .put("created_at", timestamp).put("tags", JSONArray().put(JSONArray().put("p").put(transport)))
+                        .put("content", NostrConnectEncryption.encrypt(rpc.toString(), secret)), clientKey)
+                    return JSONArray().put("EVENT").put(subscription).put(event)
+                }
 
+                val input = reviewFrame("fixture-review")
                 relay.receive(input)
                 assertEquals(1, relay.frames.size)
                 restored.decide(restored.reviews.single(), approved = true)
@@ -84,12 +88,45 @@ class AndroidNostranslationSessionTest {
                 relay.receive(input)
                 assertTrue(restored.reviews.isEmpty())
                 assertEquals(2, relay.frames.size)
+
+                relay.receive(reviewFrame("denied-review"))
+                val denied = restored.reviews.single()
+                restored.decide(denied, approved = false)
+                restored.decide(denied, approved = true)
+                assertTrue(restored.reviews.isEmpty())
+                assertEquals(3, relay.frames.size)
+                val denial = relay.frames.last().getJSONObject(1)
+                val deniedResult = JSONObject(NostrConnectEncryption.decrypt(denial.getString("content"), secret))
+                assertEquals("denied-review", deniedResult.getString("id"))
+                assertEquals("Authorisation denied.", deniedResult.getString("error"))
+
+                relay.receive(reviewFrame("expired-review"))
+                val expired = restored.reviews.single()
+                timestamp = expired.approval.expiresAt + 1
+                restored.decide(expired, approved = true)
+                assertTrue(restored.reviews.isEmpty())
+                assertEquals(4, relay.frames.size)
+                val expiry = relay.frames.last().getJSONObject(1)
+                val expiredResult = JSONObject(NostrConnectEncryption.decrypt(expiry.getString("content"), secret))
+                assertEquals("expired-review", expiredResult.getString("id"))
+                assertEquals("Authorisation expired. Retry in Nostranslation.", expiredResult.getString("error"))
+
                 restored.revoke(peer)
                 assertTrue(restored.connectedClients.isEmpty())
                 assertEquals(0, keys.loadPairings(keys.revision()).length())
                 assertTrue(relay.cancelled)
                 relay.receive(input)
-                assertEquals(2, relay.frames.size)
+                assertEquals(4, relay.frames.size)
+
+                restored.pair(link)
+                relay.open()
+                val retry = relay.frames[1].getJSONObject(1)
+                relay.receive(JSONArray().put("OK").put("different-request").put(true))
+                assertTrue(restored.connectedClients.isEmpty())
+                relay.receive(JSONArray().put("OK").put(retry.getString("id")).put(false))
+                assertTrue(restored.relayFailed)
+                assertTrue(relay.cancelled)
+                assertEquals(0, keys.loadPairings(keys.revision()).length())
             }
         } finally {
             job.cancel()
