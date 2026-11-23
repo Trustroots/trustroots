@@ -17,10 +17,10 @@
     "oxc-transform": "0.159.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "react-email": "6.11.14"
+    "react-email": "6.11.16"
   },
   "devDependencies": {
-    "@react-email/ui": "6.11.14",
+    "@react-email/ui": "6.11.16",
     "@storybook/react-vite": "10.6.7",
     "storybook": "10.6.7"
   }
