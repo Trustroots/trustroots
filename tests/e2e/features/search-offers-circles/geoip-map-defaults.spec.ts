@@ -1,10 +1,8 @@
 import { test, expect, annotateFeature } from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
-import { prepareRasterSearchMap } from '../../support/maps.mts';
 
 test.describe('approximate initial map locations', () => {
-  test.beforeEach(async ({ page, context, request }) => {
-    await prepareRasterSearchMap(page, context);
+  test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
     await page.route('**/api/map-default-location', route =>
       route.fulfill({
@@ -49,12 +47,12 @@ test.describe('approximate initial map locations', () => {
         if (request.url().endsWith('/api/map-default-location')) lookups++;
       });
       await page.goto('/search');
-      const map = page.getByTestId('leaflet-search-map');
+      const map = page.locator('.search-map');
       const [latitude, longitude, zoom] =
         state === 'recent' ? [12, 23, 7] : [34, -17, 6];
-      // A resize can report Leaflet's pixel-rounded centre. Allow one pixel
-      // of movement at the expected zoom while checking which location won.
-      const onePixelInDegrees = 360 / (256 * 2 ** zoom);
+      // A resize can move the centre slightly. Allow one pixel of movement at
+      // the expected zoom while checking which location won.
+      const onePixelInDegrees = 360 / (512 * 2 ** zoom);
       await expect
         .poll(async () => {
           const [mapLatitude, mapLongitude] = await Promise.all([
@@ -102,7 +100,7 @@ test.describe('approximate initial map locations', () => {
       route.fulfill({ status: 503, json: {} }),
     );
     await page.goto('/search');
-    const map = page.getByTestId('leaflet-search-map');
+    const map = page.locator('.search-map');
     await expect(map).toHaveAttribute('data-map-zoom', '6');
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(map).toHaveAttribute('data-map-zoom', '7');
@@ -133,7 +131,7 @@ test.describe('approximate initial map locations', () => {
     });
     await page.goto('/search');
     await requested;
-    const map = page.getByTestId('leaflet-search-map');
+    const map = page.locator('.search-map');
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(map).toHaveAttribute('data-map-zoom', '7');
     const chosenLatitude = await map.getAttribute('data-map-latitude');
@@ -202,7 +200,7 @@ test.describe('approximate initial map locations', () => {
     await expect(locate).toBeVisible();
     await locate.click();
 
-    const map = page.getByTestId('leaflet-search-map');
+    const map = page.locator('.search-map');
     await expect(map).toHaveAttribute('data-map-latitude', '-23.55');
     await expect(map).toHaveAttribute('data-map-longitude', '-46.63');
     await expect(map).toHaveAttribute('data-map-zoom', '13');
@@ -248,7 +246,7 @@ test.describe('approximate initial map locations', () => {
       );
     });
     await page.goto('/search');
-    const map = page.getByTestId('leaflet-search-map');
+    const map = page.locator('.search-map');
     await expect(map).toHaveAttribute('data-map-latitude', '12');
     const locate = page.getByRole('button', {
       name: 'Use my location',
@@ -299,7 +297,7 @@ test.describe('approximate initial map locations', () => {
       .getByPlaceholder('Write here...')
       .fill('A fictional park meeting.');
     await page.getByRole('button', { name: 'Next section' }).click();
-    await expect(page.getByTestId('leaflet-map')).toHaveAttribute(
+    await expect(page.locator('.offer-map [data-map-zoom]')).toHaveAttribute(
       'data-map-latitude',
       '34',
     );
@@ -311,10 +309,10 @@ test.describe('approximate initial map locations', () => {
     await page
       .getByRole('button', { name: 'Use my location', exact: true })
       .click();
-    const map = page.getByTestId('leaflet-map');
+    const map = page.locator('.offer-map [data-map-zoom]');
     await expect(map).toHaveAttribute('data-map-latitude', '-12');
     await expect(map).toHaveAttribute('data-map-zoom', '5');
-    await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
+    await expect(map.locator('.maplibregl-marker')).toHaveCount(0);
     const save = page.getByRole('button', { name: 'Finish editing and save' });
     await expect(save).toBeDisabled();
     const feedback = page
@@ -335,9 +333,9 @@ test.describe('approximate initial map locations', () => {
       .getByPlaceholder('Write here...')
       .fill('A fictional park meeting.');
     await page.getByRole('button', { name: 'Next section' }).click();
-    const map = page.getByTestId('leaflet-map');
+    const map = page.locator('.offer-map [data-map-zoom]');
     await expect(map).toHaveAttribute('data-map-latitude', '34');
-    await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
+    await expect(map.locator('.maplibregl-marker')).toHaveCount(0);
     const save = page.getByRole('button', { name: 'Finish editing and save' });
     await expect(save).toBeDisabled();
     await map.getByRole('button', { name: 'Zoom in' }).click();
@@ -354,9 +352,9 @@ test.describe('approximate initial map locations', () => {
       route.fulfill({ json: [] }),
     );
     await page.goto('/offer/host#location');
-    const map = page.getByTestId('leaflet-map');
+    const map = page.locator('.offer-map [data-map-zoom]');
     await expect(map).toHaveAttribute('data-map-latitude', '34');
-    await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
+    await expect(map.locator('.maplibregl-marker')).toHaveCount(0);
     const guide = page.getByRole('note').filter({
       hasText: 'Set your hosting location on the map.',
     });
@@ -382,15 +380,9 @@ test.describe('approximate initial map locations', () => {
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(guide).toHaveCount(0);
     await expect(save).toBeDisabled();
-    const zoomedTile = map
-      .locator('img[src*="tile.openstreetmap.org/7/"]')
-      .first();
-    await expect(zoomedTile).toBeVisible();
+    await expect(map).toHaveAttribute('data-map-zoom', '7');
     await map.click({ position: { x: 100, y: 100 } });
     await expect(save).toBeEnabled();
-    await expect(zoomedTile).toBeVisible();
-    await expect(
-      map.locator('img[src*="tile.openstreetmap.org/13/"]'),
-    ).toHaveCount(0);
+    await expect(map).toHaveAttribute('data-map-zoom', '7');
   });
 });

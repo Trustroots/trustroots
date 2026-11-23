@@ -324,15 +324,6 @@ function initHelmetHeaders(app: Express) {
           // Official radio artwork used for links to broadcaster websites.
           'https://somafm.com/img/',
           'https://radioparadise.com/apple-touch-icon.png',
-          'https://*.tiles.mapbox.com',
-          // Map tiles
-          'https://api.mapbox.com',
-          // Map tiles/Geocoding
-          'https://events.mapbox.com',
-          '*.tile.openstreetmap.org',
-          // Map tiles
-          '*.earthdata.nasa.gov',
-          // Map tiles
           '*.twitter.com',
           '*.gstatic.com',
           '*.googleusercontent.com',
@@ -346,18 +337,16 @@ function initHelmetHeaders(app: Express) {
           'i2.wp.com',
           // Gravatar (WordPress.com)
           'data:',
-          // Inline images (`<img src="data:...">`) + mapbox-gl
-          'blob:', // mapbox-gl https://docs.mapbox.com/mapbox-gl-js/overview/#csp-directives
+          // Inline images (`<img src="data:...">`) + maplibre-gl
+          'blob:', // maplibre-gl workers and images
         ],
         // Limits the origins that you can connect to
         // (via XHR, WebSockets, and EventSource).
         // If not allowed the browser emulates a 400 HTTP status code.
         connectSrc: [
           "'self'",
-          'https://api.mapbox.com',
-          'https://events.mapbox.com',
-          'https://fonts.openmaptiles.org',
-          'https://tile.openstreetmap.org',
+          'https://api.mapbox.com', // Geocoding
+          'https://tiles.openfreemap.org', // Map style, tiles and fonts
           ...FEATURED_NOTE_RELAYS,
           'wss://relay.maps.hitchwiki.org',
           'wss:', // Member-selected NIP-46 signer relays.

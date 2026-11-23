@@ -4,7 +4,6 @@ import React from 'react';
 // Internal dependencies
 import Map from '@/modules/core/client/components/Map/index';
 import OfferLocationOverlay from './OfferLocationOverlay';
-import { getOfferHexColor } from '../utils/markers';
 
 interface OfferLocationProps {
   location?: number[];
@@ -29,12 +28,7 @@ export default function OfferLocation({
     <Map
       aria-hidden
       className="offer-location"
-      fallbackMarker={{
-        color: getOfferHexColor({ offerType, offerStatus }),
-        location: coordinates,
-      }}
       height={height}
-      preferRaster
       location={coordinates}
       scrollZoom={false}
       width="100%"

@@ -65,9 +65,7 @@ describe('<OfferLocation />', () => {
     expect(mockMap).toHaveBeenCalledWith(
       expect.objectContaining({
         height: 320,
-        preferRaster: true,
         scrollZoom: false,
-        fallbackMarker: expect.objectContaining({ location: [50.12, 19.89] }),
       }),
     );
     expect(mockOfferLocationOverlay).toHaveBeenCalledWith(

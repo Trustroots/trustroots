@@ -71,8 +71,6 @@ type MockMapProps = {
   height: number | string;
   location: [number, number];
   zoom: number;
-  preferRaster: boolean;
-  fallbackMarker?: { location: [number, number] };
   onLocationChange: (location: [number, number]) => void;
 };
 
@@ -127,8 +125,6 @@ vi.mock('@/modules/core/client/components/Map/index', () => {
     height,
     location,
     zoom,
-    preferRaster,
-    fallbackMarker,
     onLocationChange,
   }: MockMapProps) {
     mockMapLocation(location);
@@ -136,7 +132,6 @@ vi.mock('@/modules/core/client/components/Map/index', () => {
       <div
         data-testid="offer-map"
         data-height={height}
-        data-renderer={preferRaster ? 'raster' : 'webgl'}
         data-location={location.join(',')}
         data-zoom={zoom}
       >
@@ -170,9 +165,6 @@ vi.mock('@/modules/core/client/components/Map/index', () => {
         >
           Click initial centre
         </button>
-        {fallbackMarker && (
-          <span>Marker at {fallbackMarker.location.join(',')}</span>
-        )}
         {children}
       </div>
     );
@@ -200,7 +192,6 @@ describe('OfferLocationEditor', () => {
       '34,-17',
     );
     expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '5');
-    expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
     expect(onLocationChange).not.toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Data credits' })).toHaveAttribute(
       'href',
@@ -304,14 +295,9 @@ describe('OfferLocationEditor', () => {
 
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();
     expect(screen.getByTestId('offer-map')).toHaveAttribute(
-      'data-renderer',
-      'raster',
-    );
-    expect(screen.getByTestId('offer-map')).toHaveAttribute(
       'data-height',
       '100%',
     );
-    expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
     expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
   });
 

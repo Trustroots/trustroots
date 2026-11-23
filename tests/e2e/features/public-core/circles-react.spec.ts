@@ -459,13 +459,13 @@ test('Hackers circle foregrounds the public place map and verification limits', 
     'text-shadow',
     'none',
   );
-  const marker = map.locator('.leaflet-interactive');
-  await expect(marker).toHaveAttribute('fill', '#12b591');
+  const marker = map.getByRole('button', { name: 'Example Workshop' });
+  await expect(marker).toHaveCSS('background-color', 'rgb(18, 181, 145)');
   await marker.click();
-  await expect(page.locator('.leaflet-popup-content strong')).toHaveText(
+  await expect(map.locator('.maplibregl-popup-content strong')).toHaveText(
     'Example Workshop',
   );
-  await expect(map.locator('.leaflet-popup')).toHaveCSS('opacity', '1');
+  await expect(map.locator('.maplibregl-popup')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('hackerspace-map.png'),
     fullPage: true,
@@ -869,16 +869,6 @@ test('Hackers circle puts community resources beside members on desktop and stac
     events,
     relayUrl: 'wss://relay.nomadwiki.org',
   });
-  // Clearly labelled synthetic tiles keep visual layout checks independent of
-  // remote map servers. These are test graphics, not geographical evidence.
-  await page.route(
-    /^https:\/\/(?:[abc]\.tile\.openstreetmap\.org\/|api\.mapbox\.com\/styles\/)/,
-    route =>
-      route.fulfill({
-        contentType: 'image/svg+xml',
-        body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#dce9e2"/><path d="M0 0H256V256H0Z M0 128H256 M128 0V256" fill="none" stroke="#becfc4"/><text x="128" y="120" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#6f8478">Map tile fixture</text></svg>',
-      }),
-  );
   await page.route('**/uploads-circle/hackers/**', route =>
     route.fulfill({
       path: 'public/uploads-circle/hackers.jpg',
@@ -946,7 +936,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
     await expect(members.locator('.member-search-card')).toHaveCount(2);
     await expect(members.getByText('Example Builder')).toBeVisible();
     await expect(members.getByText('Sample Tinkerer')).toBeVisible();
-    await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible();
+    await expect(page.locator('.maplibregl-canvas').first()).toBeVisible();
     await page.evaluate(async () => {
       const image = new window.Image();
       image.src = '/uploads-circle/hackers/1400x900.jpg';

@@ -26,8 +26,8 @@ import {
   withE2eDb,
 } from '../../support/db.mts';
 import {
-  prepareRasterSearchMap,
-  routeRasterMapTiles,
+  disableWebGL,
+  routeOfflineMapStyle,
   seedMapState,
 } from '../../support/maps.mts';
 import type { Dialog, Locator, Page, Request } from '@playwright/test';
@@ -77,13 +77,10 @@ async function mockDeviceLocation(
 }
 
 async function expectHostingMapSettled(map: Locator): Promise<void> {
-  await expect(map.locator('.leaflet-pan-anim')).toHaveCount(0);
   await expect
     .poll(async () => {
       const box = await map.boundingBox();
-      const marker = await map
-        .locator('.leaflet-overlay-pane path')
-        .boundingBox();
+      const marker = await map.locator('.maplibregl-marker svg').boundingBox();
       if (!box || !marker) return false;
       return (
         Math.abs(marker.x + marker.width / 2 - (box.x + box.width / 2)) < 2 &&
@@ -578,7 +575,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       .fill('A fictional meeting near the harbour.');
     await page.getByRole('button', { name: 'Next section' }).click();
 
-    const map = page.getByTestId('leaflet-map');
+    const map = page.locator('.offer-map .offer-location');
     await expect(map).toBeVisible();
     const locate = page.getByRole('button', {
       name: 'Use my location',
@@ -649,7 +646,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     ).toBeInViewport();
     await expect(page.getByRole('tab')).toHaveCount(0);
 
-    const map = page.getByTestId('leaflet-map');
+    const map = page.locator('.offer-map .offer-location');
     const locate = page.getByRole('button', {
       name: 'Use my location',
       exact: true,
@@ -715,7 +712,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(locate).toBeVisible();
     await expect(locate).toBeInViewport();
     await locate.click();
-    await expect(page.getByTestId('leaflet-map')).toHaveAttribute(
+    await expect(page.locator('.offer-map .offer-location')).toHaveAttribute(
       'data-map-latitude',
       '0',
     );
@@ -777,9 +774,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       .getByLabel('Search places', { exact: true })
       .fill('Example town');
     await page.getByRole('button', { name: 'Example town' }).click();
-    const map = page
-      .locator('.offer-map .mapboxgl-canvas, .offer-map .leaflet-container')
-      .first();
+    const map = page.locator('.offer-map .offer-location');
     await expect(map).toBeVisible();
     const box = await map.boundingBox();
     expectPresent(box);
@@ -821,29 +816,27 @@ test.describe.serial('search offers and circles feature coverage', () => {
     { name: 'desktop', width: 1280, height: 900 },
     { name: 'mobile', width: 390, height: 844 },
   ]) {
-    test(`hosting raster map stays aligned after resizing on ${viewport.name}`, async ({
+    test(`hosting map stays aligned after resizing on ${viewport.name}`, async ({
       page,
-      context,
     }, testInfo) => {
       annotateFeature(testInfo, 'profile.edit-locations', [
-        'Hosting map tiles load on the offer page.',
+        'Hosting map renders on the offer page.',
         'The location marker stays centred after resizing.',
       ]);
       await page.setViewportSize(viewport);
-      await prepareRasterSearchMap(page, context, { includeMapbox: true });
       await page.goto('/offer/host#location');
-      const map = page.locator('.offer-map .leaflet-container');
+      const map = page.locator('.offer-map .offer-location');
       const overlay = page.locator('.offer-location-overlay');
 
       async function expectAlignedMap() {
         await expect(map).toBeVisible();
-        await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+        await expect(map.locator('.maplibregl-canvas')).toBeVisible();
         await expect
           .poll(async () => {
             const mapBox = await map.boundingBox();
             const overlayBox = await overlay.boundingBox();
             const markerBox = await map
-              .locator('.leaflet-overlay-pane path')
+              .locator('.maplibregl-marker svg')
               .boundingBox();
             if (!mapBox || !overlayBox || !markerBox) return false;
             return (
@@ -873,40 +866,24 @@ test.describe.serial('search offers and circles feature coverage', () => {
     });
   }
 
-  test('hosting map uses raster tiles even when WebGL is available', async ({
+  test('hosting map shows a notice when WebGL is unavailable', async ({
     page,
-    context,
   }, testInfo) => {
-    annotateFeature(testInfo, 'profile.edit-locations', [
-      'Hosting location uses raster tiles without relying on WebGL rendering.',
-      'Hosting location can be chosen by dragging the raster map.',
+    annotateFeature(testInfo, 'offers.host', [
+      'A browser without WebGL2 sees a notice where the hosting map would be.',
     ]);
-    await context.route('https://tile.openstreetmap.org/**', route =>
-      route.abort('failed'),
-    );
-    await context.route('https://api.mapbox.com/styles/v1/**', route =>
-      route.abort('failed'),
-    );
-    await routeRasterMapTiles(context, { includeMapbox: true });
+    await disableWebGL(page, true);
     await page.goto('/offer/host#location');
-    expect(
-      await page.evaluate(() =>
-        Boolean(document.createElement('canvas').getContext('webgl')),
+    const offerMap = page.locator('.offer-map');
+    await expect(
+      offerMap.getByText(
+        'This browser cannot show the map because WebGL is not available.',
       ),
-    ).toBe(true);
-    const map = page.locator('.offer-map .leaflet-container');
-    await expect(map).toBeVisible();
-    await expect(page.locator('.offer-map .mapboxgl-canvas')).toHaveCount(0);
-    await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
-    const box = await map.boundingBox();
-    expectPresent(box);
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, {
-      steps: 10,
-    });
-    await page.mouse.up();
-    await expectHostingMapSettled(map);
+    ).toBeVisible();
+    await expect(offerMap.locator('.maplibregl-canvas')).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Use my location', exact: true }),
+    ).toBeVisible();
   });
 
   test('map search resolves bounding boxes, offers, and circle filters', async ({
@@ -969,7 +946,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
   test('hosts can offer volunteering and members can find them with a saved filter', async ({
     baseURL,
     browser,
-    context,
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'offers.host', [
@@ -989,7 +965,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         $set: { public: true, seen: new Date() },
       });
       const hostPage = await hostContext.newPage();
-      await routeRasterMapTiles(hostContext, { includeMapbox: true });
+      await routeOfflineMapStyle(hostContext);
       await signInViaApi(hostPage, hostContext.request, host);
       const created = await hostContext.request.post('/api/offers', {
         data: {
@@ -1035,7 +1011,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await hostPage.goto('/offer/host');
       await expect(volunteering).toBeChecked();
 
-      await prepareRasterSearchMap(page, context);
       await seedMapState(page);
       await page.goto('/search');
       const filter = page.getByRole('checkbox', {
@@ -1639,7 +1614,7 @@ test('connections search includes positive Experiences and respects negative one
   const context = await createIsolatedContext(browser, baseURL);
   try {
     const page = await context.newPage();
-    await prepareRasterSearchMap(page, context);
+    await routeOfflineMapStyle(context);
     await seedMapState(page);
     await signInViaApi(page, request, viewer);
     await page.goto('/search');

@@ -8,20 +8,11 @@ import {
 } from '@playwright/test';
 
 const fixturesDir = path.join(import.meta.dirname, '../fixtures/maps');
-const providerHosts = [
-  'api.mapbox.com',
-  'events.mapbox.com',
-  'fonts.openmaptiles.org',
-  'tile.openstreetmap.org',
-  'tiles.mapbox.com',
-  'gibs-a.earthdata.nasa.gov',
-  'gibs-b.earthdata.nasa.gov',
-  'gibs-c.earthdata.nasa.gov',
-];
+const providerHosts = ['api.mapbox.com'];
 
 type MapLocation = { latitude: number; longitude: number; zoom: number };
 
-type MapState = Partial<MapLocation> & { style?: unknown };
+type MapState = Partial<MapLocation>;
 
 type MapRouteFixtures = {
   offers?: string;
@@ -34,8 +25,6 @@ type HarOptions = {
   notFound?: 'abort' | 'fallback';
   url?: string;
 };
-
-type RasterTileOptions = { includeMapbox?: boolean };
 
 interface Routeable {
   route(
@@ -70,26 +59,33 @@ export async function seedMapState(
   page: Page,
   state: MapState = {},
 ): Promise<void> {
-  const {
-    latitude = 52.52,
-    longitude = 13.405,
-    zoom = 6,
-    style = readFixture('styles', 'offline-style.json'),
-  } = state;
+  const { latitude = 52.52, longitude = 13.405, zoom = 6 } = state;
 
   await page.addInitScript(
-    ({ mapStyle, mapLocation }) => {
-      window.localStorage.setItem('search-map-style', JSON.stringify(mapStyle));
+    mapLocation => {
       window.localStorage.setItem(
         'search-map-location',
         JSON.stringify({ ...mapLocation, version: 1, savedAt: Date.now() }),
       );
     },
-    {
-      mapStyle: style,
-      mapLocation: { latitude, longitude, zoom },
-    },
+    { latitude, longitude, zoom },
   );
+}
+
+/**
+ * Serve the OpenFreeMap style from an offline fixture, answer glyph requests
+ * with an empty font range and block its tiles.
+ */
+export async function routeOfflineMapStyle(router: Routeable): Promise<void> {
+  const style = readFixture('styles', 'offline-style.json');
+  await router.route('https://tiles.openfreemap.org/**', route => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname.startsWith('/styles/')) return route.fulfill({ json: style });
+    if (pathname.startsWith('/fonts/')) {
+      return route.fulfill({ contentType: 'application/x-protobuf', body: '' });
+    }
+    return route.abort();
+  });
 }
 
 export async function useMapProviderHar(
@@ -173,13 +169,8 @@ export async function useMapRouteFixtures(
 
 export async function waitForSearchMap(page: Page): Promise<void> {
   await expect(page.locator('.search-map')).toBeVisible();
-  await expect(page.locator('.mapboxgl-canvas')).toBeVisible();
+  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
 }
-
-const RASTER_TILE_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
-  'base64',
-);
 
 export async function disableWebGL(
   page: Page,
@@ -206,30 +197,6 @@ export async function disableWebGL(
       value: replacement,
     });
   }, webgl2Only);
-}
-
-export async function routeRasterMapTiles(
-  router: Routeable,
-  { includeMapbox = false }: RasterTileOptions = {},
-): Promise<void> {
-  const fulfill = (route: Route): Promise<void> =>
-    route.fulfill({ body: RASTER_TILE_PNG, contentType: 'image/png' });
-  await router.route('**://*.tile.openstreetmap.org/**', fulfill);
-  if (includeMapbox) {
-    await router.route(
-      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
-      fulfill,
-    );
-  }
-}
-
-export async function prepareRasterSearchMap(
-  page: Page,
-  router: Routeable,
-  { includeMapbox = false }: RasterTileOptions = {},
-): Promise<void> {
-  await disableWebGL(page);
-  await routeRasterMapTiles(router, { includeMapbox });
 }
 
 export async function stubNostrAuthorVisibility(

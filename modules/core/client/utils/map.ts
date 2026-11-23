@@ -1,84 +1,12 @@
 export const getMapBoxToken = () =>
   typeof window !== 'undefined' && window.settings?.mapbox?.publicKey;
 
-const MAPBOX_STREETS_TILE_URL =
-  'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const MAPBOX_ATTRIBUTION =
-  '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-
-/**
- * Return the raster tiles for Leaflet fallbacks. Mapbox Streets mirrors the
- * normal WebGL map when a public token is available; OSM remains available
- * for installations that do not configure Mapbox.
- */
-export const getRasterMapTiles = (mapboxToken = getMapBoxToken()) =>
-  mapboxToken
-    ? {
-        options: {
-          accessToken: mapboxToken,
-          attribution: MAPBOX_ATTRIBUTION,
-          maxZoom: 19,
-        },
-        url: MAPBOX_STREETS_TILE_URL,
-      }
-    : {
-        options: {
-          attribution: OSM_ATTRIBUTION,
-          maxZoom: 19,
-        },
-        url: OSM_TILE_URL,
-      };
-
-type RasterTileLayer<MapTarget> = {
-  addTo(map: MapTarget): unknown;
-  once(event: string, handler: () => void): unknown;
-  remove(): unknown;
-};
-
-export const addRasterMapTiles = <MapTarget>({
-  map,
-  mapboxToken = getMapBoxToken(),
-  tileLayer,
-}: {
-  map: MapTarget;
-  mapboxToken?: ReturnType<typeof getMapBoxToken>;
-  tileLayer: (
-    url: string,
-    options: ReturnType<typeof getRasterMapTiles>['options'],
-  ) => RasterTileLayer<MapTarget>;
-}) => {
-  const primaryTiles = getRasterMapTiles(mapboxToken);
-  const primaryLayer = tileLayer(primaryTiles.url, primaryTiles.options);
-  let fallbackStarted = false;
-
-  if (mapboxToken) {
-    primaryLayer.once('tileerror', () => {
-      if (fallbackStarted) {
-        return;
-      }
-      fallbackStarted = true;
-      primaryLayer.remove();
-      const fallbackTiles = getRasterMapTiles(false);
-      tileLayer(fallbackTiles.url, fallbackTiles.options).addTo(map);
-    });
-  }
-
-  primaryLayer.addTo(map);
-  return primaryLayer;
-};
-
-/**
- * Mapbox GL v3 needs WebGL2, so callers choose a raster renderer before
- * mounting it when the browser cannot create one.
- */
 const getBrowserDocument = () => {
   /* istanbul ignore next -- the server-side path has no DOM to exercise */
   return typeof document === 'undefined' ? null : document;
 };
 
+/** MapLibre GL needs WebGL2; callers show a notice instead of the map without it. */
 export const isWebGLSupported = (browserDocument = getBrowserDocument()) => {
   if (!browserDocument) {
     return false;

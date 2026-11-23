@@ -5,7 +5,7 @@ import MapScaleControl from '@/modules/core/client/components/Map/MapScaleContro
 
 const mockScaleControl = vi.fn();
 
-vi.mock('react-map-gl/mapbox', () => ({
+vi.mock('@vis.gl/react-maplibre', () => ({
   __esModule: true,
   ScaleControl: (props: unknown) => {
     mockScaleControl(props);
@@ -14,15 +14,12 @@ vi.mock('react-map-gl/mapbox', () => ({
 }));
 
 describe('<MapScaleControl />', () => {
-  it('renders the scale control inside the styled wrapper', () => {
+  it('renders a metric scale control', () => {
     render(<MapScaleControl />);
 
     const scaleControl = screen.getByTestId('scale-control');
 
     expect(scaleControl).toBeInTheDocument();
-    expect(
-      scaleControl.closest('.map-scale-control-container'),
-    ).toBeInTheDocument();
     expect(mockScaleControl).toHaveBeenCalledWith(
       expect.objectContaining({
         unit: 'metric',

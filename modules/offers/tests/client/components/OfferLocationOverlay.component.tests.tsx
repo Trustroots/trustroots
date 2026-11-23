@@ -11,7 +11,7 @@ const mockMap = {
 };
 let mockCurrentMap: typeof mockMap | undefined;
 const mockMarker = vi.fn();
-vi.mock('react-map-gl/mapbox', () => ({
+vi.mock('@vis.gl/react-maplibre', () => ({
   useMap: () => ({ current: mockCurrentMap }),
   Marker: (props: { children: React.ReactNode }) => {
     mockMarker(props);

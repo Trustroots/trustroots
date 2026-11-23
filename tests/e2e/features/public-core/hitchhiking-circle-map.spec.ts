@@ -66,32 +66,32 @@ test('circle map stays still without dragging and preserves its view as live pla
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 SpaceAPI-reported places',
   );
-  const pane = map.locator('.leaflet-map-pane');
-  const position = await pane.getAttribute('style');
-  const markerPosition = await map
-    .locator('.leaflet-interactive')
-    .getAttribute('d');
+  const marker = map.locator('.maplibregl-marker').first();
+  const position = await marker.getAttribute('style');
   const box = await map.boundingBox();
   expectPresent(box);
   await page.mouse.move(box.x + 100, box.y + 100);
   await page.mouse.move(box.x + 200, box.y + 150, { steps: 20 });
-  await expect(pane).toHaveAttribute('style', position!);
+  await expect(marker).toHaveAttribute('style', position!);
   expectPresent(publish);
   publish(events[1]);
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '2 SpaceAPI-reported places',
   );
-  await expect(map.locator('.leaflet-interactive')).toHaveCount(2);
-  await expect(pane).toHaveAttribute('style', position!);
-  await expect(map.locator('.leaflet-interactive').first()).toHaveAttribute(
-    'd',
-    markerPosition!,
-  );
+  await expect(map.locator('.maplibregl-marker')).toHaveCount(2);
+  await expect(marker).toHaveAttribute('style', position!);
   await page.mouse.down();
   await page.mouse.move(box.x + 280, box.y + 180, { steps: 10 });
   await page.mouse.up();
-  await expect(pane).not.toHaveAttribute('style', position!);
+  await expect(marker).not.toHaveAttribute('style', position!);
 });
+
+async function savedView(page: Page): Promise<number[] | null> {
+  const view = await page.evaluate(() =>
+    sessionStorage.getItem('circle-map-view'),
+  );
+  return view ? (JSON.parse(view) as number[]) : null;
+}
 
 async function prepareCircle(
   page: Page,
@@ -146,31 +146,16 @@ test('keeps a chosen map view between the two circles', async ({ page }) => {
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem('circle-map-view')))
     .not.toBeNull();
-  const view = await page.evaluate(() =>
-    sessionStorage.getItem('circle-map-view'),
-  );
-  await expect
-    .poll(() => page.locator('.circle-location-map .leaflet-tile').count())
-    .toBeGreaterThan(0);
-  const tiles = await page
-    .locator('.circle-location-map .leaflet-tile')
-    .evaluateAll(elements =>
-      elements.map(element => (element as HTMLImageElement).src).sort(),
-    );
+  const view = await savedView(page);
   await page.goto('/circles/hackers');
   await expect(page.locator('.circle-location-map')).toBeVisible();
-  await expect
-    .poll(() =>
-      page
-        .locator('.circle-location-map .leaflet-tile')
-        .evaluateAll(elements =>
-          elements.map(element => (element as HTMLImageElement).src).sort(),
-        ),
-    )
-    .toEqual(tiles);
-  expect(
-    await page.evaluate(() => sessionStorage.getItem('circle-map-view')),
-  ).toBe(view);
+  expect(await savedView(page)).toEqual(view);
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect.poll(() => savedView(page)).not.toEqual(view);
+  const [latitude, longitude, zoom] = (await savedView(page))!;
+  expect(latitude).toBeCloseTo(34, 3);
+  expect(longitude).toBeCloseTo(-17, 3);
+  expect(zoom).toBeCloseTo(view![2] + 1, 3);
 });
 
 test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
@@ -280,8 +265,8 @@ test('ride popups link named hitchhikers to Maps accounts and leave Anonymous un
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 ride origins in the past 7 days',
   );
-  await page.locator('.circle-location-map .leaflet-interactive').click();
-  const popup = page.locator('.leaflet-popup');
+  await page.locator('.circle-location-map .maplibregl-marker button').click();
+  const popup = page.locator('.maplibregl-popup');
   await expect(
     popup.getByRole('link', { name: 'ExampleHiker', exact: true }),
   ).toHaveAttribute('href', 'https://maps.hitchwiki.org/account/ExampleHiker');
@@ -368,39 +353,39 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
       },
     }),
   );
+  const zoom = async () => (await savedView(page))?.[2] ?? null;
   for (const circle of ['hitchhikers', 'hackers']) {
     await page.goto(`/circles/${circle}`);
     const map = page.locator('.circle-location-map');
-    const zoomOut = map.locator('.leaflet-control-zoom-out');
-    await map.hover();
-    if (circle === 'hackers') {
-      // The previous map's pinch zoom is restored on the next circle.
-      await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
-      await page.mouse.wheel(0, 10000);
-    }
-    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
-    await page.mouse.wheel(0, -240);
-    await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
-    await page.mouse.wheel(0, 10000);
-    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
-    const minimumZoom = await map.evaluate(element =>
-      Math.max(
-        3,
-        Math.ceil(
-          Math.log2(
-            Math.max(element.clientWidth, element.clientHeight, 1) / 256,
-          ),
+    await expect(map.locator('.maplibregl-canvas')).toBeVisible();
+    // maxBounds keeps the whole world height and width in view at most.
+    const minimumZoom = await map.evaluate(element => {
+      const mercatorY = (latitude: number) =>
+        Math.log(Math.tan(Math.PI / 4 + (latitude * Math.PI) / 360)) /
+        Math.PI /
+        2;
+      return Math.max(
+        1,
+        Math.log2(
+          Math.max(
+            element.clientWidth,
+            element.clientHeight / (mercatorY(85) - mercatorY(-85)),
+          ) / 512,
         ),
-      ),
-    );
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const view = sessionStorage.getItem('circle-map-view');
-          return view ? (JSON.parse(view) as number[])[2] : null;
-        }),
-      )
-      .toBe(minimumZoom);
+      );
+    });
+    await map.hover();
+    const zoomOutFully = () =>
+      expect
+        .poll(async () => {
+          await page.mouse.wheel(0, 1000);
+          return zoom();
+        })
+        .toBeCloseTo(minimumZoom, 2);
+    // A view is saved only after the camera moves, so zoom in first.
+    await page.mouse.wheel(0, -240);
+    await expect.poll(zoom).toBeGreaterThan(minimumZoom + 0.1);
+    await zoomOutFully();
     const box = await map.boundingBox();
     expectPresent(box);
     const x = box.x + box.width / 2;
@@ -413,23 +398,17 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
       type: 'touchStart',
       touchPoints: points(30),
     });
-    await touch.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: points(90),
-    });
+    for (const gap of [50, 70, 90]) {
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: points(gap),
+      });
+    }
     await touch.send('Input.dispatchTouchEvent', {
       type: 'touchEnd',
       touchPoints: [],
     });
-    await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const view = sessionStorage.getItem('circle-map-view');
-          return view ? (JSON.parse(view) as number[])[2] : null;
-        }),
-      )
-      .toBeGreaterThan(minimumZoom);
+    await expect.poll(zoom).toBeGreaterThan(minimumZoom + 0.1);
   }
 });
 
@@ -475,15 +454,15 @@ test('hackerspace popups keep links and close controls visible and omit closed s
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 SpaceAPI-reported places',
   );
-  await page.locator('.circle-location-map .leaflet-interactive').click();
-  const popup = page.locator('.leaflet-popup');
+  await page.locator('.circle-location-map .maplibregl-marker button').click();
+  const popup = page.locator('.maplibregl-popup');
   await expect(popup).toContainText('Example open workshop');
   const website = popup.getByRole('link', {
     name: 'https://workshop.example.test/',
   });
   await website.hover();
   await expect(website).not.toHaveCSS('color', 'rgb(255, 255, 255)');
-  const close = popup.locator('.leaflet-popup-close-button');
+  const close = popup.getByRole('button', { name: 'Close popup' });
   await close.hover();
   await expect(close).not.toHaveCSS('color', 'rgb(255, 255, 255)');
   const box = await close.boundingBox();

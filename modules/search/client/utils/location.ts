@@ -57,9 +57,9 @@ export function getBounds(geolocation?: Geolocation | null): MapBounds | false {
 
     return getBoundsObject(
       Number(center[1]) + borderFromCenter,
-      Number(center[0]) - borderFromCenter,
-      Number(center[1]) - borderFromCenter,
       Number(center[0]) + borderFromCenter,
+      Number(center[1]) - borderFromCenter,
+      Number(center[0]) - borderFromCenter,
     );
   }
 

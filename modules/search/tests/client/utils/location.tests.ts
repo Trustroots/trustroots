@@ -32,12 +32,10 @@ describe('location utils', () => {
       throw new Error('Expected bounds for valid centre coordinates');
     }
 
-    expect(bounds.northEast).toEqual({
-      lat: 48.802,
-      lng: 2.298,
-    });
-    expect(bounds.southWest.lat).toBeCloseTo(48.798);
-    expect(bounds.southWest.lng).toBeCloseTo(2.302);
+    expect(bounds.northEast.lat).toBeCloseTo(48.802, 6);
+    expect(bounds.northEast.lng).toBeCloseTo(2.302, 6);
+    expect(bounds.southWest.lat).toBeCloseTo(48.798, 6);
+    expect(bounds.southWest.lng).toBeCloseTo(2.298, 6);
   });
 
   it('returns false when bounds cannot be derived', () => {
