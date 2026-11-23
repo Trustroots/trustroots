@@ -5,7 +5,7 @@ import { useAnalytics } from '@trustroots/analytics/client';
 import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
-import type { MapBounds, MapPoint } from '../utils/location';
+import { getCenter, type MapBounds, type MapPoint } from '../utils/location';
 
 interface PlaceSuggestion {
   id: string;
@@ -20,6 +20,7 @@ interface SearchPlaceInputProps {
   onPlaceSearch: (
     data: MapBounds | MapPoint,
     type: 'bounds' | 'center',
+    cityName?: string,
   ) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -38,6 +39,7 @@ export default function SearchPlaceInput({
   );
   const [isOpen, setIsOpen] = useState(false);
   const skipSuggestionsRef = useRef(false);
+  const selectedQueryRef = useRef<string | null>(null);
   const suggestionRequestRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -77,7 +79,11 @@ export default function SearchPlaceInput({
     // A parent can clear the query after a map location request. Ignore any
     // suggestions that were already in flight for the previous query.
     suggestionRequestRef.current += 1;
-    loadSuggestions(searchQuery);
+    const wasSelected = searchQuery === selectedQueryRef.current;
+    selectedQueryRef.current = null;
+    if (!wasSelected) {
+      loadSuggestions(searchQuery);
+    }
   }, [loadSuggestions, searchQuery]);
 
   useEffect(() => {
@@ -103,11 +109,23 @@ export default function SearchPlaceInput({
 
     if (located) {
       track('search_place_selected', { source });
-      onPlaceSearch(located.data, located.type);
+      if (feature.id.startsWith('place.') && feature.trTitle) {
+        const centre = feature.bbox?.length === 4 ? false : getCenter(feature);
+        if (centre) {
+          onPlaceSearch(centre, 'center', feature.trTitle);
+        } else {
+          onPlaceSearch(located.data, located.type, feature.trTitle);
+        }
+      } else {
+        onPlaceSearch(located.data, located.type);
+      }
     }
 
     /* istanbul ignore next -- search suggestions always include display titles. */
-    setSearchQuery(feature.trTitle || '');
+    const title = feature.trTitle || '';
+    suggestionRequestRef.current += 1;
+    selectedQueryRef.current = title;
+    setSearchQuery(title);
     setSuggestions([]);
     setIsOpen(false);
     setLocationNotFound(false);

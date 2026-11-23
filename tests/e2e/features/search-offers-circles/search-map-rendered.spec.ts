@@ -472,6 +472,10 @@ test.describe('rendered search map feature coverage', () => {
           .getByRole('list', { name: 'Place suggestions' })
           .getByRole('button')
           .click();
+        await expect(
+          page.getByRole('heading', { name: 'Hosts near Berlin, Germany' }),
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Back to map' }).click();
         await expect
           .poll(() =>
             page.evaluate(
@@ -850,13 +854,13 @@ test.describe('rendered search map feature coverage', () => {
     );
   });
 
-  test('raster fallback stays visible after selecting a city', async ({
+  test('raster fallback is visible after returning from city results', async ({
     context,
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
       'Later camera commands recenter the raster map after a place search.',
-      'Selecting a place keeps the WebGL fallback map visible.',
+      'Returning from city results restores the WebGL fallback map.',
       'The raster renderer fits the selected city after mobile layout changes.',
     ]);
 
@@ -873,6 +877,10 @@ test.describe('rendered search map feature coverage', () => {
       .getByRole('button')
       .click();
 
+    await expect(
+      page.getByRole('heading', { name: 'Hosts near Berlin, Germany' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Back to map' }).click();
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
     await expect
@@ -1578,24 +1586,76 @@ test.describe('rendered search map feature coverage', () => {
       .toEqual({ latitude: 20, longitude: -60 });
   });
 
-  test('location search accepts a place with Enter', async ({
-    page,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'profile.edit-locations', [
-      'Geocoding/map interactions are stubbed deterministically.',
-    ]);
+  for (const { layout, width, height } of [
+    { layout: 'desktop', width: 1280, height: 800 },
+    { layout: 'mobile', width: 375, height: 667 },
+  ]) {
+    test(`place search opens city hosts on ${layout}`, async ({
+      page,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'search.map', [
+        'Choosing a city opens hosting results using the geocoded area.',
+      ]);
 
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/search');
-    await waitForSearchMap(page);
-    await page.getByRole('button', { name: 'Search places' }).click();
-    const searchInput = page.getByRole('textbox', { name: 'Search places' });
-    await searchInput.fill('Berlin');
-    await searchInput.press('Enter');
+      await page.setViewportSize({ width, height });
+      await page.goto('/search');
+      await waitForSearchMap(page);
+      if (layout === 'mobile') {
+        await page.getByRole('button', { name: 'Search places' }).click();
+      }
+      const searchInput = page.getByRole('textbox', { name: 'Search places' });
+      await searchInput.fill('Berlin');
+      const cityRequest = page.waitForRequest(request => {
+        const url = new URL(request.url());
+        return (
+          url.pathname === '/api/offers' &&
+          url.searchParams.get('northEastLat') === '52.6755' &&
+          url.searchParams.get('northEastLng') === '13.7611' &&
+          url.searchParams.get('southWestLat') === '52.3383' &&
+          url.searchParams.get('southWestLng') === '13.0884'
+        );
+      });
+      if (layout === 'mobile') {
+        await searchInput.press('Enter');
+        await expect(searchInput).toBeHidden();
+      } else {
+        await page
+          .getByRole('button', { name: 'Berlin, Germany', exact: true })
+          .click();
+      }
 
-    await expect(searchInput).toBeHidden();
-    await expect(page.locator('.search-map')).toBeVisible();
-  });
+      const params = new URL((await cityRequest).url()).searchParams;
+      expect(JSON.parse(params.get('filters')!)).toMatchObject({
+        types: ['host'],
+      });
+      const list = page.getByRole('list', {
+        name: 'Hosts near Berlin, Germany',
+      });
+      await expect(list.getByRole('listitem')).toHaveCount(1);
+      const host = list.getByRole('button', {
+        name: /open hosting offer from berlin host/i,
+      });
+      await host.click();
+      await expect(
+        page.locator('.search-result').getByText(/berlin host/i),
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'Back to results' }).click();
+      await expect(host).toBeVisible();
+
+      if (layout === 'mobile') {
+        await page.getByRole('button', { name: 'Back to map' }).click();
+        await expect(list).toBeHidden();
+        await expect(
+          page.getByRole('button', { name: 'Search places' }),
+        ).toBeVisible();
+      } else {
+        await searchInput.fill('Berlin');
+        await searchInput.press('Enter');
+        await expect(searchInput).toHaveValue('Berlin, Germany');
+        await expect(host).toBeVisible();
+      }
+    });
+  }
 
   test('location search uses deterministic geocoding fixture', async ({
     page,
