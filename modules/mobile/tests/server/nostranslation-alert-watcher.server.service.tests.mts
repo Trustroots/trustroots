@@ -36,7 +36,7 @@ class FixtureSocket extends EventTarget {
   }
 }
 
-function signedFrame() {
+function signedFrame(signingKey = author) {
   const event = finalizeEvent(
     {
       kind: 24133,
@@ -44,7 +44,7 @@ function signedFrame() {
       tags: [['p', recipient]],
       content: 'A'.repeat(132),
     },
-    author,
+    signingKey,
   );
   return { event, frame: JSON.stringify(['EVENT', subscription, event]) };
 }
@@ -155,18 +155,61 @@ describe('Nostranslation relay watcher', () => {
     ).toBe(1);
   });
 
-  it('removes an Android destination when its distributor reports it is gone', async () => {
-    await registerMember(2);
-    vi.mocked(webPush.sendNotification).mockRejectedValue(
-      Object.assign(new Error('Subscription not found.'), { statusCode: 404 }),
-    );
+  it('ignores non-text frames and bounds the relay work accepted in one burst', async () => {
+    const lookup = vi.spyOn(Registrations, 'findOne');
     watchNostranslationAlerts();
-    FixtureSocket.instances[0]!.message(signedFrame().frame);
-    await vi.waitFor(async () => {
-      expect(await Registrations.findById(recipient)).toBeNull();
-    });
-    expect(webPush.sendNotification).toHaveBeenCalledOnce();
+    const socket = FixtureSocket.instances[0]!;
+    const { frame } = signedFrame();
+    socket.message({ toString: () => frame });
+    expect(lookup).not.toHaveBeenCalled();
+
+    // Each unfinished dispatch holds a slot until its promise settles.
+    for (let index = 0; index < 32; index += 1) socket.message('invalid');
+    socket.message(frame);
+    expect(lookup).not.toHaveBeenCalled();
+    await new Promise<void>(resolve => setImmediate(resolve));
+
+    socket.message(frame);
+    expect(lookup).toHaveBeenCalledOnce();
+    expect(await Claims.countDocuments()).toBe(0);
   });
+
+  it('only claims notifications from the author attached to the destination', async () => {
+    await registerMember();
+    const delivery = vi.mocked(webPush.sendNotification).mockResolvedValue({
+      statusCode: 201,
+      body: '',
+      headers: {},
+    });
+    watchNostranslationAlerts();
+    const socket = FixtureSocket.instances[0]!;
+    const wrongAuthor = signedFrame(generateSecretKey());
+    const pairedAuthor = signedFrame();
+    socket.message(wrongAuthor.frame);
+    socket.message(pairedAuthor.frame);
+    await vi.waitFor(() => {
+      expect(delivery).toHaveBeenCalledOnce();
+    });
+    expect(await Claims.distinct('_id')).toEqual([
+      recipient + ':' + pairedAuthor.event.id,
+    ]);
+  });
+
+  it.each([404, 410])(
+    'removes an Android destination when its distributor returns %s',
+    async statusCode => {
+      await registerMember(2);
+      vi.mocked(webPush.sendNotification).mockRejectedValue(
+        Object.assign(new Error('Subscription not found.'), { statusCode }),
+      );
+      watchNostranslationAlerts();
+      FixtureSocket.instances[0]!.message(signedFrame().frame);
+      await vi.waitFor(async () => {
+        expect(await Registrations.findById(recipient)).toBeNull();
+      });
+      expect(webPush.sendNotification).toHaveBeenCalledOnce();
+    },
+  );
 
   it('skips a delivery if the mobile session is revoked after the claim', async () => {
     const session = await registerMember();
@@ -226,20 +269,24 @@ describe('Nostranslation relay watcher', () => {
     ).toBe(1);
   });
 
-  it('keeps a destination registered on a temporary delivery failure', async () => {
-    await registerMember();
-    vi.mocked(webPush.sendNotification).mockRejectedValue(
-      new Error('Service unavailable.'),
-    );
-    watchNostranslationAlerts();
-    const { frame, event } = signedFrame();
-    FixtureSocket.instances[0]!.message(frame);
-    await vi.waitFor(() => {
-      expect(webPush.sendNotification).toHaveBeenCalledOnce();
-    });
-    expect(await Registrations.findById(recipient)).not.toBeNull();
-    expect(
-      await Claims.countDocuments({ _id: recipient + ':' + event.id }),
-    ).toBe(1);
-  });
+  it.each([
+    new Error('Service unavailable.'),
+    Object.assign(new Error('Service unavailable.'), { statusCode: 503 }),
+  ])(
+    'keeps a destination registered on a temporary delivery failure (%s)',
+    async failure => {
+      await registerMember();
+      vi.mocked(webPush.sendNotification).mockRejectedValue(failure);
+      watchNostranslationAlerts();
+      const { frame, event } = signedFrame();
+      FixtureSocket.instances[0]!.message(frame);
+      await vi.waitFor(() => {
+        expect(webPush.sendNotification).toHaveBeenCalledOnce();
+      });
+      expect(await Registrations.findById(recipient)).not.toBeNull();
+      expect(
+        await Claims.countDocuments({ _id: recipient + ':' + event.id }),
+      ).toBe(1);
+    },
+  );
 });
