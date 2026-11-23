@@ -1,6 +1,9 @@
 import {
+  couchsurfingProfileLink,
   getNetworkName,
   hasConnectedAdditionalSocialAccounts,
+  hitchwikiMapsProfileLink,
+  hitchwikiProfileLink,
   warmshowersProfileLink,
   socialAccountLink,
 } from '@/modules/users/client/utils/networks';
@@ -15,6 +18,21 @@ describe('user network utilities', () => {
     );
     expect(warmshowersProfileLink('id?query#fragment')).toBe(
       'https://app.warmshowers.org/profiles/id%3Fquery%23fragment',
+    );
+  });
+
+  it('builds Couchsurfing and Hitchwiki profile links with trimmed, escaped handles', () => {
+    expect(couchsurfingProfileLink('  fictional-host  ')).toBe(
+      'https://www.couchsurfing.com/people/fictional-host',
+    );
+    expect(couchsurfingProfileLink('host/path?x#y')).toBe(
+      'https://www.couchsurfing.com/people/host%2Fpath%3Fx%23y',
+    );
+    expect(hitchwikiProfileLink(' Fictional User ')).toBe(
+      'https://hitchwiki.org/en/User:Fictional%20User',
+    );
+    expect(hitchwikiMapsProfileLink(' map-user/id ')).toBe(
+      'https://maps.hitchwiki.org/account/map-user%2Fid',
     );
   });
 

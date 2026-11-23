@@ -6,6 +6,7 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import CouchsurfingProfileAction from './CouchsurfingProfileAction';
 import { nostrChallenge, removeSocialAccount, update } from '../api/users.api';
 import {
   hasBrowserNostrSigner,
@@ -17,7 +18,12 @@ import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
-import { warmshowersProfileLink } from '../utils/networks';
+import {
+  couchsurfingProfileLink,
+  hitchwikiMapsProfileLink,
+  hitchwikiProfileLink,
+  warmshowersProfileLink,
+} from '../utils/networks';
 
 declare global {
   interface Window {
@@ -142,6 +148,8 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
         extSitesCS: draftUser.extSitesCS,
         extSitesWS: draftUser.extSitesWS,
         extSitesServas: draftUser.extSitesServas,
+        extSitesHitchwikiMaps: draftUser.extSitesHitchwikiMaps,
+        extSitesHitchwiki: draftUser.extSitesHitchwiki,
       });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
@@ -226,6 +234,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   const legacyAccounts = LEGACY_SOCIAL_PROVIDERS.filter(
     provider => draftUser.additionalProvidersData?.[provider],
   );
+  const hasSavedCouchsurfingHandle = Boolean(user.extSitesCS?.trim());
 
   return (
     <ProfileEditPage user={user}>
@@ -403,14 +412,25 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       id: 'extSitesCS',
                       label: 'couchsurfing.com/people/',
                       field: 'extSitesCS',
-                      testUrl: (value: string) =>
-                        `https://www.couchsurfing.com/people/${value}`,
+                      testUrl: couchsurfingProfileLink,
                     },
                     {
                       id: 'extSitesServas',
                       label: 'servas.org/',
                       field: 'extSitesServas',
                       testUrl: (value: string) => `https://servas.org/${value}`,
+                    },
+                    {
+                      id: 'extSitesHitchwiki',
+                      label: 'hitchwiki.org/en/User:',
+                      field: 'extSitesHitchwiki',
+                      testUrl: hitchwikiProfileLink,
+                    },
+                    {
+                      id: 'extSitesHitchwikiMaps',
+                      label: 'maps.hitchwiki.org/account/',
+                      field: 'extSitesHitchwikiMaps',
+                      testUrl: hitchwikiMapsProfileLink,
                     },
                     {
                       id: 'extSitesWS',
@@ -426,7 +446,9 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       | 'extSitesBW'
                       | 'extSitesCS'
                       | 'extSitesWS'
-                      | 'extSitesServas';
+                      | 'extSitesServas'
+                      | 'extSitesHitchwiki'
+                      | 'extSitesHitchwikiMaps';
                     testUrl: (value: string) => string;
                   }>
                 ).map(field => {
@@ -468,12 +490,26 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                             </Button>
                           </span>
                         )}
+                        {field.field === 'extSitesCS' &&
+                          hasSavedCouchsurfingHandle &&
+                          fieldValue?.trim() && (
+                            <span className="input-group-btn">
+                              <CouchsurfingProfileAction
+                                handle={fieldValue}
+                                intent="primary"
+                              >
+                                <small>{t('Test')}</small>
+                              </CouchsurfingProfileAction>
+                            </span>
+                          )}
                       </div>
-                      {field.field === 'extSitesCS' && fieldValue && (
-                        <p className="help-block text-break">
-                          {field.testUrl(fieldValue)}
-                        </p>
-                      )}
+                      {field.field === 'extSitesCS' &&
+                        !hasSavedCouchsurfingHandle &&
+                        fieldValue?.trim() && (
+                          <p className="help-block text-break">
+                            {field.testUrl(fieldValue)}
+                          </p>
+                        )}
                       {field.field === 'extSitesWS' && (
                         <p className="help-block">
                           {t(

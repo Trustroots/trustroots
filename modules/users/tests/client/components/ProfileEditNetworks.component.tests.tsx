@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
@@ -74,6 +80,36 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 }
 
 describe('ProfileEditNetworks', () => {
+  it.each(['fictional hiker', ''])(
+    'saves the Hitchwiki Maps username %j',
+    async username => {
+      mockedUsersApi.update.mockResolvedValue({
+        ...user,
+        extSitesHitchwikiMaps: username,
+      });
+      renderPage({ extSitesHitchwikiMaps: 'previous-hiker' });
+      fireEvent.change(screen.getByLabelText('maps.hitchwiki.org/account/'), {
+        target: { value: username },
+      });
+      if (username) {
+        expect(screen.getByRole('link', { name: 'Test' })).toHaveAttribute(
+          'href',
+          'https://maps.hitchwiki.org/account/fictional%20hiker',
+        );
+      } else {
+        expect(
+          screen.queryByRole('link', { name: 'Test' }),
+        ).not.toBeInTheDocument();
+      }
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(mockedUsersApi.update).toHaveBeenCalledWith(
+          expect.objectContaining({ extSitesHitchwikiMaps: username }),
+        ),
+      );
+    },
+  );
+
   it('shows remote authorisation while signing and cancels on unmount', async () => {
     const { signNostrProof } =
       await import('../../../client/services/nostr-proof.client');
@@ -416,7 +452,7 @@ describe('ProfileEditNetworks', () => {
     expect(mockedUsersApi.update).not.toHaveBeenCalled();
   });
 
-  it('renders hospitality test links except Couchsurfing', () => {
+  it('opens other hospitality test links in new tabs and warns before Couchsurfing', async () => {
     renderPage({
       extSitesBW: 'ada-bw',
       extSitesCS: 'ada-cs',
@@ -424,17 +460,47 @@ describe('ProfileEditNetworks', () => {
       extSitesWS: '00000000-0000-4000-8000-000000000004',
     });
 
-    expect(screen.getAllByRole('link', { name: 'Test' })[1]).toHaveAttribute(
+    const testLinks = screen.getAllByRole('link', { name: 'Test' });
+    expect(testLinks[1]).toHaveAttribute(
       'href',
       'https://www.bewelcome.org/members/ada-bw',
     );
-    expect(screen.getAllByRole('link', { name: 'Test' })).toHaveLength(3);
+    expect(testLinks).toHaveLength(3);
+    for (const link of testLinks) {
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    }
+
+    const testButton = screen.getByRole('button', { name: 'Test' });
+    expect(testButton).toHaveAttribute('type', 'button');
+    fireEvent.click(testButton);
+    const dialog = screen.getByRole('dialog', {
+      name: 'Continue to Couchsurfing?',
+    });
+    expect(within(dialog).getByRole('alert')).toBeVisible();
+    expect(
+      within(dialog).getByRole('link', {
+        name: 'Open Couchsurfing in a new tab',
+      }),
+    ).toHaveAttribute('href', 'https://www.couchsurfing.com/people/ada-cs');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+  });
+
+  it('shows a plain Couchsurfing preview until the member has saved a username', () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('couchsurfing.com/people/'), {
+      target: { value: 'ada-cs' },
+    });
     const couchsurfingPreview = screen.getByText(
       'https://www.couchsurfing.com/people/ada-cs',
     );
     expect(couchsurfingPreview.closest('a')).toBeNull();
     expect(couchsurfingPreview.closest('[data-slot="input-group"]')).toBeNull();
     expect(couchsurfingPreview).toHaveClass('help-block', 'text-break');
+    expect(
+      screen.queryByRole('button', { name: 'Test' }),
+    ).not.toBeInTheDocument();
   });
 
   it('lets members delete stored legacy social connections', async () => {

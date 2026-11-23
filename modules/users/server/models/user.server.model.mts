@@ -337,6 +337,18 @@ const UserSchema = new Schema<
       'Please provide a Servas household/ or address/ profile path.',
     ],
   },
+  // Hitchwiki username
+  extSitesHitchwiki: {
+    type: String,
+    trim: true,
+    set: setPlainTextField,
+  },
+  // Hitchwiki Maps username
+  extSitesHitchwikiMaps: {
+    type: String,
+    trim: true,
+    set: setPlainTextField,
+  },
   // nostr npub
   nostrChallenge: { type: String, select: false },
   nostrChallengeExpiresAt: { type: Date, select: false },

@@ -17,9 +17,11 @@ const queryClient = new QueryClient();
 export default function ProfileOverview({
   profile,
   isSelf,
+  canOpenCouchsurfing,
 }: {
   profile: UserProfile;
   isSelf: boolean;
+  canOpenCouchsurfing?: boolean;
 }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const { t } = useTranslation('users');
@@ -57,7 +59,10 @@ export default function ProfileOverview({
         {/* basic info panel */}
         <div className="panel-body">
           <div className="profile-sidebar-section">
-            <ProfileViewBasics profile={profile} />
+            <ProfileViewBasics
+              profile={profile}
+              canOpenCouchsurfing={canOpenCouchsurfing}
+            />
           </div>
         </div>
       </div>

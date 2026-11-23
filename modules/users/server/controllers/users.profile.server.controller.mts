@@ -1047,6 +1047,8 @@ function sanitizeProfile(
     delete profile.extSitesCouchers;
     delete profile.extSitesWS;
     delete profile.extSitesServas;
+    delete profile.extSitesHitchwikiMaps;
+    delete profile.extSitesHitchwiki;
     delete profile.nostrNpub;
   } else if (_.isObject(profile.additionalProvidersData)) {
     const providerIdentityFields = {

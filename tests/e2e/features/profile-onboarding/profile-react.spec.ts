@@ -4,7 +4,13 @@ import {
   test,
   expect,
 } from '../../support/fixtures.mts';
-import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
+import { updateUserByUsername } from '../../support/db.mts';
+import {
+  createUser,
+  registerViaApi,
+  SEEDED_MEMBERS,
+  signInViaApi,
+} from '../../support/helpers.mts';
 
 declare global {
   interface Window {
@@ -328,21 +334,22 @@ test('profile descriptions disable links while dedicated network exceptions rema
   await expect(
     page.getByRole('link', { name: /Fictional .* notes/ }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole('link', { name: 'CO: fictional-member', exact: true }),
-  ).toHaveAttribute('href', 'https://couchers.org/user/fictional-member');
-  await expect(
-    page.getByRole('link', { name: 'BW: fictional-member', exact: true }),
-  ).toHaveAttribute(
-    'href',
-    'https://www.bewelcome.org/members/fictional-member',
-  );
-  await expect(
-    page.getByRole('link', { name: 'Warmshowers', exact: true }),
-  ).toHaveAttribute(
-    'href',
-    'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
-  );
+  for (const [name, href] of [
+    ['CO: fictional-member', 'https://couchers.org/user/fictional-member'],
+    [
+      'BW: fictional-member',
+      'https://www.bewelcome.org/members/fictional-member',
+    ],
+    [
+      'Warmshowers',
+      'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
+    ],
+  ]) {
+    const link = page.getByRole('link', { name, exact: true });
+    await expect(link).toHaveAttribute('href', href);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  }
   await expect(
     page.getByText('CS: fictional-member', { exact: true }),
   ).toBeVisible();
@@ -350,12 +357,165 @@ test('profile descriptions disable links while dedicated network exceptions rema
     ['CS: fictional-member', 'Couchsurfing'],
     ['CO: fictional-member', 'Couchers.org'],
     ['BW: fictional-member', 'BeWelcome'],
+    ['Warmshowers', 'Warmshowers'],
   ]) {
     await expect(page.getByTitle(network, { exact: true })).toHaveText(label);
   }
   await expect(
     page.getByRole('link', { name: 'CS: fictional-member', exact: true }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'CS: fictional-member', exact: true }),
+  ).toHaveCount(0);
+});
+
+test('a saved Couchsurfing handle unlocks profile and editor links with a warning', async ({
+  context,
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.edit-networks', [
+    'Networks edit form is reachable.',
+  ]);
+  const viewer = createUser();
+  await registerViaApi(request, viewer);
+  await updateUserByUsername(viewer.username, { $set: { public: true } });
+  await signInViaApi(page, request, viewer);
+
+  const otherMember = SEEDED_MEMBERS[1];
+  const profilePath = `/profile/${otherMember.username}`;
+  const viewerHandle = 'fictional-viewer';
+  const otherHandle = 'fictional-host';
+  const couchsurfingBase = 'https://www.couchsurfing.com/people/';
+  await context.route(`${couchsurfingBase}**`, route =>
+    route.fulfill({ contentType: 'text/plain', body: 'Test profile' }),
+  );
+  await page.route(`**/api/users/${otherMember.username}`, async route => {
+    const response = await route.fetch();
+    const profile = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...profile, extSitesCS: otherHandle },
+    });
+  });
+
+  const profileAction = page.getByRole('button', {
+    name: `CS: ${otherHandle}`,
+  });
+  await page.goto(profilePath);
+  await expect(page.getByText(`CS: ${otherHandle}`)).toBeVisible();
+  await expect(profileAction).toHaveCount(0);
+
+  await page.goto('/profile/edit/networks');
+  await page.getByLabel('couchsurfing.com/people/').fill(viewerHandle);
+  const testAction = page.getByRole('button', { name: 'Test', exact: true });
+  await expect(testAction).toHaveCount(0);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    'Hospitality networks updated.',
+  );
+  await expect(testAction).toBeVisible();
+
+  for (const { action, expectedHandle, path } of [
+    {
+      action: testAction,
+      expectedHandle: viewerHandle,
+      path: '/profile/edit/networks',
+    },
+    { action: profileAction, expectedHandle: otherHandle, path: profilePath },
+  ]) {
+    await page.goto(path);
+    const originalUrl = page.url();
+    const dialog = page.getByRole('dialog', {
+      name: 'Continue to Couchsurfing?',
+    });
+    await action.press('Enter');
+    await expect(dialog.getByRole('alert')).toContainText('for-profit company');
+    expect(context.pages()).toHaveLength(1);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+    expect(context.pages()).toHaveLength(1);
+
+    await action.click();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    expect(context.pages()).toHaveLength(1);
+
+    await action.click();
+    const [newTab] = await Promise.all([
+      context.waitForEvent('page'),
+      dialog
+        .getByRole('link', { name: 'Open Couchsurfing in a new tab' })
+        .click(),
+    ]);
+    await expect(newTab).toHaveURL(`${couchsurfingBase}${expectedHandle}`);
+    await expect(page).toHaveURL(originalUrl);
+    await newTab.close();
+  }
+});
+
+test('a member can save and clear Hitchwiki and Hitchwiki Maps links independently', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.edit-networks', [
+    'Networks edit form is reachable.',
+  ]);
+  const member = createUser();
+  await registerViaApi(request, member);
+  await signInViaApi(page, request, member);
+  const wikiField = page.getByLabel('hitchwiki.org/en/User:', { exact: true });
+  const mapsField = page.getByLabel('maps.hitchwiki.org/account/', {
+    exact: true,
+  });
+  const wikiLink = page.getByRole('link', {
+    name: 'Hitchwiki: Fictional editor',
+  });
+  const mapsLink = page.getByRole('link', {
+    name: 'Hitchwiki Maps: fictional hiker',
+  });
+  const profilePath = `/profile/${member.username}`;
+  const networksPath = '/profile/edit/networks';
+  const saveButton = page.getByRole('button', { name: 'Save', exact: true });
+  const saveStatus = page.getByRole('status');
+
+  await page.goto(networksPath);
+  await wikiField.fill('Fictional editor');
+  await mapsField.fill('fictional hiker');
+  await saveButton.click();
+  await expect(saveStatus).toHaveText('Hospitality networks updated.');
+  await page.goto(profilePath);
+  for (const [field, link, destination, remainingLink] of [
+    [
+      wikiField,
+      wikiLink,
+      'https://hitchwiki.org/en/User:Fictional%20editor',
+      mapsLink,
+    ],
+    [
+      mapsField,
+      mapsLink,
+      'https://maps.hitchwiki.org/account/fictional%20hiker',
+      undefined,
+    ],
+  ] as const) {
+    await expect(link).toHaveAttribute('href', destination);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await page.goto(networksPath);
+    const preview = field
+      .locator('..')
+      .getByRole('link', { name: 'Test', exact: true });
+    await expect(preview).toHaveAttribute('href', destination);
+    await expect(preview).toHaveAttribute('target', '_blank');
+    await field.fill('');
+    await saveButton.click();
+    await expect(saveStatus).toHaveText('Hospitality networks updated.');
+    await page.goto(profilePath);
+    await expect(link).toHaveCount(0);
+    if (remainingLink) {
+      await expect(remainingLink).toBeVisible();
+    }
+  }
 });
 
 for (const path of ['household/fictional-host', 'address/fictional-host']) {

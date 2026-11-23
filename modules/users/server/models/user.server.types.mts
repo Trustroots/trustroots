@@ -51,6 +51,8 @@ export interface UserServerRecord {
   extSitesCS?: string;
   extSitesWS?: string;
   extSitesServas?: string;
+  extSitesHitchwikiMaps?: string;
+  extSitesHitchwiki?: string;
   nostrNpub?: string;
   nostrChallenge?: string;
   nostrChallengeExpiresAt?: Date;

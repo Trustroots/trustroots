@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import ProfileViewBasics from '@/modules/users/client/components/ProfileViewBasics';
@@ -52,15 +52,42 @@ const makeProfile = (overrides: Partial<UserProfile> = {}): UserProfile => ({
 });
 
 describe('<ProfileViewBasics />', () => {
+  it.each([
+    ['Hitchwiki', 'extSitesHitchwiki', 'https://hitchwiki.org/en/User:'],
+    [
+      'Hitchwiki Maps',
+      'extSitesHitchwikiMaps',
+      'https://maps.hitchwiki.org/account/',
+    ],
+  ])(
+    'shows a %s account when it is the only network',
+    (name, field, baseUrl) => {
+      render(
+        <ProfileViewBasics
+          profile={makeProfile({ [field]: 'fictional hiker' })}
+        />,
+      );
+      const link = screen.getByRole('link', {
+        name: `${name}: fictional hiker`,
+      });
+      expect(link).toHaveAttribute('href', `${baseUrl}fictional%20hiker`);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(link.closest('li')).toHaveAttribute('title', name);
+    },
+  );
+
   it.each(['household/fictional-host', 'address/fictional-host'])(
     'renders Servas as the only network and removes it when cleared: %s',
     path => {
       const { rerender } = render(
         <ProfileViewBasics profile={makeProfile({ extSitesServas: path })} />,
       );
-      expect(
-        screen.getByRole('link', { name: `Servas: ${path}` }),
-      ).toHaveAttribute('href', `https://servas.org/${path}`);
+      const link = screen.getByRole('link', { name: `Servas: ${path}` });
+      expect(link).toHaveAttribute('href', `https://servas.org/${path}`);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(link.closest('li')).toHaveAttribute('title', 'Servas');
       rerender(
         <ProfileViewBasics profile={makeProfile({ extSitesServas: '' })} />,
       );
@@ -182,10 +209,55 @@ describe('<ProfileViewBasics />', () => {
     expect(
       screen.queryByRole('link', { name: 'CS: member-cs' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'CS: member-cs' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Warmshowers' })).toHaveAttribute(
       'href',
       'https://app.warmshowers.org/profiles/00000000-0000-4000-8000-000000000001',
     );
+    for (const [name, title] of [
+      ['GitHub', 'GitHub'],
+      ['Nostroots', 'Nostroots'],
+      ['CO: member-couchers', 'Couchers.org'],
+      ['BW: member-bw', 'BeWelcome'],
+      ['Warmshowers', 'Warmshowers'],
+    ]) {
+      const link = screen.getByRole('link', { name });
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(link.closest('li')).toHaveAttribute('title', title);
+    }
+  });
+
+  it('confirms a Couchsurfing destination for an eligible viewer', () => {
+    render(
+      <ProfileViewBasics
+        profile={makeProfile({ extSitesCS: 'fictional/handle?#' })}
+        canOpenCouchsurfing
+      />,
+    );
+
+    const trigger = screen.getByRole('button', {
+      name: 'CS: fictional/handle?#',
+    });
+    expect(trigger).not.toHaveAttribute('href');
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole('dialog', {
+      name: 'Continue to Couchsurfing?',
+    });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Couchsurfing is run by a for-profit company that merely wants to extract value from its users without caring about privacy or community.',
+    );
+    const link = within(dialog).getByRole('link', {
+      name: 'Open Couchsurfing in a new tab',
+    });
+    expect(link).toHaveAttribute(
+      'href',
+      'https://www.couchsurfing.com/people/fictional%2Fhandle%3F%23',
+    );
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('renders the nostr npub fallback link when it is the only network', () => {

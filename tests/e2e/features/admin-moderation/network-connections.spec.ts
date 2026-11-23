@@ -68,7 +68,7 @@ test('staff can search and inspect external network connections', async ({
   await expect(
     page.getByRole('heading', { name: 'Search external connections' }),
   ).toBeVisible();
-  await page.getByLabel('Network').selectOption('bewelcome');
+  await page.getByLabel('Network', { exact: true }).selectOption('bewelcome');
   await page.getByLabel('Identifier').fill('Fictional-Old');
   const searchResponse = page.waitForResponse(
     response =>
@@ -109,7 +109,7 @@ test('staff can search and inspect external network connections', async ({
 
   await signInViaApi(page, request, SEEDED_ADMIN);
   await page.goto('/admin/network-connections');
-  await page.getByLabel('Network').selectOption('email');
+  await page.getByLabel('Network', { exact: true }).selectOption('email');
   await page.getByLabel('Identifier').fill(member.email);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(
