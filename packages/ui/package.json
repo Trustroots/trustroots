@@ -40,12 +40,12 @@
     "cn": "0.5.2"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "10.6.7",
-    "@storybook/addon-vitest": "10.6.7",
-    "@storybook/react-vite": "10.6.7",
-    "@vitest/browser-playwright": "5.1.0",
+    "@storybook/addon-a11y": "10.6.8",
+    "@storybook/addon-vitest": "10.6.8",
+    "@storybook/react-vite": "10.6.8",
+    "@vitest/browser-playwright": "5.1.1",
     "playwright": "1.65.1",
-    "storybook": "10.6.7",
-    "vitest": "5.1.0"
+    "storybook": "10.6.8",
+    "vitest": "5.1.1"
   }
 }
