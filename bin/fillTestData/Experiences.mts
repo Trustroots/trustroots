@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
-import yargs from 'yargs';
+import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mts';
@@ -39,74 +39,25 @@ interface ExperienceTask {
   userTo: Types.ObjectId;
   userFrom: Types.ObjectId;
 }
-/**
- * Required dependencies
- */
-
-/**
- * Configure the script usage using yargs to obtain parameters and enforce usage.
- */
-const argv = yargs(process.argv.slice(2))
-  .usage('$0 <averageNumberPerProfile> <replyRate>')
-  .command(
-    '$0 <averageNumberPerProfile> <replyRate>',
-    'Seed database with experiences',
-  )
-  .positional('averageNumberPerProfile', {
-    describe:
-      'Average Number of experiences a profile will have ' +
-      '(except for pre-populated profiles)',
-    type: 'number',
-  })
-  .positional('replyRate', {
-    describe:
-      'The probability that B will share experience with A if A shares one with B',
-    type: 'number',
-  })
-  .boolean('debug')
-  .describe('debug', 'Enable extra database output (default=false)')
-  .boolean('re-create')
-  .describe(
-    're-create',
-    'Remove existing experiences if there are any and create new ones',
-  )
-  .example(
-    '$0 10 0.8',
-    'Adds on average 10 experiences (8 of them having replies) to each profile to the database ',
-  )
-  .example(
-    '$0 10 0.8 --re-create',
-    'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing experiences from the db ',
-  )
-  .example(
-    '$0 10 0.8 --debug',
-    'Adds on average 10 experiences (8 of them having replies) to each profile to the database with debug database output',
-  )
-  .check(function (arguments_) {
-    if (
-      typeof arguments_.replyRate !== 'number' ||
-      arguments_.replyRate > 1 ||
-      arguments_.replyRate < 0
-    ) {
-      throw new Error('Reply rate must be between 0 and 1');
-    }
-    if (
-      typeof arguments_.averageNumberPerProfile !== 'number' ||
-      arguments_.averageNumberPerProfile < 0
-    ) {
-      throw new Error('Number of experiences must be positive');
-    }
-    return true;
-  })
-  .strict()
-  .parseSync();
-
-if (
-  typeof argv.averageNumberPerProfile !== 'number' ||
-  typeof argv.replyRate !== 'number'
-) {
-  throw new Error('Average experiences and reply rate must be numbers');
-}
+const { operands, values } = parseSeedArgs(process.argv.slice(2), {
+  description: 'Seed database with experiences',
+  positionals: ['averageNumberPerProfile', 'replyRate'],
+  flags: {
+    're-create': 'Remove existing experiences and create new ones',
+  },
+  example: '10 0.8',
+});
+const averageNumberPerProfile = readSeedNumber(
+  operands[0],
+  'Number of experiences must be positive',
+  0,
+);
+const replyRate = readSeedNumber(
+  operands[1],
+  'Reply rate must be between 0 and 1',
+  0,
+  1,
+);
 
 const profileType: ProfileTypes = {
   noExperiences: seqNum => seqNum % 10 === 0,
@@ -275,7 +226,7 @@ function generateExperienceSharingMatrix(
   }
 }
 function seedExperiences(averageExpNumber: number, replyRate: number) {
-  const debug = argv.debug === true;
+  const debug = values.debug === true;
   console.log('--');
   console.log('Trustroots test experiences data');
   console.log('--');
@@ -295,7 +246,7 @@ function seedExperiences(averageExpNumber: number, replyRate: number) {
         return;
       }
       const experience = await Experience.findOne();
-      if (experience && !argv.reCreate) {
+      if (experience && values['re-create'] !== true) {
         console.log(
           'Experiences already exist in the db. Use --re-create option if you want to rewrite them',
         );
@@ -377,4 +328,4 @@ function seedExperiences(averageExpNumber: number, replyRate: number) {
     });
   });
 }
-seedExperiences(argv.averageNumberPerProfile, argv.replyRate);
+seedExperiences(averageNumberPerProfile, replyRate);

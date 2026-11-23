@@ -37,15 +37,6 @@ test('experience seeding keeps at most 100 saves active and drains failures befo
       disconnected = true;
     },
   };
-  const argv = new Proxy(
-    {},
-    {
-      get: (_, name) =>
-        name === 'parseSync'
-          ? () => ({ averageNumberPerProfile: 20, replyRate: 1 })
-          : () => argv,
-    },
-  );
   const code = ts.transpileModule(
     readFileSync('bin/fillTestData/Experiences.mts', 'utf8'),
     {
@@ -63,7 +54,9 @@ test('experience seeding keeps at most 100 saves active and drains failures befo
     require: name => {
       if (name.includes('config/lib/mongoose')) return helper;
       if (name.includes('config/config')) return { db: {} };
-      if (name === 'yargs') return () => argv;
+      if (name === './seed-args.mts') {
+        return require('../bin/fillTestData/seed-args.mts');
+      }
       if (name === 'mongoose')
         return {
           model: name =>
@@ -73,7 +66,7 @@ test('experience seeding keeps at most 100 saves active and drains failures befo
         };
       return require(name);
     },
-    process: { argv: [] },
+    process: { argv: ['node', 'Experiences.mts', '20', '1'] },
     console: { log() {}, error() {} },
     setInterval: () => 1,
     clearInterval() {},
@@ -88,6 +81,31 @@ test('experience seeding keeps at most 100 saves active and drains failures befo
   assert.equal(peak, 100);
   assert.ok(saved > 100);
   assert.equal(disconnected, true);
+});
+
+test('seed arguments preserve variadic admin names and boolean flags', () => {
+  const { parseSeedArgs } = require('../bin/fillTestData/seed-args.mts');
+  const config = {
+    description: 'Seed users',
+    positionals: ['numberOfUsers'],
+    flags: { limit: 'Use requested count as a cap' },
+    example: '100 --userNames admin1 admin2',
+    acceptsUserNames: true,
+  };
+  const { operands, values, userNames } = parseSeedArgs(
+    ['100', '--userNames', 'admin1', 'admin2', '--user-names=admin3', '--limit', '--debug=false'],
+    config,
+  );
+  assert.deepEqual(operands, ['100']);
+  assert.deepEqual(userNames, ['admin1', 'admin2', 'admin3']);
+  assert.equal(values.limit, true);
+  assert.equal(values.debug, false);
+  assert.deepEqual(
+    parseSeedArgs(['--userNames', 'admin1', 'admin2', '--', '100'], config).operands,
+    ['100'],
+  );
+  assert.throws(() => parseSeedArgs(['100', '--unknown'], config), { code: 'ERR_PARSE_ARGS_UNKNOWN_OPTION' });
+  assert.throws(() => parseSeedArgs(['100', '200'], config), /Usage:/);
 });
 
 test('mass mail waits for delivery, records success and delays before fetching the next group', async () => {

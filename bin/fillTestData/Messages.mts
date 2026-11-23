@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
-import yargs from 'yargs';
+import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mts';
@@ -25,71 +25,24 @@ interface SeedThread extends Document {
   message: Types.ObjectId;
   read: boolean;
 }
-/**
- * Required dependencies
- */
-
-/**
- * Configure the script usage using yargs to obtain parameters and enforce usage.
- */
-const argv = yargs(process.argv.slice(2))
-  .usage('$0 <numberOfThreads> <maxMessages>')
-  .command(
-    '$0 <numberOfThreads> <maxMessages>',
-    'Seed database with message threads',
-  )
-  .positional('numberOfThreads', {
-    describe: 'Number of threads to add',
-    type: 'number',
-  })
-  .positional('maxMessages', {
-    describe: 'Maximum number of messages per thread to add',
-    type: 'number',
-  })
-  .boolean('debug')
-  .boolean('limit')
-  .describe('debug', 'Enable extra database output (default=false)')
-  .describe(
-    'limit',
-    'If threads already exist in the database, only add up to the number of threads (default=false)',
-  )
-  .example(
-    '$0 100 10',
-    'Adds 100 random threads wth up to 10 messages per thread to the database',
-  )
-  .example(
-    '$0 100 10 --debug',
-    'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output',
-  )
-  .example(
-    '$0 10 5 --limit',
-    'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)',
-  )
-  .check(arguments_ => {
-    if (
-      typeof arguments_.numberOfThreads !== 'number' ||
-      arguments_.numberOfThreads < 1
-    ) {
-      throw new Error('Error: Number of threads should be greater than 0');
-    } else if (
-      typeof arguments_.maxMessages !== 'number' ||
-      arguments_.maxMessages < 1
-    ) {
-      throw new Error(
-        'Error: Max messages per thread should be greater than 0',
-      );
-    }
-    return true;
-  })
-  .strict()
-  .parseSync();
-
-if (
-  typeof argv.numberOfThreads !== 'number' ||
-  typeof argv.maxMessages !== 'number'
-) {
-  throw new Error('Error: Thread and message counts must be greater than 0');
-}
+const { operands, values } = parseSeedArgs(process.argv.slice(2), {
+  description: 'Seed database with message threads',
+  positionals: ['numberOfThreads', 'maxMessages'],
+  flags: {
+    limit: 'Add only enough threads to reach the requested count',
+  },
+  example: '100 10 --limit',
+});
+const numberOfThreads = readSeedNumber(
+  operands[0],
+  'Number of threads should be greater than 0',
+  1,
+);
+const maxMessages = readSeedNumber(
+  operands[1],
+  'Max messages per thread should be greater than 0',
+  1,
+);
 
 /**
  * This generates a random integer between 0 and max - 1 inclusively
@@ -122,8 +75,8 @@ function addDays(date: Date | number, days: number) {
  */
 function seedThreads(numThreads: number, maxMessages: number) {
   let index = 0;
-  const debug = argv.debug === true;
-  const limit = argv.limit === true;
+  const debug = values.debug === true;
+  const limit = values.limit === true;
   console.log('Generating ' + numThreads + ' message threads...');
   if (numThreads > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
@@ -334,4 +287,4 @@ function seedThreads(numThreads: number, maxMessages: number) {
   } // seedThread
 } // seedThreads
 
-seedThreads(argv.numberOfThreads, argv.maxMessages);
+seedThreads(numberOfThreads, maxMessages);

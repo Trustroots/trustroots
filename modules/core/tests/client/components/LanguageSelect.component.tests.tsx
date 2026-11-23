@@ -1,6 +1,11 @@
-import type { MockedFunction } from 'vitest';
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { UseQueryResult } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
@@ -10,366 +15,131 @@ import {
   type LanguageOption,
 } from '@/modules/core/client/api/languages.api';
 
-type CapturedAsyncSelectProps = {
-  placeholder?: React.ReactNode;
-  value?: LanguageOption[];
-  isLoading?: boolean;
-  isDisabled?: boolean;
-  loadOptions?: (inputValue?: string) => Promise<LanguageOption[]>;
-  onChange?: (value: LanguageOption[] | null) => void;
-  loadingMessage?: () => string;
-  noOptionsMessage?: (args: { inputValue: string }) => string;
-};
-
-const asyncSelectProps: CapturedAsyncSelectProps[] = [];
-const useLanguagesQueryMock = useLanguagesQuery as MockedFunction<
-  typeof useLanguagesQuery
->;
-
-vi.mock('react-select/async', () => {
-  return {
-    default: function MockAsyncSelect(props: CapturedAsyncSelectProps) {
-      asyncSelectProps.push(props);
-      return (
-        <div>
-          <div>{props.placeholder}</div>
-        </div>
-      );
-    },
-  };
-});
-
 vi.mock('@/modules/core/client/api/languages.api');
 
-afterEach(() => {
-  vi.clearAllMocks();
-  asyncSelectProps.length = 0;
-});
+const languages = [
+  { value: 'eng', label: 'English' },
+  { value: 'fin', label: 'Finnish' },
+  { value: 'enm', label: 'Middle English', deprecated: true },
+  { value: 'rcf', label: 'Réunion Creole French' },
+];
 
-function latestSelectProps(): CapturedAsyncSelectProps {
-  const props = asyncSelectProps[asyncSelectProps.length - 1];
-  if (!props) {
-    throw new Error('AsyncSelect was not rendered');
-  }
-  return props;
-}
-
-function mockLanguagesQuery(
-  partial: Partial<UseQueryResult<LanguageOption[], Error>> & {
-    data?: LanguageOption[] | undefined;
-    isLoading: boolean;
-    isError: boolean;
-  },
-) {
-  useLanguagesQueryMock.mockReturnValue(
-    partial as UseQueryResult<LanguageOption[], Error>,
+function mockQuery(result: Partial<UseQueryResult<LanguageOption[], Error>>) {
+  vi.mocked(useLanguagesQuery).mockReturnValue(
+    result as UseQueryResult<LanguageOption[], Error>,
   );
 }
 
-describe('<LanguageSelect />', () => {
-  it('renders the select once languages are loaded', () => {
-    mockLanguagesQuery({
-      data: [
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-      ],
-      isLoading: false,
-      isError: false,
-    });
+beforeEach(() => mockQuery({ data: languages }));
 
-    render(<LanguageSelect placeholder="Pick a language" />);
+function search(query: string) {
+  const input = screen.getByRole('combobox');
+  act(() => input.focus());
+  fireEvent.input(input, { target: { value: query }, inputType: 'insertText' });
+  return input;
+}
 
-    expect(screen.getByText('Pick a language')).toBeInTheDocument();
-  });
+it('forwards the accessible name and uses the provided placeholder', () => {
+  render(
+    <LanguageSelect aria-label="Languages" placeholder="Pick a language" />,
+  );
+  expect(screen.getByRole('combobox', { name: 'Languages' })).toHaveAttribute(
+    'placeholder',
+    'Pick a language',
+  );
+});
 
-  it('shows an error alert when languages fail to load', async () => {
-    mockLanguagesQuery({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    });
+it('disables the field while loading and re-enables it when data arrives', () => {
+  mockQuery({ isLoading: true });
+  const { rerender } = render(<LanguageSelect />);
+  expect(screen.getByPlaceholderText('Loading…')).toBeDisabled();
 
-    render(<LanguageSelect />);
+  mockQuery({ data: languages });
+  rerender(<LanguageSelect />);
+  expect(screen.getByPlaceholderText('Select…')).toBeEnabled();
+});
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
-    await expect(latestSelectProps().loadOptions!('English')).resolves.toEqual(
-      [],
+it('shows an alert and disables the field when the language query fails', () => {
+  mockQuery({ isError: true, data: languages });
+  render(<LanguageSelect />);
+  expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
+  expect(screen.getByRole('combobox')).toBeDisabled();
+});
+
+it('prefills languages in catalogue order and keeps existing deprecated values', () => {
+  render(
+    <LanguageSelect
+      excludeDeprecated
+      preSelectedLanguages={['enm', 'fin', 'eng']}
+    />,
+  );
+  expect(
+    screen
+      .getAllByRole('button')
+      .map(button => button.getAttribute('aria-label')),
+  ).toEqual(['Remove English', 'Remove Finnish', 'Remove Middle English']);
+  // Each chip label is its own text node, separate from the remove button.
+  for (const label of ['English', 'Finnish', 'Middle English']) {
+    expect(screen.getByText(label, { exact: true })).toHaveTextContent(
+      new RegExp(`^${label}$`),
     );
-  });
+  }
+});
 
-  it('prefills selected languages from preSelectedLanguages', async () => {
-    mockLanguagesQuery({
-      data: [
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-        { value: 'swe', label: 'Swedish' },
-      ],
-      isLoading: false,
-      isError: false,
-    });
+it('prompts for a longer query and matches labels without accents', async () => {
+  render(<LanguageSelect />);
+  search('r');
+  expect(await screen.findByText('Start typing a language…')).toBeVisible();
+  expect(screen.queryByRole('option')).not.toBeInTheDocument();
+  search('reunion');
+  expect(
+    await screen.findByRole('option', { name: 'Réunion Creole French' }),
+  ).toBeVisible();
+  search('no language with this label');
+  expect(
+    await screen.findByText('No languages found; try typing something else.'),
+  ).toBeVisible();
+});
 
-    render(<LanguageSelect preSelectedLanguages={['fin', 'eng']} />);
+it('hides deprecated choices in the profile', async () => {
+  render(<LanguageSelect excludeDeprecated />);
+  search('Middle');
+  expect(
+    await screen.findByText('No languages found; try typing something else.'),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('option', { name: 'Middle English' }),
+  ).not.toBeInTheDocument();
+});
 
-    await waitFor(() => {
-      expect(latestSelectProps().value).toEqual([
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-      ]);
-    });
-  });
+it('offers deprecated choices in the search filter and updates without a callback', async () => {
+  render(<LanguageSelect />);
+  search('Middle');
+  fireEvent.click(
+    await screen.findByRole('option', { name: 'Middle English' }),
+  );
+  expect(
+    screen.getByRole('button', { name: 'Remove Middle English' }),
+  ).toBeVisible();
+});
 
-  it('retains a deprecated selection without offering it in search', async () => {
-    const existing: LanguageOption = {
-      value: 'enm',
-      label: 'Middle English (1100-1500)',
-      deprecated: true,
-    };
-    const selectable: LanguageOption = {
-      value: 'eng',
-      label: 'English',
-      deprecated: false,
-    };
-    mockLanguagesQuery({
-      data: [existing, selectable],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect excludeDeprecated preSelectedLanguages={['enm']} />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().value).toEqual([existing]);
-    });
-    expect(await latestSelectProps().loadOptions!('Middle')).toEqual([]);
-    expect(await latestSelectProps().loadOptions!('English')).toEqual([
-      selectable,
-    ]);
-  });
-
-  it('offers deprecated languages when used as a search filter', async () => {
-    const historical: LanguageOption = {
-      value: 'enm',
-      label: 'Middle English (1100-1500)',
-      deprecated: true,
-    };
-    mockLanguagesQuery({
-      data: [historical],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    expect(await latestSelectProps().loadOptions!('Middle')).toEqual([
-      historical,
-    ]);
-  });
-
-  it('forwards selected values to onChangeLanguages', async () => {
-    const onChangeLanguages = vi.fn();
-    mockLanguagesQuery({
-      data: [
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-      ],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(
-      <LanguageSelect
-        onChangeLanguages={onChangeLanguages}
-        preSelectedLanguages={['eng']}
-      />,
-    );
-
-    await waitFor(() => {
-      expect(latestSelectProps().onChange).toBeTruthy();
-    });
-    act(() => {
-      latestSelectProps().onChange?.([
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-      ]);
-    });
-
-    expect(onChangeLanguages).toHaveBeenCalledWith(['eng', 'fin']);
-  });
-
-  it('forwards an empty selection when onChange emits nothing', async () => {
-    const onChangeLanguages = vi.fn();
-    mockLanguagesQuery({
-      data: [{ value: 'eng', label: 'English' }],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect onChangeLanguages={onChangeLanguages} />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().onChange).toBeTruthy();
-    });
-    act(() => {
-      latestSelectProps().onChange?.(null);
-    });
-
-    expect(onChangeLanguages).toHaveBeenCalledWith([]);
-  });
-
-  it('updates local selected state without an onChangeLanguages callback', async () => {
-    mockLanguagesQuery({
-      data: [{ value: 'eng', label: 'English' }],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().onChange).toBeTruthy();
-    });
-    act(() => {
-      latestSelectProps().onChange?.([{ value: 'eng', label: 'English' }]);
-    });
-
-    await waitFor(() => {
-      expect(latestSelectProps().value).toEqual([
-        { value: 'eng', label: 'English' },
-      ]);
-    });
-  });
-
-  it('uses the translated placeholder by default', () => {
-    mockLanguagesQuery({
-      data: [] as LanguageOption[],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    expect(screen.getByText('Select…')).toBeInTheDocument();
-  });
-
-  it('uses the translated loading message while languages are loading', async () => {
-    mockLanguagesQuery({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().loadingMessage?.()).toBe('Loading…');
-    });
-    expect(latestSelectProps().isLoading).toBe(true);
-  });
-
-  it('treats missing input as a short language search', async () => {
-    mockLanguagesQuery({
-      data: [{ value: 'eng', label: 'English' }],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().loadOptions).toBeTruthy();
-    });
-
-    expect(await latestSelectProps().loadOptions!()).toEqual([]);
-  });
-
-  it('loads matching options only once input is long enough', async () => {
-    mockLanguagesQuery({
-      data: [
-        { value: 'eng', label: 'English' },
-        { value: 'fin', label: 'Finnish' },
-        { value: 'swe', label: 'Swedish' },
-      ],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().loadOptions).toBeTruthy();
-    });
-    const short = await latestSelectProps().loadOptions!('E');
-    const long = await latestSelectProps().loadOptions!('Eng');
-
-    expect(short).toEqual([]);
-    expect(long).toEqual([{ value: 'eng', label: 'English' }]);
-  });
-
-  it('matches language labels without requiring accents', async () => {
-    mockLanguagesQuery({
-      data: [
-        { value: 'rcf', label: 'Réunion Creole French' },
-        { value: 'fin', label: 'Finnish' },
-      ],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().loadOptions).toBeTruthy();
-    });
-
-    expect(await latestSelectProps().loadOptions!('reunion')).toEqual([
-      { value: 'rcf', label: 'Réunion Creole French' },
-    ]);
-  });
-
-  it('shows the right no-options message for short and long inputs', async () => {
-    mockLanguagesQuery({
-      data: [] as LanguageOption[],
-      isLoading: false,
-      isError: false,
-    });
-
-    render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().noOptionsMessage).toBeTruthy();
-    });
-
-    expect(latestSelectProps().noOptionsMessage!({ inputValue: 'E' })).toBe(
-      'Start typing a language…',
-    );
-    expect(latestSelectProps().noOptionsMessage!({ inputValue: 'En' })).toBe(
-      'No languages found; try typing something else.',
-    );
-  });
-
-  it('disables selector until language data is available', async () => {
-    useLanguagesQueryMock
-      .mockReturnValueOnce({
-        data: undefined,
-        isLoading: false,
-        isError: false,
-      } as UseQueryResult<LanguageOption[], Error>)
-      .mockReturnValueOnce({
-        data: [{ value: 'eng', label: 'English' }],
-        isLoading: false,
-        isError: false,
-      } as UseQueryResult<LanguageOption[], Error>);
-
-    const { rerender } = render(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().isDisabled).toBe(true);
-    });
-
-    rerender(<LanguageSelect />);
-
-    await waitFor(() => {
-      expect(latestSelectProps().isDisabled).toBe(false);
-    });
-  });
+it('selects through the keyboard and forwards codes when choices are removed', async () => {
+  const onChangeLanguages = vi.fn();
+  render(
+    <LanguageSelect
+      onChangeLanguages={onChangeLanguages}
+      preSelectedLanguages={['eng']}
+    />,
+  );
+  const input = search('Finn');
+  const option = await screen.findByRole('option', { name: 'Finnish' });
+  await waitFor(() =>
+    expect(input).toHaveAttribute('aria-activedescendant', option.id),
+  );
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(onChangeLanguages).toHaveBeenLastCalledWith(['eng', 'fin']);
+  fireEvent.click(screen.getByRole('button', { name: 'Remove Finnish' }));
+  expect(onChangeLanguages).toHaveBeenLastCalledWith(['eng']);
+  fireEvent.click(screen.getByRole('button', { name: 'Remove English' }));
+  expect(onChangeLanguages).toHaveBeenLastCalledWith([]);
 });
