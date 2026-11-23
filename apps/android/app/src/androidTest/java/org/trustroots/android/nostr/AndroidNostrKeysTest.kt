@@ -1,8 +1,11 @@
 package org.trustroots.android.nostr
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.SharedPreferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.security.KeyStore
 import java.util.UUID
 import javax.crypto.AEADBadTagException
 import org.json.JSONObject
@@ -15,6 +18,46 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AndroidNostrKeysTest {
+    @Test fun failedWritesDoNotChangeTheIdentityOrAdvanceItsRevision() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+        val failingPreferences = object : SharedPreferences by preferences {
+            override fun edit(): SharedPreferences.Editor = object : SharedPreferences.Editor by preferences.edit() {
+                override fun putString(key: String, value: String?): SharedPreferences.Editor = this
+                override fun remove(key: String): SharedPreferences.Editor = this
+                override fun commit(): Boolean = false
+            }
+        }
+        val failingContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getSharedPreferences(name: String, mode: Int) = failingPreferences
+        }
+        val scope = nostrAccountScope("https://example.test", "failing-write-${UUID.randomUUID()}")
+        val keys = AndroidNostrKeys(failingContext, scope)
+        val revision = keys.revision()
+
+        assertThrows(IllegalStateException::class.java) { keys.import("0".repeat(63) + "1") }
+        assertThrows(IllegalStateException::class.java) { keys.remove() }
+        assertEquals(revision, keys.revision())
+        assertNull(keys.publicKey())
+    }
+
+    @Test fun refusesToGenerateAReplacementKeystoreKeyWhenAnEncryptedRecordExists() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+        val scope = nostrAccountScope("https://example.test", "missing-keystore-${UUID.randomUUID()}")
+        val missingAlias = "trustroots.test.nostr.${UUID.randomUUID()}"
+        val keys = AndroidNostrKeys(context, scope, missingAlias)
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        check(preferences.edit().putString(scope.storageAccount, "AA==").commit())
+        try {
+            assertThrows(IllegalStateException::class.java) { keys.publicKey() }
+            assertFalse(keyStore.containsAlias(missingAlias))
+        } finally {
+            keys.remove()
+        }
+    }
+
     @Test fun keyPersistsEncryptedForItsAccountAndIsRemovedSeparately() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val username = "fixture-${UUID.randomUUID()}"

@@ -35,6 +35,13 @@ class NostrEventSignerTest {
         assertEquals("0ed550d7bf974792ae44954ed9807c0cf77fe3b21ee6c6729b3967f6a8615575", signed.getString("id"))
     }
 
+    @Test fun escapesUnpairedSurrogatesAtBothEndsOfContent() {
+        val content = "\udc00🌍\ud800"
+        val signed = NostrEventSigner.sign(event().put("content", content), secret)
+        assertEquals("71d27ffe2fc0ca1cf404edce17cbe631f9ddd9ba339da580aa76437254eb034f", signed.getString("id"))
+        assertEquals(content, signed.getString("content"))
+    }
+
     @Test fun rejectsInvalidEventTypesAndNumbersOutsideNip01Bounds() {
         for (candidate in listOf(event().put("kind", "1"), event().put("content", 42))) {
             assertThrows(IllegalStateException::class.java) { NostrEventSigner.sign(candidate, secret) }
