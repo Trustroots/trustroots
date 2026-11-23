@@ -206,6 +206,8 @@ class SharedMemberPilotJourneyTest {
 
         launchPilot(local)
         signIn()
+        waitForText("My profile")
+        compose.onNodeWithText("My profile").performClick()
         waitForText("A fictional welcome.")
         assertEquals("pilot-refresh", sessions.load()?.refreshToken)
 

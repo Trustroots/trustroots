@@ -250,6 +250,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
+        element(labelled: "My profile", in: app).tap()
         let profile = element(labelled: "A test profile", in: app)
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         let banner = app.descendants(matching: .any)["offline-saved-data"].firstMatch
@@ -258,6 +260,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         try await setDroppedProfileResponse(true, at: fixtureURL)
         app.terminate()
         app.launch()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
+        element(labelled: "My profile", in: app).tap()
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(banner.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(banner.label.hasPrefix("Offline — saved "))
@@ -267,7 +271,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         add(capture)
 
         try await setDroppedProfileResponse(false, at: fixtureURL)
-        app.buttons["Messages"].tap()
+        element(labelled: "Messages", in: app).tap()
         XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10), app.debugDescription)
         let bannerCleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: banner)
         XCTAssertEqual(XCTWaiter.wait(for: [bannerCleared], timeout: 10), .completed, app.debugDescription)
