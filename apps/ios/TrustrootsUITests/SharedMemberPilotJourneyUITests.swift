@@ -159,8 +159,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         }
         signOutIfAlreadySignedIn(app)
         signIn(app)
-        XCTAssertTrue(app.buttons["Open native app"].waitForExistence(timeout: 15))
-        app.buttons["Open native app"].tap()
+        let exitPilot = app.buttons["Exit shared pilot"]
+        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
+        exitPilot.tap()
         openNostrAccount(app)
 
         // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
@@ -194,8 +195,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.terminate()
         app.launch()
         signIn(app)
-        XCTAssertTrue(app.buttons["Open native app"].waitForExistence(timeout: 15))
-        app.buttons["Open native app"].tap()
+        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
+        exitPilot.tap()
         openNostrAccount(app)
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         XCTAssertEqual(localKey.label, publicKey)

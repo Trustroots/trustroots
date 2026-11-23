@@ -781,10 +781,9 @@ final class TrustrootsTests: XCTestCase {
         configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(session: URLSession(configuration: configuration), credentialStore: InMemoryMobileCredentialStore())
         MobileAPIURLProtocol.handler = { request in
-            XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
             return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, payload)
         }
-        _ = try await api.profile(serverURLString: "https://api.example.test", username: "mira", allowSaved: false)
+        _ = try await api.profile(serverURLString: "https://api.example.test", username: "mira")
         MobileAPIURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
         let cached = try await api.profile(serverURLString: "https://api.example.test", username: "mira")
         XCTAssertEqual(cached.nostrNpub, NostrTestKeys.firstNpub)
@@ -793,6 +792,10 @@ final class TrustrootsTests: XCTestCase {
         storage.values[NostrIdentityManager.legacyAccount] = NostrTestKeys.first
         let identity = NostrIdentityManager(keyStore: storage, clearPermissions: {})
         identity.activate(serverURLString: "https://api.example.test", username: "mira")
+        MobileAPIURLProtocol.handler = { request in
+            XCTAssertEqual(request.cachePolicy, .reloadIgnoringLocalCacheData)
+            throw URLError(.notConnectedToInternet)
+        }
         do {
             let live = try await api.profile(serverURLString: "https://api.example.test", username: "mira", allowSaved: false)
             try identity.considerLegacy(linkedNpub: live.nostrNpub, capturedRevision: identity.revision)
