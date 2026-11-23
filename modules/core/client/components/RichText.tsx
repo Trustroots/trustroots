@@ -4,6 +4,7 @@ import {
   sanitiseRichText,
   disableUserContentLinks,
   linkHashtags,
+  linkMarkdown,
 } from '../utils/rich-text';
 
 type RichTextProps = Omit<
@@ -13,6 +14,7 @@ type RichTextProps = Omit<
   content: string;
   allowTrustrootsLinks?: boolean;
   allowLinks?: boolean;
+  allowMarkdownLinks?: boolean;
   hashtagLinks?: ReadonlyMap<string, string>;
 };
 
@@ -20,12 +22,18 @@ export default function RichText({
   content,
   allowTrustrootsLinks = false,
   allowLinks = false,
+  allowMarkdownLinks = false,
   hashtagLinks,
   ...props
 }: RichTextProps) {
   const html = useMemo(() => {
+    // Resolve labelled links before Autolinker sees their destinations as bare URLs.
+    const source =
+      allowLinks && allowMarkdownLinks
+        ? linkMarkdown(sanitiseRichText(content))
+        : content;
     const linked = allowLinks
-      ? Autolinker.link(content, {
+      ? Autolinker.link(source, {
           email: false,
           phone: false,
           decodePercentEncoding: false,
@@ -39,13 +47,19 @@ export default function RichText({
             return match.buildTag().setAttr('href', 'https://' + href.slice(7));
           },
         })
-      : content;
+      : source;
     const sanitised = sanitiseRichText(linked);
     const html = allowLinks
       ? sanitised
       : disableUserContentLinks(sanitised, allowTrustrootsLinks);
     return hashtagLinks?.size ? linkHashtags(html, hashtagLinks) : html;
-  }, [content, allowLinks, allowTrustrootsLinks, hashtagLinks]);
+  }, [
+    content,
+    allowLinks,
+    allowMarkdownLinks,
+    allowTrustrootsLinks,
+    hashtagLinks,
+  ]);
   // DOMPurify sanitises user content. Generated destinations come from application code.
   // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
   return <div {...props} dangerouslySetInnerHTML={{ __html: html }} />;

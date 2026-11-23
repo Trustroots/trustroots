@@ -69,6 +69,43 @@ test('makes plain web addresses clickable when links are allowed', () => {
   expect(screen.getByText(/^Visit/)).toHaveTextContent(/example\.org, https/);
 });
 
+test('renders valid Markdown links alongside HTML links and bare addresses', () => {
+  const content = [
+    '<p>Read [Field guide](https://example.test/wiki/Guide_(birds)?a=1&amp;b=2)',
+    'or [Local guide](http://example.test/local).',
+    '<a href="/safety">[Safety](https://example.test/)</a>',
+    'See example.org for more.',
+    '[Email](mailto:member@example.test) [Invalid](https://[)</p>',
+  ].join(' ');
+  const { rerender } = render(
+    <RichText content={content} allowLinks allowMarkdownLinks />,
+  );
+  expect(screen.getByRole('link', { name: 'Field guide' })).toHaveAttribute(
+    'href',
+    'https://example.test/wiki/Guide_(birds)?a=1&b=2',
+  );
+  expect(screen.getByRole('link', { name: 'Local guide' })).toHaveAttribute(
+    'href',
+    'http://example.test/local',
+  );
+  expect(
+    screen.getByRole('link', { name: '[Safety](https://example.test/)' }),
+  ).toHaveAttribute('href', '/safety');
+  expect(screen.getByRole('link', { name: 'example.org' })).toHaveAttribute(
+    'href',
+    'https://example.org',
+  );
+  expect(screen.getByText(/\[Email\].*\[Invalid\]/)).toBeInTheDocument();
+  expect(screen.getAllByRole('link')).toHaveLength(4);
+
+  rerender(<RichText content={content} allowLinks />);
+  expect(
+    screen.queryByRole('link', { name: 'Field guide' }),
+  ).not.toBeInTheDocument();
+  rerender(<RichText content={content} allowMarkdownLinks />);
+  expect(screen.queryByRole('link')).not.toBeInTheDocument();
+});
+
 test('preserves allowed links around hashtags', () => {
   render(
     <RichText
