@@ -39,13 +39,9 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "extensions": ["oxc.oxc-vscode"],
       "settings": {
-        "eslint.workingDirectories": [
-          {
-            "mode": "auto"
-          }
-        ]
+        "editor.defaultFormatter": "oxc.oxc-vscode"
       }
     }
   }

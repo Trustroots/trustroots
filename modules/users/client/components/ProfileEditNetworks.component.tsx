@@ -431,7 +431,8 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                   }>
                 ).map(field => {
                   const fieldValue = draftUser[field.field] as
-                    string | undefined;
+                    | string
+                    | undefined;
                   return (
                     <div className="form-group" key={field.id}>
                       <div data-slot="input-group" className="tw:input-group">

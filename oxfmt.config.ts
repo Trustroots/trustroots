@@ -1,0 +1,56 @@
+import { defineConfig } from 'oxfmt';
+
+// Shared with oxlint.config.ts.
+export const ignorePatterns = [
+  'node_modules/',
+  'coverage/',
+  'coverage-report/',
+  'playwright-report/',
+  '**/storybook-static/',
+  'test-results/',
+  'tests/e2e/.auth/',
+  'tmp/',
+  'logs/',
+  'log/',
+  '*.log',
+  'build/',
+  'apps/android/build/',
+  'apps/android/app/build/',
+  'apps/shared/build/',
+  'public/lib/',
+  'public/dist/',
+  'public/assets/',
+  'public/push-messaging-sw.js',
+  'uploads/',
+  'public/uploads-profile/',
+  'public/uploads-circle/',
+  'modules/users/client/img/profile/uploads',
+  'bin/admin/*',
+  '!bin/admin/*.mts',
+  '!bin/admin/*.cts',
+  'deploy',
+  'public',
+  'scripts/**',
+  '!scripts/**/',
+  '!scripts/**/*.mts',
+  '!scripts/**/*.cts',
+  '**/__snapshots__/',
+  '.github/**/*.md',
+  'docs/assets/js/',
+  'docs/assets/downloads/',
+  'apps/nostranslation/build/',
+  'layers/shell/client/routeTree.gen.ts',
+  // Written by the coverage, mutation and module graph scripts.
+  'tooling/baselines/',
+];
+
+export default defineConfig({
+  printWidth: 80,
+  arrowParens: 'avoid',
+  singleQuote: true,
+  trailingComma: 'all',
+  sortPackageJson: false,
+  // Prettier ignored .editorconfig's JSON setting; keep the final newline.
+  insertFinalNewline: true,
+  ignorePatterns,
+});

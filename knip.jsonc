@@ -63,16 +63,6 @@
         "config": ["server-pm2.json", "worker-pm2.json"],
       },
       "ignoreDependencies": [
-        // eslint.config.cts loads these by name through FlatCompat, which
-        // Knip's ESLint plugin can't read.
-        "@typescript-eslint/eslint-plugin",
-        "@typescript-eslint/parser",
-        "eslint-config-prettier",
-        "eslint-plugin-jest-dom",
-        "eslint-plugin-jsx-a11y",
-        "eslint-plugin-prettier",
-        "eslint-plugin-react",
-        "eslint-plugin-testing-library",
         // The browserslist field in package.json extends this.
         "@wordpress/browserslist-config",
         // scripts/check-affected.mts runs `pnpm exec turbo`.

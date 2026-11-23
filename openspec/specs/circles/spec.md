@@ -3,7 +3,9 @@
 ## Purpose
 
 Help people discover Trustroots circles and manage their circle memberships.
+
 ## Requirements
+
 ### Requirement: Circle discovery
 
 The system SHALL make public circle catalogue entries, public circle details,

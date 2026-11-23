@@ -8,7 +8,7 @@
     "./server": "./server/index.mts"
   },
   "scripts": {
-    "lint": "eslint --ext .ts,.tsx,.mts ."
+    "lint": "oxlint . && oxfmt --check ."
   },
   "dependencies": {
     "@umami/node": "0.4.0"

@@ -8,6 +8,7 @@ import { read as readExperiences } from '../api/experiences.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
+import PublicExperiencesList from './read-experiences/PublicExperiencesList';
 import NoContent from '@/modules/core/client/components/NoContent';
 import type { Experience, ExperienceUser } from '../../shared/experience';
 
@@ -99,9 +100,29 @@ export default function ListExperiences({
     );
   }
 
+  const needsReply = (experience: Experience) =>
+    onReceiverProfile && !experience.response;
+  const awaitingReply = [...pendingExperiences, ...publicExperiences].filter(
+    needsReply,
+  );
+  const otherPending = pendingExperiences.filter(
+    experience => !needsReply(experience),
+  );
+  const otherPublic = publicExperiences.filter(
+    experience => !needsReply(experience),
+  );
+
   return (
     <>
-      {hasPendingExperiences && (
+      {awaitingReply.length > 0 && (
+        <section aria-labelledby="experiences-awaiting-reply-heading">
+          <h3 id="experiences-awaiting-reply-heading">
+            {t('Experiences awaiting your reply')}
+          </h3>
+          <ExperiencesSection experiences={awaitingReply} onReceiverProfile />
+        </section>
+      )}
+      {otherPending.length > 0 && (
         <>
           <div className="tw:grid-row">
             <div className="tw:grid-col-12 tw:sm:grid-col-6">
@@ -111,19 +132,20 @@ export default function ListExperiences({
             </div>
           </div>
           <ExperiencesSection
-            experiences={pendingExperiences}
+            experiences={otherPending}
             onReceiverProfile={onReceiverProfile}
           />
         </>
       )}
       {hasPublicExperiences && (
-        <>
-          <ExperienceCounts experiences={publicExperiences} />
-          <ExperiencesSection
-            experiences={publicExperiences}
-            onReceiverProfile={onReceiverProfile}
-          />
-        </>
+        <ExperienceCounts experiences={publicExperiences} />
+      )}
+      {otherPublic.length > 0 && (
+        <PublicExperiencesList
+          key={profile._id}
+          experiences={otherPublic}
+          onReceiverProfile={onReceiverProfile}
+        />
       )}
     </>
   );

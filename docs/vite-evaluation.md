@@ -5,10 +5,9 @@ Vite serves `/assets/*` and proxies other requests to Express on port 3001.
 Set `PORT` for Vite's browser port and `TRUSTROOTS_API_URL` for the Express
 target when using different ports.
 
-Vite and ESLint share client aliases from `config/client/aliases.mts` and the
-main stylesheet from `config/client/styles/main.less`. ESLint keeps the
-TypeScript resolver's extension mappings. Vite resolves an explicit `.js`
-import to the `.js` file, then `.ts`, then `.tsx`.
+Vite reads client aliases from `config/client/aliases.mts` and the main
+stylesheet from `config/client/styles/main.less`. Vite resolves an explicit
+`.js` import to the `.js` file, then `.ts`, then `.tsx`.
 
 Vite compiles styles with Less 4 and enables legacy arithmetic so existing
 unparenthesised divisions retain their behaviour. Module styles are imported
