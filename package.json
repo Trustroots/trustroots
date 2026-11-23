@@ -169,7 +169,6 @@
     "moment": "2.31.0",
     "mongodb": "7.8.0",
     "mongoose": "9.12.2",
-    "morgan": "1.12.1",
     "multer": "2.5.0",
     "nodemailer": "10.6.0",
     "nostr-tools": "2.26.1",
