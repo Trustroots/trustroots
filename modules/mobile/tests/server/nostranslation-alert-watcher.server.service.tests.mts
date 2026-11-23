@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import winston from 'winston';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
 import { webPush } from '../../../users/server/services/web-push.server.transport.mts';
 import { watchNostranslationAlerts } from '../../server/services/nostranslation-alert-watcher.server.service.mts';
@@ -101,6 +102,7 @@ describe('Nostranslation relay watcher', () => {
 
   it('subscribes to fresh review events and reconnects with backoff', async () => {
     vi.useFakeTimers();
+    const log = vi.spyOn(winston, 'log');
     watchNostranslationAlerts();
     const [first] = FixtureSocket.instances;
     first!.dispatchEvent(new Event('open'));
@@ -114,6 +116,11 @@ describe('Nostranslation relay watcher', () => {
     );
     first!.message(new Uint8Array());
     first!.dispatchEvent(new Event('error'));
+    expect(log).toHaveBeenCalledWith(
+      'error',
+      '[Worker] Nostranslation relay connection failed.',
+    );
+    first!.dispatchEvent(new Event('close'));
     first!.dispatchEvent(new Event('close'));
     await vi.advanceTimersByTimeAsync(999);
     expect(FixtureSocket.instances).toHaveLength(1);
@@ -226,6 +233,37 @@ describe('Nostranslation relay watcher', () => {
     },
   );
 
+  it('keeps a replacement endpoint when the previous distributor reports expiry', async () => {
+    await registerMember();
+    const replacement = {
+      ...destination,
+      endpoint: 'https://ntfy.sh/updated-translation-fixture',
+    };
+    let removalFinished = false;
+    const remove = Registrations.deleteOne.bind(Registrations);
+    vi.spyOn(Registrations, 'deleteOne').mockImplementationOnce(filter =>
+      remove(filter).post(() => {
+        removalFinished = true;
+      }),
+    );
+    vi.mocked(webPush.sendNotification).mockImplementationOnce(async () => {
+      await Registrations.updateOne(
+        { _id: recipient },
+        { $set: { destination: replacement } },
+      );
+      throw Object.assign(new Error('Old subscription expired.'), {
+        statusCode: 410,
+      });
+    });
+    watchNostranslationAlerts();
+    FixtureSocket.instances[0]!.message(signedFrame().frame);
+    await vi.waitFor(() => expect(removalFinished).toBe(true));
+    expect(await Registrations.findById(recipient).lean()).toMatchObject({
+      destination: replacement,
+    });
+    expect(webPush.sendNotification).toHaveBeenCalledOnce();
+  });
+
   it.each([404, 410])(
     'removes an Android destination when its distributor returns %s',
     async statusCode => {
@@ -291,9 +329,13 @@ describe('Nostranslation relay watcher', () => {
 
   it('can claim a replay after a temporary database write failure', async () => {
     await registerMember();
-    const create = vi
-      .spyOn(Claims, 'create')
-      .mockRejectedValueOnce(new Error('Database unavailable.'));
+    const log = vi.spyOn(winston, 'log');
+    const create = vi.spyOn(Claims, 'create').mockRejectedValueOnce(
+      new mongoose.mongo.MongoServerError({
+        message: 'Database unavailable.',
+        code: 91,
+      }),
+    );
     vi.mocked(webPush.sendNotification).mockResolvedValue({
       statusCode: 201,
       body: '',
@@ -305,6 +347,10 @@ describe('Nostranslation relay watcher', () => {
     socket.message(frame);
     await vi.waitFor(() => {
       expect(create).toHaveBeenCalledOnce();
+      expect(log).toHaveBeenCalledWith(
+        'error',
+        '[Worker] Nostranslation alert dispatch failed.',
+      );
     });
     expect(webPush.sendNotification).not.toHaveBeenCalled();
     socket.message(frame);
