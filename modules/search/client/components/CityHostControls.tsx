@@ -33,7 +33,7 @@ export default function CityHostControls({
 }: CityResults) {
   const sortId = useId();
   return (
-    <div className="tw:mb-3 tw:grid tw:gap-2">
+    <div className="tw:mx-2.5 tw:mb-3 tw:grid tw:gap-2">
       {active && <h2 className="tw:m-0 tw:text-lg">Hosts in {city.name}</h2>}
       <Button
         type="button"
@@ -44,7 +44,7 @@ export default function CityHostControls({
       </Button>
       {active && (
         <>
-          <label className="tw:grid tw:gap-1" htmlFor={sortId}>
+          <label className="tw:grid tw:gap-1 tw:text-text!" htmlFor={sortId}>
             Sort hosts
             <Select
               id={sortId}
@@ -58,7 +58,7 @@ export default function CityHostControls({
               <option value="experiences">Most public Experiences</option>
             </Select>
           </label>
-          <label className="tw:flex tw:items-center tw:gap-2">
+          <label className="tw:flex tw:items-center tw:gap-2 tw:text-text!">
             <input
               type="checkbox"
               checked={canHost}
@@ -66,7 +66,7 @@ export default function CityHostControls({
             />
             Can host only
           </label>
-          <label className="tw:flex tw:items-center tw:gap-2">
+          <label className="tw:flex tw:items-center tw:gap-2 tw:text-text!">
             <input
               type="checkbox"
               checked={onlyRecent}
