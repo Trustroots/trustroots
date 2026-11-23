@@ -2,6 +2,7 @@ import assert from 'assert';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
 import { challenge } from './../../../users/server/controllers/users.nostr.server.controller.mts';
+import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import unifiedPush from './../../../users/server/controllers/users.unified-push.server.controller.mts';
 import {
   showUnsubscribe,
@@ -503,7 +504,7 @@ describe('API route registrations', () => {
       './../../../users/server/routes/users.server.routes.mts',
       { '../policies/users.server.policy': policy },
     );
-    assert.strictEqual(routes.length, 18);
+    assert.strictEqual(routes.length, 19);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
     assert.deepStrictEqual(unsubscribeRoute.all, []);
@@ -515,6 +516,10 @@ describe('API route registrations', () => {
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],
+    );
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/users/me/safety-visit').put,
+      [userProfile.recordSafetyPageVisit],
     );
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/unified-push/test').post,
