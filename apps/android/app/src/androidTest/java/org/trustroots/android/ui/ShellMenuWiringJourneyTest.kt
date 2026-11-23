@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -39,6 +40,7 @@ import kotlin.concurrent.thread
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -50,6 +52,8 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
+import org.trustroots.android.browser.BrowserNostrSession
+import org.trustroots.android.browser.LocalBrowserNostrSession
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
 import org.trustroots.android.ui.theme.TrustrootsTheme
@@ -76,6 +80,7 @@ class ShellMenuWiringJourneyTest {
     private var previousDestination: MessageDestination? = null
     private var previousStatus: String? = null
     private val requests = CopyOnWriteArrayList<CapturedRequest>()
+    private val browserNostrSession = AtomicReference<BrowserNostrSession?>()
     private var responder: Thread? = null
     @Volatile private var activeSocket: Socket? = null
     private val responderFailure = AtomicReference<Throwable?>(null)
@@ -124,11 +129,36 @@ class ShellMenuWiringJourneyTest {
         compose.onNodeWithText("Fake browser: Nostroots").assertIsDisplayed()
         compose.onNodeWithText("https://nos.trustroots.org/").assertIsDisplayed()
         compose.onNodeWithText("Fake browser cookie: connect.sid=fictional-shell-menu-session").assertIsDisplayed()
+        compose.runOnIdle { assertFalse(checkNotNull(browserNostrSession.get()).isActive()) }
         assertTrue(requests.none { it.path.startsWith("/signup") || it.path.startsWith("/contact-add") })
 
         compose.onNodeWithText("Close fake browser").performClick()
         compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
         compose.onNodeWithText("Nostroots").assertIsDisplayed()
+        assertNoResponderFailure()
+    }
+
+    @Test fun signingSessionFromTheMemberBrowserExpiresAfterSignOut() {
+        showShell(session.copy(accessToken = "fictional-shell-menu-access"))
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        scrollMenuControlAboveNavigation("Nostroots")
+        compose.onNodeWithText("Nostroots").performClick()
+        compose.onNodeWithTag("offlineBrowserSurface").assertIsDisplayed()
+        val signingSession = compose.runOnIdle {
+            checkNotNull(browserNostrSession.get()).also { assertTrue(it.isActive()) }
+        }
+        compose.onNodeWithText("Close fake browser").performClick()
+
+        scrollMenuControlAboveNavigation("Account")
+        compose.onNodeWithText("Account").performClick()
+        compose.onNodeWithTag("accountSettingsScreen").performTouchInput {
+            swipeUp(startY = height * 0.7f, endY = height * 0.2f)
+        }
+        compose.onNodeWithText("Sign out").performScrollTo().performClick()
+        waitForText("Username or email")
+
+        compose.runOnIdle { assertFalse(signingSession.isActive()) }
         assertNoResponderFailure()
     }
 
@@ -174,14 +204,16 @@ class ShellMenuWiringJourneyTest {
         assertNoResponderFailure()
     }
 
-    private fun showShell() {
-        SecureMobileSessionStore(context).save(session)
+    private fun showShell(savedSession: MemberSession = session) {
+        SecureMobileSessionStore(context).save(savedSession)
         compose.setContent {
             TrustrootsTheme {
                 TrustrootsApp(
                     apiBaseUrl = apiBaseUrl,
                     reconcileAlerts = { _, _ -> },
                     browserContent = { route, onClose, contentPadding ->
+                        val signingSession = LocalBrowserNostrSession.current
+                        SideEffect { browserNostrSession.set(signingSession) }
                         OfflineBrowserSurface(route, onClose, contentPadding)
                     },
                 )
