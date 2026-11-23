@@ -503,7 +503,7 @@ internal fun HostMapScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Bottom,
                 ) {
-                    Box { mapScale?.let { HostMapScaleBar(it) } }
+                    Box { HostMapScaleBar(mapScale) }
                     HostMapDeviceLocation(
                         onStart = closePlaceSearch,
                         onLocation = {
