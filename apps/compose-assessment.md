@@ -207,7 +207,7 @@ signed iOS release.
 
 ## First shared member journey pilot
 
-The pilot implements sign-in, profile viewing, inbox pagination, conversation
+The pilot implements sign-in, a member dashboard, profile viewing, inbox pagination, conversation
 navigation and replies in `apps/shared`. Compose owns the journey's screens,
 back stack, loading and error states, and reply handling. The Android and iOS
 hosts project their existing API models into a small common interface. Each
@@ -219,12 +219,17 @@ The pilot is available by explicit launch option in debug builds:
 - On Android, run `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_MEMBER_PILOT true`.
 - On iOS, add `--shared-member-pilot` to the Xcode scheme's launch arguments, or
   run `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-member-pilot`.
-- Choose **Open native app** on the pilot's first screen to return to the
+- Choose **Exit shared pilot** on the pilot's first screen to return to the
   existing app with the same session. Android also supports system Back.
 
 Use an existing test account or a controlled backend with fictional data to
 compare both hosts. Launching the pilot with a saved session opens the
-member's profile. From **Messages**, open a conversation directly or view the
+member dashboard. The bottom bar provides **Home**, **Messages** and **My profile**
+throughout the signed-in pilot. Home also shows the website's featured Nostr notes and recent
+connections, with a native map of approximate locations for connections who
+are hosting or happy to meet. The app uses the same eligibility rules and
+keeps the core shortcuts available if either feed is unavailable.
+From **Messages**, open a conversation directly or view the
 other member's profile and then choose **Send a message**.
 
 | Area                  | Pilot                                                                                          | Remaining comparison                                                                                                         |
@@ -284,3 +289,32 @@ runs the native suite on its selected iPhone simulator before the native app tes
 This adds common contract coverage without adding a desktop application target.
 It does not replace the existing Android and iOS member-journey device tests or
 establish Compose UI parity for #3232.
+
+## Shared pilot dashboard
+
+The shared dashboard is a pilot increment towards #3533 within #3232. Native
+release home tabs remain unchanged. Optional profile-completion prompts, local
+events, localisation and native-default rollout remain follow-up work. The
+dashboard Android journeys cover discovery, a failed feed and return navigation;
+iOS dashboard build and runtime verification must pass on macOS before rollout.
+
+![Shared member dashboard on an Android emulator](shared/docs/member-dashboard-android.png)
+
+## Shared Home in the regular app shells
+
+The shared dashboard can now run as the first tab in the existing Android and
+SwiftUI member shells. It uses their existing secure sessions, native Search
+and Messages, and opens a regular member profile when a connection is chosen.
+Circles remains available from Android Profile and iOS Menu.
+
+- Android debug: `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_HOME true`.
+- iOS debug: `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-home`.
+
+On Android, the fixture journey covers signing in with a saved session, the
+Home map and feed, profile restoration across activity recreation, Back,
+native tabs and Circles. iOS CI exercises the handoff from the standalone
+pilot to the regular shell with the existing Keychain session. The remaining
+rollout decision centres on supported-device verification and the performance
+comparison described above.
+
+![Shared Home in the regular Android navigation](shared/docs/member-dashboard-android-shell.png)

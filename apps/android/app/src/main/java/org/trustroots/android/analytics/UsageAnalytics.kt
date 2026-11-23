@@ -7,6 +7,7 @@ import org.json.JSONObject
 // Only fixed destinations may reach the analytics transport. Never accept a URL or member value.
 internal enum class UsageScreen(val path: String, val title: String) {
     SignIn("sign-in", "Sign in"),
+    Home("home", "Home"),
     Circles("circles", "Circles"),
     Search("search", "Search"),
     Messages("messages", "Messages"),

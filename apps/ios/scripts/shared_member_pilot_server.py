@@ -45,6 +45,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if route == "/health":
             self._json(200, {"status": "ready"})
             return
+        if route == "/api/nostr/featured-notes":
+            self._json(200, [{
+                "id": "fixture-update",
+                "content": "A fictional Trustroots update.",
+                "authorUsername": "fixture-news",
+                "publishedAt": "2026-11-15T10:00:00Z",
+            }])
+            return
         if not self._authorised():
             return
         if route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
@@ -61,6 +69,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
             self._json(200, {"profile": PARTNER})
+        elif route == "/api/mobile/v0/connections":
+            self._json(200, {
+                "recent": [dict(PARTNER, activity="today")],
+                "hosts": [dict(PARTNER, location=[41.15, -8.61])],
+                "meetings": [],
+            })
         elif route == "/api/mobile/v0/messages":
             self._json(200, [{
                 "_id": "thread-pilot-1",

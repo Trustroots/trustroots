@@ -10,6 +10,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "--shared-member-pilot",
+            "--shared-home",
             "-trustroots.apiServerURL",
             fixtureURL.absoluteString,
         ]
@@ -21,20 +22,41 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        let home = XCTAttachment(screenshot: app.screenshot())
+        home.name = "shared-member-dashboard"
+        home.lifetime = .keepAlways
+        add(home)
+        element(labelled: "My profile", in: app).tap()
         let profile = element(labelled: "Mira Example", in: app)
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
-        app.buttons["Open native app"].tap()
+        app.buttons["Back"].tap()
+        app.buttons["Exit shared pilot"].tap()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Home"].isSelected)
+        XCTAssertTrue(app.buttons["Search"].exists)
+        XCTAssertTrue(app.buttons["Messages"].exists)
+        XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        let nativeHome = XCTAttachment(screenshot: app.screenshot())
+        nativeHome.name = "shared-home-regular-shell"
+        nativeHome.lifetime = .keepAlways
+        add(nativeHome)
+        app.buttons["Menu"].tap()
+        XCTAssertTrue(app.buttons["Circles"].waitForExistence(timeout: 10))
 
         app.terminate()
         try await updateFixtureSession("expire-access-token", at: fixtureURL)
         app.launch()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "My profile", in: app).tap()
         XCTAssertTrue(
             element(labelled: "A test profile after refresh 1", in: app).waitForExistence(timeout: 15),
             "The saved session should refresh and load the profile after relaunch.\n\(app.debugDescription)"
         )
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
-        app.buttons["Messages"].tap()
+        app.buttons["Back"].tap()
+        element(labelled: "Messages", in: app).tap()
         XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10))
         app.buttons["View profile"].tap()
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 10))
@@ -50,8 +72,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
-        app.buttons["Messages"].tap()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "Messages", in: app).tap()
         app.buttons["Open conversation"].tap()
         XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
         XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
@@ -63,12 +85,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         // The fixture rejects the original refresh token after the first rotation.
         try await updateFixtureSession("expire-access-token", at: fixtureURL)
         app.launch()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "My profile", in: app).tap()
         XCTAssertTrue(
             element(labelled: "A test profile after refresh 2", in: app).waitForExistence(timeout: 15),
             "The rotated refresh token should survive relaunch.\n\(app.debugDescription)"
         )
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
-        app.buttons["Messages"].tap()
+        app.buttons["Back"].tap()
+        element(labelled: "Messages", in: app).tap()
         app.buttons["Open conversation"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
         XCTAssertTrue(draft.exists)
@@ -76,6 +101,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         app.buttons["Back"].tap()
         app.buttons["Back"].tap()
+        element(labelled: "My profile", in: app).tap()
         app.buttons["Sign out"].tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
 
@@ -84,9 +110,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
 
         signIn(app)
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        element(labelled: "My profile", in: app).tap()
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
         try await updateFixtureSession("revoke-session", at: fixtureURL)
-        app.buttons["Messages"].tap()
+        element(labelled: "Messages", in: app).tap()
 
         let sessionExpired = element(
             labelled: "Your session expired or is no longer valid. Please sign in again.",
@@ -94,7 +123,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         XCTAssertTrue(sessionExpired.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(app.buttons["Sign in"].exists)
-        XCTAssertFalse(app.buttons["Messages"].exists)
+        XCTAssertFalse(element(labelled: "Messages", in: app).exists)
 
         app.terminate()
         app.launch()
@@ -150,9 +179,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             .completed,
             "The input should be visible and enabled.\n\(app.debugDescription)"
         )
-        field.tap()
-        // Compose exposes its inputs as text views. Send keys to that input,
-        // rather than whichever element the application still considers focused.
+        // Compose exposes the full field as a text view. Focus its leading text area.
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
         field.typeText(text)
         let entered = XCTNSPredicateExpectation(
             predicate: NSPredicate { object, _ in
@@ -195,6 +223,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func signOutIfAlreadySignedIn(_ app: XCUIApplication) {
+        if element(labelled: "My profile", in: app).waitForExistence(timeout: 2) {
+            element(labelled: "My profile", in: app).tap()
+        }
         let signOut = app.buttons["Sign out"]
         guard signOut.waitForExistence(timeout: 2) else { return }
         signOut.tap()
@@ -218,6 +249,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
+        element(labelled: "My profile", in: app).tap()
         let profile = element(labelled: "A test profile", in: app)
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         let banner = app.descendants(matching: .any)["offline-saved-data"].firstMatch
@@ -226,6 +259,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         try await setDroppedProfileResponse(true, at: fixtureURL)
         app.terminate()
         app.launch()
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
+        element(labelled: "My profile", in: app).tap()
         XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(banner.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(banner.label.hasPrefix("Offline — saved "))
@@ -235,7 +270,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         add(capture)
 
         try await setDroppedProfileResponse(false, at: fixtureURL)
-        app.buttons["Messages"].tap()
+        element(labelled: "Messages", in: app).tap()
         XCTAssertTrue(app.staticTexts["Robin Example"].waitForExistence(timeout: 10), app.debugDescription)
         let bannerCleared = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: banner)
         XCTAssertEqual(XCTWaiter.wait(for: [bannerCleared], timeout: 10), .completed, app.debugDescription)

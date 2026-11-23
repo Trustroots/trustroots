@@ -85,6 +85,8 @@ import org.trustroots.android.ui.signin.SignInNavigation
 import org.trustroots.android.ui.signin.SignUpOnboarding
 import org.trustroots.android.ui.startup.StartupTransition
 
+internal const val SHARED_HOME_EXTRA = "org.trustroots.android.debug.SHARED_HOME"
+
 @Composable
 internal fun TrustrootsApp(
     apiBaseUrl: String = BuildConfig.API_BASE_URL,
@@ -131,7 +133,9 @@ internal fun TrustrootsApp(
     }
     val sessionState by sessionViewModel.state.collectAsState()
     var onboardingUsername by rememberSaveable(apiBaseUrl) { mutableStateOf<String?>(null) }
-    var initialMemberDestination by rememberSaveable(apiBaseUrl) { mutableStateOf(Destination.Circles) }
+    val sharedHome = isSharedHomeRequested(activity)
+    val defaultDestination = if (sharedHome) Destination.Home else Destination.Circles
+    var initialMemberDestination by rememberSaveable(apiBaseUrl, sharedHome) { mutableStateOf(defaultDestination) }
     val session = sessionState.session
     val starting = sessionState.isStarting
     val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
@@ -157,12 +161,12 @@ internal fun TrustrootsApp(
                     initialMessage = sessionState.signedOutMessage,
                     browserContent = browserContent,
                     onSignedUp = {
-                        initialMemberDestination = Destination.Circles
+                        initialMemberDestination = defaultDestination
                         onboardingUsername = it.member.username
                         sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
                     },
                     onSignedIn = {
-                        initialMemberDestination = Destination.Messages
+                        initialMemberDestination = if (sharedHome) Destination.Home else Destination.Messages
                         onboardingUsername = null
                         sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
                     },
@@ -207,6 +211,7 @@ internal fun TrustrootsApp(
                             } else {
                                 MemberShell(
                                     initialDestination = initialMemberDestination,
+                                    sharedHome = sharedHome,
                                     analytics = analytics,
                                     session = activeSession,
                                     sessionStore = sessionStore,
@@ -237,6 +242,7 @@ internal fun TrustrootsApp(
 
 @Serializable
 internal enum class Destination(@StringRes val label: Int) {
+    Home(R.string.screen_destination_home),
     Circles(R.string.screen_destination_circles),
     Search(R.string.screen_destination_search),
     Messages(R.string.screen_destination_messages),
@@ -261,6 +267,7 @@ internal fun currentMemberTab(backStack: List<NavKey>): MemberTabVisit =
 @Composable
 private fun MemberShell(
     initialDestination: Destination,
+    sharedHome: Boolean,
     analytics: UsageAnalytics,
     session: MemberSession,
     sessionStore: SecureMobileSessionStore,
@@ -293,6 +300,7 @@ private fun MemberShell(
     }
     val analyticsScreen = when {
         destination == Destination.Menu -> activeMenuScreen
+        destination == Destination.Home -> UsageScreen.Home
         destination == Destination.Circles -> UsageScreen.Circles
         destination == Destination.Search -> searchUsageByVisit[activeVisitID] ?: UsageScreen.Search
         else -> UsageScreen.Messages
@@ -408,11 +416,12 @@ private fun MemberShell(
                     sessionCookie = session.cookieHeader,
                     accessToken = session.accessToken,
                     memberLabel = session.member.displayName,
+                    sharedHome = sharedHome,
                     onNavigate = { item ->
                         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
                         val action: () -> Unit = {
-                            if (item == Destination.Circles && item == destination) {
-                                reselect(Destination.Circles)
+                            if ((item == Destination.Circles || item == Destination.Home) && item == destination) {
+                                reselect(item)
                             } else if (item == Destination.Messages && item == destination) {
                                 reselect(Destination.Messages)
                             } else if (item == Destination.Search && item == destination) {
@@ -481,6 +490,13 @@ private fun MemberShell(
                                         openCircles = {
                                             navigateTo(Destination.Circles)
                                         },
+                                    )
+                                    Destination.Home -> NativeSharedHome(
+                                        api = api,
+                                        session = session,
+                                        contentPadding = contentPadding,
+                                        onSessionInvalidated = onSessionInvalidated,
+                                        browserContent = browserContent,
                                     )
                                     Destination.Circles -> {
                                         CirclesNavigationDisplay(

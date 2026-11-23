@@ -16,8 +16,10 @@ import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.ui.session.AppSessionEvent
 import org.trustroots.android.ui.session.AppSessionSource
 import org.trustroots.android.ui.session.AppSessionViewModel
+import org.trustroots.shared.ui.PilotConnections
 import org.trustroots.shared.ui.PilotGateway
 import org.trustroots.shared.ui.PilotMessage
+import org.trustroots.shared.ui.PilotNote
 import org.trustroots.shared.ui.PilotPerson
 import org.trustroots.shared.ui.PilotProfile
 import org.trustroots.shared.ui.PilotThread
@@ -88,6 +90,26 @@ internal class SharedMemberPilotGateway(
             if (!isCurrent(active, requestGeneration)) return@authenticated
             result.fold(
                 onSuccess = { completion(it.toPilotProfile(), null) },
+                onFailure = { error ->
+                    handleFailure(active, error)
+                    completion(null, errorText(error))
+                },
+            )
+        }
+
+    override fun featuredNotes(completion: (List<PilotNote>?, String?) -> Unit) =
+        authenticated(completion) { active, requestGeneration ->
+            val result = requireClient().featuredNotes()
+            if (!isCurrent(active, requestGeneration)) return@authenticated
+            completion(result.getOrNull(), result.exceptionOrNull()?.let(::errorText))
+        }
+
+    override fun connections(completion: (PilotConnections?, String?) -> Unit) =
+        authenticated(completion) { active, requestGeneration ->
+            val result = requireClient().dashboardConnections(active)
+            if (!isCurrent(active, requestGeneration)) return@authenticated
+            result.fold(
+                onSuccess = { completion(it, null) },
                 onFailure = { error ->
                     handleFailure(active, error)
                     completion(null, errorText(error))

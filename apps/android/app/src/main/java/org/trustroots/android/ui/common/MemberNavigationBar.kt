@@ -31,6 +31,7 @@ internal fun MemberNavigationBar(
     accessToken: String? = null,
     memberLabel: String,
     onNavigate: (Destination) -> Unit,
+    sharedHome: Boolean = false,
 ) {
     val unreadCountDescription = pluralStringResource(
         R.plurals.screen_destination_unread_count,
@@ -42,7 +43,9 @@ internal fun MemberNavigationBar(
         containerColor = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
     ) {
-        Destination.entries.forEach { item ->
+        val firstTab = if (sharedHome) Destination.Home else Destination.Circles
+        val selectedTab = if (sharedHome && destination == Destination.Circles) Destination.Menu else destination
+        listOf(firstTab, Destination.Search, Destination.Messages, Destination.Menu).forEach { item ->
             NavigationBarItem(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.onPrimary,
@@ -51,7 +54,7 @@ internal fun MemberNavigationBar(
                     unselectedTextColor = MaterialTheme.colorScheme.onPrimary,
                     indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
                 ),
-                selected = destination == item,
+                selected = selectedTab == item,
                 label = { Text(stringResource(item.label)) },
                 onClick = { onNavigate(item) },
                 modifier = Modifier.testTag("navigation-${item.name.lowercase()}").semantics {
@@ -72,6 +75,10 @@ internal fun MemberNavigationBar(
                                 accessToken = accessToken,
                                 label = memberLabel,
                                 size = 24.dp,
+                            )
+                            Destination.Home -> Icon(
+                                painter = painterResource(R.drawable.ic_material_home),
+                                contentDescription = null,
                             )
                             Destination.Circles -> Icon(
                                 painter = painterResource(R.drawable.ic_material_bubble_chart),

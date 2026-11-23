@@ -20,6 +20,9 @@ import org.trustroots.shared.ui.SharedComposeRoot
 
 internal const val SHARED_MEMBER_PILOT_EXTRA = "org.trustroots.android.debug.SHARED_MEMBER_PILOT"
 
+internal fun isSharedHomeRequested(activity: ComponentActivity): Boolean =
+    activity.intent.getBooleanExtra(SHARED_HOME_EXTRA, false)
+
 @Composable
 internal fun showSharedMemberPilot(
     activity: ComponentActivity,
@@ -53,6 +56,7 @@ internal fun showSharedMemberPilot(
         username = sessionState.session?.member?.username,
         initialError = sessionState.signedOutMessage?.let { stringResource(R.string.screen_sign_in_session_expired) },
         installBackHandler = { active, onBack -> BackHandler(active, onBack) },
+        renderConnectionsMap = { SharedHomeConnectionsMap(it) },
     )
     return true
 }
