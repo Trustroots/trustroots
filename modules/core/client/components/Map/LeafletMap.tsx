@@ -47,6 +47,7 @@ export default function LeafletMap({
       zoomControl: true,
     }).setView(location, zoom);
 
+    L.control.scale({ imperial: false }).addTo(map);
     addRasterMapTiles({ map, tileLayer: L.tileLayer });
 
     mapRef.current = map;

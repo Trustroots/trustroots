@@ -168,6 +168,7 @@ internal fun HostMapScreen(
     var showSuggestions by remember { mutableStateOf(false) }
     val suggestions = mapState.suggestions
     var mapRevision by remember { mutableIntStateOf(0) }
+    var mapScale by remember { mutableStateOf<HostMapScale?>(null) }
     var mapHasSize by remember { mutableStateOf(false) }
     BackHandler(
         enabled = showResults || showFilters || showSuggestions || selectedNotes.isNotEmpty(),
@@ -201,6 +202,7 @@ internal fun HostMapScreen(
     }
     val dispatchViewport: () -> Unit = dispatch@{
         if (map.width <= 0 || map.height <= 0) return@dispatch
+        mapScale = HostMapScale.read(map)
         val centre = map.mapCenter
         val bounds = map.boundingBox
         mapViewModel.onEvent(
@@ -496,14 +498,21 @@ internal fun HostMapScreen(
             Column(
                 Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
             ) {
-                if (!showResults) HostMapDeviceLocation(
-                    onStart = closePlaceSearch,
-                    onLocation = {
-                        mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
-                    },
-                    modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp, vertical = 4.dp),
-                    lookup = deviceLocationLookup,
-                )
+                if (!showResults) Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    Box { mapScale?.let { HostMapScaleBar(it) } }
+                    HostMapDeviceLocation(
+                        onStart = closePlaceSearch,
+                        onLocation = {
+                            mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
+                        },
+                        modifier = Modifier,
+                        lookup = deviceLocationLookup,
+                    )
+                }
                 if (!showResults && selectedNotes.isNotEmpty()) {
                     Column(
                         Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),

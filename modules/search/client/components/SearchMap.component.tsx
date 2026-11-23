@@ -1255,7 +1255,7 @@ export default function SearchMap({
         style={{ width: '100%', height: '100%' }}
       >
         {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
-        <MapScaleControl />
+        <MapScaleControl showMapStyles={showMapStyles} />
         <MapNavigationControl />
         {showMapStyles && (
           <MapStyleControl

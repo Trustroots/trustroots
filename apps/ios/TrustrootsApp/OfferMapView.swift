@@ -30,39 +30,41 @@ struct OfferMapView: View {
 
     var body: some View {
         NavigationStack {
-            Map(position: $position) {
-                ForEach(clusters) { cluster in
-                    Annotation("", coordinate: cluster.coordinate) {
-                        Button {
-                            Task { await select(cluster) }
-                        } label: {
-                            HostMapDot(count: cluster.count, color: cluster.color)
-                        }
-                        .accessibilityLabel(cluster.count == 1 ? "View potential host" : "View \(cluster.count) potential hosts")
-                    }
-                }
-                if showingCommunityNotes {
-                    ForEach(CommunityNoteCluster.group(communityNotes.notes, in: visibleRegion)) { cluster in
+            MetricScaleMap {
+                Map(position: $position) {
+                    ForEach(clusters) { cluster in
                         Annotation("", coordinate: cluster.coordinate) {
                             Button {
-                                if cluster.notes.count > 1 {
-                                    position = .region(cluster.zoomedRegion(from: visibleRegion))
-                                } else {
-                                    selectedHost = nil
-                                    selectedCommunityNote = cluster.notes.first
-                                }
+                                Task { await select(cluster) }
                             } label: {
-                                HostMapDot(count: cluster.notes.count, color: TrustrootsPalette.communityNote)
+                                HostMapDot(count: cluster.count, color: cluster.color)
                             }
-                            .accessibilityLabel(cluster.notes.count == 1 ? "View Community Note" : "View \(cluster.notes.count) Community Notes")
+                            .accessibilityLabel(cluster.count == 1 ? "View potential host" : "View \(cluster.count) potential hosts")
+                        }
+                    }
+                    if showingCommunityNotes {
+                        ForEach(CommunityNoteCluster.group(communityNotes.notes, in: visibleRegion)) { cluster in
+                            Annotation("", coordinate: cluster.coordinate) {
+                                Button {
+                                    if cluster.notes.count > 1 {
+                                        position = .region(cluster.zoomedRegion(from: visibleRegion))
+                                    } else {
+                                        selectedHost = nil
+                                        selectedCommunityNote = cluster.notes.first
+                                    }
+                                } label: {
+                                    HostMapDot(count: cluster.notes.count, color: TrustrootsPalette.communityNote)
+                                }
+                                .accessibilityLabel(cluster.notes.count == 1 ? "View Community Note" : "View \(cluster.notes.count) Community Notes")
+                            }
                         }
                     }
                 }
-            }
-            .mapStyle(.standard(elevation: .realistic))
-            .onMapCameraChange(frequency: .onEnd) { context in
-                visibleRegion = context.region
-                Task { await loadOffers(in: context.region) }
+                .mapStyle(.standard(elevation: .realistic))
+                .onMapCameraChange(frequency: .onEnd) { context in
+                    visibleRegion = context.region
+                    Task { await loadOffers(in: context.region) }
+                }
             }
             .overlay(alignment: .topTrailing) {
                 VStack(alignment: .trailing, spacing: 8) {

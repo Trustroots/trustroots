@@ -175,6 +175,7 @@ export default function CircleLocationMap(props: Props) {
       savedView ? [savedView[0], savedView[1]] : [20, 0],
       savedView ? savedView[2] : minimumZoom(),
     );
+    L.control.scale({ imperial: false }).addTo(map);
     initialViewSet.current = Boolean(savedView);
     // Preserve any view chosen while the initial relay results are loading.
     map.on('movestart', () => {

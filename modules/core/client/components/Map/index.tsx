@@ -110,7 +110,7 @@ export default function Map(props: MapProps) {
         {...overrideProps}
       >
         <MapNavigationControl />
-        <MapScaleControl />
+        <MapScaleControl showMapStyles={showMapStyles} />
         {showMapStyles && (
           <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
         )}
