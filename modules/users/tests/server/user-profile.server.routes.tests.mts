@@ -127,6 +127,36 @@ describe('User profile CRUD tests', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+
+  it('records a repeatable safety page visit for the signed-in member only', async () => {
+    const path = '/api/users/me/safety-visit';
+    const readVisit = async (id: typeof user._id) =>
+      (await User.findById(id).select('+safetyPageVisited'))?.get(
+        'safetyPageVisited',
+      );
+
+    await request(app).put(path).set('X-Trustroots-Request', '1').expect(403);
+    assert.equal(await readVisit(user._id), undefined);
+
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent
+      .put(path)
+      .set('X-Trustroots-Request', '1')
+      .send({ userId: user2._id.toString() })
+      .expect(204);
+    assert.equal(await readVisit(user._id), true);
+    assert.equal(await readVisit(user2._id), undefined);
+
+    await agent.put(path).set('X-Trustroots-Request', '1').expect(204);
+    assert.equal(await readVisit(user._id), true);
+    assert.equal(
+      (await User.findById(user._id))?.get('safetyPageVisited'),
+      undefined,
+    );
+    const profile = await agent.get(`/api/users/${user.username}`).expect(200);
+    assert.equal(profile.body.safetyPageVisited, undefined);
+  });
+
   it('clears a confirmed missing Gravatar in the background after a profile view', async () => {
     await User.updateOne(
       { _id: user2._id },

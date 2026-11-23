@@ -4,6 +4,13 @@ import {
   expectPresent,
   test,
 } from '../../support/fixtures.mts';
+import { removeUserByUsername, withE2eDb } from '../../support/db.mts';
+import {
+  createIsolatedContext,
+  createUser,
+  registerViaApi,
+  signInViaApi,
+} from '../../support/helpers.mts';
 
 for (const language of ['en', 'ar']) {
   test(`homepage circle cards do not overlap the introduction in ${language}`, async ({
@@ -95,4 +102,60 @@ test('about redirects to the homepage and the information page uses React', asyn
   await expect(
     page.getByRole('heading', { name: 'Safety Tips for Trustroots' }),
   ).toBeVisible();
+});
+
+test('a signed-in safety page visit persists across browser sessions', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.safety', [
+    'A signed-in member’s safety page visit persists across sessions.',
+  ]);
+  const member = createUser();
+  const readVisit = () =>
+    withE2eDb(async db => {
+      const user = await db
+        .collection('users')
+        .findOne(
+          { username: member.username },
+          { projection: { safetyPageVisited: 1 } },
+        );
+      return user?.safetyPageVisited;
+    });
+
+  const firstSession = await createIsolatedContext(browser, baseURL);
+  try {
+    try {
+      await registerViaApi(firstSession.request, member);
+      expect(await readVisit()).toBeUndefined();
+      const page = await firstSession.newPage();
+      await page.goto('/safety');
+      await expect(
+        page.getByRole('heading', { name: 'Safety Tips for Trustroots' }),
+      ).toBeVisible();
+      await expect.poll(readVisit).toBe(true);
+    } finally {
+      await firstSession.close();
+    }
+
+    const secondSession = await createIsolatedContext(browser, baseURL);
+    try {
+      const page = await secondSession.newPage();
+      await signInViaApi(page, undefined, member);
+      expect(await readVisit()).toBe(true);
+
+      const visit = page.waitForResponse(
+        response =>
+          response.url().endsWith('/api/users/me/safety-visit') &&
+          response.request().method() === 'PUT',
+      );
+      await page.goto('/safety');
+      expect((await visit).status()).toBe(204);
+      expect(await readVisit()).toBe(true);
+    } finally {
+      await secondSession.close();
+    }
+  } finally {
+    await removeUserByUsername(member.username);
+  }
 });
