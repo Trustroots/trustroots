@@ -323,7 +323,7 @@ describe('Reference Thread CRUD tests', function () {
                     // Dates should have ~24h difference (when rounded, there might be a few seconds extra due time it takes to run tests)
                     differenceInHours(
                       new Date(),
-                      referenceThreadFindRes[1].created,
+                      referenceThreadFindRes[1].created!,
                     ).should.equal(24);
 
                     // Read reference

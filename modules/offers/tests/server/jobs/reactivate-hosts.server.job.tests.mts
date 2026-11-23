@@ -61,7 +61,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       description: '<p>I can host! :)</p>',
       noOfferDescription: '<p>I cannot host... :(</p>',
       maxGuests: 1,
-      updated: sub(new Date(), config.limits.timeToReactivateHosts).toDate(),
+      updated: sub(new Date(), config.limits.timeToReactivateHosts),
       location: [52.498981209298776, 13.418329954147339],
       locationFuzzy: [52.50155039101136, 13.42255019882177],
     };

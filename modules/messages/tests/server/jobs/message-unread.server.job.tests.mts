@@ -997,7 +997,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1043,7 +1043,7 @@ describe('Job: message unread', function () {
             .save()
             .then(function () {
               // wait for 10 minutes
-              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+              sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
               messageUnreadJobHandler({}, function (err?: Error | null) {
                 if (err) return done(err);
@@ -1094,7 +1094,7 @@ describe('Job: message unread', function () {
             .save()
             .then(function () {
               // wait for 10 minutes
-              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+              sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
               messageUnreadJobHandler({}, function (err?: Error | null) {
                 if (err) return done(err);
@@ -1130,7 +1130,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1172,7 +1172,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 24 hours
-          sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ hours: 24 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1196,7 +1196,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1553,7 +1553,7 @@ describe('Job: message unread', function () {
       const tooOld = sub(
         new Date(),
         config.limits.unreadMessageRemindersTooLate,
-      ).toDate();
+      );
       message.created = tooOld;
       message.notificationCount = 1;
       await message.save();

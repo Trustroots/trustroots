@@ -9,19 +9,20 @@ type TimeAgoProps = { date: Date };
 
 export default function TimeAgo({ date }: TimeAgoProps) {
   const { i18n } = useTranslation();
-  const [fromNow, setFromNow] = useState(() => timeAgo(date, i18n.language));
+  const locale = i18n.language?.replace(/_/g, '-');
+  const [fromNow, setFromNow] = useState(() => timeAgo(date, locale));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setFromNow(timeAgo(date, i18n.language));
+      setFromNow(timeAgo(date, locale));
     }, REFRESH_INTERVAL);
     return () => clearInterval(interval);
-  }, [date, i18n.language]);
+  }, [date, locale]);
 
   return (
     <time
       dateTime={date.toString()}
-      title={date.toLocaleString(i18n.language, {
+      title={date.toLocaleString(locale, {
         dateStyle: 'full',
         timeStyle: 'short',
       })}
