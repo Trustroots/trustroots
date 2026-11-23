@@ -70,7 +70,7 @@
     "start:develop": "pnpm run generate-circle-images && NODE_ENV=development node ./scripts/start-with-nodemon.cts",
     "start:docker": "pnpm run start",
     "start:prod": "NODE_ENV=production node server.js",
-    "start:worker:prod": "NODE_ENV=production node worker.js",
+    "start:worker:prod": "NODE_ENV=production node worker.mjs",
     "start:worker": "NODE_ENV=development node ./scripts/start-with-nodemon.cts worker",
     "start": "TRUSTROOTS_VITE_DEV_SERVER=true concurrently --raw --kill-others --kill-others-on-fail 'pnpm:lint:watch' 'pnpm:start:develop' 'pnpm:vite:server' 'pnpm:start:worker'",
     "test:client:watch": "vitest --config vitest.client.config.mts",

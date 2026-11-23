@@ -2,7 +2,7 @@
 // `pnpm check` and CI.
 //
 // The script sets BRAVE_EXECUTABLE_PATH because Knip loads
-// playwright.windows-wheel.config.cjs (named in a workflow), which throws
+// playwright.windows-wheel.config.cts (named in a workflow), which throws
 // without it.
 //
 // @esmNamed marks a named export that mirrors a member of the module's
@@ -15,7 +15,7 @@
   "workspaces": {
     ".": {
       "entry": [
-        // server.js and worker.js (PM2, start:prod) only import these. Knip
+        // server.js and worker.mjs (PM2, start:prod) only import these. Knip
         // would map server.mjs back to server.js because they share a
         // basename, and then never walk the server or worker graph.
         "server.mjs",
@@ -59,7 +59,7 @@
         ],
       },
       "pm2": {
-        // PM2 starts server.js and worker.js from these in production.
+        // PM2 starts server.js and worker.mjs from these in production.
         "config": ["server-pm2.json", "worker-pm2.json"],
       },
       "ignoreDependencies": [

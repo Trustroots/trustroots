@@ -2,7 +2,7 @@
   "apps": [
     {
       "name": "worker",
-      "script": "./worker.js",
+      "script": "./worker.mjs",
       "watch": false,
       "env": {
         "NODE_ENV": "development"

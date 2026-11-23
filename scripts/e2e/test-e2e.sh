@@ -360,7 +360,7 @@ DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
 TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
 TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
 TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-pnpm exec playwright test --config playwright.config.cjs "$@"
+pnpm exec playwright test --config playwright.config.cts "$@"
 playwright_status="$?"
 set -e
 
