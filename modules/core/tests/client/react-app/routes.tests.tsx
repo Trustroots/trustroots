@@ -670,6 +670,9 @@ describe('React route ownership', () => {
     expect(access('/support', null)).toBeUndefined();
     expect(access('/messages', null)).toBe(signIn);
     expect(access('/messages', {})).toBeUndefined();
+    expect(access('/volunteers', null)).toBe('/volunteering');
+    expect(access('/circles/naturists', null)).toBe(signIn);
+    expect(access('/circles/hitchhikers', null)).toBeUndefined();
   });
 
   it.each([

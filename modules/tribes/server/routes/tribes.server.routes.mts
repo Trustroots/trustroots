@@ -4,6 +4,7 @@ import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
 import tribesPolicy from './../policies/tribes.server.policy.mts';
 import tribes from './../controllers/tribes.server.controller.mts';
+import { registerCircleChat } from '../controllers/circle-chat.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
 
@@ -39,6 +40,8 @@ function register(app: Express) {
       },
     }),
   );
+
+  registerCircleChat(app);
 
   app
     .route('/api/tribes')

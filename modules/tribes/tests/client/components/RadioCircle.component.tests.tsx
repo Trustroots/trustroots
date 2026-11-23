@@ -1,9 +1,12 @@
 import type { Mock, MockInstance } from 'vitest';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import http from '@/modules/core/client/api/http-client';
+import { withCircleChatRelay } from '@/modules/tribes/shared/circle-chat-relay';
 import {
   act,
   fireEvent,
-  render,
+  render as renderComponent,
   screen,
   waitFor,
   within,
@@ -12,6 +15,7 @@ import '@/config/client/i18n';
 import {
   finalizeEvent,
   generateSecretKey,
+  getPublicKey,
   nip19,
   type Event,
   type EventTemplate,
@@ -59,12 +63,19 @@ vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
     RadioRoom: vi.fn(),
   };
 });
+vi.mock('@/modules/core/client/api/http-client', () => ({
+  default: { get: vi.fn() },
+}));
+vi.mock('@/modules/tribes/shared/circle-chat-relay', () => ({
+  withCircleChatRelay: vi.fn(),
+}));
+const secret = generateSecretKey();
 const user: UserProfile = {
   _id: 'fictional-member-id',
   username: 'fictional-member',
+  nostrNpub: nip19.npubEncode(getPublicKey(secret)),
   displayName: 'Fictional Member',
 };
-const secret = generateSecretKey();
 const event = (template: EventTemplate) => finalizeEvent(template, secret);
 const station = stations[0];
 let receive: (event: Event) => void;
@@ -79,8 +90,35 @@ let room: {
 let play: MockInstance;
 let pause: MockInstance;
 let load: MockInstance;
+let queryClient: QueryClient;
+const chatPublish = vi.fn();
+const queryKey = ['circle-chat', 'radio', user._id];
+
+function render(element: React.ReactElement) {
+  return renderComponent(
+    <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>,
+  );
+}
+
+function privateChat(...messages: Event[]) {
+  const data = { messages, servicePubkey: 'service' };
+  vi.mocked(http.get).mockResolvedValue({ data });
+  act(() => {
+    void queryClient.cancelQueries({ queryKey, exact: true });
+    queryClient.setQueryData(queryKey, data);
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  });
+  vi.mocked(http.get).mockResolvedValue({ data: { messages: [] } });
+  chatPublish.mockReset().mockResolvedValue('ok');
+  vi.mocked(withCircleChatRelay).mockImplementation(async (_sign, run) =>
+    run({ publish: chatPublish } as never),
+  );
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValue({});
   localStorage.clear();
   window.history.replaceState(null, '', '/circles/radio');
@@ -176,7 +214,7 @@ async function connect() {
 
 it('shows public playback and shared count, hiding chat and listener identities', () => {
   render(<RadioCircle />);
-  expect(room.open).toHaveBeenCalledWith(false);
+  expect(room.open).toHaveBeenCalledWith();
   expect(
     screen.queryByRole('region', { name: 'Radio chat' }),
   ).not.toBeInTheDocument();
@@ -302,8 +340,8 @@ it('keeps playback available when relays fail and restores room status on events
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
 });
 it('allows logged-in members to read chat and listeners without a signer', async () => {
-  render(<RadioCircle user={user} />);
-  expect(room.open).toHaveBeenCalledWith(true);
+  render(<RadioCircle user={{ ...user, nostrNpub: undefined }} />);
+  expect(room.open).toHaveBeenCalledWith();
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
   const listening = event(roomTemplate('listening', station, 'Music'));
   const message = event(
@@ -318,15 +356,15 @@ it('allows logged-in members to read chat and listeners without a signer', async
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValue({
     [message.pubkey]: user.username,
   });
-  emit(
-    listening,
-    { ...listening, id: 'older', created_at: listening.created_at - 1 },
-    {
-      ...message,
-      tags: message.tags.filter(([name]) => name !== 'expiration'),
-    },
-  );
-  expect(screen.getByText('<script>fictional message</script>')).toBeVisible();
+  emit(listening, {
+    ...listening,
+    id: 'older',
+    created_at: listening.created_at - 1,
+  });
+  privateChat(message);
+  expect(
+    await screen.findByText('<script>fictional message</script>'),
+  ).toBeVisible();
   expect(screen.getByText('2026-08-03 10:05')).toHaveAttribute(
     'datetime',
     '2026-08-03T10:05:00.000Z',
@@ -342,7 +380,7 @@ it('allows logged-in members to read chat and listeners without a signer', async
     'href',
     `/circles/radio#${station.id}`,
   );
-  expect(screen.getByLabelText('Message')).toBeDisabled();
+  expect(screen.getByLabelText('Message')).toBeEnabled();
   const listeningNow = screen.getByRole('region', { name: 'Listening now' });
   expect(listeningNow).toHaveTextContent(station.title);
   const listenerIdentity = within(listeningNow).getByRole('link', {
@@ -378,7 +416,7 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [message.pubkey]: user.username,
   });
-  emit(message);
+  privateChat(message);
   const verifiedAuthor = await screen.findByRole('link', {
     name: 'fictional-member@trustroots.org',
   });
@@ -387,7 +425,8 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
   vi.mocked(fetchRadioAuthorUsernames).mockRejectedValueOnce(
     new Error('offline'),
   );
-  emit(
+  privateChat(
+    message,
     finalizeEvent(
       roomTemplate('chat', station, 'Another message'),
       generateSecretKey(),
@@ -409,7 +448,9 @@ it('uses a full plain npub for an unknown chat author and radio listener', async
   const message = event(
     roomTemplate('chat', station, 'Unknown author message'),
   );
-  emit(listening, message);
+  emit(listening);
+  privateChat(message);
+  await screen.findByText(message.content);
 
   const npub = nip19.npubEncode(message.pubkey);
   const listeningNow = screen.getByRole('region', { name: 'Listening now' });
@@ -447,7 +488,8 @@ it.each([false, true])(
         }),
     );
     const { unmount } = render(<RadioCircle user={user} />);
-    emit(event(roomTemplate('chat', station, 'Pending author')));
+    emit(event(roomTemplate('listening', station, 'Pending author')));
+    await waitFor(() => expect(lookup).toHaveBeenCalled());
     const [, signal] = lookup.mock.calls[0];
     unmount();
     expect(signal.aborted).toBe(true);
@@ -476,7 +518,7 @@ it('connects a matching signer, restores remote favourites and publishes message
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
   await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
-  expect(room.publish).toHaveBeenCalledWith(
+  expect(chatPublish).toHaveBeenCalledWith(
     expect.objectContaining({ content: 'Hello room' }),
   );
 });
@@ -484,6 +526,7 @@ it('keeps drafts and local favourites when relay publication fails', async () =>
   render(<RadioCircle user={user} />);
   await connect();
   room.publish.mockRejectedValue(new Error('offline'));
+  chatPublish.mockRejectedValue(new Error('offline'));
   fireEvent.click(row().getByRole('button', { name: `Star ${station.title}` }));
   await screen.findByText(
     'Favourite saved on this device, but could not be shared.',
@@ -611,8 +654,8 @@ it('shares after ten seconds, heartbeats while playing and expires stale listene
 it('switches to a station from chat and keeps playing on repeated activation', async () => {
   render(<RadioCircle user={user} />);
   const next = stations[1];
-  emit(event(roomTemplate('chat', next, 'A station recommendation')));
-  const hashtag = screen.getByRole('link', { name: `#${next.id}` });
+  privateChat(event(roomTemplate('chat', next, 'A station recommendation')));
+  const hashtag = await screen.findByRole('link', { name: `#${next.id}` });
 
   fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
   await screen.findByRole('button', { name: 'Pause' });
@@ -629,10 +672,10 @@ it('switches to a station from chat and keeps playing on repeated activation', a
   expect(fireEvent.click(hashtag, { ctrlKey: true })).toBe(true);
 });
 
-it('sorts chat, omits unknown station links and expires messages', () => {
+it('sorts chat, omits unknown station links', async () => {
   render(<RadioCircle user={user} />);
   const now = Math.floor(Date.now() / 1000);
-  emit(
+  privateChat(
     event(roomTemplate('chat', undefined, 'First', true, now - 1)),
     event(roomTemplate('chat', station, 'Second', true, now)),
     {
@@ -641,13 +684,8 @@ it('sorts chat, omits unknown station links and expires messages', () => {
       ),
       tags: [['t', 'radiostr']],
     },
-    event({
-      ...roomTemplate('chat', undefined, 'Old'),
-      tags: [
-        ['t', 'radiostr'],
-        ['expiration', '1'],
-      ],
-    }),
+  );
+  emit(
     event({
       ...roomTemplate('listening', station, 'Unknown station'),
       tags: [
@@ -658,7 +696,7 @@ it('sorts chat, omits unknown station links and expires messages', () => {
     }),
   );
   expect(screen.getByRole('link', { name: 'Unknown station' })).toBeVisible();
-  expect(screen.queryByText('Old')).not.toBeInTheDocument();
+  await screen.findByText('Second');
   expect(
     screen
       .getAllByRole('listitem')
@@ -722,21 +760,20 @@ it.each([false, true])(
     const { unmount } = render(<RadioCircle user={user} />);
     await connect();
     const finishes: Array<() => void> = [];
-    room.publish.mockImplementation(
-      () =>
-        new Promise<void>((resolve, fail) =>
-          finishes.push(() =>
-            reject ? fail(new Error('offline')) : resolve(),
-          ),
-        ),
-    );
+    function pending() {
+      return new Promise<void>((resolve, fail) =>
+        finishes.push(() => (reject ? fail(new Error('offline')) : resolve())),
+      );
+    }
+    room.publish.mockImplementation(pending);
+    chatPublish.mockImplementation(pending);
     // Programmatic submits must obey the same guards as the disabled button.
     const input = screen.getByLabelText('Message');
     const form = input.closest('form')!;
     fireEvent.change(input, { target: { value: 'Pending' } });
     fireEvent.submit(form);
     fireEvent.submit(form);
-    expect(room.publish).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(chatPublish).toHaveBeenCalledTimes(1));
     fireEvent.click(
       row().getByRole('button', { name: `Star ${station.title}` }),
     );

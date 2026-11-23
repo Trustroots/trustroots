@@ -300,7 +300,7 @@ it('subscribes visitors only to presence and filters unrelated or expired events
   const receive = vi.fn();
   const error = vi.fn();
   const room = new RadioRoom(receive, error);
-  await room.open(false);
+  await room.open();
   const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
   expect(filters[0]['#t']).toEqual(['nowplaying']);
   const listening = signed(roomTemplate('listening', station, 'Music'));
@@ -340,12 +340,12 @@ it('publishes verified events, restores favourites and tolerates a failed relay'
   const signer = await connectRadioSigner(user);
   room.setSigner(signer);
   room.loadFavourites(publicKey);
-  await room.open(true);
+  await room.open();
   room.setSigner(signer);
-  expect(relays[0].subscribe.mock.calls[0][0][0]['#t']).toEqual(['radiostr']);
+  expect(relays[0].subscribe.mock.calls[0][0][0]['#t']).toEqual(['nowplaying']);
   const chat = signed(roomTemplate('chat', station, 'Shared chat'));
   relays[0].subscribe.mock.calls[0][1].onevent(chat);
-  expect(receive).toHaveBeenCalledWith(chat);
+  expect(receive).not.toHaveBeenCalledWith(chat);
   const auth = {
     kind: 22242,
     content: '',
@@ -387,14 +387,14 @@ it('closes pending connections and fails publications after unmount', async () =
   const relays = relayFixture();
   const error = vi.fn();
   const room = new RadioRoom(vi.fn(), error);
-  const opening = room.open(false);
+  const opening = room.open();
   room.close();
   await opening;
   expect(relays[0].close).toHaveBeenCalled();
   expect(error).not.toHaveBeenCalled();
   const nextRelays = relayFixture();
   const next = new RadioRoom(vi.fn(), error);
-  const connecting = next.open(false);
+  const connecting = next.open();
   nextRelays.forEach(relay =>
     relay.connect.mockRejectedValue(new Error('offline')),
   );
@@ -403,7 +403,7 @@ it('closes pending connections and fails publications after unmount', async () =
   provider();
   const signer = await connectRadioSigner(user);
   const last = new RadioRoom(vi.fn(), error);
-  await last.open(true);
+  await last.open();
   last.setSigner({
     ...signer,
     sign: async template => {
@@ -420,36 +420,23 @@ it('reports an unavailable room when both connections fail', async () => {
   const relays = relayFixture(true);
   const error = vi.fn();
   const room = new RadioRoom(vi.fn(), error);
-  await room.open(false);
+  await room.open();
   expect(error).toHaveBeenCalled();
   expect(relays.every(relay => relay.close.mock.calls.length > 0)).toBe(true);
   room.close();
 });
 
-it('accepts only its chat topic and drops publish callbacks after closing', async () => {
+it('drops publication callbacks after closing the connection', async () => {
   const relays = relayFixture();
   const receive = vi.fn();
-  const topic = 'trustroots-circle-hackers';
-  const room = new RadioRoom(receive, vi.fn(), topic);
-  await room.open(true);
-  const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
-  expect(filters[0]['#t']).toEqual([topic]);
-  const chat = signed({
-    kind: 1,
-    created_at: now,
-    content: 'Hello',
-    tags: [['t', topic]],
-  });
-  callbacks.onevent(chat);
-  callbacks.onevent({ ...chat, kind: 0 });
-  callbacks.onevent(signed(roomTemplate('chat', station, 'Other room')));
-  expect(receive.mock.calls).toEqual([[chat]]);
+  const room = new RadioRoom(receive, vi.fn());
+  await room.open();
   provider();
   room.setSigner(await connectRadioSigner(user));
   relays[0].publish.mockImplementationOnce(async () => {
     room.close();
     return 'ok';
   });
-  await room.publish(chat);
-  expect(receive).toHaveBeenCalledTimes(1);
+  await room.publish(roomTemplate('listening', station, 'Music'));
+  expect(receive).not.toHaveBeenCalled();
 });

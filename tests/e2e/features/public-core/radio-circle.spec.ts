@@ -1,5 +1,10 @@
 /* global window, HTMLMediaElement */
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  captureSection,
+  expect,
+  test,
+} from '../../support/fixtures.mts';
 import type { Page } from '@playwright/test';
 import {
   createNostrProof,
@@ -11,7 +16,9 @@ import {
   generateSecretKey,
   getPublicKey,
   nip19,
+  type Event,
   type EventTemplate,
+  verifyEvent,
 } from 'nostr-tools';
 declare global {
   interface Window {
@@ -86,6 +93,73 @@ async function prepareRadio(page: Page, unavailable = false) {
       acceptPublishes: true,
     });
   }
+  const serviceKey = generateSecretKey();
+  const servicePubkey = getPublicKey(serviceKey);
+  const privateEvents: Event[] = events.slice(0, 3);
+  const topics: Record<string, string> = {
+    radio: 'radiostr',
+    hackers: 'trustroots-circle-hackers',
+    volunteering: 'trustroots-volunteering',
+    hitchhikers: 'trustroots-circle-hitchhikers',
+  };
+  const privatePublishes: Event[] = [];
+  await page.routeWebSocket('wss://nip42.trustroots.org/**', socket => {
+    const challenge = 'fictional-chat-challenge';
+    let pubkey: string | undefined;
+    socket.onMessage(raw => {
+      const [type, event] = JSON.parse(String(raw)) as [string, Event];
+      if (type === 'AUTH') {
+        const authenticated =
+          verifyEvent(event) &&
+          event.kind === 22242 &&
+          event.tags.some(
+            tag => tag[0] === 'challenge' && tag[1] === challenge,
+          );
+        if (authenticated) pubkey = event.pubkey;
+        socket.send(
+          JSON.stringify(['OK', event.id, authenticated, 'fixture auth']),
+        );
+      }
+      if (type === 'EVENT') {
+        const accepted = pubkey === event.pubkey && verifyEvent(event);
+        if (accepted) {
+          privateEvents.push(event);
+          privatePublishes.push(event);
+        }
+        socket.send(
+          JSON.stringify(['OK', event.id, accepted, 'fixture publish']),
+        );
+      }
+    });
+    socket.send(JSON.stringify(['AUTH', challenge]));
+  });
+  await page.route('**/api/tribes/chat/*', async route => {
+    const room = new URL(route.request().url()).pathname.split('/').at(-1)!;
+    const topic = topics[room];
+    if (route.request().method() === 'POST') {
+      const { content, channel } = route.request().postDataJSON();
+      const tags = [
+        ['t', topic],
+        ['trustroots_username', SEEDED_ADMIN.username],
+      ];
+      if (channel) tags.push(['channel', channel]);
+      const event = finalizeEvent(
+        { kind: 1, created_at, tags, content },
+        serviceKey,
+      );
+      privateEvents.push(event);
+      await route.fulfill({ status: 201, json: event });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        servicePubkey,
+        messages: privateEvents.filter(event =>
+          event.tags.some(tag => tag[0] === 't' && tag[1] === topic),
+        ),
+      },
+    });
+  });
   await page.route('**/api/tribes/radio', route =>
     route.fulfill({
       json: {
@@ -103,6 +177,16 @@ async function prepareRadio(page: Page, unavailable = false) {
         _id: 'fictional-hackers-circle',
         slug: 'hackers',
         label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  await page.route('**/api/tribes/hitchhikers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hitchhikers-circle',
+        slug: 'hitchhikers',
+        label: 'Hitchhikers',
         count: 0,
       },
     }),
@@ -126,7 +210,7 @@ async function prepareRadio(page: Page, unavailable = false) {
       window.__radioMedia.loaded++;
     };
   });
-  return { authorPublicKey };
+  return { authorPublicKey, privatePublishes };
 }
 
 async function stubArtworkImages(page: Page) {
@@ -336,7 +420,7 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
   }
 });
 
-test('logged-in members can read radio chat but need a matching signer to publish', async ({
+test('logged-in members can read and post in Radio without a Nostr key', async ({
   page,
 }, testInfo) => {
   annotateFeature(testInfo, 'circles.radio', [
@@ -376,15 +460,18 @@ test('logged-in members can read radio chat but need a matching signer to publis
   const listeningNow = radio.getByRole('region', { name: 'Listening now' });
   await expect(listeningNow).toContainText('Groovesalad');
   await expect(listeningNow).toContainText(unknownNpub);
-  await expect(radio.getByLabel('Message')).toBeDisabled();
   await expect(radio).toContainText(
-    'radio messages, listening activity and favourites are sent to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+    'listening activity and favourites are sent to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
   );
-  await radio.getByRole('button', { name: 'Connect Nostr identity' }).click();
-  await expect(radio.getByRole('alert')).toContainText(
-    'Connect a Nostr extension',
-  );
-  await expect(radio.getByLabel('Message')).toBeDisabled();
+  await radio.getByLabel('Message').fill('Fictional keyless radio chat');
+  await radio.getByRole('button', { name: 'Send' }).click();
+  const posted = radio
+    .getByRole('listitem')
+    .filter({ hasText: 'Fictional keyless radio chat' });
+  await expect(posted).toContainText(`${SEEDED_ADMIN.username} via Trustroots`);
+  await expect(
+    posted.getByRole('link', { name: '#groovesalad' }),
+  ).toBeVisible();
 });
 
 test('radio remains playable when the shared room is unavailable and stops on navigation', async ({
@@ -456,7 +543,7 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
     'Visitors see a sign-in link, and members can read without a signer.',
     'A verified signer posts to Hackers without publishing to Radio.',
   ]);
-  const { authorPublicKey } = await prepareRadio(page);
+  const { authorPublicKey, privatePublishes } = await prepareRadio(page);
   await page.goto('/circles/hackers');
   const chat = page.getByRole('region', { name: 'Hackers chat' });
   await expect(
@@ -467,14 +554,14 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/circles/hackers');
   await expect(chat).toContainText(
-    'Chat messages are published publicly to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+    'Messages are visible to people with access to the Trustroots relay.',
   );
   await expect(chat.getByText('A fictional Hackers message')).toHaveCount(1);
   const unknownNpub = nip19.npubEncode(authorPublicKey);
   await expect(chat.getByText(unknownNpub, { exact: true })).toBeVisible();
   await expect(chat.getByRole('link', { name: unknownNpub })).toHaveCount(0);
   await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
-  await expect(chat.getByLabel('Message')).toBeDisabled();
+  await expect(chat.getByLabel('Message')).toBeEnabled();
 
   const publicKey = await linkChatSigner(page);
   try {
@@ -494,8 +581,8 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
       `/profile/${SEEDED_ADMIN.username}`,
     );
     await expect(signerProfile).toHaveAttribute('title', signerNpub);
-    const published = await page.evaluate(() => window.__radioPublished);
-    expect(published).toEqual(
+    expect(await page.evaluate(() => window.__radioPublished)).toEqual([]);
+    expect(privatePublishes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           content: 'Hello from a fictional hacker',
@@ -515,8 +602,9 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
     'Visitors see a sign-in link, and members can read volunteering chat without a signer.',
     'A matching signer posts to the volunteering topic.',
   ]);
-  await prepareRadio(page);
-  await page.goto('/volunteering');
+  const { privatePublishes } = await prepareRadio(page);
+  await page.goto('/volunteers');
+  await expect(page).toHaveURL(/\/volunteering$/);
   const chat = page.getByRole('region', { name: 'Volunteering chat' });
   await expect(chat.getByText(volunteeringMessage)).toHaveCount(0);
   await chat.getByRole('link', { name: 'Log in to see chat.' }).click();
@@ -527,14 +615,14 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
   await page.getByRole('button', { name: 'Sign in to continue' }).click();
   await expect(page).toHaveURL(/\/volunteering$/);
   await expect(chat).toContainText(
-    'Chat messages are published publicly to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+    'Messages are visible to people with access to the Trustroots relay.',
   );
   const message = chat.getByText(volunteeringMessage, { exact: true });
   await expect(message).toBeVisible();
   await expect(message.locator('strong')).toHaveCount(0);
   await expect(chat.getByText('A fictional Hackers message')).toHaveCount(0);
   await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
-  await expect(chat.getByLabel('Message')).toBeDisabled();
+  await expect(chat.getByLabel('Message')).toBeEnabled();
 
   await linkChatSigner(page);
   try {
@@ -545,8 +633,8 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
     await expect(
       chat.getByText('Hello from a fictional volunteer'),
     ).toBeVisible();
-    const published = await page.evaluate(() => window.__radioPublished);
-    expect(published).toEqual(
+    expect(await page.evaluate(() => window.__radioPublished)).toEqual([]);
+    expect(privatePublishes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           content: 'Hello from a fictional volunteer',
@@ -557,4 +645,26 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
   } finally {
     await unlinkChatSigner(page);
   }
+});
+
+test('Hitchhikers chat accepts a message from a member without a key', async ({
+  page,
+}) => {
+  await prepareRadio(page);
+  await page.goto('/circles/hitchhikers');
+  const chat = page.getByRole('region', { name: 'Hitchhikers chat' });
+  await expect(
+    chat.getByRole('link', { name: 'Log in to see chat.' }),
+  ).toBeVisible();
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.reload();
+  await chat.getByLabel('Message').fill('A fictional hitchhiking question');
+  await chat.getByRole('button', { name: 'Send' }).click();
+  await expect(
+    chat.getByText('A fictional hitchhiking question'),
+  ).toBeVisible();
+  await expect(
+    chat.getByText(`${SEEDED_ADMIN.username} via Trustroots`),
+  ).toBeVisible();
+  await captureSection(chat, 'hitchhikers-mixed-chat');
 });

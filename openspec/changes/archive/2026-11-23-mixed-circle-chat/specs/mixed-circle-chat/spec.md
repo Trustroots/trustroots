@@ -4,7 +4,13 @@
 
 Trustroots SHALL serve Hackers, Volunteering, Radio and Hitchhikers chat from
 `wss://nip42.trustroots.org` and publish chat events only to that relay. Access
-in Trustroots SHALL require an eligible signed-in account.
+in Trustroots SHALL require an eligible signed-in account. The same room topic
+SHALL be used for both signing paths. Server-signed attribution SHALL be
+displayed only for events signed by the Trustroots export key.
+
+Deployments SHALL provide the existing signed-export key via the server-only
+`TRUSTROOTS_NOSTR_EXPORT_NSEC` variable. Its public key SHALL be eligible to
+authenticate to the relay through Trustroots NIP-05.
 
 #### Scenario: A member posts with their linked signer
 

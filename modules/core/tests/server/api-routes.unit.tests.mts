@@ -386,7 +386,9 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(tribeRoutes.routes, '/api/tribes/:tribe').get, [
       tribes.getTribe,
     ]);
-    tribeRoutes.routes.forEach(route => assertPolicy(route, tribesPolicy));
+    tribeRoutes.routes
+      .filter(route => route.path !== '/api/tribes/chat/:room')
+      .forEach(route => assertPolicy(route, tribesPolicy));
     assert.deepStrictEqual(
       tribeRoutes.params.map(param => [
         param.name,

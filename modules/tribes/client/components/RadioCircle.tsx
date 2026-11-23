@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { nip19, type Event } from 'nostr-tools';
 import useCircleSigner from '../hooks/useCircleSigner';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
-import CircleChatLog from './CircleChatLog';
+import { CircleRoomChat } from './TopicChat';
 import CircleNostrIdentity from './CircleNostrIdentity';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
@@ -40,31 +40,17 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   const [error, setError] = useState('');
   const [socialError, setSocialError] = useState('');
   const [relayError, setRelayError] = useState(false);
-  const {
-    signer,
-    connecting,
-    error: signerError,
-    connect,
-  } = useCircleSigner(user);
+  const signing = useCircleSigner(user);
+  const { signer } = signing;
   const [events, setEvents] = useState<Event[]>([]);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
-  const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
   const favouritesKey = user ? `${FAVOURITES_KEY}:${user._id}` : FAVOURITES_KEY;
   const [favourites, setFavourites] = useState(() =>
     readFavourites(favouritesKey),
   );
   const listeners = useMemo(() => activeListeners(events, now), [events, now]);
-  const chat = events
-    .filter(
-      event =>
-        eventType(event) === 'chat' &&
-        Number(tag(event, 'expiration') || Infinity) > now,
-    )
-    .sort((a, b) => a.created_at - b.created_at)
-    .slice(-200);
   const usernames = useCircleProfileUsernames(
-    user ? [...chat, ...listeners].map(({ pubkey }) => pubkey) : [],
+    user ? listeners.map(({ pubkey }) => pubkey) : [],
   );
   const linkedNpub = user?.nostrNpub;
   const ownPublicKey = useMemo(() => {
@@ -108,7 +94,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       () => setRelayError(true),
     );
     room.current = connection;
-    void connection.open(Boolean(user));
+    void connection.open();
     const timer = window.setInterval(
       () => setNow(Math.floor(Date.now() / 1000)),
       15000,
@@ -236,22 +222,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             );
         });
   }
-  async function send(event: React.FormEvent) {
-    event.preventDefault();
-    const text = message.trim();
-    if (!text || !signer || sending) return;
-    setSending(true);
-    setSocialError('');
-    try {
-      await room.current!.publish(roomTemplate('chat', station, text));
-      if (mounted.current) setMessage('');
-    } catch {
-      if (mounted.current)
-        setSocialError(t('Message could not be sent. Try again.'));
-    } finally {
-      if (mounted.current) setSending(false);
-    }
-  }
   function stationList(label: string, items: Station[]) {
     return (
       <section className="radio-station-group" key={label} aria-label={label}>
@@ -328,7 +298,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         {user && (
           <p>
             {t(
-              'With a connected Nostr identity, radio messages, listening activity and favourites are sent to {{relays}}.',
+              'With a connected Nostr identity, listening activity and favourites are sent to {{relays}}.',
               { relays: RADIO_RELAYS.join(', ') },
             )}
           </p>
@@ -378,6 +348,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           }}
         />
         {error && <p role="alert">{error}</p>}
+        {socialError && <p role="alert">{socialError}</p>}
         <p aria-live="polite">
           {includesLocalListener
             ? listenerCount === 1
@@ -437,87 +408,39 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         {stationGroups.map(group => stationList(group.name, group.stations))}
       </div>
       {user && (
-        <section className="radio-social-panel" aria-label={t('Radio chat')}>
-          <h3>{t('Chat')}</h3>
-          {!signer ? (
-            <>
-              <Button
-                type="button"
-                disabled={connecting}
-                onClick={() => {
-                  setSocialError('');
-                  void connect();
-                }}
-              >
-                {connecting ? t('Connecting…') : t('Connect Nostr identity')}
-              </Button>
-              <p>
-                {t(
-                  'Connect the Nostr key linked to your Trustroots profile to chat and automatically share what you are listening to.',
-                )}
-              </p>
-              <a href="/profile/edit/networks">{t('Edit linked Nostr key')}</a>
-            </>
-          ) : (
-            <p role="status">
-              {t(
-                'Connected as {{identity}}. Listening activity is shared automatically.',
-                { identity: `${user.username}@trustroots.org` },
-              )}
-            </p>
-          )}
-          {(socialError || signerError) && (
-            <p role="alert">{socialError || t(signerError)}</p>
-          )}
-          <CircleChatLog
-            messages={chat}
-            usernames={usernames}
-            stationLink={event => {
-              const channel = tag(event, 'channel');
-              const next = stations.find(item => item.id === channel);
-              return next ? (
-                <>
-                  {' '}
-                  <a
-                    href={`/circles/radio#${next.id}`}
-                    onClick={event => {
-                      if (
-                        event.button !== 0 ||
-                        event.altKey ||
-                        event.ctrlKey ||
-                        event.metaKey ||
-                        event.shiftKey
-                      ) {
-                        return;
-                      }
-                      event.preventDefault();
-                      void play(next, { pauseIfPlaying: false });
-                    }}
-                  >
-                    #{next.id}
-                  </a>
-                </>
-              ) : null;
-            }}
-          />
-          <form onSubmit={send} className="radio-chat-form">
-            <label htmlFor="radio-message">{t('Message')}</label>
-            <input
-              id="radio-message"
-              maxLength={500}
-              value={message}
-              onChange={event => setMessage(event.target.value)}
-              disabled={!signer || sending}
-            />
-            <Button
-              intent="primary"
-              type="submit"
-              disabled={!signer || !message.trim() || sending}
-            >
-              {t('Send')}
-            </Button>
-          </form>
-        </section>
+        <CircleRoomChat
+          roomName="radio"
+          user={user}
+          signing={signing}
+          channel={station?.id}
+          stationLink={event => {
+            const channel = tag(event, 'channel');
+            const next = stations.find(item => item.id === channel);
+            return next ? (
+              <>
+                {' '}
+                <a
+                  href={`/circles/radio#${next.id}`}
+                  onClick={event => {
+                    if (
+                      event.button !== 0 ||
+                      event.altKey ||
+                      event.ctrlKey ||
+                      event.metaKey ||
+                      event.shiftKey
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    void play(next, { pauseIfPlaying: false });
+                  }}
+                >
+                  #{next.id}
+                </a>
+              </>
+            ) : null;
+          }}
+        />
       )}
     </section>
   );

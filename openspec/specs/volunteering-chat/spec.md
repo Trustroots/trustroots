@@ -9,9 +9,9 @@ Give members a dedicated place to ask questions and discuss volunteering.
 ### Requirement: Dedicated volunteering chat
 
 The volunteering page SHALL show signed-in members kind-1 Nostr events tagged
-`trustroots-volunteering` using the existing chat relays. Posting SHALL require
-a Nostr signer that matches the member's linked npub and Trustroots NIP-05
-identity. The chat SHALL explain that messages are public on Nostr.
+`trustroots-volunteering` on the authenticated Trustroots relay. Members SHALL
+be able to post with a matching verified signer or via Trustroots as specified
+by mixed circle chat. `/volunteers` SHALL redirect to `/volunteering`.
 
 #### Scenario: A visitor opens the volunteering page
 
@@ -24,4 +24,4 @@ identity. The chat SHALL explain that messages are public on Nostr.
 
 - **WHEN** a signed-in member opens `/volunteering`
 - **THEN** the member can read volunteering messages without connecting a signer
-- **AND** a matching signer enables posting to the volunteering topic
+- **AND** they can publish to the topic using the signing path for their account
