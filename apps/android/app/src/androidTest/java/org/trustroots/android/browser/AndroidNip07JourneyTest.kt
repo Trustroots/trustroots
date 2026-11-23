@@ -17,6 +17,10 @@ import java.io.ByteArrayInputStream
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
 import org.bouncycastle.crypto.signers.BIP340Signer
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -44,6 +48,7 @@ class AndroidNip07JourneyTest {
         var committedURL: String? = null
         var isCurrent = true
         val session = BrowserNostrSession(keys) { isCurrent }
+        val signingDispatcher = SigningDispatcher()
         try {
             compose.setContent {
                 val scope = rememberCoroutineScope()
@@ -51,7 +56,7 @@ class AndroidNip07JourneyTest {
                     WebView(context).also { view ->
                         web = view
                         view.settings.javaScriptEnabled = true
-                        val bridge = AndroidNip07Bridge(session, scope)
+                        val bridge = AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
                         view.webViewClient = object : WebViewClient() {
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                                 committedURL = null
@@ -119,6 +124,28 @@ class AndroidNip07JourneyTest {
             val rejected = JSONObject(eval(web, "window.bridgeResponses[0]"))
             assertEquals("unsupported", rejected.getString("id"))
             assertEquals("Unsupported Nostr operation.", rejected.getString("error"))
+
+            compose.runOnUiThread { signingDispatcher.holdNext = true }
+            eval(web, """
+                window.nostr.getPublicKey().then(
+                  () => window.pendingRequest = 'returned a key',
+                  error => window.pendingRequest = error.message
+                );
+                window.nostr.getPublicKey().then(
+                  () => window.parallelRequest = 'returned a key',
+                  error => window.parallelRequest = error.message
+                );
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.parallelRequest)") == "true" }
+            assertEquals("A Nostr request is already in progress.", JSONTokener(eval(web, "window.parallelRequest")).nextValue())
+            assertEquals("null", eval(web, "window.pendingRequest"))
+            compose.runOnUiThread {
+                keys.remove()
+                keys.import("0".repeat(63) + "2")
+                signingDispatcher.release()
+            }
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.pendingRequest)") == "true" }
+            assertEquals("The signing session or local key changed.", JSONTokener(eval(web, "window.pendingRequest")).nextValue())
 
             eval(web, """
                 window.nostr.signEvent({kind: 'invalid'}).then(
@@ -188,6 +215,26 @@ class AndroidNip07JourneyTest {
     }
 
     private fun decodeHex(value: String) = value.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+    private class SigningDispatcher : CoroutineDispatcher() {
+        @Volatile var holdNext = false
+        private var pending: Runnable? = null
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            if (holdNext) {
+                holdNext = false
+                pending = block
+            } else {
+                Dispatchers.Main.dispatch(context, block)
+            }
+        }
+
+        fun release() {
+            val block = checkNotNull(pending)
+            pending = null
+            block.run()
+        }
+    }
 
     private val frameFixture = """
         <!doctype html><script>
