@@ -149,6 +149,7 @@ describe('Search users: GET /users?search=string', function () {
           expiredOffer,
           circleOffer,
           blockingOffer,
+          legacyMeeting,
         ] = await promisify(createUsers)([
           { username: 'rankedplace', locationLiving: 'Rankedplace' },
           ...[
@@ -158,6 +159,7 @@ describe('Search users: GET /users?search=string', function () {
             'expiredmember',
             'circlemember',
             'blockingmember',
+            'legacymeeting',
           ].map(username => ({
             username,
             locationLiving: 'Rankedplace',
@@ -165,7 +167,8 @@ describe('Search users: GET /users?search=string', function () {
         ]);
         const circleId = new mongoose.Types.ObjectId();
         const location = [51, 0];
-        await mongoose.model('Offer').create([
+        const Offer = mongoose.model('Offer');
+        await Offer.create([
           {
             user: host._id,
             type: 'host',
@@ -204,7 +207,17 @@ describe('Search users: GET /users?search=string', function () {
             location,
           },
           { user: blockingOffer._id, type: 'host', status: 'yes', location },
+          {
+            user: legacyMeeting._id,
+            type: 'meet',
+            validUntil: new Date('2099-01-01'),
+            location,
+          },
         ]);
+        await Offer.updateOne(
+          { user: legacyMeeting._id },
+          { $unset: { status: 1 } },
+        );
         await User.updateOne(
           { _id: circleOffer._id },
           { $set: { member: [{ tribe: circleId, since: new Date() }] } },
@@ -228,6 +241,7 @@ describe('Search users: GET /users?search=string', function () {
         (await matches('&types=host')).should.eql(['dualmember', 'openhost']);
         (await matches('&types=meet')).should.eql([
           'dualmember',
+          'legacymeeting',
           'openmeeting',
         ]);
         (await matches('&types=meet&volunteering=true')).should.eql([
@@ -243,17 +257,25 @@ describe('Search users: GET /users?search=string', function () {
           userTo: host._id,
           confirmed: true,
         });
-        const connections = await agent
-          .get('/api/users?search=Rankedplace&types=host&connectionsOnly=true')
-          .expect(200);
-        const [connection] = connections.body as SearchResponse;
-        should(connection.username).equal('openhost');
-        should(connection).have.property('score');
-        should(connection).not.have.properties(
-          'blocked',
-          'searchOffers',
-          'email',
-        );
+        const aggregate = sinon.spy(User, 'aggregate');
+        try {
+          const connections = await agent
+            .get(
+              '/api/users?search=Rankedplace&types=host&connectionsOnly=true',
+            )
+            .expect(200);
+          should(aggregate.firstCall.returnValue.options.maxTimeMS).equal(2000);
+          const [connection] = connections.body as SearchResponse;
+          should(connection.username).equal('openhost');
+          should(connection).have.property('score');
+          should(connection).not.have.properties(
+            'blocked',
+            'searchOffers',
+            'email',
+          );
+        } finally {
+          aggregate.restore();
+        }
 
         await User.updateOne(
           { _id: loggedUser._id },
@@ -308,13 +330,18 @@ describe('Search users: GET /users?search=string', function () {
 
         const response = await agent
           .get(
-            '/api/users?search=Filteredford&onlineRecently=true&languages=en&limit=1&tribes=' +
-              circleId.toString(),
+            '/api/users?search=Filteredford&onlineRecently=true&languages=en&tribes=' +
+              circleId.toString() +
+              ',',
           )
           .expect(200);
         (response.body as SearchResponse)
           .map(member => member.username)
           .should.eql(['activewalker']);
+        const emptyLanguage = await agent
+          .get('/api/users?search=Filteredford&languages=,&limit=1')
+          .expect(200);
+        should(emptyLanguage.body).have.length(1);
         await agent
           .get('/api/users?search=Filteredford&tribes=invalid')
           .expect(400);
