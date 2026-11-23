@@ -2,6 +2,14 @@
 
 The extended member search uses MongoDB's existing single text index. Its new fields are `locationLiving`, `locationFrom` and `tagline`, with names and usernames weighted above location and tagline matches. Biographies, email addresses, precise coordinates and private account fields are not indexed by this command.
 
+Create the offers index before deploying the member search availability filters
+to production. The filters use the `offers.user` index to look up offers for
+text-matched members.
+
+```sh
+NODE_ENV=production pnpm run ensure-indexes Offer
+```
+
 Before deploying the extended search against an existing database, preview the targeted change:
 
 ```sh

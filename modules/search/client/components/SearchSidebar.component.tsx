@@ -5,6 +5,7 @@ import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
 import SearchSidebarResults from './SearchSidebarResults.component';
+import type { VisibleMapCounts } from './SearchMap.component';
 import type { SearchFilters } from '../utils/search-filters';
 
 type SearchSidebarResultsPassthrough = Pick<
@@ -28,6 +29,7 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
   filters: SearchFilters;
   onCommunityNotesToggle: () => void;
   onFiltersChange: (filters: Partial<SearchFilters>) => void;
+  onPlaceQueryChange?: (location?: string) => void;
   onPlaceSearch: (
     data:
       | import('../utils/location').MapBounds
@@ -40,6 +42,7 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
   onOnlineInPast6MonthsChange: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  visibleMapCounts?: VisibleMapCounts;
 }
 
 export default function SearchSidebar({
@@ -48,12 +51,14 @@ export default function SearchSidebar({
   filters,
   onCommunityNotesToggle,
   onFiltersChange,
+  onPlaceQueryChange,
   onPlaceSearch,
   onTabSelect,
   onlineInPast6Months,
   onOnlineInPast6MonthsChange,
   searchQuery,
   setSearchQuery,
+  visibleMapCounts,
   ...resultsProps
 }: SearchSidebarProps) {
   return (
@@ -69,6 +74,7 @@ export default function SearchSidebar({
       </div>
       <div className="search-sidebar-section tw:max-sm:hidden">
         <SearchPlaceInput
+          onPlaceQueryChange={onPlaceQueryChange}
           onPlaceSearch={onPlaceSearch}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -98,6 +104,7 @@ export default function SearchSidebar({
             onFiltersChange={onFiltersChange}
             onlineInPast6Months={onlineInPast6Months}
             onOnlineInPast6MonthsChange={onOnlineInPast6MonthsChange}
+            visibleMapCounts={visibleMapCounts}
           />
         </TabsPanel>
         <TabsPanel

@@ -125,7 +125,14 @@ vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
-    default: () => <div data-testid="circles-toggle" />,
+    default: ({ onChange }: { onChange: (tribes: string[]) => void }) => (
+      <button
+        type="button"
+        onClick={() => onChange(['665100000000000000000002'])}
+      >
+        Select example circle
+      </button>
+    ),
   }),
 );
 
@@ -541,6 +548,14 @@ describe('<SearchPage />', () => {
       expect(searchMapProps.filters).toContain('tribe-cyclists'),
     );
     expect(tribesApi.get).toHaveBeenCalledWith('cyclists');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select example circle' }),
+    );
+    expect(searchMapProps.filters).toContain('665100000000000000000002');
+    expect(new URLSearchParams(window.location.search).has('tribe')).toBe(
+      false,
+    );
   });
 
   it('initialises the map location from a location query param', async () => {
@@ -599,6 +614,9 @@ describe('<SearchPage />', () => {
       await screen.findByRole('button', { name: 'Sample Harbour' }),
     );
     const list = await screen.findByRole('table', { name: 'City hosts' });
+    expect(new URLSearchParams(window.location.search).get('location')).toBe(
+      'Sample Harbour',
+    );
     expect(list).toHaveTextContent('Age 35 · Near the centre');
     expect(within(list).getByRole('cell', { name: '1' })).toBeInTheDocument();
     expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
@@ -828,16 +846,45 @@ describe('<SearchPage />', () => {
     expect(new URL(window.location.href).searchParams.get('offer')).toBe(
       mockOffer._id,
     );
+    expect(searchMapProps.location).toMatchObject({
+      lat: mockOffer.location![0],
+      lng: mockOffer.location![1],
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
     expect(
       await screen.findByRole('heading', { name: 'Hosts in Sample Harbour' }),
     ).toBeInTheDocument();
   });
 
-  it('loads an offer from the route params and tracks preview analytics', async () => {
+  it('keeps the map usable when a legacy circle cannot be loaded', async () => {
+    window.history.pushState({}, '', '/search?tribe=missing-circle');
+    const lookup = Promise.reject(new Error('Circle not found'));
+    tribesApi.get.mockReturnValue(lookup);
+
+    renderSearchPage();
+    await act(async () => {
+      await lookup.catch(() => undefined);
+    });
+
+    expect(tribesApi.get).toHaveBeenCalledWith('missing-circle');
+    expect(JSON.parse(searchMapProps.filters).tribes).toEqual([]);
+  });
+
+  it('prioritises a shared offer over the shared place viewport', async () => {
     const offerId = '665100000000000000000001';
-    window.history.pushState({}, '', `/search?offer=${offerId}`);
+    window.history.pushState(
+      {},
+      '',
+      `/search?offer=${offerId}&location=Exampleville`,
+    );
     offersApi.getOffer.mockResolvedValue(mockOffer);
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: 'Exampleville' },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
 
     renderSearchPage();
 
@@ -848,6 +895,11 @@ describe('<SearchPage />', () => {
     expect(
       await screen.findByRole('link', { name: /host person/i }),
     ).toBeInTheDocument();
+    expect(locationApi.locatePlace).toHaveBeenCalled();
+    expect(searchMapProps.location).toMatchObject({
+      lat: mockOffer.location![0],
+      lng: mockOffer.location![1],
+    });
     expect(analytics.track).toHaveBeenCalledWith('search_offer_previewed');
   });
 
@@ -1008,6 +1060,7 @@ describe('<SearchPage />', () => {
   });
 
   it('updates sidebar filters from the filters panel', () => {
+    window.history.replaceState({}, '', '/search?other=1#existing');
     renderSearchPage();
 
     fireEvent.click(screen.getByRole('button', { name: /types toggle/i }));
@@ -1023,6 +1076,122 @@ describe('<SearchPage />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /language filter/i }));
     expect(searchMapProps.filters).toContain('"fi"');
+    const { searchParams, hash } = new URL(window.location.href);
+    expect(hash).toBe('#existing');
+    expect(searchParams.get('other')).toBe('1');
+    expect(JSON.parse(searchParams.get('filters')!)).toMatchObject({
+      types: ['meet'],
+      communityNotes: false,
+      seen: { months: 24 },
+      languages: ['fi'],
+    });
+  });
+
+  it('restores a shared filter URL and updates the same map on history navigation', () => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ types: ['meet'], communityNotes: true }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.set(
+      'filters',
+      JSON.stringify({
+        types: ['host'],
+        communityNotes: false,
+        connectionsOnly: true,
+        volunteering: true,
+      }),
+    );
+    window.history.replaceState({}, '', url);
+    renderSearchPage();
+
+    const connections = screen.getByRole('checkbox', {
+      name: 'My connections only',
+    });
+    expect(connections).toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['host'],
+      communityNotes: false,
+      volunteering: true,
+    });
+
+    act(() => {
+      window.history.replaceState({}, '', '/search');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(connections).not.toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['meet'],
+      communityNotes: true,
+    });
+  });
+
+  it.each([
+    'default',
+    'pending legacy circle',
+    'resolved legacy circle',
+    'shared filters',
+  ])('writes and clears a selected place with %s', async scenario => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ connectionsOnly: true }),
+    );
+    const params = new URLSearchParams();
+    if (scenario !== 'default') params.set('tribe', 'cyclists');
+    if (scenario === 'shared filters') {
+      params.set('filters', JSON.stringify({ connectionsOnly: true }));
+    }
+    if (scenario === 'pending legacy circle') {
+      tribesApi.get.mockReturnValue(new Promise(() => {}));
+    }
+    if (scenario === 'resolved legacy circle') {
+      tribesApi.get.mockResolvedValue(
+        sampleTribe('tribe-cyclists', 'cyclists'),
+      );
+    }
+    window.history.replaceState({}, '', `/search?${params}`);
+    renderSearchPage();
+    if (scenario === 'resolved legacy circle') {
+      await waitFor(() =>
+        expect(searchMapProps.filters).toContain('tribe-cyclists'),
+      );
+    }
+    const title = 'Exampleville, Example County';
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: title },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
+
+    fireEvent.change(screen.getByLabelText('Search places'), {
+      target: { value: 'Exampleville' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: title }));
+    expect(new URL(window.location.href).searchParams.get('location')).toBe(
+      title,
+    );
+    const selectedParams = new URLSearchParams(window.location.search);
+    if (scenario === 'pending legacy circle') {
+      expect(selectedParams.get('tribe')).toBe('cyclists');
+      expect(selectedParams.has('filters')).toBe(false);
+    } else {
+      expect(JSON.parse(selectedParams.get('filters')!)).toMatchObject({
+        connectionsOnly: true,
+        ...(scenario === 'resolved legacy circle' && {
+          tribes: ['tribe-cyclists'],
+        }),
+      });
+    }
+    expect(searchMapProps.location).toEqual({ lat: 12, lng: 34, zoom: 10 });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Clear location search' }),
+    );
+    expect(new URL(window.location.href).searchParams.has('location')).toBe(
+      false,
+    );
   });
 
   it('keeps the map position when previewing an offer without recentering', async () => {
