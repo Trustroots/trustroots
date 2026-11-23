@@ -136,4 +136,12 @@ describe('<ListExperiences />', () => {
     expect(screen.getByText('public-answered')).toBeInTheDocument();
     expect(screen.getByText('pending-answered')).toBeInTheDocument();
   });
+
+  it('labels the empty incoming list on the owner’s profile', async () => {
+    readExperiencesMock.mockResolvedValueOnce([]);
+    render(<ListExperiences profile={profile} authenticatedUser={profile} />);
+    expect(
+      await screen.findByText('No experiences received yet.'),
+    ).toBeInTheDocument();
+  });
 });

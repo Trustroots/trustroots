@@ -46,6 +46,7 @@ import ListExperiences, {
   type ExperienceAction,
 } from '@/modules/experiences/client/components/ListExperiences.component';
 import { readMine } from '@/modules/experiences/client/api/experiences.api';
+import PendingAuthoredExperiences from '@/modules/experiences/client/components/PendingAuthoredExperiences';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
@@ -532,11 +533,14 @@ export default function ProfilePage({
         );
       case 'experiences':
         return referencesEnabled ? (
-          <ListExperiences
-            authenticatedUser={authUser}
-            profile={profile}
-            experienceAction={experienceAction}
-          />
+          <>
+            {isSelf && <PendingAuthoredExperiences userId={profile._id} />}
+            <ListExperiences
+              authenticatedUser={authUser}
+              profile={profile}
+              experienceAction={experienceAction}
+            />
+          </>
         ) : null;
       case 'experiences-new':
         return referencesEnabled ? (

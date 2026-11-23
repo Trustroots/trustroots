@@ -12,6 +12,7 @@ export type { CreateExperienceRequest } from '../../shared/experience';
 
 interface UserTarget {
   userTo: string;
+  view?: 'pending-authored';
 }
 
 interface UserWith {
@@ -51,11 +52,14 @@ export async function create(
  * @param {string} userTo - id of the user with whom the experiences were shared
  * @returns {array} - array of experience objects, which include the "responses" to them where exist
  */
-export async function read({ userTo }: UserTarget): Promise<Experience[]> {
+export async function read({
+  userTo,
+  view,
+}: UserTarget): Promise<Experience[]> {
   const { data: experiences } = await axios.get<Experience[]>(
     '/api/experiences',
     {
-      params: { userTo },
+      params: view ? { userTo, view } : { userTo },
     },
   );
   return experiences;

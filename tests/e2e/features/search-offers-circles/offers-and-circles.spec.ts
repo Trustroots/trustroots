@@ -297,13 +297,11 @@ test.describe.serial('search offers and circles feature coverage', () => {
         meetingAvailability.getByRole('radio', { name: 'Yes', exact: true }),
       ).toBeChecked();
     } finally {
-      const restored = await page.request.put(`/api/offers/${original._id}`, {
-        data: {
-          ...original,
-          meetingStatus: original.meetingStatus ?? 'not-set',
-        },
-      });
-      expect(restored.ok()).toBeTruthy();
+      // The browser request context may have timed out before cleanup runs.
+      const restored = await withE2eDb(db =>
+        db.collection('offers').replaceOne({ _id: original._id }, original),
+      );
+      expect(restored.matchedCount).toBe(1);
     }
   });
 

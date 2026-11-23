@@ -40,7 +40,7 @@ type PopulatedExperienceRecord = Omit<
 
 interface ExperienceRequest {
   body: CreateExperienceRequest & Record<string, unknown>;
-  query: { userTo?: string; userWith?: string };
+  query: { userTo?: string; userWith?: string; view?: string };
   params: { experienceId?: string; recipientUsername?: string };
   user: ExperienceUserRecord;
   experience?: ExperiencePayload<
@@ -632,6 +632,13 @@ service.readMany = async function readMany(req, res, next) {
     const selfId = req.user._id;
 
     const userToId = new mongoose.Types.ObjectId(userTo);
+    const pendingAuthored = req.query.view === 'pending-authored';
+    if (pendingAuthored && !selfId.equals(userToId)) {
+      return res.status(404).json({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
+    }
+
     let matchQuery: Record<string, unknown> = {
       removedAt: { $exists: false },
       // Stryker disable next-line ObjectLiteral: a wider match only adds rows with neither side equal to userTo, which pairUpExperiences drops
@@ -649,9 +656,9 @@ service.readMany = async function readMany(req, res, next) {
       removedAt: { $exists: false },
     };
 
-    matchQuery = {
-      $or: [matchQuery, privateFromSelfQuery],
-    };
+    matchQuery = pendingAuthored
+      ? { userFrom: selfId, public: false, removedAt: { $exists: false } }
+      : { $or: [matchQuery, privateFromSelfQuery] };
 
     // Aggregate projection for User in experience
     const userKeys = userMiniService.userMiniProjectionMap({
@@ -709,7 +716,9 @@ service.readMany = async function readMany(req, res, next) {
       { $sort: { created: -1 } },
     ]).exec();
 
-    const pairedUpExperiences = pairUpExperiences(experiences, userToId);
+    const pairedUpExperiences = pendingAuthored
+      ? experiences.map(experience => [experience, null] as const)
+      : pairUpExperiences(experiences, userToId);
     const experiencesWithResponses = pairedUpExperiences.map(
       ([experience, response]) =>
         prepareSendingToClient<Types.ObjectId, Date, ExperienceUserRecord>(
