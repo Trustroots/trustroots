@@ -230,8 +230,9 @@ class NostrKeyJourneyTest {
         val username = "test-backup-key-member"
         val remoteKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
         val profile = JSONObject().put("username", username).put("nostrNpub", remoteKey)
-        LocalTransportFixture {
-            LocalTransportFixture.Response(JSONObject().put("profile", profile).toString())
+        LocalTransportFixture { request ->
+            check(request.method == "GET" && request.path == "/api/users/$username")
+            LocalTransportFixture.Response(profile.toString())
         }.use { fixture ->
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val scope = nostrAccountScope(fixture.baseURL, username)
@@ -247,7 +248,7 @@ class NostrKeyJourneyTest {
                 val backup = requireNotNull(keys.backup())
                 val record = requireNotNull(preferences.getString(scope.storageAccount, null))
                 val api = MobileApiClient(fixture.baseURL)
-                val session = MemberSession("", MobileMember(username, "Test Member"))
+                val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
                 compose.setContent {
                     CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
                         NostrKeyEntry(api, session, enabled.value) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
