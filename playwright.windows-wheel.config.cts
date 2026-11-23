@@ -1,7 +1,7 @@
 // @ts-check
 const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
-const base = require('./playwright.config.cjs');
+const base = require('./playwright.config.cts');
 
 if (!process.env.BRAVE_EXECUTABLE_PATH) {
   throw new Error(

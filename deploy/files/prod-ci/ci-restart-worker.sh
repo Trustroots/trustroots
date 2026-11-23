@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Restart background worker with correct user (PM2 running worker.js)
+# Restart background worker with correct user (PM2 running worker.mjs)
 export NODE_ENV=production
 set -e
 

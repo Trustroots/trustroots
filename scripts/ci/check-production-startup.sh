@@ -51,7 +51,7 @@ docker run -d --name "$web" --network "$network" \
   "$image" >/dev/null
 docker run -d --name "$worker" --network "$network" \
   -e NODE_ENV=production -e DB_1_PORT_27017_TCP_ADDR=mongodb \
-  -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true "$image" node worker.js >/dev/null
+  -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true "$image" node worker.mjs >/dev/null
 
 ready=false
 for attempt in {1..60}; do

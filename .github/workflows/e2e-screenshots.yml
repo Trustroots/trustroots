@@ -168,7 +168,7 @@ jobs:
           cp -R ../../tests/e2e "$base_root/tests/"
           mapfile -t changed_runner_files < <(
             git -C ../.. diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" -- \
-              'scripts/e2e/**' 'playwright.config.cjs'
+              'scripts/e2e/**' 'playwright.config.cts'
           )
           for file in "${changed_runner_files[@]}"; do
             if [ -f "../../$file" ]; then
