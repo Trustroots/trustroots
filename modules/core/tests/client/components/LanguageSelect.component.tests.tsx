@@ -78,6 +78,12 @@ it('prefills languages in catalogue order and keeps existing deprecated values',
       .getAllByRole('button')
       .map(button => button.getAttribute('aria-label')),
   ).toEqual(['Remove English', 'Remove Finnish', 'Remove Middle English']);
+  // Each chip label is its own text node, separate from the remove button.
+  for (const label of ['English', 'Finnish', 'Middle English']) {
+    expect(screen.getByText(label, { exact: true })).toHaveTextContent(
+      new RegExp(`^${label}$`),
+    );
+  }
 });
 
 it('prompts for a longer query and matches labels without accents', async () => {
