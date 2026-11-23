@@ -91,7 +91,10 @@ describe('Dispatching Nostranslation alerts', () => {
         send,
         now: () => timestamp * 1000,
       }),
-    ).rejects.toMatchObject({ errors: [error] });
+    ).rejects.toMatchObject({
+      errors: [error],
+      message: 'Translation alert delivery failed.',
+    });
     expect(send).toHaveBeenCalledTimes(2);
   });
 });
