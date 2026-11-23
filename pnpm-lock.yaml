@@ -280,9 +280,6 @@ importers:
       maxmind:
         specifier: 5.1.0
         version: 5.1.0
-      medium-editor:
-        specifier: 5.23.3
-        version: 5.23.3
       moment:
         specifier: 2.31.0
         version: 2.31.0
@@ -401,9 +398,6 @@ importers:
       '@types/lodash':
         specifier: 4.17.27
         version: 4.17.27
-      '@types/medium-editor':
-        specifier: 5.0.8
-        version: 5.0.8
       '@types/node':
         specifier: 26.6.6
         version: 26.6.6
@@ -3635,9 +3629,6 @@ packages:
   '@types/lodash@4.17.27':
     resolution: {integrity: sha512-VenMRv/eKNrspX9v3H4dbmjsrnCOYdYBG3kxXKk3dG6X+urBGcj2Prww3xw1U5K4FV/mE4h5GbWd0szEKf+9ew==}
 
-  '@types/medium-editor@5.0.8':
-    resolution: {integrity: sha512-8zj+0E1nirrZ8lW6PbKru11z0klAxShLyO2SikbCz4CV1DbdN0gB9hNq99cJS1giEozUEtfhUQ0SDz+VgzeATQ==}
-
   '@types/methods@1.1.4':
     resolution: {integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==}
 
@@ -5445,9 +5436,6 @@ packages:
   media-typer@1.1.1:
     resolution: {integrity: sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==}
     engines: {node: '>= 0.8'}
-
-  medium-editor@5.23.3:
-    resolution: {integrity: sha512-he9/TdjX8f8MGdXGfCs8AllrYnqXJJvjNkDKmPg3aPW/uoIrlRqtkFthrwvmd+u4QyzEiadhCCM0EwTiRdUCJw==}
 
   memory-pager@1.5.0:
     resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
@@ -9579,8 +9567,6 @@ snapshots:
 
   '@types/lodash@4.17.27': {}
 
-  '@types/medium-editor@5.0.8': {}
-
   '@types/methods@1.1.4': {}
 
   '@types/node@26.6.6':
@@ -11565,8 +11551,6 @@ snapshots:
   media-typer@0.3.0: {}
 
   media-typer@1.1.1: {}
-
-  medium-editor@5.23.3: {}
 
   memory-pager@1.5.0: {}
 

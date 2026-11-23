@@ -1,163 +1,37 @@
 import { useTranslation } from 'react-i18next';
-import MediumEditor from 'medium-editor';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import 'medium-editor/dist/css/medium-editor.css';
+import { createPortal } from 'react-dom';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
+import { cn } from '@trustroots/ui/cn';
 import { sanitiseRichText } from '../utils/rich-text';
 
-const baseOptions = {
-  disableReturn: false,
-  disableDoubleReturn: false,
-  disableExtraSpaces: false,
-  // Automatically turns URLs entered into
-  // the text field into HTML anchor tags
-  autoLink: false,
-  anchorPreview: false,
-  paste: {
-    // Forces pasting as plain text
-    forcePlainText: false,
-    // Cleans pasted content from different sources, like google docs etc
-    cleanPastedHTML: true,
-    // List of element attributes to remove during
-    // paste when `cleanPastedHTML` is `true`
-    cleanAttrs: [
-      'class',
-      'style',
-      'dir',
-      'id',
-      'title',
-      'target',
-      'tabindex',
-      'onclick',
-      'oncontextmenu',
-      'ondblclick',
-      'onmousedown',
-      'onmouseenter',
-      'onmouseleave',
-      'onmousemove',
-      'onmouseover',
-      'onmouseout',
-      'onmouseup',
-      'onwheel',
-      'onmousewheel',
-      'onmessage',
-      'ontouchstart',
-      'ontouchmove',
-      'ontouchend',
-      'ontouchcancel',
-      'onload',
-      'onscroll',
-    ],
-    // list of element tag names to remove during
-    // paste when `cleanPastedHTML` is `true`
-    cleanTags: [
-      'link',
-      'iframe',
-      'frameset',
-      'noframes',
-      'object',
-      'video',
-      'audio',
-      'track',
-      'source',
-      'base',
-      'basefont',
-      'applet',
-      'param',
-      'embed',
-      'script',
-      'meta',
-      'head',
-      'title',
-      'svg',
-      'script',
-      'style',
-      'input',
-      'textarea',
-      'form',
-      'hr',
-      'select',
-      'optgroup',
-      'label',
-      'img',
-      'canvas',
-      'area',
-      'map',
-      'figure',
-      'picture',
-      'figcaption',
-      'noscript',
-    ],
-    //  list of element tag names to unwrap (remove the element tag but retain
-    // its child elements) during paste when `cleanPastedHTML` is `true`
-    unwrapTags: [
-      '!DOCTYPE',
-      'html',
-      'body',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'table',
-      'th',
-      'tr',
-      'td',
-      'tbody',
-      'thead',
-      'tfoot',
-      'article',
-      'header',
-      'footer',
-      'section',
-      'aside',
-      'font',
-      'center',
-      'big',
-      'code',
-      'pre',
-      'small',
-      'button',
-      'label',
-      'fieldset',
-      'legend',
-      'datalist',
-      'keygen',
-      'output',
-      'nav',
-      'main',
-      'div',
-      'span',
-    ],
-  },
-  // Toolbar buttons which appear when highlighting text
-  toolbar: {
-    buttons: [
-      {
-        name: 'bold',
-        contentDefault: '<span class="icon-bold"></span>',
-      },
-      {
-        name: 'italic',
-        contentDefault: '<span class="icon-italic"></span>',
-      },
-      {
-        name: 'underline',
-        contentDefault: '<span class="icon-underline"></span>',
-      },
-      {
-        name: 'quote',
-        contentDefault: '<span class="icon-quote"></span>',
-      },
-      {
-        name: 'unorderedlist',
-        contentDefault: '<span class="icon-list"></span>',
-      },
-    ],
-  },
-};
+function toggleQuote() {
+  const quoted = document.queryCommandValue('formatBlock') === 'blockquote';
+  document.execCommand('formatBlock', false, quoted ? 'p' : 'blockquote');
+}
 
-// medium-editor can give us a <br> at the end that we don't want
+// Chromium and WebKit put new lists inside the paragraph they replace.
+function unwrapListParagraphs(editable: HTMLElement) {
+  const paragraphs = Array.from(
+    editable.querySelectorAll(':scope > p > ul'),
+    list => list.parentElement!,
+  );
+  if (!paragraphs.length) return;
+  const selection = document.getSelection()!;
+  const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
+  for (const paragraph of paragraphs) {
+    paragraph.replaceWith(...paragraph.childNodes);
+  }
+  selection.setBaseAndExtent(
+    anchorNode!,
+    anchorOffset,
+    focusNode!,
+    focusOffset,
+  );
+}
+
+// Browsers can leave a <br> at the end of a paragraph that we don't want
 function removeTrailingBr(value: string): string {
   return value.replace(/<br><\/p>$/, '</p>');
 }
@@ -177,81 +51,134 @@ export default function TrEditor({
   text,
 }: TrEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const mediumRef = useRef<InstanceType<typeof MediumEditor> | null>(null);
-  const onChangeRef = useRef(onChange);
-  const onSubmitShortcutRef = useRef(onSubmitShortcut);
   const latestEditorText = useRef(text);
   const [initialMarkup] = useState(() => ({ __html: sanitiseRichText(text) }));
-  const isApplyingExternalText = useRef(false);
+  const [empty, setEmpty] = useState(true);
+  const [selection, setSelection] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const { t } = useTranslation('core');
 
   useLayoutEffect(() => {
-    onChangeRef.current = onChange;
-    onSubmitShortcutRef.current = onSubmitShortcut;
-  });
-
-  useLayoutEffect(() => {
-    const editable = ref.current!;
-    const medium = new MediumEditor(editable, {
-      ...baseOptions,
-      placeholder: { hideOnClick: true },
-    });
-    mediumRef.current = medium;
-    const onInput = (_event: Event, editable: HTMLElement) => {
-      // setContent emits editableInput too; external changes are not user input.
-      if (isApplyingExternalText.current) return;
-      const value = removeTrailingBr(editable.innerHTML);
-      latestEditorText.current = value;
-      onChangeRef.current(value);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      const submit = onSubmitShortcutRef.current;
-      if (
-        !submit ||
-        event.key !== 'Enter' ||
-        !(event.ctrlKey || event.metaKey) ||
-        event.altKey ||
-        event.shiftKey ||
-        event.isComposing
-      ) {
-        return;
-      }
-
-      // Handle submission before MediumEditor processes Enter as editing input.
-      event.preventDefault();
-      event.stopPropagation();
-      if (!event.repeat) submit(event);
-    };
-    medium.subscribe('editableInput', onInput);
-    editable.addEventListener('keydown', onKeyDown, { capture: true });
-    return () => {
-      medium.unsubscribe('editableInput', onInput);
-      editable.removeEventListener('keydown', onKeyDown, { capture: true });
-      medium.destroy();
-    };
-  }, []);
-
-  useEffect(() => {
-    // MediumEditor owns the editable DOM. Echoing its own input back into it
+    // The browser owns the editable DOM. Echoing its own input back into it
     // would disturb the caret and native input composition.
     if (text !== latestEditorText.current) {
       latestEditorText.current = text;
-      isApplyingExternalText.current = true;
-      try {
-        mediumRef.current?.setContent(sanitiseRichText(text));
-      } finally {
-        isApplyingExternalText.current = false;
-      }
+      ref.current!.innerHTML = sanitiseRichText(text);
     }
+    setEmpty(!ref.current!.textContent);
   }, [text]);
 
+  useEffect(() => {
+    // Like the old editor, offer formatting above highlighted text.
+    const onSelectionChange = () => {
+      const current = document.getSelection()!;
+      if (current.isCollapsed || !ref.current!.contains(current.anchorNode)) {
+        setSelection(null);
+        return;
+      }
+      const { top, left, width } = current
+        .getRangeAt(0)
+        .getBoundingClientRect();
+      setSelection({ top: top - 8, left: left + width / 2 });
+    };
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () =>
+      document.removeEventListener('selectionchange', onSelectionChange);
+  }, []);
+
+  const onInput = () => {
+    const editable = ref.current!;
+    // Typing into an empty editor leaves bare text; keep every line in a <p>.
+    if (
+      Array.from(editable.childNodes).some(
+        node => node.nodeType === Node.TEXT_NODE,
+      )
+    ) {
+      document.execCommand('formatBlock', false, 'p');
+    }
+    unwrapListParagraphs(editable);
+    setEmpty(!editable.textContent);
+    const value = removeTrailingBr(editable.innerHTML);
+    latestEditorText.current = value;
+    onChange(value);
+  };
+
+  const onKeyDown = ({ nativeEvent: event }: React.KeyboardEvent) => {
+    if (
+      !onSubmitShortcut ||
+      event.key !== 'Enter' ||
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      event.isComposing
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (!event.repeat) onSubmitShortcut(event);
+  };
+
+  const onPaste = (event: React.ClipboardEvent) => {
+    const html = event.clipboardData.getData('text/html');
+    if (!html) return;
+    event.preventDefault();
+    document.execCommand('insertHTML', false, sanitiseRichText(html));
+  };
+
+  const tools: Array<[string, string, () => void]> = [
+    [t('Bold'), 'icon-bold', () => document.execCommand('bold')],
+    [t('Italic'), 'icon-italic', () => document.execCommand('italic')],
+    [t('Underline'), 'icon-underline', () => document.execCommand('underline')],
+    [t('Quote'), 'icon-quote', toggleQuote],
+    [t('List'), 'icon-list', () => document.execCommand('insertUnorderedList')],
+  ];
+
   return (
-    <div
-      ref={ref}
-      id={id}
-      className="tr-editor"
-      data-placeholder={placeholder ? placeholder : t('Type your text')}
-      dangerouslySetInnerHTML={initialMarkup}
-    />
+    <>
+      <div
+        ref={ref}
+        id={id}
+        role="textbox"
+        aria-multiline="true"
+        contentEditable
+        tabIndex={0}
+        className={cn(
+          'tr-editor tw:relative tw:min-h-25 tw:cursor-text tw:hover:bg-brand-primary/10 tw:focus:bg-transparent tw:focus:outline-none',
+          empty &&
+            'tw:before:pointer-events-none tw:before:absolute tw:before:text-muted tw:before:content-[attr(data-placeholder)]',
+        )}
+        data-placeholder={placeholder ? placeholder : t('Type your text')}
+        dangerouslySetInnerHTML={initialMarkup}
+        onInput={onInput}
+        onKeyDown={onKeyDown}
+        onPaste={onPaste}
+      />
+      {selection &&
+        createPortal(
+          <ButtonGroup
+            role="toolbar"
+            aria-label={t('Formatting')}
+            className="tw:fixed tw:z-1040 tw:-translate-x-1/2 tw:-translate-y-full"
+            style={{ top: selection.top, left: selection.left }}
+          >
+            {tools.map(([label, icon, run]) => (
+              <Button
+                key={icon}
+                intent="primary"
+                aria-label={label}
+                title={label}
+                // Keep the selection in the editor.
+                onMouseDown={event => event.preventDefault()}
+                onClick={run}
+              >
+                <span className={icon} aria-hidden="true" />
+              </Button>
+            ))}
+          </ButtonGroup>,
+          document.body,
+        )}
+    </>
   );
 }
