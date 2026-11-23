@@ -10,7 +10,8 @@ export function debounce<Args extends unknown[]>(
   const cancel = () => {
     clearTimeout(timer);
     clearTimeout(maxTimer);
-    timer = maxTimer = undefined;
+    timer = undefined;
+    maxTimer = undefined;
   };
   const invoke = () => {
     cancel();

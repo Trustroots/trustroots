@@ -127,6 +127,7 @@ declare module 'validator' {
 
 declare module 'he' {
   export function decode(content: string): string;
+  export function escape(content: string): string;
 }
 
 declare module 'qs' {

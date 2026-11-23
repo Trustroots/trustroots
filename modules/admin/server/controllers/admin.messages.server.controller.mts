@@ -170,7 +170,7 @@ export const sendScammerWarning = async (
           .digest('hex')
           .slice(0, 24);
         return Message.findOneAndUpdate(
-          { _id: id },
+          { _id: new mongoose.Types.ObjectId(id) },
           {
             $setOnInsert: {
               content: cleanContent,

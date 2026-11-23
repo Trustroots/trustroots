@@ -515,6 +515,21 @@ describe('Messages controller unit tests', () => {
       bodyField<string>(res.body, 'message').should.equal('Invalid `dateTo`.');
     });
 
+    for (const field of ['dateFrom', 'dateTo']) {
+      it(`rejects multiple ${field} query values`, async () => {
+        const res = deferredResponse();
+        messagesController.sync(
+          { user, query: { [field]: ['2020-01-01', '2020-02-01'] } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'message').should.equal(
+          `Invalid \`${field}\`.`,
+        );
+      });
+    }
+
     it('rejects dateFrom later than dateTo', async () => {
       const res = deferredResponse();
       messagesController.sync(
