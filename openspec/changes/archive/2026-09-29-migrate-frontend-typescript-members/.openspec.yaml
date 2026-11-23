@@ -1,4 +1,0 @@
-schema: spec-driven
-created: 2026-09-28
-goal: Convert users, contacts, tribes, experiences and reference-thread frontend
-  modules while preserving runtime behaviour and compatibility

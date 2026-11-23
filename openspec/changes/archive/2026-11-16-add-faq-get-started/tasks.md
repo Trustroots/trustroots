@@ -1,3 +1,0 @@
-- [x] Add the Get Started FAQ category, route and searchable answers.
-- [x] Add automated coverage for navigation, wiki links and search.
-- [x] Run checks and archive the change into the living specification.
