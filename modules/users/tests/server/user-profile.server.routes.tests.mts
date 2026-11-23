@@ -1332,6 +1332,7 @@ describe('User profile CRUD tests', function () {
         });
     });
     it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
+      assert(user.created);
       const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
@@ -1368,6 +1369,7 @@ describe('User profile CRUD tests', function () {
         .catch(done);
     });
     it('should not be able to change username if username was changed within previous 3 months', function (done) {
+      assert(user.created);
       const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
@@ -1422,6 +1424,7 @@ describe('User profile CRUD tests', function () {
         .catch(done);
     });
     it('should be able to change username if username was changed more than 3 months ago', function (done) {
+      assert(user.created);
       const threeMonthsAgo = subMonths(user.created, 3);
       user!
         .updateOne({
@@ -1454,10 +1457,8 @@ describe('User profile CRUD tests', function () {
                   res.body.username.should.equal(user2.username);
                   User.findById(user._id)
                     .then((user: UserDocument | null) => {
-                      const threeMonthsAgo = subMonths(
-                        user!.usernameUpdated,
-                        3,
-                      );
+                      assert(user?.usernameUpdated);
+                      const threeMonthsAgo = subMonths(user.usernameUpdated, 3);
                       user!
                         .updateOne({
                           $set: {

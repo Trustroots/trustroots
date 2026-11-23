@@ -1,5 +1,7 @@
+import { differenceInYears, format as formatDate } from 'date-fns';
 import { initReactI18next } from 'react-i18next';
 import i18n, { type FormatFunction } from 'i18next';
+import { match } from 'ts-pattern';
 import { timeAgo } from '../../modules/core/shared/time-ago.mts';
 import { languageCookie, localeBackend } from './i18n-resources';
 
@@ -50,9 +52,7 @@ export function loadRtlCSS(): Promise<void> {
  * Format a translation parameter
  *
  * @param {Date|any} value - value to format
- * @param {string} format - a code that defines what to do with the string
- *    allowed values for Date:
- *      - fromNow - how long time has passed since the Date
+ * @param {string} format - the format token used in the translation
  * @param {string} languageCode - the ietf language code (learn more @/config/client/i18n-languages)
  * @returns {string|any} - the formatted value
  *                         or the original value, if the value type or format not recognized)
@@ -62,9 +62,23 @@ function format(
   format?: string,
   languageCode?: string,
 ): unknown {
-  const locale = languageCode || 'en';
+  const locale = (languageCode || 'en').replace(/_/g, '-');
   if (value instanceof Date) {
-    return format === 'fromNow' ? timeAgo(value, locale) : value;
+    if (!Number.isFinite(value.getTime())) return 'Invalid date';
+    return match(format)
+      .with('fromNow', () => timeAgo(value, locale))
+      .with('age', () => differenceInYears(new Date(), value))
+      .with('LL', () => value.toLocaleDateString(locale, { dateStyle: 'long' }))
+      .with('ll', () =>
+        value.toLocaleDateString(locale, { dateStyle: 'medium' }),
+      )
+      .with('YYYY', () => String(value.getFullYear()))
+      .with('MMMM Do', () =>
+        locale.split('-')[0] === 'en'
+          ? formatDate(value, 'MMMM do')
+          : value.toLocaleDateString(locale, { month: 'long', day: 'numeric' }),
+      )
+      .otherwise(() => value);
   }
 
   if (typeof value === 'number' && format === 'number') {

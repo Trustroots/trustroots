@@ -131,10 +131,9 @@ describe('Public statistics charts', () => {
         Array.from({ length: 12 }, (_, index) => {
           const hasRecords = index === 0 || index === 11;
           return {
-            weekStarting: start
-              .clone()
-              .add(index, 'weeks')
-              .format('YYYY-MM-DD'),
+            weekStarting: subWeeks(utcWeek, 12 - index)
+              .toISOString()
+              .slice(0, 10),
             signups: hasRecords ? 1 : 0,
             conversationsStarted: hasRecords ? 1 : 0,
             firstReplies: hasRecords ? 1 : 0,

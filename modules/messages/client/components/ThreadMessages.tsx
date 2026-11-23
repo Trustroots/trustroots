@@ -57,7 +57,7 @@ export default function ThreadMessages({
           <small>
             {t('Conversation started {{ date }}', {
               date: new Date(messages[0].created).toLocaleDateString(
-                i18n.language,
+                i18n.language?.replace(/_/g, '-'),
                 {
                   dateStyle: 'long',
                 },
