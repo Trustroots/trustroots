@@ -1,10 +1,8 @@
 import type {
-  CreateOfferRequest,
   OfferMutationResponse,
   OfferPayload,
   OfferSearchAggregationFeature,
   OfferSearchFeatureCollection,
-  UpdateOfferRequest,
 } from '../../shared/offer.js';
 
 const offerUpdateFields = [
@@ -54,33 +52,6 @@ export function prepareOfferPayload<Id, Timestamp>(
   };
 }
 
-/** Select writable fields from an update request. */
-export function prepareOfferUpdate(
-  body: UpdateOfferRequest,
-): UpdateOfferRequest {
-  return {
-    ...(body.volunteering === undefined
-      ? {}
-      : { volunteering: body.volunteering }),
-    ...(body.meetingStatus === undefined
-      ? {}
-      : { meetingStatus: body.meetingStatus }),
-    ...(body.status === undefined ? {} : { status: body.status }),
-    ...(body.description === undefined
-      ? {}
-      : { description: body.description }),
-    ...(body.noOfferDescription === undefined
-      ? {}
-      : { noOfferDescription: body.noOfferDescription }),
-    ...(body.maxGuests === undefined ? {} : { maxGuests: body.maxGuests }),
-    ...(body.location === undefined ? {} : { location: body.location }),
-    ...(body.validUntil === undefined ? {} : { validUntil: body.validUntil }),
-    ...(body.showOnlyInMyCircles === undefined
-      ? {}
-      : { showOnlyInMyCircles: body.showOnlyInMyCircles }),
-  };
-}
-
 /** Pick writable fields from an unvalidated HTTP body for Mongoose casting. */
 export function prepareOfferUpdateInput(
   body: Record<string, unknown>,
@@ -97,15 +68,6 @@ export function prepareNewOfferInput(
   body: Record<string, unknown>,
 ): OfferUpdateInput & { type?: unknown } {
   return { ...prepareOfferUpdateInput(body), type: body.type };
-}
-
-/** Select writable fields from a create request, including its required type. */
-export function prepareNewOffer(body: CreateOfferRequest): CreateOfferRequest {
-  return {
-    ...prepareOfferUpdate(body),
-    location: body.location,
-    type: body.type,
-  };
 }
 
 export function prepareOfferMutationResponse(

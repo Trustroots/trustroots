@@ -1,8 +1,7 @@
 import { initReactI18next } from 'react-i18next';
-import HttpApi from 'i18next-http-backend';
 import i18n, { type FormatFunction } from 'i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
+import { languageCookie, localeBackend } from './i18n-resources';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -90,16 +89,24 @@ const formatter = {
   format: format as FormatFunction,
 };
 
-if (!isTest) {
-  // load translation using Fetch -> see /public/locales
-  // learn more: https://github.com/i18next/i18next-http-backend
-  i18n.use(HttpApi);
-}
+if (!isTest && typeof document !== 'undefined') i18n.use(localeBackend);
+
+i18n.on('languageChanged', async (languageCode: string) => {
+  if (typeof document === 'undefined') return;
+  const direction = i18n.dir(languageCode);
+
+  document.documentElement.lang = languageCode;
+  document.documentElement.dir = direction;
+
+  if (direction === 'rtl') {
+    await loadRtlCSS();
+  }
+
+  moment.locale(languageCode);
+});
 
 i18n
-  // detect user language
-  // learn more: https://github.com/i18next/i18next-browser-languageDetector
-  .use(LanguageDetector)
+  .use(languageCookie)
   // pass the i18n instance to react-i18next.
   .use(initReactI18next)
   .use(formatter)
@@ -121,29 +128,10 @@ i18n
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
-    detection: {
-      lookupCookie: 'i18n',
-      order: ['cookie'],
-      caches: ['cookie'],
-    },
     react: {
       useSuspense: false,
     },
     // debug: true, // show missing translation keys in console.log
   });
-
-i18n.on('languageChanged', async (languageCode: string) => {
-  const direction = i18n.dir(languageCode); // `rtl` (right-to-left), or `ltr` (left-to-right)
-
-  document.documentElement.lang = languageCode;
-  document.documentElement.dir = direction;
-
-  if (direction === 'rtl') {
-    await loadRtlCSS();
-  }
-
-  // Date+time library
-  moment.locale(languageCode);
-});
 
 export default i18n;

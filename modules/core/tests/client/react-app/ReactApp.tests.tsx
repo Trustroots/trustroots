@@ -646,7 +646,9 @@ describe('<ReactApp />', () => {
   it('wraps offer pages in the offer layout', async () => {
     renderApp('/offer/host', { user: { username: 'member', public: false } });
 
-    expect(await screen.findByText('Do not panic!')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: "Don't panic!" }),
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(document.title).toBe('Host travellers - Trustroots'),
     );

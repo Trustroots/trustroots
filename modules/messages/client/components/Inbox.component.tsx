@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
 import ContentState from '@/modules/core/client/components/ContentState';
 import * as api from '../api/messages.api';
-import Activate from '@/modules/users/client/components/Activate';
+import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { MessageThreadSummary, PageParams } from '../api/messages.api';
@@ -17,7 +17,7 @@ export default function Inbox({ user }: InboxProps) {
   if (!user.public) {
     return (
       <section className="container-spacer">
-        <Activate />
+        <ActivateProfileNotice />
       </section>
     );
   }

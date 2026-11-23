@@ -1,6 +1,6 @@
 import React from 'react';
 
-import OfferActivateProfile from './OfferActivateProfile.component';
+import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 
 export default function OfferShell({
   children,
@@ -11,7 +11,7 @@ export default function OfferShell({
 }) {
   return (
     <section className="tw:page-container container-spacer offer">
-      {!user?.public && <OfferActivateProfile />}
+      {!user?.public && <ActivateProfileNotice />}
       {user?.public && children}
     </section>
   );

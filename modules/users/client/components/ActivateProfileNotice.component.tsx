@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { Trans, useTranslation } from 'react-i18next';
+import '@/config/client/i18n';
 
 export default function ActivateProfileNotice() {
   const { t } = useTranslation('users') as {
