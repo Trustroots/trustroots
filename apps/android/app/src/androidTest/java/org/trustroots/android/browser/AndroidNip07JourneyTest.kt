@@ -42,7 +42,8 @@ class AndroidNip07JourneyTest {
         keys.import("0".repeat(63) + "1")
         lateinit var web: WebView
         var committedURL: String? = null
-        val session = BrowserNostrSession(keys) { true }
+        var isCurrent = true
+        val session = BrowserNostrSession(keys) { isCurrent }
         try {
             compose.setContent {
                 val scope = rememberCoroutineScope()
@@ -95,6 +96,31 @@ class AndroidNip07JourneyTest {
             assertTrue(verifier.verifySignature(decodeHex(event.getString("sig"))))
 
             eval(web, """
+                (() => {
+                  const bridge = window.trustrootsAndroidNip07;
+                  const original = bridge.onmessage;
+                  window.bridgeResponses = [];
+                  bridge.onmessage = ({data}) => {
+                    const response = JSON.parse(data);
+                    window.bridgeResponses.push(response);
+                    if (response.id === 'unsupported') bridge.onmessage = original;
+                  };
+                  bridge.postMessage('invalid JSON');
+                  bridge.postMessage(JSON.stringify({method:'getPublicKey'}));
+                  bridge.postMessage(JSON.stringify({id:1, method:'getPublicKey'}));
+                  bridge.postMessage(JSON.stringify({id:'', method:'getPublicKey'}));
+                  bridge.postMessage(JSON.stringify({id:'x'.repeat(65), method:'getPublicKey'}));
+                  bridge.postMessage(JSON.stringify({id:'too-large', method:'x'.repeat(65536)}));
+                  bridge.postMessage(JSON.stringify({id:'unsupported', method:'encrypt'}));
+                })();
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "window.bridgeResponses.length") != "0" }
+            assertEquals("1", eval(web, "window.bridgeResponses.length"))
+            val rejected = JSONObject(eval(web, "window.bridgeResponses[0]"))
+            assertEquals("unsupported", rejected.getString("id"))
+            assertEquals("Unsupported Nostr operation.", rejected.getString("error"))
+
+            eval(web, """
                 window.nostr.signEvent({kind: 'invalid'}).then(
                   () => window.invalidEventResult = 'signed',
                   error => window.invalidEventResult = error.message
@@ -122,7 +148,15 @@ class AndroidNip07JourneyTest {
             compose.waitUntil(10_000) { eval(web, "Boolean(window.frameDecision)") == "true" }
             assertEquals("denied", JSONTokener(eval(web, "window.frameDecision")).nextValue())
 
-            compose.runOnUiThread { session.pause() }
+            compose.runOnUiThread { isCurrent = false }
+            eval(web, "window.nostr.getPublicKey().then(() => window.staleSessionDecision='allowed', () => window.staleSessionDecision='denied')")
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.staleSessionDecision)") == "true" }
+            assertEquals("denied", JSONTokener(eval(web, "window.staleSessionDecision")).nextValue())
+
+            compose.runOnUiThread {
+                isCurrent = true
+                session.pause()
+            }
             eval(web, "window.nostr.getPublicKey().then(() => window.sessionDecision='allowed', () => window.sessionDecision='denied')")
             compose.waitUntil(10_000) { eval(web, "Boolean(window.sessionDecision)") == "true" }
             assertEquals("denied", JSONTokener(eval(web, "window.sessionDecision")).nextValue())
