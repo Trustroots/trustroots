@@ -11,7 +11,8 @@ import express, {
   type Response,
   type NextFunction,
 } from 'express';
-import logDevelopmentRequest from './development-request-log.mts';
+import log from '@trustroots/logger';
+import { createDevelopmentRequestLogger } from './development-request-log.mts';
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mts';
 import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mts';
@@ -170,7 +171,7 @@ function initMiddleware(app: Express) {
 
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {
-    app.use(logDevelopmentRequest);
+    app.use(createDevelopmentRequestLogger(log));
 
     // Disable views cache
     app.set('view cache', false);
