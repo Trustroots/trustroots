@@ -10,7 +10,7 @@
     "dev": "email dev --dir src/templates --port 3030",
     "storybook": "storybook dev --port 6007 --no-open",
     "build-storybook": "storybook build --output-dir storybook-static",
-    "lint": "eslint .",
+    "lint": "oxlint . && oxfmt --check .",
     "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/services/email-templates.server.tests.mts"
   },
   "dependencies": {

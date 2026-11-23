@@ -22,7 +22,6 @@ type Manifest = {
 };
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const SOURCE_EXTENSIONS = '.js,.mjs,.mts,.cjs,.cts,.ts,.tsx';
 
 function listModules(root: string): string[] {
   return fs
@@ -61,7 +60,7 @@ export function expectedManifest(name: string, root = ROOT): Manifest {
   });
 
   const scripts: Record<string, string> = {
-    lint: `eslint --ext ${SOURCE_EXTENSIONS} .`,
+    lint: 'oxlint . && oxfmt --check .',
   };
   if (hasDir(root, ...dir, 'tests', 'client')) {
     scripts['test:client'] =

@@ -79,4 +79,3 @@ flat avatar paths.
 - **WHEN** thumbnail generation fails or reaches its time budget
 - **THEN** the system stops processing and cleans private staging without
   publishing incomplete output
-

@@ -32,14 +32,15 @@ export default function OfferStatusButton({
         size="sm"
         className="offer-hosting-button pull-right"
         render={
-          isOwnOffer ? (
-            <a href="/offer/host" />
-          ) : (
-            <a
-              href={`/messages/${username}`}
-              onClick={() => rememberOutreachSource(username, 'offer')}
-            />
-          )
+          // oxlint-disable-next-line jsx-a11y/anchor-has-content -- Button renders the label inside it.
+          <a
+            href={isOwnOffer ? '/offer/host' : `/messages/${username}`}
+            onClick={
+              isOwnOffer
+                ? undefined
+                : () => rememberOutreachSource(username, 'offer')
+            }
+          />
         }
       >
         {hostStatusLabel(status ?? 'no', key => String(t(key)))}

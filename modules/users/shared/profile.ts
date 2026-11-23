@@ -33,7 +33,9 @@ export interface GithubProviderIdentity {
 }
 
 export type PublicProviderIdentity =
-  FacebookProviderIdentity | TwitterProviderIdentity | GithubProviderIdentity;
+  | FacebookProviderIdentity
+  | TwitterProviderIdentity
+  | GithubProviderIdentity;
 
 export interface PublicProviderIdentities {
   facebook?: FacebookProviderIdentity;
