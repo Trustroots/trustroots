@@ -11,7 +11,8 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'dataExport';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -74,6 +75,7 @@ function loadMiddleware(
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      dataExport: { windowMs: 3_600_000, ipLimit: 0, identityLimit: 5 },
     },
   };
   (
@@ -307,7 +309,7 @@ describe('Targeted request limit middleware', function () {
     res.statusCode.should.equal(503);
   });
 
-  it('limits member actions without an IP dimension when IP limiting is disabled', async function () {
+  it('limits avatar uploads per member when IP limiting is disabled', async function () {
     let options: ConsumeOptions | undefined;
     const middleware = loadMiddleware(
       async value => {
@@ -322,9 +324,32 @@ describe('Targeted request limit middleware', function () {
       response(),
       () => {},
     );
-    options!.dimensions.should.deepEqual([
-      { name: 'member', value: 'fictional-member', limit: 2 },
-    ]);
+    assert.deepEqual(options, {
+      operation: 'avatarUpload',
+      windowMs: 60_000,
+      dimensions: [{ name: 'member', value: 'fictional-member', limit: 2 }],
+    });
+  });
+
+  it('limits data exports per member when a client address is unavailable', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => undefined,
+    );
+    await middleware.dataExport(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(options, {
+      operation: 'dataExport',
+      windowMs: 3_600_000,
+      dimensions: [{ name: 'member', value: 'fictional-member', limit: 5 }],
+    });
   });
 
   it('skips storage when no configured dimension has an identity', async function () {

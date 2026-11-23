@@ -142,6 +142,36 @@ test.describe.serial('account settings feature coverage', () => {
     );
   });
 
+  test('members have separate data export allowances', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'The export allowance follows the member across client addresses.',
+      'Members on the same network have separate export allowances.',
+    ]);
+    await registerViaApi(request, createUser());
+    const path = '/api/users/export';
+    for (let count = 0; count < 5; count += 1) {
+      await expect(await request.get(path)).toBeOK();
+    }
+    const limited = await request.get(path, {
+      headers: { '!~Passenger-Client-Address': '198.51.100.56' },
+    });
+    expect(limited.status()).toBe(429);
+    expect(limited.headers()['retry-after']).toMatch(/^[1-9]\d*$/);
+    expect(limited.headers()['content-disposition']).toBeUndefined();
+
+    const otherContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(otherContext.request, createUser());
+      await expect(await otherContext.request.get(path)).toBeOK();
+    } finally {
+      await otherContext.close();
+    }
+  });
+
   test('password changes refresh the current browser and revoke other sessions', async ({
     browser,
     baseURL,
