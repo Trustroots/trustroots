@@ -20,11 +20,14 @@ type MockMapProps = {
   onClick: (event: { originalEvent: { target: EventTarget } }) => void;
   onLoad: () => void;
   onMoveStart: () => void;
-  onMoveEnd: (event: {
-    viewState: { latitude: number; longitude: number; zoom: number };
-  }) => void;
+  onMoveEnd: (event: { target: typeof mockMap }) => void;
 };
-const mockMap = { fitBounds: vi.fn(), jumpTo: vi.fn() };
+const mockMap = {
+  fitBounds: vi.fn(),
+  getCenter: vi.fn(),
+  getZoom: vi.fn(),
+  jumpTo: vi.fn(),
+};
 let mockMapProps: MockMapProps;
 vi.mock('@vis.gl/react-maplibre', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
@@ -119,10 +122,11 @@ const props = {
 };
 
 const loadMap = () => act(() => mockMapProps.onLoad());
-const moveEnd = (latitude = 12, longitude = 34, zoom = 6) =>
-  act(() =>
-    mockMapProps.onMoveEnd({ viewState: { latitude, longitude, zoom } }),
-  );
+const moveEnd = (latitude = 12, longitude = 34, zoom = 6) => {
+  mockMap.getCenter.mockReturnValue({ toArray: () => [longitude, latitude] });
+  mockMap.getZoom.mockReturnValue(zoom);
+  act(() => mockMapProps.onMoveEnd({ target: mockMap }));
+};
 const renderPopup = (popupLocation: CircleLocation) =>
   render(<LocationPopup location={popupLocation} />).container;
 const markerButton = () =>
@@ -179,9 +183,7 @@ describe('shared circle map', () => {
 
   it('does not save the automatic initial fit as a chosen view', () => {
     mockMap.fitBounds.mockImplementationOnce(() =>
-      mockMapProps.onMoveEnd({
-        viewState: { latitude: 12, longitude: 34, zoom: 6 },
-      }),
+      mockMapProps.onMoveEnd({ target: mockMap }),
     );
     render(<CircleLocationMap {...props} />);
     loadMap();
@@ -258,10 +260,14 @@ describe('shared circle map', () => {
       <CircleLocationMap {...props} locations={[]} state="loading" />,
     );
     loadMap();
+    moveEnd();
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock device location' }),
     );
     expect(mockMap.jumpTo).toHaveBeenCalledWith({ center: [0, 0], zoom: 13 });
+    moveEnd(0, 0, 13);
+    moveEnd(0.002, 0.003, 14);
+    expect(sessionStorage.getItem('circle-map-view')).toBe('[12,34,6]');
     rerender(<CircleLocationMap {...props} />);
     expect(mockMap.fitBounds).not.toHaveBeenCalled();
   });
@@ -275,6 +281,8 @@ describe('shared circle map', () => {
       center: [-17, 34],
       zoom: 6,
     });
+    moveEnd(34, -17, 6);
+    expect(sessionStorage.getItem('circle-map-view')).toBeNull();
   });
 
   it('opens a popup for the selected marker and keeps it open when locations are refreshed', () => {
