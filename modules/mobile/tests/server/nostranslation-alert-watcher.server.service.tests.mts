@@ -195,6 +195,37 @@ describe('Nostranslation relay watcher', () => {
     ]);
   });
 
+  it.each([
+    ['suspended member', 0, { roles: ['user', 'suspended'] }],
+    ['changed authentication version', 0, { authVersion: 1 }],
+    ['changed nonzero authentication version', 4, { authVersion: 5 }],
+  ] as const)(
+    'does not claim a notification for a %s',
+    async (_description, version, update) => {
+      await registerMember(version);
+      await User.updateOne({ username: 'reviewwatcher' }, { $set: update });
+      await User.collection.insertOne({
+        roles: ['user'],
+        authVersion: version,
+      });
+
+      let authorizationChecked = false;
+      const exists = User.exists.bind(User);
+      vi.spyOn(User, 'exists').mockImplementationOnce(filter =>
+        exists(filter).post(() => {
+          authorizationChecked = true;
+        }),
+      );
+      const claim = vi.spyOn(Claims, 'create');
+      watchNostranslationAlerts();
+      FixtureSocket.instances[0]!.message(signedFrame().frame);
+      await vi.waitFor(() => expect(authorizationChecked).toBe(true));
+      await new Promise<void>(resolve => setImmediate(resolve));
+      expect(claim).not.toHaveBeenCalled();
+      expect(webPush.sendNotification).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([404, 410])(
     'removes an Android destination when its distributor returns %s',
     async statusCode => {
@@ -239,6 +270,22 @@ describe('Nostranslation relay watcher', () => {
       expect(lookup).toHaveBeenCalledTimes(3);
     });
     expect(update).toHaveBeenCalledOnce();
+    expect(webPush.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it('does not deliver to a destination that was removed after the claim', async () => {
+    await registerMember();
+    const lookup = vi.spyOn(Registrations, 'findOne');
+    vi.spyOn(Claims, 'create').mockImplementationOnce(async () => {
+      await Registrations.deleteOne({ _id: recipient });
+      return new Claims();
+    });
+    watchNostranslationAlerts();
+    FixtureSocket.instances[0]!.message(signedFrame().frame);
+    await vi.waitFor(() => {
+      expect(lookup).toHaveBeenCalledTimes(2);
+    });
+    expect(await Registrations.countDocuments()).toBe(0);
     expect(webPush.sendNotification).not.toHaveBeenCalled();
   });
 
