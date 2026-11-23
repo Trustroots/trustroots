@@ -1,220 +1,73 @@
-import mockModule from '../../../../testutils/server/mock-module.mts';
-import sinon from 'sinon';
 import 'should';
-let policyModule: typeof import('../../server/policies/offers.server.policy.mts');
-before(async function () {
-  policyModule = await import('../../server/policies/offers.server.policy.mts');
-});
-interface PolicyResponseDouble {
-  statusCode: number;
-  body: { message: string } | null;
-  status(code: number): PolicyResponseDouble;
-  json(body: { message: string }): PolicyResponseDouble;
-  send(body: { message: string }): PolicyResponseDouble;
-}
+import policy from '../../server/policies/offers.server.policy.mts';
+import {
+  assertGrants,
+  policyRequest,
+  policyResponse,
+} from '../../../../testutils/server/route-grants.server.testutil.mts';
 
-function loadPolicy() {
-  const implementation = policyModule;
-  const mockAcl = implementation._acl;
-  const allow = sinon.stub(mockAcl, 'allow');
-  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
-  return {
-    policy: implementation.default,
-    mockAcl: { allow, areAnyRolesAllowed },
-  };
-}
-
-function mockResponse(): PolicyResponseDouble {
-  const res: PolicyResponseDouble = {
-    statusCode: 200,
-    body: null,
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-    send(body: { message: string }) {
-      res.body = body;
-      return res;
-    },
-  };
-  return res;
+function offerRequest(owner: unknown) {
+  const req = policyRequest('user', '/api/offers/:offerId', 'POST');
+  return { ...req, offer: { user: owner } };
 }
 
 describe('Offers policy unit tests', () => {
-  afterEach(() => sinon.restore());
-
   it('grants admins everything and users only the documented methods', () => {
-    const { policy, mockAcl } = loadPolicy();
-
-    policy.invokeRolesPolicies();
-
-    mockAcl.allow.firstCall.args[0].should.deepEqual([
-      {
-        roles: ['admin'],
-        allows: [
-          { resources: '/api/offers', permissions: '*' },
-          { resources: '/api/offers-by/:offerUserId', permissions: '*' },
-          { resources: '/api/offers/:offerId', permissions: '*' },
-        ],
-      },
-      {
-        roles: ['user'],
-        allows: [
-          { resources: '/api/offers', permissions: ['get', 'post'] },
-          { resources: '/api/offers-by/:offerUserId', permissions: ['get'] },
-          {
-            resources: '/api/offers/:offerId',
-            permissions: ['get', 'put', 'delete'],
-          },
-        ],
-      },
+    assertGrants(policy.isAllowed, [
+      'user GET /api/offers',
+      'user POST /api/offers',
+      'admin GET /api/offers',
+      'admin POST /api/offers',
+      'admin PUT /api/offers',
+      'admin DELETE /api/offers',
+      'user GET /api/offers-by/:offerUserId',
+      'admin GET /api/offers-by/:offerUserId',
+      'admin POST /api/offers-by/:offerUserId',
+      'admin PUT /api/offers-by/:offerUserId',
+      'admin DELETE /api/offers-by/:offerUserId',
+      'user GET /api/offers/:offerId',
+      'user PUT /api/offers/:offerId',
+      'user DELETE /api/offers/:offerId',
+      'admin GET /api/offers/:offerId',
+      'admin POST /api/offers/:offerId',
+      'admin PUT /api/offers/:offerId',
+      'admin DELETE /api/offers/:offerId',
     ]);
   });
 
-  it('answers 500 when the ACL check fails', async () => {
-    // A fresh copy of the policy, so its route authorisation is built in this test.
-    const { default: policy } = await mockModule<
-      typeof import('../../server/policies/offers.server.policy.mts')
-    >(
-      new URL(
-        '../../server/policies/offers.server.policy.mts',
-        import.meta.url,
-      ),
-      {
-        './../../../core/server/services/memory-policy.server.service.mts':
-          () => ({
-            allow() {},
-            areAnyRolesAllowed: sinon.stub().yields(new Error('acl down')),
-          }),
-      },
-    );
-    const res = mockResponse();
-    const next = sinon.stub();
+  it('lets owners do anything with their own offer', () => {
+    const req = offerRequest(undefined);
+    req.offer.user = req.user!._id;
+    let permitted = false;
 
-    policy.isAllowed(
-      {
-        user: { _id: 'user-id', public: true, roles: ['user'] },
-        route: { path: '/api/offers' },
-        method: 'GET',
-      },
-      res,
-      next,
-    );
+    policy.isAllowed(req, policyResponse(), () => {
+      permitted = true;
+    });
 
-    res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    next.called.should.be.false();
+    permitted.should.be.true();
   });
 
   it('does not let a user manipulate an offer owned by someone else', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-    const next = sinon.stub();
+    const res = policyResponse();
 
-    policy.isAllowed(
-      {
-        user: { _id: 'user-id', public: true, roles: ['user'] },
-        route: { path: '/api/offers/:offerId' },
-        method: 'PUT',
-        offer: { user: 'someone-else' },
-      },
-      res,
-      next,
-    );
-
-    next.called.should.be.false();
-    res.statusCode.should.equal(403);
-  });
-
-  it('returns 403 for unauthenticated users', () => {
-    const { policy } = loadPolicy();
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        route: { path: '/api/offers' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-  });
-
-  it('returns 403 for unpublished users', done => {
-    const { policy } = loadPolicy();
-    const res = mockResponse();
-    let nextCalled = false;
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: false,
-          roles: ['user'],
-        },
-        route: { path: '/api/offers' },
-        method: 'GET',
-      },
-      res,
-      () => {
-        nextCalled = true;
-      },
-    );
-
-    res.statusCode.should.equal(403);
-    nextCalled.should.be.false();
-    done();
-  });
-
-  it('allows owners to manipulate their own offer', done => {
-    const { policy } = loadPolicy();
-    const userId = { toString: () => 'user-id' };
-    const req = {
-      user: { _id: userId, public: true, roles: ['user'] },
-      route: { path: '/api/offer/:offerId' },
-      method: 'PUT',
-      offer: { user: userId },
-    };
-    let nextCalled = false;
-
-    policy.isAllowed(req, mockResponse(), () => {
-      nextCalled = true;
+    policy.isAllowed(offerRequest({ valueOf: () => 'other-id' }), res, () => {
+      throw new Error('A member changed somebody else’s offer');
     });
 
-    nextCalled.should.be.true();
-    done();
+    res.statusCode.should.equal(403);
   });
 
-  it('calls next when ACL allows the request', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
+  it('returns 403 for unpublished users, even on their own offer', () => {
+    const req = offerRequest(undefined);
+    req.offer.user = req.user!._id;
+    req.user!.public = false;
+    const res = policyResponse();
 
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/offers-by/:offerUserId' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
+    policy.isAllowed(req, res, () => {
+      throw new Error('An unpublished member reached offers');
+    });
 
-    mockAcl.areAnyRolesAllowed
-      .calledWith(['user'], '/api/offers-by/:offerUserId', 'get')
-      .should.be.true();
-    next.calledOnce.should.be.true();
+    res.statusCode.should.equal(403);
+    res.body!.should.deepEqual({ message: 'Forbidden.' });
   });
 });

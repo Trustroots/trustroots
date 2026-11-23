@@ -1,4 +1,3 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
 import type {
@@ -13,72 +12,15 @@ type ContactsRequest = PolicyRequest & {
   };
 };
 
-/**
- * Module dependencies.
- */
-const acl = memoryPolicy();
-const authoriseRoute = createRouteAuthorisation(acl);
-/**
- * Invoke Contacts Permissions
- */
-function invokeRolesPolicies() {
-  acl.allow([
-    {
-      roles: ['admin'],
-      allows: [
-        {
-          resources: '/api/contact',
-          permissions: [],
-        },
-        {
-          resources: '/api/contact-by/:contactUserId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/contact/:contactId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/contacts/:listUserId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/contacts/:listUserId/common',
-          permissions: ['get'],
-        },
-      ],
-    },
-    {
-      roles: ['user'],
-      allows: [
-        {
-          resources: '/api/contact',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/contact-by/:contactUserId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/contact/:contactId',
-          permissions: ['get', 'put'],
-        },
-        {
-          resources: '/api/contacts/:listUserId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/contacts/:listUserId/common',
-          permissions: ['get'],
-        },
-      ],
-    },
-  ]);
-}
+const read = ['get'];
+const authoriseRoute = createRouteAuthorisation({
+  '/api/contact': { user: ['post'] },
+  '/api/contact-by/:contactUserId': { admin: read, user: read },
+  '/api/contact/:contactId': { admin: read, user: ['get', 'put'] },
+  '/api/contacts/:listUserId': { admin: read, user: read },
+  '/api/contacts/:listUserId/common': { admin: read, user: read },
+});
 
-/**
- * Check If Contacts Policy Allows
- */
 function isAllowed(
   req: ContactsRequest,
   res: PolicyResponse,
@@ -104,12 +46,5 @@ function isAllowed(
   }
   return authoriseRoute(req, res, next);
 }
-const service = {
-  invokeRolesPolicies,
-  isAllowed,
-};
-export { invokeRolesPolicies, isAllowed };
-export default service;
-
-// Expose the ACL dependency for native ESM boundary stubs.
-export { acl as _acl };
+export { isAllowed };
+export default { isAllowed };
