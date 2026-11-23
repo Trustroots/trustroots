@@ -88,7 +88,7 @@ function digest(record: Registration): string {
   return createHash('sha256')
     .update(
       [record.author, record.transport, ...fields]
-        .map(field => Buffer.byteLength(field, 'utf8') + ':' + field)
+        .map(field => Buffer.byteLength(field) + ':' + field)
         .join(''),
     )
     .digest('hex');

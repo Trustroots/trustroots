@@ -9,7 +9,10 @@ import {
   alertRegistrations,
   type AlertRegistrationRecord,
 } from './nostranslation-alert-registration.server.service.mts';
-import { sendTranslationAlert } from './nostranslation-alert-transport.server.service.mts';
+import {
+  isTranslationDestinationGone,
+  sendTranslationAlert,
+} from './nostranslation-alert-transport.server.service.mts';
 
 const subscription = 'trustroots-translation-alerts';
 const maxInFlight = 32;
@@ -95,14 +98,7 @@ async function send(destination: Destination, expiresAt: Date) {
   try {
     await sendTranslationAlert(current.destination, expiresAt);
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error &&
-      'statusCode' in error &&
-      (error.statusCode === 410 ||
-        (error.statusCode === 404 &&
-          current.destination.platform === 'android'))
-    ) {
+    if (isTranslationDestinationGone(current.destination.platform, error)) {
       await alertRegistrations().deleteOne({
         _id: { $eq: current._id },
         session: current.session,

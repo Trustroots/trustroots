@@ -34,13 +34,12 @@ export function readTranslationAlertEnvelope(
   now: number,
 ): TranslationAlertEnvelope | undefined {
   if (frame.length > 32_768) return;
-  let payload: unknown;
+  let result: ReturnType<typeof relayFrame.safeParse>;
   try {
-    payload = JSON.parse(frame);
+    result = relayFrame.safeParse(JSON.parse(frame));
   } catch {
     return;
   }
-  const result = relayFrame.safeParse(payload);
   if (!result.success) return;
   const [, subscriptionId, event] = result.data;
   if (
