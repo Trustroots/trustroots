@@ -58,6 +58,7 @@ module.exports = function (app) {
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
     )
+    .get(translationAlerts.configuration)
     .put(translationAlerts.register)
     .delete(translationAlerts.unregister);
   app

@@ -43,7 +43,9 @@ struct AccountView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .task { await loadAccount() }
-        .sheet(isPresented: $showNostranslationSigning) { NostranslationSigningSheet() }
+        .sheet(isPresented: $showNostranslationSigning) {
+            NostranslationSigningSheet(serverURLString: session.serverURLString)
+        }
     }
 
     private var emailSection: some View {

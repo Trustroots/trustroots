@@ -447,6 +447,33 @@ class MobileApiClient(
             }
         }
 
+    internal suspend fun registerTranslationAlert(
+        session: MemberSession,
+        registration: JSONObject,
+        sign: (JSONObject) -> JSONObject,
+    ): Unit = withContext(Dispatchers.IO) {
+        val challenge = JSONObject(jsonRequest(
+            "/api/mobile/v0/nostranslation/alerts/challenge", "POST", registration.toString(), session,
+        ).body).getJSONObject("event")
+        val body = JSONObject(registration.toString()).put("proof", sign(challenge))
+        jsonRequest("/api/mobile/v0/nostranslation/alerts", "PUT", body.toString(), session)
+        Unit
+    }
+
+    internal suspend fun translationAlertVapidKey(session: MemberSession): String? = withContext(Dispatchers.IO) {
+        val response = JSONObject(jsonRequest("/api/mobile/v0/nostranslation/alerts", "GET", session = session).body)
+        response.opt("androidVapidKey") as? String
+    }
+
+    internal suspend fun unregisterTranslationAlert(session: MemberSession, transport: String): Unit =
+        withContext(Dispatchers.IO) {
+            jsonRequest(
+                "/api/mobile/v0/nostranslation/alerts", "DELETE",
+                JSONObject().put("transport", transport).toString(), session,
+            )
+            Unit
+        }
+
     suspend fun searchMembers(session: MemberSession, query: String): Result<List<MemberProfile>> =
         withContext(Dispatchers.IO) {
             runCatching {

@@ -55,6 +55,28 @@ after five minutes and is consumed once. The profile route rejects a key
 already linked to another member. Send `{ nostrNpub: "" }` to unlink without
 changing local key storage.
 
+The bearer-authenticated `GET /api/mobile/v0/nostranslation/alerts` returns
+`{ androidVapidKey, ios }` for available notification transports. Send the
+client public key as `author`, the separate device transport public key as
+`transport`, and a `destination` to `POST /api/mobile/v0/nostranslation/alerts/challenge`.
+The destination contains `{ platform: "android", endpoint, publicKey, auth }`
+for UnifiedPush or `{ platform: "ios", token }` for APNs.
+
+Sign the returned kind 27235 event with the transport key. The payload digest
+binds the client key, transport key, platform and destination fields in the
+order above. Each string is prefixed by its UTF-8 byte length and a colon
+before concatenation and SHA-256 hashing. Send the original registration and
+the signed `proof` to `PUT /api/mobile/v0/nostranslation/alerts`. The
+challenge is single-use and expires after two minutes. Use
+`DELETE /api/mobile/v0/nostranslation/alerts` with `{ transport }` to unregister.
+
+The worker starts watching the relay with `TRUSTROOTS_NOSTRANSLATION_ALERTS=true`.
+UnifiedPush uses the existing VAPID settings and endpoint host allowlist. APNs
+requires `TRUSTROOTS_APNS_TEAM_ID`, `TRUSTROOTS_APNS_KEY_ID`,
+`TRUSTROOTS_APNS_TOPIC` and `TRUSTROOTS_APNS_PRIVATE_KEY` containing the PEM
+signing key. Set `TRUSTROOTS_APNS_SANDBOX=true` when using development device
+tokens. Notifications contain a generic prompt and expire with the envelope.
+
 The server controller passes database results to these builders. Checking the
 builders catches errors in their payload construction, but does not type-check
 the surrounding controllers, database queries or untrusted HTTP input. Existing

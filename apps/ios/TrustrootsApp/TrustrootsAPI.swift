@@ -1250,6 +1250,41 @@ final class TrustrootsAPI {
         return try decoder.decode(MemberProfile.self, from: data)
     }
 
+    func registerTranslationAlert(
+        serverURLString: String,
+        registration: [String: Any],
+        sign: ([String: Any]) throws -> [String: Any]
+    ) async throws {
+        let path = "api/mobile/v0/nostranslation/alerts"
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: path + "/challenge", method: "POST", body: registration
+        )
+        guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let event = response["event"] as? [String: Any] else { throw TrustrootsAPIError.invalidResponse }
+        var body = registration
+        body["proof"] = try sign(event)
+        _ = try await writeNostrProfile(serverURLString: serverURLString, path: path, method: "PUT", body: body)
+    }
+
+    func unregisterTranslationAlert(serverURLString: String, transport: String) async throws {
+        _ = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/nostranslation/alerts",
+            method: "DELETE", body: ["transport": transport]
+        )
+    }
+
+    func translationAlertsAvailable(serverURLString: String) async throws -> Bool {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/nostranslation/alerts"))
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw TrustrootsAPIError.invalidResponse }
+        struct Capabilities: Decodable { let ios: Bool }
+        return try decoder.decode(Capabilities.self, from: data).ios
+    }
+
     private func writeNostrProfile(
         serverURLString: String, path: String, method: String, body: [String: Any]
     ) async throws -> Data {

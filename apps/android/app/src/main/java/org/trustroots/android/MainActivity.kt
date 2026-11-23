@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.NostranslationAlerts
 import org.trustroots.android.ui.TrustrootsApp
 import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.updates.ApkUpdateAlerts
@@ -16,6 +17,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MessageAlerts.captureIntent(intent)
+        NostranslationAlerts.captureIntent(intent)
         ApkUpdateAlerts.reconcile(this)
         applyAppearance()
         setContent {
@@ -48,5 +50,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         MessageAlerts.captureIntent(intent)
+        NostranslationAlerts.captureIntent(intent)
     }
 }
