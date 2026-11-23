@@ -25,10 +25,11 @@ test.describe.serial('auth email and token feature coverage', () => {
       'Valid confirmation token can be validated.',
     ]);
     const member = createUser();
+    const newEmail = createUser().email;
     await registerViaApi(request, member);
     const token = await findActionToken(member.username, 'emailToken');
     await updateUserByUsername(member.username, {
-      $set: { public: true, emailTemporary: 'new-address@example.org' },
+      $set: { public: true, emailTemporary: newEmail },
     });
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(`/confirm-email/${token}`);
@@ -40,9 +41,7 @@ test.describe.serial('auth email and token feature coverage', () => {
     ).toBeVisible();
     await expect(page.getByText(member.email, { exact: true })).toBeVisible();
     await expect(page.getByText('New email', { exact: true })).toBeVisible();
-    await expect(
-      page.getByText('new-address@example.org', { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText(newEmail, { exact: true })).toBeVisible();
     expect((await findUserByUsername(member.username))!.email).toBe(
       member.email,
     );
@@ -64,9 +63,7 @@ test.describe.serial('auth email and token feature coverage', () => {
     await expect(
       page.getByRole('heading', { name: 'Email confirmed' }),
     ).toBeVisible();
-    expect((await findUserByUsername(member.username))!.email).toBe(
-      'new-address@example.org',
-    );
+    expect((await findUserByUsername(member.username))!.email).toBe(newEmail);
   });
 
   test('email change can be cancelled from its link without signing in', async ({
@@ -126,7 +123,8 @@ test.describe.serial('auth email and token feature coverage', () => {
     await expect(
       page.getByRole('button', { name: 'Resend confirmation' }),
     ).toHaveCount(0);
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Email Address')).toHaveValue(member.email);
     await expect(
       page.getByRole('button', { name: 'Cancel email change' }),
     ).toHaveCount(0);
