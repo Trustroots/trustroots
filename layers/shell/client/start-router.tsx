@@ -4,12 +4,35 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
+import { createMiddleware } from '@tanstack/react-start';
 
 import ShellDocument from './ShellDocument';
 
+declare module '@tanstack/react-start' {
+  interface Register {
+    server: {
+      requestContext: {
+        express?: (request: Request) => Response | Promise<Response>;
+      };
+    };
+  }
+}
+
 /**
- * The server only prerenders the SPA shell, so it gets the bare document for
- * every path and never imports browser-only page modules.
+ * Start routes win; for any other request the production server's
+ * `context.express` returns the response that hands it to Express. Without
+ * it, as when the shell is prerendered, Start renders the shell.
+ */
+const expressFallback = createMiddleware().server(
+  ({ context, request, next }) => {
+    const { express } = context;
+    return express ? express(request) : next();
+  },
+);
+
+/**
+ * The server gets the bare document for every path and never imports
+ * browser-only page modules.
  */
 export async function createStartRouter(server: boolean): Promise<AnyRouter> {
   if (server) {
@@ -22,6 +45,7 @@ export async function createStartRouter(server: boolean): Promise<AnyRouter> {
     const anyPath = createRoute({
       getParentRoute: () => rootRoute,
       path: '$',
+      server: { middleware: [expressFallback] },
     });
     return createRouter({
       routeTree: rootRoute.addChildren([anyPath]),

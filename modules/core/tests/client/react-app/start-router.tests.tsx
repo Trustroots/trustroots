@@ -26,6 +26,31 @@ describe('TanStack Start router entry', () => {
     ]);
   });
 
+  it('hands every path to Express when the server passes it', async () => {
+    const router = await createStartRouter(true);
+    expect(router.matchRoutes('/').map(match => match.routeId)).toEqual([
+      '__root__',
+      '/$',
+    ]);
+    const { middleware } = router.routesById['/$'].options.server as {
+      middleware: { options: { server: (ctx: object) => unknown } }[];
+    };
+    const [fallback] = middleware;
+    const request = new Request('http://localhost/api/languages');
+    const response = new Response('from Express');
+    const express = vi.fn(() => response);
+    const next = vi.fn();
+
+    expect(
+      fallback.options.server({ context: { express }, request, next }),
+    ).toBe(response);
+    expect(express).toHaveBeenCalledWith(request);
+    expect(next).not.toHaveBeenCalled();
+
+    fallback.options.server({ context: {}, request, next });
+    expect(next).toHaveBeenCalledOnce();
+  });
+
   it('renders the shell as a whole document with Start scripts', async () => {
     const router = await createStartRouter(true);
     await router.load();
