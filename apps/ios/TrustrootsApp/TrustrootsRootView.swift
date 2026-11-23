@@ -503,6 +503,7 @@ private struct MoreView: View {
                 Button("Account") {
                     selectDestination(.account)
                 }
+                .accessibilityIdentifier("account-menu-entry")
 
                 Section("Help") {
                     Button("Frequently asked questions") {

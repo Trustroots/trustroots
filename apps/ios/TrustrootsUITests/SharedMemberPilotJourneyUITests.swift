@@ -150,18 +150,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
         let app = XCUIApplication()
         app.launchArguments = [
-            "--shared-member-pilot",
             "-trustroots.apiServerURL", "http://127.0.0.1:\(port)",
         ]
         app.launch()
         addTeardownBlock { [self] in
-            signOutIfAlreadySignedIn(app)
+            signOutOfNativeAccountIfNeeded(app)
         }
-        signOutIfAlreadySignedIn(app)
-        signIn(app)
-        let exitPilot = app.buttons["Exit shared pilot"]
-        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
-        exitPilot.tap()
+        signOutOfNativeAccountIfNeeded(app)
+        signInNatively(app)
         openNostrAccount(app)
 
         // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
@@ -194,9 +190,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
-        signIn(app)
-        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
-        exitPilot.tap()
+        signInNatively(app)
         openNostrAccount(app)
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         XCTAssertEqual(localKey.label, publicKey)
@@ -224,10 +218,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func openNostrAccount(_ app: XCUIApplication) {
-        let account = app.buttons["Account"].firstMatch
-        XCTAssertTrue(account.waitForExistence(timeout: 10))
+        let menu = app.buttons["Menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+        menu.tap()
+        let account = app.buttons["account-menu-entry"]
+        XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
         account.tap()
-        XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
+        guard app.buttons["Menu"].waitForExistence(timeout: 2) else { return }
+        openNostrAccount(app)
+        let signOut = app.buttons["Sign out"]
+        reveal(signOut, in: app)
+        signOut.tap()
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func attachNostrSection(_ app: XCUIApplication, name: String) {
@@ -257,6 +263,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     private func signIn(_ app: XCUIApplication) {
         let username = app.descendants(matching: .any)["pilot-username"]
         let password = app.descendants(matching: .any)["pilot-password"]
+        signIn(app, username: username, password: password)
+    }
+
+    private func signInNatively(_ app: XCUIApplication) {
+        signIn(app, username: app.textFields["Username or email"], password: app.secureTextFields["Password"])
+    }
+
+    private func signIn(_ app: XCUIApplication, username: XCUIElement, password: XCUIElement) {
         enterText("pilot-member", into: username, in: app)
         enterText("example-password", into: password, in: app, secure: true)
         let submit = app.buttons["Sign in"]
@@ -267,8 +281,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertEqual(
             XCTWaiter.wait(for: [credentialsEntered], timeout: 10),
             .completed,
-            "The pilot should enable sign in after receiving both credentials."
+            "Sign in should be enabled after receiving both credentials."
         )
+        reveal(submit, in: app)
         submit.tap()
     }
 
