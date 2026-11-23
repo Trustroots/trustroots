@@ -1,8 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import type { IncomingMessage } from 'node:http';
+import type { IncomingHttpHeaders } from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { Readable } from 'node:stream';
+import { ReadableStream } from 'node:stream/web';
 
 import config from './../../../../config/config.mts';
 import * as errorService from './error.server.service.mts';
@@ -13,7 +15,8 @@ export interface UploadedFile {
   originalname: string;
   path?: string;
 }
-type UploadRequest = IncomingMessage & { file?: Partial<UploadedFile> };
+type UploadBody = Readable & { headers: IncomingHttpHeaders };
+type UploadRequest = UploadBody & { file?: Partial<UploadedFile> };
 interface UploadResponse {
   status(code: number): { send(body: { message: string }): unknown };
 }
@@ -63,11 +66,13 @@ async function detectMimeType(buffer: Buffer): Promise<string> {
  * resolves to `undefined` when the request is not multipart or carries no file.
  */
 export async function readUpload(
-  req: IncomingMessage,
+  req: UploadBody,
   uploadField: string,
   maxUploadSize: number,
 ): Promise<UploadedFile | undefined> {
-  if (!req.headers['content-type']?.startsWith('multipart/form-data')) {
+  const contentType = req.headers['content-type'] ?? '';
+  const mediaType = contentType.split(';', 1)[0]!.trim().toLowerCase();
+  if (mediaType !== 'multipart/form-data') {
     return undefined;
   }
   const limit = maxUploadSize + MULTIPART_OVERHEAD;
@@ -90,7 +95,7 @@ export async function readUpload(
   try {
     form = await new Request('http://localhost/', {
       method: 'POST',
-      headers: { 'content-type': req.headers['content-type'] ?? '' },
+      headers: { 'content-type': contentType },
       body: ReadableStream.from(body()),
       duplex: 'half',
     } as RequestInit).formData();
@@ -99,7 +104,8 @@ export async function readUpload(
   }
   const entries = [...form];
   const files = entries.filter(
-    (entry): entry is [string, File] => entry[1] instanceof File,
+    (entry): entry is [string, File] =>
+      entry[1] instanceof File && entry[1].name !== '',
   );
   if (
     entries.length > MAX_PARTS ||

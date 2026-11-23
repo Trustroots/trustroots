@@ -122,9 +122,30 @@ describe('file-upload.service unit tests', () => {
       file.originalname.should.equal('photo.png');
     });
 
+    it('recognises multipart content types regardless of their casing', async () => {
+      const req = multipart([image(png)]);
+      req.headers['content-type'] = req.headers['content-type']!.replace(
+        'multipart/form-data',
+        'Multipart/Form-Data',
+      );
+      const file = await readUpload(req, 'avatar', 1024);
+      file!.buffer.equals(png).should.be.true();
+    });
+
     it('resolves to undefined when the request has no file', async () => {
       const result = await readUpload(
         multipart([{ name: 'note', content: 'hello' }]),
+        'avatar',
+        1024,
+      );
+      (result === undefined).should.be.true();
+    });
+
+    it('treats an unselected file input as no upload', async () => {
+      const result = await readUpload(
+        multipart([
+          { name: 'avatar', filename: '', type: 'application/octet-stream' },
+        ]),
         'avatar',
         1024,
       );
@@ -197,9 +218,13 @@ describe('file-upload.service unit tests', () => {
     });
 
     it('resolves to undefined for requests that are not multipart', async () => {
-      for (const headers of [{ 'content-type': 'application/json' }, {}]) {
+      for (const headers of [
+        { 'content-type': 'application/json' },
+        { 'content-type': 'multipart/form-datax; boundary=ignored' },
+        {},
+      ]) {
         const req = Object.assign(Readable.from(['{}']), { headers });
-        const result = await readUpload(req as never, 'avatar', 1024);
+        const result = await readUpload(req, 'avatar', 1024);
         (result === undefined).should.be.true();
       }
     });
@@ -208,7 +233,7 @@ describe('file-upload.service unit tests', () => {
       const req = Object.assign(Readable.from([Buffer.from('broken')]), {
         headers: { 'content-type': 'multipart/form-data; boundary=missing' },
       });
-      await readUpload(req as never, 'avatar', 1024).should.be.rejectedWith({
+      await readUpload(req, 'avatar', 1024).should.be.rejectedWith({
         code: 'INVALID_MULTIPART',
       });
     });
