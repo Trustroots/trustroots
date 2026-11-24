@@ -9,7 +9,7 @@ import org.junit.Test
 class AndroidNip07OriginTest {
     @Test fun acceptsTheTrustedDomainsAndDefaultHttpsPort() {
         assertEquals("https://trustroots.org", trustedSigningOrigin("https://trustroots.org/circles/radio"))
-        assertEquals("https://notes.hitchwiki.org", trustedSigningOrigin("https://NOTES.HITCHWIKI.ORG:443/"))
+        assertEquals("https://www.hitchwiki.org", trustedSigningOrigin("https://WWW.HITCHWIKI.ORG:443/"))
         assertEquals("https://hitchwiki.org", trustedSigningOrigin("https://hitchwiki.org/"))
     }
 
@@ -18,6 +18,7 @@ class AndroidNip07OriginTest {
             null, "about:blank", "https://[invalid", "https://nottrustroots.org", "https://trustroots.org.example.test",
             "https://trustroots.org@evil.test", "https://user@trustroots.org",
             "http://hitchwiki.org", "https://hitchwiki.org:8080",
+            "https://notes.hitchwiki.org", "https://beta.trustroots.org",
         )) {
             assertNull(url, trustedSigningOrigin(url))
         }

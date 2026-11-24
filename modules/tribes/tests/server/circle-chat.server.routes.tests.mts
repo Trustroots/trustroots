@@ -326,8 +326,9 @@ describe('Circle chat API', () => {
 
   it('requires a configured secret key', async () => {
     const publicKey = nip19.npubEncode(getPublicKey(generateSecretKey()));
+    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', '');
     for (const encoded of ['', publicKey]) {
-      vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', encoded);
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', encoded);
       await assert.rejects(readCircleChat('radio'), {
         message: 'Circle chat signer is unavailable',
       });
@@ -335,6 +336,8 @@ describe('Circle chat API', () => {
   });
 
   it('returns a service error when the signing key is unavailable', async () => {
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', '');
+    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', '');
     const app = chatApp({});
     await app.get(path).expect(503, {
       message: 'Circle chat is temporarily unavailable.',

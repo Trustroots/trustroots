@@ -72,12 +72,7 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-areas:
         'availability description'
-        'location description'
-        'save .';
-
-      .offer-host-save {
-        grid-area: save;
-      }
+        'location description';
 
       #availability {
         grid-area: availability;
@@ -101,10 +96,6 @@
     margin: 0;
   }
 
-  .offer-host-save {
-    justify-self: end;
-  }
-
   @media (max-width: @screen-xs-max) {
     margin-bottom: 0;
 
@@ -115,12 +106,6 @@
       h1 {
         font-size: 22px;
       }
-    }
-
-    .offer-host-header button,
-    .offer-host-save button {
-      font-size: @font-size-base;
-      white-space: nowrap;
     }
 
     .offer-host-sections {

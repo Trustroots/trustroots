@@ -9,13 +9,15 @@ import {
 import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 
 interface StaffRequest {
-  query: { page?: unknown; network?: unknown; identifier?: unknown };
+  query: { page?: unknown };
+  body?: { page?: unknown; network?: unknown; identifier?: unknown };
   params: { memberId?: string };
   route: { path: string };
   user: { _id: Types.ObjectId | string };
 }
 
 interface StaffResponse {
+  set(name: string, value: string): unknown;
   status(code: number): StaffResponse;
   send(body: unknown): unknown;
 }
@@ -37,7 +39,11 @@ function pageNumber(value: unknown): number | null {
   return Number(value);
 }
 
-async function audit(req: StaffRequest, page: number): Promise<void> {
+async function audit(
+  req: StaffRequest,
+  page: number,
+  network?: string,
+): Promise<void> {
   // Record access, not external identifiers: those are deleted with the member.
   // Fail closed if the staff access log cannot be persisted.
   await new AuditLog({
@@ -46,13 +52,14 @@ async function audit(req: StaffRequest, page: number): Promise<void> {
     params: req.params,
     query: {
       page,
-      ...(req.query.network ? { network: req.query.network } : {}),
+      ...(network ? { network } : {}),
     },
     body: {},
   }).save();
 }
 
 export async function history(req: StaffRequest, res: StaffResponse) {
+  res.set('Cache-Control', 'private, no-store');
   const page = pageNumber(req.query.page);
   const id = req.params.memberId;
   if (page === null || !id || !/^[a-f\d]{24}$/i.test(id)) {
@@ -95,9 +102,10 @@ export async function history(req: StaffRequest, res: StaffResponse) {
 }
 
 export async function search(req: StaffRequest, res: StaffResponse) {
-  const page = pageNumber(req.query.page);
-  const network = NETWORKS.find(item => item.id === req.query.network)?.id;
-  const input = req.query.identifier;
+  res.set('Cache-Control', 'private, no-store');
+  const page = pageNumber(req.body?.page);
+  const network = NETWORKS.find(item => item.id === req.body?.network)?.id;
+  const input = req.body?.identifier;
   if (
     page === null ||
     !network ||
@@ -124,7 +132,7 @@ export async function search(req: StaffRequest, res: StaffResponse) {
       .skip((page - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE + 1)
       .lean();
-    await audit(req, page);
+    await audit(req, page, network);
     return res.send({
       members: members.slice(0, PAGE_SIZE).map(member => ({
         _id: member._id,

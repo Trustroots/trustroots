@@ -2,22 +2,24 @@ import { Textarea } from '@trustroots/ui/Textarea';
 import { Input } from '@trustroots/ui/Input';
 import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
 import isEqual from 'lodash/isEqual';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
+import ProfileCompletionReminders from '@/modules/users/client/components/ProfileCompletionReminders.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import OfferLocationEditor from './OfferLocationEditor.component';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
-import { plainTextLength } from './offerEdit.helpers';
+import { hasHostingLocation, plainTextLength } from './offerEdit.helpers';
 import MeetingAvailabilityControl from './MeetingAvailabilityControl';
-import OfferLocationEditor from './OfferLocationEditor.component';
 import { hostStatusIntent } from './hostStatusIntent';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];
+const AUTOSAVE_DELAY = 600;
 const HOST_SECTIONS = new Set(['availability', 'description', 'location']);
 
 interface HostOffer {
@@ -34,7 +36,10 @@ interface HostOffer {
 }
 
 interface HostPageProps {
-  user: { _id: string; username: string };
+  user: React.ComponentProps<typeof ProfileCompletionReminders>['profile'] & {
+    _id: string;
+    username: string;
+  };
 }
 
 function defaultHostOffer(): HostOffer {
@@ -54,25 +59,16 @@ function defaultHostOffer(): HostOffer {
 export default function OfferHostPage({ user }: HostPageProps) {
   const { track } = useAnalytics();
   const routeParams = useSearch({ strict: false });
+  const fromMeet = routeParams.from === 'meet';
   const { hash, pathname, searchStr } = useLocation();
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
-  const savedOffer = useRef(offer);
+  const [saved, setSaved] = useState(offer);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
-  function hasUnsavedChanges() {
-    return !isEqual(offer, savedOffer.current);
-  }
-
-  useBlocker({
-    shouldBlockFn: ({ current, next }) =>
-      hasUnsavedChanges() &&
-      (current.pathname !== next.pathname ||
-        !isEqual(current.search, next.search)) &&
-      !window.confirm('Leave without saving your hosting offer changes?'),
-    enableBeforeUnload: hasUnsavedChanges,
-  });
+  const [saveError, setSaveError] = useState(false);
+  const createAttempted = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,16 +83,21 @@ export default function OfferHostPage({ user }: HostPageProps) {
           ? { ...defaultHostOffer(), ...offers[0], type: 'host' }
           : defaultHostOffer();
 
-        if (
-          routeParams.status === 'yes' ||
-          routeParams.status === 'maybe' ||
-          routeParams.status === 'no'
-        ) {
-          nextOffer.status = routeParams.status;
+        if (!hasHostingLocation(nextOffer.location)) nextOffer.location = null;
+
+        if (!offers?.length) {
+          if (fromMeet) nextOffer.status = 'no';
+          else if (
+            routeParams.status === 'yes' ||
+            routeParams.status === 'maybe' ||
+            routeParams.status === 'no'
+          ) {
+            nextOffer.status = routeParams.status;
+          }
         }
 
         if (isMounted) {
-          savedOffer.current = nextOffer;
+          setSaved(nextOffer);
           setOffer(nextOffer);
         }
       } catch {
@@ -115,13 +116,117 @@ export default function OfferHostPage({ user }: HostPageProps) {
     return () => {
       isMounted = false;
     };
-  }, [routeParams.status, user._id]);
+  }, [fromMeet, routeParams.status, user._id]);
 
   useEffect(() => {
     if (!isLoading && !loadError && HOST_SECTIONS.has(hash)) {
       document.getElementById(hash)!.scrollIntoView({ block: 'start' });
     }
   }, [hash, isLoading, loadError]);
+
+  const isDescriptionTooShort =
+    offer.status !== 'no' && plainTextLength(offer.description) < 5;
+  const location = hasHostingLocation(offer.location) ? offer.location : null;
+  const hasLocation = location !== null;
+  const hasValidGuestCount =
+    Number.isInteger(offer.maxGuests) &&
+    offer.maxGuests >= 0 &&
+    offer.maxGuests <= 99;
+  const isDirty = !isEqual(
+    { ...offer, _id: undefined },
+    { ...saved, _id: undefined },
+  );
+  const shouldWarn = isDirty || isSaving || saveError;
+
+  useBlocker({
+    enableBeforeUnload: () => shouldWarn,
+    shouldBlockFn: ({ current, next }) =>
+      shouldWarn &&
+      (current.pathname !== next.pathname ||
+        !isEqual(current.search, next.search)) &&
+      !window.confirm('Leave without saving your hosting offer changes?'),
+  });
+
+  const saveOffer = useEffectEvent(
+    async (draft: HostOffer, coordinates: [number, number]) => {
+      const payload: CreateOfferRequest = {
+        type: 'host',
+        status: draft.status,
+        description: draft.description,
+        noOfferDescription: draft.noOfferDescription,
+        maxGuests: draft.maxGuests,
+        meetingStatus: draft.meetingStatus,
+        volunteering: draft.volunteering,
+        showOnlyInMyCircles: draft.showOnlyInMyCircles,
+        location: coordinates,
+      };
+      let id = saved._id;
+      setIsSaving(true);
+
+      try {
+        // The previous request may have reached the server before it failed.
+        if (!id && createAttempted.current) {
+          id = (await getOffers(user._id, 'host'))[0]?._id;
+        }
+
+        const action = id ? 'update' : 'create';
+        if (id) {
+          await updateOffer(id, payload);
+        } else {
+          createAttempted.current = true;
+          const created = await createOffer(payload);
+          id = created._id ?? (await getOffers(user._id, 'host'))[0]?._id;
+          if (!id) throw new Error('Could not find the saved hosting offer.');
+        }
+
+        setSaved({ ...draft, _id: id });
+        track('offer_saved', { type: 'host', action, status: draft.status });
+      } catch (error: unknown) {
+        setSaveError(true);
+        track('offer_save_failed', {
+          type: 'host',
+          reason: saveFailureReason(error),
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+  );
+
+  const canSave = !isDescriptionTooShort && hasValidGuestCount && hasLocation;
+  const [retry, setRetry] = useState(false);
+
+  useEffect(() => {
+    if (
+      isLoading ||
+      loadError ||
+      (!isDirty && !retry) ||
+      !canSave ||
+      isSaving ||
+      saveError ||
+      !location
+    )
+      return;
+
+    const timer = window.setTimeout(
+      () => {
+        setRetry(false);
+        void saveOffer(offer, location);
+      },
+      retry ? 0 : AUTOSAVE_DELAY,
+    );
+    return () => window.clearTimeout(timer);
+  }, [
+    canSave,
+    isDirty,
+    isLoading,
+    isSaving,
+    loadError,
+    location,
+    offer,
+    retry,
+    saveError,
+  ]);
 
   if (isLoading) {
     return (
@@ -149,82 +254,65 @@ export default function OfferHostPage({ user }: HostPageProps) {
     );
   }
 
-  const isDescriptionTooShort =
-    offer.status !== 'no' && plainTextLength(offer.description) < 5;
-  const hasLocation =
-    Array.isArray(offer.location) && offer.location.length === 2;
-  const saveDisabled = isSaving || isDescriptionTooShort || !hasLocation;
-  const saveTitle = isDescriptionTooShort
-    ? 'Write longer description first'
-    : !hasLocation
-      ? 'Choose a location first'
-      : undefined;
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (saveDisabled) {
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const payload: CreateOfferRequest = {
-        type: 'host',
-        status: offer.status,
-        description: offer.description,
-        noOfferDescription: offer.noOfferDescription,
-        maxGuests: offer.maxGuests,
-        meetingStatus: offer.meetingStatus,
-        showOnlyInMyCircles: offer.showOnlyInMyCircles,
-        volunteering: offer.volunteering,
-        location: offer.location!,
-      };
-
-      if (offer._id) {
-        await updateOffer(offer._id, payload);
-      } else {
-        await createOffer(payload);
-      }
-
-      track('offer_saved', {
-        type: 'host',
-        action: offer._id ? 'update' : 'create',
-        status: offer.status,
-      });
-
-      savedOffer.current = offer;
-      window.location.assign(`/profile/${user.username}`);
-    } catch (error: unknown) {
-      track('offer_save_failed', {
-        type: 'host',
-        reason: saveFailureReason(error),
-      });
-      setIsSaving(false);
-    }
-  }
-
-  const saveButton = (
-    <Button
-      intent="primary"
-      size="lg"
-      disabled={saveDisabled}
-      title={saveTitle}
-      type="submit"
-    >
-      Save and Exit
-    </Button>
-  );
-
   return (
     <section className="offers-edit offers-edit-host">
-      <form autoComplete="off" noValidate onSubmit={handleSubmit}>
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={event => event.preventDefault()}
+      >
         <div className="offer-host-header">
           <h1>Hosting offer</h1>
-          {saveButton}
+          <div role="status">
+            {isSaving && 'Saving…'}
+            {!isSaving &&
+              !saveError &&
+              isDirty &&
+              canSave &&
+              'Changes pending…'}
+            {!isSaving &&
+              !saveError &&
+              !isDirty &&
+              saved._id &&
+              'All changes saved'}
+          </div>
         </div>
 
+        <ProfileCompletionReminders profile={user} />
+        {!saved._id && !fromMeet && (
+          <p>
+            Your hosting offer will go live automatically once the required
+            details are complete.
+          </p>
+        )}
+        {saveError && (
+          <Alert intent="danger" role="alert">
+            Could not save your hosting changes.{' '}
+            <Button
+              size="sm"
+              disabled={!canSave}
+              type="button"
+              onClick={() => {
+                setRetry(true);
+                setSaveError(false);
+              }}
+            >
+              Retry
+            </Button>
+          </Alert>
+        )}
+
+        {isDescriptionTooShort && (
+          <p>
+            <a href={`${pathname}${searchStr}#description`}>
+              Add a hosting description
+            </a>{' '}
+            of at least five characters.
+          </p>
+        )}
+        {!hasValidGuestCount && (
+          <p>Enter a whole number of guests from 0 to 99.</p>
+        )}
         <div className="offer-host-sections">
           <section id="availability" aria-label="Availability">
             {!hasLocation && (
@@ -276,7 +364,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   onChange={meetingStatus =>
                     setOffer(current => ({ ...current, meetingStatus }))
                   }
-                  disabled={isSaving}
                 />
                 <p role="status">
                   {offer.status === 'no'
@@ -328,7 +415,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 <label className="tw:mb-3 tw:block">
                   <input
                     checked={offer.volunteering}
-                    disabled={isSaving}
                     onChange={({ target: { checked } }) =>
                       setOffer(current => ({
                         ...current,
@@ -455,11 +541,24 @@ export default function OfferHostPage({ user }: HostPageProps) {
             </div>
           </section>
           <section id="location" aria-label="Location">
+            {fromMeet && (
+              <Alert intent="info" role="note">
+                {saved._id && hasHostingLocation(saved.location) ? (
+                  <a href="/offer/meet">Continue to meetups</a>
+                ) : (
+                  'Choose a location on the map to continue to meetups. Your location will save automatically.'
+                )}
+              </Alert>
+            )}
+            <p>
+              Moving the pin saves the new location automatically when the offer
+              is ready to save.
+            </p>
             <OfferLocationEditor
               location={offer.location}
               offerStatus={offer.status}
               offerType="host"
-              showHostingGuide={!offer._id}
+              showHostingGuide={!saved._id && !fromMeet}
               onLocationChange={location =>
                 setOffer(current => ({ ...current, location }))
               }
@@ -470,7 +569,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
               </Alert>
             )}
           </section>
-          <div className="offer-host-save">{saveButton}</div>
         </div>
       </form>
     </section>

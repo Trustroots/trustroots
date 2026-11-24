@@ -2,6 +2,7 @@ import type { MockInstance } from 'vitest';
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   addRasterMapTiles,
+  distanceInMetres,
   getRasterMapTiles,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
@@ -18,6 +19,13 @@ function canvasElement(
 }
 
 describe('map utilities', () => {
+  it('measures great-circle distances in metres', () => {
+    expect(distanceInMetres([52.52, 13.405], [52.52, 13.405])).toBe(0);
+    expect(
+      Math.round(distanceInMetres([52.52, 13.405], [48.8566, 2.3522])),
+    ).toBe(877463);
+  });
+
   let createElement: MockInstance<
     (...args: Parameters<Document['createElement']>) => HTMLElement
   >;

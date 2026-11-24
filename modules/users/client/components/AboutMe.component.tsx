@@ -53,6 +53,7 @@ export default function AboutMe({
       cancelled = true;
     };
   }, [hasHashtags]);
+  const descriptionLength = plainTextLength(profile.description);
 
   return (
     <>
@@ -80,10 +81,9 @@ export default function AboutMe({
           )}
         </div>
 
-        {/* User watching their own profile and it's too short */}
         {isSelf &&
-          (!profile.description ||
-            plainTextLength(profile.description) < profileMinimumLength) && (
+          descriptionLength > 0 &&
+          descriptionLength < profileMinimumLength && (
             <footer className="panel-footer">
               <p className="lead">
                 {t(

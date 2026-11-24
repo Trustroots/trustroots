@@ -7,10 +7,19 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.webkit.WebViewFeature
 import java.io.ByteArrayInputStream
@@ -31,6 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.nostrAccountScope
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 
 @RunWith(AndroidJUnit4::class)
 class AndroidNip07JourneyTest {
@@ -50,14 +60,24 @@ class AndroidNip07JourneyTest {
         var isCurrent = true
         val session = BrowserNostrSession(keys) { isCurrent }
         val signingDispatcher = SigningDispatcher()
+        val lifecycleOwner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry(this)
+        }
         try {
+            compose.runOnUiThread { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
             compose.setContent {
                 val scope = rememberCoroutineScope()
+                val installedBridge = remember {
+                    AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
+                }
+                CompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                    BrowserSigningApproval(installedBridge)
+                }
                 AndroidView(factory = { context ->
                     WebView(context).also { view ->
                         web = view
                         view.settings.javaScriptEnabled = true
-                        bridge = AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
+                        bridge = installedBridge
                         view.webViewClient = object : WebViewClient() {
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                                 committedURL = null
@@ -89,6 +109,12 @@ class AndroidNip07JourneyTest {
                   } catch (error) { window.radioError = error.message; }
                 })();
             """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.radioKey || window.radioError)") == "true" }
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Sign a Nostr event for $base?").assertExists()
+            compose.onNodeWithText("Hello from Android Radio", substring = true).assertExists()
+            assertEquals("null", eval(web, "window.radioResult"))
+            compose.onNodeWithText("Sign event").performClick()
             compose.waitUntil(10_000) { eval(web, "Boolean(window.radioResult || window.radioError)") == "true" }
             assertEquals("null", eval(web, "window.radioError"))
             val event = JSONObject(eval(web, "window.radioResult"))
@@ -100,6 +126,31 @@ class AndroidNip07JourneyTest {
                 update(hash, 0, hash.size)
             }
             assertTrue(verifier.verifySignature(decodeHex(event.getString("sig"))))
+
+            eval(web, """
+                window.nostr.signEvent({kind:1, created_at:1800000000, content:'Declined note', tags:[]})
+                  .then(() => window.denial = 'signed', error => window.denial = error.message);
+            """.trimIndent())
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Cancel").performClick()
+            assertEquals("Nostr signing was not approved.", JSONTokener(awaitValue(web, "window.denial")).nextValue())
+
+            eval(web, """
+                window.nostr.signEvent({kind:1, created_at:1800000000, content:'Dismissed note', tags:[]})
+                  .then(() => window.dismissal = 'signed', error => window.dismissal = error.message);
+            """.trimIndent())
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            pressBackFromNonActivityRoot(compose.activity, dialogOnly = true)
+            assertEquals("Nostr signing was not approved.", JSONTokener(awaitValue(web, "window.dismissal")).nextValue())
+
+            eval(web, """
+                window.nostr.signEvent({kind:1, created_at:1800000000, content:'Backgrounded note', tags:[]})
+                  .then(() => window.backgroundDecision = 'signed', error => window.backgroundDecision = error.message);
+            """.trimIndent())
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            compose.runOnUiThread { lifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED }
+            assertEquals("Nostr signing was not approved.", JSONTokener(awaitValue(web, "window.backgroundDecision")).nextValue())
+            compose.runOnUiThread { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
 
             val binaryMessagesSupported = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER)
             eval(web, """

@@ -983,6 +983,24 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun fetchesPendingNostranslationAlertsForTheRequestedTransport() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(body = """{"events":[{"id":"fixture-envelope"}]}"""))
+            server.start()
+            val api = MobileApiClient(server.url("/").toString())
+            val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+
+            val events = runBlocking { api.pendingTranslationAlerts(session, "example-transport") }
+            assertEquals("fixture-envelope", events.getJSONObject(0).getString("id"))
+            val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            assertEquals("POST", request.method)
+            assertEquals("/api/mobile/v0/nostranslation/alerts/pending", request.target)
+            assertEquals("Bearer example-access", request.headers["Authorization"])
+            assertEquals("example-transport", JSONObject(requireNotNull(request.body).utf8()).getString("transport"))
+        }
+    }
+
+    @Test
     fun onlyUsesAStringNostranslationVapidKey() {
         MockWebServer().use { server ->
             server.enqueue(MockResponse(body = """{"androidVapidKey":"example-vapid"}"""))

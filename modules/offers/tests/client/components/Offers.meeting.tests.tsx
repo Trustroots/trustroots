@@ -138,7 +138,7 @@ it('directs owners without an offer to set a location', async () => {
     await screen.findByRole('link', {
       name: /Set your location and availability/,
     }),
-  ).toHaveAttribute('href', '/offer/host#location');
+  ).toHaveAttribute('href', '/offer/host?from=meet#location');
   await act(async () => {
     await ref.current!.saveMeetingStatus('yes');
   });

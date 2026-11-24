@@ -4,6 +4,7 @@ import { dispatchTranslationAlert } from './nostranslation-alert-dispatch.server
 import {
   translationAlertKind,
   translationAlertRelay,
+  type TranslationAlertEnvelope,
 } from './nostranslation-alert-envelope.server.service.mts';
 import {
   alertRegistrations,
@@ -65,12 +66,16 @@ type Destination = Awaited<ReturnType<typeof activeDestinations>>[number];
 
 async function claim(
   destination: Destination,
-  eventId: string,
+  event: TranslationAlertEnvelope['event'],
   expiresAt: Date,
 ) {
   try {
     await mongoose.model('NostranslationAlertClaim').create({
-      _id: destination.id + ':' + eventId,
+      _id: destination.id + ':' + event.id,
+      user: destination.registration.user,
+      session: destination.registration.session,
+      transport: destination.id,
+      event,
       expiresAt,
     });
     return true;

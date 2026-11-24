@@ -32,11 +32,16 @@ test('loads a member connection history page', async () => {
 
 test('searches connection history by network and identifier', async () => {
   const data = { members: [], page: 1, hasNextPage: false };
-  axiosMock.get.mockResolvedValueOnce(response(data));
+  axiosMock.post.mockResolvedValueOnce(response(data));
   await expect(searchNetworkConnections('nostr', 'npub-example')).resolves.toBe(
     data,
   );
-  expect(axiosMock.get).toHaveBeenCalledWith('/api/admin/network-connections', {
-    params: { network: 'nostr', identifier: 'npub-example', page: 1 },
-  });
+  expect(axiosMock.post).toHaveBeenCalledWith(
+    '/api/admin/network-connections',
+    {
+      network: 'nostr',
+      identifier: 'npub-example',
+      page: 1,
+    },
+  );
 });

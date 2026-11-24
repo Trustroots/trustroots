@@ -5,18 +5,20 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import lazyMap from '@/modules/core/client/components/lazyMap';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import JoinButton from './JoinButton';
 import EditCircle from './EditCircle';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
-import HackerspaceMap from './HackerspaceMap';
-import HitchhikingMap from './HitchhikingMap';
 import RadioCircle from './RadioCircle';
 import TopicChat from './TopicChat';
 import { getCircleBackgroundStyle } from '../utils';
 import { circleQuery, setCachedCircle } from '../api/circle-queries';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
+
+const HackerspaceMap = lazyMap(() => import('./HackerspaceMap'));
+const HitchhikingMap = lazyMap(() => import('./HitchhikingMap'));
 
 const resourceLinkProps = {
   rel: 'noopener noreferrer',

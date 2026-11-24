@@ -206,6 +206,11 @@ const service = {
     },
     avatarUpload: { windowMs: 60 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
     dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },
+    nostranslationAlertWrite: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 0,
+      identityLimit: 24,
+    },
   },
   limits: {
     // Maximum length for public feedback for an experience

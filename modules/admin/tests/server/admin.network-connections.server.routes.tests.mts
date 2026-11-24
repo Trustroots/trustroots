@@ -53,8 +53,9 @@ describe('Admin network connections routes', () => {
     );
     for (const address of ['previous@example.test', 'current@example.test']) {
       const response = await supportAgent
-        .get('/api/admin/network-connections')
-        .query({ network: 'email', identifier: address.toUpperCase() })
+        .post('/api/admin/network-connections')
+        .send({ network: 'email', identifier: address.toUpperCase() })
+        .expect('Cache-Control', 'private, no-store')
         .expect(200);
       const [match] = response.body.members;
       assert.deepEqual(
@@ -64,30 +65,33 @@ describe('Admin network connections routes', () => {
       assert.equal(match.identifier, address);
       assert.equal(match.current, address.startsWith('current'));
       await regularAgent
-        .get('/api/admin/network-connections')
-        .query({ network: 'email', identifier: address })
+        .post('/api/admin/network-connections')
+        .send({ network: 'email', identifier: address })
         .expect(403);
     }
   });
 
   it('allows administrators and support staff, and rejects other roles', async () => {
-    await request(app).get('/api/admin/network-connections').expect(403);
+    await request(app).post('/api/admin/network-connections').expect(403);
     await request(app)
       .get(`/api/admin/network-connections/${new mongoose.Types.ObjectId()}`)
       .expect(403);
-    await regularAgent.get('/api/admin/network-connections').expect(403);
+    await regularAgent.post('/api/admin/network-connections').expect(403);
     await regularAgent
       .get(`/api/admin/network-connections/${new mongoose.Types.ObjectId()}`)
       .expect(403);
     await welcomeAgent
-      .get('/api/admin/network-connections?network=github&identifier=member')
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'member' })
       .expect(403);
 
     await supportAgent
-      .get('/api/admin/network-connections?network=github&identifier=member')
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'member' })
       .expect(200);
     await adminAgent
-      .get('/api/admin/network-connections?network=github&identifier=member')
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'member' })
       .expect(200);
   });
 
@@ -211,9 +215,8 @@ describe('Admin network connections routes', () => {
     ]);
 
     const response = await supportAgent
-      .get(
-        '/api/admin/network-connections?network=github&identifier=https%3A%2F%2Fgithub.com%2FRiverGuide',
-      )
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'https://github.com/RiverGuide' })
       .expect(200);
     const body = response.body as {
       members: Array<{
@@ -252,9 +255,11 @@ describe('Admin network connections routes', () => {
     assert.equal(JSON.stringify(searchAudit).includes('riverguide'), false);
 
     const unmatched = await adminAgent
-      .get(
-        '/api/admin/network-connections?network=github&identifier=https%3A%2F%2Fgithub.com%2Fno-such-member',
-      )
+      .post('/api/admin/network-connections')
+      .send({
+        network: 'github',
+        identifier: 'https://github.com/no-such-member',
+      })
       .expect(200);
     (unmatched.body as { members: unknown[] }).members.length.should.equal(0);
   });
@@ -275,9 +280,8 @@ describe('Admin network connections routes', () => {
     await mongoose.connection.collection('users').insertMany(members);
 
     const firstResponse = await supportAgent
-      .get(
-        '/api/admin/network-connections?network=github&identifier=bulk-handle&page=1',
-      )
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'bulk-handle', page: '1' })
       .expect(200);
     const firstPage = firstResponse.body as {
       members: Array<{ _id: string; current: boolean }>;
@@ -291,9 +295,8 @@ describe('Admin network connections routes', () => {
     firstPage.hasNextPage.should.equal(true);
 
     const secondResponse = await adminAgent
-      .get(
-        '/api/admin/network-connections?network=github&identifier=bulk-handle&page=2',
-      )
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'bulk-handle', page: '2' })
       .expect(200);
     const secondPage = secondResponse.body as {
       members: Array<{ _id: string; current: boolean }>;
@@ -310,9 +313,8 @@ describe('Admin network connections routes', () => {
       .collection('users')
       .deleteOne({ _id: members[50]!._id });
     const finalPage = await supportAgent
-      .get(
-        '/api/admin/network-connections?network=github&identifier=bulk-handle',
-      )
+      .post('/api/admin/network-connections')
+      .send({ network: 'github', identifier: 'bulk-handle' })
       .expect(200);
     assert.equal(finalPage.body.members.length, 50);
     assert.equal(finalPage.body.hasNextPage, false);
@@ -320,7 +322,8 @@ describe('Admin network connections routes', () => {
 
   it('validates search and history requests at the route boundary', async () => {
     const invalidSearch = await supportAgent
-      .get('/api/admin/network-connections?network=unknown&identifier=member')
+      .post('/api/admin/network-connections')
+      .send({ network: 'unknown', identifier: 'member' })
       .expect(400);
     invalidSearch.body.message.should.equal('Invalid connection search.');
 

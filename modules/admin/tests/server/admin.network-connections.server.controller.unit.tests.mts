@@ -12,6 +12,7 @@ const AuditLog = mongoose.model('AuditLog');
 type ControllerResponse = {
   statusCode: number;
   body: unknown;
+  set(name: string, value: string): void;
   status(code: number): ControllerResponse;
   send(body: unknown): ControllerResponse;
   waitForResponse(): Promise<ControllerResponse>;
@@ -20,7 +21,8 @@ type ControllerResponse = {
 type ObjectId = import('mongoose').Types.ObjectId;
 
 type StaffRequest = {
-  query: { page?: unknown; network?: unknown; identifier?: unknown };
+  query: { page?: unknown };
+  body?: { page?: unknown; network?: unknown; identifier?: unknown };
   params: { memberId?: string };
   route: { path: string };
   user: { _id: ObjectId };
@@ -39,6 +41,10 @@ function mockResponse(): ControllerResponse {
   });
   const res: ControllerResponse = {
     statusCode: 200,
+    set(name, value) {
+      assert.equal(name, 'Cache-Control');
+      assert.equal(value, 'private, no-store');
+    },
     body: null,
     status(code) {
       res.statusCode = code;
@@ -55,11 +61,12 @@ function mockResponse(): ControllerResponse {
 }
 
 function request(
-  query: StaffRequest['query'] = {},
+  input: NonNullable<StaffRequest['body']> = {},
   memberId?: string,
 ): StaffRequest {
   return {
-    query,
+    query: memberId ? input : {},
+    body: memberId ? undefined : input,
     params: memberId ? { memberId } : {},
     route: { path: '/api/admin/network-connections' },
     user: { _id: new mongoose.Types.ObjectId() },
@@ -229,8 +236,17 @@ describe('Admin network connections controller unit tests', () => {
   });
 
   describe('search', () => {
+    it('rejects a request without a body', async () => {
+      const response = await callSearch({ ...request(), body: undefined });
+      assert.equal(response.statusCode, 400);
+      assert.deepEqual(response.body, {
+        message: 'Invalid connection search.',
+      });
+    });
+
     it('rejects invalid pages, networks, and identifiers', async () => {
       for (const query of [
+        {},
         { page: '0', network: 'github', identifier: 'someone' },
         { network: 'unknown', identifier: 'someone' },
         { network: 'github', identifier: 123 },

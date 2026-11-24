@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import okhttp3.Request
 import okhttp3.Response
@@ -62,6 +63,25 @@ internal class AndroidNostranslationSession(
         }.filter { it.signingKey == localKey }
         connectedClients = clients.map(Client::peer)
         clients.forEach { connect(it) }
+    }
+
+    suspend fun recoverPending(load: suspend (String) -> JSONArray) {
+        for (client in clients) {
+            val connection = connections[client.peer] ?: continue
+            val events = try {
+                load(connection.wire.transportPublicKey)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The live relay can still deliver the review.
+                continue
+            }
+            if (!isCurrent(client, connection)) continue
+            for (index in 0 until minOf(events.length(), 8)) {
+                val event = events.optJSONObject(index) ?: continue
+                receive(client, connection, JSONArray().put("EVENT").put(connection.subscription).put(event))
+            }
+        }
     }
 
     fun pair(link: NostranslationConnectionLink) {

@@ -1,18 +1,24 @@
 package org.trustroots.android.browser
 
 import android.webkit.WebView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import java.net.URI
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import org.trustroots.android.nostr.AndroidNostrKeys
+import org.trustroots.android.nostr.NostrEventSigner
 
 /** Provided only by the signed-in native shell. The predicate reads live session state. */
 internal class BrowserNostrSession(val keys: AndroidNostrKeys, private val isSessionCurrent: () -> Boolean) {
@@ -25,11 +31,16 @@ internal class BrowserNostrSession(val keys: AndroidNostrKeys, private val isSes
 
 internal val LocalBrowserNostrSession = staticCompositionLocalOf<BrowserNostrSession?> { null }
 
+private val signingOrigins = setOf(
+    "https://trustroots.org", "https://www.trustroots.org",
+    "https://hitchwiki.org", "https://www.hitchwiki.org",
+)
+
 internal fun trustedSigningOrigin(url: String?): String? {
     val uri = url?.let { runCatching { URI(it) }.getOrNull() } ?: return null
     val link = BrowserLink.parse(url) ?: return null
     if (!link.canEmbed || uri.rawUserInfo != null || uri.port !in setOf(-1, 443)) return null
-    return "https://${link.host.lowercase()}"
+    return "https://${link.host.lowercase()}".takeIf(signingOrigins::contains)
 }
 
 internal fun maySignFromFrame(isMainFrame: Boolean, sourceOrigin: String, currentURL: String?): Boolean {
@@ -40,9 +51,20 @@ internal fun maySignFromFrame(isMainFrame: Boolean, sourceOrigin: String, curren
 internal class AndroidNip07Bridge(private val session: BrowserNostrSession, private val scope: CoroutineScope) {
     private var request: Job? = null
     private var pageCommitted = false
+    var approval by mutableStateOf<SigningApproval?>(null)
+        private set
+
+    class SigningApproval(val origin: String, val details: String) {
+        val decision = CompletableDeferred<Boolean>()
+    }
+
+    fun declineApproval() {
+        approval?.decision?.complete(false)
+    }
 
     fun pageChanged() {
         pageCommitted = false
+        approval = null
         request?.cancel()
         request = null
     }
@@ -54,7 +76,7 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
             !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
         ) return
 
-        WebViewCompat.addWebMessageListener(view, bridgeName, rules) { webView, message, origin, mainFrame, reply ->
+        WebViewCompat.addWebMessageListener(view, bridgeName, signingOrigins) { webView, message, origin, mainFrame, reply ->
             val source = origin.toString()
             if (message.type != WebMessageCompat.TYPE_STRING) return@addWebMessageListener
             val data = message.data ?: return@addWebMessageListener
@@ -83,12 +105,34 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
 
             val keyRevision = session.keys.revision()
             request = scope.launch {
+                val event = if (method == "signEvent") {
+                    val unsigned = body.optJSONObject("event")
+                    val details = unsigned?.let { runCatching { NostrEventSigner.describe(it) }.getOrNull() }
+                    if (details == null) {
+                        respond(null, "This Nostr request could not be completed.")
+                        return@launch
+                    }
+                    val pending = SigningApproval(source, details)
+                    approval = pending
+                    val accepted = try {
+                        withTimeoutOrNull(60_000) { pending.decision.await() }
+                    } finally {
+                        if (approval === pending) approval = null
+                    }
+                    if (accepted != true) {
+                        respond(null, "Nostr signing was not approved.")
+                        return@launch
+                    }
+                    if (!isActive() || session.keys.revision() != keyRevision) {
+                        respond(null, "The signing session or local key changed.")
+                        return@launch
+                    }
+                    unsigned
+                } else null
                 val result = withContext(Dispatchers.IO) {
                     runCatching {
-                        when (method) {
-                            "getPublicKey" -> session.keys.browserPublicKey(keyRevision)
-                            else -> session.keys.signBrowserEvent(body.getJSONObject("event"), keyRevision)
-                        }
+                        if (event == null) session.keys.browserPublicKey(keyRevision)
+                        else session.keys.signBrowserEvent(event, keyRevision)
                     }
                 }
                 if (!isActive() || session.keys.revision() != keyRevision) {
@@ -103,16 +147,12 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
                 }
             }
         }
-        WebViewCompat.addDocumentStartJavaScript(view, script, rules)
+        WebViewCompat.addDocumentStartJavaScript(view, script, signingOrigins)
     }
 
     private companion object {
         const val bridgeName = "trustrootsAndroidNip07"
         const val maxRequestSize = 65_536
-        val rules = setOf(
-            "https://trustroots.org", "https://*.trustroots.org",
-            "https://hitchwiki.org", "https://*.hitchwiki.org",
-        )
         @JvmField
         val script = """
             (() => {
@@ -139,7 +179,7 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
                 const timeout = setTimeout(() => {
                   pending.delete(id);
                   reject(new Error('The Nostr request timed out.'));
-                }, 10000);
+                }, method === 'signEvent' ? 65000 : 10000);
                 pending.set(id, {resolve, reject, timeout});
                 bridge.postMessage(message);
               });

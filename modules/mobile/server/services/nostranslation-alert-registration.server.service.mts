@@ -4,6 +4,7 @@ import { verifyEvent } from 'nostr-tools';
 import { z } from 'zod';
 import config from '../../../../config/config.mts';
 import unifiedPush from '../../../users/server/services/unified-push.server.service.mts';
+import type { TranslationAlertEnvelope } from './nostranslation-alert-envelope.server.service.mts';
 
 export const translationAlertsPath = '/api/mobile/v0/nostranslation/alerts';
 
@@ -210,4 +211,33 @@ export async function unregisterTranslationAlert(
     session: scope.session,
   });
   return true;
+}
+
+export async function listPendingTranslationAlerts(
+  scope: RegistrationScope,
+  transport: unknown,
+) {
+  const parsed = hexKey.safeParse(transport);
+  if (!parsed.success) return;
+  const filter = { user: scope.user, session: scope.session };
+  const registration = await alertRegistrations()
+    .findOne({ ...filter, _id: parsed.data, expiresAt: { $gt: new Date() } })
+    .select('author')
+    .lean();
+  if (!registration) return [];
+  const claims = await mongoose
+    .model<{ event: TranslationAlertEnvelope['event'] }>(
+      'NostranslationAlertClaim',
+    )
+    .find({
+      ...filter,
+      transport: parsed.data,
+      'event.pubkey': registration.author,
+      expiresAt: { $gt: new Date() },
+    })
+    .sort({ expiresAt: -1 })
+    .limit(8)
+    .select('event')
+    .lean();
+  return claims.map(claim => claim.event);
 }

@@ -15,11 +15,13 @@ import config from '../../../../config/config.mts';
 import express from '../../../../config/lib/express.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
 import translationAlerts from '../../server/controllers/mobile-nostranslation-alerts.server.controller.cjs';
+import { alertRegistrations } from '../../server/services/nostranslation-alert-registration.server.service.mts';
 
 const path = '/api/mobile/v0/nostranslation/alerts';
 const secret = generateSecretKey();
 const transport = getPublicKey(secret);
-const author = getPublicKey(generateSecretKey());
+const authorSecret = generateSecretKey();
+const author = getPublicKey(authorSecret);
 const destination = { platform: 'ios', token: 'ab'.repeat(32) };
 const registration = { author, transport, destination };
 const User = mongoose.model('User');
@@ -110,6 +112,125 @@ describe('Mobile Nostranslation alert registrations', () => {
       .set('Authorization', auth)
       .send(registration)
       .expect(404);
+  });
+
+  it('shares the write allowance across sessions and leaves opt-out available', async () => {
+    const auth = await signIn();
+    const otherSession = await signIn();
+    const policy = config.targetedRequestLimits.nostranslationAlertWrite;
+    const original = policy.identityLimit;
+    policy.identityLimit = 1;
+    try {
+      await request(app)
+        .post(path + '/challenge')
+        .set('Authorization', auth)
+        .send(registration)
+        .expect(200);
+      await request(app)
+        .put(path)
+        .set('Authorization', otherSession)
+        .send(registration)
+        .expect(429)
+        .expect('Retry-After', /^\d+$/);
+      await request(app)
+        .delete(path)
+        .set('Authorization', auth)
+        .send({ transport })
+        .expect(204);
+    } finally {
+      policy.identityLimit = original;
+    }
+  });
+
+  it('recovers only fresh encrypted alerts for the registered session, pairing and author', async () => {
+    const auth = await signIn();
+    const otherSession = await signIn();
+    const challenge = await request(app)
+      .post(path + '/challenge')
+      .set('Authorization', auth)
+      .send(registration)
+      .expect(200);
+    await request(app)
+      .put(path)
+      .set('Authorization', auth)
+      .send({
+        ...registration,
+        proof: finalizeEvent(challenge.body.event, secret),
+      })
+      .expect(204);
+
+    const registered = await alertRegistrations()
+      .findById(transport)
+      .lean()
+      .orFail();
+    const timestamp = Math.floor(Date.now() / 1000);
+    const unsigned = {
+      kind: 24133,
+      created_at: timestamp,
+      tags: [['p', transport]],
+      content: 'A'.repeat(132),
+    };
+    const expected = finalizeEvent({ ...unsigned }, authorSecret);
+    const otherAuthor = finalizeEvent({ ...unsigned }, generateSecretKey());
+    const expired = finalizeEvent(
+      { ...unsigned, created_at: timestamp - 60 },
+      authorSecret,
+    );
+    const claims = mongoose.model('NostranslationAlertClaim');
+    await claims.insertMany(
+      [expected, otherAuthor, expired].map(event => ({
+        _id: transport + ':' + event.id,
+        user: registered.user,
+        session: registered.session,
+        transport,
+        event,
+        expiresAt: new Date((event.created_at + 60) * 1000),
+      })),
+    );
+
+    const pending = (authorization: string, key = transport) =>
+      request(app)
+        .post(path + '/pending')
+        .set('Authorization', authorization)
+        .send({ transport: key });
+    await request(app)
+      .post(path + '/pending')
+      .send({ transport })
+      .expect(401);
+    await pending(auth, 'invalid').expect(400);
+    await pending(otherSession).expect(200, { events: [] });
+    await pending(auth, getPublicKey(generateSecretKey())).expect(200, {
+      events: [],
+    });
+    const findRegistration = vi.spyOn(alertRegistrations(), 'findOne');
+    const findClaims = vi.spyOn(claims, 'find');
+    await pending(auth)
+      .expect('Cache-Control', /no-store/)
+      .expect(200, { events: [JSON.parse(JSON.stringify(expected))] });
+    const registrationQuery = findRegistration.mock.results[0]!.value;
+    expect(registrationQuery.getFilter()).toEqual({
+      _id: transport,
+      user: registered.user,
+      session: registered.session,
+      expiresAt: { $gt: expect.any(Date) },
+    });
+    expect(registrationQuery.projection()).toEqual({ author: 1 });
+    const claimsQuery = findClaims.mock.results[0]!.value;
+    expect(claimsQuery.getOptions()).toMatchObject({
+      sort: { expiresAt: -1 },
+      limit: 8,
+    });
+    expect(claimsQuery.projection()).toEqual({ event: 1 });
+    findRegistration.mockRestore();
+    findClaims.mockRestore();
+    await request(app)
+      .delete(path)
+      .set('Authorization', auth)
+      .send({ transport })
+      .expect(204);
+    await pending(auth).expect(200, { events: [] });
+    config.featureFlags.nostranslationAlerts = false;
+    await pending(auth).expect(404);
   });
 
   it('binds proof to the mobile session, transport key and device, then consumes it once', async () => {

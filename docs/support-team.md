@@ -3,9 +3,10 @@
 Administrators can add or remove **Support team** on a member record. The role
 provides the support inbox at `/admin/support`, member search and account details,
 internal member notes, acquisition stories, location corrections and the staff
-member's own blocker list.
-It does not grant suspension, shadowbanning, role changes, bulk exports, audit-log
-browsing or unrestricted private conversations. Legacy moderators are unchanged.
+member's own blocker list. Support team members can also suspend or shadowban
+ordinary members, undo those actions, and browse the moderation audit log.
+Role changes, bulk exports and unrestricted private conversations are outside
+the role's permissions.
 
 Requests use the new, open, pending, hold, solved and closed statuses. Replies
 appear in the shared thread and are sent through the configured support mailbox.

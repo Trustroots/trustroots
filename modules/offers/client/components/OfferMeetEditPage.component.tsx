@@ -7,12 +7,12 @@ import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import OfferLocationEditor from './OfferLocationEditor.component';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
 import MeetsExplanation from './MeetsExplanation.component';
-import OfferLocationEditor from './OfferLocationEditor.component';
 import { Alert } from '@trustroots/ui/Alert';
 
 const MIN_DESCRIPTION = 5;

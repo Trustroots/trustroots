@@ -29,9 +29,20 @@ challenge.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const claim = new Schema({
   _id: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, required: true },
+  session: { type: Schema.Types.ObjectId, required: true },
+  transport: { type: String, required: true },
+  event: { type: Schema.Types.Mixed, required: true },
   expiresAt: { type: Date, required: true },
 });
 claim.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+claim.index({
+  user: 1,
+  session: 1,
+  transport: 1,
+  'event.pubkey': 1,
+  expiresAt: -1,
+});
 
 mongoose.model('NostranslationAlertRegistration', registration);
 mongoose.model('NostranslationAlertChallenge', challenge);

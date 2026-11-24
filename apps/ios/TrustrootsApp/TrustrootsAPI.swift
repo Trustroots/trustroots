@@ -1273,6 +1273,16 @@ final class TrustrootsAPI {
         )
     }
 
+    func pendingTranslationAlerts(serverURLString: String, transport: String) async throws -> [[String: Any]] {
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/nostranslation/alerts/pending",
+            method: "POST", body: ["transport": transport]
+        )
+        guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let events = response["events"] as? [[String: Any]] else { throw TrustrootsAPIError.invalidResponse }
+        return events
+    }
+
     func translationAlertsAvailable(serverURLString: String) async throws -> Bool {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL

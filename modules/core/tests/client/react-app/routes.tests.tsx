@@ -701,6 +701,19 @@ describe('React route ownership', () => {
     },
   );
 
+  it('keeps member search mounted when the search query changes', () => {
+    const route = (router.routesById as unknown as Record<string, AnyRoute>)[
+      '/search/members'
+    ];
+    expect(
+      route.options.remountDeps!({
+        routeId: '/search/members',
+        params: {},
+        search: { search: 'fictional-member' },
+      } as never),
+    ).toBeUndefined();
+  });
+
   it('matches profile and contact route policies', () => {
     expect(findRoute('/profile/alice')).toMatchObject({
       params: { username: 'alice' },

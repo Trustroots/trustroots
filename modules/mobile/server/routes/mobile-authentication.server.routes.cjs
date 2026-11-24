@@ -50,7 +50,14 @@ module.exports = function (app) {
     '/api/mobile/v0/nostranslation/alerts/challenge',
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,
+    translationAlerts.allowWrite,
     translationAlerts.challenge,
+  );
+  app.post(
+    '/api/mobile/v0/nostranslation/alerts/pending',
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    translationAlerts.pending,
   );
   app
     .route('/api/mobile/v0/nostranslation/alerts')
@@ -59,7 +66,7 @@ module.exports = function (app) {
       mobileAuthentication.prepareResource,
     )
     .get(translationAlerts.configuration)
-    .put(translationAlerts.register)
+    .put(translationAlerts.allowWrite, translationAlerts.register)
     .delete(translationAlerts.unregister);
   app
     .route('/api/mobile/v0/users/unified-push')

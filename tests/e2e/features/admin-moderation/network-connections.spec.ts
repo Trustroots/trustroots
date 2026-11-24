@@ -31,9 +31,9 @@ test('staff can search and inspect external network connections', async ({
   await signInViaApi(page, request, member);
   expect(
     (
-      await request.get(
-        '/api/admin/network-connections?network=bewelcome&identifier=fictional-old',
-      )
+      await request.post('/api/admin/network-connections', {
+        data: { network: 'bewelcome', identifier: 'fictional-old' },
+      })
     ).status(),
   ).toBe(403);
   expect(
@@ -74,7 +74,7 @@ test('staff can search and inspect external network connections', async ({
     response =>
       response.url().includes('/api/admin/network-connections') &&
       !response.url().includes('/api/admin/network-connections/') &&
-      response.request().method() === 'GET' &&
+      response.request().method() === 'POST' &&
       response.ok(),
   );
   await page.getByRole('button', { name: 'Search' }).click();
