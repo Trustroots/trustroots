@@ -90,7 +90,7 @@ services:
       - NODE_ENV=production
     # Override the container's start command (which will start passenger) to
     # start the worker
-    command: ['node', 'worker.js']
+    command: ['node', 'worker.mjs']
 
   influxdb:
     image: influxdb:1.8.10
