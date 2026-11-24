@@ -1,22 +1,18 @@
 import { generateSecretKey, getPublicKey, verifyEvent } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
 import 'should';
-
-import config from '../../../../../config/config.mts';
-import mockModule from '../../../../../testutils/server/mock-module.mts';
+import { vi } from 'vitest';
 import * as canonical from '../../../server/services/data-export-canonical.server.service.mts';
 import * as service from '../../../server/services/data-export-signing.server.service.mts';
 
-const originalSigning = config.dataExportSigning;
-
 function loadService(nsec: string) {
-  config.dataExportSigning = { nsec };
+  vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nsec);
   return service;
 }
 
 describe('Member data export signing', () => {
   afterEach(() => {
-    config.dataExportSigning = originalSigning;
+    vi.unstubAllEnvs();
   });
 
   const secretKey = generateSecretKey();
@@ -96,43 +92,16 @@ describe('Member data export signing', () => {
     event.content.should.equal('');
   });
 
-  describe('logging', () => {
-    const logged: unknown[][] = [];
-    let logging: typeof service;
-
-    before(async () => {
-      logging = await mockModule<typeof service>(
-        new URL(
-          '../../../server/services/data-export-signing.server.service.mts',
-          import.meta.url,
-        ),
-        { '@trustroots/logger': (...args: unknown[]) => logged.push(args) },
-      );
-    });
-
-    beforeEach(() => {
-      logged.length = 0;
-    });
-
-    it('stays quiet when no signing key is configured', () => {
-      config.dataExportSigning = { nsec: '' };
-
-      (logging.signPayload(payload) === null).should.be.true();
-      logged.should.be.empty();
-    });
-
-    it('logs why a configured key that is not an nsec was rejected', () => {
-      config.dataExportSigning = { nsec: nip19.npubEncode(publicKey) };
-
-      (logging.signPayload(payload) === null).should.be.true();
-      logged.should.deepEqual([
-        [
-          'error',
-          'Could not decode the data export signing key #dg4hd2',
-          { error: 'Expected an nsec, got a npub' },
-        ],
-      ]);
-    });
+  it('uses the same service key precedence as NIP-05', () => {
+    const legacy = generateSecretKey();
+    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', nip19.nsecEncode(legacy));
+    sign().event.pubkey.should.equal(publicKey);
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', undefined);
+    service
+      .signPayload(payload)!
+      .event.pubkey.should.equal(getPublicKey(legacy));
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', 'invalid');
+    (service.signPayload(payload) === null).should.be.true();
   });
 
   it('attests the same root for repeated exports of unchanged data', () => {

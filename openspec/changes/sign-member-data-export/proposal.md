@@ -23,6 +23,6 @@ Signing is only worth something if the signed bytes are a pure function of the m
 
 - Changes the export format from version `1` to version `2`. Nothing consumes it yet, so this is the cheapest moment to change it.
 - Adds no production dependency: `nostr-tools` is already one.
-- Requires a dedicated signing key to be provisioned and its nsec injected at runtime. The key is hot by construction, because the export is generated per request.
+- Uses the shared Trustroots Nostr service signer. The webapp needs access to the key because the export is generated per request.
 - Does not add timestamping. A NIP-01 `created_at` is chosen by the signer, so this change proves authorship but not time; anchoring is scoped as a follow-up.
 - Does not widen what the export contains. It does change the character of the third-party data already in `contacts`, from deniable to attested; the open decisions are recorded in `docs/data-export-signing.md`.

@@ -5,8 +5,7 @@ import {
 } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
 import 'should';
-
-import config from '../../../../../config/config.mts';
+import { vi } from 'vitest';
 import * as canonical from '../../../server/services/data-export-canonical.server.service.mts';
 import * as signingService from '../../../server/services/data-export-signing.server.service.mts';
 import * as verification from '../../../server/services/data-export-verification.server.service.mts';
@@ -15,10 +14,8 @@ const secretKey = generateSecretKey();
 const publicKey = getPublicKey(secretKey);
 const otherPublicKey = getPublicKey(generateSecretKey());
 
-const originalSigning = config.dataExportSigning;
-
 function signing() {
-  config.dataExportSigning = { nsec: nip19.nsecEncode(secretKey) };
+  vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));
   return signingService;
 }
 
@@ -43,7 +40,7 @@ function buildFile(overrides = {}, now?: Date) {
 
 describe('Member data export verification', () => {
   after(() => {
-    config.dataExportSigning = originalSigning;
+    vi.unstubAllEnvs();
   });
 
   const keyHistory = [

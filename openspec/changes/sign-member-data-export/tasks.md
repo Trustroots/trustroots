@@ -6,7 +6,7 @@
 
 ## 2. Signing
 
-- [x] 2.1 Sign the root digest with a dedicated Nostr key as a NIP-01 event
+- [x] 2.1 Sign the root digest with the Trustroots Nostr service key as a NIP-01 event
 - [x] 2.2 Serve an unsigned export with a warning when no key is configured
 - [x] 2.3 Bump the export format to version 2
 

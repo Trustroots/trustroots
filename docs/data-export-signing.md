@@ -56,13 +56,13 @@ Making the strong version true needs an independent time anchor. The intended fo
 
 ## Key custody
 
-The signing key is a dedicated secp256k1 keypair used for nothing else — not the nostroots server key, not any member key, not a key that also posts. It is generated offline and injected at runtime as an nsec:
+The signing key is the shared Trustroots Nostr service identity, `_@trustroots.org`. It is generated offline and injected into the webapp at runtime as an nsec.
 
 ```
-TRUSTROOTS_EXPORT_SIGNING_NSEC=nsec1…
+TRUSTROOTS_NOSTR_SERVICE_NSEC=nsec1…
 ```
 
-or as `dataExportSigning.nsec` in `config/env/local.js`. **An nsec must never be committed** — not to this repository, not to a compose file, not to an ansible inventory in the clear. With no key configured the export is served unsigned and the server logs a warning; that is a degraded export, never a failed request.
+Keep the nsec in the deployment environment. With no usable key configured, the export is served unsigned and the server logs a warning.
 
 ## Key distribution
 

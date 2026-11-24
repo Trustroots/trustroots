@@ -52,7 +52,7 @@ function serializedDependencies(
 
 // A throwaway export-signing key per run, so the e2e export is actually signed
 // and verified. Set on process.env so test workers see the same key.
-process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC ||=
+process.env.TRUSTROOTS_NOSTR_SERVICE_NSEC ||=
   nip19.nsecEncode(generateSecretKey());
 
 const webServers = [
@@ -60,8 +60,7 @@ const webServers = [
     command: 'pnpm run start:e2e:api',
     env: {
       TRUSTROOTS_TEST_STATS_OUTAGE: 'true',
-      TRUSTROOTS_EXPORT_SIGNING_NSEC:
-        process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC,
+      TRUSTROOTS_NOSTR_SERVICE_NSEC: process.env.TRUSTROOTS_NOSTR_SERVICE_NSEC,
     },
     url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
     timeout: 120 * 1000,

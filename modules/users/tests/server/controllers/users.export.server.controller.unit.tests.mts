@@ -5,6 +5,7 @@ import path from 'node:path';
 import winston from 'winston';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
+import { vi } from 'vitest';
 import config from './../../../../../config/config.mts';
 import mongoose from 'mongoose';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
@@ -154,17 +155,16 @@ function responseBody(response: MockResponse): ExportBody {
 describe('Member data export controller', () => {
   const user = { _id: 'member-id', username: 'member' };
   const exportedAt = new Date('2026-01-02T03:04:00.000Z');
-  const originalSigning = config.dataExportSigning;
   const secretKey = generateSecretKey();
   const publicKey = getPublicKey(secretKey);
 
   afterEach(() => {
     sinon.restore();
-    config.dataExportSigning = originalSigning;
+    vi.unstubAllEnvs();
   });
 
   it('serves an unsigned export and warns when no signing key is configured', async () => {
-    config.dataExportSigning = { nsec: '' };
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', '');
     const log = sinon.stub(winston, 'log');
     const loaded = loadController({
       profile: (_req, _res, next) => next(),
@@ -181,7 +181,7 @@ describe('Member data export controller', () => {
   });
 
   it('signs all six delivered sections and detects changes in each of them', async () => {
-    config.dataExportSigning = { nsec: nip19.nsecEncode(secretKey) };
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));
     const log = sinon.stub(winston, 'log');
     const loaded = loadController({
       profile: (req, _res, next) => {
@@ -243,7 +243,7 @@ describe('Member data export controller', () => {
   });
 
   it('attests the same content when request time and list order change', async () => {
-    config.dataExportSigning = { nsec: nip19.nsecEncode(secretKey) };
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));
     const clock = sinon.useFakeTimers(exportedAt);
     const offers = [{ _id: 'offer-b' }, { _id: 'offer-a' }];
     const messages = [{ _id: 'message-b' }, { _id: 'message-a' }];
