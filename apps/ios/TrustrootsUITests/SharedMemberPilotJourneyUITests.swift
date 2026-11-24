@@ -280,7 +280,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
         let passwordPrompt = app.sheets["Save Password?"]
         if passwordPrompt.waitForExistence(timeout: 5) {
-            passwordPrompt.buttons["Not Now"].tap()
+            let dismiss = passwordPrompt.buttons["Not Now"]
+            let center = dismiss.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            center.tap()
+            if !passwordPrompt.waitForNonExistence(timeout: 2) {
+                center.tap()
+            }
             XCTAssertTrue(passwordPrompt.waitForNonExistence(timeout: 5), app.debugDescription)
         }
     }
@@ -316,7 +321,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         // Compose exposes the full field as a text view. Focus its leading text area.
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
-        field.typeText(text)
+        if field.elementType == .textView {
+            let keyboard = app.keyboards.firstMatch
+            if !keyboard.waitForExistence(timeout: 2) {
+                field.tap()
+            }
+            XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+            // The focused UIKit input is outside the Compose accessibility element.
+            app.typeText(text)
+        } else {
+            field.typeText(text)
+        }
         let entered = XCTNSPredicateExpectation(
             predicate: NSPredicate { object, _ in
                 guard let element = object as? XCUIElement,
