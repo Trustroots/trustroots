@@ -23,6 +23,15 @@ internal object NostrEventSigner {
             .put("id", id.toHex()).put("sig", signer.generateSignature().toHex())
     }
 
+    fun describe(event: JSONObject): String {
+        val body = eventBody(event)
+        return JSONObject().put("kind", body.kind).put("created_at", body.createdAt)
+            .put("tags", JSONArray(body.tags.map { JSONArray(it) })).put("content", body.content)
+            .toString(2).replace(Regex("[\\p{Cf}\\u2028\\u2029]")) { match ->
+                match.value.map { "\\u" + it.code.toString(16).padStart(4, '0') }.joinToString("")
+            }
+    }
+
     fun verifies(event: JSONObject, expectedAuthor: String): Boolean = runCatching {
         if (event.opt("pubkey") != expectedAuthor) return false
         val pubkey = BIP340Signer.decodePublicKey(decodeHex(expectedAuthor, 32)) ?: return false

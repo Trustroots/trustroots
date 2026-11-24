@@ -1457,6 +1457,19 @@ test.describe('rendered search map feature coverage', () => {
       await expect(canHost).toBeChecked();
       await expect(rows).toHaveCount(1);
       await expect(rows.first()).toBeFocused();
+
+      await page.goBack();
+      await expect(page).not.toHaveURL(/[?&]location=/);
+      await expect(list).toHaveCount(0);
+      await page.goForward();
+      await expect(list).toBeVisible();
+      if (screen === 'mobile') {
+        await results.getByRole('button', { name: 'Back to map' }).click();
+        await page.getByRole('button', { name: 'Search places' }).click();
+      }
+      await page.getByRole('button', { name: 'Clear location search' }).click();
+      await expect(page).not.toHaveURL(/[?&]location=/);
+      await expect(list).toHaveCount(0);
     });
   }
 

@@ -24,7 +24,7 @@ const relayFrame = z.tuple([z.literal('EVENT'), z.string(), eventSchema]);
 export interface TranslationAlertEnvelope {
   author: string;
   recipient: string;
-  eventId: string;
+  event: z.infer<typeof eventSchema>;
   expiresAt: Date;
 }
 
@@ -53,7 +53,7 @@ export function readTranslationAlertEnvelope(
   return {
     author: event.pubkey,
     recipient: event.tags[0][1],
-    eventId: event.id,
+    event,
     expiresAt: new Date((event.created_at + translationAlertLifetime) * 1000),
   };
 }

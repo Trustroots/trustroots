@@ -375,7 +375,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
     await screen.findByRole('heading', { name: 'Hitchhikers' });
     if (mapText) {
-      expect(screen.getByText(mapText)).toBeInTheDocument();
+      expect(await screen.findByText(mapText)).toBeInTheDocument();
       expect(
         container.querySelector('.has-location-map .circle-hero-map'),
       ).toBeInTheDocument();
@@ -398,7 +398,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
         />,
       );
       await screen.findByRole('heading', { name: 'Hackers' });
-      expect(screen.getByTestId('hackerspace-map')).toBeVisible();
+      expect(await screen.findByTestId('hackerspace-map')).toBeVisible();
       expect(screen.getByRole('link', { name: 'Circle Wiki' })).toHaveAttribute(
         'href',
         'https://wiki.trustroots.org/en/Hackers',

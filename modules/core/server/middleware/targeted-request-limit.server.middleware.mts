@@ -1,7 +1,7 @@
 import config from '../../../../config/config.mts';
 import { getClientIpAddress as defaultGetClientIpAddress } from '../services/client-ip.server.service.mts';
 import { consume as defaultConsume } from '../services/targeted-request-limits.server.service.mts';
-type Operation =
+export type Operation =
   | 'signup'
   | 'support'
   | 'contactRequest'
@@ -11,7 +11,8 @@ type Operation =
   | 'passwordChange'
   | 'resendConfirmation'
   | 'avatarUpload'
-  | 'dataExport';
+  | 'dataExport'
+  | 'nostranslationAlertWrite';
 interface LimitRequest {
   get?: (header: string) => string | undefined;
   ip?: string;
@@ -168,6 +169,11 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     dataExport: createLimiter('dataExport', 'member', deps),
+    nostranslationAlertWrite: createLimiter(
+      'nostranslationAlertWrite',
+      'member',
+      deps,
+    ),
     getRequestIdentity,
   };
 }

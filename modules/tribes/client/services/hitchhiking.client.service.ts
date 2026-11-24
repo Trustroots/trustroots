@@ -1,5 +1,5 @@
 import type { Event } from 'nostr-tools';
-import { latLng } from 'leaflet';
+import { distanceInMetres } from '@/modules/core/client/utils/map';
 import type { CircleLocation } from '../components/CircleLocationMap';
 
 export const HITCHWIKI_RELAY = 'wss://relay.maps.hitchwiki.org';
@@ -118,10 +118,10 @@ function rideFacts(
       .reduce(
         (total, stop, index) =>
           total +
-          latLng(
-            stops[index].location.latitude,
-            stops[index].location.longitude,
-          ).distanceTo(latLng(stop.location.latitude, stop.location.longitude)),
+          distanceInMetres(
+            [stops[index].location.latitude, stops[index].location.longitude],
+            [stop.location.latitude, stop.location.longitude],
+          ),
         0,
       );
     add('Distance (straight line)', `${Math.round(distance / 1000)} km`);

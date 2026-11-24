@@ -132,7 +132,7 @@ function renderNotFound(
 
 /**
  * Log received CSP violation report
- * See `config/lib/express.js` and `initHelmetHeaders()` for more
+ * See `config/lib/security-headers.mts` and `initSecurityHeaders()` for more
  */
 function receiveCSPViolationReport(req: { body?: unknown }, res: CoreResponse) {
   if (process.env.NODE_ENV !== 'test') {

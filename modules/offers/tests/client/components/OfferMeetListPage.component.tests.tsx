@@ -57,7 +57,7 @@ describe('OfferMeetListPage', () => {
 
     expect(await screen.findByText('Your meetups')).toBeVisible();
     expect(screen.getByText('Coffee meetup.')).toBeInTheDocument();
-    expect(screen.getByTestId('offer-location')).toBeInTheDocument();
+    expect(await screen.findByTestId('offer-location')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Modify this meet offer' }),
     ).toHaveAttribute('href', '/offer/meet/offer-1');

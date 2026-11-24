@@ -131,4 +131,6 @@ export interface PlaceHostPage<Id = string, Timestamp = string> {
 
 export interface OfferMutationResponse {
   message: 'Offer saved.' | 'Offer updated.' | 'Offer removed.';
+  /** Present on successful hosting offer creation. */
+  _id?: string;
 }

@@ -123,7 +123,7 @@ const registerRoutes = (app: RouteApp): void => {
   app
     .route('/api/admin/network-connections')
     .all(adminPolicy.isAllowed)
-    .get(networkConnections.search);
+    .post(networkConnections.search);
   app
     .route('/api/admin/network-connections/:memberId')
     .all(adminPolicy.isAllowed)

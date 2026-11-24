@@ -37,6 +37,7 @@ interface MailUser {
 }
 interface UnreadNotification {
   notificationCount?: number;
+  total?: number;
   messages: Array<Record<string, unknown> & { content: string }>;
 }
 interface SupportMailRequest extends Record<string, unknown> {
@@ -200,7 +201,7 @@ function sendMessagesUnread(
     name: userTo.displayName,
     email: userTo.email,
     mailTitle: mailSubject,
-    messageCount: notification.messages.length,
+    messageCount: notification.total ?? notification.messages.length,
     messages: notification.messages.map(message =>
       messagePreview(message.content),
     ),

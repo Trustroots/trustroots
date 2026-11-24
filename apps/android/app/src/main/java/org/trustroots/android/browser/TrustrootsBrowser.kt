@@ -117,6 +117,7 @@ fun TrustrootsBrowser(
     ) { paddingValues ->
         key(nostrSession) {
             val nip07 = remember(nostrSession) { nostrSession?.let { AndroidNip07Bridge(it, nostrScope) } }
+            if (nip07 != null) BrowserSigningApproval(nip07)
             AndroidView(
                 factory = { browserContext ->
                     WebView(browserContext).apply {

@@ -19,7 +19,8 @@ import useCityHosts from '../hooks/use-city-hosts';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
-import SearchMap, { type VisibleMapCounts } from './SearchMap.component';
+import lazyMap from '@/modules/core/client/components/lazyMap';
+import type { VisibleMapCounts } from './SearchMap.component';
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebar from './SearchSidebar.component';
 import {
@@ -29,6 +30,8 @@ import {
   setSearchFilters,
   type SearchFilters,
 } from '../utils/search-filters';
+
+const SearchMap = lazyMap(() => import('./SearchMap.component'));
 
 interface SearchUser {
   _id?: string;
@@ -496,7 +499,13 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
     const placeQuery = parseLocationQuery(routeParams.location);
     setSearchQuery(placeQuery);
-    if (!placeQuery) return;
+    if (!placeQuery) {
+      setCity(undefined);
+      setShowCityResults(false);
+      // Device location can also remove the URL parameter and supplies its own camera position.
+      setBounds({});
+      return;
+    }
 
     const requestGeneration = placeSearchGenerationRef.current;
     let isMounted = true;

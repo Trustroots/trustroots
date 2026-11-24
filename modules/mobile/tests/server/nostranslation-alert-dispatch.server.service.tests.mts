@@ -25,8 +25,8 @@ describe('Dispatching Nostranslation alerts', () => {
     const activeDestinations = vi.fn(async () => [first, second]);
     const send = vi.fn();
     const claim = vi.fn(
-      async (destination: { id: string }, eventId: string) => {
-        const id = destination.id + ':' + eventId;
+      async (destination: { id: string }, envelope: { id: string }) => {
+        const id = destination.id + ':' + envelope.id;
         if (deliveries.has(id)) return false;
         deliveries.add(id);
         return true;
@@ -49,7 +49,7 @@ describe('Dispatching Nostranslation alerts', () => {
       author: getPublicKey(key),
       recipient,
     });
-    expect(claim).toHaveBeenCalledWith(first, event.id, expiry);
+    expect(claim).toHaveBeenCalledWith(first, event, expiry);
     expect(send.mock.calls).toEqual([
       [first, expiry],
       [second, expiry],

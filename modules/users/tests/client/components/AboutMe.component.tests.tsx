@@ -150,15 +150,24 @@ describe('<AboutMe />', () => {
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
-  it('prompts the current member to complete a missing description', () => {
-    const profile: AboutMeProfile = {};
-    render(<AboutMe isSelf profile={profile} profileMinimumLength={20} />);
+  it('shows the empty description placeholder', () => {
+    render(<AboutMe isSelf profile={{}} profileMinimumLength={20} />);
 
     expect(
       screen.getByLabelText(
         'Member has not written description about themself.',
       ),
     ).toBeInTheDocument();
+  });
+
+  it('reminds the current member that a short description limits messaging', () => {
+    render(
+      <AboutMe
+        isSelf
+        profile={{ description: 'I like trains.' }}
+        profileMinimumLength={20}
+      />,
+    );
     expect(
       screen.getByText(
         'Your profile description should be longer so that you can send messages.',

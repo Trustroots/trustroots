@@ -137,6 +137,11 @@ internal fun NostranslationDialog(
         runCatching(signer::start).onFailure { error = failed }
         onDispose(signer::close)
     }
+    LaunchedEffect(signer, openedFromAlert, alertsEnabled) {
+        if (openedFromAlert && alertsEnabled) {
+            signer.recoverPending { transport -> api.pendingTranslationAlerts(session, transport) }
+        }
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!scanning) close() }
     LaunchedEffect(signer) {
         while (true) {

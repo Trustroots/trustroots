@@ -5,8 +5,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -109,7 +111,24 @@ class AndroidNostranslationSessionTest {
                 }
 
                 val input = reviewFrame("fixture-review")
-                relay.receive(input)
+                assertThrows(CancellationException::class.java) {
+                    runBlocking { restored.recoverPending { throw CancellationException() } }
+                }
+                runBlocking {
+                    restored.recoverPending { throw IOException("Fixture offline") }
+                    restored.recoverPending {
+                        signedIn = false
+                        JSONArray().put(input.getJSONObject(2))
+                    }
+                }
+                signedIn = true
+                assertTrue(restored.reviews.isEmpty())
+                runBlocking {
+                    restored.recoverPending { requestedTransport ->
+                        assertEquals(transport, requestedTransport)
+                        JSONArray().put("not an event").put(input.getJSONObject(2))
+                    }
+                }
                 assertEquals(1, relay.frames.size)
                 restored.decide(restored.reviews.single(), approved = true)
                 val reply = relay.frames.last().getJSONObject(1)
@@ -215,6 +234,7 @@ class AndroidNostranslationSessionTest {
                 val disconnectedReview = restored.reviews.single()
                 relay.closed()
                 relay.closed()
+                runBlocking { restored.recoverPending { error("No connected pairing") } }
                 relay.open()
                 restored.decide(disconnectedReview, approved = true)
                 assertTrue(restored.relayFailed)

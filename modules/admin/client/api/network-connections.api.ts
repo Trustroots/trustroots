@@ -51,9 +51,9 @@ export async function searchNetworkConnections(
   identifier: string,
   page = 1,
 ): Promise<NetworkConnectionSearchPage> {
-  const { data } = await axios.get<NetworkConnectionSearchPage>(
+  const { data } = await axios.post<NetworkConnectionSearchPage>(
     '/api/admin/network-connections',
-    { params: { network, identifier, page } },
+    { network, identifier, page },
   );
   return data;
 }

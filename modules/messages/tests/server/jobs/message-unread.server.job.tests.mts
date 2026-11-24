@@ -1503,6 +1503,31 @@ describe('Job: message unread', function () {
       ).should.equal(0);
     });
 
+    it('bounds the email preview and marks the full conversation notified', async function () {
+      await ageMessage(60);
+      const created = moment().subtract(30, 'minutes').toDate();
+      await Message.create(
+        Array.from({ length: 20 }, (_, index) => ({
+          ..._message,
+          created,
+          content: `Recent preview ${index}`,
+        })),
+      );
+      await runJob();
+
+      jobs.length.should.equal(1);
+      jobs[0].data.text.should.containEql('21 unread messages');
+      jobs[0].data.text.should.containEql('Recent preview 0');
+      jobs[0].data.text.should.not.containEql(_message.content);
+      (
+        await Message.countDocuments({
+          userTo: userToId,
+          userFrom: userFromId,
+          notificationCount: 1,
+        })
+      ).should.equal(21);
+    });
+
     it('logs why a reminder was skipped for a removed member', async function () {
       const log = sinon.stub(winston.Logger.prototype, 'log');
       await ageMessage();

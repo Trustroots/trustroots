@@ -28,13 +28,13 @@ function frame(event: unknown, subscription = connection) {
 }
 
 describe('Nostranslation alert relay envelopes', () => {
-  it('returns only verified delivery metadata', () => {
+  it('returns the verified encrypted event and its delivery metadata', () => {
     const event = envelope();
     expect(readTranslationAlertEnvelope(frame(event), connection, now)).toEqual(
       {
         author: getPublicKey(client),
         recipient: transport,
-        eventId: event.id,
+        event,
         expiresAt: new Date((now + 60) * 1000),
       },
     );
@@ -61,7 +61,7 @@ describe('Nostranslation alert relay envelopes', () => {
     expect(
       readTranslationAlertEnvelope(payload, connection, now),
     ).toMatchObject({
-      eventId: event.id,
+      event: { id: event.id },
       expiresAt: new Date((now + 90) * 1000),
     });
     expect(

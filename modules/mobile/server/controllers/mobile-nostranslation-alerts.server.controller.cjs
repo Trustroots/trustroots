@@ -1,5 +1,8 @@
 const config = require('../../../../config/config.mts').default;
+const targetedRequestLimit =
+  require('../../../core/server/middleware/targeted-request-limit.server.middleware.mts').default;
 const {
+  listPendingTranslationAlerts,
   newTranslationAlertChallenge,
   registerTranslationAlert,
   unregisterTranslationAlert,
@@ -16,8 +19,12 @@ function registrationScope(req) {
   };
 }
 
-exports.challenge = async function (req, res) {
+exports.allowWrite = function (req, res, next) {
   if (!config.featureFlags.nostranslationAlerts) return res.sendStatus(404);
+  return targetedRequestLimit.nostranslationAlertWrite(req, res, next);
+};
+
+exports.challenge = async function (req, res) {
   const event = await newTranslationAlertChallenge(
     registrationScope(req),
     req.body,
@@ -38,7 +45,6 @@ exports.configuration = function (_req, res) {
 };
 
 exports.register = async function (req, res) {
-  if (!config.featureFlags.nostranslationAlerts) return res.sendStatus(404);
   const accepted = await registerTranslationAlert(
     registrationScope(req),
     req.body,
@@ -58,4 +64,15 @@ exports.unregister = async function (req, res) {
   if (!accepted)
     return res.status(400).json({ message: 'Invalid transport key.' });
   return res.status(204).end();
+};
+
+exports.pending = async function (req, res) {
+  if (!config.featureFlags.nostranslationAlerts) return res.sendStatus(404);
+  const events = await listPendingTranslationAlerts(
+    registrationScope(req),
+    req.body?.transport,
+  );
+  if (!events)
+    return res.status(400).json({ message: 'Invalid transport key.' });
+  return res.json({ events });
 };

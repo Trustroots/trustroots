@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,6 +73,65 @@ class AndroidNip07NativeMessageTest {
         }
     }
 
+    @Test fun cancelsApprovalOnNavigationAndRechecksSessionAndKeyAfterApproval() {
+        var current = true
+        withInstalledBridge(isCurrent = { current }) { origin, view, bridge, listener ->
+            val replies = LinkedBlockingQueue<JSONObject>()
+            val reply = recordingReply(replies)
+            val unsigned = """{"kind":1,"content":"A note\u202e","created_at":1800000000,"tags":[]}"""
+            fun request(id: String, fields: String = """, "event":$unsigned""") {
+                listener.onPostMessage(
+                    view, WebMessageCompat("""{"id":"$id","method":"signEvent"$fields}"""), origin, true, reply,
+                )
+            }
+            fun error() = requireNotNull(replies.poll(5, TimeUnit.SECONDS)).getString("error")
+
+            bridge.pageCommitted()
+            bridge.declineApproval()
+            request("missing-event", "")
+            assertEquals("This Nostr request could not be completed.", error())
+            request("declined")
+            val details = requireNotNull(bridge.approval).details
+            assertTrue(details.contains("\\u202e"))
+            bridge.declineApproval()
+            assertEquals("Nostr signing was not approved.", error())
+
+            request("navigation")
+            val cancelled = requireNotNull(bridge.approval)
+            bridge.pageChanged()
+            assertNull(bridge.approval)
+            cancelled.decision.complete(true)
+            assertTrue(replies.isEmpty())
+            bridge.pageCommitted()
+
+            request("signed-out")
+            current = false
+            requireNotNull(bridge.approval).decision.complete(true)
+            assertEquals("The signing session or local key changed.", error())
+            current = true
+
+            request("key-changed")
+            val context = RuntimeEnvironment.getApplication()
+            val account = nostrAccountScope(origin.toString(), "browser-fixture")
+            val keys = AndroidNostrKeys(context, account)
+            keys.remove()
+            requireNotNull(bridge.approval).decision.complete(true)
+            assertEquals("The signing session or local key changed.", error())
+            assertNull(bridge.approval)
+
+            val preferences = context.getSharedPreferences("nostr-identities", android.content.Context.MODE_PRIVATE)
+            check(preferences.edit().putString(account.storageAccount, "AA==").commit())
+            try {
+                listener.onPostMessage(
+                    view, WebMessageCompat("""{"id":"unreadable-key","method":"getPublicKey"}"""), origin, true, reply,
+                )
+                assertEquals("This Nostr request could not be completed.", error())
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
     private fun withInstalledBridge(
         isCurrent: () -> Boolean,
         test: (Uri, WebView, AndroidNip07Bridge, WebViewCompat.WebMessageListener) -> Unit,
@@ -125,7 +185,7 @@ class AndroidNip07NativeMessageTest {
                 view: WebView, name: String, origins: Set<String>, callback: WebViewCompat.WebMessageListener,
             ) {
                 assertEquals("trustrootsAndroidNip07", name)
-                assertTrue(origins.contains("https://*.trustroots.org"))
+                assertEquals(setOf("https://trustroots.org", "https://www.trustroots.org", "https://hitchwiki.org", "https://www.hitchwiki.org"), origins)
                 listener = callback
             }
 
