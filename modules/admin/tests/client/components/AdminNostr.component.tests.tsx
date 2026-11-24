@@ -13,6 +13,7 @@ import {
   signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
+import http from '@/modules/core/client/api/http-client';
 
 vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
   default: () => null,
@@ -30,7 +31,46 @@ const note = {
   publishedAt: '2026-11-01T12:00:00.000Z',
 };
 
-afterEach(() => vi.resetAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.resetAllMocks();
+});
+
+it('publishes the service profile and lets an administrator retry a relay failure', async () => {
+  listNotes.mockResolvedValue([]);
+  const post = vi.spyOn(http, 'post');
+  post
+    .mockRejectedValueOnce({
+      response: { data: { message: 'Relay unavailable.' } },
+    })
+    .mockResolvedValueOnce({ data: {} });
+  render(<AdminNostr />);
+  await screen.findByText('No featured notes.');
+
+  const profile = within(
+    screen.getByRole('region', { name: 'Trustroots service identity' }),
+  );
+  const publish = profile.getByRole('button', {
+    name: 'Publish Trustroots profile',
+  });
+  fireEvent.click(publish);
+  expect(publish).toBeDisabled();
+  expect(await profile.findByRole('alert')).toHaveTextContent(
+    'Relay unavailable.',
+  );
+  expect(publish).toBeEnabled();
+
+  fireEvent.click(publish);
+  expect(profile.queryByRole('alert')).toBeNull();
+  expect(await profile.findByRole('status')).toHaveTextContent(
+    'Trustroots profile published.',
+  );
+  expect(publish).toBeEnabled();
+  expect(post.mock.calls).toEqual([
+    ['/api/admin/nostr/service-profile'],
+    ['/api/admin/nostr/service-profile'],
+  ]);
+});
 
 it('inserts a web link into selected text and retries a revision without publishing twice', async () => {
   const content = 'A [fictional](https://example.test/details) update.';

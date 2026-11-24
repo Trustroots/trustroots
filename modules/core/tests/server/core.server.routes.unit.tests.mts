@@ -5,7 +5,9 @@ import express, {
   type Response,
 } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
+import { generateSecretKey, getPublicKey, nip19 } from 'nostr-tools';
 import request from 'supertest';
+import { vi } from 'vitest';
 import mockModule from './../../../../testutils/server/mock-module.mts';
 
 type TribeRequest = Request & { tribe?: { slug: string }; user?: unknown };
@@ -93,6 +95,36 @@ describe('Core route table', function () {
       .expect(400);
     assert.deepEqual(response.body, { error: 'Valid username required.' });
     assert.equal(response.headers['access-control-allow-origin'], '*');
+  });
+
+  it('serves the service identity without looking up a member', async function () {
+    const current = generateSecretKey();
+    const legacy = generateSecretKey();
+    const client = request(await app());
+    let address = 0;
+    const lookup = () =>
+      client
+        .get('/.well-known/nostr.json?name=_')
+        .set('!~Passenger-Client-Address', `2001:db8:${++address}::1`);
+    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', nip19.nsecEncode(legacy));
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(current));
+    try {
+      await lookup().expect(200, { names: { _: getPublicKey(current) } });
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', undefined);
+      await lookup().expect(200, { names: { _: getPublicKey(legacy) } });
+      vi.stubEnv(
+        'TRUSTROOTS_NOSTR_SERVICE_NSEC',
+        nip19.npubEncode(getPublicKey(current)),
+      );
+      await lookup().expect(200, { names: {} });
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', 'invalid');
+      await lookup().expect(200, { names: {} });
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', undefined);
+      vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', undefined);
+      await lookup().expect(200, { names: {} });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('limits each public Nostr lookup independently and retains response headers', async function () {

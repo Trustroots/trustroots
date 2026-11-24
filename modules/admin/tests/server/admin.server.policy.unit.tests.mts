@@ -99,6 +99,7 @@ describe('Admin policy unit tests', () => {
     policies[0].allows.should.containDeep([
       { resources: '/api/admin/mongo', permissions: ['get'] },
       { resources: '/api/admin/nostr/featured-notes', permissions: ['post'] },
+      { resources: '/api/admin/nostr/service-profile', permissions: ['post'] },
       {
         resources: '/api/admin/nostr/featured-notes/:id',
         permissions: ['delete', 'put'],

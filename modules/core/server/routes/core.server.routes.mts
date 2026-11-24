@@ -11,6 +11,10 @@ import { getMapDefaultLocation } from '../controllers/map-default-location.serve
 import { listFeaturedNotes } from '../controllers/featured-nostr-notes.server.controller.mts';
 import { publicNip05MemberFilter } from '../services/nostr-identity.server.service.mts';
 import { getClientIpAddress } from '../services/client-ip.server.service.mts';
+import {
+  getNostrServiceSigner,
+  trustrootsNostrServiceName,
+} from '../services/nostr-service-signer.server.mts';
 
 /**
  * Module dependencies.
@@ -176,13 +180,19 @@ export default function (app: Application) {
   }, createNostrLookupLimit());
   nip05.get(function (req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
-    const User = mongoose.model<NostrUserRecord>('User');
     const rawName = req.query.name;
+    if (rawName === trustrootsNostrServiceName) {
+      const signer = getNostrServiceSigner();
+      return res.json({
+        names: signer ? { [trustrootsNostrServiceName]: signer.publicKey } : {},
+      });
+    }
     if (!authenticationService.isLegacyUsernameLookupValid(rawName)) {
       return res.status(400).send({
         error: 'Valid username required.',
       });
     }
+    const User = mongoose.model<NostrUserRecord>('User');
     const name = String(rawName).toLowerCase();
     User.findOne({
       ...publicNip05MemberFilter,

@@ -2,7 +2,14 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import sinon from 'sinon';
-import { finalizeEvent, generateSecretKey, nip19 } from 'nostr-tools';
+import {
+  finalizeEvent,
+  generateSecretKey,
+  nip19,
+  verifyEvent,
+} from 'nostr-tools';
+import { Relay } from 'nostr-tools/relay';
+import { vi } from 'vitest';
 import express from '../../../../config/lib/express.mts';
 import * as users from '../../../../testutils/server/data.server.testutil.mts';
 import { default as FeaturedNote } from '../../../core/server/models/featured-nostr-note.server.model.mts';
@@ -58,6 +65,43 @@ describe('Admin featured Nostr notes', () => {
 
   after(async () => {
     await users.clearDatabase();
+  });
+
+  it('publishes the domain profile with the service key for administrators only', async () => {
+    const route = '/api/admin/nostr/service-profile';
+    await support.post(route).set('X-Trustroots-Request', '1').expect(403);
+    const publishProfile = () =>
+      admin.post(route).set('X-Trustroots-Request', '1');
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', '');
+    try {
+      await publishProfile().expect(503);
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(author));
+      const connect = vi.spyOn(Relay.prototype, 'connect').mockResolvedValue();
+      const close = vi
+        .spyOn(Relay.prototype, 'close')
+        .mockImplementation(() => {});
+      const publish = vi
+        .spyOn(Relay.prototype, 'publish')
+        .mockResolvedValue('accepted');
+      const result = await publishProfile().expect(200);
+      const [profile] = publish.mock.calls[0]!;
+      assert.equal(result.body.id, profile.id);
+      assert.equal(verifyEvent(profile), true);
+      assert.equal(profile.pubkey, event.pubkey);
+      assert.equal(profile.kind, 0);
+      assert.deepEqual(JSON.parse(profile.content), {
+        name: 'Trustroots',
+        nip05: '_@trustroots.org',
+      });
+      assert.equal(connect.mock.calls.length, 1);
+      assert.equal(close.mock.calls.length, 1);
+      publish.mockRejectedValueOnce(new Error('relay unavailable'));
+      await publishProfile().expect(502);
+      assert.equal(close.mock.calls.length, 2);
+    } finally {
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    }
   });
 
   it('stores verified notes once, exposes only public fields and removes them', async () => {

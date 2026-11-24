@@ -3118,6 +3118,11 @@ const features = [
         ),
         apiRoute('POST', '/api/admin/nostr/featured-notes', source.adminServer),
         apiRoute(
+          'POST',
+          '/api/admin/nostr/service-profile',
+          source.adminServer,
+        ),
+        apiRoute(
           'PUT',
           '/api/admin/nostr/featured-notes/:id',
           source.adminServer,
@@ -3140,11 +3145,16 @@ const features = [
       'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
       'Administrators can publish a public note with a NIP-07 signer and feature it on the homepage.',
       'Administrators can insert a link and revise a published note at the same Nostr address.',
+      'Administrators can publish the Trustroots service profile.',
     ],
     relatedSpecs: [
       spec(
         'features/admin-moderation/admin-nostr.spec.ts',
         'administrators can feature and remove a published Nostr note',
+      ),
+      spec(
+        'features/admin-moderation/admin-nostr.spec.ts',
+        'administrators can publish the Trustroots service profile',
       ),
     ],
   },

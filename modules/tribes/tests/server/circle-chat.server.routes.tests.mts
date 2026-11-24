@@ -94,6 +94,11 @@ afterEach(() => {
 describe('Circle chat API', () => {
   const path = '/api/tribes/chat/hitchhikers';
 
+  beforeEach(() => {
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', undefined);
+    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', undefined);
+  });
+
   it('rejects guest access and prevents caches from storing a response', async () => {
     const app = chatApp();
     await app
@@ -166,15 +171,10 @@ describe('Circle chat API', () => {
       .post(path)
       .set('X-Test-Account-Id', 'another-fictional-account')
       .expect(400);
-    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', '');
-    try {
-      await app.get(path).expect(503);
-    } finally {
-      vi.unstubAllEnvs();
-    }
+    await app.get(path).expect(503);
   });
 
-  it('authenticates with the export key, publishes session attribution and reads the same room', async () => {
+  it('authenticates with the service key, publishes session attribution and reads the same room', async () => {
     const serviceKey = generateSecretKey();
     const servicePubkey = getPublicKey(serviceKey);
     const memberKey = generateSecretKey();
@@ -192,7 +192,7 @@ describe('Circle chat API', () => {
       makeEvent('Invalid timestamp', [topic], -1),
     ];
     const { authenticated, published, connections } = fakeRelay(events);
-    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', nip19.nsecEncode(serviceKey));
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(serviceKey));
     const app = chatApp({});
     const radioPath = '/api/tribes/chat/radio';
     const longestMessage = 'Fictional '.repeat(49) + 'chat post.';
@@ -334,22 +334,13 @@ describe('Circle chat API', () => {
     }
   });
 
-  it('returns a service error when the export signing key is unavailable', async () => {
-    const previous = process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC;
-    delete process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC;
-    try {
-      const app = chatApp({});
-      const result = await app.get(path).expect(503);
-      assert.equal(
-        result.body.message,
-        'Circle chat is temporarily unavailable.',
-      );
-      await app.post(path).send({ content: 'Fictional chat' }).expect(503, {
-        message: 'Circle chat is temporarily unavailable.',
-      });
-    } finally {
-      if (previous !== undefined)
-        process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC = previous;
-    }
+  it('returns a service error when the signing key is unavailable', async () => {
+    const app = chatApp({});
+    await app.get(path).expect(503, {
+      message: 'Circle chat is temporarily unavailable.',
+    });
+    await app.post(path).send({ content: 'Fictional chat' }).expect(503, {
+      message: 'Circle chat is temporarily unavailable.',
+    });
   });
 });
