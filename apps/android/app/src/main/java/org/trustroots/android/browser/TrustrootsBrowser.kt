@@ -26,6 +26,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -71,6 +73,8 @@ fun TrustrootsBrowser(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
+    val nostrSession = LocalBrowserNostrSession.current
+    val nostrScope = rememberCoroutineScope()
     val closeBrowser by rememberUpdatedState(onClose)
     var navigateBack by remember { mutableStateOf<() -> Unit>({ closeBrowser() }) }
     var externalURL by remember { mutableStateOf<BrowserLink?>(null) }
@@ -111,73 +115,86 @@ fun TrustrootsBrowser(
             )
         },
     ) { paddingValues ->
-        AndroidView(
-            factory = { browserContext ->
-                WebView(browserContext).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    // Keep the embedded site closer to its mobile-browser text size.
-                    settings.textZoom = EMBEDDED_SITE_TEXT_ZOOM_PERCENT
-                    settings.allowFileAccess = false
-                    settings.allowContentAccess = false
-                    settings.javaScriptCanOpenWindowsAutomatically = false
-                    settings.setGeolocationEnabled(false)
-                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                    settings.setSupportMultipleWindows(false)
-                    settings.safeBrowsingEnabled = true
-                    settings.userAgentString =
-                        "${settings.userAgentString} TrustrootsAndroid/0.1 native"
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView, url: String?) {
-                            applyEmbeddedBrowserStyleAfterLoad(view, url)
-                            browserEntryState.savedSnapshot = BrowserSnapshot(
-                                route.url,
-                                android.os.Bundle().also { view.saveState(it) },
-                            )
+        key(nostrSession) {
+            val nip07 = remember(nostrSession) { nostrSession?.let { AndroidNip07Bridge(it, nostrScope) } }
+            AndroidView(
+                factory = { browserContext ->
+                    WebView(browserContext).apply {
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        // Keep the embedded site closer to its mobile-browser text size.
+                        settings.textZoom = EMBEDDED_SITE_TEXT_ZOOM_PERCENT
+                        settings.allowFileAccess = false
+                        settings.allowContentAccess = false
+                        settings.javaScriptCanOpenWindowsAutomatically = false
+                        settings.setGeolocationEnabled(false)
+                        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        settings.setSupportMultipleWindows(false)
+                        settings.safeBrowsingEnabled = true
+                        settings.userAgentString =
+                            "${settings.userAgentString} TrustrootsAndroid/0.1 native"
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+                                nip07?.pageChanged()
+                            }
+
+                            override fun onPageCommitVisible(view: WebView, url: String) {
+                                nip07?.pageCommitted()
+                            }
+
+                            override fun onPageFinished(view: WebView, url: String?) {
+                                applyEmbeddedBrowserStyleAfterLoad(view, url)
+                                browserEntryState.savedSnapshot = BrowserSnapshot(
+                                    route.url,
+                                    android.os.Bundle().also { view.saveState(it) },
+                                )
+                            }
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView,
+                                request: WebResourceRequest,
+                            ): Boolean {
+                                val link = BrowserLink.parse(request.url.toString()) ?: return true
+                                if (link.canEmbed) return false
+                                externalURL = link
+                                return true
+                            }
                         }
-                        override fun shouldOverrideUrlLoading(
-                            view: WebView,
-                            request: WebResourceRequest,
-                        ): Boolean {
-                            val link = BrowserLink.parse(request.url.toString()) ?: return true
-                            if (link.canEmbed) return false
-                            externalURL = link
-                            return true
+                        nip07?.install(this)
+                        installEmbeddedBrowserStyle(this)
+                        applyBrowserSessionCookie(route.url, route.sessionCookie)
+                        val snapshot = browserEntryState.savedSnapshot
+                        val restored = when {
+                            snapshot == null -> null
+                            snapshot.routeURL != route.url -> null
+                            else -> restoreState(snapshot.browserState)
+                        }
+                        if (restored == null) {
+                            browserEntryState.savedSnapshot = null
+                            loadUrl(route.url)
+                        }
+                        navigateBack = {
+                            if (canGoBack()) goBack() else closeBrowser()
                         }
                     }
-                    installEmbeddedBrowserStyle(this)
-                    applyBrowserSessionCookie(route.url, route.sessionCookie)
-                    val snapshot = browserEntryState.savedSnapshot
-                    val restored = when {
-                        snapshot == null -> null
-                        snapshot.routeURL != route.url -> null
-                        else -> restoreState(snapshot.browserState)
-                    }
-                    if (restored == null) {
-                        browserEntryState.savedSnapshot = null
-                        loadUrl(route.url)
-                    }
-                    navigateBack = {
-                        if (canGoBack()) goBack() else closeBrowser()
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(contentPadding.horizontalInset())
-                .padding(contentPadding.bottomInset()),
-            onRelease = { released ->
-                browserEntryState.savedSnapshot = BrowserSnapshot(
-                    route.url,
-                    android.os.Bundle().also { released.saveState(it) },
-                )
-                released.stopLoading()
-                released.destroy()
-                // This AndroidView is not pooled; its sole view is released with this composition.
-                navigateBack = { closeBrowser() }
-            },
-        )
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(contentPadding.horizontalInset())
+                    .padding(contentPadding.bottomInset()),
+                onRelease = { released ->
+                    nip07?.pageChanged()
+                    browserEntryState.savedSnapshot = BrowserSnapshot(
+                        route.url,
+                        android.os.Bundle().also { released.saveState(it) },
+                    )
+                    released.stopLoading()
+                    released.destroy()
+                    // This AndroidView is not pooled; its sole view is released with this composition.
+                    navigateBack = { closeBrowser() }
+                },
+            )
+        }
     }
 }
 

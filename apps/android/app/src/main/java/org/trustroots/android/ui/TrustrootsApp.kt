@@ -63,6 +63,11 @@ import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
+import org.trustroots.android.browser.BrowserNostrSession
+import org.trustroots.android.browser.LocalBrowserNostrSession
+import org.trustroots.android.nostr.AndroidNostrKeys
+import org.trustroots.android.nostr.nostrAccountScope
+import org.trustroots.android.api.secureApiBaseURL
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
@@ -173,8 +178,15 @@ internal fun TrustrootsApp(
                 )
             }
         } else {
+            val nostrSession = remember(session.member.username, session.sessionId, apiBaseUrl, sessionViewModel) {
+                val scope = nostrAccountScope(secureApiBaseURL(apiBaseUrl), session.member.username)
+                BrowserNostrSession(AndroidNostrKeys(context.applicationContext, scope)) {
+                    sessionViewModel.canSignFor(session, apiBaseUrl)
+                }
+            }
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides shellGraphOwner,
+                LocalBrowserNostrSession provides nostrSession,
             ) {
               key(session.member.username) {
                 val activeSession = session

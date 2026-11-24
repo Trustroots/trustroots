@@ -74,7 +74,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
         element(labelled: "Messages", in: app).tap()
-        app.buttons["Open conversation"].tap()
+        openConversation(in: app, draft: draft)
         XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
         XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
         XCTAssertTrue(app.buttons["Send reply"].isEnabled)
@@ -94,7 +94,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
         app.buttons["Back"].tap()
         element(labelled: "Messages", in: app).tap()
-        app.buttons["Open conversation"].tap()
+        openConversation(in: app, draft: draft)
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
         XCTAssertTrue(draft.exists)
         XCTAssertFalse(app.buttons["Send reply"].isEnabled)
@@ -145,13 +145,154 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
     }
 
+    func testNostrLocalKeySurvivesSignOutAndRemovalKeepsProfileSeparate() throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-trustroots.apiServerURL", "http://127.0.0.1:\(port)",
+        ]
+        app.launch()
+        addTeardownBlock { [self] in
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInNatively(app)
+        openNostrAccount(app)
+
+        // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
+        // key removed so the journey is repeatable without touching profile links.
+        if app.buttons["Remove local key"].exists {
+            tapAccountButton(app.buttons["Remove local key"], in: app)
+            app.alerts.buttons["Remove"].tap()
+        }
+        let generate = app.buttons["Generate new key"]
+        tapAccountButton(generate, in: app)
+        let localKey = app.staticTexts["nostr-local-public-key"]
+        XCTAssertTrue(localKey.waitForExistence(timeout: 10))
+        let publicKey = localKey.label
+        XCTAssertTrue(publicKey.hasPrefix("npub1"))
+        XCTAssertTrue(app.staticTexts["No linked public key."].exists)
+        let link = app.buttons["Link local key to profile"]
+        tapAccountButton(link, in: app)
+        let unlink = app.buttons["Unlink profile key"]
+        XCTAssertTrue(unlink.waitForExistence(timeout: 10))
+        attachNostrSection(app, name: "Local Nostr key and linked profile key")
+
+        let signOut = app.buttons["Sign out"]
+        tapAccountButton(signOut, in: app)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+        app.terminate()
+        app.launch()
+        signInNatively(app)
+        openNostrAccount(app)
+        XCTAssertTrue(localKey.waitForExistence(timeout: 10))
+        XCTAssertEqual(localKey.label, publicKey)
+
+        let remove = app.buttons["Remove local key"]
+        tapAccountButton(remove, in: app)
+        XCTAssertTrue(app.alerts["Remove local Nostr key?"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(localKey.exists)
+        tapAccountButton(remove, in: app)
+        app.alerts.buttons["Remove"].tap()
+        XCTAssertTrue(generate.waitForExistence(timeout: 10))
+        XCTAssertFalse(localKey.exists)
+        XCTAssertTrue(unlink.exists)
+        attachNostrSection(app, name: "Local key removed without changing profile")
+        tapAccountButton(unlink, in: app)
+        XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Unlink"].tap()
+        XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
+        tapAccountButton(signOut, in: app)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
+    }
+
+    private func openNostrAccount(_ app: XCUIApplication) {
+        let account = app.buttons["gearshape.fill"]
+        XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(account.isHittable, app.debugDescription)
+        account.tap()
+        let keySection = app.staticTexts["Local public key (npub)"]
+        if !keySection.waitForExistence(timeout: 3), account.isHittable {
+            account.tap()
+        }
+        XCTAssertTrue(keySection.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
+        guard app.buttons["Menu"].waitForExistence(timeout: 2) else { return }
+        if !app.staticTexts["Local public key (npub)"].exists {
+            openNostrAccount(app)
+        }
+        tapAccountButton(app.buttons["Sign out"], in: app)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    private func tapAccountButton(_ button: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+        let account = app.scrollViews["account-scroll-view"]
+        XCTAssertTrue(account.exists, app.debugDescription)
+        // Account starts near the top. Later actions can leave the next button
+        // above or below the viewport, depending on how the key section shrank.
+        for _ in 0..<5 {
+            if button.isHittable { break }
+            let belowCenter = button.frame.midY >= account.frame.midY
+            let start = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.7 : 0.3))
+            let end = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.3 : 0.7))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(button.isHittable, app.debugDescription)
+        XCTAssertTrue(button.isEnabled, app.debugDescription)
+        button.tap()
+    }
+
+    private func attachNostrSection(_ app: XCUIApplication, name: String) {
+        let section = app.descendants(matching: .any)["nostr-key-section"]
+        XCTAssertTrue(section.exists)
+        let screenshot = XCTAttachment(screenshot: section.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     private func element(labelled label: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func openConversation(in app: XCUIApplication, draft: XCUIElement) {
+        let open = app.buttons["Open conversation"]
+        XCTAssertTrue(open.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(open, in: app)
+        open.tap()
+        if !draft.waitForExistence(timeout: 3), open.isHittable {
+            open.tap()
+        }
+        XCTAssertTrue(draft.waitForExistence(timeout: 15), app.debugDescription)
     }
 
     private func signIn(_ app: XCUIApplication) {
         let username = app.descendants(matching: .any)["pilot-username"]
         let password = app.descendants(matching: .any)["pilot-password"]
+        signIn(app, username: username, password: password)
+    }
+
+    private func signInNatively(_ app: XCUIApplication) {
+        signIn(app, username: app.textFields["Username or email"], password: app.secureTextFields["Password"])
+        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
+        let passwordPrompt = app.sheets["Save Password?"]
+        if passwordPrompt.waitForExistence(timeout: 5) {
+            let dismiss = passwordPrompt.buttons["Not Now"]
+            let center = dismiss.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            center.tap()
+            if !passwordPrompt.waitForNonExistence(timeout: 2) {
+                center.tap()
+            }
+            XCTAssertTrue(passwordPrompt.waitForNonExistence(timeout: 5), app.debugDescription)
+        }
+    }
+
+    private func signIn(_ app: XCUIApplication, username: XCUIElement, password: XCUIElement) {
         enterText("pilot-member", into: username, in: app)
         enterText("example-password", into: password, in: app, secure: true)
         let submit = app.buttons["Sign in"]
@@ -162,8 +303,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertEqual(
             XCTWaiter.wait(for: [credentialsEntered], timeout: 10),
             .completed,
-            "The pilot should enable sign in after receiving both credentials."
+            "Sign in should be enabled after receiving both credentials."
         )
+        reveal(submit, in: app)
         submit.tap()
     }
 
@@ -181,7 +323,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         // Compose exposes the full field as a text view. Focus its leading text area.
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).tap()
-        field.typeText(text)
+        if field.elementType == .textView {
+            let keyboard = app.keyboards.firstMatch
+            if !keyboard.waitForExistence(timeout: 2) {
+                field.tap()
+            }
+            XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+            // The focused UIKit input is outside the Compose accessibility element.
+            app.typeText(text)
+        } else {
+            field.typeText(text)
+        }
         let entered = XCTNSPredicateExpectation(
             predicate: NSPredicate { object, _ in
                 guard let element = object as? XCUIElement,
@@ -228,6 +380,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         }
         let signOut = app.buttons["Sign out"]
         guard signOut.waitForExistence(timeout: 2) else { return }
+        reveal(signOut, in: app)
         signOut.tap()
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }

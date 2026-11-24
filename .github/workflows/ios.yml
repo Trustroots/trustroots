@@ -116,3 +116,11 @@ jobs:
           path: ${{ runner.temp }}/compose-offline-screenshots/*.png
           if-no-files-found: error
           retention-days: 7
+      - name: Upload iOS test results and section screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ios-test-results
+          path: ${{ runner.temp }}/TrustrootsTests.xcresult
+          if-no-files-found: ignore
+          retention-days: 7

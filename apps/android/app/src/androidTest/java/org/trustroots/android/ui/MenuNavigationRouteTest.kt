@@ -51,6 +51,15 @@ class MenuNavigationRouteTest {
         assertEquals("Nostroots", privateSite.title)
         assertEquals("https://nos.trustroots.org/", privateSite.url)
         assertEquals("fictional=session", privateSite.sessionCookie)
+
+        val radio = browserRouteFor(
+            MenuBrowserVisit(MenuBrowserDestination.Radio, 6L),
+            "fictional=session",
+            context,
+        )
+        assertEquals("Radio", radio.title)
+        assertEquals("https://www.trustroots.org/circles/radio", radio.url)
+        assertNull(radio.sessionCookie)
     }
 
     @Test fun browserRouteKeyContainsNoTitleUrlOrCredentialPayload() {

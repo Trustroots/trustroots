@@ -21,6 +21,7 @@ class MenuNavigationTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun menuMatchesPhoneWebNavigationWithoutSignOut() {
+        val openedRadio = AtomicBoolean(false)
         compose.setContent {
             MenuScreen(
                 session = MemberSession("connect.sid=test", MobileMember("river-otter", "River Otter")),
@@ -33,8 +34,11 @@ class MenuNavigationTest {
                 openCircles = {},
                 openAccount = {},
                 openBrowser = {},
+                openRadio = { openedRadio.set(true) },
             )
         }
+        compose.onNodeWithText("Radio").performScrollTo().performClick()
+        assertTrue(openedRadio.get())
         compose.onNodeWithText("Find people").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Host").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Contacts").performScrollTo().assertIsDisplayed()

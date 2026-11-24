@@ -317,6 +317,7 @@ struct MemberProfile: Decodable {
     let email: String?
     let emailTemporary: String?
     let newsletter: Bool?
+    let nostrNpub: String?
     let member: [ProfileCircleMembership]?
 
     enum CodingKeys: String, CodingKey {
@@ -337,6 +338,7 @@ struct MemberProfile: Decodable {
         case email
         case emailTemporary
         case newsletter
+        case nostrNpub
         case member
     }
 
@@ -359,6 +361,7 @@ struct MemberProfile: Decodable {
         email = try container.decodeIfPresent(String.self, forKey: .email)
         emailTemporary = try container.decodeIfPresent(String.self, forKey: .emailTemporary)
         newsletter = try container.decodeIfPresent(Bool.self, forKey: .newsletter)
+        nostrNpub = try container.decodeIfPresent(String.self, forKey: .nostrNpub)
         member = try container.decodeIfPresent([ProfileCircleMembership].self, forKey: .member)
     }
 }
@@ -974,11 +977,12 @@ final class TrustrootsAPI {
         )
     }
 
-    func profile(serverURLString: String, username: String) async throws -> MemberProfile {
+    func profile(serverURLString: String, username: String, allowSaved: Bool = true) async throws -> MemberProfile {
         struct ProfileResponse: Decodable { let profile: MemberProfile }
         let response: ProfileResponse = try await get(
             serverURLString: serverURLString,
-            path: "api/mobile/v0/profiles/\(username)"
+            path: "api/mobile/v0/profiles/\(username)",
+            useOfflineCache: allowSaved
         )
         return response.profile
     }
@@ -1223,6 +1227,51 @@ final class TrustrootsAPI {
         } catch {
             throw TrustrootsAPIError.requestFailed(error.localizedDescription)
         }
+    }
+
+    func nostrProfileChallenge(serverURLString: String, npub: String) async throws -> [String: Any] {
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/profile/nostr/challenge",
+            method: "POST", body: ["nostrNpub": npub]
+        )
+        guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let event = response["event"] as? [String: Any] else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        return event
+    }
+
+    func updateNostrProfile(serverURLString: String, npub: String?, proof: [String: Any]?) async throws -> MemberProfile {
+        var body: [String: Any] = ["nostrNpub": npub ?? ""]
+        if let proof { body["nostrProof"] = proof }
+        let data = try await writeNostrProfile(
+            serverURLString: serverURLString, path: "api/mobile/v0/profile", method: "PUT", body: body
+        )
+        return try decoder.decode(MemberProfile.self, from: data)
+    }
+
+    private func writeNostrProfile(
+        serverURLString: String, path: String, method: String, body: [String: Any]
+    ) async throws -> Data {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent(path))
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let http = response as? HTTPURLResponse else { throw TrustrootsAPIError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            struct Failure: Decodable { let message: String? }
+            if let message = (try? decoder.decode(Failure.self, from: data))?.message {
+                throw TrustrootsAPIError.serverMessage(message)
+            }
+            throw TrustrootsAPIError.serverMessage("The profile key could not be updated.")
+        }
+        return data
     }
 
     func updateProfile(

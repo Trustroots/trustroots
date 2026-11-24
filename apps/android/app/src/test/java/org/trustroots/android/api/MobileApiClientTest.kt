@@ -48,6 +48,28 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun rejectsMissingKeyFieldsAndOtherMembersDuringNostrProfileOperations() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), accessToken = "example-access")
+        for (profile in listOf(
+            """{"username":"quiet-fox"}""",
+            """{"username":"another-member","nostrNpub":null}""",
+        )) {
+            val (result, request) = withApiResponse(200, """{"profile":$profile}""") { baseURL ->
+                runBlocking { MobileApiClient(baseURL).linkedNostrKey(session) }
+            }
+            assertTrue(result.exceptionOrNull() is IllegalStateException)
+            assertEquals("GET /api/mobile/v0/profiles/quiet-fox HTTP/1.1", request.line)
+        }
+        val (result, request) = withApiResponse(200, """{"username":"another-member","nostrNpub":null}""") { baseURL ->
+            runCatching { runBlocking { MobileApiClient(baseURL).updateNostrProfile(session, null, null) } }
+        }
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertEquals("PUT /api/mobile/v0/profile HTTP/1.1", request.line)
+        assertEquals("", JSONObject(request.body).getString("nostrNpub"))
+        assertFalse(JSONObject(request.body).has("nostrProof"))
+    }
+
+    @Test
     fun preservesTheBearerResourceContractForEveryMemberFeature() {
         val routes = listOf(
             Triple("/api/mobile/v0/auth/signout", "POST", "/api/mobile/v0/auth/signout"),

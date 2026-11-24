@@ -112,6 +112,44 @@ class AppSessionViewModelTest {
     }
 
     @Test
+    fun browserSigningRequiresTheActiveBearerSessionAndItsOriginalBackend() = withScope { scope ->
+        val origin = "https://one.example.test"
+        val otherOrigin = "https://two.example.test"
+        val first = session().copy(accessToken = "first-token")
+        val model = settledModel(scope, FakeOperations().apply { restoredSession = first }, origin)
+        assertTrue(model.canSignFor(first, origin))
+        assertFalse(model.canSignFor(first, otherOrigin))
+        assertFalse(model.canSignFor(first.copy(accessToken = null), origin))
+        assertFalse(model.canSignFor(first.copy(member = MobileMember("other-member", "Other Member")), origin))
+
+        model.onEvent(AppSessionEvent.BackendChanged(otherOrigin))
+        assertFalse(model.canSignFor(first, origin))
+        assertFalse(model.canSignFor(first, otherOrigin))
+
+        val second = first.copy(accessToken = "second-token")
+        model.onEvent(AppSessionEvent.SignedIn(second, otherOrigin))
+        assertFalse(model.canSignFor(first, otherOrigin))
+        assertTrue(model.canSignFor(second, otherOrigin))
+        model.onEvent(AppSessionEvent.SignedOut(AppSessionSource.from(second, otherOrigin)))
+        assertFalse(model.canSignFor(second, otherOrigin))
+    }
+
+    @Test
+    fun browserSigningStaysPausedWhenRestorationCompletesForThePreviousBackend() = withScope { scope ->
+        val origin = "https://one.example.test"
+        val otherOrigin = "https://two.example.test"
+        val restored = CompletableDeferred<MemberSession?>()
+        val member = session().copy(accessToken = "first-token")
+        val model = settledModel(scope, FakeOperations().apply { loadAction = { restored.await() } }, origin)
+        model.onEvent(AppSessionEvent.BackendChanged(otherOrigin))
+        restored.complete(member)
+
+        assertEquals(member, model.state.value.session)
+        assertFalse(model.canSignFor(member, origin))
+        assertFalse(model.canSignFor(member, otherOrigin))
+    }
+
+    @Test
     fun backendChangeNormalisesTheActiveIdentityBeforeAcceptingSignIn() = withScope { scope ->
         val operations = FakeOperations()
         val model = settledModel(scope, operations, "https://first.example.invalid")

@@ -1,0 +1,528 @@
+package org.trustroots.android.nostr
+
+import android.app.Activity
+import android.app.KeyguardManager
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.content.SharedPreferences
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.ActivityResultRegistryOwner
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.LocalTransportFixture
+import org.trustroots.android.ui.account.NostrKeyEntry
+
+@RunWith(AndroidJUnit4::class)
+class NostrKeyJourneyTest {
+    @get:Rule val compose = createComposeRule()
+
+    @Test fun replaceAndUnlinkAreSeparateFromLocalRemoval(): Unit = ServerSocket(0).use { server ->
+        val username = "test-key-member"
+        val backend = "http://127.0.0.1:${server.localPort}"
+        val profile = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+        keys.remove()
+        val responder = thread(isDaemon = true) {
+            var linkedKey: String? = profile
+            val challenge = JSONObject().put("kind", 27235).put("created_at", System.currentTimeMillis() / 1000)
+                .put("content", "").put("tags", JSONArray()
+                    .put(JSONArray().put("u").put("$backend/api/users"))
+                    .put(JSONArray().put("method").put("PUT"))
+                    .put(JSONArray().put("challenge").put("a".repeat(64))))
+            repeat(4) {
+                runCatching { server.accept() }.getOrNull()?.use { socket ->
+                    val reader = socket.getInputStream().bufferedReader()
+                    val request = reader.readLine().orEmpty()
+                    var length = 0
+                    while (true) {
+                        val line = reader.readLine()
+                        if (line.isNullOrEmpty()) break
+                        if (line.startsWith("Content-Length:", true)) length = line.substringAfter(':').trim().toInt()
+                    }
+                    val input = CharArray(length)
+                    var offset = 0
+                    while (offset < length) {
+                        val count = reader.read(input, offset, length - offset)
+                        if (count < 0) break
+                        offset += count
+                    }
+                    val current = JSONObject().put("username", username)
+                    val response = when {
+                        request.startsWith("POST /api/mobile/v0/profile/nostr/challenge ") ->
+                            JSONObject().put("event", challenge)
+                        request.startsWith("PUT /api/mobile/v0/profile ") -> {
+                            val update = JSONObject(input.concatToString())
+                            linkedKey = update.getString("nostrNpub").ifEmpty { null }
+                            if (linkedKey != null) {
+                                val proof = update.getJSONObject("nostrProof")
+                                check(proof.getString("sig").length == 128)
+                                check(proof.getJSONArray("tags").toString() == challenge.getJSONArray("tags").toString())
+                            }
+                            current.put("nostrNpub", linkedKey ?: JSONObject.NULL)
+                        }
+                        else -> JSONObject().put("profile", current.put("nostrNpub", linkedKey))
+                    }
+                    val body = response.toString().encodeToByteArray()
+                    socket.getOutputStream().apply {
+                        write("HTTP/1.1 200 OK\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".encodeToByteArray())
+                        write(body)
+                    }
+                }
+            }
+        }
+        try {
+            val api = MobileApiClient(backend)
+            val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
+            compose.setContent { NostrKeyEntry(api, session, enabled = true) }
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Generate new key")
+            compose.onNodeWithText("Generate new key").performScrollTo().performClick()
+            awaitText("Copy public key")
+            awaitText(profile)
+            val replacement = compose.onNode(hasText("Replace profile key") and hasClickAction())
+            replacement.performScrollTo().performClick()
+            compose.onNodeWithText("Cancel").performClick()
+            compose.onNodeWithText(profile).performScrollTo().assertIsDisplayed()
+            replacement.performScrollTo().performClick()
+            replacement.performClick()
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(profile).fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithText("Remove local key").performScrollTo().performClick()
+            compose.onNodeWithText("Cancel").performClick()
+            compose.onNodeWithText("Copy public key").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Remove local key").performScrollTo().performClick()
+            compose.onNode(hasText("Remove local key") and hasClickAction()).performClick()
+            awaitText("Generate new key")
+            val unlink = compose.onNode(hasText("Unlink profile key") and hasClickAction())
+            unlink.performScrollTo().performClick()
+            unlink.performClick()
+            awaitText("No linked public key.")
+        } finally {
+            keys.remove()
+            server.close()
+            responder.join(1_000)
+        }
+    }
+
+    @Test fun importsAndCopiesALocalKeyAndRetriesRefusedProfileLinking() {
+        val username = "test-import-member"
+        val publicKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+        val writes = AtomicInteger()
+        val backendURL = AtomicReference<String>()
+        LocalTransportFixture { request ->
+            val member = JSONObject().put("username", username).put("nostrNpub", JSONObject.NULL)
+            when (request.method to request.path) {
+                "GET" to "/api/mobile/v0/profiles/$username" ->
+                    LocalTransportFixture.Response(JSONObject().put("profile", member).toString())
+                "POST" to "/api/mobile/v0/profile/nostr/challenge" -> {
+                    val challenge = JSONObject().put("kind", 27235).put("created_at", System.currentTimeMillis() / 1000)
+                        .put("content", "").put("tags", JSONArray()
+                            .put(JSONArray().put("u").put("${backendURL.get()}/api/users"))
+                            .put(JSONArray().put("method").put("PUT"))
+                            .put(JSONArray().put("challenge").put("a".repeat(64))))
+                    LocalTransportFixture.Response(JSONObject().put("event", challenge).toString())
+                }
+                "PUT" to "/api/mobile/v0/profile" -> when (writes.incrementAndGet()) {
+                    1 -> LocalTransportFixture.Response("{}", status = 403)
+                    2 -> LocalTransportFixture.Response("{}", status = 503)
+                    else -> LocalTransportFixture.Response(member.put("nostrNpub", publicKey).toString())
+                }
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.use { fixture ->
+            val backend = fixture.baseURL
+            backendURL.set(backend)
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val account = nostrAccountScope(backend, username)
+            val keys = AndroidNostrKeys(context, account)
+            try {
+                val api = MobileApiClient(backend)
+                val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
+                compose.setContent { NostrKeyEntry(api, session, enabled = true) }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText("Import private key")
+                awaitText("No linked public key.")
+                val existingKey = keys.generate()
+                compose.onNodeWithText("Generate new key").performScrollTo().performClick()
+                awaitText("The local Nostr key could not be accessed.")
+                assertEquals(existingKey, AndroidNostrKeys(context, account).publicKey())
+                keys.remove()
+
+                val field = compose.onNode(hasSetTextAction())
+                val importButton = compose.onNodeWithText("Import private key")
+                field.performTextReplacement("x".repeat(129))
+                importButton.assertIsNotEnabled()
+                field.performTextReplacement("not-a-private-key")
+                importButton.performScrollTo().performClick()
+                awaitText("Enter a valid nsec or 64-character private key.")
+                field.performTextReplacement("0".repeat(63) + "1")
+                importButton.performScrollTo().performClick()
+                awaitText("Copy public key")
+                compose.onNodeWithText("Copy public key").performScrollTo().performClick()
+                compose.runOnIdle {
+                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                    assertEquals(publicKey, clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+                }
+                if (!context.getSystemService(KeyguardManager::class.java).isDeviceSecure) {
+                    compose.onNodeWithText("Back up private key").performScrollTo().performClick()
+                    awaitText("Set up a device screen lock to back up your Nostr key.")
+                }
+                val link = compose.onNodeWithText("Link local key to profile")
+                for (message in listOf(
+                    "The profile update was refused. This public key may already be linked to another member.",
+                    "The profile key could not be updated. Please try again.",
+                )) {
+                    link.performScrollTo().performClick()
+                    awaitText(message)
+                }
+                link.performScrollTo().performClick()
+                awaitText("Unlink profile key")
+                assertEquals(3, writes.get())
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
+    @Test fun dropsStaleProfileLinkClicksAndNeverSendsAnUnprovenWrite() {
+        val username = "test-guarded-profile-link"
+        val challenges = AtomicInteger()
+        val writes = AtomicInteger()
+        LocalTransportFixture { request ->
+            when (request.method to request.path) {
+                "GET" to "/api/mobile/v0/profiles/$username" -> {
+                    val profile = JSONObject().put("username", username).put("nostrNpub", JSONObject.NULL)
+                    LocalTransportFixture.Response(JSONObject().put("profile", profile).toString())
+                }
+                "POST" to "/api/mobile/v0/profile/nostr/challenge" -> {
+                    challenges.incrementAndGet()
+                    LocalTransportFixture.Response("{}")
+                }
+                "PUT" to "/api/mobile/v0/profile" -> {
+                    writes.incrementAndGet()
+                    LocalTransportFixture.Response("{}", status = 503)
+                }
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.use { fixture ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val keys = AndroidNostrKeys(context, nostrAccountScope(fixture.baseURL, username))
+            val registry = CredentialResultRegistry()
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = registry
+            }
+            try {
+                keys.generate()
+                val api = MobileApiClient(fixture.baseURL)
+                val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
+                compose.setContent {
+                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                        NostrKeyEntry(api, session, enabled = true) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                    }
+                }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText("No linked public key.")
+                awaitText("Link local key to profile")
+                val link = compose.onNodeWithText("Link local key to profile")
+                link.performScrollTo()
+                val startLink = requireNotNull(link.fetchSemanticsNode().config[SemanticsActions.OnClick].action)
+                compose.onNodeWithText("Back up private key").performScrollTo().performClick()
+                link.assertIsNotEnabled()
+                compose.runOnIdle {
+                    startLink()
+                    registry.respond(Activity.RESULT_CANCELED)
+                }
+                assertEquals(0, challenges.get())
+                compose.runOnIdle {
+                    startLink()
+                    startLink()
+                }
+                awaitText("The profile key could not be updated. Please try again.")
+                assertEquals(1, challenges.get())
+                assertEquals(0, writes.get())
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
+    @Test fun showsUnavailableProfileAndLocalKeyErrors() {
+        val username = "test-unavailable-key-member"
+        LocalTransportFixture { LocalTransportFixture.Response("{}", status = 503) }.use { fixture ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val scope = nostrAccountScope(fixture.baseURL, username)
+            val keys = AndroidNostrKeys(context, scope)
+            val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+            check(preferences.edit().putString(scope.storageAccount, "AA==").commit())
+            try {
+                val api = MobileApiClient(fixture.baseURL)
+                val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
+                compose.setContent { NostrKeyEntry(api, session, enabled = true) }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText("Profile key unavailable.")
+                awaitText("The local Nostr key could not be accessed.")
+                compose.onNodeWithText("Back up private key").assertDoesNotExist()
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
+    @Test fun backupRequiresCredentialApprovalAndHidesTheSecretWhenRequested() {
+        val username = "test-backup-key-member"
+        val remoteKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+        val profile = JSONObject().put("username", username).put("nostrNpub", remoteKey)
+        LocalTransportFixture { request ->
+            check(request.method == "GET" && request.path == "/api/users/$username")
+            LocalTransportFixture.Response(profile.toString())
+        }.use { fixture ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val scope = nostrAccountScope(fixture.baseURL, username)
+            val keys = AndroidNostrKeys(context, scope)
+            val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+            val registry = CredentialResultRegistry()
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = registry
+            }
+            val lifecycleOwner = object : LifecycleOwner {
+                override val lifecycle = LifecycleRegistry(this)
+            }
+            val holdBackupRead = AtomicBoolean()
+            val readingBackup = CountDownLatch(1)
+            val releaseBackup = CountDownLatch(1)
+            val pausedPreferences = object : SharedPreferences by preferences {
+                override fun getString(key: String?, defValue: String?): String? {
+                    if (key == scope.storageAccount && holdBackupRead.compareAndSet(true, false)) {
+                        readingBackup.countDown()
+                        check(releaseBackup.await(25, TimeUnit.SECONDS))
+                    }
+                    return preferences.getString(key, defValue)
+                }
+            }
+            val enabled = mutableStateOf(true)
+            try {
+                val localKey = keys.import("0".repeat(63) + "2")
+                val backup = requireNotNull(keys.backup())
+                val record = requireNotNull(preferences.getString(scope.storageAccount, null))
+                val api = MobileApiClient(fixture.baseURL)
+                val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+                compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
+                compose.setContent {
+                    val activityContext = LocalContext.current
+                    val keyContext = remember(activityContext) { withNostrPreferences(activityContext, pausedPreferences) }
+                    CompositionLocalProvider(
+                        LocalActivityResultRegistryOwner provides owner,
+                        LocalLifecycleOwner provides lifecycleOwner,
+                        LocalContext provides keyContext,
+                    ) {
+                        NostrKeyEntry(api, session, enabled.value) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                    }
+                }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText(remoteKey)
+                awaitText(localKey)
+                compose.onNodeWithText("Replace profile key").assertDoesNotExist()
+                compose.onNodeWithText("Unlink profile key").assertDoesNotExist()
+                val reveal = compose.onNodeWithText("Back up private key")
+                reveal.performScrollTo().performClick()
+                compose.onNodeWithText("Remove local key").assertIsNotEnabled()
+                compose.runOnIdle { registry.respond(Activity.RESULT_CANCELED) }
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle {
+                    check(preferences.edit().putString(scope.storageAccount, "AA==").commit())
+                    registry.respond(Activity.RESULT_OK)
+                }
+                awaitText("The local Nostr key could not be accessed.")
+                compose.onNodeWithText(backup).assertDoesNotExist()
+                check(preferences.edit().putString(scope.storageAccount, record).commit())
+
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle { registry.respond(Activity.RESULT_OK) }
+                awaitText(backup)
+                compose.onNodeWithText("Hide private key").performScrollTo().performClick()
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle {
+                    holdBackupRead.set(true)
+                    registry.respond(Activity.RESULT_OK)
+                }
+                compose.waitUntil(15_000) { readingBackup.count == 0L }
+                compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED }
+                releaseBackup.countDown()
+                compose.waitUntil(10_000) {
+                    compose.onAllNodesWithText("Back up private key").fetchSemanticsNodes().any {
+                        !it.config.contains(SemanticsProperties.Disabled)
+                    }
+                }
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
+                compose.runOnIdle { enabled.value = false }
+                compose.onNodeWithText("Nostr key").assertIsNotEnabled()
+                compose.onNodeWithText("Copy public key").assertDoesNotExist()
+            } finally {
+                releaseBackup.countDown()
+                keys.remove()
+            }
+        }
+    }
+
+    private class CredentialResultRegistry : ActivityResultRegistry() {
+        private var pendingCode: Int? = null
+
+        override fun <I, O> onLaunch(
+            requestCode: Int,
+            contract: ActivityResultContract<I, O>,
+            input: I,
+            options: ActivityOptionsCompat?,
+        ) {
+            assertEquals("trustroots.test.CREDENTIAL", (input as Intent).action)
+            pendingCode = requestCode
+        }
+
+        fun respond(status: Int) {
+            val requestCode = requireNotNull(pendingCode)
+            pendingCode = null
+            check(dispatchResult(requestCode, status, null))
+        }
+    }
+
+    @Test fun doesNotApplyACredentialResultToARecreatedKeyDialog() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val backend = "http://127.0.0.1:1"
+        val username = "test-recreated-backup"
+        val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+        val registry = CredentialResultRegistry()
+        val owner = object : ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        val restoration = StateRestorationTester(compose)
+        try {
+            keys.generate()
+            val backup = requireNotNull(keys.backup())
+            val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+            val api = MobileApiClient(backend)
+            restoration.setContent {
+                CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                    NostrKeyEntry(api, session, enabled = true) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                }
+            }
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Back up private key")
+            compose.onNodeWithText("Back up private key").performScrollTo().performClick()
+
+            restoration.emulateSavedInstanceStateRestore()
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Back up private key")
+            compose.runOnIdle { registry.respond(Activity.RESULT_OK) }
+
+            compose.onNodeWithText("Back up private key").assertIsEnabled()
+            compose.onNodeWithText(backup).assertDoesNotExist()
+        } finally {
+            keys.remove()
+        }
+    }
+
+    @Test fun disablesTheKeyInputsWhileAKeyWriteIsPending() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val backend = "http://127.0.0.1:1"
+        val username = "test-pending-key-write"
+        val account = nostrAccountScope(backend, username)
+        val keys = AndroidNostrKeys(context, account)
+        val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+        val checkingForExistingKey = CountDownLatch(1)
+        val continueWrite = CountDownLatch(1)
+        val controlledPreferences = object : SharedPreferences by preferences {
+            override fun contains(key: String?): Boolean {
+                if (key == account.storageAccount) {
+                    checkingForExistingKey.countDown()
+                    check(continueWrite.await(25, TimeUnit.SECONDS))
+                }
+                return preferences.contains(key)
+            }
+        }
+        try {
+            val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+            val api = MobileApiClient(backend)
+            compose.setContent {
+                val activityContext = LocalContext.current
+                val wrapped = remember(activityContext) { withNostrPreferences(activityContext, controlledPreferences) }
+                CompositionLocalProvider(LocalContext provides wrapped) {
+                    NostrKeyEntry(api, session, enabled = true)
+                }
+            }
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Generate new key")
+            compose.onNode(hasSetTextAction()).performTextReplacement("0".repeat(63) + "1")
+            compose.onNodeWithText("Generate new key").performScrollTo().performClick()
+            compose.waitUntil(15_000) { checkingForExistingKey.count == 0L }
+
+            compose.onNodeWithText("Private key (nsec or hex)").assertIsNotEnabled()
+            compose.onNodeWithText("Import private key").assertIsNotEnabled()
+            compose.onNodeWithText("Generate new key").assertIsNotEnabled()
+
+            continueWrite.countDown()
+            awaitText("Copy public key")
+        } finally {
+            continueWrite.countDown()
+            keys.remove()
+        }
+    }
+
+    private fun withNostrPreferences(context: Context, preferences: SharedPreferences): Context =
+        object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                if (name == "nostr-identities") preferences else super.getSharedPreferences(name, mode)
+        }
+
+    private fun awaitText(text: String) {
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    }
+}

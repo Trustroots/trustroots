@@ -249,6 +249,7 @@ dependencies {
     releaseImplementation("org.unifiedpush.android:embedded-fcm-distributor:3.1.0")
     implementation("androidx.webkit:webkit:1.17.1")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.85")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
