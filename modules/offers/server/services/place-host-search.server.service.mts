@@ -1,4 +1,10 @@
-import { differenceInYears, subMonths } from 'date-fns';
+import {
+  addYears,
+  compareAsc,
+  differenceInCalendarYears,
+  subMonths,
+  subYears,
+} from 'date-fns';
 import type { PipelineStage, Types } from 'mongoose';
 import {
   userMiniProjection,
@@ -20,6 +26,19 @@ type SearchAggregate = (
 ) => Promise<PlaceHostSearchDocument[]>;
 
 const pageSize = 30;
+
+function ageInYears(now: Date, birthdate: Date): number {
+  const years = differenceInCalendarYears(now, birthdate);
+  const direction = Math.sign(years);
+  const dayOrder = Math.sign(now.getDate() - birthdate.getDate());
+  // Anchor from the larger day of the month so February 29 clamps to
+  // February 28 at the same time of day in a non-leap year.
+  const anniversaryOrder =
+    dayOrder === -1
+      ? compareAsc(now, addYears(birthdate, years))
+      : compareAsc(subYears(now, years), birthdate);
+  return anniversaryOrder === -direction ? years - direction : years;
+}
 
 const countPublicExperiences: PipelineStage[] = [
   {
@@ -128,7 +147,7 @@ export async function listPlaceHosts(
     .map(({ user: { birthdate, ...user }, ...offer }) => ({
       ...offer,
       user,
-      ...(birthdate && { age: differenceInYears(now, birthdate) }),
+      ...(birthdate && { age: ageInYears(now, birthdate) }),
     }));
 
   if (results.length > pageSize) {
