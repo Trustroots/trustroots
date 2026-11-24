@@ -133,7 +133,7 @@ describe('<MapLibreMap />', () => {
     const onMoveStart = vi.fn();
     const onMove = vi.fn();
     const onMoveEnd = vi.fn();
-    renderMap({ onMoveStart, onMove, onMoveEnd });
+    const { container } = renderMap({ onMoveStart, onMove, onMoveEnd });
 
     act(() => glProps.onMoveStart!(target));
     act(() => glProps.onMove!(target));
@@ -142,6 +142,8 @@ describe('<MapLibreMap />', () => {
     act(() => glProps.onMoveEnd!(target));
     act(() => glProps.onMoveEnd!(target));
 
+    expect(container.firstChild).toHaveAttribute('data-map-latitude', '51');
+    expect(container.firstChild).toHaveAttribute('data-map-zoom', '5');
     expect(onMoveStart).toHaveBeenCalled();
     expect(onMove).toHaveBeenCalledWith(view, bounds);
     expect(onMoveEnd.mock.calls.map(([, , dragged]) => dragged)).toEqual([

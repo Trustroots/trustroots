@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import React, { useEffect, useImperativeHandle, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import ReactMapGL, {
   Layer,
   Marker,
@@ -117,6 +117,7 @@ export default function MapLibreMap(props: MapProps) {
   const { view, layers = [], scrollZoom = true } = props;
   const mapRef = useRef<MapRef>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const [settled, setSettled] = useState(view);
   const appliedView = useRef(view);
   const dragged = useRef(false);
   const hovered = useRef<MapGeoJSONFeature | null>(null);
@@ -210,6 +211,9 @@ export default function MapLibreMap(props: MapProps) {
       className={cn(props.className, 'tw:map-scale')}
       aria-hidden={props['aria-hidden']}
       style={props.style}
+      data-map-latitude={settled.latitude}
+      data-map-longitude={settled.longitude}
+      data-map-zoom={settled.zoom}
     >
       <ReactMapGL
         ref={mapRef}
@@ -245,6 +249,7 @@ export default function MapLibreMap(props: MapProps) {
           props.onMove?.(viewOf(target), boundsOf(target));
         }}
         onMoveEnd={({ target }) => {
+          setSettled(viewOf(target));
           props.onMoveEnd?.(viewOf(target), boundsOf(target), dragged.current);
           dragged.current = false;
         }}

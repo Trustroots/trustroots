@@ -167,6 +167,10 @@ describe('<LeafletMap />', () => {
     );
     expect(map.getCenter()).toEqual(L.latLng(1, 2));
     expect(map.getZoom()).toBe(4);
+    expect(document.querySelector('[data-map-zoom]')).toHaveAttribute(
+      'data-map-zoom',
+      '3',
+    );
 
     act(() =>
       ref.current!.flyTo({ latitude: 5, longitude: 6, zoom: 7 }, false),

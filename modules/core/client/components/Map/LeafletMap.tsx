@@ -356,6 +356,9 @@ export default function LeafletMap(props: MapProps) {
       className={cn(props.className, 'tw:relative tw:map-scale')}
       aria-hidden={props['aria-hidden']}
       style={props.style}
+      data-map-latitude={settled.latitude}
+      data-map-longitude={settled.longitude}
+      data-map-zoom={settled.zoom}
     >
       <div ref={containerRef} className="tw:absolute tw:inset-0 tw:z-0" />
       {portals}
