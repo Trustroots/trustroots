@@ -53,7 +53,6 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.account.NostrKeyEntry
-import org.trustroots.android.ui.account.deviceCredentialPrompt
 
 @RunWith(AndroidJUnit4::class)
 class NostrKeyJourneyTest {
@@ -150,7 +149,6 @@ class NostrKeyJourneyTest {
     @Test fun importsAndCopiesALocalKeyAndRetriesRefusedProfileLinking() {
         val username = "test-import-member"
         val publicKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
-        val challenges = AtomicInteger()
         val writes = AtomicInteger()
         val backendURL = AtomicReference<String>()
         LocalTransportFixture { request ->
@@ -159,7 +157,6 @@ class NostrKeyJourneyTest {
                 "GET" to "/api/mobile/v0/profiles/$username" ->
                     LocalTransportFixture.Response(JSONObject().put("profile", member).toString())
                 "POST" to "/api/mobile/v0/profile/nostr/challenge" -> {
-                    if (challenges.incrementAndGet() == 1) return@LocalTransportFixture LocalTransportFixture.Response("{}")
                     val challenge = JSONObject().put("kind", 27235).put("created_at", System.currentTimeMillis() / 1000)
                         .put("content", "").put("tags", JSONArray()
                             .put(JSONArray().put("u").put("${backendURL.get()}/api/users"))
@@ -180,22 +177,10 @@ class NostrKeyJourneyTest {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val account = nostrAccountScope(backend, username)
             val keys = AndroidNostrKeys(context, account)
-            val registry = CredentialResultRegistry()
-            val owner = object : ActivityResultRegistryOwner {
-                override val activityResultRegistry = registry
-            }
-            val useTestCredential = AtomicBoolean()
             try {
                 val api = MobileApiClient(backend)
                 val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
-                compose.setContent {
-                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
-                        NostrKeyEntry(api, session, enabled = true) { activity, title, message ->
-                            if (useTestCredential.get()) Intent("trustroots.test.CREDENTIAL")
-                            else deviceCredentialPrompt(activity, title, message)
-                        }
-                    }
-                }
+                compose.setContent { NostrKeyEntry(api, session, enabled = true) }
                 compose.onNodeWithText("Nostr key").performClick()
                 awaitText("Import private key")
                 awaitText("No linked public key.")
@@ -216,18 +201,73 @@ class NostrKeyJourneyTest {
                 importButton.performScrollTo().performClick()
                 awaitText("Copy public key")
                 compose.onNodeWithText("Copy public key").performScrollTo().performClick()
-                val clipboard = context.getSystemService(ClipboardManager::class.java)
-                compose.waitUntil(10_000) {
-                    compose.runOnUiThread { clipboard.primaryClip?.getItemAt(0)?.text?.toString() == publicKey }
+                compose.runOnIdle {
+                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                    assertEquals(publicKey, clipboard.primaryClip?.getItemAt(0)?.text?.toString())
                 }
                 if (!context.getSystemService(KeyguardManager::class.java).isDeviceSecure) {
                     compose.onNodeWithText("Back up private key").performScrollTo().performClick()
                     awaitText("Set up a device screen lock to back up your Nostr key.")
                 }
                 val link = compose.onNodeWithText("Link local key to profile")
+                for (message in listOf(
+                    "The profile update was refused. This public key may already be linked to another member.",
+                    "The profile key could not be updated. Please try again.",
+                )) {
+                    link.performScrollTo().performClick()
+                    awaitText(message)
+                }
+                link.performScrollTo().performClick()
+                awaitText("Unlink profile key")
+                assertEquals(3, writes.get())
+            } finally {
+                keys.remove()
+            }
+        }
+    }
+
+    @Test fun dropsStaleProfileLinkClicksAndNeverSendsAnUnprovenWrite() {
+        val username = "test-guarded-profile-link"
+        val challenges = AtomicInteger()
+        val writes = AtomicInteger()
+        LocalTransportFixture { request ->
+            when (request.method to request.path) {
+                "GET" to "/api/mobile/v0/profiles/$username" -> {
+                    val profile = JSONObject().put("username", username).put("nostrNpub", JSONObject.NULL)
+                    LocalTransportFixture.Response(JSONObject().put("profile", profile).toString())
+                }
+                "POST" to "/api/mobile/v0/profile/nostr/challenge" -> {
+                    challenges.incrementAndGet()
+                    LocalTransportFixture.Response("{}")
+                }
+                "PUT" to "/api/mobile/v0/profile" -> {
+                    writes.incrementAndGet()
+                    LocalTransportFixture.Response("{}", status = 503)
+                }
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.use { fixture ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val keys = AndroidNostrKeys(context, nostrAccountScope(fixture.baseURL, username))
+            val registry = CredentialResultRegistry()
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = registry
+            }
+            try {
+                keys.generate()
+                val api = MobileApiClient(fixture.baseURL)
+                val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
+                compose.setContent {
+                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                        NostrKeyEntry(api, session, enabled = true) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                    }
+                }
+                compose.onNodeWithText("Nostr key").performClick()
+                awaitText("No linked public key.")
+                awaitText("Link local key to profile")
+                val link = compose.onNodeWithText("Link local key to profile")
                 link.performScrollTo()
                 val startLink = requireNotNull(link.fetchSemanticsNode().config[SemanticsActions.OnClick].action)
-                useTestCredential.set(true)
                 compose.onNodeWithText("Back up private key").performScrollTo().performClick()
                 link.assertIsNotEnabled()
                 compose.runOnIdle {
@@ -242,17 +282,6 @@ class NostrKeyJourneyTest {
                 awaitText("The profile key could not be updated. Please try again.")
                 assertEquals(1, challenges.get())
                 assertEquals(0, writes.get())
-                for (message in listOf(
-                    "The profile update was refused. This public key may already be linked to another member.",
-                    "The profile key could not be updated. Please try again.",
-                )) {
-                    link.performScrollTo().performClick()
-                    awaitText(message)
-                }
-                link.performScrollTo().performClick()
-                awaitText("Unlink profile key")
-                assertEquals(4, challenges.get())
-                assertEquals(3, writes.get())
             } finally {
                 keys.remove()
             }
