@@ -95,7 +95,7 @@ internal object NostranslationAlerts {
         UnifiedPush.unregister(context, instance)
         scope.launch {
             writeLock.withLock {
-                val prior = prefs(context).getStringSet("$id:registered", emptySet()).orEmpty()
+                val prior = prefs(context).getStringSet("$id:registered", null).orEmpty()
                 val remaining = prior.filterTo(mutableSetOf()) {
                     runCatching { api.unregisterTranslationAlert(session, it) }.isFailure
                 }
@@ -132,7 +132,7 @@ internal object NostranslationAlerts {
         val account = nostrAccountScope(api.backendURL, session.member.username)
         val keys = AndroidNostrKeys(context, account)
         val revision = keys.revision()
-        val previous = prefs(context).getStringSet("${account.storageAccount}:registered", emptySet()).orEmpty()
+        val previous = prefs(context).getStringSet("${account.storageAccount}:registered", null).orEmpty()
         val current = mutableSetOf<String>()
         if (keys.browserPublicKey(revision) != null) {
             val records = keys.loadPairings(revision)

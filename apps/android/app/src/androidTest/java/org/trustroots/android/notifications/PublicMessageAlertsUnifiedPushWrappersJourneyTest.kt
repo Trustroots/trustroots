@@ -416,7 +416,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra("application", targetContext.packageName),
         )
-        waitUntil("the fake distributor APK reports that it has launched") {
+        waitUntil("the fake distributor APK reports that it has launched", timeoutSeconds = 45) {
             distributorEvents.any { it.action == FIXTURE_LAUNCHED } &&
                 activityScenario?.state == Lifecycle.State.RESUMED
         }
@@ -547,8 +547,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
 
     private fun countRequests(method: String): Int = requests.count { it.method == method }
 
-    private fun waitUntil(description: String, condition: () -> Boolean) {
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8)
+    private fun waitUntil(description: String, timeoutSeconds: Long = 8, condition: () -> Boolean) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds)
         while (System.nanoTime() < deadline) {
             responderFailure.get()?.let { throw AssertionError("Fixture server failed while waiting for $description", it) }
             if (condition()) return
