@@ -32,6 +32,7 @@ const grants = [
 function unpublishedDecision(middleware: typeof policy.isAllowed): {
   permitted: boolean;
   statusCode: number;
+  body: { message: string } | null;
 } {
   const req = policyRequest(
     'user',
@@ -44,7 +45,7 @@ function unpublishedDecision(middleware: typeof policy.isAllowed): {
   middleware(req, res, () => {
     permitted = true;
   });
-  return { permitted, statusCode: res.statusCode };
+  return { permitted, statusCode: res.statusCode, body: res.body };
 }
 
 describe('Experiences policy unit tests', () => {
@@ -57,6 +58,7 @@ describe('Experiences policy unit tests', () => {
     unpublishedDecision(policy.isAllowed).should.deepEqual({
       permitted: false,
       statusCode: 403,
+      body: { message: 'Forbidden.' },
     });
   });
 

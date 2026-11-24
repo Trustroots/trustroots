@@ -27,7 +27,7 @@ function forbid(res: PolicyResponse) {
 
 /** Granted routes for published members only. */
 function isAllowed(req: PolicyRequest, res: PolicyResponse, next: PolicyNext) {
-  return isRouteAllowed(grants, req) && req.user?.public ? next() : forbid(res);
+  return req.user?.public && isRouteAllowed(grants, req) ? next() : forbid(res);
 }
 
 /** Granted routes for any signed-in member, published or not. */
