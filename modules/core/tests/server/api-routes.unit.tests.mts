@@ -34,7 +34,7 @@ interface Recorder {
   routes: RecordedRoute[];
 }
 type RouteRegistrar = (app: RecorderApp) => void;
-type DependencyReplacements = Record<string, NamedHandler>;
+type DependencyReplacements = Record<string, NamedHandler> | NamedHandler;
 
 function handler(name: string): NamedHandler {
   const fn: NamedHandler = (req, res, next) => {
@@ -476,7 +476,7 @@ describe('API route registrations', () => {
     const { routes } = await register(
       './../../../users/server/routes/auth.server.routes.mts',
       {
-        '../services/signin-challenge.server.service': { default: signinChallenge },
+        '../services/signin-challenge.server.service': signinChallenge,
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
         '../../../core/server/middleware/targeted-request-limit.server.middleware':

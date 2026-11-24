@@ -1,5 +1,7 @@
 const mobileAuthentication = require('../controllers/mobile-authentication.server.controller.cjs');
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
+const signinChallenge =
+  require('../../../users/server/services/signin-challenge.server.service.mts').default;
 const targetedRequestLimit =
   require('../../../core/server/middleware/targeted-request-limit.server.middleware.mts').default;
 const translationAlerts = require('../controllers/mobile-nostranslation-alerts.server.controller.cjs');
@@ -179,7 +181,11 @@ module.exports = function (app) {
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
   app
     .route('/api/mobile/v0/auth/signin')
-    .post(mobileAuthenticationThrottle.signin, mobileAuthentication.signin);
+    .post(
+      mobileAuthenticationThrottle.signin,
+      signinChallenge,
+      mobileAuthentication.signin,
+    );
   app
     .route('/api/mobile/v0/auth/refresh')
     .post(mobileAuthenticationThrottle.refresh, mobileAuthentication.refresh);

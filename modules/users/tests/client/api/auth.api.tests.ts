@@ -2,7 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 import { solveSigninChallenge } from '@/modules/users/client/utils/signin-challenge';
 
 import * as authApi from '@/modules/users/client/api/auth.api';
-jest.mock('@/modules/users/client/utils/signin-challenge');
+vi.mock('@/modules/users/client/utils/signin-challenge');
 
 vi.mock(
   'axios',
@@ -69,8 +69,8 @@ describe('auth.api', () => {
       .mockRejectedValueOnce({
         response: { status: 429, data: { signinChallenge: challenge } },
       })
-      .mockResolvedValueOnce({ data: { _id: 'sample' } });
-    jest.mocked(solveSigninChallenge).mockResolvedValue({
+      .mockResolvedValueOnce(response({ _id: 'sample' }));
+    vi.mocked(solveSigninChallenge).mockResolvedValue({
       token: challenge.token,
       solution: 42,
     });

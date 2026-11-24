@@ -1,27 +1,30 @@
+import type { Mock } from 'vitest';
 import { solveSigninChallenge } from '@/modules/users/client/utils/signin-challenge';
 
 describe('sign-in challenge worker', () => {
   let worker: {
     onmessage?: (event: { data: number }) => void;
     onerror?: () => void;
-    terminate: jest.Mock;
-    postMessage: jest.Mock;
+    terminate: Mock;
+    postMessage: Mock;
   };
   const originalWorker = global.Worker;
   const createUrl = URL.createObjectURL;
   const revokeUrl = URL.revokeObjectURL;
   beforeEach(() => {
-    jest.useFakeTimers();
-    worker = { terminate: jest.fn(), postMessage: jest.fn() };
-    global.Worker = jest.fn(() => worker) as unknown as typeof Worker;
-    URL.createObjectURL = jest.fn(() => 'blob:challenge');
-    URL.revokeObjectURL = jest.fn();
+    vi.useFakeTimers();
+    worker = { terminate: vi.fn(), postMessage: vi.fn() };
+    global.Worker = vi.fn(function () {
+      return worker;
+    }) as unknown as typeof Worker;
+    URL.createObjectURL = vi.fn(() => 'blob:challenge');
+    URL.revokeObjectURL = vi.fn();
   });
   afterEach(() => {
     global.Worker = originalWorker;
     URL.createObjectURL = createUrl;
     URL.revokeObjectURL = revokeUrl;
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
   it('solves in a worker and cleans up its resources', async () => {
     const pending = solveSigninChallenge({ token: 'token', difficulty: 14 });
@@ -52,12 +55,13 @@ describe('sign-in challenge worker', () => {
   });
   it('terminates workers after the bounded deadline', async () => {
     const pending = solveSigninChallenge({ token: 'token', difficulty: 14 });
-    jest.advanceTimersByTime(30000);
-    await expect(pending).rejects.toThrow('timed out');
+    const rejected = expect(pending).rejects.toThrow('timed out');
+    vi.advanceTimersByTime(30000);
+    await rejected;
     expect(worker.terminate).toHaveBeenCalled();
   });
   it('cleans up when workers cannot be created', async () => {
-    global.Worker = jest.fn(() => {
+    global.Worker = vi.fn(function () {
       throw new Error('unavailable');
     }) as unknown as typeof Worker;
     await expect(

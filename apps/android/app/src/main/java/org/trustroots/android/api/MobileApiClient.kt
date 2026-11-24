@@ -979,13 +979,15 @@ internal suspend fun solveSigninChallenge(
     return withContext(Dispatchers.Default) {
         withTimeoutOrNull(timeoutMillis) {
             val digest = MessageDigest.getInstance("SHA-256")
-            for (solution in 0L..maximumSolution) {
+            var solution = 0L
+            do {
                 currentCoroutineContext().ensureActive()
                 val hash = digest.digest("$token:$solution".toByteArray(Charsets.UTF_8))
                 if (hash[0].toInt() == 0 && (hash[1].toInt() and 0xfc) == 0) {
                     return@withTimeoutOrNull solution
                 }
-            }
+                solution++
+            } while (solution <= maximumSolution)
             throw MobileApiException(429, "Sign-in check could not be completed. Please try again.")
         } ?: throw MobileApiException(429, "Sign-in check timed out. Please try again.")
     }

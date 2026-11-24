@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { finalizeEvent, getPublicKey, nip19 } from 'nostr-tools';
 import express from '../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
+import { consume } from '../../../core/server/services/targeted-request-limits.server.service.mts';
 
 const User = mongoose.model('User');
 const MobileSession = mongoose.model('MobileSession');
@@ -88,6 +89,27 @@ describe('Mobile authentication API', function () {
     const storedSession = await MobileSession.findOne({ user: member._id });
     storedSession.accessTokenHash.should.not.equal(response.body.accessToken);
     storedSession.refreshTokenHash.should.not.equal(response.body.refreshToken);
+  });
+
+  it('requires an account challenge before creating a mobile session', async function () {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await consume({
+        operation: 'signin-account',
+        dimensions: [
+          { name: 'account', value: credentials.username, limit: 20 },
+        ],
+        windowMs: 15 * 60 * 1000,
+      });
+    }
+
+    const response = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(429);
+
+    response.body.signinChallenge.difficulty.should.equal(14);
+    response.body.signinChallenge.token.should.be.a.String();
+    (await MobileSession.countDocuments({ user: member._id })).should.equal(0);
   });
 
   it('rejects incorrect credentials without revealing which part failed', async function () {
