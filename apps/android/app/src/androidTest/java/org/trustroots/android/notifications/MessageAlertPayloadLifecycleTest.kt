@@ -184,6 +184,7 @@ class MessageAlertPayloadLifecycleTest {
         val session = MemberSession("", MobileMember("alert-fixture", "Alert Fixture"), "fixture-review-access")
         lateinit var backend: String
         val beforeChallenge = AtomicReference<(() -> Unit)?>(null)
+        val onRegistration = AtomicReference<(() -> Unit)?>(null)
         LocalTransportFixture { request ->
             assertEquals("Bearer fixture-review-access", request.authorization)
             val body = JSONObject(request.body)
@@ -201,7 +202,10 @@ class MessageAlertPayloadLifecycleTest {
                     beforeChallenge.getAndSet(null)?.invoke()
                     LocalTransportFixture.Response(JSONObject().put("event", challenge).toString())
                 }
-                "PUT" to alertPath -> LocalTransportFixture.Response("", status = 204)
+                "PUT" to alertPath -> {
+                    onRegistration.getAndSet(null)?.invoke()
+                    LocalTransportFixture.Response("", status = 204)
+                }
                 "DELETE" to alertPath -> LocalTransportFixture.Response("", status = 204)
                 else -> error("Unexpected registration request ${request.method} ${request.path}")
             }
@@ -262,6 +266,21 @@ class MessageAlertPayloadLifecycleTest {
                 awaitNostranslationRegistration(fixture, R.string.nostranslation_alerts_unavailable)
                 assertEquals(listOf("POST", "PUT", "DELETE", "DELETE", "POST", "POST"), fixture.requests.map { it.method })
                 assertEquals(emptySet<String>(), preferences.getStringSet(registered, null))
+
+                val secondPeer = "e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13"
+                keys.generate()
+                keys.savePairings(keys.revision(), pairing.put(
+                    JSONObject().put("peer", secondPeer).put("transport", "0".repeat(63) + "2"),
+                ))
+                check(preferences.edit().remove(registered).commit())
+                onRegistration.set { check(preferences.edit().remove(account.storageAccount).commit()) }
+                val previousRequestCount = fixture.requests.size
+                NostranslationAlerts.status.value = null
+                pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
+                awaitNostranslationRegistration(fixture, R.string.nostranslation_alerts_unavailable)
+                assertFalse(NostranslationAlerts.isEnabled(context, backend, session))
+                assertEquals(listOf("POST", "PUT"), fixture.requests.drop(previousRequestCount).map { it.method })
+                assertEquals(setOf(transport), preferences.getStringSet(registered, null))
             } finally {
                 keys.remove()
                 restorePreferences(preferences, savedPreferences)
@@ -339,6 +358,12 @@ class MessageAlertPayloadLifecycleTest {
             }
 
             try {
+                check(preferences.edit().putBoolean(account, true).remove(registered).commit())
+                NostranslationAlerts.disable(context, api, session)
+                awaitRegistrations(emptySet())
+                assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+                assertTrue(fixture.requests.isEmpty())
+
                 check(preferences.edit().putBoolean(account, true)
                     .putStringSet(registered, setOf(retryTransport, removedTransport)).commit())
                 NostranslationAlerts.status.value = R.string.nostranslation_alerts_ready
