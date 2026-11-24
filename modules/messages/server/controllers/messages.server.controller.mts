@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
-import { isAfter, sub } from 'date-fns';
+import { sub } from 'date-fns';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -926,8 +926,10 @@ service.sync = function (req, res) {
     _.set(queryDate, 'created.$lt', dateTo);
   }
 
-  // Validate correct order of dates
-  if (dateFrom && dateTo && isAfter(dateFrom, dateTo)) {
+  // A missing bound leaves that end of the range open.
+  const earliest = dateFrom?.getTime() ?? -Infinity;
+  const latest = dateTo?.getTime() ?? Infinity;
+  if (earliest > latest) {
     return res.status(400).send({
       message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
     });

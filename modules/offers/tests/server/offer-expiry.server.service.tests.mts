@@ -1,4 +1,4 @@
-import { add, addDays, endOfDay } from 'date-fns';
+import { add, addDays, endOfDay, startOfDay } from 'date-fns';
 import 'should';
 
 import normaliseOfferExpiry from './../../server/services/offer-expiry.server.service.mts';
@@ -30,6 +30,25 @@ describe('Offer expiry service', () => {
     const expiry = normaliseOfferExpiry('meet', validUntil, undefined, now);
 
     expiry!.should.deepEqual(validUntil);
+  });
+
+  it('accepts an expiry on the first day of the allowed range', () => {
+    const firstDay = startOfDay(now);
+
+    normaliseOfferExpiry(
+      'meet',
+      firstDay,
+      maxValidFromNow,
+      now,
+    )!.should.deepEqual(firstDay);
+  });
+
+  it('treats a zero timestamp as absent', () => {
+    const epoch = new Date(0);
+
+    normaliseOfferExpiry('meet', 0, maxValidFromNow, epoch)!.should.deepEqual(
+      add(epoch, maxValidFromNow),
+    );
   });
 
   it('accepts an expiry on the last day of the allowed range', () => {

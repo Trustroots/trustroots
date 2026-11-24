@@ -1,4 +1,4 @@
-import { add, endOfDay, isValid, startOfDay, type Duration } from 'date-fns';
+import { add, startOfDay, type Duration } from 'date-fns';
 
 /**
  * Normalise an offer expiry using the rules shared by offer creation and updates.
@@ -21,19 +21,17 @@ function normaliseOfferExpiry(
   const maximumAge = maxValidFromNow || {
     days: 30,
   };
-  // The JavaScript Date API coerces arbitrary raw request values.
-  const parsedValidUntil = new Date(validUntil as string);
-  // Stryker disable next-line StringLiteral: validUntilEndOfDay is always the last millisecond of a day, so it is at or after `now` exactly when it is at or after the start of that day
-  const minDate = startOfDay(now);
-  // Add one extra day just to accommodate oddities from timezones
-  const maxDate = endOfDay(add(now, maximumAge));
-  if (validUntil && isValid(parsedValidUntil)) {
-    const validUntilEndOfDay = endOfDay(parsedValidUntil);
-    if (validUntilEndOfDay >= minDate && validUntilEndOfDay <= maxDate) {
-      return parsedValidUntil;
-    }
+  const maximumExpiry = add(now, maximumAge);
+  const parsedValidUntil = validUntil
+    ? new Date(validUntil as string)
+    : new Date(NaN);
+  const expiryDay = startOfDay(parsedValidUntil);
+
+  // Compare calendar days, retaining the exact timestamp when it is allowed.
+  if (expiryDay >= startOfDay(now) && expiryDay <= startOfDay(maximumExpiry)) {
+    return parsedValidUntil;
   }
-  return add(now, maximumAge);
+  return maximumExpiry;
 }
 
 export default normaliseOfferExpiry;
