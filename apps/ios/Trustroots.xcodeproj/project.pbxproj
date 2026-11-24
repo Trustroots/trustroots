@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		02D080F0E87640E68768BD34 /* MetricScaleMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85E18966AF7948A1A3D7AE0F /* MetricScaleMap.swift */; };
+		4616D99FC97A4911926AFE17 /* NostranslationSigning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31ED24D04BC6446DAB382217 /* NostranslationSigning.swift */; };
 		096987F1528B6A1267D53671 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D103BD8F57CC26B8A23F9A9 /* Foundation.framework */; };
 		0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D160385B89B56C5385E8E9 /* NostrIdentity.swift */; };
 		0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */; };
@@ -66,6 +67,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		31ED24D04BC6446DAB382217 /* NostranslationSigning.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NostranslationSigning.swift; sourceTree = "<group>"; };
 		85E18966AF7948A1A3D7AE0F /* MetricScaleMap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MetricScaleMap.swift; sourceTree = "<group>"; };
 		16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsBrowserView.swift; sourceTree = "<group>"; };
 		1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberSearchView.swift; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 				63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */,
 				96D160385B89B56C5385E8E9 /* NostrIdentity.swift */,
 				E82F35538CEB951435D8D59F /* NostrKeySection.swift */,
+				31ED24D04BC6446DAB382217 /* NostranslationSigning.swift */,
 				D449CA143A8F71AB9A565F05 /* OfferMapView.swift */,
 				85E18966AF7948A1A3D7AE0F /* MetricScaleMap.swift */,
 				721EB49D8267392766F4B575 /* OfflineResponseCache.swift */,
@@ -404,6 +407,7 @@
 				5BF5363FD85409C9BDD0E7C3 /* MessageInboxView.swift in Sources */,
 				3F7B4302D3CCCC2F0AEF29F0 /* NIP07Bridge.swift in Sources */,
 				0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */,
+				4616D99FC97A4911926AFE17 /* NostranslationSigning.swift in Sources */,
 				4951CB2CA766B8942009DE0F /* NostrKeySection.swift in Sources */,
 				F4D20135BF257F65348025D5 /* OfferMapView.swift in Sources */,
 				02D080F0E87640E68768BD34 /* MetricScaleMap.swift in Sources */,

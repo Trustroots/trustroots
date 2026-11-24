@@ -61,6 +61,7 @@ final class NostrIdentityManager: ObservableObject {
 
     var hasKey: Bool { publicKey != nil }
     var isActive: Bool { signingSession.scope != nil }
+    var accountScope: NostrAccountScope? { signingSession.scope }
 
     func activate(serverURLString: String, username: String) {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
@@ -118,11 +119,15 @@ final class NostrIdentityManager: ObservableObject {
     }
 
     func remove() throws {
-        try keyStore.remove(account: activeAccount())
+        let account = try activeAccount()
+        try keyStore.remove(account: Self.pairingAccount(account))
+        try keyStore.remove(account: account)
         signingSession.invalidate()
         identityChanged()
         refresh()
     }
+
+    static func pairingAccount(_ account: String) -> String { "nostranslation:\(account)" }
 
     func claimLegacy() throws {
         let account = try activeAccount()
@@ -242,6 +247,16 @@ final class NostrKeyStore: NostrKeyStorage {
     func remove(account: String) throws {
         let status = SecItemDelete(lookup(account) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else { throw NostrIdentityError.keychain(status) }
+    }
+
+    func update(secret: String, account: String) throws {
+        let attributes = [kSecValueData as String: Data(secret.utf8)]
+        let status = SecItemUpdate(lookup(account) as CFDictionary, attributes as CFDictionary)
+        if status == errSecItemNotFound {
+            try save(secret: secret, account: account)
+        } else if status != errSecSuccess {
+            throw NostrIdentityError.keychain(status)
+        }
     }
 
     private func lookup(_ account: String) -> [String: Any] {
@@ -381,6 +396,14 @@ enum NostrCrypto {
         #endif
     }
 
+    static func verifyEventID(_ eventID: String, signature: String, publicKey: String) throws {
+        #if canImport(NostrSDK)
+        try NostrSDKBridgeCrypto().verifySignature(signature, for: eventID, withPublicKey: publicKey)
+        #else
+        throw NostrIdentityError.unsupported
+        #endif
+    }
+
     static func nip44Encrypt(_ text: String, secret: String, peer: String) throws -> String {
         #if canImport(NostrSDK)
         guard let privateKey = NostrSDK.PrivateKey(hex: secret), let publicKey = NostrSDK.PublicKey(hex: peer) else { throw NostrIdentityError.invalidKey }
@@ -423,5 +446,5 @@ enum NostrCrypto {
 }
 
 #if canImport(NostrSDK)
-private struct NostrSDKBridgeCrypto: ContentSigning, NIP44v2Encrypting, LegacyDirectMessageEncrypting {}
+private struct NostrSDKBridgeCrypto: ContentSigning, SignatureVerifying, NIP44v2Encrypting, LegacyDirectMessageEncrypting {}
 #endif

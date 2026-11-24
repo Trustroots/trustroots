@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="nostranslation_signing">Nostranslation signing</string>
+    <string name="nostranslation_paste_link">Nostranslation connection link</string>
+    <string name="nostranslation_scan_qr">Scan Nostranslation QR code</string>
+    <string name="nostranslation_review_link">Review connection</string>
+    <string name="nostranslation_pair">Pair with Nostranslation</string>
+    <string name="nostranslation_connection_details">Allow %1$s to request review signatures through %2$s?</string>
+    <string name="nostranslation_authorise">Authorise a translation review</string>
+    <string name="nostranslation_approve">Approve signature</string>
+    <string name="nostranslation_deny">Deny</string>
+    <string name="nostranslation_expired">This request expired. Retry in Nostranslation.</string>
+    <string name="nostranslation_client">Nostranslation client %1$s</string>
+    <string name="nostranslation_revoke">Revoke client</string>
+    <string name="nostranslation_invalid_link">Enter a valid Nostranslation connection link.</string>
+    <string name="nostranslation_action_failed">This action could not be completed. Check your local Nostr key and try again.</string>
+    <string name="nostranslation_relay_failed">The relay connection failed. Close and reopen this screen to retry.</string>
     <string name="app_name">Trustroots</string>
     <string name="filter_circles">Filter circles</string>
     <string name="clear_circle_filter">Clear circle filter</string>

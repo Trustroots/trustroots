@@ -169,19 +169,23 @@ enum NIP07Bridge {
         return try sign(event: event, secret: secret)
     }
 
-    private static func sign(event: [String: Any], secret: String) throws -> [String: Any] {
+    static func sign(event: [String: Any], secret: String) throws -> [String: Any] {
         guard let kind = number(event["kind"]), let content = event["content"] as? String,
               let tags = tags(event["tags"]) else { throw NostrIdentityError.invalidKey }
         let publicKey = try NostrCrypto.publicKey(secret: secret)
         let createdAt = number(event["created_at"]) ?? Int(Date().timeIntervalSince1970)
-        let payload: [Any] = [0, publicKey, createdAt, kind, tags, content]
-        let data = try JSONSerialization.data(withJSONObject: payload, options: [.withoutEscapingSlashes])
-        let eventID = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let eventID = try Self.eventID(publicKey: publicKey, createdAt: createdAt, kind: kind, tags: tags, content: content)
         return [
             "id": eventID, "pubkey": publicKey, "created_at": createdAt,
             "kind": kind, "tags": tags, "content": content,
             "sig": try NostrCrypto.signEventID(eventID, secret: secret)
         ]
+    }
+
+    static func eventID(publicKey: String, createdAt: Int, kind: Int, tags: [[String]], content: String) throws -> String {
+        let payload: [Any] = [0, publicKey, createdAt, kind, tags, content]
+        let data = try JSONSerialization.data(withJSONObject: payload, options: [.withoutEscapingSlashes])
+        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
     private static func number(_ value: Any?) -> Int? {

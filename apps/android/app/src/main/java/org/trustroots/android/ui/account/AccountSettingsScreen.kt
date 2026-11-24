@@ -204,6 +204,7 @@ internal fun AccountSettingsScreen(
             Text(signedInAs, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
             key(api.backendURL, session.member.username, session.sessionId ?: session.cookieHeader) {
                 NostrKeyEntry(api, session, enabled = !state.isSigningOut)
+                NostranslationEntry(api.backendURL, session.member.username, browserNostrSession, enabled = !state.isSigningOut)
             }
             if (previewUpdateAlerts) {
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))

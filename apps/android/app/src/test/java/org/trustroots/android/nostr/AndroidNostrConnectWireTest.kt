@@ -119,6 +119,15 @@ class AndroidNostrConnectWireTest {
         }
     }
 
+    @Test fun restoresAnApprovedClientWithoutReusingThePairingSecret() {
+        AndroidNostrConnectWire(link.clientPublicKey, transportKey).use { restored ->
+            assertThrows(IllegalStateException::class.java) { restored.handshake(now) }
+            val request = restored.decodeRequest(fixture.getJSONObject("getPublicKey"), now)
+            assertEquals(NostrConnectCommand.PublicKey, request?.command)
+            assertEquals("fixture-1", request?.id)
+        }
+    }
+
     @Test fun decodesBrowserRequestsAndPassesTheOriginalEventToTheApprovalPolicy() {
         AndroidNostrConnectWire(link, transportKey).use { wire ->
             wire.handshake(now)
