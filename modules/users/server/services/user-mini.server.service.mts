@@ -119,7 +119,7 @@ function visibleUserLookupStages({
 }: {
   localField: string;
   as: string;
-}): PipelineStage[] {
+}): Array<PipelineStage.Lookup | PipelineStage.Unwind | PipelineStage.Match> {
   return [
     {
       $lookup: {
