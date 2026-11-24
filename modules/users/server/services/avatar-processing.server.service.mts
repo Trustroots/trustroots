@@ -2,55 +2,25 @@ import dependency2 from 'fs';
 import os from 'os';
 import path from 'path';
 import crypto from 'crypto';
-import sharp, { type Metadata, type Sharp } from 'sharp';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
+import processAvatarImage from './avatar-processing.server.worker.mts';
+import {
+  avatarSizes,
+  maxHeight,
+  maxPixels,
+  maxWidth,
+  validateDimensions,
+} from './avatar-processing.server.dimensions.mts';
 import type {
   AvatarProcessingJob,
   AvatarProcessingResult,
   AvatarProcessingService,
 } from './avatar-processing.server.types.mts';
 const fs = dependency2.promises;
-const avatarSizes = [2048, 1024, 512, 256, 128, 64, 32];
-const maxWidth = 10000;
-const maxHeight = 10000;
-const maxPixels = 40 * 1000 * 1000;
 const maxThumbnailBytes = 8 * 1024 * 1024;
-const processorTimeoutSeconds = 15;
 const uploadProcessingTimeoutMs = 60000;
 const maxQueuedUploads = 2;
-const supportedFormats = ['gif', 'jpeg', 'png'];
-sharp.concurrency(1);
-function openLimitedImage(sourcePath: string): Sharp {
-  return sharp(sourcePath, {
-    failOn: 'warning',
-    limitInputPixels: maxPixels,
-  }).timeout({ seconds: processorTimeoutSeconds });
-}
-function validateDimensions({
-  format,
-  height,
-  pages,
-  width,
-}: Pick<Metadata, 'format' | 'height' | 'pages' | 'width'>): void {
-  if (!supportedFormats.includes(format)) {
-    throw new Error('Unsupported image format.');
-  }
-  if ((pages ?? 1) !== 1) {
-    throw new Error('Only single-frame images are supported.');
-  }
-  if (
-    !Number.isInteger(width) ||
-    !Number.isInteger(height) ||
-    width < 1 ||
-    height < 1 ||
-    width > maxWidth ||
-    height > maxHeight ||
-    width * height > maxPixels
-  ) {
-    throw new Error('Image dimensions exceed the supported limits.');
-  }
-}
 function validateVersion(version: string): void {
   if (!/^[a-f0-9]{32}$/.test(version)) {
     throw new Error('Invalid avatar version.');
@@ -70,29 +40,6 @@ async function createPrivateStage(): Promise<string> {
 async function copyTestThumbnails(sourcePath: string, stageDir: string) {
   for (const size of avatarSizes) {
     await fs.copyFile(sourcePath, path.join(stageDir, `${size}.jpg`));
-  }
-}
-async function createNativeThumbnails(
-  sourcePath: string,
-  stageDir: string,
-  timedOut: () => boolean,
-) {
-  validateDimensions(await openLimitedImage(sourcePath).metadata());
-  for (const size of avatarSizes) {
-    if (timedOut()) {
-      throw timeLimitError();
-    }
-    const output = await openLimitedImage(sourcePath)
-      .autoOrient()
-      .flatten({ background: '#ffffff' })
-      .resize(size, size, { fit: 'cover', kernel: 'linear' })
-      .sharpen({ sigma: 0.25 })
-      .toColourspace('srgb')
-      .jpeg({ quality: 82 })
-      .toFile(path.join(stageDir, `${size}.jpg`));
-    if (output.width !== size || output.height !== size) {
-      throw new Error('Generated avatar thumbnail has unexpected dimensions.');
-    }
   }
 }
 async function validateThumbnails(stageDir: string) {
@@ -152,9 +99,9 @@ async function processAvatar({
   const stageDir = await createPrivateStage();
   let publicStage: string | undefined;
   let versionDirectory: string | undefined;
-  let timedOut = false;
+  const processing = new AbortController();
   const deadline = setTimeout(() => {
-    timedOut = true;
+    processing.abort(timeLimitError());
   }, uploadProcessingTimeoutMs);
   try {
     if (
@@ -163,16 +110,12 @@ async function processAvatar({
     ) {
       await copyTestThumbnails(sourcePath, stageDir);
     } else {
-      await createNativeThumbnails(sourcePath, stageDir, () => timedOut);
+      await processAvatarImage(sourcePath, stageDir, processing.signal);
     }
-    if (timedOut) {
-      throw timeLimitError();
-    }
+    processing.signal.throwIfAborted();
     await validateThumbnails(stageDir);
     publicStage = await copyToPublicStage(stageDir, avatarDirectory, version);
-    if (timedOut) {
-      throw timeLimitError();
-    }
+    processing.signal.throwIfAborted();
     versionDirectory = path.join(avatarDirectory, version);
     await fs.rename(publicStage, versionDirectory);
     publicStage = undefined;
@@ -183,9 +126,7 @@ async function processAvatar({
       await fs.chmod(path.join(versionDirectory, `${size}.jpg`), 0o644);
     }
     await fs.chmod(versionDirectory, 0o755);
-    if (timedOut) {
-      throw timeLimitError();
-    }
+    processing.signal.throwIfAborted();
     return {
       version,
       versionDirectory,

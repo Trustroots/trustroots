@@ -91,6 +91,17 @@ flat avatar paths.
 - **THEN** the system stops processing and cleans private staging without
   publishing incomplete output
 
+### Requirement: Avatar processing worker lifecycle
+
+The system SHALL run native avatar thumbnail generation in a child process for
+each upload.
+
+#### Scenario: The upload deadline expires during processing
+
+- **WHEN** the upload deadline expires while the child process is generating thumbnails
+- **THEN** the system SHALL stop the child process and wait for it to exit before
+  cleaning the private staging directory and releasing the processing slot
+
 ### Requirement: React profile viewing
 
 The system SHALL render member profile views with the React application shell

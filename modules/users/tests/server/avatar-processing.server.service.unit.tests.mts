@@ -231,6 +231,17 @@ describe('Avatar processing service', () => {
     async function loadService(sharpModule?: unknown) {
       const uploadDir = path.join(temporaryRoot, 'public');
       const uploadTmpDir = path.join(temporaryRoot, 'temp');
+      const native = sharpModule
+        ? await mockModule<
+            typeof import('../../server/services/avatar-processing.server.image.mts')
+          >(
+            new URL(
+              '../../server/services/avatar-processing.server.image.mts',
+              import.meta.url,
+            ),
+            { sharp: sharpModule },
+          )
+        : undefined;
       return (
         await mockModule<{ default: AvatarProcessingService }>(
           new URL(
@@ -243,7 +254,12 @@ describe('Avatar processing service', () => {
               uploadDir,
               uploadTmpDir,
             },
-            ...(sharpModule ? { sharp: sharpModule } : {}),
+            ...(native
+              ? {
+                  './avatar-processing.server.worker.mts':
+                    native.createNativeThumbnails,
+                }
+              : {}),
           },
         )
       ).default;
