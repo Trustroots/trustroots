@@ -1845,7 +1845,7 @@ const features = [
       'The place search input and clear button share a bottom border at desktop and mobile widths.',
       'Line-based wheel events zoom the rendered map.',
       'Later camera commands recenter the map after a place search.',
-      'A browser without WebGL2 sees a notice where the map would be.',
+      'A browser without WebGL2 gets a Leaflet map with raster tiles.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
       'Trackpad pinch zoom preserves the centre selected by place search.',
@@ -1874,7 +1874,7 @@ const features = [
       ),
       spec(
         'search-map-rendered.spec.js',
-        'search map shows a notice when WebGL is unavailable',
+        'search map falls back to Leaflet when only WebGL1 is available',
       ),
       spec(
         'search-map-rendered.spec.js',
