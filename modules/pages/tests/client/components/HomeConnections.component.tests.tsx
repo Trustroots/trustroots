@@ -133,7 +133,7 @@ describe('<HomeConnections />', () => {
     expect(
       screen.getByRole('link', { name: /Monthly Member/ }),
     ).toHaveTextContent('Active this month');
-    const map = screen.getByTestId('hosting-map');
+    const map = await screen.findByTestId('hosting-map');
     expect(map).toHaveAttribute('data-view-key', 'home-hosting-map-view');
     expect(map).toHaveTextContent('Older Host');
     expect(map).toHaveTextContent('Recent Host');

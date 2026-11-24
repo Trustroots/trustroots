@@ -8,7 +8,9 @@ import { useAnalytics } from '@trustroots/analytics/client';
 import { deleteOffer, getOffers } from '../api/offers.api';
 import type { OfferPayload } from '../../shared/offer';
 import NoMeets from './NoMeets.component';
-import OfferLocation from './OfferLocation.component';
+import lazyMap from '@/modules/core/client/components/lazyMap';
+
+const OfferLocation = lazyMap(() => import('./OfferLocation.component'));
 
 type MeetOffer = Omit<OfferPayload, '_id' | 'type' | 'validUntil'> & {
   _id: string;

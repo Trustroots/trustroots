@@ -10,8 +10,10 @@ import { Button } from '@trustroots/ui/Button';
 import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import type { MeetingStatus } from '../../shared/offer';
 import OfferStatusButton from './OfferStatusButton';
-import OfferLocation from './OfferLocation.component';
+import lazyMap from '@/modules/core/client/components/lazyMap';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+
+const OfferLocation = lazyMap(() => import('./OfferLocation.component'));
 
 interface OffersPresentationalProps {
   isOwnOffer: boolean;

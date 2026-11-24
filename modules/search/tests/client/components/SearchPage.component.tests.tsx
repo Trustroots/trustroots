@@ -208,6 +208,12 @@ const mockOffer: SearchResultOffer & {
   },
 };
 
+// Render the SearchMap double synchronously instead of through React.lazy.
+vi.mock('@/modules/core/client/components/lazyMap', async () => {
+  const { default: SearchMapDouble } =
+    await import('@/modules/search/client/components/SearchMap.component');
+  return { default: () => SearchMapDouble };
+});
 vi.mock('@/modules/search/client/components/SearchMap.component', () => ({
   __esModule: true,
   default: (props: SearchMapHarnessProps) => {

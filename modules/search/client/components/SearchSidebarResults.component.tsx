@@ -1,7 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
+import { distanceInMetres } from '@/modules/core/client/utils/map';
 import React, { useRef } from 'react';
-import { latLng } from 'leaflet';
 import { useTranslation } from 'react-i18next';
 import { match, P } from 'ts-pattern';
 import { Badge } from '@trustroots/ui/Badge';
@@ -156,9 +156,7 @@ function CityHostRow({
   const { hosting } = getAvailability(host, translateStatus);
   const name = host.user.displayName || host.user.username;
   const kilometres = Math.round(
-    latLng(city.centre.lat, city.centre.lng).distanceTo(
-      latLng(...host.location),
-    ) / 1000,
+    distanceInMetres([city.centre.lat, city.centre.lng], host.location) / 1000,
   );
 
   return (
