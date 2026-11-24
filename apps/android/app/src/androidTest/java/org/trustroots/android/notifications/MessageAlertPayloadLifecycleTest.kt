@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -289,6 +290,16 @@ class MessageAlertPayloadLifecycleTest {
             service.onMessage(PushMessage("not JSON".toByteArray(), decrypted = true), instance)
             service.onMessage(PushMessage("""{"type":"other"}""".toByteArray(), decrypted = true), instance)
             assertFalse(notifications.activeNotifications.any { it.tag == instance })
+
+            if (Build.VERSION.SDK_INT >= 33) {
+                val deniedContext = object : ContextWrapper(context) {
+                    override fun checkSelfPermission(permission: String): Int =
+                        if (permission == Manifest.permission.POST_NOTIFICATIONS) PackageManager.PERMISSION_DENIED
+                        else super.checkSelfPermission(permission)
+                }
+                NostranslationAlerts.show(deniedContext, review)
+                assertFalse(notifications.activeNotifications.any { it.tag == instance })
+            }
 
             service.onMessage(review, instance)
             val deadline = SystemClock.elapsedRealtime() + 5_000

@@ -1,6 +1,5 @@
 package org.trustroots.android.notifications
 
-import android.Manifest
 import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,9 +8,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.content.ContextCompat
 import java.security.MessageDigest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +26,7 @@ import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.NostrEventSigner
 import org.trustroots.android.nostr.NostrKeyCodec
 import org.trustroots.android.nostr.nostrAccountScope
+import org.trustroots.android.ui.common.canPostNotifications
 import org.unifiedpush.android.connector.UnifiedPush
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
@@ -172,9 +169,7 @@ internal object NostranslationAlerts {
         val session = SecureMobileSessionStore(context).load() ?: return
         val backend = prefs(context).getString("backend", null) ?: return
         if (!isEnabled(context, backend, session)) return
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) return
+        if (!context.canPostNotifications()) return
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(NotificationChannel(
             instance, context.getString(R.string.nostranslation_signing), NotificationManager.IMPORTANCE_DEFAULT,

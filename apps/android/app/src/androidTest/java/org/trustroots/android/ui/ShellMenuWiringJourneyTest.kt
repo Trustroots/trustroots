@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -54,8 +56,10 @@ import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.BrowserNostrSession
 import org.trustroots.android.browser.LocalBrowserNostrSession
+import org.trustroots.android.nostr.nostrAccountScope
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
+import org.trustroots.android.notifications.NostranslationAlerts
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -202,6 +206,36 @@ class ShellMenuWiringJourneyTest {
         compose.onNodeWithText("Updated Heron").assertIsDisplayed()
         assertTrue(requests.any { it.method == "GET" && it.path == "/api/users/steady-heron" })
         assertNoResponderFailure()
+    }
+
+    @Test fun translationAlertOpensOnlyForTheSignedInAccountAndIsConsumedOnDismissal() {
+        val previousAlert = NostranslationAlerts.openRequested.value
+        val retryHint = "If the request has expired, retry in Nostranslation."
+        val extra = "org.trustroots.android.OPEN_NOSTRANSLATION_REVIEW"
+        val account = nostrAccountScope(apiBaseUrl, session.member.username).storageAccount
+        try {
+            NostranslationAlerts.openRequested.value = null
+            showShell()
+            waitForText("Discover circles")
+            compose.runOnIdle {
+                NostranslationAlerts.captureIntent(null)
+                NostranslationAlerts.captureIntent(Intent())
+                assertNull(NostranslationAlerts.openRequested.value)
+                val other = nostrAccountScope(apiBaseUrl, "another-member").storageAccount
+                NostranslationAlerts.captureIntent(Intent().putExtra(extra, other))
+            }
+            compose.onNodeWithText(retryHint).assertDoesNotExist()
+
+            compose.runOnIdle { NostranslationAlerts.captureIntent(Intent().putExtra(extra, account)) }
+            waitForText(retryHint)
+            compose.onNodeWithText(retryHint).assertIsDisplayed()
+            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithText(retryHint).assertDoesNotExist()
+            compose.runOnIdle { assertNull(NostranslationAlerts.openRequested.value) }
+            assertNoResponderFailure()
+        } finally {
+            NostranslationAlerts.openRequested.value = previousAlert
+        }
     }
 
     private fun showShell(savedSession: MemberSession = session) {
