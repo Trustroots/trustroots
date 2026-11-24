@@ -105,7 +105,7 @@ describe('Mobile authentication API', function () {
     response.body.code.should.equal('web_sign_in_required');
     should.not.exist(response.body.accessToken);
     await request(app)
-      .get('/api/mobile/v0/auth/me')
+      .get('/api/mobile/v0/me')
       .set('Authorization', `Bearer ${tokens.accessToken}`)
       .expect(401);
     await request(app)

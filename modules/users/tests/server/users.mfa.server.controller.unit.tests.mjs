@@ -4,6 +4,7 @@ const require = createRequire(import.meta.url);
 const assert = require('node:assert/strict');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
+const config = require('../../../../config/config.mts').default;
 require('../../server/models/user.server.model.mts');
 const User = mongoose.model('User');
 
@@ -213,6 +214,14 @@ describe('Authenticator MFA controller', () => {
       const res = response();
       await controller.settings(request(null), res);
       assert.equal(res.statusCode, 403);
+    });
+
+    it('explains why authenticator setup is unavailable when the site key is missing', async () => {
+      sinon.stub(config, 'mfaEncryptionKey').value('');
+      const res = response();
+      await controller.settings(request(), res);
+      assert.equal(res.statusCode, 503);
+      assert.match(res.body.message, /site has no valid MFA encryption key/);
     });
 
     it('returns enabled state and remaining recovery codes', async () => {

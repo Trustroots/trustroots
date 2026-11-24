@@ -79,6 +79,15 @@ describe('Staff passkey settings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add passkey' }));
     await screen.findByText('Device request cancelled.');
   });
+  it('shows the site configuration error when passkey settings are unavailable', async () => {
+    const message = 'Passkeys are not configured for this site.';
+    mocked.getPasskeys.mockRejectedValueOnce({
+      response: { data: { message } },
+    });
+    render(<PasskeySettings />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+
   it('does not update an unmounted component after a late load', async () => {
     let resolve!: (value: api.MemberPasskey[]) => void;
     mocked.getPasskeys.mockReturnValue(

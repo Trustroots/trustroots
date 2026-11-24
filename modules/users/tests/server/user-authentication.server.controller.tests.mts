@@ -12,6 +12,7 @@ import mfaService from '../../server/services/mfa.server.service.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 /** Unit tests for the OAuth helpers of the authentication controller. */
 
+import config from '../../../../config/config.mts';
 const MemberPasskey = mongoose.model('MemberPasskey');
 
 type AuthenticationUserRecord =
@@ -1358,6 +1359,22 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       responseField(res, '_id').toString().should.equal(user._id.toString());
       should.not.exist(session.mfaChallenge);
+    });
+
+    it('explains when the site cannot verify authenticator codes', async () => {
+      const { challenge, code } = await createMfaChallenge();
+      sinon.stub(config, 'mfaEncryptionKey').value('');
+      const res = deferredResponse();
+
+      await authController.verifyMfa(
+        { session: { mfaChallenge: challenge }, body: { code } },
+        res,
+      );
+
+      res.statusCode.should.equal(503);
+      responseField(res, 'message').should.containEql(
+        'no valid MFA encryption key',
+      );
     });
 
     it('returns unavailable when the account lookup fails', async () => {

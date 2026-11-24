@@ -18,8 +18,10 @@ export default function PasskeySettings() {
       .then(result => {
         if (active) setKeys(result);
       })
-      .catch(() => {
-        if (active) setError('Could not load passkeys.');
+      .catch(reason => {
+        if (active) {
+          setError(readApiError(reason).message || 'Could not load passkeys.');
+        }
       });
     return () => {
       active = false;

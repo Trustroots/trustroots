@@ -44,14 +44,26 @@ function base32Decode(input) {
   return Buffer.from(output);
 }
 
+export class MfaConfigurationError extends Error {}
+
+export const mfaConfigurationMessage =
+  'Authenticator setup is unavailable because this site has no valid MFA encryption key. Contact a site administrator.';
+
 function encryptionKey() {
   const encoded = config.mfaEncryptionKey;
-  if (!encoded) throw new Error('MFA_ENCRYPTION_KEY is required.');
+  if (!encoded)
+    throw new MfaConfigurationError('MFA_ENCRYPTION_KEY is required.');
   const key = Buffer.from(encoded, 'base64');
   if (key.length !== 32 || key.toString('base64') !== encoded) {
-    throw new Error('MFA_ENCRYPTION_KEY must be a base64-encoded 32-byte key.');
+    throw new MfaConfigurationError(
+      'MFA_ENCRYPTION_KEY must be a base64-encoded 32-byte key.',
+    );
   }
   return key;
+}
+
+export function assertMfaConfigured() {
+  encryptionKey();
 }
 
 function encryptSecret(secret) {
