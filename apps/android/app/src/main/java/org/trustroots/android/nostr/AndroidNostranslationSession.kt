@@ -122,27 +122,31 @@ internal class AndroidNostranslationSession(
         connections[client.peer] = connection
         val request = Request.Builder().url(NostranslationConnectionLink.relayURL).build()
         connection.socket = sockets.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                scope.launch {
-                    if (!isCurrent(client, connection)) return@launch
-                    val filter = JSONObject().put("kinds", JSONArray(listOf(24133)))
-                        .put("authors", JSONArray(listOf(client.peer)))
-                        .put("#p", JSONArray(listOf(wire.transportPublicKey))).put("since", now() - 60)
-                    send(connection, JSONArray().put("REQ").put(connection.subscription).put(filter))
-                    if (pairingSecret != null) {
-                        val handshake = wire.handshake(now())
-                        connection.handshakeId = handshake.getString("id")
-                        publish(connection, handshake)
-                    }
+            override fun onOpen(webSocket: WebSocket, response: Response) = withCurrentConnection {
+                val filter = JSONObject().put("kinds", JSONArray(listOf(24133)))
+                    .put("authors", JSONArray(listOf(client.peer)))
+                    .put("#p", JSONArray(listOf(wire.transportPublicKey))).put("since", now() - 60)
+                send(connection, JSONArray().put("REQ").put(connection.subscription).put(filter))
+                if (pairingSecret != null) {
+                    val handshake = wire.handshake(now())
+                    connection.handshakeId = handshake.getString("id")
+                    publish(connection, handshake)
                 }
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (text.length > 32_768) return
+                withCurrentConnection {
+                    val frame = runCatching { JSONArray(text) }.getOrNull() ?: return@withCurrentConnection
+                    receive(client, connection, frame)
+                }
+            }
+
+            private fun withCurrentConnection(action: () -> Unit) {
                 scope.launch {
-                    if (!isCurrent(client, connection)) return@launch
-                    val frame = runCatching { JSONArray(text) }.getOrNull() ?: return@launch
-                    runCatching { receive(client, connection, frame) }.onFailure { relayFailed = true }
+                    runCatching {
+                        if (isCurrent(client, connection)) action()
+                    }.onFailure { relayFailed = true }
                 }
             }
 

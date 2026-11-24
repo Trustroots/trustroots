@@ -1,7 +1,9 @@
 package org.trustroots.android.nostr
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
@@ -13,7 +15,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -35,17 +37,20 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.browser.BrowserNostrSession
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.account.NostranslationEntry
 
 @RunWith(AndroidJUnit4::class)
 class NostranslationEntryJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun reviewsAPairingThenApprovesAndDeniesSignaturesBeforeRevokingTheClient() {
         val backend = "https://example.test"
         val username = "pair-${UUID.randomUUID()}"
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+        val account = nostrAccountScope(backend, username)
+        val keys = AndroidNostrKeys(context, account)
+        val keyPreferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
         val clientKey = ByteArray(32).apply { this[31] = 1 }
         val peer = NostrEventSigner.publicKey(clientKey)
         val connectionLink = "nostrconnect://$peer?relay=wss%3A%2F%2Frelay.trustroots.org" +
@@ -129,6 +134,50 @@ class NostranslationEntryJourneyTest {
                 assertEquals("denied-from-dialog", denied.getString("id"))
                 assertEquals("Authorisation denied.", denied.getString("error"))
             }
+            compose.runOnIdle { relay.receive(reviewFrame("dismissed-with-back")) }
+            compose.onNodeWithText("Authorise a translation review").assertIsDisplayed()
+            pressBackFromNonActivityRoot(compose.activity, dialogOnly = true)
+            compose.runOnIdle {
+                val reply = relay.frames.last().getJSONObject(1)
+                val dismissed = JSONObject(NostrConnectEncryption.decrypt(reply.getString("content"), secret))
+                assertEquals("dismissed-with-back", dismissed.getString("id"))
+                assertEquals("Authorisation denied.", dismissed.getString("error"))
+            }
+
+            val savedKey = requireNotNull(keyPreferences.getString(account.storageAccount, null))
+            val beforeUnreadableKey = relay.frames.size
+            compose.runOnIdle {
+                check(keyPreferences.edit().putString(account.storageAccount, "AA==").commit())
+                relay.receive(reviewFrame("received-with-unreadable-key"))
+            }
+            compose.onNodeWithText("The relay connection failed. Close and reopen this screen to retry.").assertIsDisplayed()
+            compose.onNodeWithText("Authorise a translation review").assertDoesNotExist()
+            compose.runOnIdle {
+                assertEquals(beforeUnreadableKey, relay.frames.size)
+                check(keyPreferences.edit().putString(account.storageAccount, savedKey).commit())
+            }
+
+            val error = compose.onNodeWithText(
+                "This action could not be completed. Check your local Nostr key and try again.",
+            )
+            val actions: List<() -> Unit> = listOf(
+                { compose.onNodeWithText("Approve signature").performClick() },
+                { compose.onNodeWithText("Deny").performClick() },
+                { pressBackFromNonActivityRoot(compose.activity, dialogOnly = true) },
+            )
+            for ((index, act) in actions.withIndex()) {
+                val frames = relay.frames.size
+                compose.runOnIdle { relay.receive(reviewFrame("unreadable-key-$index")) }
+                compose.onNodeWithText("Authorise a translation review").assertIsDisplayed()
+                compose.runOnIdle { check(keyPreferences.edit().putString(account.storageAccount, "AA==").commit()) }
+                act()
+                error.assertIsDisplayed()
+                compose.runOnIdle {
+                    assertEquals(frames, relay.frames.size)
+                    check(keyPreferences.edit().putString(account.storageAccount, savedKey).commit())
+                }
+            }
+
             compose.runOnIdle { relay.receive(reviewFrame("expires-in-dialog")) }
             compose.onNodeWithText("Approve signature").assertIsDisplayed()
             compose.runOnIdle { now = timestamp + 61 }
@@ -145,7 +194,13 @@ class NostranslationEntryJourneyTest {
             }
             compose.onNodeWithText("The relay connection failed. Close and reopen this screen to retry.")
                 .assertIsDisplayed()
-            compose.onNodeWithText("Revoke client").performClick()
+            val revoke = compose.onNodeWithText("Revoke client")
+            compose.runOnIdle { check(keyPreferences.edit().putString(account.storageAccount, "AA==").commit()) }
+            revoke.performClick()
+            error.assertIsDisplayed()
+            connected.assertIsDisplayed()
+            compose.runOnIdle { check(keyPreferences.edit().putString(account.storageAccount, savedKey).commit()) }
+            revoke.performClick()
             connected.assertDoesNotExist()
             compose.runOnIdle { assertTrue(relay.cancelled) }
             compose.onNodeWithText("Done").performClick()
