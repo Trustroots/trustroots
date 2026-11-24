@@ -17,7 +17,7 @@ import emailService from './../../../../core/server/services/email.server.servic
 import reactivateHostsJobHandler from './../../../server/jobs/reactivate-hosts.server.job.mts';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
 import config from './../../../../../config/config.mts';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import should from 'should';
 
 const User = mongoose.model<UserRecord, UserModel>('User');
@@ -50,9 +50,7 @@ describe('Job: reactivate hosts unit tests', () => {
           description: '<p>I can host! :)</p>',
           noOfferDescription: '<p>I cannot host... :(</p>',
           maxGuests: 1,
-          updated: moment().subtract(
-            moment.duration(config.limits.timeToReactivateHosts),
-          ),
+          updated: sub(new Date(), config.limits.timeToReactivateHosts),
           location: [52.498981209298776, 13.418329954147339],
           locationFuzzy: [52.50155039101136, 13.42255019882177],
         });

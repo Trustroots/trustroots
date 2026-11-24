@@ -1,5 +1,5 @@
 import mongoose, { type Types } from 'mongoose';
-import moment from 'moment';
+import { milliseconds } from 'date-fns';
 import config from '../../../../config/config.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
 import type { MessageThrottleAlertRecord } from '../models/message-throttle-alert.server.model.mts';
@@ -46,9 +46,9 @@ async function notify(
           timestamp: now.toISOString(),
           recipientCount,
           limit: config.limits.messagesToIndividualsThrottle.count,
-          windowMinutes: moment
-            .duration(config.limits.messagesToIndividualsThrottle.duration)
-            .asMinutes(),
+          windowMinutes:
+            milliseconds(config.limits.messagesToIndividualsThrottle.duration) /
+            60000,
         },
         error => (error ? reject(error) : resolve()),
       );

@@ -3,7 +3,7 @@ import { setEmailConfirmationToken } from '../services/email-confirmation.server
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
-import moment from 'moment';
+import { subDays, subHours } from 'date-fns';
 import mongoose from 'mongoose';
 import type {
   UserServerModel,
@@ -35,14 +35,10 @@ const run = function (
 ) {
   async function remind(): Promise<void> {
     // Ignore very recently signed up users
-    const createdTimeAgo = moment()
-      .subtract(moment.duration({ hours: 4 }))
-      .toDate();
+    const createdTimeAgo = subHours(new Date(), 4);
 
     // Ignore very recently reminded users
-    const remindedTimeAgo = moment()
-      .subtract(moment.duration({ days: 2 }))
-      .toDate();
+    const remindedTimeAgo = subDays(new Date(), 2);
     const users = await User.find({
       public: false,
       created: {

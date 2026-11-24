@@ -5,7 +5,8 @@ import type {
   CountUsers,
   LegacyMongoose,
 } from '../legacy-cli-contracts.d.cts';
-const moment = require('moment') as typeof import('moment');
+const { addDays, startOfDay } =
+  require('date-fns') as typeof import('date-fns');
 const mongooseService = require('./../../config/lib/mongoose.mts')
   .default as ConnectionHelper;
 const mongoose = require('mongoose') as LegacyMongoose;
@@ -43,12 +44,11 @@ const aggregateSort = {
 const enumerateDaysBetweenDates = function (startDate: Date, endDate: Date) {
   const dates: Date[] = [];
 
-  const currDate = moment(startDate).clone().startOf('day').add(1, 'day');
-  const lastDate = moment(endDate).clone().startOf('day').add(1, 'day');
+  let currDate = addDays(startOfDay(startDate), 1);
+  const lastDate = addDays(startOfDay(endDate), 1);
 
-  while (currDate.add(1, 'days').diff(lastDate) < 0) {
-    // console.log(currDate.toDate());
-    dates.push(currDate.clone().toDate());
+  while ((currDate = addDays(currDate, 1)) < lastDate) {
+    dates.push(currDate);
   }
 
   return dates;

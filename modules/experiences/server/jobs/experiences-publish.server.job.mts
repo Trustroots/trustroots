@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import config from './../../../../config/config.mts';
 const Experience = mongoose.model('Experience');
 
@@ -16,7 +16,7 @@ function run(
   Experience.updateMany(
     {
       created: {
-        $lt: moment().subtract(config.limits.timeToReplyExperience),
+        $lt: sub(new Date(), config.limits.timeToReplyExperience),
       },
       public: false,
       removedAt: { $exists: false },

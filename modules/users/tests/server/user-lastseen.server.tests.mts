@@ -1,5 +1,5 @@
 import request from 'supertest';
-import moment from 'moment';
+import { milliseconds } from 'date-fns';
 import mongoose, { type QueryFilter, type HydratedDocument } from 'mongoose';
 import should from 'should';
 import sinon from 'sinon';
@@ -167,9 +167,7 @@ describe('Last seen middleware', function () {
   const middleware = lastSeen as unknown as Middleware;
 
   const now = new Date('2026-01-02T03:04:05.000Z');
-  const interval = moment
-    .duration(config.limits.timeToUpdateLastSeenUser)
-    .asMilliseconds();
+  const interval = milliseconds(config.limits.timeToUpdateLastSeenUser);
   const ip = '192.0.2.1';
   const otherIp = '192.0.2.2';
 

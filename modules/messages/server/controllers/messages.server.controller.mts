@@ -1,5 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
-import moment from 'moment';
+import { isAfter, sub } from 'date-fns';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -477,7 +477,7 @@ service.inbox = function (req, res) {
  */
 async function recentRecipientCount(userId: Types.ObjectId): Promise<number> {
   const { duration } = config.limits.messagesToIndividualsThrottle;
-  const timeLimit = moment().subtract(moment.duration(duration)).toDate();
+  const timeLimit = sub(new Date(), duration);
 
   // Count how many persons this user has already written within the limit
   const writtenTo = await Message.distinct('userTo', {
@@ -894,34 +894,31 @@ service.sync = function (req, res) {
   const created: { $gt?: Date; $lt?: Date } = {};
   if (Object.hasOwn(queryParams, 'dateFrom')) {
     const input = queryParams.dateFrom;
-    dateFrom = typeof input === 'string' ? moment(String(input)) : null;
-
-    // Validate `dateFrom`
-    if (!dateFrom?.isValid()) {
+    dateFrom = typeof input === 'string' ? new Date(input) : null;
+    if (!dateFrom || Number.isNaN(dateFrom.getTime())) {
       return res.status(400).send({
         message: 'Invalid `dateFrom`.',
       });
     }
 
     // Append dateFrom to date query
-    created.$gt = dateFrom.toDate();
+    created.$gt = dateFrom;
   }
   if (Object.hasOwn(queryParams, 'dateTo')) {
     const input = queryParams.dateTo;
-    dateTo = typeof input === 'string' ? moment(String(input)) : null;
-    // Validate `dateTo`
-    if (!dateTo?.isValid()) {
+    dateTo = typeof input === 'string' ? new Date(input) : null;
+    if (!dateTo || Number.isNaN(dateTo.getTime())) {
       return res.status(400).send({
         message: 'Invalid `dateTo`.',
       });
     }
 
     // Append dateTo to date query
-    created.$lt = dateTo.toDate();
+    created.$lt = dateTo;
   }
 
   // Validate correct order of dates
-  if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+  if (dateFrom && dateTo && isAfter(dateFrom, dateTo)) {
     return res.status(400).send({
       message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
     });

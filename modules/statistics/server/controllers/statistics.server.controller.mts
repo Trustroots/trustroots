@@ -2,7 +2,7 @@ import { promisify } from 'node:util';
 /**
  * Module dependencies.
  */
-import moment from 'moment';
+import { sub, subDays, type Duration } from 'date-fns';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import semver from 'semver';
@@ -147,10 +147,7 @@ interface StatisticsControllerService {
   getMeetOffersCount(callback: Callback<number>): void;
   getHostOffersCount(callback: Callback<HostingCounts>): void;
   getNewsletterSubscriptionsCount(callback: Callback<number>): void;
-  getLastSeenStatistic(
-    since: moment.DurationInputArg1,
-    callback: Callback<number>,
-  ): void;
+  getLastSeenStatistic(since: Duration, callback: Callback<number>): void;
   getUserLanguagesCount(
     limit: number,
     callback: Callback<LanguageCount[]>,
@@ -410,12 +407,12 @@ export const getNewsletterSubscriptionsCount = function (
  * @esmNamed
  */
 export const getLastSeenStatistic = function (
-  since: moment.DurationInputArg1,
+  since: Duration,
   callback: Callback<number>,
 ): void {
   const query = {
     seen: {
-      $gte: moment().subtract(since).toDate(),
+      $gte: sub(new Date(), since),
     },
   };
   User.countDocuments(query).then(
@@ -954,10 +951,10 @@ export const getPublicStatistics = function (
     };
     state.experiences = (await promisify(
       statisticsService.getExperienceStatistics,
-    )(moment().subtract(90, 'days').toDate()))!;
+    )(subDays(new Date(), 90)))!;
     state.messageInteractions = (await promisify(
       statisticsService.getMessageInteractionStatistics,
-    )(moment().subtract(90, 'days').toDate()))!;
+    )(subDays(new Date(), 90)))!;
     state.recentActivity = (await promisify(
       statisticsService.getRecentActivityStatistics,
     )(new Date()))!;
