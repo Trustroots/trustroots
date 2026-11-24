@@ -45,6 +45,7 @@ class AndroidNip07JourneyTest {
         val keys = AndroidNostrKeys(compose.activity, nostrAccountScope(base, "radio-${UUID.randomUUID()}"))
         keys.import("0".repeat(63) + "1")
         lateinit var web: WebView
+        lateinit var bridge: AndroidNip07Bridge
         var committedURL: String? = null
         var isCurrent = true
         val session = BrowserNostrSession(keys) { isCurrent }
@@ -56,7 +57,7 @@ class AndroidNip07JourneyTest {
                     WebView(context).also { view ->
                         web = view
                         view.settings.javaScriptEnabled = true
-                        val bridge = AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
+                        bridge = AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
                         view.webViewClient = object : WebViewClient() {
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                                 committedURL = null
@@ -100,6 +101,7 @@ class AndroidNip07JourneyTest {
             }
             assertTrue(verifier.verifySignature(decodeHex(event.getString("sig"))))
 
+            val binaryMessagesSupported = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER)
             eval(web, """
                 (() => {
                   const bridge = window.trustrootsAndroidNip07;
@@ -110,6 +112,7 @@ class AndroidNip07JourneyTest {
                     window.bridgeResponses.push(response);
                     if (response.id === 'unsupported') bridge.onmessage = original;
                   };
+                  if ($binaryMessagesSupported) bridge.postMessage(new Uint8Array([1, 2, 3]).buffer);
                   bridge.postMessage('invalid JSON');
                   bridge.postMessage(JSON.stringify({method:'getPublicKey'}));
                   bridge.postMessage(JSON.stringify({id:1, method:'getPublicKey'}));
@@ -124,6 +127,20 @@ class AndroidNip07JourneyTest {
             val rejected = JSONObject(eval(web, "window.bridgeResponses[0]"))
             assertEquals("unsupported", rejected.getString("id"))
             assertEquals("Unsupported Nostr operation.", rejected.getString("error"))
+
+            compose.runOnUiThread { bridge.pageChanged() }
+            eval(web, """
+                window.nostr.getPublicKey().then(
+                  () => window.uncommittedPageResult = 'returned a key',
+                  error => window.uncommittedPageResult = error.message
+                );
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.uncommittedPageResult)") == "true" }
+            assertEquals(
+                "Nostr signing is available only to a trusted top-level page in an active session.",
+                JSONTokener(eval(web, "window.uncommittedPageResult")).nextValue(),
+            )
+            compose.runOnUiThread { bridge.pageCommitted() }
 
             compose.runOnUiThread { signingDispatcher.holdNext = true }
             eval(web, """
@@ -146,6 +163,24 @@ class AndroidNip07JourneyTest {
             }
             compose.waitUntil(10_000) { eval(web, "Boolean(window.pendingRequest)") == "true" }
             assertEquals("The signing session or local key changed.", JSONTokener(eval(web, "window.pendingRequest")).nextValue())
+
+            compose.runOnUiThread { signingDispatcher.holdNext = true }
+            eval(web, """
+                window.nostr.getPublicKey().then(
+                  () => window.signedOutRequest = 'returned a key',
+                  error => window.signedOutRequest = error.message
+                );
+                window.nostr.getPublicKey().catch(error => window.requestAlreadyPending = error.message);
+            """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.requestAlreadyPending)") == "true" }
+            assertEquals("A Nostr request is already in progress.", JSONTokener(eval(web, "window.requestAlreadyPending")).nextValue())
+            compose.runOnUiThread {
+                isCurrent = false
+                signingDispatcher.release()
+            }
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.signedOutRequest)") == "true" }
+            assertEquals("The signing session or local key changed.", JSONTokener(eval(web, "window.signedOutRequest")).nextValue())
+            compose.runOnUiThread { isCurrent = true }
 
             eval(web, """
                 window.nostr.signEvent({kind: 'invalid'}).then(

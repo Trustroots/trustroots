@@ -162,13 +162,20 @@ class NostrKeyJourneyTest {
             val backend = fixture.baseURL
             backendURL.set(backend)
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+            val account = nostrAccountScope(backend, username)
+            val keys = AndroidNostrKeys(context, account)
             try {
                 val api = MobileApiClient(backend)
                 val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
                 compose.setContent { NostrKeyEntry(api, session, enabled = true) }
                 compose.onNodeWithText("Nostr key").performClick()
                 awaitText("Import private key")
+                val existingKey = keys.generate()
+                compose.onNodeWithText("Generate new key").performScrollTo().performClick()
+                awaitText("The local Nostr key could not be accessed.")
+                assertEquals(existingKey, AndroidNostrKeys(context, account).publicKey())
+                keys.remove()
+
                 val field = compose.onNode(hasSetTextAction())
                 val importButton = compose.onNodeWithText("Import private key")
                 field.performTextReplacement("x".repeat(129))
