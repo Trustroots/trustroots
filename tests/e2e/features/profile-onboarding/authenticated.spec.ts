@@ -143,6 +143,7 @@ test.describe('authenticated member flows', () => {
       'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
       'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
       'The export carries a signature that verifies against the configured signing key.',
+      'A profile-only export verifies with the original attestation.',
     ]);
 
     if (!authenticatedMember)
@@ -171,17 +172,29 @@ test.describe('authenticated member flows', () => {
 
     // playwright.config.cts gives the e2e server a throwaway signing key.
     const { data: secretKey } = nip19.decode(
-      process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC as `nsec1${string}`,
+      process.env.TRUSTROOTS_NOSTR_SERVICE_NSEC as `nsec1${string}`,
     );
     const pubkey = getPublicKey(secretKey);
-    const report = verifyExport(data, {
-      keyHistory: [{ pubkey, status: 'active' }],
-    });
+    const keyHistory = [{ pubkey, status: 'active' }];
+    const report = verifyExport(data, { keyHistory });
 
     expect(report).toMatchObject({
       problems: [],
       valid: true,
+      partial: false,
       event: { status: 'verified', pubkey },
+    });
+
+    const { format, version, profile, signature } = data;
+    expect(
+      verifyExport({ format, version, profile, signature }, { keyHistory }),
+    ).toMatchObject({
+      valid: true,
+      partial: true,
+      sections: {
+        profile: { status: 'verified' },
+        contacts: { status: 'absent' },
+      },
     });
 
     // The signed part of the file must not vary between downloads, otherwise
@@ -189,6 +202,7 @@ test.describe('authenticated member flows', () => {
     const second = await (await page.request.get('/api/users/export')).json();
 
     expect(second.exportedAt).toEqual(expect.any(String));
+    expect(second.signature.root).toEqual(signature.root);
     expect({ ...second, exportedAt: null, signature: null }).toEqual({
       ...data,
       exportedAt: null,

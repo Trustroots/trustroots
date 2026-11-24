@@ -40,9 +40,9 @@ The member's data is deliberately _not_ restructured into Nostr events. Designin
 node bin/verify-data-export.mts trustroots-data.json
 ```
 
-Exit 0 when every check passes, 1 otherwise. It needs no server, no database, and no network. It checks, in order: the format and version; each section's digest; the root against the section digests and against the event's `x` tag; the event id and Schnorr signature; and the signing key against the pinned key history in `config/data-export-signing-keys.json`.
+The verifier runs offline. It checks the format and version, every supplied section against its digest, the root against the digest manifest, the event kind and its `x` tag, the event signature, and the signing key against `config/data-export-signing-keys.json`.
 
-It reports rather than merely passing or failing, because a fork operator deciding whether to trust an imported social graph needs to know _which_ section failed and what the signing key's status is. It also distinguishes an absent section from an empty one, so a partial file cannot be mistaken for a member with no contacts.
+The CLI exits 0 for a verified full or partial export and exits 1 if a check fails. To share a partial export, keep `format`, `version`, the entire `signature` object and at least one data section. The report marks omitted sections as absent and identifies a successful partial verification as `OK (partial export)`.
 
 ## What a signature does not prove
 

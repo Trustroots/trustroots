@@ -163,22 +163,32 @@ describe('Member data export controller', () => {
     vi.unstubAllEnvs();
   });
 
-  it('serves an unsigned export and warns when no signing key is configured', async () => {
-    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', '');
-    const log = sinon.stub(winston, 'log');
-    const loaded = loadController({
-      profile: (_req, _res, next) => next(),
-      contacts: (_req, _res, next) => next(),
+  for (const [reason, nsec] of [
+    ['missing', ''],
+    ['malformed', 'invalid-test-key'],
+    ['unusable', nip19.nsecEncode(new Uint8Array(32))],
+  ]) {
+    it(`serves an unsigned export and warns when the signing key is ${reason}`, async () => {
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nsec);
+      const log = sinon.stub(winston, 'log');
+      const loaded = loadController({
+        profile: (_req, _res, next) => next(),
+        contacts: (_req, _res, next) => next(),
+      });
+      const response = mockResponse();
+      const next = sinon.stub();
+
+      await loaded.download({ user } as never, response as never, next);
+
+      assert.equal(responseBody(response).signature, null);
+      assert.equal(next.called, false);
+      sinon.assert.calledOnceWithExactly(
+        log,
+        'warn',
+        'Serving an unsigned export because no usable signing key is configured.',
+      );
     });
-    const response = mockResponse();
-    const next = sinon.stub();
-
-    await loaded.download({ user } as never, response as never, next);
-
-    assert.equal(responseBody(response).signature, null);
-    assert.equal(next.called, false);
-    assert.equal(log.calledWith('warn', sinon.match(/unsigned export/)), true);
-  });
+  }
 
   it('signs all six delivered sections and detects changes in each of them', async () => {
     vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));

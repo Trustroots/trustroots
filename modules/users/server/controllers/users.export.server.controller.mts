@@ -345,7 +345,7 @@ service.download = async function (
     if (!signature) {
       log(
         'warn',
-        'Serving an unsigned export because no signing key is configured.',
+        'Serving an unsigned export because no usable signing key is configured.',
       );
     }
     res

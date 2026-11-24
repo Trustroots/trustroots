@@ -69,7 +69,7 @@ describe('Member data export verification', () => {
     const file = buildFile();
     file.signature.event = finalizeEvent(
       {
-        kind: signingService.ATTESTATION_KIND,
+        kind: canonical.ATTESTATION_KIND,
         created_at: file.signature.event.created_at,
         tags: [
           ['m', 'application/json'],
@@ -148,7 +148,7 @@ describe('Member data export verification', () => {
       ]);
   });
 
-  it('fails the tampered section and the root when a byte changes', () => {
+  it('fails the tampered section while verifying the unchanged root', () => {
     const file = buildFile();
     file.contacts[0].username = 'someone-else';
 
@@ -157,7 +157,7 @@ describe('Member data export verification', () => {
     report.valid.should.be.false();
     report.sections.contacts.status.should.equal('mismatch');
     report.sections.profile.status.should.equal('verified');
-    report.root!.status.should.equal('mismatch');
+    report.root!.status.should.equal('verified');
     report.problems.should.deepEqual([
       'Section "contacts" does not match the signed digest; it has been altered.',
     ]);
@@ -189,15 +189,69 @@ describe('Member data export verification', () => {
     );
   });
 
-  it('distinguishes an absent section from an empty one', () => {
+  it('verifies a profile-only export and reports which sections are absent', () => {
     const file = buildFile();
-    delete file.contacts;
+    for (const name of canonical.SECTION_NAMES) {
+      if (name !== 'profile') delete file[name];
+    }
 
     const report = verification.verifyExport(file, { keyHistory });
 
     report.sections.contacts.status.should.equal('absent');
+    report.sections.profile.status.should.equal('verified');
+    report.root!.status.should.equal('verified');
+    report.partial.should.be.true();
+    report.valid.should.be.true();
+    report.problems.should.be.empty();
+    verification
+      .describeReport(report)
+      .should.containEql('OK (partial export)');
+  });
+
+  it('rejects a partial export with a changed section or withheld digest', () => {
+    const file = buildFile();
+    delete file.contacts;
+    file.profile.username = 'different-member';
+    file.signature.sections.contacts = 'a'.repeat(64);
+
+    const report = verification.verifyExport(file, { keyHistory });
+
+    report.partial.should.be.true();
     report.valid.should.be.false();
-    report.problems.should.matchAny(/withheld/);
+    report.sections.profile.status.should.equal('mismatch');
+    report.root!.status.should.equal('mismatch');
+    verification.describeReport(report).should.containEql('FAILED');
+  });
+
+  it('rejects a file containing only the attestation', () => {
+    const file = buildFile();
+    for (const name of canonical.SECTION_NAMES) delete file[name];
+
+    const report = verification.verifyExport(file, { keyHistory });
+
+    report.valid.should.be.false();
+    report.problems.should.deepEqual([
+      'The export contains no data sections to verify.',
+    ]);
+  });
+
+  it('rejects a correctly signed event of a different kind', () => {
+    const file = buildFile();
+    file.signature.event = finalizeEvent(
+      {
+        kind: 1,
+        created_at: file.signature.event.created_at,
+        tags: file.signature.event.tags,
+        content: '',
+      },
+      secretKey,
+    );
+
+    const report = verification.verifyExport(file, { keyHistory });
+
+    report.valid.should.be.false();
+    report.event!.status.should.equal('invalid');
+    report.problems.should.matchAny(/export attestation kind/);
   });
 
   it('fails when the event does not attest the signature root', () => {

@@ -13,11 +13,6 @@
 import { getNostrServiceSigner } from '../../../core/server/services/nostr-service-signer.server.mts';
 import * as canonical from './data-export-canonical.server.service.mts';
 
-// Placeholder kind, pending an assignment in the nostroots `nr-common` kind
-// registry. The attestation travels inside the exported file rather than to a
-// relay, so replaceable-kind semantics never come into play.
-const ATTESTATION_KIND = 30410;
-
 /**
  * @returns {object|null} a detached signature, or `null` when no usable
  *   signing key is configured. An unsigned export is a degraded export, not a
@@ -37,7 +32,7 @@ function signPayload(
   const createdAt = Math.floor((now ? now.getTime() : Date.now()) / 1000);
 
   const event = signer.sign({
-    kind: ATTESTATION_KIND,
+    kind: canonical.ATTESTATION_KIND,
     created_at: createdAt,
     tags: [
       ['x', root],
@@ -57,4 +52,4 @@ function signPayload(
   };
 }
 
-export { ATTESTATION_KIND, signPayload };
+export { signPayload };

@@ -29,6 +29,9 @@ const SECTION_NAMES = [
   'experiences',
 ] as const;
 const SIGNATURE_ALGORITHM = 'nostr-schnorr-secp256k1/jcs-sha256';
+// The attestation travels in the export file. Kind 30410 is provisional
+// pending an assignment in the nostroots nr-common kind registry.
+const ATTESTATION_KIND = 30410;
 
 type SectionName = (typeof SECTION_NAMES)[number];
 type JsonRecord = Record<string, unknown>;
@@ -180,6 +183,7 @@ function digestPayload(payload: SignedPayload) {
 
 export type { SectionName, SignedPayload };
 export {
+  ATTESTATION_KIND,
   EXPORT_FORMAT,
   EXPORT_VERSION,
   SECTION_NAMES,

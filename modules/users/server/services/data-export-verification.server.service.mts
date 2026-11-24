@@ -38,6 +38,7 @@ type SectionReport = {
 };
 type Report = {
   valid: boolean;
+  partial: boolean;
   signed: boolean;
   problems: string[];
   sections: Record<string, SectionReport>;
@@ -70,9 +71,7 @@ function verifySections(
 
     if (file[name] === undefined) {
       report.sections[name] = { status: 'absent', expected };
-      report.problems.push(
-        `Section "${name}" is withheld from this file; the attestation covers it, so this file is a partial export.`,
-      );
+      report.partial = true;
       return;
     }
 
@@ -88,6 +87,14 @@ function verifySections(
       `Section "${name}" does not match the signed digest; it has been altered.`,
     );
   });
+
+  if (
+    canonical.SECTION_NAMES.every(
+      name => report.sections[name].status === 'absent',
+    )
+  ) {
+    report.problems.push('The export contains no data sections to verify.');
+  }
 }
 
 function verifyRoot(file: ExportFile, signature: Signature, report: Report) {
@@ -99,11 +106,7 @@ function verifyRoot(file: ExportFile, signature: Signature, report: Report) {
     }),
   );
 
-  const sectionsIntact = canonical.SECTION_NAMES.every(
-    name => report.sections[name].status === 'verified',
-  );
-
-  if (recomputed === signature.root && sectionsIntact) {
+  if (recomputed === signature.root) {
     report.root = { status: 'verified', expected: signature.root };
     return;
   }
@@ -114,11 +117,9 @@ function verifyRoot(file: ExportFile, signature: Signature, report: Report) {
     actual: recomputed,
   };
 
-  if (recomputed !== signature.root) {
-    report.problems.push(
-      'The root digest does not match the section digests it claims to cover.',
-    );
-  }
+  report.problems.push(
+    'The root digest does not match the section digests it claims to cover.',
+  );
 }
 
 function verifyAttestation(signature: Signature, report: Report) {
@@ -156,6 +157,14 @@ function verifyAttestation(signature: Signature, report: Report) {
     createdAt: event.created_at,
     claimedAt: new Date(claimedMs).toISOString(),
   };
+
+  if (event.kind !== canonical.ATTESTATION_KIND) {
+    report.event.status = 'invalid';
+    report.problems.push(
+      `The Nostr event must have export attestation kind ${canonical.ATTESTATION_KIND}.`,
+    );
+    return;
+  }
 
   if (findTag(event, 'x') !== signature.root) {
     report.event.status = 'mismatch';
@@ -228,6 +237,7 @@ function verifyExport(
 ): Report {
   const report: Report = {
     valid: false,
+    partial: false,
     signed: false,
     problems: [],
     sections: {},
@@ -324,7 +334,8 @@ function describeReport(report: Report): string {
 
   report.problems.forEach(problem => lines.push(`Problem:     ${problem}`));
 
-  lines.push(report.valid ? 'Result:      OK' : 'Result:      FAILED');
+  const result = report.partial ? 'OK (partial export)' : 'OK';
+  lines.push(`Result:      ${report.valid ? result : 'FAILED'}`);
 
   return lines.join('\n');
 }
