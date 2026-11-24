@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
@@ -47,6 +48,17 @@ internal object NostranslationAlerts {
 
     fun isEnabled(context: Context, backend: String, session: MemberSession): Boolean =
         prefs(context).getBoolean(account(backend, session), false)
+
+    fun observeEnabled(context: Context, backend: String, session: MemberSession, onChange: (Boolean) -> Unit): () -> Unit {
+        val preferences = prefs(context)
+        val key = account(backend, session)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { updated, changed ->
+            if (changed == key || changed == null) onChange(updated.getBoolean(key, false))
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        onChange(preferences.getBoolean(key, false))
+        return { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     fun captureIntent(intent: Intent?) {
         intent?.getStringExtra(openExtra)?.let { openRequested.value = it }
