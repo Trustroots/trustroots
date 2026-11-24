@@ -69,8 +69,7 @@ jobs:
             device_id="$(xcrun simctl create 'Trustroots iOS 17.0' \
               com.apple.CoreSimulator.SimDeviceType.iPhone-15 "$runtime_id")"
           else
-            device_id="$(xcrun simctl list devices available -j | jq -er \
-              'first(.devices[][] | select(.name | startswith("iPhone")) | .udid)')"
+            device_id="$(bash apps/ios/scripts/select-ci-simulator.sh)"
           fi
           test -n "$device_id"
           echo "id=$device_id" >> "$GITHUB_OUTPUT"

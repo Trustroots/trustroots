@@ -129,11 +129,27 @@ jobs:
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Test coverage reporting scripts
         run: python3 -m unittest discover -s apps/android/scripts
+      - name: Cache Robolectric test runtimes
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-runtimes-${{ runner.os }}-${{ hashFiles('apps/android/app/build.gradle.kts', 'apps/android/app/src/test/**/*.kt') }}
+          restore-keys: robolectric-runtimes-${{ runner.os }}-
       - name: Build coverage APKs and run unit tests before starting the emulator
-        run: >-
-          bash apps/android/gradlew -p apps/android --build-cache
-          -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081
-          testDebugUnitTest assembleDebug assembleDebugAndroidTest
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/android-coverage-build.log"
+          for attempt in 1 2 3; do
+            if bash apps/android/gradlew -p apps/android --build-cache \
+              -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 \
+              testDebugUnitTest assembleDebug assembleDebugAndroidTest 2>&1 | tee "$log"; then
+              exit 0
+            fi
+            if [ "$attempt" = 3 ] || ! grep -Eq 'HTTP response code: 429.*org/robolectric/android-all-instrumented' "$log"; then
+              exit 1
+            fi
+            sleep "$((attempt * 15))"
+          done
       - name: Package coverage inputs
         run: |
           tar -czf android-coverage-inputs.tar.gz -C apps/android/app/build \
