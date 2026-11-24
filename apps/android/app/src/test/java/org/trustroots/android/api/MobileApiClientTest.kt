@@ -6,6 +6,8 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlinx.coroutines.runBlocking
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import org.json.JSONObject
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
@@ -930,6 +932,76 @@ class MobileApiClientTest {
             "https://push.example.test/fictional-endpoint",
             JSONObject(unregisterRequest.body).getString("endpoint"),
         )
+    }
+
+    @Test
+    fun registersNostranslationAlertsWithTheSignedChallengeAndDeletesByTransport() {
+        MockWebServer().use { server ->
+            val path = "/api/mobile/v0/nostranslation/alerts"
+            val registration = JSONObject()
+                .put("author", "example-author")
+                .put("transport", "example-transport")
+                .put("destination", JSONObject().put("platform", "android"))
+            server.enqueue(MockResponse(body = """{"event":{"kind":27235,"id":"challenge"}}"""))
+            server.enqueue(MockResponse(code = 204))
+            server.enqueue(MockResponse(code = 204))
+            server.start()
+            val api = MobileApiClient(server.url("/").toString())
+            val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+
+            runBlocking {
+                api.registerTranslationAlert(session, registration) { event ->
+                    assertEquals(27235, event.getInt("kind"))
+                    assertEquals("challenge", event.getString("id"))
+                    event.put("sig", "example-signature")
+                }
+                api.unregisterTranslationAlert(session, "example-transport")
+            }
+
+            val challenge = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            val registered = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            val removed = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            assertEquals(listOf("POST", "PUT", "DELETE"), listOf(challenge.method, registered.method, removed.method))
+            assertEquals(listOf("$path/challenge", path, path), listOf(challenge.target, registered.target, removed.target))
+            listOf(challenge, registered, removed).forEach {
+                assertEquals("Bearer example-access", it.headers["Authorization"])
+            }
+            val challengeBody = JSONObject(requireNotNull(challenge.body).utf8())
+            val registeredBody = JSONObject(requireNotNull(registered.body).utf8())
+            for (body in listOf(challengeBody, registeredBody)) {
+                assertEquals("example-author", body.getString("author"))
+                assertEquals("example-transport", body.getString("transport"))
+                assertEquals("android", body.getJSONObject("destination").getString("platform"))
+            }
+            assertFalse(challengeBody.has("proof"))
+            val proof = registeredBody.getJSONObject("proof")
+            assertEquals("challenge", proof.getString("id"))
+            assertEquals("example-signature", proof.getString("sig"))
+            val removedBody = JSONObject(requireNotNull(removed.body).utf8())
+            assertEquals("example-transport", removedBody.getString("transport"))
+        }
+    }
+
+    @Test
+    fun onlyUsesAStringNostranslationVapidKey() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(body = """{"androidVapidKey":"example-vapid"}"""))
+            server.enqueue(MockResponse(body = """{"androidVapidKey":42}"""))
+            server.start()
+            val api = MobileApiClient(server.url("/").toString())
+            val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+
+            runBlocking {
+                assertEquals("example-vapid", api.translationAlertVapidKey(session))
+                assertNull(api.translationAlertVapidKey(session))
+            }
+            repeat(2) {
+                val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+                assertEquals("GET", request.method)
+                assertEquals("/api/mobile/v0/nostranslation/alerts", request.target)
+                assertEquals("Bearer example-access", request.headers["Authorization"])
+            }
+        }
     }
 
     @Test
