@@ -10,6 +10,7 @@ export type Operation =
   | 'resetPassword'
   | 'passwordChange'
   | 'resendConfirmation'
+  | 'manageSessions'
   | 'avatarUpload'
   | 'dataExport'
   | 'nostranslationAlertWrite';
@@ -167,6 +168,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     resetPassword: createLimiter('resetPassword', 'token', deps),
     passwordChange: createLimiter('passwordChange', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
+    manageSessions: createLimiter('manageSessions', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     dataExport: createLimiter('dataExport', 'member', deps),
     nostranslationAlertWrite: createLimiter(

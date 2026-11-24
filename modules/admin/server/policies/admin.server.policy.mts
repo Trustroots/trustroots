@@ -12,6 +12,7 @@ const greeters = (...methods: string[]) => ({
 });
 
 export const isAllowed = createRouteAuthorisation({
+  '/api/admin/elevate': greeters('post'),
   '/api/admin/dashboard': support('get'),
   '/api/admin/network-connections': support('post'),
   '/api/admin/network-connections/:memberId': support('get'),

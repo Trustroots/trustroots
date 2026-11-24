@@ -7,6 +7,7 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import MemberSessions from './MemberSessions.component';
 import {
   cancelProfileRemoval,
   getProfileRemovalStatus,
@@ -640,6 +641,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>
+      <MemberSessions />
     </ProfileEditPage>
   );
 }

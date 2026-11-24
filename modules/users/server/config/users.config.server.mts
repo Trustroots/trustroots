@@ -10,6 +10,7 @@ import type {
   UserServerModel,
   UserServerRecord,
 } from '../models/user.server.types.mts';
+import { checkMemberSession } from '../services/member-session.server.service.mts';
 /**
  * Module dependencies.
  */
@@ -97,4 +98,5 @@ export default async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  app.use(checkMemberSession);
 }
