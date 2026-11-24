@@ -306,7 +306,7 @@ export default function TribeDetailPage({
       <div
         className={
           isHackersCircle
-            ? 'hackers-circle-community tw:grid-cols-1'
+            ? 'hackers-circle-community tw:grid-cols-1 tw:[&>.circle-member-discovery]:max-w-none!'
             : undefined
         }
       >
