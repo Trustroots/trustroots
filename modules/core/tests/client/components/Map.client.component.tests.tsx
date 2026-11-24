@@ -26,8 +26,16 @@ describe('<Map />', () => {
   it('renders MapLibre where WebGL2 is available', async () => {
     mockIsWebGLSupported.mockReturnValue(true);
     const { track, wrapper } = fakeAnalytics();
-    render(<Map view={view}>Map child</Map>, { wrapper });
+    render(
+      <Map view={view} className="offer-location" style={{ height: 220 }}>
+        Map child
+      </Map>,
+      { wrapper },
+    );
 
+    const placeholder = screen.getByRole('alertdialog').parentElement;
+    expect(placeholder).toHaveClass('offer-location');
+    expect(placeholder).toHaveStyle({ height: '220px' });
     expect(await screen.findByTestId('maplibre')).toHaveTextContent(
       'Map child',
     );

@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useAnalytics } from '@trustroots/analytics/client';
+import { cn } from '@trustroots/ui/cn';
 
 import LoadingIndicator from '../LoadingIndicator';
 import { isWebGLSupported } from '../../utils/map';
@@ -18,7 +19,16 @@ export default function Map(props: MapProps) {
 
   const Renderer = webGL ? MapLibreMap : LeafletMap;
   return (
-    <Suspense fallback={<LoadingIndicator />}>
+    <Suspense
+      fallback={
+        <div
+          className={cn(props.className, 'tw:overflow-hidden')}
+          style={props.style}
+        >
+          <LoadingIndicator />
+        </div>
+      }
+    >
       <Renderer {...props} />
     </Suspense>
   );
