@@ -30,6 +30,7 @@ vi.mock('leaflet', () => {
     __esModule: true,
     default: {
       map: vi.fn(() => map),
+      control: { scale: vi.fn(() => ({ addTo: vi.fn() })) },
       tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
       layerGroup: vi.fn(() => group),
       circleMarker: vi.fn(() => ({

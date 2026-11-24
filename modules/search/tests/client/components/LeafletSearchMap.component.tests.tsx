@@ -71,6 +71,7 @@ vi.mock('leaflet', () => ({
       },
     ),
     control: {
+      scale: vi.fn(() => ({ addTo: vi.fn() })),
       zoom: vi.fn(() => ({ addTo: vi.fn() })),
     },
     divIcon: vi.fn(options => options),

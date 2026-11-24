@@ -1,14 +1,17 @@
-// External dependencies
 import { ScaleControl } from 'react-map-gl/mapbox';
 import React from 'react';
 
-// Internal dependencies
-import './map-scale-control.less';
-
-export default function MapScaleControl() {
+export default function MapScaleControl({
+  showMapStyles = false,
+}: {
+  showMapStyles?: boolean;
+}) {
   return (
-    <div className="map-scale-control-container">
-      <ScaleControl position="bottom-left" maxWidth={100} unit="metric" />
-    </div>
+    <ScaleControl
+      position="bottom-left"
+      maxWidth={100}
+      unit="metric"
+      style={showMapStyles ? { marginBottom: 62 } : undefined}
+    />
   );
 }

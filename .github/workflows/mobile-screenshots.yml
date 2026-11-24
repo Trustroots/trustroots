@@ -77,10 +77,36 @@ jobs:
           mkdir -p tmp/mobile-screenshots
           xcrun simctl io "$DEVICE_ID" screenshot tmp/mobile-screenshots/ios_sign_in.png
           test -s tmp/mobile-screenshots/ios_sign_in.png
+      - name: Capture iOS map scale
+        working-directory: apps/ios
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+          TRUSTROOTS_IOS_PILOT_PORT: 18765
+        run: |
+          python3 scripts/shared_member_pilot_server.py --port "$TRUSTROOTS_IOS_PILOT_PORT" &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --retry 10 --retry-connrefused "http://127.0.0.1:$TRUSTROOTS_IOS_PILOT_PORT/health" >/dev/null
+          xcodebuild \
+            -project Trustroots.xcodeproj \
+            -scheme TrustrootsTests \
+            -destination "id=$DEVICE_ID" \
+            -derivedDataPath "$RUNNER_TEMP/TrustrootsDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TrustrootsMapScale.xcresult" \
+            -parallel-testing-enabled NO \
+            -only-testing:TrustrootsUITests/SharedMemberPilotJourneyUITests/testShowsMetricScaleOnNativeMap \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            test
+          xcrun xcresulttool export attachments \
+            --path "$RUNNER_TEMP/TrustrootsMapScale.xcresult" \
+            --output-path "$RUNNER_TEMP/ios-map-scale" \
+            --test-id 'SharedMemberPilotJourneyUITests/testShowsMetricScaleOnNativeMap()'
+          image="$(jq -er 'first(.[] | .attachments[] | select(.suggestedHumanReadableName | startswith("iOS map distance scale")) | .exportedFileName)' "$RUNNER_TEMP/ios-map-scale/manifest.json")"
+          cp "$RUNNER_TEMP/ios-map-scale/$image" ../../tmp/mobile-screenshots/ios_host_map.png
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mobile-screenshot-ios
-          path: tmp/mobile-screenshots/ios_sign_in.png
+          path: tmp/mobile-screenshots/ios_*.png
           retention-days: 1
 
   android:
@@ -183,6 +209,7 @@ jobs:
         run: |
           screenshots="$GITHUB_WORKSPACE/tmp/mobile-screenshots"
           test -s "$screenshots/ios_sign_in.png"
+          test -s "$screenshots/ios_host_map.png"
           test -s "$screenshots/android_sign_in.png"
           test -s "$screenshots/android_host_map.png"
           test -s "$screenshots/android_circles.png"
@@ -231,6 +258,10 @@ jobs:
               '### iOS sign in',
               '',
               `![iOS sign in](${baseUrl}/ios_sign_in.png)`,
+              '',
+              '### iOS host map',
+              '',
+              `![iOS host map](${baseUrl}/ios_host_map.png)`,
               '',
               '### Android sign in',
               '',
