@@ -10,6 +10,8 @@ import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,8 +28,12 @@ import org.trustroots.android.MainActivity
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.nostr.AndroidNostrKeys
+import org.trustroots.android.nostr.NostrEventSigner
 import org.trustroots.android.nostr.nostrAccountScope
+import org.trustroots.android.ui.LocalTransportFixture
 import org.unifiedpush.android.connector.FailedReason
+import org.unifiedpush.android.connector.data.PublicKeySet
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import java.util.UUID
@@ -127,6 +133,83 @@ class MessageAlertPayloadLifecycleTest {
             assertNull(MessageAlerts.status.value)
         } finally {
             NostranslationAlerts.status.value = previousStatus
+        }
+    }
+
+    @Test
+    fun nostranslationEndpointRegistersThePairedTransportAndRemovesStaleRegistrations() {
+        val endpoint = "https://push.example.test/review"
+        val peer = "c6047f9441ed7d6d3045406e95c07cd85a778e4b8cef3ca7abac09b95c709ee5"
+        val transport = "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+        val alertPath = "/api/mobile/v0/nostranslation/alerts"
+        val nonce = "a".repeat(64)
+        val session = MemberSession("", MobileMember("alert-fixture", "Alert Fixture"), "fixture-review-access")
+        lateinit var backend: String
+        LocalTransportFixture { request ->
+            assertEquals("Bearer fixture-review-access", request.authorization)
+            val body = JSONObject(request.body)
+            when (request.method to request.path) {
+                "POST" to "$alertPath/challenge" -> {
+                    assertEquals(peer, body.getString("author"))
+                    assertEquals(transport, body.getString("transport"))
+                    assertEquals(endpoint, body.getJSONObject("destination").getString("endpoint"))
+                    val tags = JSONArray().put(JSONArray().put("u").put("$backend$alertPath"))
+                        .put(JSONArray().put("method").put("PUT"))
+                        .put(JSONArray().put("payload").put("dd5c430f183b4ce6c685950899f626d3ff4db8c3ce2cfe6a485a5111040295a0"))
+                        .put(JSONArray().put("challenge").put(nonce))
+                    val challenge = JSONObject().put("kind", 27235).put("content", "").put("tags", tags)
+                        .put("created_at", System.currentTimeMillis() / 1000)
+                    LocalTransportFixture.Response(JSONObject().put("event", challenge).toString())
+                }
+                "PUT" to alertPath -> LocalTransportFixture.Response("", status = 204)
+                "DELETE" to alertPath -> LocalTransportFixture.Response("", status = 204)
+                else -> error("Unexpected registration request ${request.method} ${request.path}")
+            }
+        }.use { fixture ->
+            backend = fixture.baseURL
+            val account = nostrAccountScope(backend, session.member.username)
+            val keys = AndroidNostrKeys(context, account)
+            val preferences = context.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
+            val registered = "${account.storageAccount}:registered"
+            val savedPreferences = preferences.all
+            val savedStatus = NostranslationAlerts.status.value
+            try {
+                keys.generate()
+                keys.savePairings(keys.revision(), JSONArray().put(JSONObject()
+                    .put("peer", peer).put("transport", "0".repeat(63) + "1")))
+                val sessionStore = SecureMobileSessionStore(context)
+                sessionStore.save(session)
+                assertEquals(session.accessToken, sessionStore.load()?.accessToken)
+                preferences.edit().putString("backend", backend).putBoolean(account.storageAccount, true)
+                    .putStringSet(registered, setOf("obsolete-transport")).commit()
+                assertTrue(NostranslationAlerts.isEnabled(context, backend, session))
+                val pushEndpoint = PushEndpoint(endpoint, PublicKeySet("fixture-key", "fixture-auth"), temporary = false)
+
+                NostranslationAlerts.status.value = null
+                pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
+                awaitNostranslationRegistration(fixture)
+                assertEquals(setOf(transport), preferences.getStringSet(registered, null))
+                val register = fixture.requests.single { it.method == "PUT" }
+                val proof = JSONObject(register.body).getJSONObject("proof")
+                assertEquals(nonce, proof.getJSONArray("tags").getJSONArray(3).getString(1))
+                assertTrue(NostrEventSigner.verifies(proof, transport))
+
+                keys.remove()
+                NostranslationAlerts.status.value = null
+                pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
+                awaitNostranslationRegistration(fixture)
+                assertEquals(emptySet<String>(), preferences.getStringSet(registered, null))
+
+                assertEquals(listOf("POST", "PUT", "DELETE", "DELETE"), fixture.requests.map { it.method })
+                assertEquals(
+                    listOf("obsolete-transport", transport),
+                    fixture.requests.filter { it.method == "DELETE" }.map { JSONObject(it.body).getString("transport") },
+                )
+            } finally {
+                keys.remove()
+                restorePreferences(preferences, savedPreferences)
+                NostranslationAlerts.status.value = savedStatus
+            }
         }
     }
 
@@ -307,6 +390,15 @@ class MessageAlertPayloadLifecycleTest {
         ContextWrapper::class.java.getDeclaredMethod("attachBaseContext", Context::class.java).apply {
             isAccessible = true
         }.invoke(service, context)
+    }
+
+    private fun awaitNostranslationRegistration(fixture: LocalTransportFixture) {
+        val deadline = SystemClock.elapsedRealtime() + 90_000
+        while (NostranslationAlerts.status.value == null && SystemClock.elapsedRealtime() < deadline) {
+            Thread.sleep(25)
+        }
+        val requests = fixture.requests.map { "${it.method} ${it.path}" }
+        assertEquals("Alert registration did not settle after requests $requests", R.string.nostranslation_alerts_ready, NostranslationAlerts.status.value)
     }
 
     private fun notificationsFor(senderId: String): List<String> =
