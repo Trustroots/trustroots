@@ -100,7 +100,7 @@ describe('<OffersPresentational />', () => {
 
   it.each(['maybe', 'no'] as const)(
     'uses a generic member label without a username: %s',
-    meetingStatus => {
+    async meetingStatus => {
       render(
         <OffersPresentational
           isOwnOffer={false}
@@ -115,15 +115,17 @@ describe('<OffersPresentational />', () => {
             : 'This member is too busy to meet people',
         ),
       ).toBeVisible();
-      expect(screen.queryByTestId('hosting-map') !== null).toBe(
-        meetingStatus === 'maybe',
-      );
+      if (meetingStatus === 'maybe') {
+        expect(await screen.findByTestId('hosting-map')).toBeVisible();
+      } else {
+        expect(screen.queryByTestId('hosting-map')).toBeNull();
+      }
     },
   );
 
   it.each([true, false])(
     'shows a meeting map without the hosting description (owner: %s)',
-    isOwnOffer => {
+    async isOwnOffer => {
       render(
         <OffersPresentational
           isOwnOffer={isOwnOffer}
@@ -144,7 +146,7 @@ describe('<OffersPresentational />', () => {
       expect(
         screen.queryByText('Approximate hosting location'),
       ).not.toBeInTheDocument();
-      const map = screen.getByTestId('hosting-map');
+      const map = await screen.findByTestId('hosting-map');
       expect(map).toHaveAttribute('data-location', '[51,4]');
       expect(map).toHaveAttribute('data-height', '220');
       expect(map).toHaveAttribute('data-status', 'yes');
@@ -181,7 +183,7 @@ describe('<OffersPresentational />', () => {
     },
   );
 
-  it('keeps the hosting map when the member also welcomes meetings', () => {
+  it('keeps the hosting map when the member also welcomes meetings', async () => {
     render(
       <OffersPresentational
         isOwnOffer={false}
@@ -190,7 +192,7 @@ describe('<OffersPresentational />', () => {
       />,
     );
     expect(screen.getByText('Approximate hosting location')).toBeVisible();
-    expect(screen.getByTestId('hosting-map')).toHaveAttribute(
+    expect(await screen.findByTestId('hosting-map')).toHaveAttribute(
       'data-type',
       'host',
     );
@@ -212,7 +214,7 @@ describe('<OffersPresentational />', () => {
   });
   it.each(['yes', 'maybe'] as const)(
     'shows a compact map for status %s',
-    status => {
+    async status => {
       render(
         <OffersPresentational
           isOwnOffer={false}
@@ -220,7 +222,7 @@ describe('<OffersPresentational />', () => {
           offer={{ ...hostingOffer, status, location: [51, 4] }}
         />,
       );
-      const map = screen.getByTestId('hosting-map');
+      const map = await screen.findByTestId('hosting-map');
       expect(map).toHaveAttribute('data-location', '[51,4]');
       expect(map).toHaveAttribute('data-height', '220');
       expect(map).toHaveAttribute('data-status', status);

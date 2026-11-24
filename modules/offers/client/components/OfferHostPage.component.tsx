@@ -9,12 +9,16 @@ import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import lazyMap from '@/modules/core/client/components/lazyMap';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
 import MeetingAvailabilityControl from './MeetingAvailabilityControl';
-import OfferLocationEditor from './OfferLocationEditor.component';
 import { hostStatusIntent } from './hostStatusIntent';
+
+const OfferLocationEditor = lazyMap(
+  () => import('./OfferLocationEditor.component'),
+);
 
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];

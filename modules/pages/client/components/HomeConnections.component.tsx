@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import CircleLocationMap, {
-  type CircleLocation,
-} from '@/modules/tribes/client/components/CircleLocationMap';
+import lazyMap from '@/modules/core/client/components/lazyMap';
+import type { CircleLocation } from '@/modules/tribes/client/components/CircleLocationMap';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type {
   ConnectionsDiscovery,
@@ -13,6 +12,9 @@ import { memberActivityLabel } from '@/modules/tribes/client/utils/memberActivit
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 
+const CircleLocationMap = lazyMap(
+  () => import('@/modules/tribes/client/components/CircleLocationMap'),
+);
 const EMPTY_CONNECTIONS: ConnectionsDiscovery = { recent: [], hosts: [] };
 const hostingColour = '#008269';
 const meetingColour = '#b16a19';
