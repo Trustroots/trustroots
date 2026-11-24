@@ -1,8 +1,23 @@
 import 'should';
+import mockModule from '../../../../../testutils/server/mock-module.mts';
 
 import * as canonical from '../../../server/services/data-export-canonical.server.service.mts';
 
 describe('Member data export canonicalisation', () => {
+  it('uses the published format, version and signature algorithm', async () => {
+    const wire = await mockModule<typeof canonical>(
+      new URL(
+        '../../../server/services/data-export-canonical.server.service.mts',
+        import.meta.url,
+      ),
+      {},
+    );
+
+    wire.EXPORT_FORMAT.should.equal('trustroots-data-export');
+    wire.EXPORT_VERSION.should.equal(2);
+    wire.SIGNATURE_ALGORITHM.should.equal('nostr-schnorr-secp256k1/jcs-sha256');
+  });
+
   describe('canonicalise', () => {
     it('sorts object keys by UTF-16 code unit', () => {
       canonical
@@ -112,6 +127,30 @@ describe('Member data export canonicalisation', () => {
       });
 
       payload.contacts.should.deepEqual([{ a: 1 }, { z: 1 }]);
+    });
+
+    it('orders mixed sections by identifier then by canonical form', () => {
+      const records = [
+        { 0: 'first key', _id: 'z' },
+        { _id: 'A' },
+        { _id: 'a', priority: 2 },
+        { _id: 'a', priority: 1 },
+        { name: 'No identifier' },
+      ];
+      const expected = [
+        records[4],
+        records[1],
+        records[3],
+        records[2],
+        records[0],
+      ];
+
+      canonical
+        .buildSignedPayload({ contacts: records })
+        .contacts.should.deepEqual(expected);
+      canonical
+        .buildSignedPayload({ contacts: [...records].reverse() })
+        .contacts.should.deepEqual(expected);
     });
 
     it('keeps duplicate items in a stable, canonical order', () => {

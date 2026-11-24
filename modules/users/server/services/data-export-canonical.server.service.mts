@@ -51,9 +51,8 @@ function serialise(value: unknown): string | undefined {
       if (!Number.isFinite(value)) {
         throw new TypeError('Cannot canonicalise a non-finite number');
       }
-      // `JSON.stringify` uses ECMAScript Number::toString, which is what
-      // RFC 8785 prescribes. `-0` serialises as `0`, also per the RFC.
-      return JSON.stringify(value === 0 ? 0 : value);
+      // JSON.stringify also serialises negative zero as zero.
+      return JSON.stringify(value);
     case 'string':
       return JSON.stringify(value);
     case 'object':
@@ -108,28 +107,25 @@ function toPlainJson<T = unknown>(value: unknown): T {
 }
 
 function sha256Hex(input: string): string {
-  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
+  return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function compareStrings(left: string, right: string): number {
+  return Number(left > right) - Number(left < right);
 }
 
 function sortSection(items: unknown[]): unknown[] {
-  const idOf = (item: unknown) =>
-    String((item as { _id?: unknown } | null)?._id || '');
   return items
-    .map(item => ({ item, canonical: canonicalise(item) }))
-    .sort((a, b) => {
-      const left = idOf(a.item);
-      const right = idOf(b.item);
-
-      if (left !== right) {
-        return left < right ? -1 : 1;
-      }
-
-      if (a.canonical === b.canonical) {
-        return 0;
-      }
-
-      return a.canonical < b.canonical ? -1 : 1;
-    })
+    .map(item => ({
+      item,
+      id: String((item as { _id?: unknown } | null)?._id || ''),
+      canonical: canonicalise(item),
+    }))
+    .sort(
+      (left, right) =>
+        compareStrings(left.id, right.id) ||
+        compareStrings(left.canonical, right.canonical),
+    )
     .map(entry => entry.item);
 }
 

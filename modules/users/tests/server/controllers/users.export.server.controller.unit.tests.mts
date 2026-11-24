@@ -52,7 +52,7 @@ interface ExportBody {
     root: string;
     signed: string[];
     sections: Record<string, string>;
-    event: { pubkey: string };
+    event: { pubkey: string; tags: string[][] };
   } | null;
 }
 interface MockResponse {
@@ -182,6 +182,7 @@ describe('Member data export controller', () => {
 
   it('signs all six delivered sections and detects changes in each of them', async () => {
     config.dataExportSigning = { nsec: nip19.nsecEncode(secretKey) };
+    const log = sinon.stub(winston, 'log');
     const loaded = loadController({
       profile: (req, _res, next) => {
         req.profile = {
@@ -208,6 +209,11 @@ describe('Member data export controller', () => {
     const keyHistory = [{ pubkey: publicKey, status: 'active' }];
     assert.equal(verification.verifyExport(file, { keyHistory }).valid, true);
     assert.equal(file.signature?.event.pubkey, publicKey);
+    assert.deepEqual(
+      file.signature?.event.tags.find(([tag]) => tag === 'd'),
+      ['d', user.username],
+    );
+    sinon.assert.neverCalledWith(log, 'warn', sinon.match(/unsigned export/));
     for (const section of [
       'profile',
       'circles',

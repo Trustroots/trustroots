@@ -205,8 +205,8 @@ describe('Member data export verification', () => {
 
   it('fails when the event does not attest the signature root', () => {
     const file = buildFile();
-    file.signature.event.tags = file.signature.event.tags.map(
-      (tag: string[]) => (tag[0] === 'x' ? ['x', 'b'.repeat(64)] : tag),
+    file.signature.event.tags = file.signature.event.tags.map((tag: string[]) =>
+      tag[0] === 'x' ? ['x', 'b'.repeat(64)] : tag,
     );
 
     const report = verification.verifyExport(file, { keyHistory });
