@@ -74,9 +74,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
         element(labelled: "Messages", in: app).tap()
-        openConversation(in: app, draft: draft)
+        let restoredDraft = openConversation(in: app)
         XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
-        XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
+        XCTAssertEqual(restoredDraft.value as? String, "A reply kept after a delivery failure.")
         XCTAssertTrue(app.buttons["Send reply"].isEnabled)
         app.buttons["Send reply"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
@@ -94,9 +94,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign out"].waitForExistence(timeout: 10))
         app.buttons["Back"].tap()
         element(labelled: "Messages", in: app).tap()
-        openConversation(in: app, draft: draft)
+        let clearedDraft = openConversation(in: app)
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
-        XCTAssertTrue(draft.exists)
+        XCTAssertTrue(clearedDraft.exists)
         XCTAssertFalse(app.buttons["Send reply"].isEnabled)
 
         app.buttons["Back"].tap()
@@ -112,7 +112,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signIn(app)
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
         element(labelled: "My profile", in: app).tap()
-        XCTAssertTrue(profile.waitForExistence(timeout: 30), app.debugDescription)
+        let reopenedProfile = element(labelled: "Mira Example", in: app)
+        XCTAssertTrue(reopenedProfile.waitForExistence(timeout: 30), app.debugDescription)
         app.buttons["Back"].tap()
         try await updateFixtureSession("revoke-session", at: fixtureURL)
         element(labelled: "Messages", in: app).tap()
@@ -260,7 +261,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
 
-    private func openConversation(in app: XCUIApplication, draft: XCUIElement) {
+    private func openConversation(in app: XCUIApplication) -> XCUIElement {
+        // Resolve the draft against the process launched for this visit.
+        let draft = app.descendants(matching: .any)["pilot-draft"]
         let open = app.buttons["Open conversation"]
         XCTAssertTrue(open.waitForExistence(timeout: 30), app.debugDescription)
         reveal(open, in: app)
@@ -269,6 +272,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             open.tap()
         }
         XCTAssertTrue(draft.waitForExistence(timeout: 15), app.debugDescription)
+        return draft
     }
 
     private func signIn(_ app: XCUIApplication) {
