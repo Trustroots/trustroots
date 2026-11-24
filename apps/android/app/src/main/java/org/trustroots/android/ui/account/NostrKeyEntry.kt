@@ -45,6 +45,7 @@ import org.trustroots.android.api.MobileApiException
 import kotlinx.coroutines.ensureActive
 import org.trustroots.android.nostr.AndroidNostrKeys
 import org.trustroots.android.nostr.nostrAccountScope
+import org.trustroots.android.notifications.NostranslationAlerts
 
 @Composable
 internal fun NostrKeyEntry(
@@ -131,7 +132,11 @@ private fun NostrKeyDialog(
         busy = true
         scope.launch {
             withContext(Dispatchers.IO) { runCatching(operation) }.fold(
-                onSuccess = { publicKey = it; input = "" },
+                onSuccess = {
+                    publicKey = it
+                    input = ""
+                    if (it == null) NostranslationAlerts.reconcile(context, api, session)
+                },
                 onFailure = {
                     error = if (it is IllegalArgumentException) R.string.nostr_invalid_key else R.string.nostr_storage_error
                 },

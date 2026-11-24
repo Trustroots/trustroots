@@ -42,6 +42,7 @@ import org.trustroots.android.notifications.FakeUnifiedPushDistributorReceiver.R
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.unifiedpush.android.connector.UnifiedPush
@@ -54,6 +55,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private val targetContext get() = instrumentation.targetContext
     private val testContext get() = instrumentation.context
     private val alertPreferences get() = targetContext.getSharedPreferences(MESSAGE_PREFERENCES, Context.MODE_PRIVATE)
+    private val reviewAlertPreferences get() = targetContext.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
     private val sessionPreferences get() = targetContext.getSharedPreferences(SESSION_PREFERENCES, Context.MODE_PRIVATE)
     private val receiverComponent by lazy {
         ComponentName(testContext, FakeUnifiedPushDistributorReceiver::class.java)
@@ -63,6 +65,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private val requests = CopyOnWriteArrayList<ApiRequest>()
     private val distributorEvents = CopyOnWriteArrayList<DistributorEvent>()
     private val completedResponses = AtomicInteger()
+    @Volatile private var reviewAlertBackendAvailable = true
     private val responderFailure = AtomicReference<Throwable?>(null)
     @Volatile private var activeSocket: Socket? = null
     private var responder: Thread? = null
@@ -75,6 +78,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private var connectorStateTouched = false
     private var previousAlertPreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousSessionPreferences: Map<String, *> = emptyMap<String, Any>()
+    private var previousReviewAlertPreferences: Map<String, *> = emptyMap<String, Any>()
+    private var previousReviewAlertStatus: Int? = null
     private var previousStatus: String? = null
     private var previousStatusMetadata: MessageAlertStatusMetadata? = null
     private var previousDestination: MessageDestination? = null
@@ -122,6 +127,24 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         assertEquals(2, countRequests("GET"))
         assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))
         assertTrue(alertPreferences.all.isEmpty())
+        val api = MobileApiClient(FIXTURE_BASE_URL)
+        activityScenario?.onActivity { activity -> NostranslationAlerts.enable(activity, api, session) }
+        waitUntil("review alerts report that no distributor is installed") {
+            NostranslationAlerts.status.value == R.string.nostranslation_alerts_unavailable
+        }
+        assertEquals(1, requests.count { it.path == REVIEW_ALERTS_PATH && it.method == "GET" })
+        assertFalse(NostranslationAlerts.isEnabled(targetContext, api.backendURL, session))
+
+        reviewAlertBackendAvailable = false
+        NostranslationAlerts.status.value = null
+        activityScenario?.onActivity { activity -> NostranslationAlerts.enable(activity, api, session) }
+        waitUntil("review alerts report an unavailable backend") {
+            NostranslationAlerts.status.value == R.string.nostranslation_alerts_unavailable
+        }
+        val reviewRequests = requests.filter { it.path == REVIEW_ALERTS_PATH }
+        assertEquals(2, reviewRequests.size)
+        assertTrue(reviewRequests.all { it.method == "GET" && it.cookie == session.cookieHeader })
+        assertFalse(NostranslationAlerts.isEnabled(targetContext, api.backendURL, session))
         assertResponderHealthy()
     }
 
@@ -287,12 +310,33 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
             distributorEvents.first { it.action == ACTION_REGISTER }.token,
             unregisterEvent.token,
         )
+        val api = MobileApiClient(FIXTURE_BASE_URL)
+        val reviewMessage = targetContext.getString(R.string.nostranslation_signing)
+        activityScenario?.onActivity { activity -> NostranslationAlerts.enable(activity, api, session) }
+        waitUntil("enabling review alerts sends REGISTER with the server's VAPID key") {
+            distributorEvents.any { it.action == ACTION_REGISTER && it.message == reviewMessage }
+        }
+        assertTrue(NostranslationAlerts.isEnabled(targetContext, api.backendURL, session))
+
+        NostranslationAlerts.reconcile(targetContext, api, session)
+        waitUntil("reconciling review alerts sends a second REGISTER") {
+            distributorEvents.count { it.action == ACTION_REGISTER && it.message == reviewMessage } == 2
+        }
+        val reviewRegistrations = distributorEvents.filter { it.action == ACTION_REGISTER && it.message == reviewMessage }
+        assertTrue(reviewRegistrations.all { it.vapid == FIXTURE_VAPID_KEY && it.targetPackage == targetContext.packageName })
+        assertEquals(1, reviewRegistrations.map { it.token }.distinct().size)
+        assertTrue(reviewRegistrations.first().token.isNotBlank())
+        assertTrue(reviewRegistrations.first().token != unregisterEvent.token)
+        val reviewRequests = requests.filter { it.path == REVIEW_ALERTS_PATH }
+        assertEquals(2, reviewRequests.size)
+        assertTrue(reviewRequests.all { it.method == "GET" && it.cookie == session.cookieHeader })
         assertResponderHealthy()
     }
 
     @After fun restoreAllState() {
         try {
             if (connectorStateTouched) {
+                runCatching { UnifiedPush.unregister(targetContext, NostranslationAlerts.instance) }
                 runCatching { UnifiedPush.unregister(targetContext) }
                 runCatching { UnifiedPush.removeDistributor(targetContext) }
             }
@@ -314,6 +358,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                             if (stateCaptured) {
                                 restorePreferences(alertPreferences, previousAlertPreferences)
                                 restorePreferences(sessionPreferences, previousSessionPreferences)
+                                restorePreferences(reviewAlertPreferences, previousReviewAlertPreferences)
+                                NostranslationAlerts.status.value = previousReviewAlertStatus
                                 MessageAlerts.status.value = previousStatus
                                 MessageAlerts.statusMetadata.value = previousStatusMetadata
                                 MessageAlerts.destination.value = previousDestination
@@ -332,6 +378,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private fun setUpIsolatedState() {
         previousAlertPreferences = alertPreferences.all
         previousSessionPreferences = sessionPreferences.all
+        previousReviewAlertPreferences = reviewAlertPreferences.all
+        previousReviewAlertStatus = NostranslationAlerts.status.value
         previousStatus = MessageAlerts.status.value
         previousStatusMetadata = MessageAlerts.statusMetadata.value
         previousDestination = MessageAlerts.destination.value
@@ -340,6 +388,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         stateCaptured = true
         alertPreferences.edit().clear().commit()
         sessionPreferences.edit().clear().commit()
+        reviewAlertPreferences.edit().clear().commit()
+        NostranslationAlerts.status.value = null
         MessageAlerts.status.value = null
         MessageAlerts.statusMetadata.value = null
         MessageAlerts.destination.value = null
@@ -378,7 +428,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 .putExtra("application", targetContext.packageName),
         )
-        waitUntil("the fake distributor APK reports that it has launched") {
+        waitUntil("the fake distributor APK reports that it has launched", timeoutSeconds = 45) {
             distributorEvents.any { it.action == FIXTURE_LAUNCHED } &&
                 activityScenario?.state == Lifecycle.State.RESUMED
         }
@@ -449,11 +499,18 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                         val path = requestLine.split(' ').getOrElse(1) { "" }
                         val body = String(bodyBytes, Charsets.UTF_8)
                         requests += ApiRequest(method, path, body, cookie)
-                        val payload = if (method == "GET") {
-                            """{"enabled":true,"publicKey":"$FIXTURE_VAPID_KEY"}"""
-                        } else "{}"
+                        val payload = when {
+                            method == "GET" && path == REVIEW_ALERTS_PATH ->
+                                """{"androidVapidKey":"$FIXTURE_VAPID_KEY"}"""
+                            method == "GET" -> """{"enabled":true,"publicKey":"$FIXTURE_VAPID_KEY"}"""
+                            else -> "{}"
+                        }
                         val bytes = payload.toByteArray(Charsets.UTF_8)
-                        val status = if (path.startsWith("/api/users/unified-push")) "200 OK" else "404 Not Found"
+                        val status = when {
+                            path == REVIEW_ALERTS_PATH && !reviewAlertBackendAvailable -> "503 Service Unavailable"
+                            path.startsWith("/api/users/unified-push") || path == REVIEW_ALERTS_PATH -> "200 OK"
+                            else -> "404 Not Found"
+                        }
                         connection.getOutputStream().apply {
                             write(
                                 "HTTP/1.1 $status\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n"
@@ -502,8 +559,8 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
 
     private fun countRequests(method: String): Int = requests.count { it.method == method }
 
-    private fun waitUntil(description: String, condition: () -> Boolean) {
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8)
+    private fun waitUntil(description: String, timeoutSeconds: Long = 8, condition: () -> Boolean) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds)
         while (System.nanoTime() < deadline) {
             responderFailure.get()?.let { throw AssertionError("Fixture server failed while waiting for $description", it) }
             if (condition()) return
@@ -557,6 +614,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     )
 
     private companion object {
+        const val REVIEW_ALERTS_PATH = "/api/mobile/v0/nostranslation/alerts"
         const val MESSAGE_PREFERENCES = "message-alerts"
         const val SESSION_PREFERENCES = "mobile-session"
         const val FIXTURE_BASE_URL = "http://127.0.0.1:38081"

@@ -1,8 +1,12 @@
 package org.trustroots.android.nostr
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
@@ -10,14 +14,18 @@ import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.core.app.ActivityOptionsCompat
 import androidx.lifecycle.Lifecycle
@@ -32,12 +40,20 @@ import java.util.UUID
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserNostrSession
+import org.trustroots.android.notifications.NostranslationAlerts
 import org.trustroots.android.testing.pressBackFromNonActivityRoot
+import org.trustroots.android.ui.LocalTransportFixture
+import org.trustroots.android.ui.account.NostranslationDialog
 import org.trustroots.android.ui.account.NostranslationEntry
 
 @RunWith(AndroidJUnit4::class)
@@ -47,6 +63,8 @@ class NostranslationEntryJourneyTest {
     @Test fun reviewsAPairingThenApprovesAndDeniesSignaturesBeforeRevokingTheClient() {
         val backend = "https://example.test"
         val username = "pair-${UUID.randomUUID()}"
+        val api = MobileApiClient(backend)
+        val memberSession = MemberSession("", MobileMember(username, "Fixture Member"))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val account = nostrAccountScope(backend, username)
         val keys = AndroidNostrKeys(context, account)
@@ -60,7 +78,7 @@ class NostranslationEntryJourneyTest {
         var now = 1_800_000_000L
         try {
             keys.generate()
-            compose.setContent { NostranslationEntry(backend, username, session.value, true, relay) { now } }
+            compose.setContent { NostranslationEntry(api, memberSession, session.value, true, relay) { now } }
             val entry = compose.onNodeWithText("Nostranslation signing")
             entry.assertIsNotEnabled()
             compose.runOnIdle { session.value = BrowserNostrSession(keys) { true } }
@@ -213,6 +231,8 @@ class NostranslationEntryJourneyTest {
     @Test fun reviewsAScannedLinkAndExplainsWhenTheLocalKeyIsMissing() {
         val backend = "https://example.test"
         val username = "scan-${UUID.randomUUID()}"
+        val api = MobileApiClient(backend)
+        val memberSession = MemberSession("", MobileMember(username, "Fixture Member"))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
         val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = 1 })
@@ -234,7 +254,7 @@ class NostranslationEntryJourneyTest {
                     LocalActivityResultRegistryOwner provides owner,
                     LocalLifecycleOwner provides lifecycleOwner,
                 ) {
-                    NostranslationEntry(backend, username, session, true, relay)
+                    NostranslationEntry(api, memberSession, session, true, relay)
                 }
             }
             compose.onNodeWithText("Nostranslation signing").performClick()
@@ -280,7 +300,9 @@ class NostranslationEntryJourneyTest {
             keys.savePairings(revision, JSONArray().put(JSONObject()))
             val session = BrowserNostrSession(keys) { true }
             val relay = RecordingNostranslationRelay()
-            compose.setContent { NostranslationEntry(backend, username, session, enabled.value, relay) }
+            val api = MobileApiClient(backend)
+            val member = MemberSession("", MobileMember(username, "Fixture Member"))
+            compose.setContent { NostranslationEntry(api, member, session, enabled.value, relay) }
 
             val entry = compose.onNodeWithText("Nostranslation signing")
             val done = compose.onNodeWithText("Done")
@@ -301,6 +323,140 @@ class NostranslationEntryJourneyTest {
             assertEquals(0, relay.connectionsCreated)
         } finally {
             keys.remove()
+        }
+    }
+
+    @Test fun openingAnAlertShowsItsRetryHintAndReflectsDisablingAlertsImmediately() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val api = MobileApiClient("https://example.test")
+        val session = MemberSession("", MobileMember("alert-${UUID.randomUUID()}", "Fixture Member"))
+        val account = nostrAccountScope(api.backendURL, session.member.username)
+        val preferences = context.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
+        val previousStatus = NostranslationAlerts.status.value
+        val keys = AndroidNostrKeys(context, account)
+        val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = 1 })
+        val open = mutableStateOf(true)
+
+        try {
+            keys.generate()
+            val signer = requireNotNull(keys.browserPublicKey(keys.revision()))
+            keys.savePairings(keys.revision(), JSONArray().put(JSONObject().put("peer", peer)
+                .put("transport", "0".repeat(63) + "2").put("signer", signer)))
+            preferences.edit().putBoolean(account.storageAccount, true).commit()
+            NostranslationAlerts.status.value = null
+            val browserSession = BrowserNostrSession(keys) { true }
+            val relay = RecordingNostranslationRelay()
+            compose.setContent {
+                if (open.value) {
+                    NostranslationDialog(api, session, browserSession, openedFromAlert = true, sockets = relay) {
+                        open.value = false
+                    }
+                }
+            }
+
+            val retryHint = compose.onNodeWithText("If the request has expired, retry in Nostranslation.")
+            retryHint.performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Disable review alerts").performScrollTo().performClick()
+            compose.onNodeWithText("Enable review alerts").performScrollTo().assertIsDisplayed()
+            assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+            compose.onNodeWithText("Done").performClick()
+            retryHint.assertDoesNotExist()
+        } finally {
+            preferences.edit().remove(account.storageAccount).commit()
+            NostranslationAlerts.status.value = previousStatus
+            keys.remove()
+        }
+    }
+
+    @Test fun requestsNotificationPermissionBeforeLoadingTheReviewAlertKey() {
+        assumeTrue(Build.VERSION.SDK_INT >= 33)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val member = MobileMember("alert-permission-${UUID.randomUUID()}", "Fixture Member")
+        val session = MemberSession("", member, "fixture-review-access")
+        val failed = "Review alerts could not be enabled. Check notification settings and try again."
+        LocalTransportFixture { request ->
+            assertEquals("GET", request.method)
+            assertEquals("/api/mobile/v0/nostranslation/alerts", request.path)
+            assertEquals("Bearer fixture-review-access", request.authorization)
+            LocalTransportFixture.Response("{}")
+        }.use { fixture ->
+            val api = MobileApiClient(fixture.baseURL)
+            val account = nostrAccountScope(api.backendURL, member.username)
+            val keys = AndroidNostrKeys(context, account)
+            val previousStatus = NostranslationAlerts.status.value
+            var granted = false
+            var permissionAlreadyGranted = false
+            var permissionRequests = 0
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = object : ActivityResultRegistry() {
+                    override fun <I, O> onLaunch(
+                        requestCode: Int,
+                        contract: ActivityResultContract<I, O>,
+                        input: I,
+                        options: ActivityOptionsCompat?,
+                    ) {
+                        assertEquals(Manifest.permission.POST_NOTIFICATIONS, input)
+                        permissionRequests += 1
+                        dispatchResult(requestCode, granted)
+                    }
+                }
+            }
+            try {
+                keys.generate()
+                val revision = keys.revision()
+                val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = 1 })
+                keys.savePairings(revision, JSONArray().put(JSONObject().put("peer", peer)
+                    .put("transport", "0".repeat(63) + "2").put("signer", requireNotNull(keys.browserPublicKey(revision)))))
+                NostranslationAlerts.status.value = null
+                val browser = BrowserNostrSession(keys) { true }
+                val relay = RecordingNostranslationRelay()
+                compose.setContent {
+                    val activityContext = LocalContext.current
+                    val permissionContext = remember(activityContext) {
+                        object : ContextWrapper(activityContext) {
+                            override fun checkSelfPermission(permission: String): Int {
+                                if (permission != Manifest.permission.POST_NOTIFICATIONS) return super.checkSelfPermission(permission)
+                                return if (permissionAlreadyGranted) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
+                            }
+                        }
+                    }
+                    CompositionLocalProvider(
+                        LocalContext provides permissionContext,
+                        LocalActivityResultRegistryOwner provides owner,
+                    ) {
+                        NostranslationDialog(api, session, browser, sockets = relay) {}
+                    }
+                }
+
+                val enable = compose.onNodeWithText("Enable review alerts")
+                enable.performScrollTo().performClick()
+                compose.waitUntil(10_000) { compose.onAllNodesWithText(failed).fetchSemanticsNodes().isNotEmpty() }
+                assertTrue(fixture.requests.isEmpty())
+
+                compose.runOnIdle {
+                    granted = true
+                    NostranslationAlerts.status.value = null
+                }
+                enable.performScrollTo().performClick()
+                compose.waitUntil(15_000) {
+                    fixture.requests.isNotEmpty() && compose.onAllNodesWithText(failed).fetchSemanticsNodes().isNotEmpty()
+                }
+                assertEquals(1, fixture.requests.size)
+                compose.runOnIdle {
+                    assertEquals(2, permissionRequests)
+                    permissionAlreadyGranted = true
+                    NostranslationAlerts.status.value = null
+                }
+                enable.performScrollTo().performClick()
+                compose.waitUntil(15_000) {
+                    fixture.requests.size == 2 && compose.onAllNodesWithText(failed).fetchSemanticsNodes().isNotEmpty()
+                }
+                compose.runOnIdle { assertEquals(2, permissionRequests) }
+                assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+            } finally {
+                NostranslationAlerts.status.value = previousStatus
+                keys.remove()
+            }
         }
     }
 

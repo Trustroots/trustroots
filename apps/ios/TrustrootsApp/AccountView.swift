@@ -44,7 +44,9 @@ struct AccountView: View {
         }
         .accessibilityIdentifier("account-scroll-view")
         .task { await loadAccount() }
-        .sheet(isPresented: $showNostranslationSigning) { NostranslationSigningSheet() }
+        .sheet(isPresented: $showNostranslationSigning) {
+            NostranslationSigningSheet(serverURLString: session.serverURLString)
+        }
     }
 
     private var emailSection: some View {
