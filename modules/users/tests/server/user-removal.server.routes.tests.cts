@@ -676,6 +676,24 @@ describe('User removal CRUD tests', function () {
         0,
       );
     });
+    it('preserves the account when deleting its activity fails', async function () {
+      const activity = await AccountActivity.create({
+        _id: 'retained-account-activity',
+        user: userA._id,
+        eventType: 'password_changed',
+      });
+      sinon
+        .stub(AccountActivity, 'deleteMany')
+        .rejects(new Error('Activity storage unavailable'));
+
+      const response = await agent
+        .delete('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
+        .expect(400);
+      response.body.message.should.equal('Removing your profile failed.');
+      should.exist(await User.findById(userA._id).exec());
+      should.exist(await AccountActivity.findById(activity._id).exec());
+    });
     it('should remove profile images', function (done: DoneCallback) {
       // Each user has their own folder for avatars
       const uploadDir =
