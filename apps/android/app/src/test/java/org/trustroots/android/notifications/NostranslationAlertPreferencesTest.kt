@@ -114,9 +114,11 @@ class NostranslationAlertPreferencesTest {
     )
     fun onlyRegistersAfterDistributorConsentAndRefreshesTheKeyOnReconcile() {
         MockWebServer().use { server ->
-            for (key in listOf("declined-key", "first-key", "refreshed-key")) {
+            for (key in listOf("declined-key", "first-key")) {
                 server.enqueue(MockResponse(body = JSONObject().put("androidVapidKey", key).toString()))
             }
+            server.enqueue(MockResponse(code = 503))
+            server.enqueue(MockResponse(body = """{"androidVapidKey":"refreshed-key"}"""))
             server.start()
             val api = MobileApiClient(server.url("/").toString())
             val controller = Robolectric.buildActivity(Activity::class.java).setup()
@@ -136,10 +138,21 @@ class NostranslationAlertPreferencesTest {
                 assertTrue(NostranslationAlerts.isEnabled(context, api.backendURL, session))
                 assertEquals(api.backendURL, preferences.getString("backend", null))
 
+                DistributorChoice.savedDistributor = null
+                NostranslationAlerts.reconcile(context, api, session)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertEquals(2, server.requestCount)
+
+                DistributorChoice.savedDistributor = "fixture-distributor"
+                NostranslationAlerts.reconcile(context, api, session)
+                await { server.requestCount == 3 }
+                assertEquals(listOf("first-key"), DistributorChoice.registrations)
+                assertTrue(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+
                 NostranslationAlerts.reconcile(context, api, session)
                 await { DistributorChoice.registrations.size == 2 }
                 assertEquals(listOf("first-key", "refreshed-key"), DistributorChoice.registrations)
-                assertEquals(3, server.requestCount)
+                assertEquals(4, server.requestCount)
             } finally {
                 DistributorChoice.registrations.clear()
                 DistributorChoice.accepted = false
