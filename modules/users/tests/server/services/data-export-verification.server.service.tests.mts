@@ -39,7 +39,7 @@ function buildFile(overrides = {}, now?: Date) {
 }
 
 describe('Member data export verification', () => {
-  after(() => {
+  afterEach(() => {
     vi.unstubAllEnvs();
   });
 
