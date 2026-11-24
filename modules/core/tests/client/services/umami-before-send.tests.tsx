@@ -43,6 +43,10 @@ const DYNAMIC_ROUTES: Array<[path: string, template: string]> = [
     '/admin/support/requests/:requestId',
   ],
   ['/admin/support/member/member1', '/admin/support/member/:username'],
+  [
+    '/admin/support/message-reviews/0123456789abcdef01234567',
+    '/admin/support/message-reviews/:reviewId',
+  ],
   ['/admin/user/member1', '/admin/user/:username'],
   ['/admin/circles/hitchhikers', '/admin/circles/:circle'],
 ];

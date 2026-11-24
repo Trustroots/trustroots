@@ -207,6 +207,8 @@ const emails: Record<string, Send> = {
         email: 'support@example.test',
         username: 'ada_l',
         adminProfileUrl: 'http://localhost:3000/admin/user?id=' + ada._id,
+        reviewUrl:
+          'http://localhost:3000/admin/support/message-reviews/0123456789abcdef01234567',
         timestamp: '2026-11-18T10:00:00.000Z',
         recipientCount: 12,
         limit: 10,

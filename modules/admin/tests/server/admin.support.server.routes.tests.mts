@@ -7,6 +7,7 @@ import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import controller from '../../server/controllers/admin.support.server.controller.mts';
 import supportController from '../../../support/server/controllers/support.server.controller.mts';
 import { linkHistoricalReport } from '../../../support/server/services/report-link.server.service.mts';
+import type { MessageThrottleReviewRecord } from '../../../messages/server/models/message-throttle-alert.server.model.mts';
 import type {
   ExperienceRecord,
   MessageRecord,
@@ -29,6 +30,10 @@ interface SupportRequestRecord {
 }
 interface AuditLogRecord {
   user?: Types.ObjectId;
+  route?: string;
+  params?: Record<string, string>;
+  query?: Record<string, unknown>;
+  body?: Record<string, unknown>;
 }
 type SupportUserFixture = ReturnType<
   typeof utils.generateUsersWithSharedPassword
@@ -39,6 +44,9 @@ type SupportUserFixture = ReturnType<
 const User = mongoose.model<UserRecord, UserModel>('User');
 const SupportRequest = mongoose.model<SupportRequestRecord>('SupportRequest');
 const Message = mongoose.model<MessageRecord>('Message');
+const MessageThrottleReview = mongoose.model<MessageThrottleReviewRecord>(
+  'MessageThrottleReview',
+);
 const Experience = mongoose.model<ExperienceRecord>('Experience');
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 
@@ -77,6 +85,8 @@ describe('Support team access and investigation', () => {
     await utils.clearDatabase();
   });
   const endpoint = (id: Types.ObjectId | string) => `/api/admin/support/${id}`;
+  const reviewEndpoint = (id: Types.ObjectId | string) =>
+    `/api/admin/support-message-reviews/${id}`;
   async function status(value: string) {
     return agent
       .patch(endpoint(report._id))
@@ -230,6 +240,116 @@ describe('Support team access and investigation', () => {
     }
   });
 
+  it('returns and audits only outgoing messages within the saved window', async () => {
+    const windowStart = new Date('2026-01-01T12:00:00.000Z');
+    const windowEnd = new Date('2026-01-01T13:00:00.000Z');
+    const sender = users[1]._id;
+    const recipient = users[2]._id;
+    const review = await MessageThrottleReview.create({
+      sender,
+      windowStart,
+      windowEnd,
+    });
+    const outgoing = { userFrom: sender, userTo: recipient };
+    await Message.insertMany([
+      { ...outgoing, created: new Date(+windowStart - 1), content: 'Earlier' },
+      {
+        ...outgoing,
+        created: windowStart,
+        content: 'At start',
+        shadowHidden: true,
+      },
+      ...Array.from({ length: 49 }, (_, index) => ({
+        ...outgoing,
+        created: new Date(+windowStart + 1),
+        content: `Message ${index}`,
+      })),
+      { ...outgoing, created: windowEnd, content: 'At end' },
+      { ...outgoing, created: new Date(+windowEnd + 1), content: 'Later' },
+      {
+        userFrom: recipient,
+        userTo: sender,
+        created: windowStart,
+        content: 'Incoming',
+      },
+      {
+        userFrom: users[4]._id,
+        userTo: recipient,
+        created: windowStart,
+        content: 'Other sender',
+      },
+    ]);
+
+    const path = reviewEndpoint(review._id);
+    const first = await agent
+      .get(path)
+      .query({
+        sender: users[4]._id.toString(),
+        windowStart: '2025-01-01',
+        windowEnd: '2027-01-01',
+        category: 'Fictional extra query data',
+      })
+      .expect(200)
+      .expect('Cache-Control', 'no-store');
+    first.body.windowStart.should.equal(windowStart.toISOString());
+    first.body.windowEnd.should.equal(windowEnd.toISOString());
+    first.body.hasMore.should.equal(true);
+    first.body.items
+      .map((item: { content: string }) => item.content)
+      .should.eql([
+        'At start',
+        ...Array.from({ length: 49 }, (_, index) => `Message ${index}`),
+      ]);
+    first.body.items[0].shadowHidden.should.equal(true);
+    first.body.items[0].userTo.username.should.equal(users[2].username);
+    Object.hasOwn(first.body.items[0].userTo, 'email').should.equal(false);
+    const second = await agent.get(path).query({ page: 2 }).expect(200);
+    second.body.hasMore.should.equal(false);
+    second.body.items
+      .map((item: { content: string }) => item.content)
+      .should.eql(['At end']);
+
+    const logs = await AuditLog.find({
+      user: users[0]._id,
+      route: '/api/admin/support-message-reviews/:reviewId',
+      'params.reviewId': review._id.toString(),
+    })
+      .sort({ _id: 1 })
+      .lean();
+    logs.map(log => log.query).should.eql([{ page: 1 }, { page: 2 }]);
+    logs
+      .every(log => Object.keys(log.body ?? {}).length === 0)
+      .should.equal(true);
+
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects(new Error('Audit unavailable'));
+    const failed = await agent.get(path).expect(500);
+    Object.hasOwn(failed.body, 'items').should.equal(false);
+  });
+
+  it('requires a valid review ID and a Support or administrator role', async () => {
+    const review = await MessageThrottleReview.create({
+      sender: users[1]._id,
+      windowStart: new Date('2026-01-01T12:00:00.000Z'),
+      windowEnd: new Date('2026-01-01T13:00:00.000Z'),
+    });
+    const path = reviewEndpoint(review._id);
+    await request(app).get(path).expect(403);
+    for (const role of ['user', 'moderator', 'welcome-team', 'admin']) {
+      await User.updateOne(
+        { _id: users[4]._id },
+        { $set: { roles: ['user', role] } },
+      );
+      const session = request.agent(app);
+      await utils.signIn(raw[4], session);
+      const res = await session.get(path).expect(role === 'admin' ? 200 : 403);
+      if (role === 'admin') res.body.items.should.eql([]);
+    }
+    await agent.get(reviewEndpoint('bad')).expect(400);
+    await agent.get(reviewEndpoint(new mongoose.Types.ObjectId())).expect(404);
+    await agent.get(path).query({ page: 1_000_000 }).expect(400);
+  });
   it('triages requests, records access and keeps resolved investigations available', async () => {
     await Message.create([
       {
@@ -548,6 +668,7 @@ describe('Support team access and investigation', () => {
     const res = {
       send: sinon.spy(),
       json: sinon.spy(),
+      set: sinon.stub().returnsThis(),
       status: sinon.stub().returnsThis(),
     };
     await controller.list(

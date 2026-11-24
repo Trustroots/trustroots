@@ -100,6 +100,7 @@ import { Route as ProfileEditLocationsRouteImport } from './routes/profile.edit.
 import { Route as ProfileEditNetworksRouteImport } from './routes/profile.edit.networks'
 import { Route as ProfileEditPhotoRouteImport } from './routes/profile.edit.photo'
 import { Route as AdminSupportMemberUsernameRouteImport } from './routes/admin.support.member.$username'
+import { Route as AdminSupportMessageReviewsReviewIdRouteImport } from './routes/admin.support.message-reviews.$reviewId'
 import { Route as AdminSupportRequestsRequestIdRouteImport } from './routes/admin.support.requests.$requestId'
 import { Route as ProfileUsernameExperiencesIndexRouteImport } from './routes/profile.$username.experiences.index'
 import { Route as ProfileUsernameExperiencesNewRouteImport } from './routes/profile.$username.experiences.new'
@@ -562,6 +563,12 @@ const AdminSupportMemberUsernameRoute =
     path: '/admin/support/member/$username',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminSupportMessageReviewsReviewIdRoute =
+  AdminSupportMessageReviewsReviewIdRouteImport.update({
+    id: '/admin/support/message-reviews/$reviewId',
+    path: '/admin/support/message-reviews/$reviewId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminSupportRequestsRequestIdRoute =
   AdminSupportRequestsRequestIdRouteImport.update({
     id: '/admin/support/requests/$requestId',
@@ -673,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/offer/meet/': typeof OfferMeetIndexRoute
   '/profile/edit/': typeof ProfileEditIndexRoute
   '/admin/support/member/$username': typeof AdminSupportMemberUsernameRoute
+  '/admin/support/message-reviews/$reviewId': typeof AdminSupportMessageReviewsReviewIdRoute
   '/admin/support/requests/$requestId': typeof AdminSupportRequestsRequestIdRoute
   '/profile/$username/experiences/new': typeof ProfileUsernameExperiencesNewRoute
   '/profile/$username/experiences/': typeof ProfileUsernameExperiencesIndexRoute
@@ -768,6 +776,7 @@ export interface FileRoutesByTo {
   '/offer/meet': typeof OfferMeetIndexRoute
   '/profile/edit': typeof ProfileEditIndexRoute
   '/admin/support/member/$username': typeof AdminSupportMemberUsernameRoute
+  '/admin/support/message-reviews/$reviewId': typeof AdminSupportMessageReviewsReviewIdRoute
   '/admin/support/requests/$requestId': typeof AdminSupportRequestsRequestIdRoute
   '/profile/$username/experiences/new': typeof ProfileUsernameExperiencesNewRoute
   '/profile/$username/experiences': typeof ProfileUsernameExperiencesIndexRoute
@@ -865,6 +874,7 @@ export interface FileRoutesById {
   '/offer/meet/': typeof OfferMeetIndexRoute
   '/profile/edit/': typeof ProfileEditIndexRoute
   '/admin/support/member/$username': typeof AdminSupportMemberUsernameRoute
+  '/admin/support/message-reviews/$reviewId': typeof AdminSupportMessageReviewsReviewIdRoute
   '/admin/support/requests/$requestId': typeof AdminSupportRequestsRequestIdRoute
   '/profile/$username/experiences/new': typeof ProfileUsernameExperiencesNewRoute
   '/profile/$username/experiences/': typeof ProfileUsernameExperiencesIndexRoute
@@ -963,6 +973,7 @@ export interface FileRouteTypes {
     | '/offer/meet/'
     | '/profile/edit/'
     | '/admin/support/member/$username'
+    | '/admin/support/message-reviews/$reviewId'
     | '/admin/support/requests/$requestId'
     | '/profile/$username/experiences/new'
     | '/profile/$username/experiences/'
@@ -1058,6 +1069,7 @@ export interface FileRouteTypes {
     | '/offer/meet'
     | '/profile/edit'
     | '/admin/support/member/$username'
+    | '/admin/support/message-reviews/$reviewId'
     | '/admin/support/requests/$requestId'
     | '/profile/$username/experiences/new'
     | '/profile/$username/experiences'
@@ -1154,6 +1166,7 @@ export interface FileRouteTypes {
     | '/offer/meet/'
     | '/profile/edit/'
     | '/admin/support/member/$username'
+    | '/admin/support/message-reviews/$reviewId'
     | '/admin/support/requests/$requestId'
     | '/profile/$username/experiences/new'
     | '/profile/$username/experiences/'
@@ -1241,6 +1254,7 @@ export interface RootRouteChildren {
   AdminUserIndexRoute: typeof AdminUserIndexRoute
   ProfileEditIndexRoute: typeof ProfileEditIndexRoute
   AdminSupportMemberUsernameRoute: typeof AdminSupportMemberUsernameRoute
+  AdminSupportMessageReviewsReviewIdRoute: typeof AdminSupportMessageReviewsReviewIdRoute
   AdminSupportRequestsRequestIdRoute: typeof AdminSupportRequestsRequestIdRoute
 }
 
@@ -1883,6 +1897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportMemberUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/support/message-reviews/$reviewId': {
+      id: '/admin/support/message-reviews/$reviewId'
+      path: '/admin/support/message-reviews/$reviewId'
+      fullPath: '/admin/support/message-reviews/$reviewId'
+      preLoaderRoute: typeof AdminSupportMessageReviewsReviewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/support/requests/$requestId': {
       id: '/admin/support/requests/$requestId'
       path: '/admin/support/requests/$requestId'
@@ -2031,6 +2052,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUserIndexRoute: AdminUserIndexRoute,
   ProfileEditIndexRoute: ProfileEditIndexRoute,
   AdminSupportMemberUsernameRoute: AdminSupportMemberUsernameRoute,
+  AdminSupportMessageReviewsReviewIdRoute:
+    AdminSupportMessageReviewsReviewIdRoute,
   AdminSupportRequestsRequestIdRoute: AdminSupportRequestsRequestIdRoute,
 }
 export const routeTree = rootRouteImport

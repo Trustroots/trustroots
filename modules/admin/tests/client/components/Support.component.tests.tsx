@@ -10,6 +10,7 @@ import {
 import SupportInbox, {
   SupportMemberPage,
   SupportMemberSearchPage,
+  SupportMessageReviewPage,
 } from '../../../client/components/Support.component';
 import * as api from '../../../client/api/support.api';
 import { setUserRole } from '../../../client/api/users.api';
@@ -160,6 +161,52 @@ beforeEach(() => {
 });
 afterEach(() => {
   setViewer(null);
+});
+
+test('renders paginated outgoing messages and retries a failed review load', async () => {
+  const windowStart = '2026-01-02T12:00:00.000Z';
+  const windowEnd = '2026-01-02T13:00:00.000Z';
+  load
+    .mockRejectedValueOnce(new Error('Request failed'))
+    .mockResolvedValueOnce({
+      page: 1,
+      hasMore: true,
+      windowStart,
+      windowEnd,
+      items: [
+        {
+          _id: 'message-1',
+          userTo: { username: 'fictional-recipient' },
+          created: windowStart,
+          content: '<p>Fictional message</p>',
+          shadowHidden: true,
+        },
+        { _id: 'message-2', userTo: null, created: windowEnd },
+      ],
+    })
+    .mockResolvedValueOnce({
+      page: 2,
+      hasMore: false,
+      windowStart,
+      windowEnd,
+      items: [],
+    });
+  render(<SupportMessageReviewPage id="review-1" />);
+  expect(await screen.findByRole('alert')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  expect(await screen.findByText('Fictional message')).toBeVisible();
+  expect(screen.getByText(/To fictional-recipient/)).toBeVisible();
+  expect(screen.getByText(/To Deleted member/)).toBeVisible();
+  expect(screen.getByText('Hidden message')).toBeVisible();
+  expect(
+    screen.getAllByText('2026-01-02 12:00', { selector: 'time' }),
+  ).toHaveLength(2);
+  expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  expect(await screen.findByText('No outgoing messages found.')).toBeVisible();
+  expect(load).toHaveBeenLastCalledWith(
+    '/api/admin/support-message-reviews/review-1?page=2',
+  );
 });
 
 test('triages a report and reads its whole conversation and unpublished experiences', async () => {

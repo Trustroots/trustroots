@@ -23,6 +23,7 @@ import { formatAdminDateTime } from '../utils/admin-date';
 import { useAuth } from '../../../core/client/react-app/auth';
 import type {
   InvestigationItem,
+  MessageThrottleReview,
   Page,
   SupportMember,
   SupportConversationItem,
@@ -620,6 +621,63 @@ function CaseMemberStatus({
         {linkLabel}
       </a>
     </div>
+  );
+}
+
+export function SupportMessageReviewPage({ id }: { id: string }) {
+  const [page, setPage] = useState(1);
+  const { data, failed, reload } = useResource<MessageThrottleReview>(
+    `/api/admin/support-message-reviews/${encodeURIComponent(id)}?page=${page}`,
+  );
+  return (
+    <>
+      <AdminHeader />
+      <main className="container">
+        <p>
+          <a href="/admin/support">Support inbox</a>
+        </p>
+        <h1>Review outgoing messages</h1>
+        {data ? (
+          <>
+            <p>
+              <time dateTime={data.windowStart}>
+                {formatAdminDateTime(data.windowStart)}
+              </time>
+              {' to '}
+              <time dateTime={data.windowEnd}>
+                {formatAdminDateTime(data.windowEnd)}
+              </time>
+              {' UTC'}
+            </p>
+            {data.items.length === 0 && <p>No outgoing messages found.</p>}
+            {data.items.map(message => (
+              <article className="panel panel-default" key={message._id}>
+                <div className="panel-body">
+                  <p>
+                    To {message.userTo?.username ?? 'Deleted member'} ·{' '}
+                    <time dateTime={message.created}>
+                      {formatAdminDateTime(message.created)}
+                    </time>
+                  </p>
+                  {message.shadowHidden && <p>Hidden message</p>}
+                  <div
+                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {plainText(message.content)}
+                  </div>
+                </div>
+              </article>
+            ))}
+            <Pager page={data.page} hasMore={data.hasMore} onPage={setPage} />
+          </>
+        ) : (
+          <>
+            <ResourceState failed={failed} />
+            {failed && <Button onClick={reload}>Retry</Button>}
+          </>
+        )}
+      </main>
+    </>
   );
 }
 

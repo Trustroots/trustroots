@@ -12,6 +12,7 @@ import {
   type SupportStatus,
 } from '../../../support/shared/statuses.ts';
 import type { SupportMessageRecord } from '../../../support/server/models/support-message.server.model.mts';
+import type { MessageThrottleReviewRecord } from '../../../messages/server/models/message-throttle-alert.server.model.mts';
 import { normaliseStoredSupportCategory } from '../../../support/server/services/support-fingerprint.server.service.mts';
 import { supportCategoryExpression } from '../../../support/server/services/support-migration.server.service.mts';
 import {
@@ -104,6 +105,7 @@ interface SupportRequest {
 }
 
 interface SupportResponse {
+  set(field: string, value: string): SupportResponse;
   status(code: number): SupportResponse;
   send(body: unknown): unknown;
   json(body: unknown): unknown;
@@ -131,6 +133,9 @@ const SupportRequestModel =
 const SupportMessage = mongoose.model<SupportMessageRecord>('SupportMessage');
 const User = mongoose.model<UserRecord>('User');
 const Message = mongoose.model<InvestigationRecord>('Message');
+const MessageThrottleReview = mongoose.model<MessageThrottleReviewRecord>(
+  'MessageThrottleReview',
+);
 const Experience = mongoose.model<InvestigationRecord>('Experience');
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 const PAGE_SIZE = 50;
@@ -581,6 +586,43 @@ export const investigation = handler(async (req, res) => {
   });
 });
 
+/** @esmNamed */
+export const messageThrottleReview = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const review = await MessageThrottleReview.findById(
+    objectId(req.params.reviewId),
+  ).lean();
+  if (!review) {
+    throw Object.assign(new Error('Message review not found.'), {
+      status: 404,
+    });
+  }
+  const { sender, windowStart, windowEnd } = review;
+  const messages = await Message.find({
+    userFrom: sender,
+    created: { $gte: windowStart, $lte: windowEnd },
+  })
+    .select('_id created content userTo shadowHidden')
+    .sort({ created: 1, _id: 1 })
+    .skip((page - 1) * PAGE_SIZE)
+    .limit(PAGE_SIZE + 1)
+    .populate('userTo', 'username')
+    .lean();
+  await new AuditLog({
+    user: req.user._id,
+    route: req.route.path,
+    params: { reviewId: review._id.toString() },
+    query: { page },
+  }).save();
+  return res.set('Cache-Control', 'no-store').json({
+    windowStart,
+    windowEnd,
+    items: messages.slice(0, PAGE_SIZE),
+    page,
+    hasMore: messages.length > PAGE_SIZE,
+  });
+});
+
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -728,6 +770,7 @@ const api = {
   reply,
   retry,
   investigation,
+  messageThrottleReview,
   searchMembers,
   member,
 };

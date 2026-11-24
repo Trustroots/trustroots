@@ -151,6 +151,10 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .get(support.investigation);
   app
+    .route('/api/admin/support-message-reviews/:reviewId')
+    .all(adminPolicy.isAllowed)
+    .get(support.messageThrottleReview);
+  app
     .route('/api/admin/support-members')
     .all(adminPolicy.isAllowed)
     .get(support.searchMembers);
