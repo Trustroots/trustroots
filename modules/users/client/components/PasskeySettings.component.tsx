@@ -60,7 +60,7 @@ export default function PasskeySettings() {
   return (
     <section className="panel panel-default" aria-labelledby="passkeys-title">
       <div className="panel-heading" id="passkeys-title">
-        Staff passkeys
+        Passkeys
       </div>
       <div className="panel-body">
         <p>

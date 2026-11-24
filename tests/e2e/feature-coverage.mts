@@ -1273,8 +1273,8 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Administrators can register and manage optional passkeys for second-factor sign-in.',
-    roles: ['admin'],
+      'Members can register and manage optional passkeys for second-factor sign-in.',
+    roles: ['member', 'admin'],
     references: {
       clientRoutes: [
         clientRoute(
@@ -1319,11 +1319,16 @@ const features = [
     },
     requiredScenarios: [
       'A staff member can use a registered passkey after password sign-in.',
+      'A regular member can enrol an authenticator and use a registered passkey after password sign-in.',
     ],
     relatedSpecs: [
       spec(
         'staff-passkeys.spec.js',
         'staff register, use and remove an optional device passkey',
+      ),
+      spec(
+        'staff-passkeys.spec.js',
+        'members register, use and remove an optional device passkey',
       ),
     ],
   },

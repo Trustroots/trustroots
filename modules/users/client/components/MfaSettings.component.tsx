@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as mfaApi from '../api/mfa.api';
 import { readApiError } from '../utils/api-error';
+import PasskeySettings from './PasskeySettings.component';
 
 export default function MfaSettings({
   onSignedOut = () => window.location.assign('/signin'),
@@ -121,7 +122,7 @@ export default function MfaSettings({
     }
   }
 
-  return (
+  const authenticatorSettings = (
     <section
       className="panel panel-default"
       aria-labelledby="mfa-settings-title"
@@ -257,8 +258,11 @@ export default function MfaSettings({
         ) : (
           <form onSubmit={handleBegin} autoComplete="off">
             <p>
-              Add an authenticator app to protect sign-in and privileged account
-              access.
+              Add an authenticator app to require a second step after your
+              password. Once it is set up, you can add a passkey for that step.
+            </p>
+            <p>
+              Accounts with two-factor authentication sign in on the website.
             </p>
             <div className="form-group">
               <label htmlFor="mfa-enrol-password">Confirm your password</label>
@@ -278,5 +282,12 @@ export default function MfaSettings({
         )}
       </div>
     </section>
+  );
+
+  return (
+    <>
+      {authenticatorSettings}
+      {status?.enabled && <PasskeySettings />}
+    </>
   );
 }

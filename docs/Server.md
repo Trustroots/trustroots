@@ -65,10 +65,8 @@ For a separate production Compose file, add the variable to both `webapp` and
 in [PRODUCTION.md](../deploy/docker/PRODUCTION.md); it checks the desired key
 format and that both services receive the same value without displaying it.
 
-Authenticator MFA and passkeys are available only to administrators. Admin
-permissions require a session that has completed MFA. Existing administrators
-should enrol an authenticator before relying on those permissions.
-The current MFA challenge is supported by the web sign-in flow. Native Android
-and iOS clients do not yet handle the `202 mfaRequired` response, so
-administrators who enable MFA must use the web client until native challenge
-support ships.
+Members can enable authenticator MFA in **Edit profile → Account**. Once
+enrolled, they can add a passkey for the second step of password sign-in.
+Administrator permissions require a session that has completed MFA. Accounts
+with MFA enabled use the website to sign in until Android and iOS support the
+second step.

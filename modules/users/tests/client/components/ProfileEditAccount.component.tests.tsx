@@ -28,10 +28,6 @@ vi.mock('@/modules/users/client/components/MfaSettings.component', () => ({
   __esModule: true,
   default: () => <section>Authenticator settings</section>,
 }));
-vi.mock('@/modules/users/client/components/PasskeySettings.component', () => ({
-  __esModule: true,
-  default: () => <section>Staff passkey settings</section>,
-}));
 const updateUser = vi.mocked(usersApi.update);
 const changePassword = vi.mocked(usersApi.changePassword);
 const resendConfirmation = vi.mocked(usersApi.resendEmailConfirmation);
@@ -162,19 +158,13 @@ describe('ProfileEditAccount', () => {
     },
   );
 
-  it('shows authenticator and passkey settings only to administrators', () => {
-    const ordinary = renderPage({ roles: ['user', 'welcome-team'] });
-    expect(
-      screen.queryByText('Authenticator settings'),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Staff passkey settings'),
-    ).not.toBeInTheDocument();
-    ordinary.unmount();
-    renderPage({ roles: ['user', 'admin'] });
-    expect(screen.getByText('Authenticator settings')).toBeInTheDocument();
-    expect(screen.getByText('Staff passkey settings')).toBeInTheDocument();
-  });
+  it.each([{ roles: ['user'] }, { roles: ['user', 'admin'] }])(
+    'shows security settings for $roles',
+    ({ roles }) => {
+      renderPage({ roles });
+      expect(screen.getByText('Authenticator settings')).toBeInTheDocument();
+    },
+  );
 
   beforeEach(() => {
     vi.clearAllMocks();

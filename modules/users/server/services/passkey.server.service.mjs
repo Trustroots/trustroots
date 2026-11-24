@@ -37,24 +37,22 @@ function sessionBinding(req) {
     .digest('hex');
 }
 
-async function confirmedStaff(req) {
-  if (
-    !req.user ||
-    !mfa.isPrivileged(req.user) ||
-    req.user.mfaEnabled !== true ||
-    req.user.$locals?.mfaVerified !== true
-  ) {
-    fail('A verified staff account is required.', 403);
+async function verifiedMember(req) {
+  if (req.user?.mfaEnabled !== true || req.user.$locals?.mfaVerified !== true) {
+    fail('Sign in with your authenticator or passkey first.', 403);
   }
-  const user = await mongoose.model('User').findById(req.user._id);
-  if (
-    !user ||
-    (user.authVersion || 0) !== (req.user.authVersion || 0) ||
-    !mfa.isPrivileged(user) ||
-    user.mfaEnabled !== true
-  ) {
-    fail('Sign in again.', 403);
-  }
+  const user = await mongoose.model('User').findOne({
+    _id: req.user._id,
+    authVersion: req.user.authVersion || 0,
+    mfaEnabled: true,
+    roles: { $nin: ['suspended'] },
+  });
+  if (!user) fail('Sign in again.', 403);
+  return user;
+}
+
+async function confirmedMember(req) {
+  const user = await verifiedMember(req);
   const password = req.body.currentPassword;
   if (
     typeof password !== 'string' ||
@@ -77,7 +75,7 @@ async function confirmedStaff(req) {
   return user;
 }
 
-async function challengedStaff(req) {
+async function challengedMember(req) {
   const challenge = req.session?.mfaChallenge;
   if (!mfa.challengeIsValid(challenge)) fail('Sign in again.', 401);
   const user = await mongoose.model('User').findOne({
@@ -86,7 +84,7 @@ async function challengedStaff(req) {
     mfaEnabled: true,
     roles: { $nin: ['suspended'] },
   });
-  if (!user || !mfa.isPrivileged(user)) fail('Sign in again.', 401);
+  if (!user) fail('Sign in again.', 401);
   return user;
 }
 
@@ -121,8 +119,7 @@ async function consumeCeremony(req, user, type) {
 }
 
 export async function list(req) {
-  if (!req.user || !mfa.isPrivileged(req.user))
-    fail('Staff account required.', 403);
+  if (!req.user) fail('Sign in again.', 403);
   const rows = await mongoose
     .model('MemberPasskey')
     .find({ user: req.user._id })
@@ -137,7 +134,7 @@ export async function list(req) {
 
 export async function registrationOptions(req) {
   const { rpId } = deployment();
-  const user = await confirmedStaff(req);
+  const user = await confirmedMember(req);
   const keys = await mongoose.model('MemberPasskey').find({ user: user._id });
   if (keys.length >= 10) fail('Remove a passkey before adding another.');
   const label = typeof req.body.label === 'string' ? req.body.label.trim() : '';
@@ -174,21 +171,7 @@ export async function register(req) {
   const { rpId, origins } = deployment();
   // Fresh credential confirmation took place when options were issued; the
   // consumed ceremony binds that confirmation to this session and authVersion.
-  if (
-    !req.user ||
-    !mfa.isPrivileged(req.user) ||
-    req.user.mfaEnabled !== true ||
-    req.user.$locals?.mfaVerified !== true
-  ) {
-    fail('A verified staff account is required.', 403);
-  }
-  const user = await mongoose.model('User').findOne({
-    _id: req.user._id,
-    authVersion: req.user.authVersion || 0,
-    mfaEnabled: true,
-    roles: { $nin: ['suspended'] },
-  });
-  if (!user || !mfa.isPrivileged(user)) fail('Sign in again.', 403);
+  const user = await verifiedMember(req);
   const ceremony = await consumeCeremony(req, user, 'registration');
   const result = await webauthn.verifyRegistrationResponse({
     response: req.body.response,
@@ -216,7 +199,7 @@ export async function register(req) {
 
 export async function authenticationOptions(req) {
   const { rpId } = deployment();
-  const user = await challengedStaff(req);
+  const user = await challengedMember(req);
   const keys = await mongoose.model('MemberPasskey').find({ user: user._id });
   if (!keys.length)
     fail('No passkey is available. Use your authenticator or recovery code.');
@@ -233,7 +216,7 @@ export async function authenticationOptions(req) {
 
 export async function authenticate(req) {
   const { rpId, origins } = deployment();
-  const user = await challengedStaff(req);
+  const user = await challengedMember(req);
   const ceremony = await consumeCeremony(req, user, 'authentication');
   const key = await mongoose
     .model('MemberPasskey')
@@ -280,14 +263,14 @@ export async function authenticate(req) {
     mfaEnabled: true,
     roles: { $nin: ['suspended'] },
   });
-  if (!current || !mfa.isPrivileged(current)) fail('Sign in again.', 401);
+  if (!current) fail('Sign in again.', 401);
   delete req.session.mfaChallenge;
   current.$locals.mfaVerified = true;
   return current;
 }
 
 export async function remove(req) {
-  const user = await confirmedStaff(req);
+  const user = await confirmedMember(req);
   const key = await mongoose.model('MemberPasskey').findOneAndDelete({
     _id: String(req.params.id),
     user: user._id,

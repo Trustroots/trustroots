@@ -13,6 +13,13 @@ import * as mfaApi from '@/modules/users/client/api/mfa.api';
 const mockSetUser = jest.fn();
 
 jest.mock('@/modules/users/client/api/mfa.api');
+jest.mock(
+  '@/modules/users/client/components/PasskeySettings.component',
+  () => ({
+    __esModule: true,
+    default: () => <section>Passkey settings</section>,
+  }),
+);
 jest.mock('@/modules/core/client/react-app/auth', () => ({
   useAuth: () => ({ setUser: mockSetUser }),
 }));
@@ -42,6 +49,7 @@ describe('MfaSettings', () => {
     render(<MfaSettings />);
 
     await screen.findByText(/Add an authenticator app/);
+    expect(screen.queryByText('Passkey settings')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Confirm your password'), {
       target: { value: 'password' },
     });
@@ -58,6 +66,7 @@ describe('MfaSettings', () => {
       screen.getByRole('button', { name: 'Enable authenticator MFA' }),
     );
     expect(await screen.findByText('RECOVERYCODE1')).toBeInTheDocument();
+    expect(screen.getByText('Passkey settings')).toBeInTheDocument();
     expect(mockSetUser).toHaveBeenCalled();
     fireEvent.click(
       screen.getByRole('button', { name: 'I have saved these codes' }),
