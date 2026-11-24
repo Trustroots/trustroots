@@ -44,7 +44,7 @@ internal class AndroidNostranslationSession(
     private val signing = NostrSigningSession().apply { activate(account) }
     private val revision = keys.revision()
     private val connections = mutableMapOf<String, Connection>()
-    private val seen = LinkedHashMap<Pair<String, String>, Long>()
+    private val receivedRequests = NostranslationRequestHistory()
     private var clients = emptyList<Client>()
     var reviews by mutableStateOf(emptyList<Review>())
         private set
@@ -190,11 +190,9 @@ internal class AndroidNostranslationSession(
                 val event = frame.optJSONObject(2) ?: return
                 val timestamp = now()
                 val request = connection.wire.decodeRequest(event, timestamp) ?: return
-                val id = client.peer to request.id
-                seen.entries.removeAll { it.value < timestamp - 120 }
-                if (id in seen || seen.size >= 256) return
-                seen[id] = timestamp
-                handleRequest(client, connection, request, timestamp)
+                if (receivedRequests.record(client.peer, request.id, timestamp)) {
+                    handleRequest(client, connection, request, timestamp)
+                }
             }
         }
     }
@@ -266,5 +264,17 @@ internal class AndroidNostranslationSession(
         reviews.forEach { it.approval.deny() }
         reviews = emptyList()
         connections.keys.toList().forEach(::disconnect)
+    }
+}
+
+internal class NostranslationRequestHistory {
+    private val received = LinkedHashMap<Pair<String, String>, Long>()
+
+    fun record(peer: String, requestId: String, timestamp: Long): Boolean {
+        received.entries.removeAll { it.value < timestamp - 120 }
+        val request = peer to requestId
+        if (request in received || received.size >= 256) return false
+        received[request] = timestamp
+        return true
     }
 }
