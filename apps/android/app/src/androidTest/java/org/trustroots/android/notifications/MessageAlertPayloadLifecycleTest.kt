@@ -210,10 +210,10 @@ class MessageAlertPayloadLifecycleTest {
             val registered = "${account.storageAccount}:registered"
             val savedPreferences = preferences.all
             val savedStatus = NostranslationAlerts.status.value
+            val pairing = JSONArray().put(JSONObject().put("peer", peer).put("transport", "0".repeat(63) + "1"))
             try {
                 keys.generate()
-                keys.savePairings(keys.revision(), JSONArray().put(JSONObject()
-                    .put("peer", peer).put("transport", "0".repeat(63) + "1")))
+                keys.savePairings(keys.revision(), pairing)
                 val sessionStore = SecureMobileSessionStore(context)
                 sessionStore.save(session)
                 assertEquals(session.accessToken, sessionStore.load()?.accessToken)
@@ -244,13 +244,20 @@ class MessageAlertPayloadLifecycleTest {
                 )
 
                 keys.generate()
-                keys.savePairings(keys.revision(), JSONArray().put(JSONObject()
-                    .put("peer", peer).put("transport", "0".repeat(63) + "1")))
+                keys.savePairings(keys.revision(), pairing)
+                beforeChallenge.set { check(preferences.edit().remove(account.storageAccount).commit()) }
+                NostranslationAlerts.status.value = null
+                pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
+                awaitNostranslationRegistration(fixture, R.string.nostranslation_alerts_unavailable)
+                assertFalse(NostranslationAlerts.isEnabled(context, backend, session))
+                assertEquals(listOf("POST", "PUT", "DELETE", "DELETE", "POST"), fixture.requests.map { it.method })
+
+                check(preferences.edit().putBoolean(account.storageAccount, true).commit())
                 beforeChallenge.set { keys.remove() }
                 NostranslationAlerts.status.value = null
                 pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
                 awaitNostranslationRegistration(fixture, R.string.nostranslation_alerts_unavailable)
-                assertEquals(listOf("POST", "PUT", "DELETE", "DELETE", "POST"), fixture.requests.map { it.method })
+                assertEquals(listOf("POST", "PUT", "DELETE", "DELETE", "POST", "POST"), fixture.requests.map { it.method })
                 assertEquals(emptySet<String>(), preferences.getStringSet(registered, null))
             } finally {
                 keys.remove()
