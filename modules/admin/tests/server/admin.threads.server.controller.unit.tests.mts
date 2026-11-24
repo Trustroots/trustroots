@@ -42,7 +42,7 @@ describe('Admin threads controller unit tests', () => {
   });
 
   it('rejects a missing body and ids that are neither text nor ObjectIds', async () => {
-    for (const req of [{}, { body: { userId: 123 } }]) {
+    for (const req of [{}, { body: { userId: new Uint8Array(12) } }]) {
       const res = mockResponse();
       await adminThreads.getThreads(req, res);
       const response = await res.waitForResponse();
