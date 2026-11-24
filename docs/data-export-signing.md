@@ -50,13 +50,13 @@ The CLI exits 0 for a verified full or partial export and exits 1 if a check fai
 
 What this design does deliver today is the weaker, honest version: once a key is declared compromised, a verifier can reject signatures whose claimed date falls after the compromise, and can report that an earlier claimed date is _unproven_. The verifier says so in those words rather than returning a bare "valid".
 
-Making the strong version true needs an independent time anchor. The intended follow-up is OpenTimestamps: accumulate the day's root digests, publish the Merkle root, and stamp it so that Bitcoin attests the root existed no later than a given block. That gives a genuine upper bound on the signing time from a source Trustroots cannot forge. The sectioned root digest exists so that this is an addition rather than a format break. It is deliberately not part of this change.
+Independent timestamping is a follow-up. A proof should cover the signed attestation, including its signature. For example, Trustroots could batch hashes of signed attestations into a Merkle tree and stamp its root with OpenTimestamps. An importer with an inclusion proof could then verify that the signature existed by the time of the anchoring block.
 
 **The key is hot by construction.** The export is generated per request, so the signing key must be reachable from the web app's request path. Compromise of the app server is compromise of the key. The mitigation is not secrecy but a bounded blast radius: rotation, a published key history, and eventually the time anchor above.
 
 ## Key custody
 
-The signing key is the shared Trustroots Nostr service identity, `_@trustroots.org`. It is generated offline and injected into the webapp at runtime as an nsec.
+The export uses `_@trustroots.org`, the same service signer as circle chat. The webapp reads the existing nsec from its runtime environment.
 
 ```
 TRUSTROOTS_NOSTR_SERVICE_NSEC=nsec1…
@@ -66,13 +66,7 @@ Keep the nsec in the deployment environment. With no usable key configured, the 
 
 ## Key distribution
 
-A key published on trustroots.org is exactly as trustworthy as trustroots.org, which is the thing a fork exists to stop depending on. No single channel fixes that. Together, these make a _silent_ key substitution require compromising several independent parties, and a _loud_ one visible. That is the achievable property; claiming more would be false.
-
-1. `config/data-export-signing-keys.json` in this repository — the pinned history the verifier reads. A fork operator who audits it once inherits the trust anchor. This is the strongest link, and it is the Debian `debian-archive-keyring` model: distribute the key with the client, not from the server being verified.
-2. A signed git tag in `Trustroots/trustroots`, so the introduction is timestamped and third-party-mirrored.
-3. `https://www.trustroots.org/.well-known/nostr.json?name=_` — convenient, and the weakest link, because it is served by the party being verified.
-4. A Nostr event published to `relay.trustroots.org` and to public relays, so third-party relay operators hold copies Trustroots cannot silently retract.
-5. An announcement on the issue and the blog, so the introduction is publicly witnessed.
+The offline verifier uses the public keys pinned in `config/data-export-signing-keys.json`. The active service key is also published through the [NIP-05 lookup for `_@trustroots.org`](https://www.trustroots.org/.well-known/nostr.json?name=_). When pinning the initial key, confirm it against the deployed circle-chat signer and record its activation date if known.
 
 ## Rotation and revocation
 
@@ -88,18 +82,10 @@ To rotate:
 2. Add the new public key to `config/data-export-signing-keys.json` as `active`, with `validFrom`, and mark the outgoing key `retired` with a `validUntil`. Open a pull request; that is the public record.
 3. Deploy the new nsec through the runtime secret mechanism, then restart.
 4. Verify a fresh export end to end with `bin/verify-data-export.mts`.
-5. Announce through the distribution channels above.
+5. Check that the NIP-05 lookup returns the new active public key.
 
 To revoke a compromised key, do the same but set `status: "compromised"` and `revokedAt` to the earliest time the compromise might have begun — the earliest, not the latest, because the boundary cannot be proven.
 
 ## Privacy
 
-The `contacts` section carries **other members'** usernames, display names, home and current locations, Facebook IDs, and `emailHash` — an MD5 of a lowercased email address, which is reversible in practice for any address on a wordlist.
-
-Signing changes what that is. Unsigned, the file is deniable: a third party who obtains it cannot tell it from a fabrication, so it is worth little to a data broker or a harasser. Signed, it becomes an artefact Trustroots vouches for about people who never consented to it, transferable to anyone. That harm does not exist today; attestation creates it.
-
-This change does not widen what the export contains — the field set is untouched. Sectioning is the first mitigation: the `contacts` attestation can be presented separately or withheld, and the verifier reports a withheld section rather than treating it as empty. Three further decisions are open, and they belong to the maintainers rather than to this change, because they are a values call about a community's data:
-
-- reduce the signed contact records to edges and identifiers, dropping the other party's location;
-- replace `emailHash` with something not reversible, or drop it, since a fork can obtain a Gravatar hash itself once the member is present;
-- or accept the disclosure as it stands.
+Signed and unsigned exports include each contact relationship's ID, parties, confirmation status and creation date, plus the other member's ID, username and display name. The download excludes other members' location fields, email hashes, Facebook identifiers and other mini-profile metadata. Members can also omit the entire contact section when sharing a partial export.

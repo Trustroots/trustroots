@@ -370,6 +370,10 @@ describe('API route registrations', () => {
         '../policies/tribes.server.policy': tribesPolicy,
       },
     );
+    const { trustrootsNostrServiceName, trustrootsNostrServiceIdentifier } =
+      await import('../../server/services/nostr-service-signer.server.mts');
+    assert.equal(trustrootsNostrServiceName, '_');
+    assert.equal(trustrootsNostrServiceIdentifier, '_@trustroots.org');
     const supportRoutes = await register(
       './../../../support/server/routes/support.server.routes.mts',
       {

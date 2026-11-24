@@ -7,7 +7,7 @@ Signing is only worth something if the signed bytes are a pure function of the m
 ## What Changes
 
 - Bump the export to version `2` and add a detached `signature` object carrying per-section SHA-256 digests, a root digest, and a NIP-01 attestation event.
-- Define the signed bytes as RFC 8785 canonical JSON over `format`, `version`, `profile`, `contacts`, and `hostingOffers`, with list sections sorted deterministically before they are digested and sent.
+- Define the signed bytes as RFC 8785 canonical JSON over `format`, `version`, and the six data sections, with list sections sorted deterministically before they are digested and sent.
 - Keep `exportedAt` in the file but outside the signature, since it varies per request.
 - Serve an unsigned export with a logged warning when no signing key is configured, never an error.
 - Add a standalone verifier that checks a downloaded file without a server, a database, or a network, and reports which section failed and what the signing key's status is.
@@ -24,5 +24,5 @@ Signing is only worth something if the signed bytes are a pure function of the m
 - Changes the export format from version `1` to version `2`. Nothing consumes it yet, so this is the cheapest moment to change it.
 - Adds no production dependency: `nostr-tools` is already one.
 - Uses the shared Trustroots Nostr service signer. The webapp needs access to the key because the export is generated per request.
-- Does not add timestamping. A NIP-01 `created_at` is chosen by the signer, so this change proves authorship but not time; anchoring is scoped as a follow-up.
-- Does not widen what the export contains. It does change the character of the third-party data already in `contacts`, from deniable to attested; the open decisions are recorded in `docs/data-export-signing.md`.
+- Labels the signing time as signer-claimed. Independent timestamping of the signed attestation is a follow-up.
+- Limits exported contacts to relationship details and the other member's ID, username and display name.

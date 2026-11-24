@@ -157,6 +157,30 @@ describe('Member data export controller', () => {
   const exportedAt = new Date('2026-01-02T03:04:00.000Z');
   const secretKey = generateSecretKey();
   const publicKey = getPublicKey(secretKey);
+  const exportedContact = {
+    _id: 'contact-1',
+    userFrom: user._id,
+    userTo: 'other-member-id',
+    confirmed: true,
+    created: '2026-01-01T00:00:00.000Z',
+    user: {
+      _id: 'other-member-id',
+      username: 'other-member',
+      displayName: 'Contact Example',
+    },
+  };
+  const contactWithPrivateFields = {
+    ...exportedContact,
+    privateNote: 'Fictional note',
+    user: {
+      ...exportedContact.user,
+      locationFrom: 'Fictional hometown',
+      locationLiving: 'Fictional city',
+      emailHash: 'fictional-hash',
+      facebookId: 'fictional-facebook-id',
+      avatarSource: 'facebook',
+    },
+  };
 
   afterEach(() => {
     sinon.restore();
@@ -173,7 +197,10 @@ describe('Member data export controller', () => {
       const log = sinon.stub(winston, 'log');
       const loaded = loadController({
         profile: (_req, _res, next) => next(),
-        contacts: (_req, _res, next) => next(),
+        contacts: (req, _res, next) => {
+          req.contacts = [contactWithPrivateFields];
+          next();
+        },
       });
       const response = mockResponse();
       const next = sinon.stub();
@@ -181,6 +208,7 @@ describe('Member data export controller', () => {
       await loaded.download({ user } as never, response as never, next);
 
       assert.equal(responseBody(response).signature, null);
+      assert.deepEqual(responseBody(response).contacts, [exportedContact]);
       assert.equal(next.called, false);
       sinon.assert.calledOnceWithExactly(
         log,
@@ -202,7 +230,7 @@ describe('Member data export controller', () => {
         next();
       },
       contacts: (req, _res, next) => {
-        req.contacts = [{ _id: 'contact-1' }];
+        req.contacts = [contactWithPrivateFields];
         next();
       },
       offers: [{ _id: 'offer-1', description: 'Guest bed' }],
@@ -216,6 +244,7 @@ describe('Member data export controller', () => {
       sinon.stub() as never,
     );
     const file = responseBody(response);
+    assert.deepEqual(file.contacts, [exportedContact]);
     const keyHistory = [{ pubkey: publicKey, status: 'active' }];
     assert.equal(verification.verifyExport(file, { keyHistory }).valid, true);
     assert.equal(file.signature?.event.pubkey, publicKey);
@@ -258,7 +287,10 @@ describe('Member data export controller', () => {
     const offers = [{ _id: 'offer-b' }, { _id: 'offer-a' }];
     const messages = [{ _id: 'message-b' }, { _id: 'message-a' }];
     const experiences = [{ _id: 'experience-b' }, { _id: 'experience-a' }];
-    const contacts = [{ _id: 'contact-b' }, { _id: 'contact-a' }];
+    const contacts = [
+      { ...exportedContact, _id: 'contact-b' },
+      { ...exportedContact, _id: 'contact-a' },
+    ];
     const memberships = [{ tribe: 'circle-b' }, { tribe: 'circle-a' }];
     const loaded = loadController({
       profile: (req, _res, next) => {
@@ -346,7 +378,7 @@ describe('Member data export controller', () => {
     };
     const contacts: Middleware = (req, _res, next, userId) => {
       assert.equal(userId, user._id);
-      req.contacts = [{ displayName: 'Contact Example' }];
+      req.contacts = [contactWithPrivateFields];
       next();
     };
     const controller = loadController({
@@ -397,7 +429,7 @@ describe('Member data export controller', () => {
           since: '2020-01-01T00:00:00.000Z',
         },
       ],
-      contacts: [{ displayName: 'Contact Example' }],
+      contacts: [exportedContact],
       hostingOffers: [
         {
           _id: 'offer-1',

@@ -28,6 +28,15 @@ and the member's data.
 - **WHEN** an unauthenticated visitor requests the data-export endpoint
 - **THEN** the system refuses the request
 
+#### Scenario: Export contains another member's contact details
+
+- **WHEN** an authenticated member downloads an export containing a contact
+- **THEN** the contact record includes the relationship ID, parties,
+  confirmation status and creation date, and the other member's ID, username
+  and display name
+- **AND** only those fields appear in the contact record, whether or not the
+  export is signed
+
 #### Scenario: Export is signed with the export signing key
 
 - **WHEN** a signing key is configured and an authenticated member requests

@@ -334,7 +334,20 @@ service.download = async function (
     const body = canonical.buildSignedPayload({
       profile,
       circles: circlesFromProfile(profile),
-      contacts: req.contacts || [],
+      contacts: (req.contacts || []).map(
+        ({ _id, confirmed, created, userFrom, userTo, user }) => ({
+          _id,
+          confirmed,
+          created,
+          userFrom,
+          userTo,
+          user: {
+            _id: user._id,
+            username: user.username,
+            displayName: user.displayName,
+          },
+        }),
+      ),
       hostingOffers,
       messages,
       experiences,
