@@ -36,7 +36,6 @@ import org.unifiedpush.android.connector.data.PushMessage
 internal object NostranslationAlerts {
     const val instance = "nostranslation"
     private const val openExtra = "org.trustroots.android.OPEN_NOSTRANSLATION_REVIEW"
-    private const val endpointPath = "/api/mobile/v0/nostranslation/alerts"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val writeLock = Mutex()
     val openRequested = MutableStateFlow<String?>(null)
@@ -139,7 +138,7 @@ internal object NostranslationAlerts {
                         .put("destination", destination)
                     api.registerTranslationAlert(session, registration) { challenge ->
                         check(keys.revision() == revision && isEnabled(context, api.backendURL, session))
-                        signChallenge(challenge, api.backendURL, author, transport, destination, secret)
+                        signNostranslationAlertChallenge(challenge, api.backendURL, author, transport, destination, secret)
                     }
                     current.add(transport)
                     prefs(context).edit().putStringSet("${account.storageAccount}:registered", previous + current).apply()
@@ -150,29 +149,6 @@ internal object NostranslationAlerts {
         }
         for (removed in previous - current) api.unregisterTranslationAlert(session, removed)
         prefs(context).edit().putStringSet("${account.storageAccount}:registered", current).apply()
-    }
-
-    private fun signChallenge(
-        event: JSONObject, backend: String, peer: String, transport: String, destination: JSONObject, secret: ByteArray,
-    ): JSONObject {
-        val fields = listOf(peer, transport, "android", destination.getString("endpoint"),
-            destination.getString("publicKey"), destination.getString("auth"))
-        val binding = fields.joinToString("") { "${it.encodeToByteArray().size}:$it" }
-        val payload = MessageDigest.getInstance("SHA-256").digest(binding.encodeToByteArray())
-            .joinToString("") { "%02x".format(it.toInt() and 255) }
-        val created = event.getLong("created_at")
-        val now = System.currentTimeMillis() / 1000
-        require(event.get("kind") == 27235 && event.get("content") == "" && created in (now - 120)..(now + 30))
-        val tags = event.getJSONArray("tags")
-        require(tags.length() == 4)
-        val values = (0 until tags.length()).associate { index ->
-            val tag = tags.getJSONArray(index)
-            require(tag.length() == 2)
-            tag.get(0) as String to tag.get(1) as String
-        }
-        require(values["u"] == "${backend.trimEnd('/')}$endpointPath" && values["method"] == "PUT" &&
-            values["payload"] == payload && values["challenge"]?.matches(Regex("[0-9a-f]{64}")) == true)
-        return NostrEventSigner.sign(event, secret)
     }
 
     fun registrationFailed() { status.value = R.string.nostranslation_alerts_unavailable }
@@ -201,4 +177,32 @@ internal object NostranslationAlerts {
             .setContentText(context.getString(R.string.nostranslation_review_waiting))
             .setContentIntent(pending).setAutoCancel(true).build())
     }
+}
+
+internal fun signNostranslationAlertChallenge(
+    event: JSONObject,
+    backend: String,
+    peer: String,
+    transport: String,
+    destination: JSONObject,
+    secret: ByteArray,
+    now: Long = System.currentTimeMillis() / 1000,
+): JSONObject {
+    val fields = listOf(peer, transport, "android", destination.getString("endpoint"),
+        destination.getString("publicKey"), destination.getString("auth"))
+    val binding = fields.joinToString("") { "${it.encodeToByteArray().size}:$it" }
+    val payload = MessageDigest.getInstance("SHA-256").digest(binding.encodeToByteArray())
+        .joinToString("") { "%02x".format(it.toInt() and 255) }
+    val created = event.getLong("created_at")
+    require(event.get("kind") == 27235 && event.get("content") == "" && created in (now - 120)..(now + 30))
+    val tags = event.getJSONArray("tags")
+    require(tags.length() == 4)
+    val values = (0 until tags.length()).associate { index ->
+        val tag = tags.getJSONArray(index)
+        require(tag.length() == 2)
+        tag.get(0) as String to tag.get(1) as String
+    }
+    require(values["u"] == "${backend.trimEnd('/')}/api/mobile/v0/nostranslation/alerts" && values["method"] == "PUT" &&
+        values["payload"] == payload && values["challenge"]?.matches(Regex("[0-9a-f]{64}")) == true)
+    return NostrEventSigner.sign(event, secret)
 }
