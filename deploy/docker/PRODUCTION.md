@@ -1,9 +1,19 @@
 # Production Docker operations
 
-After an upgrade or database restore, run `pnpm run ensure-circle-discovery-indexes`
-inside the application container. Production disables automatic index creation;
-without these indexes, circle member discovery can exceed its query time limit.
-This command is idempotent and does not drop indexes or change member data.
+After an upgrade or database restore, run the circle discovery index maintenance
+command from the production Compose directory.
+
+```bash
+docker compose exec -T webapp node ./bin/db-maintenance/ensure-circle-discovery-indexes.mts
+```
+
+Production disables automatic index creation, and circle member discovery can
+exceed its query time limit when the indexes are missing. The command is
+idempotent and only creates the two required indexes.
+
+The retired database migrations remain in Git history at
+`5ec71e146e7de5ed3a0b47b22a014a4ef9aebd9d` under `migrations/archived/`.
+List the archived files with `git ls-tree -r --name-only 5ec71e146 -- migrations/archived`.
 
 GitHub Actions validates production image builds on pull requests and publishes
 `linux/amd64` images tagged `latest` and `git-<short-commit>` to GHCR after

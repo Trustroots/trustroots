@@ -61,9 +61,6 @@ npm-debug.*
 # Docs
 public/developers/api
 
-# DB migrations
-/.migrate
-
 # User uploads
 uploads
 public/uploads-profile

@@ -174,7 +174,6 @@ export default defineConfig({
         'modules/*/shared/**',
         'modules/*/server/**',
         'tests/e2e/**',
-        'migrations/**',
         'testutils/server/**',
         'testutils/common/**',
         'packages/analytics/server/**',
@@ -342,7 +341,6 @@ export default defineConfig({
       files: [
         'bin/**',
         'config/**',
-        'migrations/**',
         'scripts/**',
         'tooling/guards/**',
         'packages/logger/**',

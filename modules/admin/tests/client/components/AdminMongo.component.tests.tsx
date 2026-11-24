@@ -18,6 +18,59 @@ beforeEach(() => {
   get.mockReset();
 });
 
+it('shows the current maintenance status and expands collection indexes', async () => {
+  get.mockResolvedValue({
+    data: {
+      capturedAt: '2025-01-02T12:00:00.000Z',
+      server: { version: '7.0.1', topology: 'standalone', fcv: null },
+      collections: [],
+      jobs: [],
+      jobsCapturedAt: null,
+      history: [],
+      indexInventory: {
+        circleDiscovery: [
+          {
+            name: 'circle_discovery_member_seen',
+            collection: 'users',
+            status: 'matches',
+          },
+          {
+            name: 'circle_discovery_recommenders',
+            collection: 'experiences',
+            status: 'missing',
+          },
+        ],
+        collections: [
+          {
+            name: 'users',
+            indexes: [{ name: 'fixture_index', fields: ['seen (-1)'] }],
+          },
+          { name: 'experiences', indexes: null },
+          { name: 'empty_fixture', indexes: [] },
+        ],
+      },
+    },
+  });
+  render(<AdminMongo />);
+
+  const maintenance = await screen.findByRole('table', {
+    name: 'Circle discovery indexes',
+  });
+  expect(
+    within(maintenance).getByRole('row', { name: /users/ }),
+  ).toHaveTextContent('Definition matches');
+  expect(
+    within(maintenance).getByRole('row', { name: /experiences/ }),
+  ).toHaveTextContent('Missing');
+  fireEvent.click(screen.getByText('Collection index inventory'));
+  const inventory = screen.getByRole('table', {
+    name: 'Collection index inventory',
+  });
+  expect(inventory).toHaveTextContent('fixture_index seen (-1)');
+  expect(inventory).toHaveTextContent('experiencesUnavailable');
+  expect(inventory).toHaveTextContent('empty_fixtureNo indexes');
+});
+
 it('keeps collection storage visible when the job count is unavailable', async () => {
   get.mockResolvedValue({
     data: {

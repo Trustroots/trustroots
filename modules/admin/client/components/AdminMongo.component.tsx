@@ -6,6 +6,7 @@ import {
   type AgendaCollectionStorage,
   type AgendaStorageSample,
   type MongoDiagnosticsSnapshot,
+  type MongoIndexInventory,
 } from '../../shared/mongo-diagnostics.mts';
 import AdminHeader from './AdminHeader.component';
 
@@ -161,6 +162,7 @@ export default function AdminMongo() {
                 Issue #3455
               </a>
             </p>
+            <IndexInventory inventory={snapshot.indexInventory} />
             <h3>Collection storage</h3>
             <p>
               Allocated data includes space MongoDB can reuse. Indexes are
@@ -263,6 +265,99 @@ export default function AdminMongo() {
           </>
         )}
       </main>
+    </>
+  );
+}
+
+const indexStatusLabels = {
+  matches: 'Definition matches',
+  missing: 'Missing',
+  different: 'Definition differs',
+  unavailable: 'Unavailable',
+};
+
+function IndexInventory({ inventory }: { inventory?: MongoIndexInventory }) {
+  return (
+    <>
+      <h3>Index maintenance</h3>
+      {inventory && (
+        <>
+          <p>
+            Checks the current database against the circle discovery migration.{' '}
+            <a href="https://github.com/Trustroots/trustroots/blob/main/deploy/docker/PRODUCTION.md">
+              Index maintenance runbook
+            </a>
+          </p>
+          <div className="table-responsive">
+            <table
+              className="table table-striped"
+              aria-label="Circle discovery indexes"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">Collection</th>
+                  <th scope="col">Required index</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.circleDiscovery.map(
+                  ({ collection, name, status }) => (
+                    <tr key={name}>
+                      <td>{collection}</td>
+                      <th scope="row">{name}</th>
+                      <td>{indexStatusLabels[status]}</td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      <details>
+        <summary>Collection index inventory</summary>
+        {inventory?.collections ? (
+          <div className="table-responsive">
+            <table
+              className="table table-striped"
+              aria-label="Collection index inventory"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">Collection</th>
+                  <th scope="col">Indexes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.collections.map(({ name, indexes }) => (
+                  <tr key={name}>
+                    <th scope="row">{name}</th>
+                    <td>
+                      {indexes === null ? (
+                        'Unavailable'
+                      ) : indexes.length ? (
+                        <ul className="list-unstyled">
+                          {indexes.map(index => (
+                            <li key={index.name}>
+                              <strong>{index.name}</strong>{' '}
+                              <code>{index.fields.join(', ')}</code>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        'No indexes'
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p role="alert">Collection index metadata is unavailable.</p>
+        )}
+      </details>
     </>
   );
 }

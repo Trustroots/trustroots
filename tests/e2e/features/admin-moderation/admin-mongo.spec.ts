@@ -7,6 +7,45 @@ import {
 } from '../../support/helpers.mts';
 import { withE2eDb } from '../../support/db.mts';
 
+test('admin inspects MongoDB diagnostics index status and inventory', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.mongo', [
+    'Admin sees live collection indexes and circle discovery index status.',
+  ]);
+  await signInViaApi(page, request, SEEDED_ADMIN);
+  const collectionName = 'mongoIndexDiagnosticsFixture';
+  await withE2eDb(db =>
+    db.collection(collectionName).createIndex({ fixtureOrder: -1 }),
+  );
+  try {
+    await page.goto('/admin/mongo');
+    const circleIndexes = page.getByRole('table', {
+      name: 'Circle discovery indexes',
+    });
+    await expect(circleIndexes.getByRole('row', { name: /users/ })).toHaveText(
+      /circle_discovery_member_seen\s*(Definition matches|Missing)/,
+    );
+    await expect(
+      circleIndexes.getByRole('row', { name: /experiences/ }),
+    ).toHaveText(
+      /circle_discovery_recommenders\s*(Definition matches|Missing)/,
+    );
+    await page.getByText('Collection index inventory', { exact: true }).click();
+    const inventory = page.getByRole('table', {
+      name: 'Collection index inventory',
+    });
+    const collection = inventory.getByRole('row', {
+      name: /mongoIndexDiagnosticsFixture/,
+    });
+    await expect(collection).toContainText('fixtureOrder_-1');
+    await expect(collection).toContainText('fixtureOrder (-1)');
+  } finally {
+    await withE2eDb(db => db.collection(collectionName).drop());
+  }
+});
+
 test('admin inspects MongoDB diagnostics and refreshes live job counts', async ({
   page,
   request,

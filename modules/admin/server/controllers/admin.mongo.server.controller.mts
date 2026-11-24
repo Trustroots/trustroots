@@ -17,6 +17,7 @@ import {
   readJobCounts,
   readSavedAgendaInventory,
 } from '../services/agenda-inventory.server.service.mts';
+import { readMongoIndexInventory } from '../services/mongo-index-inventory.server.service.mts';
 
 const maxTimeMS = 5_000;
 
@@ -122,15 +123,17 @@ export async function diagnostics(req: Request, res: Response) {
   }
 
   const capturedAt = new Date();
-  const [server, agenda, history] = await Promise.all([
+  const [server, agenda, history, indexInventory] = await Promise.all([
     readServerDiagnostics(db),
     readAgendaDiagnostics(db, req.query?.liveJobs === 'true'),
     readAgendaStorageHistory(db, capturedAt).catch(() => null),
+    readMongoIndexInventory(db),
   ]);
   return res.json({
     capturedAt: capturedAt.toISOString(),
     server,
     history,
+    indexInventory,
     ...agenda,
   } satisfies MongoDiagnosticsSnapshot);
 }
