@@ -84,7 +84,11 @@ class AndroidNostranslationSessionTest {
 
             val secret = NostrConnectEncryption.conversationKey(clientKey, NostrEventSigner.decodeHex(transport, 32))
             var signedIn = true
-            AndroidNostranslationSession(account, keys, scope, { signedIn }, relay) { timestamp }.use { restored ->
+            var signOutDuringRequest = false
+            AndroidNostranslationSession(account, keys, scope, { signedIn }, relay) {
+                if (signOutDuringRequest) signedIn = false
+                timestamp
+            }.use { restored ->
                 restored.start()
                 relay.open()
                 assertEquals(listOf(peer), restored.connectedClients)
@@ -191,7 +195,11 @@ class AndroidNostranslationSessionTest {
 
                 relay.receive(reviewFrame("sign-out-before-approval"))
                 val signedOutReview = restored.reviews.single()
-                signedIn = false
+                signOutDuringRequest = true
+                relay.receive(reviewFrame("received-during-sign-out"))
+                signOutDuringRequest = false
+                assertFalse(signedIn)
+                assertEquals(listOf(signedOutReview), restored.reviews)
                 relay.receive(reviewFrame("received-after-sign-out"))
                 assertEquals(listOf(signedOutReview), restored.reviews)
                 restored.decide(signedOutReview, approved = true)
@@ -252,7 +260,12 @@ class AndroidNostranslationSessionTest {
                         "&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture",
                 ))
             }
-            AndroidNostranslationSession(account, keys, scope, { true }, relay) { 1_800_000_000L }.use { signer ->
+            var signedIn = true
+            var signOutBeforeRelaySend = false
+            AndroidNostranslationSession(account, keys, scope, { signedIn }, relay) {
+                if (signOutBeforeRelaySend) signedIn = false
+                1_800_000_000L
+            }.use { signer ->
                 signer.start()
                 links.take(8).forEach(signer::pair)
                 assertThrows(IllegalArgumentException::class.java) { signer.pair(links.last()) }
@@ -270,6 +283,12 @@ class AndroidNostranslationSessionTest {
                 signer.pair(links.last())
                 assertEquals(9, relay.connectionsCreated)
                 assertTrue(signer.connectedClients.isEmpty())
+
+                relay.acceptsFrames = true
+                signOutBeforeRelaySend = true
+                relay.open()
+                assertFalse(signedIn)
+                assertTrue(relay.frames.isEmpty())
             }
         } finally {
             job.cancel()
