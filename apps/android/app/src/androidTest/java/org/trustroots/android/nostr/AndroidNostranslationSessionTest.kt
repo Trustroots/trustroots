@@ -16,6 +16,7 @@ import okio.ByteString
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -191,6 +192,8 @@ class AndroidNostranslationSessionTest {
                 relay.receive(reviewFrame("sign-out-before-approval"))
                 val signedOutReview = restored.reviews.single()
                 signedIn = false
+                relay.receive(reviewFrame("received-after-sign-out"))
+                assertEquals(listOf(signedOutReview), restored.reviews)
                 restored.decide(signedOutReview, approved = true)
                 assertTrue(restored.reviews.isEmpty())
                 assertEquals(afterRequests, relay.frames.size)
@@ -254,6 +257,13 @@ class AndroidNostranslationSessionTest {
                 links.take(8).forEach(signer::pair)
                 assertThrows(IllegalArgumentException::class.java) { signer.pair(links.last()) }
                 assertEquals(8, relay.connectionsCreated)
+                assertTrue(signer.connectedClients.isEmpty())
+
+                assertFalse(signer.relayFailed)
+                relay.acceptsFrames = false
+                relay.open()
+                assertTrue(signer.relayFailed)
+                assertTrue(relay.frames.isEmpty())
                 assertTrue(signer.connectedClients.isEmpty())
 
                 relay.fail()
@@ -329,6 +339,7 @@ class AndroidNostranslationSessionTest {
 
 internal class RecordingNostranslationRelay : WebSocket.Factory {
     val frames = mutableListOf<JSONArray>()
+    var acceptsFrames = true
     var connectionsCreated = 0
         private set
     var cancelled = false
@@ -344,7 +355,7 @@ internal class RecordingNostranslationRelay : WebSocket.Factory {
         socket = object : WebSocket {
             override fun request() = request
             override fun queueSize() = 0L
-            override fun send(text: String): Boolean = frames.add(JSONArray(text))
+            override fun send(text: String): Boolean = acceptsFrames && frames.add(JSONArray(text))
             override fun send(bytes: ByteString) = false
             override fun close(code: Int, reason: String?) = true
             override fun cancel() { cancelled = true }
