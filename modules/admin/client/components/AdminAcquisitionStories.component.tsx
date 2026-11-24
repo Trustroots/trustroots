@@ -1,3 +1,4 @@
+import { Input } from '@trustroots/ui/Input';
 import { Select } from '@trustroots/ui/Select';
 import { useAuth } from '../../../core/client/react-app/auth';
 import React, { useMemo, useState, useEffect } from 'react';
@@ -60,6 +61,7 @@ interface AcquisitionStory {
   created: string | number;
   username: string;
   displayName?: string;
+  email?: string;
   circleCount: number;
   locationLiving?: string;
   locationFrom?: string;
@@ -171,7 +173,8 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
 export default function AdminAcquisitionStories() {
   const { user, hasRole } = useAuth();
   const viewerLanguages = user?.languages || [];
-  const publicProfile = !hasRole('admin');
+  const isAdmin = hasRole('admin');
+  const publicProfile = !isAdmin;
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [sendingConfirmationIds, setSendingConfirmationIds] = useState<
     Set<string>
@@ -180,6 +183,8 @@ export default function AdminAcquisitionStories() {
     Record<string, { kind: 'success' | 'error'; message: string }>
   >({});
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const searchTerm = search.trim().toLowerCase();
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [profileVisibility, setProfileVisibility] =
     useState<ProfileVisibility>('all');
@@ -210,6 +215,18 @@ export default function AdminAcquisitionStories() {
           (profileVisibility === 'visible' && story.public === true) ||
           (profileVisibility === 'hidden' && story.public !== true),
       )
+      .filter(
+        story =>
+          !searchTerm ||
+          [
+            story.username,
+            story.displayName,
+            isAdmin ? story.email : undefined,
+            story.locationLiving,
+            story.locationFrom,
+            story.acquisitionStory,
+          ].some(value => value?.toLowerCase().includes(searchTerm)),
+      )
       .sort((left, right) => {
         const leftValue = valueFor(left);
         const rightValue = valueFor(right);
@@ -219,7 +236,7 @@ export default function AdminAcquisitionStories() {
             : String(leftValue).localeCompare(String(rightValue));
         return comparison * direction;
       });
-  }, [profileVisibility, sort, stories, unassignedOnly]);
+  }, [isAdmin, profileVisibility, searchTerm, sort, stories, unassignedOnly]);
 
   function sortBy(column: StorySortColumn) {
     setSort(currentSort => ({
@@ -271,6 +288,23 @@ export default function AdminAcquisitionStories() {
       <div className="tw:page-container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 500 stories</p>
+
+        <div className="tw:mb-4">
+          <label className="tw:mb-2" htmlFor="acquisition-stories-search">
+            Search stories
+          </label>
+          <Input
+            id="acquisition-stories-search"
+            onChange={event => setSearch(event.target.value)}
+            placeholder={
+              isAdmin
+                ? 'Email, username, name, location or story'
+                : 'Username, name, location or story'
+            }
+            type="search"
+            value={search}
+          />
+        </div>
 
         <div className="tw:mb-4 tw:flex tw:min-h-[21px] tw:items-baseline tw:gap-1.5">
           <input
@@ -330,6 +364,7 @@ export default function AdminAcquisitionStories() {
                   sort={sort}
                   tooltip="The member's name and username"
                 />
+                {isAdmin && <th scope="col">Email address</th>}
                 <SortableHeader
                   column="circleCount"
                   label="Circles"
@@ -424,6 +459,11 @@ export default function AdminAcquisitionStories() {
                       <RestrictionBadges statuses={story.restrictionStatuses} />
                     </div>
                   </td>
+                  {isAdmin && (
+                    <td className="admin-acquisition-stories-email">
+                      {story.email || '—'}
+                    </td>
+                  )}
                   <td>{story.circleCount || 0}</td>
                   <td>
                     {story.locationLiving && (
@@ -532,9 +572,11 @@ export default function AdminAcquisitionStories() {
 
         {!isLoading && sortedStories.length === 0 && (
           <p>
-            {unassignedOnly
-              ? 'No unassigned acquisition stories found.'
-              : 'No acquisition stories found.'}
+            {searchTerm
+              ? 'No acquisition stories match your search.'
+              : unassignedOnly
+                ? 'No unassigned acquisition stories found.'
+                : 'No acquisition stories found.'}
           </p>
         )}
       </div>

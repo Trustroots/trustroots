@@ -203,7 +203,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Greeters can replace an unconfirmed signup link with a fresh link.',
       'The old link is invalidated and the fresh link activates the account.',
       'Confirmed members have no resend action and regular members are denied.',
-      'The acquisition story response contains no email addresses or tokens.',
+      'Greeter acquisition story responses omit email addresses and tokens.',
     ]);
 
     const greeter = createUser();
@@ -294,6 +294,9 @@ test.describe('admin acquisition feature coverage', () => {
       await expect(
         pendingRow.getByText('Not confirmed', { exact: true }),
       ).toBeVisible();
+      await expect(
+        page.getByRole('columnheader', { name: 'Email address' }),
+      ).toHaveCount(0);
       await expect(
         confirmedRow.getByText('Confirmed', { exact: true }),
       ).toBeVisible();
@@ -472,6 +475,41 @@ test.describe('admin acquisition feature coverage', () => {
     await expect(visibility).toBeVisible();
     await checkbox.uncheck();
     await expect(members).toHaveText(['forest-member']);
+  });
+
+  test('admin can find acquisition stories by account email and username', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Administrators can see and search account emails and usernames.',
+      'Text search combines with the profile visibility filter.',
+    ]);
+    await page.goto('/admin/acquisition-stories');
+    await expect(
+      page.getByRole('columnheader', { name: 'Email address' }),
+    ).toBeVisible();
+    const search = page.getByRole('searchbox', { name: 'Search stories' });
+    const visibility = page.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
+    const rows = page.locator('tbody tr');
+    const alice = 'e2e-seeded-alice@example.test';
+
+    await search.fill('  ALICE@EXAMPLE  ');
+    await expect(rows).toHaveCount(1);
+    await expect(
+      rows.getByRole('cell', { name: alice, exact: true }),
+    ).toBeVisible();
+    await visibility.selectOption('hidden');
+    await expect(
+      page.getByText('No acquisition stories match your search.'),
+    ).toBeVisible();
+    await visibility.selectOption('all');
+    await search.fill('seeded-alice');
+    await expect(rows).toHaveCount(1);
+    await expect(rows).toContainText(alice);
+    await search.clear();
+    await expect(rows.nth(1)).toBeVisible();
   });
 
   test('admin acquisition stories remain available without analysis', async ({
