@@ -123,7 +123,8 @@ describe('file-upload.service unit tests', () => {
   describe('readUpload', () => {
     it('returns the uploaded file with its name and declared type', async () => {
       const req = multipart([{ name: 'note', content: 'hello' }, image(png)]);
-      const file = (await readUpload(req, 'avatar', 1024))!;
+      const { file, fields } = (await readUpload(req, 'avatar', 1024))!;
+      assert.deepEqual(fields, { note: 'hello' });
       file.buffer.equals(png).should.be.true();
       file.mimetype.should.equal('image/png');
       file.originalname.should.equal('photo.png');
@@ -136,7 +137,7 @@ describe('file-upload.service unit tests', () => {
         'Multipart/Form-Data ',
       );
       const file = await readUpload(req, 'avatar', 1024);
-      file!.buffer.equals(png).should.be.true();
+      file!.file.buffer.equals(png).should.be.true();
     });
 
     it('resolves to undefined when the request has no file', async () => {
@@ -165,7 +166,7 @@ describe('file-upload.service unit tests', () => {
         'avatar',
         100,
       );
-      file!.buffer.length.should.equal(100);
+      file!.file.buffer.length.should.equal(100);
     });
 
     it('rejects a file one byte over the maximum', async () => {
@@ -204,7 +205,7 @@ describe('file-upload.service unit tests', () => {
         { name: 'note', content: 'a'.repeat(padding) },
       ]);
       assert.deepEqual(
-        (await readUpload(req, 'avatar', fileLimit))?.buffer,
+        (await readUpload(req, 'avatar', fileLimit))?.file.buffer,
         png,
       );
     });
@@ -237,7 +238,7 @@ describe('file-upload.service unit tests', () => {
         'avatar',
         1024,
       );
-      result!.buffer.equals(png).should.be.true();
+      result!.file.buffer.equals(png).should.be.true();
     });
 
     it('resolves to undefined for requests that are not multipart', async () => {
@@ -279,9 +280,8 @@ describe('file-upload.service unit tests', () => {
     it('passes multipart fields and the validated image to the next handler', async () => {
       const req = multipart([
         { name: 'label', content: 'Example circle' },
-        { name: 'organiserIds[]', content: 'example-one' },
         image(png, 'image/png', 'image'),
-        { name: 'organiserIds[]', content: 'example-two' },
+        { name: 'organiserIds', content: '["example-one"]' },
       ]);
       const result = await run(req, undefined, 'image');
       result.passed.should.be.true();
@@ -289,7 +289,7 @@ describe('file-upload.service unit tests', () => {
         { ...req.body },
         {
           label: 'Example circle',
-          organiserIds: ['example-one', 'example-two'],
+          organiserIds: '["example-one"]',
         },
       );
       const stored = req.file!.path!;

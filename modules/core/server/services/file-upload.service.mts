@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
-import appendField from 'append-field';
+import { match, P } from 'ts-pattern';
 
 import config from './../../../../config/config.mts';
 import * as errorService from './error.server.service.mts';
@@ -24,69 +24,41 @@ type UploadRequest = UploadBody & {
 interface UploadResponse {
   status(code: number): { send(body: { message: string }): unknown };
 }
-export type UploadError = Error & { code: string };
+export type UploadError = Error & {
+  code: 'LIMIT_FILE_SIZE' | 'LIMIT_UNEXPECTED_FILE' | 'INVALID_MULTIPART';
+};
 
-const MAX_PARTS = 11;
-
-function uploadError(code: string): UploadError {
+function uploadError(code: UploadError['code']): UploadError {
   return Object.assign(new Error(code), { code });
 }
 
-function detectMimeTypeFallback(buffer: Buffer): string {
-  const header = buffer.toString('utf8', 0, 256).trim();
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return 'image/jpeg';
-  }
-  if (buffer[0] === 0x89 && buffer.toString('ascii', 1, 4) === 'PNG') {
-    return 'image/png';
-  }
-  if (buffer.toString('ascii', 0, 3) === 'GIF') {
-    return 'image/gif';
-  }
-  if (buffer.toString('ascii', 0, 4) === '%PDF') {
-    return 'application/pdf';
-  }
-  if (/^<\?xml[\s\S]*<svg|^<svg/i.test(header)) {
-    return 'image/svg+xml';
-  }
-  return 'application/octet-stream';
-}
 async function detectMimeType(buffer: Buffer): Promise<string> {
-  if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK === 'true') {
-    return detectMimeTypeFallback(buffer);
+  if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK !== 'true') {
+    const { fileTypeFromBuffer } = await import('file-type');
+    const detected = await fileTypeFromBuffer(buffer);
+    if (detected) return detected.mime;
   }
-  const { fileTypeFromBuffer } = await import('file-type');
-  return (
-    (await fileTypeFromBuffer(buffer))?.mime ?? detectMimeTypeFallback(buffer)
-  );
+  return match(buffer.toString('latin1', 0, 256))
+    .with(P.string.startsWith('\xff\xd8\xff'), () => 'image/jpeg')
+    .with(P.string.startsWith('\x89PNG'), () => 'image/png')
+    .with(P.string.startsWith('GIF'), () => 'image/gif')
+    .with(P.string.startsWith('%PDF'), () => 'application/pdf')
+    .with(P.string.regex(/^\s*(<\?xml[\s\S]*)?<svg/i), () => 'image/svg+xml')
+    .otherwise(() => 'application/octet-stream');
 }
 
 /**
- * Read the single file of a multipart request with the standard
- * `Request.formData()`. Rejects with an error whose `code` is
- * `LIMIT_FILE_SIZE`, `LIMIT_UNEXPECTED_FILE` or `INVALID_MULTIPART`;
- * resolves to `undefined` when the request is not multipart or carries no file.
+ * Read the single file and the text fields of a multipart request with the
+ * standard `Request.formData()`. Rejects with an `UploadError`; resolves to
+ * `undefined` when the request is not multipart or carries no file.
  */
 export async function readUpload(
   req: UploadBody,
   uploadField: string,
   maxUploadSize: number,
-): Promise<UploadedFile | undefined> {
-  return (await parseUpload(req, uploadField, maxUploadSize))?.file;
-}
-
-async function parseUpload(
-  req: UploadBody,
-  uploadField: string,
-  maxUploadSize: number,
-) {
-  const contentType = req.headers['content-type'];
-  if (!contentType) {
-    return undefined;
-  }
-  if (
-    contentType.split(';', 1)[0]!.trim().toLowerCase() !== 'multipart/form-data'
-  ) {
+): Promise<{ file: UploadedFile; fields: Record<string, string> } | undefined> {
+  const contentType = req.headers['content-type'] ?? '';
+  if (!/^multipart\/form-data\s*(;|$)/i.test(contentType)) {
     return undefined;
   }
   // Room for the multipart boundaries and the other form fields. Computed
@@ -124,7 +96,7 @@ async function parseUpload(
       entry[1] instanceof File && entry[1].name !== '',
   );
   if (
-    entries.length > MAX_PARTS ||
+    entries.length > 11 ||
     files.length > 1 ||
     files.some(([name]) => name !== uploadField)
   ) {
@@ -134,28 +106,23 @@ async function parseUpload(
   if (!file) return undefined;
   if (file.size > maxUploadSize) throw uploadError('LIMIT_FILE_SIZE');
   return {
-    entries,
     file: {
       buffer: Buffer.from(await file.arrayBuffer()),
       mimetype: file.type,
       originalname: file.name,
     },
+    fields: Object.fromEntries(
+      entries.filter(
+        (entry): entry is [string, string] => !(entry[1] instanceof File),
+      ),
+    ),
   };
 }
 
 /**
  * Upload file handler and validator: reads the multipart file, checks its
  * declared type and magic bytes, and places it in a temp folder, with its
- * path in `req.file.path`.
- *
- * @link https://www.npmjs.com/package/file-type
- *
- * @param {Array} validMimeTypes - List of mime types filter should accept
- * @param {String} uploadField - Name of the POST upload field in the multipart-form
- * @param {Object} req - Express.js middleware request
- * @param {Object} res - Express.js middleware response
- * @param {Function} next — Next middleware function
- * @param {Number} maxUploadSize - Maximum file size in bytes
+ * path in `req.file.path` and the text fields in `req.body`.
  */
 export const uploadFile = async (
   validMimeTypes: string[],
@@ -165,33 +132,24 @@ export const uploadFile = async (
   next: () => void,
   maxUploadSize = config.maxUploadSize,
 ) => {
-  const unsupported = () =>
-    res.status(415).send({
-      message: errorService.getErrorMessageByKey('unsupported-media-type'),
-    });
   try {
-    const parsed = await parseUpload(req, uploadField, maxUploadSize);
-    if (!parsed) {
+    const upload = await readUpload(req, uploadField, maxUploadSize);
+    if (!upload) {
       return res.status(422).send({
         message: errorService.getErrorMessageByKey('unprocessable-entity'),
       });
     }
-    const { entries, file } = parsed;
-    // Browsers send application/octet-stream when File.type is empty.
-    // Let the content detector below validate these files by their bytes.
+    const { file, fields } = upload;
+    // Browsers send application/octet-stream when File.type is empty, so the
+    // bytes decide; the declared type is never trusted on its own.
     if (
-      !validMimeTypes.includes(file.mimetype) &&
-      file.mimetype !== 'application/octet-stream'
+      (file.mimetype !== 'application/octet-stream' &&
+        !validMimeTypes.includes(file.mimetype)) ||
+      !validMimeTypes.includes(await detectMimeType(file.buffer))
     ) {
-      return unsupported();
-    }
-    // The declared type is not trusted: check the magic bytes too.
-    if (!validMimeTypes.includes(await detectMimeType(file.buffer))) {
-      return unsupported();
-    }
-    const fields: Record<string, unknown> = Object.create(null);
-    for (const [name, value] of entries) {
-      if (typeof value === 'string') appendField(fields, name, value);
+      return res.status(415).send({
+        message: errorService.getErrorMessageByKey('unsupported-media-type'),
+      });
     }
     const uploadDirectory = path.resolve(config.uploadTmpDir || os.tmpdir());
     const uploadPath = path.join(
@@ -203,21 +161,22 @@ export const uploadFile = async (
     req.body = fields;
     req.file = { ...file, path: uploadPath };
   } catch (error) {
-    const code = (error as UploadError).code;
-    if (code === 'LIMIT_FILE_SIZE') {
-      const maxUploadSizeMb = (maxUploadSize / (1024 * 1024)).toFixed(2);
-      return res.status(413).send({
-        message: `Image too big. Please maximum ${maxUploadSizeMb} Mb files.`,
-      });
-    }
-    if (code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).send({
-        message: `Missing "${uploadField}" field from the API call.`,
-      });
-    }
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey(),
-    });
+    const [status, message] = match((error as UploadError).code)
+      .with(
+        'LIMIT_FILE_SIZE',
+        () =>
+          [
+            413,
+            `Image too big. Please maximum ${(maxUploadSize / (1024 * 1024)).toFixed(2)} Mb files.`,
+          ] as const,
+      )
+      .with(
+        'LIMIT_UNEXPECTED_FILE',
+        () =>
+          [400, `Missing "${uploadField}" field from the API call.`] as const,
+      )
+      .otherwise(() => [400, errorService.getErrorMessageByKey()] as const);
+    return res.status(status).send({ message });
   }
   next();
 };

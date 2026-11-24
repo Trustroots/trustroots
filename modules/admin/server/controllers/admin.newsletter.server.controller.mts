@@ -664,7 +664,8 @@ export const uploadSubscribersCsv = async (
   next: (error?: Error | null) => void,
 ): Promise<void> => {
   try {
-    const file = await readUpload(req, 'newsletterCsv', config.maxUploadSize);
+    const file = (await readUpload(req, 'newsletterCsv', config.maxUploadSize))
+      ?.file;
     if (!file) {
       return void res.status(422).send({
         message: errorService.getErrorMessageByKey('unprocessable-entity'),
