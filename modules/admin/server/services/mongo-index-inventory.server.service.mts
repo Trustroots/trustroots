@@ -2,8 +2,6 @@ import type { Db, Document } from 'mongodb';
 import { circleDiscoveryIndexes } from '../../../../config/lib/circle-discovery-indexes.mts';
 import type { MongoIndexInventory } from '../../shared/mongo-diagnostics.mts';
 
-const options = { timeoutMS: 5_000 };
-
 function describeIndex({ name, key, weights }: Document) {
   const fields = Object.entries(key).flatMap(([field, order]) => {
     if (weights && field === '_fts') {
@@ -19,7 +17,7 @@ async function listCollections(db: Db) {
     return await db
       .listCollections(
         { type: { $in: ['collection', 'timeseries'] } },
-        { ...options, nameOnly: true },
+        { nameOnly: true, timeoutMS: 5_000 },
       )
       .toArray();
   } catch {
@@ -29,7 +27,10 @@ async function listCollections(db: Db) {
 
 async function listIndexes(db: Db, name: string) {
   try {
-    return await db.collection(name).listIndexes(options).toArray();
+    return await db
+      .collection(name)
+      .listIndexes({ timeoutMS: 5_000 })
+      .toArray();
   } catch {
     return null;
   }
