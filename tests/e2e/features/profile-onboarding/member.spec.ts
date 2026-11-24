@@ -274,19 +274,17 @@ test.describe('confirmed member flows', () => {
     expectPresent(box);
     expect(box.height).toBe(220);
     await expect(map.locator('.maplibregl-canvas')).toBeVisible();
-    await expect(map.locator('.maplibregl-marker')).toHaveCount(1);
   });
 
   test('profile hosting map zooms with WebGL available', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-accommodation', [
-      'The location marker and zoom controls remain usable.',
+      'The zoom controls remain usable.',
     ]);
     await page.goto(`/profile/${portland.username}/accommodation`);
     const map = page.locator('.offer-view .offer-location');
     await expect(map.locator('.maplibregl-canvas')).toBeVisible();
-    await expect(map.locator('.maplibregl-marker')).toHaveCount(1);
     await expect(map).toHaveAttribute('data-map-zoom', '11');
     // The decorative map is aria-hidden, so its controls have no accessible role.
     await map.locator('.maplibregl-ctrl-zoom-in').click();

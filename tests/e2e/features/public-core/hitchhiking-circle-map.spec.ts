@@ -104,11 +104,13 @@ test('circle map stays still without dragging and preserves its view as live pla
     .toBe(true);
 });
 
-async function savedView(page: Page): Promise<number[] | null> {
+async function savedView(
+  page: Page,
+): Promise<{ latitude: number; longitude: number; zoom: number } | null> {
   const view = await page.evaluate(() =>
     sessionStorage.getItem('circle-map-view'),
   );
-  return view ? (JSON.parse(view) as number[]) : null;
+  return view ? JSON.parse(view) : null;
 }
 
 async function prepareCircle(
@@ -175,10 +177,10 @@ test('keeps a chosen map view between the two circles', async ({ page }) => {
   expect(await savedView(page)).toEqual(view);
   await page.getByRole('button', { name: 'Zoom in' }).click();
   await expect.poll(() => savedView(page)).not.toEqual(view);
-  const [latitude, longitude, zoom] = (await savedView(page))!;
-  expect(latitude).toBeCloseTo(view[0], 3);
-  expect(longitude).toBeCloseTo(view[1], 3);
-  expect(zoom).toBeCloseTo(view[2] + 1, 3);
+  const { latitude, longitude, zoom } = (await savedView(page))!;
+  expect(latitude).toBeCloseTo(view.latitude, 3);
+  expect(longitude).toBeCloseTo(view.longitude, 3);
+  expect(zoom).toBeCloseTo(view.zoom + 1, 3);
 });
 
 test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
@@ -378,7 +380,7 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
       },
     }),
   );
-  const zoom = async () => (await savedView(page))?.[2] ?? null;
+  const zoom = async () => (await savedView(page))?.zoom ?? null;
   for (const circle of ['hitchhikers', 'hackers']) {
     await page.goto(`/circles/${circle}`);
     const map = page.locator('.circle-location-map');

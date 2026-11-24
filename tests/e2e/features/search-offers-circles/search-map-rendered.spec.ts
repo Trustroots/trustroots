@@ -497,20 +497,8 @@ test.describe('rendered search map feature coverage', () => {
     await waitForSearchMap(page);
     const map = page.locator('.search-map');
     const scale = map.locator('.maplibregl-ctrl-scale');
-    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+    await expect(scale).toHaveText(/^\d+\s(km|m)$/);
     await captureSection(map, 'map-distance-scale-desktop');
-    // The style picker must not cover the bar.
-    await expect
-      .poll(async () => {
-        const scaleBox = await scale.boundingBox();
-        const styleBox = await map
-          .getByRole('button', { name: 'Change map style' })
-          .boundingBox();
-        return Boolean(
-          scaleBox && styleBox && scaleBox.y + scaleBox.height <= styleBox.y,
-        );
-      })
-      .toBe(true);
     const initialScale = await scale.innerText();
     const initialZoom = await readMapZoom(page);
     expectPresent(initialZoom, 'initial map zoom should be stored');

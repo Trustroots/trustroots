@@ -146,11 +146,12 @@ describe('shared circle map', () => {
   });
 
   it.each([
-    '[12, 34]',
-    '[12, 34, 0]',
-    '[86, 34, 6]',
-    '[12, 181, 6]',
-    '[12, 34, 25]',
+    '{"latitude":12,"longitude":34}',
+    '{"latitude":12,"longitude":34,"zoom":0}',
+    '{"latitude":86,"longitude":34,"zoom":6}',
+    '{"latitude":12,"longitude":181,"zoom":6}',
+    '{"latitude":12,"longitude":34,"zoom":25}',
+    '[12, 34, 6]',
     'not json',
   ])('ignores a saved view that is not usable (%s)', saved => {
     sessionStorage.setItem('circle-map-view', saved);
@@ -245,7 +246,9 @@ describe('shared circle map', () => {
     );
     moveEnd(0, 0, 13);
     moveEnd(0.002, 0.003, 14);
-    expect(sessionStorage.getItem('circle-map-view')).toBe('[12,34,6]');
+    expect(sessionStorage.getItem('circle-map-view')).toBe(
+      '{"latitude":12,"longitude":34,"zoom":6}',
+    );
     rerender(<CircleLocationMap {...props} />);
     expect(mockMap.fitBounds).not.toHaveBeenCalled();
   });

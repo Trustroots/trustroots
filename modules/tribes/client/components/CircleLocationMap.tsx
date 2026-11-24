@@ -12,15 +12,14 @@ const ACCOMMODATION_URL =
 
 function readView(viewKey = VIEW_KEY) {
   try {
-    const view = JSON.parse(sessionStorage.getItem(viewKey) || 'null');
-    return Array.isArray(view) &&
-      view.length === 3 &&
-      view.every(Number.isFinite) &&
-      Math.abs(view[0]) <= 85 &&
-      Math.abs(view[1]) <= 180 &&
-      view[2] >= 1 &&
-      view[2] <= 24
-      ? { latitude: view[0], longitude: view[1], zoom: view[2] }
+    const { latitude, longitude, zoom } =
+      JSON.parse(sessionStorage.getItem(viewKey) || 'null') ?? {};
+    return [latitude, longitude, zoom].every(Number.isFinite) &&
+      Math.abs(latitude) <= 85 &&
+      Math.abs(longitude) <= 180 &&
+      zoom >= 1 &&
+      zoom <= 24
+      ? { latitude, longitude, zoom }
       : null;
   } catch {
     return null;
@@ -208,12 +207,12 @@ export default function CircleLocationMap(props: Props) {
             onMoveStart={() => {
               initialViewSet.current = true;
             }}
-            onMoveEnd={({ latitude, longitude, zoom }) => {
+            onMoveEnd={view => {
               if (fittingResults.current || viewUsesLocation.current) return;
               try {
                 sessionStorage.setItem(
                   props.viewKey || VIEW_KEY,
-                  JSON.stringify([latitude, longitude, zoom]),
+                  JSON.stringify(view),
                 );
               } catch {
                 // Maps remain usable when session storage is unavailable.

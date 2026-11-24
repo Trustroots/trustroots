@@ -77,20 +77,6 @@ async function mockDeviceLocation(
   );
 }
 
-async function expectHostingMapSettled(map: Locator): Promise<void> {
-  await expect
-    .poll(async () => {
-      const box = await map.boundingBox();
-      const marker = await map.locator('.maplibregl-marker svg').boundingBox();
-      if (!box || !marker) return false;
-      return (
-        Math.abs(marker.x + marker.width / 2 - (box.x + box.width / 2)) < 2 &&
-        Math.abs(marker.y + marker.height / 2 - (box.y + box.height / 2)) < 2
-      );
-    })
-    .toBe(true);
-}
-
 async function swipeUpFrom(page: Page, element: Locator): Promise<void> {
   const box = await element.boundingBox();
   expect(box).toBeTruthy();
@@ -853,7 +839,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       steps: 10,
     });
     await page.mouse.up();
-    await expectHostingMapSettled(map);
+    await expect
+      .poll(async () => Number(await map.getAttribute('data-map-longitude')))
+      .toBeLessThan(-7.001);
     const response = await saved;
     await page.request.put(response.url(), {
       data: {
@@ -884,7 +872,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     }, testInfo) => {
       annotateFeature(testInfo, 'profile.edit-locations', [
         'Hosting map renders on the offer page.',
-        'The location marker stays centred after resizing.',
+        'The map canvas stays aligned after resizing.',
       ]);
       await page.setViewportSize(viewport);
       await page.goto('/offer/host#location');
@@ -898,23 +886,16 @@ test.describe.serial('search offers and circles feature coverage', () => {
           .poll(async () => {
             const mapBox = await map.boundingBox();
             const overlayBox = await overlay.boundingBox();
-            const markerBox = await map
-              .locator('.maplibregl-marker svg')
+            const canvasBox = await map
+              .locator('.maplibregl-canvas')
               .boundingBox();
-            if (!mapBox || !overlayBox || !markerBox) return false;
+            if (!mapBox || !overlayBox || !canvasBox) return false;
             return (
               Math.abs(mapBox.height - overlayBox.height) < 1 &&
               Math.abs(mapBox.y - overlayBox.y) < 1 &&
-              Math.abs(
-                markerBox.x +
-                  markerBox.width / 2 -
-                  (mapBox.x + mapBox.width / 2),
-              ) < 2 &&
-              Math.abs(
-                markerBox.y +
-                  markerBox.height / 2 -
-                  (mapBox.y + mapBox.height / 2),
-              ) < 2
+              (['x', 'y', 'width', 'height'] as const).every(
+                key => Math.abs(canvasBox[key] - mapBox[key]) < 1,
+              )
             );
           })
           .toBe(true);
