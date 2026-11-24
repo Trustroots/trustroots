@@ -7,6 +7,7 @@ import type {
   OfferSearchFeatureCollection,
   OfferStatus,
   OfferType,
+  PlaceHostPage,
 } from '../../shared/offer.js';
 import type { OfferServerRecord } from '../models/offer.server.types.mts';
 
@@ -127,6 +128,7 @@ type OfferResponseBody =
   | OfferMutationResponse
   | OfferSanitisedPayload
   | OfferSearchFeatureCollection
+  | PlaceHostPage<Types.ObjectId, Date>
   | Array<OfferSanitisedPayload>;
 
 export interface OfferResponse {

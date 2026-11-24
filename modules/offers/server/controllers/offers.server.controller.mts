@@ -40,6 +40,11 @@ import {
   prepareOfferMutationResponse,
   prepareOfferSearchResults,
 } from './../services/offer-payload.server.service.mts';
+import {
+  listPlaceHosts,
+  type PlaceHostSearchDocument,
+} from '../services/place-host-search.server.service.mts';
+
 function getUserProfile() {
   return userProfile;
 }
@@ -435,6 +440,7 @@ async function list(req: OfferRequest, res: OfferResponse) {
   // Parse filters
   let filters: OfferFilters = addOfferFilterHelpers({});
   const requestQuery = req.query!;
+  const isPlaceList = requestQuery.view === 'place-hosts';
   if (requestQuery.filters) {
     const parsedFilters = parseFiltersString(String(requestQuery.filters));
 
@@ -554,6 +560,15 @@ async function list(req: OfferRequest, res: OfferResponse) {
         },
       });
     }
+  }
+
+  if (isPlaceList) {
+    query.push({
+      $match: {
+        type: 'host',
+        ...(requestQuery.canHost === 'true' && { status: 'yes' }),
+      },
+    });
   }
 
   // Some of the filters are based on `user` schema
@@ -705,6 +720,22 @@ async function list(req: OfferRequest, res: OfferResponse) {
           'user.blocked': { $ne: req.user._id },
         },
       });
+    }
+
+    if (isPlaceList) {
+      query.push({
+        $match: {
+          'user._id': { $nin: req.user.blocked || [] },
+          'user.blocked': { $ne: req.user._id },
+        },
+      });
+      return res.json(
+        await listPlaceHosts(
+          stages => Offer.aggregate<PlaceHostSearchDocument>(stages).exec(),
+          query,
+          requestQuery,
+        ),
+      );
     }
 
     // Pick fields and convert to GeoJson Feature

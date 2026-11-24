@@ -5,7 +5,12 @@ import { useAnalytics } from '@trustroots/analytics/client';
 import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
-import type { MapBounds, MapPoint } from '../utils/location';
+import {
+  getCitySearch,
+  type CitySearch,
+  type MapBounds,
+  type MapPoint,
+} from '../utils/location';
 
 interface PlaceSuggestion {
   id: string;
@@ -17,9 +22,11 @@ interface PlaceSuggestion {
 
 interface SearchPlaceInputProps {
   id?: string;
+  onPlaceQueryChange?: (location?: string) => void;
   onPlaceSearch: (
     data: MapBounds | MapPoint,
     type: 'bounds' | 'center',
+    city?: CitySearch,
   ) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -27,6 +34,7 @@ interface SearchPlaceInputProps {
 
 export default function SearchPlaceInput({
   id = 'search-query',
+  onPlaceQueryChange,
   onPlaceSearch,
   searchQuery,
   setSearchQuery,
@@ -103,7 +111,10 @@ export default function SearchPlaceInput({
 
     if (located) {
       track('search_place_selected', { source });
-      onPlaceSearch(located.data, located.type);
+      const city = getCitySearch(feature);
+      if (city) onPlaceSearch(located.data, located.type, city);
+      else onPlaceSearch(located.data, located.type);
+      onPlaceQueryChange?.(feature.trTitle);
     }
 
     /* istanbul ignore next -- search suggestions always include display titles. */
@@ -160,6 +171,7 @@ export default function SearchPlaceInput({
               suggestionRequestRef.current += 1;
               skipSuggestionsRef.current = false;
               setSearchQuery('');
+              onPlaceQueryChange?.();
               setSuggestions([]);
               setIsOpen(false);
               setLocationNotFound(false);

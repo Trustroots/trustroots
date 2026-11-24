@@ -472,6 +472,7 @@ test.describe('rendered search map feature coverage', () => {
           .getByRole('list', { name: 'Place suggestions' })
           .getByRole('button')
           .click();
+        await page.getByRole('button', { name: 'Back to map' }).click();
         await expect
           .poll(() =>
             page.evaluate(
@@ -923,6 +924,7 @@ test.describe('rendered search map feature coverage', () => {
       .getByRole('list', { name: 'Place suggestions' })
       .getByRole('button')
       .click();
+    await page.getByRole('button', { name: 'Back to map' }).click();
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
@@ -1350,6 +1352,114 @@ test.describe('rendered search map feature coverage', () => {
     await captureSection(card, 'map-meeting-only-mobile');
   });
 
+  for (const [screen, width] of [
+    ['desktop', 1200],
+    ['mobile', 390],
+  ] as const) {
+    test(`city host search preserves sorted and filtered results on ${screen}`, async ({
+      page,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'search.map', [
+        'Selecting a city opens a host list using the city bounds.',
+        'City hosts can be sorted, filtered and opened without choosing a map pin.',
+      ]);
+      await page.setViewportSize({ width, height: 844 });
+      const hosts = [
+        {
+          _id: '665100000000000000000001',
+          user: { displayName: 'Aster Host', username: 'aster-host' },
+          status: 'yes',
+          experienceCount: 1,
+          age: 35,
+        },
+        {
+          _id: '665100000000000000000002',
+          user: { displayName: 'Briar Host', username: 'briar-host' },
+          status: 'maybe',
+          experienceCount: 3,
+        },
+      ];
+      await page.route('**/api/offers?**', route => {
+        const { searchParams } = new URL(route.request().url());
+        if (searchParams.get('view') !== 'place-hosts') return route.fallback();
+        expect(searchParams.get('northEastLat')).toBe('52.6755');
+        expect(searchParams.get('northEastLng')).toBe('13.7611');
+        expect(searchParams.get('southWestLat')).toBe('52.3383');
+        expect(searchParams.get('southWestLng')).toBe('13.0884');
+        const matching =
+          searchParams.get('canHost') === 'true'
+            ? hosts.slice(0, 1)
+            : [...hosts];
+        if (searchParams.get('sort') === 'experiences') matching.reverse();
+        return route.fulfill({
+          json: {
+            offers: matching.map(host => ({
+              ...host,
+              type: 'host',
+              activity: 'past-month',
+              location: [52.51, 13.42],
+            })),
+          },
+        });
+      });
+      await page.route('**/api/offers/665100000000000000000001', route =>
+        route.fulfill({
+          json: {
+            ...hosts[0],
+            type: 'host',
+            location: [52.51, 13.42],
+            description: 'Room for a guest.',
+          },
+        }),
+      );
+      await page.goto('/search');
+      if (screen === 'mobile') {
+        await page.getByRole('button', { name: 'Search places' }).click();
+      }
+      await page.getByRole('textbox', { name: 'Search places' }).fill('Berlin');
+      await page.getByRole('button', { name: 'Berlin, Germany' }).click();
+      const results = page.getByRole('region', {
+        name: 'Search results',
+        exact: true,
+      });
+      const list = results.getByRole('table', { name: 'City hosts' });
+      const rows = list.getByRole('button');
+      await expect(rows.first()).toHaveAccessibleName(/Aster Host/);
+      await expect(
+        list.getByRole('columnheader', { name: 'Public Experiences' }),
+      ).toBeVisible();
+      const firstHost = list.getByRole('row').nth(1);
+      await expect(
+        firstHost.getByRole('cell', { name: '1', exact: true }),
+      ).toBeVisible();
+      await expect(firstHost).toContainText('Age 35');
+      await expect(
+        firstHost.getByRole('cell', { name: 'Past month', exact: true }),
+      ).toBeVisible();
+      await expect
+        .poll(() =>
+          list.evaluate(table => table.scrollWidth - table.clientWidth),
+        )
+        .toBeLessThanOrEqual(0);
+      await captureSection(results, `city-host-results-${screen}`);
+      const sort = results.getByLabel('Sort hosts');
+      await sort.selectOption('experiences');
+      await expect(rows.first()).toHaveAccessibleName(/Briar Host/);
+      const canHost = results.getByRole('checkbox', { name: 'Can host only' });
+      await canHost.check();
+      await expect(rows).toHaveCount(1);
+      await rows.first().click();
+      await expect(
+        results.getByRole('link', { name: /Aster Host/ }),
+      ).toBeVisible();
+      await results.getByRole('button', { name: 'Back to results' }).click();
+      await expect(sort).toHaveValue('experiences');
+      await expect(canHost).toBeChecked();
+      await expect(rows).toHaveCount(1);
+      await expect(rows.first()).toBeFocused();
+    });
+  }
+
   test('offer deep-link uses fixture offer data in the sidebar', async ({
     page,
   }, testInfo) => {
@@ -1562,6 +1672,10 @@ test.describe('rendered search map feature coverage', () => {
     );
     await searchInput.fill('Example Harbour');
     await searchInput.press('Enter');
+    await expect(
+      page.getByRole('heading', { name: 'Hosts in Example Harbour' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Back to map' }).click();
     await expect
       .poll(async () => Number(await map.getAttribute('data-map-latitude')))
       .toBeCloseTo(-23.55, 4);
@@ -1650,6 +1764,10 @@ test.describe('rendered search map feature coverage', () => {
     await searchInput.press('Enter');
 
     await expect(searchInput).toBeHidden();
+    await expect(
+      page.getByRole('heading', { name: 'Hosts in Berlin, Germany' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Back to map' }).click();
     await expect(page.locator('.search-map')).toBeVisible();
   });
 

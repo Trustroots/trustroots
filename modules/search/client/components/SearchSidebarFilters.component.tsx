@@ -5,7 +5,9 @@ import { useAnalytics, type SearchFilter } from '@trustroots/analytics/client';
 import SearchFilterLanguage from './SearchFilterLanguage.component';
 import SearchCirclesToggle from './SearchCirclesToggle.component';
 import SearchMyCirclesToggle from './SearchMyCirclesToggle.component';
+import SearchFilterSwitch from './SearchFilterSwitch.component';
 import SearchTypesToggle from './SearchTypesToggle.component';
+import type { VisibleMapCounts } from './SearchMap.component';
 import { normalizeTypes, type SearchFilters } from '../utils/search-filters';
 
 interface SearchSidebarFiltersProps {
@@ -16,6 +18,7 @@ interface SearchSidebarFiltersProps {
   onFiltersChange: (filters: Partial<SearchFilters>) => void;
   onlineInPast6Months: boolean;
   onOnlineInPast6MonthsChange: () => void;
+  visibleMapCounts?: VisibleMapCounts;
 }
 
 export default function SearchSidebarFilters({
@@ -26,6 +29,7 @@ export default function SearchSidebarFilters({
   onFiltersChange,
   onlineInPast6Months,
   onOnlineInPast6MonthsChange,
+  visibleMapCounts,
 }: SearchSidebarFiltersProps) {
   const { track } = useAnalytics();
   const connectionsOnly = filters.connectionsOnly === true;
@@ -44,6 +48,7 @@ export default function SearchSidebarFilters({
       <div aria-label="Map content" role="group">
         <h4>Map content</h4>
         <SearchTypesToggle
+          counts={visibleMapCounts}
           onChange={types =>
             changeFilters('types', {
               types,
@@ -52,55 +57,52 @@ export default function SearchSidebarFilters({
           }
           types={filters.types}
         />
-        <p>
-          <label className="tw:flex tw:items-center tw:gap-2">
-            <input
-              checked={volunteering}
-              onChange={() =>
-                changeFilters('volunteering', {
-                  volunteering: !volunteering,
-                  ...(!volunteering
-                    ? { types: normalizeTypes([...filters.types, 'host']) }
-                    : {}),
-                })
-              }
-              type="checkbox"
-            />
+        <div className="form-group">
+          <SearchFilterSwitch
+            checked={volunteering}
+            count={volunteering ? visibleMapCounts?.host : undefined}
+            onChange={checked =>
+              changeFilters('volunteering', {
+                volunteering: checked,
+                ...(checked
+                  ? { types: normalizeTypes([...filters.types, 'host']) }
+                  : {}),
+              })
+            }
+          >
             Offers volunteering
-          </label>
-        </p>
-        <p>
-          <label className="tr-switch">
-            <input
-              checked={communityNotesEnabled && !connectionsOnly}
-              disabled={connectionsOnly}
-              onChange={() => {
-                track('search_filter_changed', { filter: 'community_notes' });
-                onCommunityNotesToggle();
-              }}
-              type="checkbox"
-            />
-            <div className="toggle"></div>
+          </SearchFilterSwitch>
+        </div>
+        <div className="form-group">
+          <SearchFilterSwitch
+            checked={communityNotesEnabled && !connectionsOnly}
+            count={
+              communityNotesEnabled && !connectionsOnly
+                ? visibleMapCounts?.communityNotes
+                : undefined
+            }
+            disabled={connectionsOnly}
+            onChange={() => {
+              track('search_filter_changed', { filter: 'community_notes' });
+              onCommunityNotesToggle();
+            }}
+          >
             Community Notes <small className="text-muted">via Nostroots</small>
-          </label>
-        </p>
+          </SearchFilterSwitch>
+        </div>
       </div>
 
       <hr className="hr-gray hr-tight" />
 
-      <div className="checkbox">
-        <label>
-          <input
-            checked={connectionsOnly}
-            onChange={() =>
-              changeFilters('connections_only', {
-                connectionsOnly: !connectionsOnly,
-              })
-            }
-            type="checkbox"
-          />
+      <div className="form-group">
+        <SearchFilterSwitch
+          checked={connectionsOnly}
+          onChange={checked =>
+            changeFilters('connections_only', { connectionsOnly: checked })
+          }
+        >
           My connections only
-        </label>
+        </SearchFilterSwitch>
       </div>
 
       <hr className="hr-gray hr-tight" />
@@ -134,20 +136,17 @@ export default function SearchSidebarFilters({
 
       <hr className="hr-gray hr-tight" />
 
-      <p>
-        <label className="tr-switch">
-          <input
-            checked={onlineInPast6Months}
-            onChange={() => {
-              track('search_filter_changed', { filter: 'online_recently' });
-              onOnlineInPast6MonthsChange();
-            }}
-            type="checkbox"
-          />
-          <div className="toggle"></div>
+      <div className="form-group">
+        <SearchFilterSwitch
+          checked={onlineInPast6Months}
+          onChange={() => {
+            track('search_filter_changed', { filter: 'online_recently' });
+            onOnlineInPast6MonthsChange();
+          }}
+        >
           Online in the past 6 months
-        </label>
-      </p>
+        </SearchFilterSwitch>
+      </div>
 
       <hr className="hr-gray hr-tight" />
 

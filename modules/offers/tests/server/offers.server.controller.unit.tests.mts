@@ -34,6 +34,7 @@ interface OfferResponseBody extends Record<string, unknown> {
   location: number[];
   noOfferDescription: string;
   features: unknown[];
+  offers: unknown[];
 }
 interface MockOfferResponse {
   statusCode: number;
@@ -744,6 +745,37 @@ describe('Offers controller unit tests', () => {
         { $set: { blocked: [owner._id] } },
       );
       (await search()).should.eql([]);
+    });
+
+    it('lists city hosts without a blocked list and ignores a non-text offset', async () => {
+      const host = await createOffer(stranger._id, {
+        location: [16, 26],
+        status: 'yes',
+      });
+      const aggregate = sinon.spy(Offer, 'aggregate');
+      const search = async (blocked?: UserDocument['_id'][]) => {
+        const { res } = await runHandler(res =>
+          offersController.list(
+            {
+              user: { _id: owner._id, blocked },
+              query: { ...validCoords, view: 'place-hosts', offset: 2 },
+            },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(200);
+        return res.body.offers;
+      };
+
+      (await search()).should.match([{ _id: host._id }]);
+      const pipeline = aggregate.firstCall.args[0] as Array<{
+        $match?: Record<string, unknown>;
+      }>;
+      const blockedMatch = pipeline.find(
+        stage => stage.$match?.['user.blocked'],
+      )?.$match;
+      should(blockedMatch?.['user._id']).deepEqual({ $nin: [] });
+      (await search([stranger._id])).should.eql([]);
     });
 
     it('filters offers by a single tribe', async () => {

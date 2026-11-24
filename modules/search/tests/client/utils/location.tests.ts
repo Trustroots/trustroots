@@ -2,6 +2,7 @@ import {
   getBounds,
   getBoundsObject,
   getCenter,
+  getCitySearch,
   shortTitle,
 } from '@/modules/search/client/utils/location';
 
@@ -63,6 +64,42 @@ describe('location utils', () => {
   it('returns false when centre coordinates are invalid', () => {
     expect(getCenter({})).toBe(false);
     expect(getCenter({ center: [1] })).toBe(false);
+  });
+
+  it('uses a fixed city area when the geocoder supplies only a centre', () => {
+    expect(
+      getCitySearch({ id: 'place.sample', trTitle: 'Sample', center: [0, 0] }),
+    ).toEqual({
+      name: 'Sample',
+      centre: { lat: 0, lng: 0 },
+      bounds: {
+        northEast: { lat: 0.1, lng: 0.1 },
+        southWest: { lat: -0.1, lng: -0.1 },
+      },
+    });
+  });
+
+  it('requires a city name and finite coordinates', () => {
+    expect(
+      getCitySearch({ id: 'place.sample', center: [0, 0] }),
+    ).toBeUndefined();
+    expect(
+      getCitySearch({ id: 'place.sample', trTitle: 'Sample' }),
+    ).toBeUndefined();
+    expect(
+      getCitySearch({
+        id: 'place.sample',
+        trTitle: 'Sample',
+        center: [0, 'invalid'],
+      }),
+    ).toBeUndefined();
+    expect(
+      getCitySearch({
+        id: 'place.sample',
+        trTitle: 'Sample',
+        center: ['invalid', 0],
+      }),
+    ).toBeUndefined();
   });
 
   it('builds a short title from place context', () => {

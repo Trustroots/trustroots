@@ -1,4 +1,5 @@
 import type { MockedFunction } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import {
   act,
@@ -124,7 +125,14 @@ vi.mock(
   '@/modules/search/client/components/SearchCirclesToggle.component',
   () => ({
     __esModule: true,
-    default: () => <div data-testid="circles-toggle" />,
+    default: ({ onChange }: { onChange: (tribes: string[]) => void }) => (
+      <button
+        type="button"
+        onClick={() => onChange(['665100000000000000000002'])}
+      >
+        Select example circle
+      </button>
+    ),
   }),
 );
 
@@ -285,7 +293,15 @@ function renderSearchPage(
     public: true,
   },
 ) {
-  return render(<SearchPage user={user} />, { wrapper: analytics.wrapper });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SearchPage user={user} />
+    </QueryClientProvider>,
+    { wrapper: analytics.wrapper },
+  );
 }
 
 function openResultsWithVisibleOfferIds(offerIds: string[]) {
@@ -532,6 +548,14 @@ describe('<SearchPage />', () => {
       expect(searchMapProps.filters).toContain('tribe-cyclists'),
     );
     expect(tribesApi.get).toHaveBeenCalledWith('cyclists');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select example circle' }),
+    );
+    expect(searchMapProps.filters).toContain('665100000000000000000002');
+    expect(new URLSearchParams(window.location.search).has('tribe')).toBe(
+      false,
+    );
   });
 
   it('initialises the map location from a location query param', async () => {
@@ -557,10 +581,310 @@ describe('<SearchPage />', () => {
     );
   });
 
-  it('loads an offer from the route params and tracks preview analytics', async () => {
+  it('queries city bounds, keeps filters and restores the list after opening an offer', async () => {
+    const feature = {
+      id: 'place.sample-harbour',
+      trTitle: 'Sample Harbour',
+      center: [22, 44],
+      bbox: [21, 43, 23, 45],
+    };
+    locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    offersApi.queryPlaceHosts.mockResolvedValue({
+      offers: [
+        {
+          ...mockOffer,
+          type: 'host',
+          age: 35,
+          activity: 'past-month',
+          experienceCount: 1,
+          location: [44, 22],
+        },
+      ],
+    });
+    renderSearchPage();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: 'Sample Harbour' },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Sample Harbour' }),
+    );
+    const list = await screen.findByRole('table', { name: 'City hosts' });
+    expect(new URLSearchParams(window.location.search).get('location')).toBe(
+      'Sample Harbour',
+    );
+    expect(list).toHaveTextContent('Age 35 · Near the centre');
+    expect(within(list).getByRole('cell', { name: '1' })).toBeInTheDocument();
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        northEastLat: 45,
+        northEastLng: 23,
+        southWestLat: 43,
+        southWestLng: 21,
+        sort: 'name',
+      }),
+      expect.any(AbortSignal),
+    );
+
+    fireEvent.change(screen.getByLabelText('Sort hosts'), {
+      target: { value: 'activity' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Can host only' }));
+    await waitFor(() =>
+      expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+        expect.objectContaining({ sort: 'activity', canHost: true }),
+        expect.any(AbortSignal),
+      ),
+    );
+    const host = await screen.findByRole('button', {
+      name: /open hosting offer from Host Person/i,
+    });
+    fireEvent.click(host);
+    expect(
+      await screen.findByRole('link', { name: /Host Person/ }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    expect(
+      await screen.findByRole('table', { name: 'City hosts' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Sort hosts')).toHaveValue('activity');
+    expect(
+      screen.getByRole('checkbox', { name: 'Can host only' }),
+    ).toBeChecked();
+  });
+
+  it('handles unavailable city pages and offers while keeping the list usable', async () => {
+    const feature = {
+      id: 'place.sample-harbour',
+      trTitle: 'Sample Harbour',
+      center: [22, 44],
+    };
+    const host = {
+      ...mockOffer,
+      type: 'host' as const,
+      activity: 'past-six-months' as const,
+      experienceCount: 0,
+    };
+    locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    let rejectNextPage!: (error: Error) => void;
+    const nextPage = new Promise<never>((_resolve, reject) => {
+      rejectNextPage = reject;
+    });
+    offersApi.queryPlaceHosts
+      .mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce({ offers: [host], nextOffset: 30 })
+      .mockReturnValueOnce(nextPage)
+      .mockResolvedValueOnce({
+        offers: [
+          {
+            ...host,
+            _id: 'another-host',
+            status: undefined,
+            volunteering: true,
+            user: { _id: 'member-2', username: 'another-host' },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ offers: [] });
+    offersApi.getOffer.mockRejectedValueOnce(new Error('Offer unavailable'));
+    renderSearchPage();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+      target: { value: feature.trTitle },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: feature.trTitle }),
+    );
+    expect(screen.getByText('Loading hosts…')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    const list = await screen.findByRole('table', { name: 'City hosts' });
+    expect(within(list).getByRole('cell', { name: '0' })).toBeInTheDocument();
+    expect(list).toHaveTextContent(/About \d+ km from centre/);
+    fireEvent.click(screen.getByRole('button', { name: 'Load more hosts' }));
+    expect(
+      await screen.findByRole('button', { name: 'Loading hosts…' }),
+    ).toBeDisabled();
+    await act(async () => rejectNextPage(new Error('Connection lost')));
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(
+      await within(list).findByRole('button', { name: /another-host/ }),
+    ).toBeInTheDocument();
+    expect(within(list).getByText('Offers volunteering')).toBeInTheDocument();
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 30 }),
+      expect.any(AbortSignal),
+    );
+
+    fireEvent.click(
+      within(list).getByRole('button', {
+        name: /open hosting offer from Host Person/i,
+      }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This offer could not be opened',
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Results in this map area' }),
+    );
+    expect(
+      screen.queryByRole('table', { name: 'City hosts' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Hosts in Sample Harbour' }),
+    );
+    expect(
+      await screen.findByRole('table', { name: 'City hosts' }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Active in the past six months' }),
+    );
+    expect(
+      await screen.findByText(
+        'No hosts match these filters in Sample Harbour.',
+      ),
+    ).toBeInTheDocument();
+    expect(offersApi.queryPlaceHosts).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        filters: expect.stringContaining('"months":24'),
+      }),
+      expect.any(AbortSignal),
+    );
+  });
+
+  it.each([false, true])(
+    'ignores a city preview that settles after closing the mobile pane (fails: %s)',
+    async fails => {
+      window.innerWidth = 390;
+      const feature = {
+        id: 'place.sample-harbour',
+        trTitle: 'Sample Harbour',
+        center: [22, 44],
+      };
+      locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
+      locationApi.locatePlace.mockReturnValue({
+        data: { lat: 44, lng: 22 },
+        type: 'center',
+      });
+      offersApi.queryPlaceHosts.mockResolvedValue({
+        offers: [
+          {
+            ...mockOffer,
+            type: 'host',
+            activity: 'past-month',
+            experienceCount: 2,
+          },
+        ],
+      });
+
+      let finish!: () => void;
+      offersApi.getOffer.mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () => {
+              if (fails) reject(new Error('Offer unavailable'));
+              else resolve(mockOffer);
+            };
+          }),
+      );
+      renderSearchPage();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Search places' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Search places' }), {
+        target: { value: feature.trTitle },
+      });
+      fireEvent.click(
+        await screen.findByRole('button', { name: feature.trTitle }),
+      );
+      fireEvent.click(
+        await screen.findByRole('button', {
+          name: /open hosting offer from Host Person/i,
+        }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Back to map' }));
+      await act(async () => finish());
+
+      fireEvent.click(screen.getByRole('button', { name: /^Hosts$/ }));
+      expect(
+        await screen.findByRole('table', { name: 'City hosts' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    },
+  );
+
+  it('keeps a deep-linked offer when the URL also specifies a city', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/search?location=Sample+Harbour&offer=${mockOffer._id}`,
+    );
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      {
+        id: 'place.sample-harbour',
+        trTitle: 'Sample Harbour',
+        center: [22, 44],
+      },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 44, lng: 22 },
+      type: 'center',
+    });
+    offersApi.queryPlaceHosts.mockResolvedValue({ offers: [] });
+
+    renderSearchPage();
+    expect(
+      await screen.findByRole('link', { name: /Host Person/ }),
+    ).toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.get('offer')).toBe(
+      mockOffer._id,
+    );
+    expect(searchMapProps.location).toMatchObject({
+      lat: mockOffer.location![0],
+      lng: mockOffer.location![1],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Hosts in Sample Harbour' }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the map usable when a legacy circle cannot be loaded', async () => {
+    window.history.pushState({}, '', '/search?tribe=missing-circle');
+    const lookup = Promise.reject(new Error('Circle not found'));
+    tribesApi.get.mockReturnValue(lookup);
+
+    renderSearchPage();
+    await act(async () => {
+      await lookup.catch(() => undefined);
+    });
+
+    expect(tribesApi.get).toHaveBeenCalledWith('missing-circle');
+    expect(JSON.parse(searchMapProps.filters).tribes).toEqual([]);
+  });
+
+  it('prioritises a shared offer over the shared place viewport', async () => {
     const offerId = '665100000000000000000001';
-    window.history.pushState({}, '', `/search?offer=${offerId}`);
+    window.history.pushState(
+      {},
+      '',
+      `/search?offer=${offerId}&location=Exampleville`,
+    );
     offersApi.getOffer.mockResolvedValue(mockOffer);
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: 'Exampleville' },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
 
     renderSearchPage();
 
@@ -571,6 +895,11 @@ describe('<SearchPage />', () => {
     expect(
       await screen.findByRole('link', { name: /host person/i }),
     ).toBeInTheDocument();
+    expect(locationApi.locatePlace).toHaveBeenCalled();
+    expect(searchMapProps.location).toMatchObject({
+      lat: mockOffer.location![0],
+      lng: mockOffer.location![1],
+    });
     expect(analytics.track).toHaveBeenCalledWith('search_offer_previewed');
   });
 
@@ -731,6 +1060,7 @@ describe('<SearchPage />', () => {
   });
 
   it('updates sidebar filters from the filters panel', () => {
+    window.history.replaceState({}, '', '/search?other=1#existing');
     renderSearchPage();
 
     fireEvent.click(screen.getByRole('button', { name: /types toggle/i }));
@@ -746,6 +1076,122 @@ describe('<SearchPage />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /language filter/i }));
     expect(searchMapProps.filters).toContain('"fi"');
+    const { searchParams, hash } = new URL(window.location.href);
+    expect(hash).toBe('#existing');
+    expect(searchParams.get('other')).toBe('1');
+    expect(JSON.parse(searchParams.get('filters')!)).toMatchObject({
+      types: ['meet'],
+      communityNotes: false,
+      seen: { months: 24 },
+      languages: ['fi'],
+    });
+  });
+
+  it('restores a shared filter URL and updates the same map on history navigation', () => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ types: ['meet'], communityNotes: true }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.set(
+      'filters',
+      JSON.stringify({
+        types: ['host'],
+        communityNotes: false,
+        connectionsOnly: true,
+        volunteering: true,
+      }),
+    );
+    window.history.replaceState({}, '', url);
+    renderSearchPage();
+
+    const connections = screen.getByRole('checkbox', {
+      name: 'My connections only',
+    });
+    expect(connections).toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['host'],
+      communityNotes: false,
+      volunteering: true,
+    });
+
+    act(() => {
+      window.history.replaceState({}, '', '/search');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(connections).not.toBeChecked();
+    expect(JSON.parse(searchMapProps.filters)).toMatchObject({
+      types: ['meet'],
+      communityNotes: true,
+    });
+  });
+
+  it.each([
+    'default',
+    'pending legacy circle',
+    'resolved legacy circle',
+    'shared filters',
+  ])('writes and clears a selected place with %s', async scenario => {
+    window.localStorage.setItem(
+      'search.filters.user-1',
+      JSON.stringify({ connectionsOnly: true }),
+    );
+    const params = new URLSearchParams();
+    if (scenario !== 'default') params.set('tribe', 'cyclists');
+    if (scenario === 'shared filters') {
+      params.set('filters', JSON.stringify({ connectionsOnly: true }));
+    }
+    if (scenario === 'pending legacy circle') {
+      tribesApi.get.mockReturnValue(new Promise(() => {}));
+    }
+    if (scenario === 'resolved legacy circle') {
+      tribesApi.get.mockResolvedValue(
+        sampleTribe('tribe-cyclists', 'cyclists'),
+      );
+    }
+    window.history.replaceState({}, '', `/search?${params}`);
+    renderSearchPage();
+    if (scenario === 'resolved legacy circle') {
+      await waitFor(() =>
+        expect(searchMapProps.filters).toContain('tribe-cyclists'),
+      );
+    }
+    const title = 'Exampleville, Example County';
+    locationApi.fetchLocationSuggestions.mockResolvedValue([
+      { id: 'place-1', trTitle: title },
+    ]);
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 12, lng: 34, zoom: 10 },
+      type: 'center',
+    });
+
+    fireEvent.change(screen.getByLabelText('Search places'), {
+      target: { value: 'Exampleville' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: title }));
+    expect(new URL(window.location.href).searchParams.get('location')).toBe(
+      title,
+    );
+    const selectedParams = new URLSearchParams(window.location.search);
+    if (scenario === 'pending legacy circle') {
+      expect(selectedParams.get('tribe')).toBe('cyclists');
+      expect(selectedParams.has('filters')).toBe(false);
+    } else {
+      expect(JSON.parse(selectedParams.get('filters')!)).toMatchObject({
+        connectionsOnly: true,
+        ...(scenario === 'resolved legacy circle' && {
+          tribes: ['tribe-cyclists'],
+        }),
+      });
+    }
+    expect(searchMapProps.location).toEqual({ lat: 12, lng: 34, zoom: 10 });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Clear location search' }),
+    );
+    expect(new URL(window.location.href).searchParams.has('location')).toBe(
+      false,
+    );
   });
 
   it('keeps the map position when previewing an offer without recentering', async () => {

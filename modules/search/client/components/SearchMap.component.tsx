@@ -75,6 +75,12 @@ interface MapLocation {
   clearSelection?: boolean;
 }
 
+export interface VisibleMapCounts {
+  host?: number;
+  meet?: number;
+  communityNotes?: number;
+}
+
 interface SearchMapProps {
   filters: string;
   isUserPublic: boolean;
@@ -83,6 +89,7 @@ interface SearchMapProps {
   onOfferClose: () => void;
   onOfferOpen: (offer: SearchResultOffer) => void;
   onVisibleOffersChange?: (offerIds: string[]) => void;
+  onVisibleMapCountsChange?: (counts: VisibleMapCounts) => void;
   onVisibleCommunityNoteThreadsChange?: (
     threads: { notes: NostrEvent[]; plusCode: string | null }[],
   ) => void;
@@ -322,6 +329,7 @@ export default function SearchMap({
   onOfferClose,
   onOfferOpen,
   onVisibleOffersChange = ignoreVisibleCallback,
+  onVisibleMapCountsChange = ignoreVisibleCallback,
   onVisibleCommunityNoteThreadsChange = ignoreVisibleCallback,
   onCommunityNoteOpen,
   onDeviceLocationRequest,
@@ -414,7 +422,6 @@ export default function SearchMap({
     null,
   );
   const communityNotesEventsRef = useRef<CommunityNoteFeature[]>([]);
-  const hasInitialisedFiltersRef = useRef(false);
 
   const parsedFilters: Partial<SearchFilters> = filters
     ? JSON.parse(filters)
@@ -939,25 +946,28 @@ export default function SearchMap({
     if (!hasViewport) {
       onVisibleOffersChange([]);
       onVisibleCommunityNoteThreadsChange([]);
+      onVisibleMapCountsChange({});
       return;
     }
 
-    onVisibleOffersChange(
-      offers.features
-        .filter(feature => {
-          const [longitude, latitude] = feature.geometry.coordinates;
-          return isCoordinateInViewport(
-            longitude,
-            latitude,
-            southWest!,
-            northEast!,
-          );
-        })
-        .map(feature => feature.properties.id),
-    );
+    const visibleOffers = offers.features.filter(feature => {
+      const [longitude, latitude] = feature.geometry.coordinates;
+      return isCoordinateInViewport(
+        longitude,
+        latitude,
+        southWest!,
+        northEast!,
+      );
+    });
+    onVisibleOffersChange(visibleOffers.map(feature => feature.properties.id));
+    const offerCounts = { host: 0, meet: 0 };
+    for (const { properties } of visibleOffers) {
+      if (properties.type) offerCounts[properties.type] += 1;
+    }
 
     if (!communityNotesEnabled) {
       onVisibleCommunityNoteThreadsChange([]);
+      onVisibleMapCountsChange(offerCounts);
       return;
     }
 
@@ -982,6 +992,7 @@ export default function SearchMap({
     });
 
     onVisibleCommunityNoteThreadsChange([...threads.values()]);
+    onVisibleMapCountsChange({ ...offerCounts, communityNotes: threads.size });
   }, [
     communityNotes,
     communityNotesEnabled,
@@ -989,6 +1000,7 @@ export default function SearchMap({
     map,
     offers,
     onVisibleCommunityNoteThreadsChange,
+    onVisibleMapCountsChange,
     onVisibleOffersChange,
     viewport,
     useWebGL,
@@ -1012,13 +1024,7 @@ export default function SearchMap({
   // Apply externally changed filters object
   // Changed by the search sidebar
   useEffect(() => {
-    // Preserve an offer opened from the initial URL. Later filter changes
-    // clear the selection because it may no longer match the visible results.
-    if (hasInitialisedFiltersRef.current) {
-      onOfferClose();
-    } else {
-      hasInitialisedFiltersRef.current = true;
-    }
+    offerSelectionGeneration.current += 1;
     clearPreviouslySelectedState();
     clearPreviouslyHoveredState();
 
