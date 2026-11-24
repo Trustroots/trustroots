@@ -2191,10 +2191,12 @@ describe('Profile controller unit tests', () => {
           },
         }),
       );
-      Object.keys(sanitized.additionalProvidersData).should.deepEqual([
-        'facebook',
-        'github',
-      ]);
+      JSON.parse(
+        JSON.stringify(sanitized.additionalProvidersData),
+      ).should.deepEqual({
+        facebook: {},
+        github: { login: 'fictional-github-login' },
+      });
     });
 
     it('omits private and unrecognised document fields after sanitisation', () => {

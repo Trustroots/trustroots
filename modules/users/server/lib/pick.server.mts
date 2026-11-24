@@ -1,10 +1,9 @@
 export function pick(
-  source: object,
+  source: unknown,
   keys: readonly string[],
 ): Record<string, unknown> {
+  const value: object = Object(source);
   return Object.fromEntries(
-    keys
-      .filter(key => key in source)
-      .map(key => [key, Reflect.get(source, key)]),
+    keys.filter(key => key in value).map(key => [key, Reflect.get(value, key)]),
   );
 }
