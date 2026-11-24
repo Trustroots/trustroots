@@ -233,6 +233,40 @@ class AndroidNostranslationSessionTest {
         }
     }
 
+    @Test fun pendingPairingsReserveClientSlotsUntilTheRelayDisconnects() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val account = nostrAccountScope("https://example.test", "pairing-limit-${UUID.randomUUID()}")
+        val keys = AndroidNostrKeys(context, account)
+        val relay = RecordingNostranslationRelay()
+        val job = Job()
+        val scope = CoroutineScope(Dispatchers.Unconfined + job)
+        try {
+            keys.generate()
+            val links = (1..9).map { index ->
+                val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = index.toByte() })
+                requireNotNull(NostranslationConnectionLink.parse(
+                    "nostrconnect://$peer?relay=wss%3A%2F%2Frelay.trustroots.org" +
+                        "&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture",
+                ))
+            }
+            AndroidNostranslationSession(account, keys, scope, { true }, relay) { 1_800_000_000L }.use { signer ->
+                signer.start()
+                links.take(8).forEach(signer::pair)
+                assertThrows(IllegalArgumentException::class.java) { signer.pair(links.last()) }
+                assertEquals(8, relay.connectionsCreated)
+                assertTrue(signer.connectedClients.isEmpty())
+
+                relay.fail()
+                signer.pair(links.last())
+                assertEquals(9, relay.connectionsCreated)
+                assertTrue(signer.connectedClients.isEmpty())
+            }
+        } finally {
+            job.cancel()
+            keys.remove()
+        }
+    }
+
     @Test fun rejectsNewReviewsAtCapacityAndRevokesEveryQueuedApproval() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val account = nostrAccountScope("https://example.test", "queue-${UUID.randomUUID()}")
@@ -295,12 +329,15 @@ class AndroidNostranslationSessionTest {
 
 internal class RecordingNostranslationRelay : WebSocket.Factory {
     val frames = mutableListOf<JSONArray>()
+    var connectionsCreated = 0
+        private set
     var cancelled = false
         private set
     private lateinit var socket: WebSocket
     private lateinit var listener: WebSocketListener
 
     override fun newWebSocket(request: Request, listener: WebSocketListener): WebSocket {
+        connectionsCreated += 1
         frames.clear()
         cancelled = false
         this.listener = listener

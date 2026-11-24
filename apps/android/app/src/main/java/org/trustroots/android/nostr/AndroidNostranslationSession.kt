@@ -66,8 +66,8 @@ internal class AndroidNostranslationSession(
 
     fun pair(link: NostranslationConnectionLink) {
         val localKey = checkNotNull(currentPublicKey())
-        require(clients.size < 8 && clients.none { it.peer == link.clientPublicKey })
-        require(link.clientPublicKey !in connections)
+        val knownPeers = clients.map(Client::peer).toSet() + connections.keys
+        require(knownPeers.size < 8 && link.clientPublicKey !in knownPeers)
         val secret = NostrKeyCodec.generate()
         try {
             val encoded = secret.joinToString("") { "%02x".format(it.toInt() and 255) }

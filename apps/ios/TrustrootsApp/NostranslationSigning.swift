@@ -108,8 +108,10 @@ final class NostranslationSigner: ObservableObject {
     }
 
     func pair(_ link: NostranslationLink) throws {
-        guard let publicKey, clients.count < 8, connections[link.peer] == nil,
-              !clients.contains(where: { $0.peer == link.peer }) else { throw NostrIdentityError.inactiveSession }
+        let knownPeers = Set(clients.map(\.peer)).union(connections.keys)
+        guard let publicKey, knownPeers.count < 8, !knownPeers.contains(link.peer) else {
+            throw NostrIdentityError.inactiveSession
+        }
         let client = Client(peer: link.peer, transportSecret: try NostrKeyCodec.generateSecret(), signingKey: publicKey)
         try connect(client, pairingSecret: link.secret)
     }
