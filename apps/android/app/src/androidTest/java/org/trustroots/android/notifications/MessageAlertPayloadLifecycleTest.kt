@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
@@ -266,6 +267,42 @@ class MessageAlertPayloadLifecycleTest {
                 restorePreferences(preferences, savedPreferences)
                 NostranslationAlerts.status.value = savedStatus
             }
+        }
+    }
+
+    @Test
+    fun reviewAlertObserverIgnoresOtherAccountsAndTracksClearedSettings() {
+        val name = "review-alert-observer-${UUID.randomUUID()}"
+        val preferences = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+        val isolatedContext = object : ContextWrapper(context) {
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                if (name == "nostranslation-alerts") preferences else super.getSharedPreferences(name, mode)
+        }
+        val backend = "https://example.test"
+        val session = MemberSession("", MobileMember("observed-member", "Observed member"))
+        val account = nostrAccountScope(backend, session.member.username).storageAccount
+        val other = nostrAccountScope(backend, "another-member").storageAccount
+        val observed = mutableListOf<Boolean>()
+        try {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val unsubscribe = NostranslationAlerts.observeEnabled(isolatedContext, backend, session) { observed += it }
+                try {
+                    check(preferences.edit().putBoolean(other, true).commit())
+                    assertEquals(listOf(false), observed)
+                    check(preferences.edit().putBoolean(account, true).commit())
+                    assertEquals(listOf(false, true), observed)
+                    val editor = preferences.edit()
+                    if (Build.VERSION.SDK_INT >= 30) editor.clear() else editor.remove(account)
+                    check(editor.commit())
+                    assertEquals(listOf(false, true, false), observed)
+                } finally {
+                    unsubscribe()
+                }
+                check(preferences.edit().putBoolean(account, true).commit())
+                assertEquals(listOf(false, true, false), observed)
+            }
+        } finally {
+            context.deleteSharedPreferences(name)
         }
     }
 
