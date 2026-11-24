@@ -1,10 +1,5 @@
-import {
-  finalizeEvent,
-  getPublicKey,
-  nip19,
-  type Event,
-  type EventTemplate,
-} from 'nostr-tools';
+import type { Event, EventTemplate } from 'nostr-tools';
+import { getNostrServiceSigner } from '../../../core/server/services/nostr-service-signer.server.mts';
 import {
   CHAT_ATTRIBUTION_TAG,
   chatTemplate,
@@ -13,21 +8,19 @@ import {
 } from '../../shared/circle-chat.ts';
 import { withCircleChatRelay } from '../../shared/circle-chat-relay.ts';
 
-function exportSigner() {
-  const encoded = process.env.TRUSTROOTS_NOSTR_EXPORT_NSEC;
-  const key = encoded && nip19.decode(encoded);
-  if (!key || key.type !== 'nsec') {
+function requireServiceSigner() {
+  const signer = getNostrServiceSigner();
+  if (!signer) {
     throw new Error('Circle chat signer is unavailable');
   }
-  const { data } = key;
   return {
-    publicKey: getPublicKey(data),
-    sign: async (event: EventTemplate) => finalizeEvent(event, data),
+    publicKey: signer.publicKey,
+    sign: async (event: EventTemplate) => signer.sign(event),
   };
 }
 
 export async function readCircleChat(room: ChatRoom) {
-  const { publicKey, sign } = exportSigner();
+  const { publicKey, sign } = requireServiceSigner();
   const messages = await withCircleChatRelay(sign, relay => {
     return new Promise<Event[]>((resolve, reject) => {
       const limit = 200;
@@ -68,7 +61,7 @@ export async function publishCircleChat(
   content: string,
   channel?: string,
 ) {
-  const { sign } = exportSigner();
+  const { sign } = requireServiceSigner();
   const template = chatTemplate(room, content, channel);
   template.tags.push([CHAT_ATTRIBUTION_TAG, username]);
   const event = await sign(template);

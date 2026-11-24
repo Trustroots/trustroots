@@ -18,6 +18,30 @@ import {
   signInViaApi,
 } from '../../support/helpers.mts';
 
+test('administrators can publish the Trustroots service profile', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.nostr', [
+    'Administrators can publish the Trustroots service profile.',
+  ]);
+  await signInViaApi(page, request, SEEDED_ADMIN);
+  const profilePath = '/api/admin/nostr/service-profile';
+  await page.route(profilePath, route =>
+    route.fulfill({ json: { id: 'a'.repeat(64) } }),
+  );
+  await page.goto('/admin/nostr');
+  const published = page.waitForRequest(
+    req =>
+      new URL(req.url()).pathname === profilePath && req.method() === 'POST',
+  );
+  await page
+    .getByRole('button', { name: 'Publish Trustroots profile' })
+    .click();
+  await published;
+  await expect(page.getByText('Trustroots profile published.')).toBeVisible();
+});
+
 test('administrators can feature and remove a published Nostr note', async ({
   page,
   request,

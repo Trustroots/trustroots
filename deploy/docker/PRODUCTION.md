@@ -33,6 +33,18 @@ docker build \
   -t ghcr.io/trustrootsops/trustroots:latest
 ```
 
+## Nostr service identity
+
+The Nostr service identity uses `TRUSTROOTS_NOSTR_SERVICE_NSEC` in the webapp
+container. `TRUSTROOTS_NOSTR_EXPORT_NSEC` remains a fallback during rollout.
+Keep the secret in the deployment environment. The production image forwards
+both variable names through Nginx to Passenger.
+
+Once the webapp is deployed, open `/admin/nostr` as an administrator and select
+**Publish Trustroots profile**. The public NIP-05 lookup at
+`/.well-known/nostr.json?name=_` should return the signer's public key in hex.
+Circle chat also needs a relay release that accepts the domain identity.
+
 ## Production resilience
 
 Application telemetry is best effort: statistics callbacks acknowledge local

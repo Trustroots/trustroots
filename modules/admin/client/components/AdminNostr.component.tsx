@@ -11,7 +11,7 @@ import {
 } from '@trustroots/ui/Modal';
 import type { Event } from 'nostr-tools';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
-import { getErrorMessage } from '@/modules/core/client/api/http-client';
+import http, { getErrorMessage } from '@/modules/core/client/api/http-client';
 import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedNostrNote.component';
 import {
   FEATURED_NOTE_PUBLISH_RELAYS,
@@ -46,6 +46,43 @@ function markdownLink({ text, url }: LinkDraft) {
   } catch {
     return undefined;
   }
+}
+
+function NostrServiceProfile() {
+  const [publishing, setPublishing] = useState(false);
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+
+  async function publish() {
+    setPublishing(true);
+    setStatus('');
+    setError('');
+    try {
+      await http.post('/api/admin/nostr/service-profile');
+      setStatus('Trustroots profile published.');
+    } catch (cause) {
+      setError(
+        getErrorMessage(cause, 'Could not publish the Trustroots profile.'),
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="nostr-service-profile">
+      <h2 id="nostr-service-profile">Trustroots service identity</h2>
+      <Button
+        type="button"
+        disabled={publishing}
+        onClick={() => void publish()}
+      >
+        Publish Trustroots profile
+      </Button>
+      {status && <p role="status">{status}</p>}
+      {error && <p role="alert">{error}</p>}
+    </section>
+  );
 }
 
 export default function AdminNostr() {
@@ -247,6 +284,7 @@ export default function AdminNostr() {
       <AdminHeader />
       <div className="tw:page-container">
         <h1>Featured Nostr notes</h1>
+        <NostrServiceProfile />
         <h2>{editing ? 'Edit featured note' : 'Publish a note'}</h2>
         <p>
           Your NIP-07 browser signer will sign the note. Trustroots will publish

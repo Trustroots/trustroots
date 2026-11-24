@@ -35,6 +35,7 @@ import adminReferenceThreads from './../controllers/admin.reference-threads.serv
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mts';
 import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
 import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mts';
+import { publishServiceProfile } from '../controllers/admin.nostr-service.server.controller.mts';
 
 type RouteHandler = (...args: never[]) => unknown;
 
@@ -56,6 +57,10 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/nostr/service-profile')
+    .all(adminPolicy.isAllowed)
+    .post(publishServiceProfile);
   app
     .route('/api/admin/nostr/featured-notes')
     .all(adminPolicy.isAllowed)

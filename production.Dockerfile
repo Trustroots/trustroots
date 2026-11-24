@@ -87,6 +87,7 @@ WORKDIR /home/app/trustroots
 COPY --chown=app:app --from=builder /trustroots/ ./
 
 COPY deploy/docker/nginx-confd.conf /etc/nginx/conf.d/nginx.conf
+COPY deploy/docker/nginx-nostr-env.conf /etc/nginx/main.d/nostr-env.conf
 COPY deploy/docker/webapp.conf /etc/nginx/sites-enabled/default
 COPY deploy/docker/seed-circle-images.sh /etc/my_init.d/10-seed-circle-images.sh
 # Keep a copy outside the mount point. On startup the seed script fills a

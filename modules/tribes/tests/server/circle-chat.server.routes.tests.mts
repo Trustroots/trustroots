@@ -192,7 +192,7 @@ describe('Circle chat API', () => {
       makeEvent('Invalid timestamp', [topic], -1),
     ];
     const { authenticated, published, connections } = fakeRelay(events);
-    vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', nip19.nsecEncode(serviceKey));
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(serviceKey));
     const app = chatApp({});
     const radioPath = '/api/tribes/chat/radio';
     const longestMessage = 'Fictional '.repeat(49) + 'chat post.';
