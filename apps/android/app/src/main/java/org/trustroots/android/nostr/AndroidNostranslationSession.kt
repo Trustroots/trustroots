@@ -126,12 +126,10 @@ internal class AndroidNostranslationSession(
                 val filter = JSONObject().put("kinds", JSONArray(listOf(24133)))
                     .put("authors", JSONArray(listOf(client.peer)))
                     .put("#p", JSONArray(listOf(wire.transportPublicKey))).put("since", now() - 60)
+                val handshake = pairingSecret?.let { wire.handshake(now()) }
+                connection.handshakeId = handshake?.getString("id")
                 send(connection, JSONArray().put("REQ").put(connection.subscription).put(filter))
-                if (pairingSecret != null) {
-                    val handshake = wire.handshake(now())
-                    connection.handshakeId = handshake.getString("id")
-                    publish(connection, handshake)
-                }
+                if (handshake != null) publish(connection, handshake)
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -184,7 +182,7 @@ internal class AndroidNostranslationSession(
             "EVENT" -> {
                 if (frame.opt(1) != connection.subscription) return
                 if (client !in clients) {
-                    if (connection.handshakeId != null && connection.earlyEvents.size < 8) connection.earlyEvents.add(frame)
+                    if (connection.earlyEvents.size < 8) connection.earlyEvents.add(frame)
                     return
                 }
                 val event = frame.optJSONObject(2) ?: return

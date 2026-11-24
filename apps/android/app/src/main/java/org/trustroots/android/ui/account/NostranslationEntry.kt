@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -89,6 +90,21 @@ private fun NostranslationDialog(
         scanning = false
         result.contents?.let(::reviewLink)
     }
+    val readTime by rememberUpdatedState(currentTimeSeconds)
+
+    fun launchScanner() {
+        val options = ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            .setPrompt(scanPrompt).setBeepEnabled(false).setBarcodeImageEnabled(false)
+        scanning = true
+        runCatching { scanner.launch(options) }.onFailure {
+            scanning = false
+            error = failed
+        }
+    }
+
+    fun revokeClient(peer: String) {
+        runCatching { signer.revoke(peer) }.onFailure { error = failed }
+    }
 
     DisposableEffect(signer) {
         runCatching(signer::start).onFailure { error = failed }
@@ -97,7 +113,7 @@ private fun NostranslationDialog(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!scanning) close() }
     LaunchedEffect(signer) {
         while (true) {
-            now = currentTimeSeconds()
+            now = readTime()
             delay(1000)
         }
     }
@@ -155,18 +171,10 @@ private fun NostranslationDialog(
                     TextButton(onClick = { reviewLink(input) }, enabled = input.isNotBlank()) {
                         Text(stringResource(R.string.nostranslation_review_link))
                     }
-                    TextButton(onClick = {
-                        val options = ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                            .setPrompt(scanPrompt).setBeepEnabled(false).setBarcodeImageEnabled(false)
-                        scanning = true
-                        runCatching { scanner.launch(options) }.onFailure {
-                            scanning = false
-                            error = failed
-                        }
-                    }) { Text(scanPrompt) }
+                    TextButton(onClick = ::launchScanner) { Text(scanPrompt) }
                     signer.connectedClients.forEach { peer ->
                         Text(stringResource(R.string.nostranslation_client, peer.take(12)))
-                        TextButton(onClick = { runCatching { signer.revoke(peer) }.onFailure { error = failed } }) {
+                        TextButton(onClick = { revokeClient(peer) }) {
                             Text(stringResource(R.string.nostranslation_revoke))
                         }
                     }

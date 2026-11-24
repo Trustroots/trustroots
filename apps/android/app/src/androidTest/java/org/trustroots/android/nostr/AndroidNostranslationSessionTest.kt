@@ -151,7 +151,9 @@ class AndroidNostranslationSessionTest {
                 relay.receive(JSONArray().put("EVENT").put(subscription).put(JSONObject()))
                 relay.receive("not a relay frame")
                 relay.receive("x".repeat(32_769))
+                relay.receive(JSONArray().put("NOTICE").put("relay maintenance"))
                 relay.receive(JSONArray().put("OK").put("unrelated-acknowledgement").put(true))
+                assertFalse(restored.relayFailed)
                 assertEquals(4, relay.frames.size)
 
                 for ((method, params, response) in listOf(
@@ -289,6 +291,52 @@ class AndroidNostranslationSessionTest {
                 relay.open()
                 assertFalse(signedIn)
                 assertTrue(relay.frames.isEmpty())
+
+                signer.close()
+                signedIn = true
+                assertThrows(IllegalStateException::class.java) { signer.pair(links.first()) }
+                assertThrows(IllegalStateException::class.java) { signer.revoke(links.first().clientPublicKey) }
+                assertEquals(9, relay.connectionsCreated)
+            }
+        } finally {
+            job.cancel()
+            keys.remove()
+        }
+    }
+
+    @Test fun callbacksDuringSocketCreationLeaveThePairingUnconfirmedAndCanBeRetried() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val account = nostrAccountScope("https://example.test", "socket-open-${UUID.randomUUID()}")
+        val keys = AndroidNostrKeys(context, account)
+        val relay = RecordingNostranslationRelay()
+        val job = Job()
+        val scope = CoroutineScope(Dispatchers.Unconfined + job)
+        val peer = NostrEventSigner.publicKey(ByteArray(32).apply { this[31] = 1 })
+        val link = requireNotNull(NostranslationConnectionLink.parse(
+            "nostrconnect://$peer?relay=wss%3A%2F%2Frelay.trustroots.org" +
+                "&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture",
+        ))
+        try {
+            keys.generate()
+            relay.afterCreatingSocket = relay::open
+            AndroidNostranslationSession(account, keys, scope, { true }, relay) { 1_800_000_000L }.use { signer ->
+                signer.pair(link)
+                assertTrue(signer.relayFailed)
+                assertTrue(relay.frames.isEmpty())
+                assertTrue(signer.connectedClients.isEmpty())
+            }
+
+            relay.afterCreatingSocket = relay::fail
+            AndroidNostranslationSession(account, keys, scope, { true }, relay) { 1_800_000_000L }.use { signer ->
+                signer.pair(link)
+                assertTrue(signer.relayFailed)
+                assertTrue(signer.connectedClients.isEmpty())
+
+                relay.afterCreatingSocket = null
+                signer.pair(link)
+                relay.open()
+                assertEquals(listOf("REQ", "EVENT"), relay.frames.map { it.getString(0) })
+                assertTrue(signer.connectedClients.isEmpty())
             }
         } finally {
             job.cancel()
@@ -359,6 +407,7 @@ class AndroidNostranslationSessionTest {
 internal class RecordingNostranslationRelay : WebSocket.Factory {
     val frames = mutableListOf<JSONArray>()
     var acceptsFrames = true
+    var afterCreatingSocket: (() -> Unit)? = null
     var connectionsCreated = 0
         private set
     var cancelled = false
@@ -379,6 +428,7 @@ internal class RecordingNostranslationRelay : WebSocket.Factory {
             override fun close(code: Int, reason: String?) = true
             override fun cancel() { cancelled = true }
         }
+        afterCreatingSocket?.invoke()
         return socket
     }
 
