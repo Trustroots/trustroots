@@ -175,6 +175,7 @@ export default function CircleLocationMap(props: Props) {
       savedView ? [savedView[0], savedView[1]] : [20, 0],
       savedView ? savedView[2] : minimumZoom(),
     );
+    L.control.scale({ imperial: false }).addTo(map);
     initialViewSet.current = Boolean(savedView);
     // Preserve any view chosen while the initial relay results are loading.
     map.on('movestart', () => {
@@ -306,7 +307,7 @@ export default function CircleLocationMap(props: Props) {
       </div>
       <div className="circle-location-map-frame">
         <div
-          className="circle-location-map"
+          className="circle-location-map tw:map-scale"
           ref={container}
           role="application"
           aria-label={props.mapLabel}

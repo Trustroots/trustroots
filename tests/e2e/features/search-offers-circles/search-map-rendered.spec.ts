@@ -541,12 +541,36 @@ test.describe('rendered search map feature coverage', () => {
     ]);
     await page.goto('/search');
     await waitForSearchMap(page);
+    const map = page.locator('.search-map');
+    const scale = map.locator('.mapboxgl-ctrl-scale');
+    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+    await captureSection(map, 'map-distance-scale-desktop');
+    // The style picker must not cover the bar.
+    await expect
+      .poll(async () => {
+        const scaleBox = await scale.boundingBox();
+        const styleBox = await map
+          .getByRole('button', { name: 'Change map style' })
+          .boundingBox();
+        return Boolean(
+          scaleBox && styleBox && scaleBox.y + scaleBox.height <= styleBox.y,
+        );
+      })
+      .toBe(true);
+    const initialScale = await scale.innerText();
     const initialZoom = await readMapZoom(page);
     expectPresent(initialZoom, 'initial map zoom should be stored');
     await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
     await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom + 1, 4);
+    await expect(scale).not.toHaveText(initialScale);
     await page.getByRole('button', { name: 'Zoom out', exact: true }).click();
     await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom, 1);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page
+      .getByRole('button', { name: 'Back to map', exact: true })
+      .click();
+    await expect(scale).toBeInViewport();
+    await captureSection(map, 'map-distance-scale-mobile');
   });
 
   test('search map uses raster tiles when only WebGL1 is available', async ({
@@ -786,6 +810,33 @@ test.describe('rendered search map feature coverage', () => {
     await expect(
       page.locator('.search-sidebar-container.is-offer-open'),
     ).toBeVisible();
+  });
+
+  test('the raster distance scale is visible and updates on zoom', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'The map shows a live metric scale on desktop and mobile.',
+    ]);
+    await prepareRasterSearchMap(page, context, { includeMapbox: true });
+    await page.goto('/search');
+
+    const map = page.getByTestId('leaflet-search-map');
+    const scale = map.locator('.leaflet-control-scale-line');
+    await expect(scale).toBeInViewport();
+    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+    const beforeZoom = await scale.innerText();
+    await map.locator('.leaflet-control-zoom-in').click({ timeout: 5000 });
+    await expect(scale).not.toHaveText(beforeZoom);
+    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page
+      .getByRole('button', { name: 'Back to map', exact: true })
+      .click();
+    await expect(scale).toBeInViewport();
+    await expect(scale).toHaveText(/^\d+ (km|m)$/);
   });
 
   test('search map uses the raster fallback when WebGL is unavailable', async ({

@@ -75,6 +75,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "hosts": [dict(PARTNER, location=[41.15, -8.61])],
                 "meetings": [],
             })
+        elif route == "/api/mobile/v0/offers":
+            self._json(200, {"features": []})
+        elif route == "/api/mobile/v0/circles":
+            self._json(200, [])
         elif route == "/api/mobile/v0/messages":
             self._json(200, [{
                 "_id": "thread-pilot-1",

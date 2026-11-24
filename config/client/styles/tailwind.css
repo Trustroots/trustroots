@@ -39,3 +39,15 @@
   position: relative;
   inset-inline-end: calc(100% * --value(integer) / 12);
 }
+
+/* The map libraries set the width from the current projection. */
+@utility map-scale {
+  & :is(.leaflet-control-scale-line, .mapboxgl-ctrl-scale) {
+    @apply tw:pointer-events-none! tw:relative tw:rounded-md tw:border-0! tw:bg-white/80! tw:backdrop-blur-[2px] tw:px-0! tw:pt-0.5! tw:pb-2! tw:text-center tw:text-xs! tw:font-semibold tw:tabular-nums tw:text-emerald-950! tw:shadow-[0_0_0_4px_#ffffffcc,0_3px_9px_3px_#052e1633];
+
+    &::after {
+      content: '';
+      @apply tw:absolute tw:inset-x-0 tw:bottom-0.5 tw:h-1 tw:border-x tw:border-b-2 tw:border-current;
+    }
+  }
+}
