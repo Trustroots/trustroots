@@ -12,16 +12,18 @@ function offerRequest(owner: unknown) {
 }
 
 describe('Offers policy unit tests', () => {
-  it('grants admins everything and users only the documented methods', () => {
+  it('grants admins and users only their documented methods', () => {
     assertGrants(policy.isAllowed, [
       'user GET /api/offers',
       'user POST /api/offers',
       'admin GET /api/offers',
+      'admin HEAD /api/offers',
       'admin POST /api/offers',
       'admin PUT /api/offers',
       'admin DELETE /api/offers',
       'user GET /api/offers-by/:offerUserId',
       'admin GET /api/offers-by/:offerUserId',
+      'admin HEAD /api/offers-by/:offerUserId',
       'admin POST /api/offers-by/:offerUserId',
       'admin PUT /api/offers-by/:offerUserId',
       'admin DELETE /api/offers-by/:offerUserId',
@@ -29,6 +31,7 @@ describe('Offers policy unit tests', () => {
       'user PUT /api/offers/:offerId',
       'user DELETE /api/offers/:offerId',
       'admin GET /api/offers/:offerId',
+      'admin HEAD /api/offers/:offerId',
       'admin POST /api/offers/:offerId',
       'admin PUT /api/offers/:offerId',
       'admin DELETE /api/offers/:offerId',

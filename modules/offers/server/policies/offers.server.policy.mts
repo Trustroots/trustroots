@@ -9,11 +9,14 @@ type OffersRequest = PolicyRequest & {
   offer?: { user: unknown };
 };
 
-const everything = ['get', 'post', 'put', 'delete'];
+const adminMethods = ['get', 'head', 'post', 'put', 'delete'];
 const authoriseRoute = createRouteAuthorisation({
-  '/api/offers': { admin: everything, user: ['get', 'post'] },
-  '/api/offers-by/:offerUserId': { admin: everything, user: ['get'] },
-  '/api/offers/:offerId': { admin: everything, user: ['get', 'put', 'delete'] },
+  '/api/offers': { admin: adminMethods, user: ['get', 'post'] },
+  '/api/offers-by/:offerUserId': { admin: adminMethods, user: ['get'] },
+  '/api/offers/:offerId': {
+    admin: adminMethods,
+    user: ['get', 'put', 'delete'],
+  },
 });
 
 function isAllowed(req: OffersRequest, res: PolicyResponse, next: PolicyNext) {
