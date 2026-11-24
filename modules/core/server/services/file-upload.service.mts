@@ -26,8 +26,6 @@ interface UploadResponse {
 }
 export type UploadError = Error & { code: string };
 
-// Room for the multipart boundaries and the other form fields
-const MULTIPART_OVERHEAD = 64 * 1024;
 const MAX_PARTS = 11;
 
 function uploadError(code: string): UploadError {
@@ -91,7 +89,9 @@ async function parseUpload(
   ) {
     return undefined;
   }
-  const limit = maxUploadSize + MULTIPART_OVERHEAD;
+  // Room for the multipart boundaries and the other form fields. Computed
+  // per call so Stryker's per-test coverage sees the tests that check it.
+  const limit = maxUploadSize + 64 * 1024;
   if (Number(req.headers['content-length']) > limit) {
     throw uploadError('LIMIT_FILE_SIZE');
   }
