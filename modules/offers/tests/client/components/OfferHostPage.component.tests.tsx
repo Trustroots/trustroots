@@ -10,6 +10,7 @@ import {
 
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type {
@@ -531,6 +532,31 @@ describe('OfferHostPage', () => {
     );
   });
 
+  it.each([
+    { offers: [hostOffer], outcome: 'All changes saved' },
+    { offers: [], outcome: 'Could not save your hosting changes.' },
+  ])(
+    'looks up the ID when a create response omits it: $outcome',
+    async ({ offers, outcome }) => {
+      offersApiMock.getOffers
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce(offers);
+      offersApiMock.createOffer.mockResolvedValueOnce({
+        message: 'Offer saved.',
+      });
+      window.history.replaceState({}, '', '/offer/host?from=meet#location');
+      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Change location' }),
+      );
+
+      expect(await screen.findByText(outcome)).toBeVisible();
+      expect(offersApiMock.createOffer).toHaveBeenCalledTimes(1);
+      expect(offersApiMock.getOffers).toHaveBeenCalledTimes(2);
+    },
+  );
+
   it('shows an error state when loading fails', async () => {
     window.history.replaceState({}, '', '/offer/host#location');
     offersApiMock.getOffers.mockRejectedValue(new Error('network'));
@@ -669,6 +695,38 @@ describe('OfferHostPage', () => {
         name: /People that are not in any of my circles should not find me/,
       }),
     ).toBeChecked();
+  });
+
+  it('blocks form submission and autosave while the guest count is invalid', async () => {
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    const guests = await screen.findByRole('spinbutton', {
+      name: 'How many guests can you accommodate?',
+    });
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.change(guests, { target: { value: '100' } });
+      expect(
+        screen.getByText('Enter a whole number of guests from 0 to 99.'),
+      ).toBeVisible();
+      expect(fireEvent.submit(guests.closest('form')!)).toBe(false);
+      await act(async () => vi.advanceTimersByTimeAsync(600));
+      expect(offersApiMock.updateOffer).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('accepts a saved location with the default latitude and a different longitude', async () => {
+    offersApiMock.getOffers.mockResolvedValue([
+      { ...hostOffer, location: [DEFAULT_LOCATION.lat, 10] },
+    ]);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+    expect(await screen.findByText('All changes saved')).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: 'Choose a location' }),
+    ).not.toBeInTheDocument();
   });
 
   it('ignores offer results after unmounting during load', async () => {
