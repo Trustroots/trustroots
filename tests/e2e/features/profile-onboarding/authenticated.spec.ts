@@ -789,7 +789,7 @@ test.describe('authenticated member flows', () => {
     await waitForTribesList(page);
 
     await expect(
-      page.locator('h3.tribe-label', { hasText: 'Hitchhikers' }),
+      page.getByRole('heading', { name: 'Hitchhikers', exact: true }),
     ).toBeVisible();
   });
 

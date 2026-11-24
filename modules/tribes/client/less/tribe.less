@@ -167,6 +167,7 @@
   display: grid;
   margin: 0;
 }
+
 .circle-hero-map {
   margin-top: 20px;
   margin-bottom: 16px;
@@ -224,8 +225,6 @@
     width: 100%;
     min-width: 0;
     padding: 0;
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
   }
 }
 .hackers-circle-resource-footer {
@@ -238,22 +237,6 @@
 @media (min-width: @screen-md-min) {
   .circle-hero-map {
     margin-top: 0;
-  }
-  .hackers-circle-community.has-members {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-    grid-template-areas:
-      'chat chat'
-      'resources members';
-    gap: 36px;
-    .topic-chat {
-      grid-area: chat;
-    }
-    .hackers-circle-resources {
-      grid-area: resources;
-    }
-    .circle-member-discovery {
-      grid-area: members;
-    }
   }
 }
 

@@ -1377,7 +1377,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await signInViaApi(memberPage, context.request, throwaway);
 
       await memberPage.goto('/circles');
-      const circleGrid = memberPage.locator('.tribes-grid');
+      const circleGrid = memberPage.locator('.tribes-grid').filter({
+        has: memberPage.getByRole('link', { name: /^Hitchhikers/ }),
+      });
       const hitchhikersCard = circleGrid
         .locator('.tribe')
         .filter({ hasText: 'Hitchhikers' });

@@ -354,9 +354,7 @@ export async function waitForTribesList(page: Page): Promise<void> {
   } else {
     expect(Array.isArray(tribes)).toBeTruthy();
   }
-  await expect(
-    page.locator('a.tribe-link, h3.tribe-label').first(),
-  ).toBeVisible();
+  await expect(page.locator('a.tribe-link').first()).toBeVisible();
 }
 
 /**

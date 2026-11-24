@@ -1,4 +1,5 @@
 /* global getComputedStyle, window */
+import { withE2eDb } from '../../support/db.mts';
 import {
   annotateFeature,
   captureSection,
@@ -92,6 +93,67 @@ test('circle pages use React and preserve guest navigation', async ({
   await expect(page).toHaveURL(/\/signup\?tribe=hitchhikers$/);
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
+});
+
+test('the circle catalogue features new circles and filters both sections', async ({
+  page,
+}) => {
+  await withE2eDb(async db => {
+    const circles = db.collection('tribes');
+    const { insertedIds } = await circles.insertMany([
+      {
+        slug: 'forest-walkers',
+        label: 'Forest Walkers',
+        count: 20,
+        created: new Date('2020-01-01T00:00:00Z'),
+        public: true,
+      },
+      {
+        slug: 'coastal-walkers',
+        label: 'Coastal Walkers',
+        count: 1,
+        created: new Date(),
+        public: true,
+      },
+    ]);
+    try {
+      await page.goto('/circles');
+
+      const filter = page.getByRole('searchbox', { name: 'Filter circles' });
+      const newCircles = page.getByRole('heading', { name: 'New circles' });
+      const moreCircles = page.getByRole('heading', { name: 'More circles' });
+      const coastal = page.getByRole('link', { name: /^Coastal Walkers/ });
+      const forest = page.getByRole('link', { name: /^Forest Walkers/ });
+
+      await expect(filter).toBeInViewport();
+      await expect(newCircles).toBeVisible();
+      await expect(moreCircles).toBeVisible();
+      await expect(coastal).toHaveCount(1);
+      await expect(forest).toHaveCount(1);
+      const coastalBounds = await coastal.boundingBox();
+      const forestBounds = await forest.boundingBox();
+      expectPresent(coastalBounds);
+      expectPresent(forestBounds);
+      expect(coastalBounds.y).toBeLessThan(forestBounds.y);
+
+      await filter.fill('  FOREST-WALKERS  ');
+      await expect(forest).toBeVisible();
+      await expect(coastal).toHaveCount(0);
+      await expect(newCircles).toHaveCount(0);
+      await filter.fill('Coastal Walk');
+      await expect(coastal).toBeVisible();
+      await expect(moreCircles).toHaveCount(0);
+      await filter.fill('fictional missing circle');
+      await expect(
+        page.getByText('No circles match your filter.'),
+      ).toBeVisible();
+      await filter.clear();
+      await expect(coastal).toBeVisible();
+      await expect(forest).toBeVisible();
+    } finally {
+      await circles.deleteMany({ _id: { $in: Object.values(insertedIds) } });
+    }
+  });
 });
 
 test('circle membership retains account roles and legacy member links', async ({
@@ -274,6 +336,17 @@ test('circle membership retains account roles and legacy member links', async ({
     await expect(
       page.getByRole('link', { name: 'Circle Wiki', exact: true }),
     ).toBeVisible();
+    const wikiBounds = await page
+      .getByRole('link', { name: 'Circle Wiki', exact: true })
+      .boundingBox();
+    const memberBounds = await page
+      .locator('.circle-member-discovery')
+      .boundingBox();
+    expectPresent(wikiBounds);
+    expectPresent(memberBounds);
+    expect(wikiBounds.y).toBeGreaterThanOrEqual(
+      memberBounds.y + memberBounds.height,
+    );
     await expect(
       page.getByRole('link', { name: 'Volunteering', exact: true }),
     ).toBeVisible();
@@ -842,7 +915,7 @@ test('member navigation menus and narrow layout remain usable', async ({
   expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
 });
 
-test('Hackers circle puts community resources beside members on desktop and stacks them on mobile', async ({
+test('Hackers circle puts community resources below members on desktop and mobile', async ({
   page,
 }) => {
   const events = [
@@ -939,7 +1012,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
   try {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/circles/hackers');
-    const community = page.locator('.hackers-circle-community.has-members');
+    const community = page.locator('.hackers-circle-community');
     const chat = community.locator('.topic-chat');
     const resources = community.locator('.hackers-circle-resources');
     const members = community.locator('.circle-member-discovery');
@@ -969,12 +1042,11 @@ test('Hackers circle puts community resources beside members on desktop and stac
           (desktopMembers.x + desktopMembers.width),
       ),
     ).toBeLessThan(2);
-    expect(desktopResources.y).toBeGreaterThanOrEqual(
+    expect(desktopMembers.y).toBeGreaterThanOrEqual(
       desktopChat.y + desktopChat.height,
     );
-    expect(Math.abs(desktopResources.y - desktopMembers.y)).toBeLessThan(2);
-    expect(desktopMembers.x).toBeGreaterThan(
-      desktopResources.x + desktopResources.width,
+    expect(desktopResources.y).toBeGreaterThanOrEqual(
+      desktopMembers.y + desktopMembers.height,
     );
     await captureSection(community, 'circle-hackers-desktop');
     await page.setViewportSize({ width: 390, height: 844 });
@@ -984,11 +1056,11 @@ test('Hackers circle puts community resources beside members on desktop and stac
     expectPresent(mobileChat);
     expectPresent(mobileResources);
     expectPresent(mobileMembers);
-    expect(mobileResources.y).toBeGreaterThanOrEqual(
+    expect(mobileMembers.y).toBeGreaterThanOrEqual(
       mobileChat.y + mobileChat.height,
     );
-    expect(mobileMembers.y).toBeGreaterThanOrEqual(
-      mobileResources.y + mobileResources.height,
+    expect(mobileResources.y).toBeGreaterThanOrEqual(
+      mobileMembers.y + mobileMembers.height,
     );
     expect(
       await page.evaluate(() => window.document.documentElement.scrollWidth),

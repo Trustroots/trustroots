@@ -57,7 +57,13 @@ const renderAndWaitForTribes = async ({
 
 describe('CirclesPage', () => {
   const tribes: TribeSummary[] = [
-    { _id: 'tribe-1', slug: 'hitchhikers', label: 'Hitchhikers', count: 2 },
+    {
+      _id: 'tribe-1',
+      slug: 'hitchhikers',
+      label: 'Hitchhikers',
+      count: 3,
+      new: true,
+    },
     { _id: 'tribe-2', slug: 'forest-folk', label: 'Forest Folk', count: 4 },
     {
       _id: 'tribe-3',
@@ -112,6 +118,19 @@ describe('CirclesPage', () => {
     expect(tribe).toHaveTextContent('4');
   });
 
+  it('waits for the catalogue before showing an empty filter result', () => {
+    api.tribes.read.mockReturnValueOnce(new Promise(() => {}));
+    const page = render(
+      <TribesPage onMembershipUpdated={onMembershipUpdated} />,
+    );
+
+    fireEvent.change(page.getByRole('searchbox', { name: 'Filter circles' }), {
+      target: { value: 'coastal' },
+    });
+
+    expect(page.getByRole('status')).toBeEmptyDOMElement();
+  });
+
   describe('not signed in', () => {
     beforeEach(async () => {
       page = await renderAndWaitForTribes({ user: undefined });
@@ -143,6 +162,31 @@ describe('CirclesPage', () => {
           `/signup?tribe=${tribeData.slug}`,
         );
       });
+    });
+
+    it('filters circle names and slugs and restores the catalogue on clearing', () => {
+      const filter = page.getByRole('searchbox', { name: 'Filter circles' });
+      const newCircles = page.getByRole('heading', { name: 'New circles' });
+      const moreCircles = page.getByRole('heading', { name: 'More circles' });
+
+      fireEvent.change(filter, { target: { value: '  FOREST-FOLK  ' } });
+      expect(page.getByRole('link', { name: /^Forest Folk/ })).toBeVisible();
+      expect(newCircles).not.toBeInTheDocument();
+
+      fireEvent.change(filter, { target: { value: 'Hitch' } });
+      expect(page.getByRole('link', { name: /^Hitchhikers/ })).toBeVisible();
+      expect(moreCircles).not.toBeInTheDocument();
+
+      fireEvent.change(filter, { target: { value: 'fictional unknown' } });
+      expect(page.getByRole('status')).toHaveTextContent(
+        'No circles match your filter.',
+      );
+
+      fireEvent.change(filter, { target: { value: '' } });
+      expect(page.getAllByRole('heading', { level: 3 })).toEqual([
+        page.getByRole('heading', { name: 'New circles' }),
+        page.getByRole('heading', { name: 'More circles' }),
+      ]);
     });
   });
 
@@ -190,6 +234,29 @@ describe('CirclesPage', () => {
           within(tribe).getByText('Join', { selector: 'button' });
         }
       });
+    });
+
+    it('keeps a new circle featured after a membership response omits its new marker', async () => {
+      const { _id, slug, label } = fake.tribes[0];
+      api.tribes.leave.mockResolvedValueOnce({
+        tribe: { _id, slug, label, count: 2 },
+      });
+      const circle = page.getByText(nestedTextMatch(label), { selector: 'li' });
+      fireEvent.click(
+        within(circle).getByRole('button', { name: 'Leave circle' }),
+      );
+      const modal = await page.findByRole('dialog', {
+        name: 'Leave this circle?',
+      });
+      fireEvent.click(
+        within(modal).getByRole('button', { name: 'Leave circle' }),
+      );
+
+      expect(
+        await within(circle).findByRole('button', { name: `Join (${label})` }),
+      ).toBeVisible();
+      expect(within(circle).getByText('New circle!')).toBeVisible();
+      expect(within(circle).getByText('2 members')).toBeVisible();
     });
 
     for (const tribeData of fake.tribes) {
