@@ -323,6 +323,13 @@ export default function TribeDetailPage({
           user={user}
         />
       )}
+      {tribe.slug === 'hitchhikers' && (
+        <TopicChat
+          roomName="hitchhikers"
+          key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+          user={user}
+        />
+      )}
       {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
           Do not embed remote wiki HTML, scripts, images or frames here. */}
       <div

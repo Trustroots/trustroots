@@ -670,6 +670,9 @@ describe('React route ownership', () => {
     expect(access('/support', null)).toBeUndefined();
     expect(access('/messages', null)).toBe(signIn);
     expect(access('/messages', {})).toBeUndefined();
+    expect(access('/volunteers', null)).toBe('/volunteering');
+    expect(access('/circles/naturists', null)).toBe(signIn);
+    expect(access('/circles/hitchhikers', null)).toBeUndefined();
   });
 
   it.each([
@@ -726,7 +729,9 @@ describe('React route ownership', () => {
 
   it('renders every React-owned route that does not redirect', () => {
     routes
-      .filter(route => !['/about', '/offer'].includes(route.path))
+      .filter(
+        route => !['/about', '/offer', '/volunteers'].includes(route.path),
+      )
       .forEach(route => {
         const { container, unmount } = renderRoute(route);
 

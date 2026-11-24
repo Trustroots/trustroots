@@ -229,10 +229,11 @@ test('hitchhiking map uses explicit device location and GeoIP fallback on failur
   await expect
     .poll(() => page.evaluate(() => window.__deviceLocationRequests))
     .toBe(1);
-  await expect(page.getByRole('status')).toContainText(
-    'Showing an approximate location based on your IP address.',
-  );
-  await expect(page.getByRole('status')).toContainText('approximate');
+  await expect(
+    page.getByRole('status').filter({
+      hasText: 'Showing an approximate location based on your IP address.',
+    }),
+  ).toBeVisible();
   await expect.poll(() => defaultLocationRequests).toBe(1);
 });
 

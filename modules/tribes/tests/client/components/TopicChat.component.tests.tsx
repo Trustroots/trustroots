@@ -1,266 +1,183 @@
-import type { Mock } from 'vitest';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+  nip19,
+} from 'nostr-tools';
 import '@/config/client/i18n';
+import http from '@/modules/core/client/api/http-client';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
+import { withCircleChatRelay } from '@/modules/tribes/shared/circle-chat-relay';
 import {
-  connectRadioSigner,
-  fetchRadioAuthorUsernames,
-  HACKERS_CHAT_TOPIC,
-  RadioRoom,
-} from '@/modules/tribes/client/services/radio.client.service';
-import type { UserProfile } from '@/modules/users/client/types';
-import type { Event } from 'nostr-tools';
-import { npubEncode } from 'nostr-tools/nip19';
+  CHAT_ATTRIBUTION_TAG,
+  chatTemplate,
+} from '@/modules/tribes/shared/circle-chat';
+import useCircleSigner from '@/modules/tribes/client/hooks/useCircleSigner';
 
-vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
-  const actual = await vi.importActual(
-    '@/modules/tribes/client/services/radio.client.service',
+vi.mock('@/modules/core/client/api/http-client', () => ({
+  default: { get: vi.fn(), post: vi.fn() },
+}));
+vi.mock('@/modules/tribes/client/hooks/useCircleSigner', () => ({
+  default: vi.fn(),
+}));
+vi.mock('@/modules/tribes/shared/circle-chat-relay', () => ({
+  withCircleChatRelay: vi.fn(),
+}));
+
+const member = { _id: 'member-1', username: 'fictional-member' };
+const serviceKey = generateSecretKey();
+const memberKey = generateSecretKey();
+const servicePubkey = getPublicKey(serviceKey);
+const sign = vi.fn(async template => finalizeEvent(template, memberKey));
+const connect = vi.fn();
+
+function openChat(props: React.ComponentProps<typeof TopicChat>) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <TopicChat {...props} />
+    </QueryClientProvider>,
   );
-  return {
-    ...actual,
-    connectRadioSigner: vi.fn(),
-    fetchRadioAuthorUsernames: vi.fn().mockResolvedValue({}),
-    RadioRoom: vi.fn(),
-  };
-});
-
-const user: UserProfile = {
-  _id: 'fictional-member-id',
-  username: 'fictional-member',
-  displayName: 'Fictional Member',
-};
-const publicKey = 'ab'.repeat(32);
-const signer = {
-  publicKey,
-  sign: vi.fn(async () => {
-    throw new Error('This fixture publishes through the mocked room.');
-  }),
-};
-let receive: (event: Event) => void;
-let relayFailure: () => void;
-let room: {
-  open: Mock;
-  close: Mock;
-  publish: Mock;
-  setSigner: Mock;
-};
+}
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  room = {
-    open: vi.fn(async () => {}),
-    close: vi.fn(),
-    publish: vi.fn(async () => {}),
-    setSigner: vi.fn(),
-  };
-  vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
-    receive = onEvent;
-    relayFailure = onError;
-    return room as unknown as RadioRoom;
+  vi.resetAllMocks();
+  sign.mockImplementation(async template => finalizeEvent(template, memberKey));
+  vi.mocked(http.get).mockImplementation(async url => ({
+    data:
+      url === '/api/nostr/author-visibility'
+        ? { usernames: {} }
+        : { messages: [], servicePubkey },
+  }));
+  vi.mocked(useCircleSigner).mockReturnValue({
+    signer: undefined,
+    connecting: false,
+    error: '',
+    connect,
   });
-  vi.mocked(connectRadioSigner).mockResolvedValue(signer);
 });
 
-it('does not create a room for a guest', () => {
-  render(<TopicChat roomName="hackers" />);
-
-  expect(RadioRoom).not.toHaveBeenCalled();
+it('lets visitors sign in without requesting chat history', () => {
+  openChat({ roomName: 'hackers' });
   expect(
     screen.getByRole('link', { name: 'Log in to see chat.' }),
   ).toHaveAttribute(
     'href',
     '/signin?continue=true&returnTo=%2Fcircles%2Fhackers',
   );
+  expect(http.get).not.toHaveBeenCalled();
 });
 
-it('deduplicates received events and displays their content as text', async () => {
-  vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
-    [publicKey]: user.username,
+it('posts as a keyless member and recognises attribution only from the Trustroots key', async () => {
+  const spoof = chatTemplate('hitchhikers', 'Fictional spoof');
+  spoof.tags.push([CHAT_ATTRIBUTION_TAG, 'other-member']);
+  vi.mocked(http.get).mockResolvedValueOnce({
+    data: { messages: [finalizeEvent(spoof, memberKey)], servicePubkey },
   });
-  render(<TopicChat roomName="hackers" user={user} />);
-
-  expect(RadioRoom).toHaveBeenCalledWith(
-    expect.any(Function),
-    expect.any(Function),
-    HACKERS_CHAT_TOPIC,
-  );
-  expect(room.open).toHaveBeenCalledWith(true);
-  const event: Event = {
-    id: 'event-1',
-    pubkey: publicKey,
-    created_at: 1_800_000_000,
-    kind: 1,
-    tags: [],
-    content: '<strong>A fictional chat message.</strong>',
-    sig: 'signature',
-  };
-  act(() => {
-    receive(event);
-    receive(event);
+  const post = chatTemplate('hitchhikers', 'Fictional chat');
+  post.tags.push([CHAT_ATTRIBUTION_TAG, member.username]);
+  vi.mocked(http.post).mockResolvedValueOnce({
+    data: finalizeEvent(post, serviceKey),
   });
-
-  const message = await screen.findByText(event.content);
-  expect(message).toBeInTheDocument();
-  expect(message.children).toHaveLength(0);
-  expect(screen.getAllByText(event.content)).toHaveLength(1);
-  const identity = await screen.findByRole('link', {
-    name: 'fictional-member@trustroots.org',
-  });
-  expect(identity).toHaveAttribute('href', '/profile/fictional-member');
-  expect(identity).toHaveAttribute('title', npubEncode(publicKey));
-});
-
-it('shows an unknown author as a plain full npub', async () => {
-  const unknownKey = 'cd'.repeat(32);
-  const event: Event = {
-    id: 'unknown-event',
-    pubkey: unknownKey,
-    created_at: 1_800_000_000,
-    kind: 1,
-    tags: [],
-    content: 'A message from an unknown author.',
-    sig: 'signature',
-  };
-  render(<TopicChat roomName="hackers" user={user} />);
-  act(() => receive(event));
-
-  const npub = npubEncode(unknownKey);
-  expect(await screen.findByText(npub)).toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: npub })).not.toBeInTheDocument();
-});
-
-it('keeps sending disabled until the linked signer connects', async () => {
-  render(<TopicChat roomName="hackers" user={user} />);
-
-  expect(screen.getByLabelText('Message')).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Connect Nostr identity' }),
-  );
+  openChat({ roomName: 'hitchhikers', user: member });
+  expect(await screen.findByText('Fictional spoof')).toBeVisible();
   expect(
-    await screen.findByText('Connected as fictional-member@trustroots.org.'),
-  ).toBeInTheDocument();
-  expect(room.setSigner).toHaveBeenCalledWith(signer);
-  expect(screen.getByLabelText('Message')).toBeEnabled();
-});
-
-it('publishes trimmed text with the hackers chat topic tag', async () => {
-  render(<TopicChat roomName="hackers" user={user} />);
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Connect Nostr identity' }),
-  );
-  await screen.findByText('Connected as fictional-member@trustroots.org.');
+    screen.queryByText('other-member via Trustroots'),
+  ).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: '  A fictional message.  ' },
+    target: { value: ' Fictional chat ' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(
+    await screen.findByText('fictional-member via Trustroots'),
+  ).toBeVisible();
+  expect(http.post).toHaveBeenCalledWith('/api/tribes/chat/hitchhikers', {
+    content: 'Fictional chat',
+    channel: undefined,
+  });
+  expect(withCircleChatRelay).not.toHaveBeenCalled();
+});
 
-  await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
-  expect(room.publish).toHaveBeenCalledWith(
+it('uses the matching member signer when linked', async () => {
+  vi.mocked(http.get).mockRejectedValueOnce(new Error('offline'));
+  vi.mocked(useCircleSigner).mockReturnValue({
+    signer: { publicKey: getPublicKey(memberKey), sign },
+    connecting: false,
+    error: '',
+    connect,
+  });
+  const publish = vi.fn(async () => 'ok');
+  vi.mocked(withCircleChatRelay).mockImplementation(async (_sign, run) =>
+    run({ publish } as never),
+  );
+  openChat({
+    roomName: 'volunteering',
+    user: { ...member, nostrNpub: nip19.npubEncode(getPublicKey(memberKey)) },
+  });
+  expect(
+    await screen.findByText('Circle chat is temporarily unavailable.'),
+  ).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Message'), {
+    target: { value: 'Fictional chat' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(await screen.findByText('Fictional chat')).toBeVisible();
+  expect(publish).toHaveBeenCalledWith(
     expect.objectContaining({
-      kind: 1,
-      tags: [['t', HACKERS_CHAT_TOPIC]],
-      content: 'A fictional message.',
+      pubkey: getPublicKey(memberKey),
+      tags: [['t', 'trustroots-volunteering']],
     }),
   );
+  expect(http.post).not.toHaveBeenCalled();
 });
 
-it('keeps the draft and shows an error when publishing fails', async () => {
-  room.publish.mockRejectedValueOnce(new Error('relay unavailable'));
-  render(<TopicChat roomName="hackers" user={user} />);
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Connect Nostr identity' }),
-  );
-  await screen.findByText('Connected as fictional-member@trustroots.org.');
+it('recognises a server-signed post when chat history is unavailable', async () => {
+  vi.mocked(http.get).mockRejectedValueOnce(new Error('offline'));
+  const post = chatTemplate('hackers', 'Fictional chat');
+  post.tags.push([CHAT_ATTRIBUTION_TAG, member.username]);
+  vi.mocked(http.post).mockResolvedValueOnce({
+    data: finalizeEvent(post, serviceKey),
+  });
+
+  openChat({ roomName: 'hackers', user: member });
+  expect(
+    await screen.findByText('Circle chat is temporarily unavailable.'),
+  ).toHaveAttribute('role', 'status');
   fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: 'Keep this draft.' },
+    target: { value: 'Fictional chat' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-
   expect(
-    await screen.findByText('Message could not be sent. Try again.'),
-  ).toBeInTheDocument();
-  expect(screen.getByLabelText('Message')).toHaveValue('Keep this draft.');
+    await screen.findByText('fictional-member via Trustroots'),
+  ).toBeVisible();
 });
 
-it.each([
-  ['hackers', 'The Hackers chat is unavailable.'],
-  ['volunteering', 'The volunteering chat is unavailable.'],
-] as const)(
-  'reports relay errors and closes the %s room on unmount',
-  (roomName, error) => {
-    const { unmount } = render(<TopicChat roomName={roomName} user={user} />);
-
-    act(() => relayFailure());
-    expect(screen.getByRole('status')).toHaveTextContent(error);
-    unmount();
-    expect(room.close).toHaveBeenCalledTimes(1);
-  },
-);
-
-it('orders different messages and shows signer connection errors', async () => {
-  vi.mocked(connectRadioSigner).mockRejectedValueOnce(
-    new Error('Signer denied access.'),
+it('keeps the draft when a server send fails', async () => {
+  vi.mocked(http.post).mockRejectedValueOnce(new Error('offline'));
+  openChat({ roomName: 'hackers', user: member });
+  const composer = screen.getByLabelText('Message');
+  fireEvent.change(composer, { target: { value: 'Fictional draft' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Message could not be sent',
   );
-  render(<TopicChat roomName="hackers" user={user} />);
-  const sample: Event = {
-    id: 'new',
-    pubkey: publicKey,
-    created_at: 2,
-    kind: 1,
-    tags: [],
-    content: 'New',
-    sig: 'signature',
-  };
-  act(() => {
-    receive(sample);
-    receive({ ...sample, id: 'old', content: 'Old', created_at: 1 });
+  expect(composer).toHaveValue('Fictional draft');
+  await waitFor(() => expect(composer).toBeEnabled());
+});
+
+it('prompts a linked member without a connected signer', () => {
+  openChat({
+    roomName: 'hackers',
+    user: { ...member, nostrNpub: nip19.npubEncode(getPublicKey(memberKey)) },
   });
-  expect(
-    screen
-      .getAllByRole('listitem')
-      .map(item => item.querySelector('p')?.textContent),
-  ).toEqual(['Old', 'New']);
-  fireEvent.submit(screen.getByLabelText('Message').closest('form')!);
-  expect(room.publish).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Message')).toBeDisabled();
   fireEvent.click(
     screen.getByRole('button', { name: 'Connect Nostr identity' }),
   );
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Signer denied access.',
-  );
+  expect(connect).toHaveBeenCalledOnce();
 });
-
-it.each(['resolve', 'reject'])(
-  'ignores a publish that will %s after leaving',
-  async outcome => {
-    let finish!: () => void;
-    room.publish.mockImplementationOnce(
-      () =>
-        new Promise((resolve, reject) => {
-          finish = () =>
-            outcome === 'resolve'
-              ? resolve(undefined)
-              : reject(new Error('Offline'));
-        }),
-    );
-    const { unmount } = render(<TopicChat roomName="hackers" user={user} />);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Connect Nostr identity' }),
-    );
-    await screen.findByText('Connected as fictional-member@trustroots.org.');
-    fireEvent.change(screen.getByLabelText('Message'), {
-      target: { value: 'Hello' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    unmount();
-    await act(async () => finish());
-  },
-);

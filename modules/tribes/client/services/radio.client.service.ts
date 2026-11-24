@@ -14,8 +14,6 @@ export const RADIO_RELAYS = [
   'wss://relay.trustroots.org',
   'wss://relay.nomadwiki.org',
 ];
-export const HACKERS_CHAT_TOPIC = 'trustroots-circle-hackers';
-export const VOLUNTEERING_CHAT_TOPIC = 'trustroots-volunteering';
 export const LISTENER_TTL = 12 * 60;
 export const EVENT_TTL = 30 * 24 * 60 * 60;
 export const FAVOURITES_KEY = 'radiostr:starred-stations:v1';
@@ -262,27 +260,17 @@ export class RadioRoom {
   constructor(
     private onEvent: (event: Event) => void,
     private onError: () => void,
-    private chatTopic?: string,
   ) {}
 
-  async open(loggedIn: boolean) {
-    const filters: Filter[] = loggedIn
-      ? [
-          {
-            kinds: [1],
-            '#t': [this.chatTopic ?? 'radiostr'],
-            since: Math.floor(Date.now() / 1000) - EVENT_TTL,
-            limit: 500,
-          },
-        ]
-      : [
-          {
-            kinds: [1],
-            '#t': ['nowplaying'],
-            since: Math.floor(Date.now() / 1000) - LISTENER_TTL,
-            limit: 500,
-          },
-        ];
+  async open() {
+    const filters: Filter[] = [
+      {
+        kinds: [1],
+        '#t': ['nowplaying'],
+        since: Math.floor(Date.now() / 1000) - LISTENER_TTL,
+        limit: 500,
+      },
+    ];
     await Promise.all(
       RADIO_RELAYS.map(async url => {
         const relay = new Relay(url);
@@ -304,11 +292,7 @@ export class RadioRoom {
                 const now = Math.floor(Date.now() / 1000);
                 if (
                   !this.closed &&
-                  (this.chatTopic
-                    ? event.kind === 1 && hasTag(event, 't', this.chatTopic)
-                    : loggedIn
-                      ? eventType(event)
-                      : eventType(event) === 'listening') &&
+                  eventType(event) === 'listening' &&
                   event.created_at <= now + 60 &&
                   Number(tag(event, 'expiration') || Infinity) > now
                 )

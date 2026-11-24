@@ -22,14 +22,14 @@ and SHALL NOT prevent choosing another station.
 ### Requirement: Authenticated social interface
 
 Chat and listener identities SHALL be shown only to logged-in Trustroots
-members. The interface SHALL NOT subscribe to chat, fetch listener profiles, or
-look up author identities for visitors. These restrictions SHALL NOT claim that
-public Nostr events are private.
+members. The interface SHALL NOT request chat history, fetch listener profiles,
+or look up author identities for visitors.
 
 #### Scenario: A member reads the room
 
 - **WHEN** a logged-in member opens the circle without a signer
-- **THEN** they can read chat and see listeners but cannot publish
+- **THEN** they can read chat and see listeners
+- **AND** they can publish chat via Trustroots if their account has no linked npub
 
 #### Scenario: A visitor opens the room
 
@@ -38,7 +38,7 @@ public Nostr events are private.
 
 ### Requirement: Matching verified signing identity
 
-Publication SHALL require a Nostr signer matching both the logged-in member's linked npub and the member's Trustroots NIP-05 lookup. The Radio circle SHALL detect a complete NIP-07 provider on entry and for up to five seconds and attempt connection once for a member with a linked npub. Manual retry SHALL remain available. The application SHALL store no secret keys and SHALL verify signed event contents.
+Member-signed publication SHALL require a Nostr signer matching both the logged-in member's linked npub and the member's Trustroots NIP-05 lookup. The Radio circle SHALL detect a complete NIP-07 provider on entry and for up to five seconds and attempt connection once for a member with a linked npub. Manual retry SHALL remain available. The application SHALL verify signed event contents and keep the shared export signing key on the server.
 
 #### Scenario: A mismatched signer connects
 
@@ -54,17 +54,18 @@ Publication SHALL require a Nostr signer matching both the logged-in member's li
 ### Requirement: Radiostr compatibility
 
 Chat, favourites and listening events SHALL use the existing kind-1 Radiostr tags,
-station IDs, thirty-day expiration, and Trustroots/Nomadwiki relays. Listener
-counts SHALL deduplicate public keys and expire activity after twelve minutes.
+station IDs and thirty-day expiration. Chat SHALL use the authenticated Trustroots
+relay. Favourites and listening events SHALL use the existing public
+Trustroots/Nomadwiki relays. Listener counts SHALL deduplicate public keys and expire activity after twelve minutes.
 Verified connected members SHALL share activity after ten seconds of playback,
 then every five minutes while playing. Favourites SHALL reconcile local state
 with that signer's relay events, preserving remote unstar actions.
 
 #### Scenario: Both interfaces are in use
 
-- **WHEN** Radiostr publishes a supported room event
-- **THEN** the circle processes it using the same station and room identities
-- **AND** duplicate relay deliveries do not duplicate messages or listeners
+- **WHEN** Radiostr publishes listening activity to a supported public relay
+- **THEN** the circle processes it using the same station identity
+- **AND** duplicate relay deliveries do not duplicate listeners
 
 ### Requirement: Chat message details
 
