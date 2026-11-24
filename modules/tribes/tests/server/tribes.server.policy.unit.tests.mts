@@ -3,7 +3,7 @@ import { assertGrants } from '../../../../testutils/server/route-grants.server.t
 
 describe('Tribes policy unit tests', () => {
   it('lets guests read circles, members join them and keeps member lists signed-in', async () => {
-    // Route registration can load and cache this policy before the test runs.
+    // api-routes.unit.tests stubs this module; load the real one.
     const policy = await mockModule<
       typeof import('../../server/policies/tribes.server.policy.mts')
     >(

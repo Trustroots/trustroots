@@ -4,8 +4,20 @@ import type {
   PolicyResponse,
 } from '../../modules/core/server/services/policy-types.server.mts';
 
-const roles = ['guest', 'user', 'admin', 'support-team', 'welcome-team'];
-const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const roles = [
+  'guest',
+  'admin',
+  'welcome-team',
+  'support-team',
+  'moderator',
+  'flagged',
+  'shadowban',
+  'suspended',
+  'user',
+  'volunteer-alumni',
+  'volunteer',
+];
+const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
 export interface PolicyResponseDouble extends PolicyResponse {
   statusCode: number;
