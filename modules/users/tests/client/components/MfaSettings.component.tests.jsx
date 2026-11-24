@@ -75,6 +75,18 @@ describe('MfaSettings', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the deployment error when authenticator settings are unavailable', async () => {
+    const message = 'This site has no valid MFA encryption key.';
+    mfaApi.getMfaStatus.mockRejectedValueOnce({
+      response: { data: { message } },
+    });
+    render(<MfaSettings />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(
+      screen.queryByText('Loading authenticator settings...'),
+    ).not.toBeInTheDocument();
+  });
+
   it('ignores settings results after the component unmounts', async () => {
     let resolveStatus;
     mfaApi.getMfaStatus.mockReturnValue(

@@ -193,6 +193,7 @@ describe('Staff passkey ceremonies', function () {
     ]) {
       config.passkeys = settings;
       await assert.rejects(service.registrationOptions(req), /not configured/);
+      await assert.rejects(service.list(req), /not configured/);
     }
   });
   it('rejects unverified and ordinary members at management entry points', async function () {

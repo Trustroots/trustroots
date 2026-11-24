@@ -24,7 +24,10 @@ import {
   CONNECTION_HISTORY_CONFLICT_MESSAGE,
   isConnectionHistoryWriteConflict,
 } from '../services/connection-history.server.service.mts';
-import mfaService from '../services/mfa.server.service.mjs';
+import mfaService, {
+  MfaConfigurationError,
+  mfaConfigurationMessage,
+} from '../services/mfa.server.service.mjs';
 type UserDocument = UserServerDocument;
 type AuthenticatedUser = UserDocument;
 
@@ -554,9 +557,12 @@ service.verifyMfa = async function (req, res) {
       }
       return res.json(userProfile.sanitizeOwnProfile(result.user));
     });
-  } catch {
+  } catch (error) {
     return res.status(503).send({
-      message: 'Authenticator verification is temporarily unavailable.',
+      message:
+        error instanceof MfaConfigurationError
+          ? mfaConfigurationMessage
+          : 'Authenticator verification is temporarily unavailable.',
     });
   }
 };

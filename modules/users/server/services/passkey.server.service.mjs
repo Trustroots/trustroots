@@ -25,7 +25,10 @@ function fail(message, status = 400) {
 function deployment() {
   const { rpId, origins } = config.passkeys;
   if (!rpId || !Array.isArray(origins) || origins.length === 0) {
-    fail('Passkeys are not configured for this site.', 503);
+    fail(
+      'Passkeys are not configured for this site. Contact a site administrator.',
+      503,
+    );
   }
   return { rpId, origins };
 }
@@ -123,6 +126,7 @@ async function consumeCeremony(req, user, type) {
 export async function list(req) {
   if (!req.user || !mfa.isPrivileged(req.user))
     fail('Staff account required.', 403);
+  deployment();
   const rows = await mongoose
     .model('MemberPasskey')
     .find({ user: req.user._id })

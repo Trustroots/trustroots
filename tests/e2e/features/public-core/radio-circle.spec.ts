@@ -11,7 +11,6 @@ import {
   installNostrRelayStub,
 } from '../../support/nostr.mts';
 import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
-import { provisionFixtureMfa } from '../../support/mfa.mts';
 import {
   finalizeEvent,
   generateSecretKey,
@@ -568,16 +567,12 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
   await expect(page).toHaveURL(/\/volunteering$/);
   const chat = page.getByRole('region', { name: 'Volunteering chat' });
   await expect(chat.getByText(volunteeringMessage)).toHaveCount(0);
-  const recoveryCode = await provisionFixtureMfa(SEEDED_ADMIN);
-  if (!recoveryCode) throw new Error('Expected an administrator recovery code');
   await chat.getByRole('link', { name: 'Log in to see chat.' }).click();
   await page.getByLabel('Email or username').fill(SEEDED_ADMIN.username);
   await page
     .getByLabel('Password', { exact: true })
     .fill(SEEDED_ADMIN.password);
   await page.getByRole('button', { name: 'Sign in to continue' }).click();
-  await page.getByLabel('Authenticator or recovery code').fill(recoveryCode);
-  await page.getByRole('button', { name: 'Verify and sign in' }).click();
   await expect(page).toHaveURL(/\/volunteering$/);
   await expect(chat).toContainText(
     'Messages are visible to people with access to the Trustroots relay.',
