@@ -44,7 +44,7 @@ import org.trustroots.android.nostr.NostranslationConnectionLink
 import org.trustroots.android.nostr.nostrAccountScope
 import org.trustroots.android.notifications.NostranslationAlerts
 import org.trustroots.android.ui.common.canPostNotifications
-import org.trustroots.android.ui.common.findActivity
+import org.trustroots.android.ui.common.requireActivity
 
 @Composable
 internal fun NostranslationEntry(
@@ -80,7 +80,7 @@ internal fun NostranslationDialog(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val activity = context.findActivity(Activity::class.java)
+    val activity = context.requireActivity(Activity::class.java, "Nostranslation must be hosted by an Activity.")
     val alertStatus by NostranslationAlerts.status.collectAsState()
     var alertsEnabled by remember(context, api.backendURL, session.member.username) {
         mutableStateOf(NostranslationAlerts.isEnabled(context, api.backendURL, session))
@@ -90,7 +90,7 @@ internal fun NostranslationDialog(
         onDispose(stopObserving)
     }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
-        if (allowed && activity != null) NostranslationAlerts.enable(activity, api, session)
+        if (allowed) NostranslationAlerts.enable(activity, api, session)
         else NostranslationAlerts.registrationFailed()
     }
     val signer = remember(activeSession) {
@@ -212,7 +212,7 @@ internal fun NostranslationDialog(
                         TextButton(onClick = {
                             if (alertsEnabled) NostranslationAlerts.disable(context, api, session)
                             else if (!context.canPostNotifications()) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            else if (activity != null) NostranslationAlerts.enable(activity, api, session)
+                            else NostranslationAlerts.enable(activity, api, session)
                         }) {
                             Text(stringResource(if (alertsEnabled) R.string.nostranslation_disable_alerts else R.string.nostranslation_enable_alerts))
                         }

@@ -65,6 +65,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private val requests = CopyOnWriteArrayList<ApiRequest>()
     private val distributorEvents = CopyOnWriteArrayList<DistributorEvent>()
     private val completedResponses = AtomicInteger()
+    @Volatile private var reviewAlertBackendAvailable = true
     private val responderFailure = AtomicReference<Throwable?>(null)
     @Volatile private var activeSocket: Socket? = null
     private var responder: Thread? = null
@@ -132,6 +133,17 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
             NostranslationAlerts.status.value == R.string.nostranslation_alerts_unavailable
         }
         assertEquals(1, requests.count { it.path == REVIEW_ALERTS_PATH && it.method == "GET" })
+        assertFalse(NostranslationAlerts.isEnabled(targetContext, api.backendURL, session))
+
+        reviewAlertBackendAvailable = false
+        NostranslationAlerts.status.value = null
+        activityScenario?.onActivity { activity -> NostranslationAlerts.enable(activity, api, session) }
+        waitUntil("review alerts report an unavailable backend") {
+            NostranslationAlerts.status.value == R.string.nostranslation_alerts_unavailable
+        }
+        val reviewRequests = requests.filter { it.path == REVIEW_ALERTS_PATH }
+        assertEquals(2, reviewRequests.size)
+        assertTrue(reviewRequests.all { it.method == "GET" && it.cookie == session.cookieHeader })
         assertFalse(NostranslationAlerts.isEnabled(targetContext, api.backendURL, session))
         assertResponderHealthy()
     }
@@ -494,10 +506,10 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                             else -> "{}"
                         }
                         val bytes = payload.toByteArray(Charsets.UTF_8)
-                        val status = if (path.startsWith("/api/users/unified-push") || path == REVIEW_ALERTS_PATH) {
-                            "200 OK"
-                        } else {
-                            "404 Not Found"
+                        val status = when {
+                            path == REVIEW_ALERTS_PATH && !reviewAlertBackendAvailable -> "503 Service Unavailable"
+                            path.startsWith("/api/users/unified-push") || path == REVIEW_ALERTS_PATH -> "200 OK"
+                            else -> "404 Not Found"
                         }
                         connection.getOutputStream().apply {
                             write(
