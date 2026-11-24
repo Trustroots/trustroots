@@ -23,7 +23,7 @@ function decide(req: Parameters<typeof policy.isAllowed>[0]) {
   policy.isAllowed(req, res, () => {
     permitted = true;
   });
-  return { permitted, statusCode: res.statusCode };
+  return { permitted, statusCode: res.statusCode, body: res.body };
 }
 
 describe('Reference thread policy unit tests', () => {
@@ -41,6 +41,7 @@ describe('Reference thread policy unit tests', () => {
     decide(unpublishedRequest('GET', false)).should.deepEqual({
       permitted: false,
       statusCode: 403,
+      body: { message: 'Forbidden.' },
     });
   });
 
@@ -48,6 +49,7 @@ describe('Reference thread policy unit tests', () => {
     decide(unpublishedRequest('POST', true)).should.deepEqual({
       permitted: false,
       statusCode: 403,
+      body: { message: 'Forbidden.' },
     });
   });
 });

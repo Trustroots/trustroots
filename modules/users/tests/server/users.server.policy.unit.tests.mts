@@ -10,6 +10,7 @@ import {
 
 const profilePath = '/api/users/:username';
 const avatarPath = '/api/users/:avatarUserId/avatar';
+const hidden = '404 Not found.';
 
 function decide({
   roles,
@@ -37,7 +38,7 @@ function decide({
   policy.isAllowed(req, res, () => {
     permitted = true;
   });
-  return permitted ? 200 : res.statusCode;
+  return permitted ? 'next' : `${res.statusCode} ${res.body!.message}`;
 }
 
 describe('Users policy unit tests', () => {
@@ -93,29 +94,31 @@ describe('Users policy unit tests', () => {
   });
 
   it('hides unpublished profiles from other members with 404', () => {
-    decide({ roles: ['user'], viewerPublic: true }).should.equal(404);
+    decide({ roles: ['user'], viewerPublic: true }).should.equal(hidden);
   });
 
   it('refuses unpublished members browsing other profiles with 403', () => {
-    decide({ roles: ['user'], profilePublic: true }).should.equal(403);
+    decide({ roles: ['user'], profilePublic: true }).should.equal(
+      '403 Forbidden.',
+    );
   });
 
   it('lets members past the visibility checks on their own profile', () => {
-    decide({ roles: ['user'], ownProfile: true }).should.equal(200);
+    decide({ roles: ['user'], ownProfile: true }).should.equal('next');
   });
 
   it('applies the hidden profile exceptions only to the intended staff reads', () => {
     for (const [roles, path, method, status] of [
-      [['support-team'], profilePath, 'GET', 200],
-      [['admin'], profilePath, 'GET', 200],
-      [['admin'], avatarPath, 'GET', 200],
-      [['support-team'], avatarPath, 'GET', 404],
-      [['support-team'], profilePath, 'PUT', 404],
-      [['admin'], profilePath, 'PUT', 404],
-      [['admin'], avatarPath, 'POST', 404],
-      [['admin'], '/api/users/mini/:userId', 'GET', 404],
-      [undefined, profilePath, 'GET', 404],
-      [undefined, avatarPath, 'GET', 404],
+      [['support-team'], profilePath, 'GET', 'next'],
+      [['admin'], profilePath, 'GET', 'next'],
+      [['admin'], avatarPath, 'GET', 'next'],
+      [['support-team'], avatarPath, 'GET', hidden],
+      [['support-team'], profilePath, 'PUT', hidden],
+      [['admin'], profilePath, 'PUT', hidden],
+      [['admin'], avatarPath, 'POST', hidden],
+      [['admin'], '/api/users/mini/:userId', 'GET', hidden],
+      [undefined, profilePath, 'GET', hidden],
+      [undefined, avatarPath, 'GET', hidden],
     ] as const) {
       decide({ roles: roles && [...roles], path, method }).should.equal(status);
     }

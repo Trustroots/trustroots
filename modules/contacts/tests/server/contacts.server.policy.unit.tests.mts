@@ -45,14 +45,15 @@ describe('Contacts policy unit tests', () => {
     }
   });
 
-  it('refuses deletion to members outside the contact', () => {
-    const res = policyResponse();
-
-    policy.isAllowed(contactRequest('one-id', 'two-id'), res, () => {
-      throw new Error('A third member deleted a contact');
-    });
-
-    res.statusCode.should.equal(403);
+  it('refuses deletion to members outside the contact and to guests', () => {
+    const guest = { ...contactRequest('one-id', 'two-id'), user: undefined };
+    for (const req of [contactRequest('one-id', 'two-id'), guest]) {
+      const res = policyResponse();
+      policy.isAllowed(req, res, () => {
+        throw new Error('Someone outside the contact deleted it');
+      });
+      res.statusCode.should.equal(403);
+    }
   });
 
   it('returns 403 for unpublished users', () => {

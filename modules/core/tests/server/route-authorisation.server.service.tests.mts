@@ -1,5 +1,8 @@
 import 'should';
-import { isRouteAllowed } from '../../server/services/route-authorisation.server.service.mts';
+import {
+  createRouteAuthorisation,
+  isRouteAllowed,
+} from '../../server/services/route-authorisation.server.service.mts';
 
 const grants = {
   '/api/examples': { guest: ['get'], member: ['get', 'post'] },
@@ -58,5 +61,31 @@ describe('Route authorisation service', () => {
       grants,
       request([], '/api/examples', 'GET'),
     ).should.be.false();
+  });
+
+  it('answers 403 JSON when no role grants the route', () => {
+    let status = 0;
+    let body: unknown;
+    const res = {
+      status(code: number) {
+        status = code;
+        return res;
+      },
+      json(message: unknown) {
+        body = message;
+        return res;
+      },
+    };
+
+    createRouteAuthorisation(grants)(
+      request(['member'], '/api/examples', 'DELETE'),
+      res,
+      () => {
+        throw new Error('An ungranted method was let through');
+      },
+    );
+
+    status.should.equal(403);
+    (body as object).should.deepEqual({ message: 'Forbidden.' });
   });
 });
