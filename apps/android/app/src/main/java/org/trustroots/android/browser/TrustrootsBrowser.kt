@@ -32,8 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -119,12 +117,7 @@ fun TrustrootsBrowser(
     ) { paddingValues ->
         key(nostrSession) {
             val nip07 = remember(nostrSession) { nostrSession?.let { AndroidNip07Bridge(it, nostrScope) } }
-            if (nip07 != null) {
-                LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                    nip07.declineApproval()
-                }
-                nip07.approval?.let { BrowserSigningDialog(it) }
-            }
+            if (nip07 != null) BrowserSigningApproval(nip07)
             AndroidView(
                 factory = { browserContext ->
                     WebView(browserContext).apply {

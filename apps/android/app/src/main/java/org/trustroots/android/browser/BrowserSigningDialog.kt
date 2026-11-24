@@ -13,10 +13,20 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import org.trustroots.android.R
 
 @Composable
-internal fun BrowserSigningDialog(approval: AndroidNip07Bridge.SigningApproval) {
+internal fun BrowserSigningApproval(bridge: AndroidNip07Bridge) {
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        bridge.declineApproval()
+    }
+    bridge.approval?.let { BrowserSigningDialog(it) }
+}
+
+@Composable
+private fun BrowserSigningDialog(approval: AndroidNip07Bridge.SigningApproval) {
     AlertDialog(
         onDismissRequest = { approval.decision.complete(false) },
         properties = DialogProperties(securePolicy = SecureFlagPolicy.SecureOn),

@@ -64,9 +64,9 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
 
     fun pageChanged() {
         pageCommitted = false
+        approval = null
         request?.cancel()
         request = null
-        approval = null
     }
 
     fun pageCommitted() { pageCommitted = true }
