@@ -163,30 +163,24 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
         // key removed so the journey is repeatable without touching profile links.
         if app.buttons["Remove local key"].exists {
-            reveal(app.buttons["Remove local key"], in: app)
-            app.buttons["Remove local key"].tap()
+            tapAccountButton(app.buttons["Remove local key"], in: app)
             app.alerts.buttons["Remove"].tap()
         }
         let generate = app.buttons["Generate new key"]
-        XCTAssertTrue(generate.waitForExistence(timeout: 10))
-        reveal(generate, in: app)
-        generate.tap()
+        tapAccountButton(generate, in: app)
         let localKey = app.staticTexts["nostr-local-public-key"]
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         let publicKey = localKey.label
         XCTAssertTrue(publicKey.hasPrefix("npub1"))
         XCTAssertTrue(app.staticTexts["No linked public key."].exists)
         let link = app.buttons["Link local key to profile"]
-        XCTAssertTrue(link.waitForExistence(timeout: 10))
-        reveal(link, in: app)
-        link.tap()
+        tapAccountButton(link, in: app)
         let unlink = app.buttons["Unlink profile key"]
         XCTAssertTrue(unlink.waitForExistence(timeout: 10))
         attachNostrSection(app, name: "Local Nostr key and linked profile key")
 
         let signOut = app.buttons["Sign out"]
-        reveal(signOut, in: app)
-        signOut.tap()
+        tapAccountButton(signOut, in: app)
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
@@ -196,24 +190,21 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertEqual(localKey.label, publicKey)
 
         let remove = app.buttons["Remove local key"]
-        reveal(remove, in: app)
-        remove.tap()
+        tapAccountButton(remove, in: app)
         XCTAssertTrue(app.alerts["Remove local Nostr key?"].waitForExistence(timeout: 5))
         app.alerts.buttons["Cancel"].tap()
         XCTAssertTrue(localKey.exists)
-        remove.tap()
+        tapAccountButton(remove, in: app)
         app.alerts.buttons["Remove"].tap()
         XCTAssertTrue(generate.waitForExistence(timeout: 10))
         XCTAssertFalse(localKey.exists)
         XCTAssertTrue(unlink.exists)
         attachNostrSection(app, name: "Local key removed without changing profile")
-        reveal(unlink, in: app)
-        unlink.tap()
+        tapAccountButton(unlink, in: app)
         XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
         app.alerts.buttons["Unlink"].tap()
         XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
-        reveal(signOut, in: app)
-        signOut.tap()
+        tapAccountButton(signOut, in: app)
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }
 
@@ -229,11 +220,29 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
         guard app.buttons["Menu"].waitForExistence(timeout: 2) else { return }
-        openNostrAccount(app)
-        let signOut = app.buttons["Sign out"]
-        reveal(signOut, in: app)
-        signOut.tap()
+        if !app.staticTexts["Local public key (npub)"].exists {
+            openNostrAccount(app)
+        }
+        tapAccountButton(app.buttons["Sign out"], in: app)
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    private func tapAccountButton(_ button: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+        let account = app.scrollViews["account-scroll-view"]
+        XCTAssertTrue(account.exists, app.debugDescription)
+        // Account starts near the top. Later actions can leave the next button
+        // above or below the viewport, depending on how the key section shrank.
+        for _ in 0..<5 {
+            if button.isHittable { break }
+            let belowCenter = button.frame.midY >= account.frame.midY
+            let start = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.7 : 0.3))
+            let end = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.3 : 0.7))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(button.isHittable, app.debugDescription)
+        XCTAssertTrue(button.isEnabled, app.debugDescription)
+        button.tap()
     }
 
     private func attachNostrSection(_ app: XCUIApplication, name: String) {

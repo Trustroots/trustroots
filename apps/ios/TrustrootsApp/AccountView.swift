@@ -42,6 +42,7 @@ struct AccountView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityIdentifier("account-scroll-view")
         .task { await loadAccount() }
         .sheet(isPresented: $showNostranslationSigning) {
             NostranslationSigningSheet(serverURLString: session.serverURLString)

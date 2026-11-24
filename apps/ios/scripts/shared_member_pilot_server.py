@@ -60,7 +60,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
             return
         if not self._authorised():
             return
-        if route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
+        if route == "/api/mobile/v0/me":
+            self._json(200, {"member": {
+                **MEMBER,
+                "email": "pilot-member@example.test",
+                "newsletter": False,
+            }})
+        elif route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
             fixture = type(self)
             with fixture.session_lock:
                 drop_profile_response = fixture.drop_profile_response
