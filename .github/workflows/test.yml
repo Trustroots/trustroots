@@ -597,6 +597,7 @@ jobs:
           path: coverage/server
       - name: Require full client and server coverage
         if: needs.changes.outputs.run-code != 'false'
+        shell: bash
         run: node scripts/coverage/check-coverage.cts --require-full | tee -a "$GITHUB_STEP_SUMMARY"
 
   pages:
