@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 
-import Map from '@/modules/core/client/components/Map/index';
+import lazyMap from '@/modules/core/client/components/lazyMap';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import useMapDefaultLocation, {
   type MapDefaultLocation,
@@ -9,13 +9,15 @@ import useMapDefaultLocation, {
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
-import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
 import type {
   MapBounds,
   MapPoint,
 } from '@/modules/search/client/utils/location';
+
+const Map = lazyMap(() => import('@/modules/core/client/components/Map/index'));
+const OfferLocationOverlay = lazyMap(() => import('./OfferLocationOverlay'));
 
 interface OfferLocationEditorProps {
   location: [number, number] | null;

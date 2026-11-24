@@ -249,7 +249,10 @@ test.describe('approximate initial map locations', () => {
     });
     await page.goto('/search');
     const map = page.getByTestId('leaflet-search-map');
-    await expect(map).toHaveAttribute('data-map-latitude', '12');
+    // Leaflet can report its centre from a rounded pixel origin.
+    await expect
+      .poll(async () => Number(await map.getAttribute('data-map-latitude')))
+      .toBeCloseTo(12, 3);
     const locate = page.getByRole('button', {
       name: 'Use my location',
       exact: true,
