@@ -18,10 +18,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -351,13 +353,7 @@ class NostrKeyJourneyTest {
                 compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
                 compose.setContent {
                     val activityContext = LocalContext.current
-                    val keyContext = remember(activityContext) {
-                        object : ContextWrapper(activityContext) {
-                            override fun getApplicationContext(): Context = this
-                            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
-                                if (name == "nostr-identities") pausedPreferences else super.getSharedPreferences(name, mode)
-                        }
-                    }
+                    val keyContext = remember(activityContext) { withNostrPreferences(activityContext, pausedPreferences) }
                     CompositionLocalProvider(
                         LocalActivityResultRegistryOwner provides owner,
                         LocalLifecycleOwner provides lifecycleOwner,
@@ -436,6 +432,95 @@ class NostrKeyJourneyTest {
             check(dispatchResult(requestCode, status, null))
         }
     }
+
+    @Test fun doesNotApplyACredentialResultToARecreatedKeyDialog() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val backend = "http://127.0.0.1:1"
+        val username = "test-recreated-backup"
+        val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+        val registry = CredentialResultRegistry()
+        val owner = object : ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        val restoration = StateRestorationTester(compose)
+        try {
+            keys.generate()
+            val backup = requireNotNull(keys.backup())
+            val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+            val api = MobileApiClient(backend)
+            restoration.setContent {
+                CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                    NostrKeyEntry(api, session, enabled = true) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
+                }
+            }
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Back up private key")
+            compose.onNodeWithText("Back up private key").performScrollTo().performClick()
+
+            restoration.emulateSavedInstanceStateRestore()
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Back up private key")
+            compose.runOnIdle { registry.respond(Activity.RESULT_OK) }
+
+            compose.onNodeWithText("Back up private key").assertIsEnabled()
+            compose.onNodeWithText(backup).assertDoesNotExist()
+        } finally {
+            keys.remove()
+        }
+    }
+
+    @Test fun disablesTheKeyInputsWhileAKeyWriteIsPending() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val backend = "http://127.0.0.1:1"
+        val username = "test-pending-key-write"
+        val account = nostrAccountScope(backend, username)
+        val keys = AndroidNostrKeys(context, account)
+        val preferences = context.getSharedPreferences("nostr-identities", Context.MODE_PRIVATE)
+        val checkingForExistingKey = CountDownLatch(1)
+        val continueWrite = CountDownLatch(1)
+        val controlledPreferences = object : SharedPreferences by preferences {
+            override fun contains(key: String?): Boolean {
+                if (key == account.storageAccount) {
+                    checkingForExistingKey.countDown()
+                    check(continueWrite.await(25, TimeUnit.SECONDS))
+                }
+                return preferences.contains(key)
+            }
+        }
+        try {
+            val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+            val api = MobileApiClient(backend)
+            compose.setContent {
+                val activityContext = LocalContext.current
+                val wrapped = remember(activityContext) { withNostrPreferences(activityContext, controlledPreferences) }
+                CompositionLocalProvider(LocalContext provides wrapped) {
+                    NostrKeyEntry(api, session, enabled = true)
+                }
+            }
+            compose.onNodeWithText("Nostr key").performClick()
+            awaitText("Generate new key")
+            compose.onNode(hasSetTextAction()).performTextReplacement("0".repeat(63) + "1")
+            compose.onNodeWithText("Generate new key").performScrollTo().performClick()
+            compose.waitUntil(15_000) { checkingForExistingKey.count == 0L }
+
+            compose.onNodeWithText("Private key (nsec or hex)").assertIsNotEnabled()
+            compose.onNodeWithText("Import private key").assertIsNotEnabled()
+            compose.onNodeWithText("Generate new key").assertIsNotEnabled()
+
+            continueWrite.countDown()
+            awaitText("Copy public key")
+        } finally {
+            continueWrite.countDown()
+            keys.remove()
+        }
+    }
+
+    private fun withNostrPreferences(context: Context, preferences: SharedPreferences): Context =
+        object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                if (name == "nostr-identities") preferences else super.getSharedPreferences(name, mode)
+        }
 
     private fun awaitText(text: String) {
         compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
