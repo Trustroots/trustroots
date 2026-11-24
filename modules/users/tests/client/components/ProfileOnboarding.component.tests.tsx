@@ -5,6 +5,7 @@ import '@/config/client/i18n';
 import AvatarNameMobile from '@/modules/users/client/components/AvatarNameMobile.component';
 import ConfirmEmailNotification from '@/modules/users/client/components/ConfirmEmailNotification.component';
 import HostingAndMeetPanel from '@/modules/users/client/components/HostingAndMeetPanel.component';
+import ProfileCompletionReminders from '@/modules/users/client/components/ProfileCompletionReminders.component';
 import UserDoesNotExist from '@/modules/users/client/components/UserDoesNotExist.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
@@ -30,6 +31,49 @@ const sparseProfile = {
 } as UserProfile & { displayUsername?: string };
 
 describe('profile onboarding components', () => {
+  it('links to each missing profile detail and removes completed reminders', () => {
+    const { rerender } = render(
+      <ProfileCompletionReminders
+        profile={{ description: '<p>&nbsp;</p>', avatarSource: 'none' }}
+      />,
+    );
+    const description = screen.getByRole('link', {
+      name: 'Add an About me description',
+    });
+    const photo = screen.getByRole('link', { name: 'Add a profile photo' });
+    expect(description).toHaveAttribute('href', '/profile/edit');
+    expect(photo).toHaveAttribute('href', '/profile/edit/photo');
+
+    rerender(
+      <ProfileCompletionReminders
+        profile={{ description: 'I travel by train.' }}
+      />,
+    );
+    expect(description).not.toBeInTheDocument();
+    expect(photo).toBeVisible();
+
+    rerender(
+      <ProfileCompletionReminders
+        profile={{ avatarSource: 'local', avatarUploaded: true }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Add an About me description' }),
+    ).toBeVisible();
+    expect(photo).not.toBeInTheDocument();
+
+    rerender(
+      <ProfileCompletionReminders
+        profile={{
+          description: 'I travel by train.',
+          avatarSource: 'gravatar',
+          emailHash: 'example',
+        }}
+      />,
+    );
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+  });
+
   it('invites new members to complete their profile', () => {
     render(<Welcome />);
 

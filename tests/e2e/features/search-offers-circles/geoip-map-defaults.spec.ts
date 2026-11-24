@@ -353,6 +353,14 @@ test.describe('approximate initial map locations', () => {
     await page.route('**/api/offers-by/**', route =>
       route.fulfill({ json: [] }),
     );
+    let saves = 0;
+    await page.route('**/api/offers', route => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      saves += 1;
+      return route.fulfill({
+        json: { message: 'Offer saved.', _id: 'saved-host' },
+      });
+    });
     await page.goto('/offer/host#location');
     const map = page.getByTestId('leaflet-map');
     await expect(map).toHaveAttribute('data-map-latitude', '34');
@@ -377,17 +385,17 @@ test.describe('approximate initial map locations', () => {
         exact: false,
       })
       .fill('A fictional spare room.');
-    const save = page.getByRole('button', { name: 'Save and Exit' }).last();
-    await expect(save).toBeDisabled();
+    expect(saves).toBe(0);
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(guide).toHaveCount(0);
-    await expect(save).toBeDisabled();
+    expect(saves).toBe(0);
     const zoomedTile = map
       .locator('img[src*="tile.openstreetmap.org/7/"]')
       .first();
     await expect(zoomedTile).toBeVisible();
     await map.click({ position: { x: 100, y: 100 } });
-    await expect(save).toBeEnabled();
+    await expect(page.getByText('All changes saved')).toBeVisible();
+    expect(saves).toBe(1);
     await expect(zoomedTile).toBeVisible();
     await expect(
       map.locator('img[src*="tile.openstreetmap.org/13/"]'),

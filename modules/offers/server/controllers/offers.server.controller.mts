@@ -316,7 +316,12 @@ function create(
   offer.updated = new Date();
   offer.save().then(
     function () {
-      res.json(prepareOfferMutationResponse('Offer saved.'));
+      const response = prepareOfferMutationResponse('Offer saved.');
+      res.json(
+        offer.type === 'host'
+          ? { ...response, _id: offer._id.toString() }
+          : response,
+      );
     },
     function () {
       res.status(400).send({
@@ -361,7 +366,18 @@ function update(
   }
   // Host offers get `undefined`, which `prepareOfferUpdateInput` leaves out
   body.validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
-  const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
+  const changes = prepareOfferUpdateInput(body);
+  if (
+    offer.type === 'host' &&
+    offer.locationFuzzy?.length === 2 &&
+    Array.isArray(changes.location) &&
+    changes.location.length === 2 &&
+    changes.location[0] === offer.location?.[0] &&
+    changes.location[1] === offer.location?.[1]
+  ) {
+    delete changes.location;
+  }
+  const updatedOffer = _.extend(offer, changes);
   updatedOffer.updated = new Date();
   updatedOffer.set('reactivateReminderSent', undefined);
   updatedOffer.save().then(

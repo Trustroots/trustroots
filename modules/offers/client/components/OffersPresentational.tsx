@@ -11,6 +11,7 @@ import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import type { MeetingStatus } from '../../shared/offer';
 import OfferStatusButton from './OfferStatusButton';
 import OfferLocation from './OfferLocation.component';
+import { hasHostingLocation } from './offerEdit.helpers';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
 interface OffersPresentationalProps {
@@ -138,7 +139,15 @@ export default function OffersPresentational({
             <Button
               variant="outline"
               intent="primary"
-              render={<a href={'/offer/meet'} />}
+              render={
+                <a
+                  href={
+                    hasHostingLocation(offer.location)
+                      ? '/offer/meet'
+                      : '/offer/host?from=meet#location'
+                  }
+                />
+              }
             >
               {t('Meet people')}
             </Button>
@@ -163,7 +172,7 @@ export default function OffersPresentational({
                     disabled={isSavingMeeting}
                   />
                 ) : (
-                  <a href="/offer/host#location">
+                  <a href="/offer/host?from=meet#location">
                     {t(
                       'Are you open to meeting people? Set your location and availability.',
                     )}

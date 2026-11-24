@@ -229,6 +229,8 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer saved.');
+      const created = required(await Offer.findById(res.body._id));
+      created.location.should.eql([10, 20]);
     });
 
     it('preserves numeric moment-compatible expiry input', async () => {
@@ -395,6 +397,28 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer updated.');
+    });
+
+    it('keeps the public hosting pin when the location is unchanged', async () => {
+      offerReq.type = 'host';
+      await offerReq.save();
+      const location = [...offerReq.location];
+      const fuzzy = [...required(offerReq.locationFuzzy)];
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location, description: 'Updated' },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      required(updated.locationFuzzy).should.eql(fuzzy);
+      required(updated.description).should.equal('Updated');
     });
 
     it('updates the optional offer fields accepted by the endpoint', async () => {

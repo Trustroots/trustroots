@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -11,7 +12,10 @@ import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.comp
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import type { OfferPayload } from '@/modules/offers/shared/offer';
+import type {
+  OfferMutationResponse,
+  OfferPayload,
+} from '@/modules/offers/shared/offer';
 
 const offersApiMock = vi.mocked(offersApi);
 type BlockerOptions = {
@@ -96,7 +100,6 @@ describe('OfferHostPage', () => {
       ).toBeVisible();
       fireEvent.click(toggle);
       expect(hasUnsavedChanges()).toBe(true);
-      fireEvent.submit(document.querySelector('form')!);
 
       await waitFor(() =>
         expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
@@ -109,6 +112,11 @@ describe('OfferHostPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    offersApiMock.createOffer.mockResolvedValue({
+      message: 'Offer saved.',
+      _id: 'new-host',
+    });
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
     window.history.replaceState({}, '', '/offer/host');
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
       configurable: true,
@@ -127,16 +135,7 @@ describe('OfferHostPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Hosting offer' }),
     ).toBeVisible();
-    const saveButtons = screen.getAllByRole('button', {
-      name: 'Save and Exit',
-    });
-    expect(saveButtons).toHaveLength(2);
-    saveButtons.forEach(button => {
-      expect(button).toHaveAttribute('data-variant', 'solid');
-      expect(button).toHaveAttribute('data-intent', 'primary');
-      expect(button).toHaveAttribute('data-size', 'lg');
-      expect(button).toBeEnabled();
-    });
+    expect(screen.getByText('All changes saved')).toBeVisible();
   });
 
   it.each(['availability', 'description', 'location'])(
@@ -259,9 +258,6 @@ describe('OfferHostPage', () => {
       target: { value: 'A saved hosting description.' },
     });
     expect(hasUnsavedChanges()).toBe(true);
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
-    );
     await waitFor(() => expect(update).toHaveBeenCalled());
     await waitFor(() => expect(hasUnsavedChanges()).toBe(false));
     update.mockRestore();
@@ -279,9 +275,6 @@ describe('OfferHostPage', () => {
       target: { value: 'A failed hosting update.' },
     });
     expect(hasUnsavedChanges()).toBe(true);
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Save and Exit' })[0],
-    );
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith(
         'offer-1',
@@ -317,9 +310,9 @@ describe('OfferHostPage', () => {
     window.history.replaceState({}, '', '/offer/host#location');
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     expect(await screen.findByTestId('location-editor')).toBeVisible();
-    screen
-      .getAllByRole('button', { name: 'Save and Exit' })
-      .forEach(button => expect(button).toBeDisabled());
+    expect(
+      screen.queryByRole('button', { name: 'Save and Exit' }),
+    ).not.toBeInTheDocument();
   });
 
   it.each(['yes', 'maybe', 'no'] as const)(
@@ -337,7 +330,6 @@ describe('OfferHostPage', () => {
       const meeting = group.getByRole('radio', { name: 'Yes' });
       expect(meeting).toBeChecked();
       fireEvent.click(group.getByRole('radio', { name: 'No' }));
-      fireEvent.submit(document.querySelector('form')!);
       await waitFor(() =>
         expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
           'offer-1',
@@ -367,7 +359,6 @@ describe('OfferHostPage', () => {
       }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
-    fireEvent.submit(document.querySelector('form')!);
     await waitFor(() =>
       expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
         'offer-1',
@@ -409,7 +400,10 @@ describe('OfferHostPage', () => {
 
   it('creates a new host offer when saving', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
+    offersApiMock.createOffer.mockResolvedValue({
+      message: 'Offer saved.',
+      _id: 'new-host',
+    });
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     await screen.findByRole('radiogroup', { name: 'Can you host?' });
@@ -419,14 +413,11 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome to my home.' },
     });
-    screen
-      .getAllByRole('button', { name: 'Save and Exit' })
-      .forEach(button => expect(button).toBeDisabled());
+    expect(
+      screen.queryByRole('button', { name: 'Save and Exit' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       document.querySelector('[data-testid="location-editor"] button')!,
-    );
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
     );
 
     await waitFor(() => {
@@ -457,7 +448,6 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Updated hosting description.' },
     });
-    fireEvent.submit(document.querySelector('form')!);
 
     await waitFor(() => {
       expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
@@ -470,6 +460,74 @@ describe('OfferHostPage', () => {
     expect(analytics.track).toHaveBeenCalledWith(
       'offer_saved',
       expect.objectContaining({ type: 'host', action: 'update' }),
+    );
+  });
+
+  it('serialises edits made while the first offer is being created', async () => {
+    let finishCreate!: (response: OfferMutationResponse) => void;
+    offersApiMock.getOffers.mockResolvedValue([]);
+    offersApiMock.createOffer.mockReturnValueOnce(
+      new Promise(resolve => {
+        finishCreate = resolve;
+      }),
+    );
+    window.history.replaceState({}, '', '/offer/host?from=meet#location');
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+    expect(
+      await screen.findByText(/Choose a location on the map to continue/),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
+    await waitFor(() =>
+      expect(offersApiMock.createOffer).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'no', location: [52, 4] }),
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText(/Tell others why you cannot host/), {
+      target: { value: 'I am travelling this month.' },
+    });
+    expect(offersApiMock.updateOffer).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('link', { name: 'Continue to meetups' }),
+    ).not.toBeInTheDocument();
+
+    await act(async () =>
+      finishCreate({ message: 'Offer saved.', _id: 'new-offer' }),
+    );
+    expect(await screen.findByText('All changes saved')).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'Continue to meetups' }),
+    ).toHaveAttribute('href', '/offer/meet');
+    expect(offersApiMock.createOffer).toHaveBeenCalledTimes(1);
+    expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+      'new-offer',
+      expect.objectContaining({
+        noOfferDescription: 'I am travelling this month.',
+      }),
+    );
+  });
+
+  it('looks up the offer before retrying an uncertain create', async () => {
+    offersApiMock.getOffers
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([hostOffer]);
+    offersApiMock.createOffer.mockRejectedValueOnce(
+      new Error('Connection lost'),
+    );
+    window.history.replaceState({}, '', '/offer/host?from=meet#location');
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Change location' }),
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+
+    expect(await screen.findByText('All changes saved')).toBeVisible();
+    expect(offersApiMock.createOffer).toHaveBeenCalledTimes(1);
+    expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+      hostOffer._id,
+      expect.objectContaining({ location: [52, 4] }),
     );
   });
 
@@ -511,7 +569,6 @@ describe('OfferHostPage', () => {
     expect(
       screen.getByText(/Search for a place or move the map/),
     ).toBeInTheDocument();
-    fireEvent.submit(document.querySelector('form')!);
     expect(offersApiMock.createOffer).not.toHaveBeenCalled();
   });
 
@@ -531,7 +588,6 @@ describe('OfferHostPage', () => {
       fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
         target: { value: 'Updated hosting description.' },
       });
-      fireEvent.submit(document.querySelector('form')!);
 
       await waitFor(() => {
         expect(offersApiMock.updateOffer).toHaveBeenCalled();
@@ -585,9 +641,9 @@ describe('OfferHostPage', () => {
       screen.getByRole('link', { name: /Choose a location/ }),
     ).toHaveAttribute('href', '/offer/host#location');
     expect(document.getElementById('location')).toBeInTheDocument();
-    screen
-      .getAllByRole('button', { name: 'Save and Exit' })
-      .forEach(button => expect(button).toBeDisabled());
+    expect(
+      screen.queryByRole('button', { name: 'Save and Exit' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: /Choose a location/ }));
     await waitFor(() =>
       expect(window.location.href).toContain('/offer/host#location'),
@@ -647,7 +703,7 @@ describe('OfferHostPage', () => {
     await new Promise(resolve => setTimeout(resolve, 20));
   });
 
-  it('overrides a loaded offer status from route params', async () => {
+  it('keeps loaded availability when following a status link', async () => {
     window.history.pushState({}, '', '/offer/host?status=no');
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
@@ -655,7 +711,8 @@ describe('OfferHostPage', () => {
     const hosting = await screen.findByRole('radiogroup', {
       name: 'Can you host?',
     });
-    expect(within(hosting).getByRole('radio', { name: 'No' })).toBeChecked();
+    expect(within(hosting).getByRole('radio', { name: 'Yes' })).toBeChecked();
+    expect(offersApiMock.updateOffer).not.toHaveBeenCalled();
   });
 
   it('does not submit when the description is too short', async () => {
@@ -667,7 +724,6 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Hi' },
     });
-    fireEvent.submit(document.querySelector('form')!);
 
     expect(offersApiMock.updateOffer).not.toHaveBeenCalled();
   });
@@ -695,7 +751,7 @@ describe('OfferHostPage', () => {
     });
   });
 
-  it('allows a new host to choose a location and enable saving immediately', async () => {
+  it('allows a new host to choose a location and publish automatically', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
@@ -704,10 +760,6 @@ describe('OfferHostPage', () => {
       target: { value: 'A welcoming place to stay.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
-    for (const save of screen.getAllByRole('button', {
-      name: 'Save and Exit',
-    })) {
-      expect(save).toBeEnabled();
-    }
+    expect(await screen.findByText('All changes saved')).toBeVisible();
   });
 });

@@ -4,6 +4,7 @@ import React, { Component } from 'react';
 // Internal dependencies
 import { getOffers, updateOffer, type Offer } from '../api/offers.api';
 import type { MeetingStatus } from '../../shared/offer';
+import { hasHostingLocation } from './offerEdit.helpers';
 import OffersPresentational from './OffersPresentational';
 
 interface ProfileSummary {
@@ -67,7 +68,13 @@ class Offers extends Component<OffersProps, OffersState> {
 
   saveMeetingStatus = async (meetingStatus: MeetingStatus) => {
     const { offer, isOwnOffer, isSavingMeeting } = this.state;
-    if (!isOwnOffer || isSavingMeeting || !offer._id || !offer.location) return;
+    if (
+      !isOwnOffer ||
+      isSavingMeeting ||
+      !offer._id ||
+      !hasHostingLocation(offer.location)
+    )
+      return;
     this.setState({ isSavingMeeting: true, meetingError: false });
     try {
       await updateOffer(offer._id, { meetingStatus, location: offer.location });
@@ -95,7 +102,7 @@ class Offers extends Component<OffersProps, OffersState> {
         isUserPublic={isUserPublic}
         offer={offer}
         onMeetingStatusChange={
-          isOwnOffer && offer._id && offer.location
+          isOwnOffer && offer._id && hasHostingLocation(offer.location)
             ? this.saveMeetingStatus
             : undefined
         }

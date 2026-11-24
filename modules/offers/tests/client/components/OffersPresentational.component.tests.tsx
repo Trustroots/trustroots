@@ -334,22 +334,28 @@ describe('<OffersPresentational />', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows start-hosting actions for an owner who is not hosting', () => {
-    render(
-      <OffersPresentational
-        isOwnOffer={true}
-        isUserPublic={true}
-        username="alice"
-        offer={{ status: 'no' }}
-      />,
-    );
+  it.each([
+    [undefined, '/offer/host?from=meet#location'],
+    [[51.5, -0.12] as [number, number], '/offer/meet'],
+  ])(
+    'links owners to the appropriate route for location %j',
+    (location, meetUrl) => {
+      render(
+        <OffersPresentational
+          isOwnOffer={true}
+          isUserPublic={true}
+          username="alice"
+          offer={{ status: 'no', location }}
+        />,
+      );
 
-    expect(
-      screen.getByRole('link', { name: 'Start hosting travellers' }),
-    ).toHaveAttribute('href', '/offer/host?status=yes');
-    expect(screen.getByRole('link', { name: 'Meet people' })).toHaveAttribute(
-      'href',
-      '/offer/meet',
-    );
-  });
+      expect(
+        screen.getByRole('link', { name: 'Start hosting travellers' }),
+      ).toHaveAttribute('href', '/offer/host?status=yes');
+      expect(screen.getByRole('link', { name: 'Meet people' })).toHaveAttribute(
+        'href',
+        meetUrl,
+      );
+    },
+  );
 });

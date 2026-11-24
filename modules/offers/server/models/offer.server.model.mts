@@ -94,7 +94,10 @@ const setLocation = function (
   this: HydratedDocument<{ locationFuzzy?: number[] }>,
   value: OfferLocation,
 ): OfferLocation {
-  this.locationFuzzy = getFuzzyLocation(value);
+  // Mongoose applies the array's empty default before hydrating stored fields.
+  if (Array.isArray(value) && value.length === 2) {
+    this.locationFuzzy = getFuzzyLocation(value);
+  }
   return value;
 };
 

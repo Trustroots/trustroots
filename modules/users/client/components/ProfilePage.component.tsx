@@ -12,6 +12,7 @@ import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
 import AboutMe from './AboutMe.component';
+import ProfileCompletionReminders from './ProfileCompletionReminders.component';
 import AvatarNameMobile from './AvatarNameMobile.component';
 import MemberIdentity from './MemberIdentity';
 import BlockedMemberBanner from './BlockedMemberBanner.component';
@@ -660,6 +661,7 @@ export default function ProfilePage({
 
         {!isLoading && profile?.username && profile.$resolved && (
           <>
+            {isSelf && <ProfileCompletionReminders profile={profile} />}
             {pendingIncomingContact && (
               <div
                 className="tw:grid-row"
