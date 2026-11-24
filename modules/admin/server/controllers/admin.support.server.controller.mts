@@ -589,9 +589,8 @@ export const investigation = handler(async (req, res) => {
 /** @esmNamed */
 export const messageThrottleReview = handler(async (req, res) => {
   const page = pageNumber(req.query);
-  const review = await MessageThrottleReview.findById(
-    objectId(req.params.reviewId),
-  ).lean();
+  const reviewId = new mongoose.Types.ObjectId(objectId(req.params.reviewId));
+  const review = await MessageThrottleReview.findById(reviewId).lean();
   if (!review) {
     throw Object.assign(new Error('Message review not found.'), {
       status: 404,
