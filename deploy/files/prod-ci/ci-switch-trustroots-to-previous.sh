@@ -8,5 +8,5 @@ cd /srv
 sudo rm -f trustroots
 sudo ln -s /srv/ci-versions/previous trustroots
 
-# Restart
-sudo ./ci-restart.sh
+# Restart Passenger
+sudo ./_ci-restart-passenger.sh

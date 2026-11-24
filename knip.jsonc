@@ -15,9 +15,8 @@
   "workspaces": {
     ".": {
       "entry": [
-        // server.js and worker.mjs (PM2, start:prod) only import these. Knip
-        // would map server.mjs back to server.js because they share a
-        // basename, and then never walk the server or worker graph.
+        // Knip resolves server.mjs to the server.js wrapper by basename.
+        // Declare both runtime entry points so Knip follows both graphs.
         "server.mjs",
         "worker.mjs",
         // Command-line tools run by path from package scripts, shell scripts,
@@ -57,10 +56,6 @@
           "vitest.client.config.mts",
           "apps/nostranslation/vitest.config.mts",
         ],
-      },
-      "pm2": {
-        // PM2 starts server.js and worker.mjs from these in production.
-        "config": ["server-pm2.json", "worker-pm2.json"],
       },
       "ignoreDependencies": [
         // The browserslist field in package.json extends this.

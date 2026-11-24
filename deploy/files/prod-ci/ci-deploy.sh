@@ -113,11 +113,6 @@ sudo ln -s /srv/configs/local.js local.js
 cd "$DEPLOYMENT_FOLDER"
 sudo chown -R www-data:www-data .
 
-# Stop background job worker
-# ...because we're going to mess with
-# its symlinked working directory
-sudo su -c "pm2 stop worker" pm2
-
 # Point current-symlink to newly build version
 cd "$DEPLOYMENT_BASE"
 sudo rm -f current
@@ -127,8 +122,9 @@ sudo ln -s "$DEPLOYMENT_FOLDER" current
 sudo rm -f previous
 sudo ln -s "$DEPLOYMENT_FOLDER_PREV" previous
 
-# Restart the app (Passenger + pm2 worker)
-. /srv/ci-restart.sh
+# Restart Passenger
+cd /srv
+sudo ./_ci-restart-passenger.sh
 
 echo ""
 echo "Clean out old versions"
