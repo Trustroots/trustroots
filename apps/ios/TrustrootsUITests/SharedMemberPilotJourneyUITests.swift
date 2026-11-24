@@ -209,13 +209,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func openNostrAccount(_ app: XCUIApplication) {
-        let menu = app.buttons["Menu"]
-        XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
-        menu.tap()
-        let account = app.buttons["account-menu-entry"]
-        XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
+        let account = app.buttons["gearshape.fill"]
+        XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(account.isHittable, app.debugDescription)
         account.tap()
-        XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10), app.debugDescription)
+        let keySection = app.staticTexts["Local public key (npub)"]
+        if !keySection.waitForExistence(timeout: 3), account.isHittable {
+            account.tap()
+        }
+        XCTAssertTrue(keySection.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
