@@ -213,6 +213,42 @@ class NostranslationEntryJourneyTest {
         }
     }
 
+    @Test fun invalidStoredPairingCanBeRetriedAndDisablingTheEntryHidesItsDialog() {
+        val backend = "https://example.test"
+        val username = "bad-pairing-${UUID.randomUUID()}"
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val keys = AndroidNostrKeys(context, nostrAccountScope(backend, username))
+        val enabled = mutableStateOf(true)
+        try {
+            keys.generate()
+            val revision = keys.revision()
+            keys.savePairings(revision, JSONArray().put(JSONObject()))
+            val session = BrowserNostrSession(keys) { true }
+            val relay = RecordingNostranslationRelay()
+            compose.setContent { NostranslationEntry(backend, username, session, enabled.value, relay) }
+
+            val entry = compose.onNodeWithText("Nostranslation signing")
+            val done = compose.onNodeWithText("Done")
+            val actionFailed = compose.onNodeWithText(
+                "This action could not be completed. Check your local Nostr key and try again.",
+            )
+            entry.performClick()
+            actionFailed.assertIsDisplayed()
+            done.performClick()
+
+            keys.savePairings(revision, JSONArray())
+            entry.performClick()
+            done.assertIsDisplayed()
+            actionFailed.assertDoesNotExist()
+            compose.runOnIdle { enabled.value = false }
+            done.assertDoesNotExist()
+            entry.assertIsNotEnabled()
+            assertEquals(0, relay.connectionsCreated)
+        } finally {
+            keys.remove()
+        }
+    }
+
     private class ScanResultRegistry : ActivityResultRegistry() {
         private var pendingCode: Int? = null
         var available = true

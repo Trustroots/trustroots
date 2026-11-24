@@ -44,12 +44,14 @@ internal fun NostranslationEntry(
     sockets: WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
     currentTimeSeconds: () -> Long = { System.currentTimeMillis() / 1000 },
 ) {
-    var open by remember(activeSession) { mutableStateOf(false) }
-    TextButton(onClick = { open = true }, enabled = enabled && activeSession != null) {
+    var dialogSession by remember(activeSession) { mutableStateOf<BrowserNostrSession?>(null) }
+    TextButton(onClick = { dialogSession = activeSession }, enabled = enabled && activeSession != null) {
         Text(stringResource(R.string.nostranslation_signing))
     }
-    if (open && enabled && activeSession != null) {
-        NostranslationDialog(backend, username, activeSession, sockets, currentTimeSeconds) { open = false }
+    if (enabled) {
+        dialogSession?.let { signingSession ->
+            NostranslationDialog(backend, username, signingSession, sockets, currentTimeSeconds) { dialogSession = null }
+        }
     }
 }
 
