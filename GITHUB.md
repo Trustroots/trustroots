@@ -38,13 +38,7 @@ Wait for the checks to be green before you mark a pull request ready for review,
 
 ## Keep pull requests small
 
-Small pull requests are reviewed faster and are easier to revert. CI reports on size rather than blocking it: the "Tests" workflow posts and updates a single summary comment on each pull request (`pnpm run coverage:pr-summary`) that includes
-
-- line changes in the pull request,
-- CI job and step timing snapshots, including log links and the slowest completed step, and
-- changes to direct runtime dependencies and to the resolved packages in `pnpm-lock.yaml`, plus an inventory of the production dependencies installed in the production image.
-
-These reports do not fail the build, so keep an eye on the numbers yourself: split unrelated changes into separate pull requests, and add a dependency only when you can say why it is needed. Dependabot opens weekly update pull requests (`.github/dependabot.yml`).
+Small pull requests are reviewed faster and are easier to revert. CI does not block on size, so keep an eye on it yourself: split unrelated changes into separate pull requests, and add a dependency only when you can say why it is needed. Dependabot opens weekly update pull requests (`.github/dependabot.yml`).
 
 ## What stays out of the repository
 
