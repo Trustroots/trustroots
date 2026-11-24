@@ -9,15 +9,20 @@ export default function TribesHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
   };
 
   return (
-    <Board names="tribes-1" className="tribes-header">
+    <Board
+      names="tribes-1"
+      className="tribes-header tw:mb-[30px]! tw:bg-[position:50%_30%]! tw:pt-[80px]! tw:pb-[50px]! tw:sm:mb-[40px]! tw:sm:pt-[110px]! tw:sm:pb-[80px]!"
+    >
       <div className="tw:page-container">
         <div className="tw:grid-row">
           <div className="tw:grid-col-12 text-center">
             <br />
             <br />
-            <h2>{t('Discover circles') as string}</h2>
+            <h2 className="tw:text-shadow-none!">
+              {t('Discover circles') as string}
+            </h2>
             <br />
-            <p className="lead">
+            <p className="lead tw:text-shadow-none!">
               {
                 t(
                   'Joining circles helps you find likeminded Trustroots members.',

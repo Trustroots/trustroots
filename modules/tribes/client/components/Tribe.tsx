@@ -45,7 +45,7 @@ export default function Tribe({
             'is-image': tribe.image,
           })}
         >
-          <h3 className="font-brand-light tribe-label">{tribe.label}</h3>
+          <h4 className="h3 font-brand-light tribe-label">{tribe.label}</h4>
           <span className="tribe-meta">{countInfo}</span>
         </div>
       </a>

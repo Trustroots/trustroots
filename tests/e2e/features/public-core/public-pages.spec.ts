@@ -231,10 +231,10 @@ test.describe('public pages and unauthenticated flows', () => {
 
     await expect(page).toHaveURL(/\/circles/);
     await expect(
-      page.locator('h3.tribe-label', { hasText: 'Hitchhikers' }).first(),
+      page.getByRole('heading', { name: 'Hitchhikers', exact: true }),
     ).toBeVisible();
     await expect(
-      page.locator('h3.tribe-label', { hasText: 'Cyclists' }).first(),
+      page.getByRole('heading', { name: 'Cyclists', exact: true }),
     ).toBeVisible();
   });
 

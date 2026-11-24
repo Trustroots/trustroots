@@ -233,19 +233,6 @@ export default function TribeDetailPage({
                     >
                       {t('Find members') as string}
                     </Button>
-                    {wikiUrl && !isHackersCircle && (
-                      <Button
-                        render={
-                          <a
-                            href={wikiUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        }
-                      >
-                        {t('Circle Wiki') as string}
-                      </Button>
-                    )}
                   </div>
                 ) : (
                   <Button
@@ -270,22 +257,6 @@ export default function TribeDetailPage({
                   >
                     <i className="icon-right"></i>{' '}
                     {t('How does it work?') as string}
-                  </Button>
-                )}
-                {wikiUrl && !user && !isHackersCircle && (
-                  <Button
-                    variant="link"
-                    size="lg"
-                    className="tribe-readmore"
-                    render={
-                      <a
-                        href={wikiUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      />
-                    }
-                  >
-                    {t('Circle Wiki') as string}
                   </Button>
                 )}
                 {user && (
@@ -335,9 +306,7 @@ export default function TribeDetailPage({
       <div
         className={
           isHackersCircle
-            ? `hackers-circle-community${
-                user && isMember ? ' has-members' : ''
-              }`
+            ? 'hackers-circle-community tw:grid-cols-1 tw:[&>.circle-member-discovery]:max-w-none!'
             : undefined
         }
       >
@@ -347,6 +316,9 @@ export default function TribeDetailPage({
             key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
             user={user}
           />
+        )}
+        {user && isMember && (
+          <CircleMemberDiscovery circle={tribe} user={user} />
         )}
         {isHackersCircle && (
           <section className="hackers-circle-resources">
@@ -436,8 +408,17 @@ export default function TribeDetailPage({
             </div>
           </section>
         )}
-        {user && isMember && (
-          <CircleMemberDiscovery circle={tribe} user={user} />
+        {!isHackersCircle && wikiUrl && (
+          <div className="tw:page-container tw:pt-5 tw:pb-9">
+            <Button
+              variant="link"
+              render={
+                <a href={wikiUrl} target="_blank" rel="noopener noreferrer" />
+              }
+            >
+              {t('Circle Wiki') as string}
+            </Button>
+          </div>
         )}
       </div>
     </>
