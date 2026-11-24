@@ -898,39 +898,22 @@ service.sync = function (req, res) {
 
   const queryParams = req.query!;
   // Validate and construct date filters
-  let dateFrom;
-  let dateTo;
   const created: { $gt?: Date; $lt?: Date } = {};
-  if (Object.hasOwn(queryParams, 'dateFrom')) {
-    const input = queryParams.dateFrom;
-    dateFrom = typeof input === 'string' ? moment(String(input)) : null;
-
-    // Validate `dateFrom`
-    if (!dateFrom?.isValid()) {
-      return res.status(400).send({
-        message: 'Invalid `dateFrom`.',
-      });
+  for (const [field, operator] of [
+    ['dateFrom', '$gt'],
+    ['dateTo', '$lt'],
+  ] as const) {
+    if (!Object.hasOwn(queryParams, field)) continue;
+    const input = queryParams[field];
+    const date = typeof input === 'string' ? moment(input) : null;
+    if (!date?.isValid()) {
+      return res.status(400).send({ message: `Invalid \`${field}\`.` });
     }
-
-    // Append dateFrom to date query
-    created.$gt = dateFrom.toDate();
-  }
-  if (Object.hasOwn(queryParams, 'dateTo')) {
-    const input = queryParams.dateTo;
-    dateTo = typeof input === 'string' ? moment(String(input)) : null;
-    // Validate `dateTo`
-    if (!dateTo?.isValid()) {
-      return res.status(400).send({
-        message: 'Invalid `dateTo`.',
-      });
-    }
-
-    // Append dateTo to date query
-    created.$lt = dateTo.toDate();
+    created[operator] = date.toDate();
   }
 
   // Validate correct order of dates
-  if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+  if (created.$gt! > created.$lt!) {
     return res.status(400).send({
       message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
     });

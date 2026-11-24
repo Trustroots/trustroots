@@ -9,6 +9,7 @@ import should from 'should';
 import sinon from 'sinon';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
+import { pick } from '../../../users/server/lib/pick.server.mts';
 import express from './../../../../config/lib/express.mts';
 describe('Read a single experience by experience id', () => {
   let app: TestExpressApp;
@@ -110,18 +111,12 @@ describe('Read a single experience by experience id', () => {
         .split(' ')
         .slice(2)
         .filter(field => field !== 'avatarVersion');
-      const pickUserFields = (user: object) =>
-        Object.fromEntries(
-          userFields
-            .filter(field => field in user)
-            .map(field => [field, Reflect.get(user, field)]),
-        );
       const userFromExp = {
-        ...pickUserFields(users[1]),
+        ...pick(users[1], userFields),
         _id: users[1]._id.toString(),
       };
       const userToExp = {
-        ...pickUserFields(users[2]),
+        ...pick(users[2], userFields),
         _id: users[2]._id.toString(),
       };
       should(body).eql({

@@ -56,14 +56,12 @@ const getGlobbedPaths = function (
   const urlRegex = new RegExp('^(?:[a-z]+:)?//', 'i');
 
   // The output array
-  let output: string[] = [];
+  const output: string[] = [];
 
   // If glob pattern is array so we use each pattern in a recursive way, otherwise we use glob
   if (Array.isArray(globPatterns)) {
     globPatterns.forEach(function (globPattern) {
-      output = [
-        ...new Set([...output, ...getGlobbedPaths(globPattern, excludes)]),
-      ];
+      output.push(...getGlobbedPaths(globPattern, excludes));
     });
   } else if (typeof globPatterns === 'string') {
     if (urlRegex.test(globPatterns)) {
@@ -82,10 +80,10 @@ const getGlobbedPaths = function (
           return file;
         });
       }
-      output = [...new Set([...output, ...files])];
+      output.push(...files);
     }
   }
-  return output;
+  return [...new Set(output)];
 };
 
 /**

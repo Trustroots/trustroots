@@ -255,23 +255,20 @@ function obfuscateTokens(user: UserDocument | null | undefined) {
   // Historical MongoDB fields may remain until the maintenance script runs.
   Reflect.deleteProperty(_user, 'lastIpAddress');
 
-  const hide = (holder: object | undefined, key: string) => {
-    if (holder && Object.hasOwn(holder, key)) {
-      Reflect.set(holder, key, '(Hidden from admins.)');
-    }
-  };
+  const { facebook, github, twitter } = Object(_user.additionalProvidersData);
   // 'emailToken' is needed to generate email reset links visible at dashboard
-  hide(_user, 'removeProfileToken');
-  hide(_user, 'resetPasswordToken');
-  const providers = _user.additionalProvidersData as
-    | Record<string, object | undefined>
-    | undefined;
-  hide(providers?.facebook, 'accessToken');
-  hide(providers?.facebook, 'refreshToken');
-  hide(providers?.github, 'accessToken');
-  hide(providers?.github, 'refreshToken');
-  hide(providers?.twitter, 'token');
-  hide(providers?.twitter, 'tokenSecret');
+  for (const [holder, keys] of [
+    [_user, ['removeProfileToken', 'resetPasswordToken']],
+    [facebook, ['accessToken', 'refreshToken']],
+    [github, ['accessToken', 'refreshToken']],
+    [twitter, ['token', 'tokenSecret']],
+  ]) {
+    for (const key of keys) {
+      if (holder && Object.hasOwn(holder, key)) {
+        Reflect.set(holder, key, '(Hidden from admins.)');
+      }
+    }
+  }
 
   return _user;
 }

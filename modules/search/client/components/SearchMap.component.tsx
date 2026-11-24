@@ -1,5 +1,5 @@
 // External dependencies
-import useDebouncedCallback from '../hooks/use-debounced-callback';
+import useDebouncedCallback from '@/modules/core/client/hooks/use-debounced-callback';
 import React, { useEffect, useRef, useState } from 'react';
 import ReactMapGL, { Layer, Source, type MapRef } from 'react-map-gl/mapbox';
 import type { Event as NostrEvent } from 'nostr-tools';

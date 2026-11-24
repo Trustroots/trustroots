@@ -245,11 +245,10 @@ function stat(point: StatObject, callback: StatCallback = function () {}) {
   }
   if (outstandingWrites < 32) {
     outstandingWrites += 1;
-    let released = false;
+    let pending = 1;
     const release = () => {
-      if (released) return;
-      released = true;
-      outstandingWrites -= 1;
+      outstandingWrites -= pending;
+      pending = 0;
     };
     try {
       influxService.stat(point, release);

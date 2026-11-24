@@ -991,14 +991,13 @@ describe('Offer search tests', function () {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
                 // Set assertions
-                offersGetRes.body.features.should.have.lengthOf(3);
-                // Count different offer types
-                const types: string[] = offersGetRes.body.features.map(
-                  (offer: { properties: { type: string } }) =>
-                    offer.properties.type,
-                );
-                types.filter(type => type === 'host').should.have.lengthOf(2);
-                types.filter(type => type === 'meet').should.have.lengthOf(1);
+                offersGetRes.body.features
+                  .map(
+                    (offer: { properties: { type: string } }) =>
+                      offer.properties.type,
+                  )
+                  .sort()
+                  .should.eql(['host', 'host', 'meet']);
                 // Call the assertion callback
                 return done();
               });
@@ -1122,14 +1121,13 @@ describe('Offer search tests', function () {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
                   // Set assertions
-                  offersGetRes.body.features.should.have.lengthOf(3);
-                  // Count different offer types
-                  const types: string[] = offersGetRes.body.features.map(
-                    (offer: { properties: { type: string } }) =>
-                      offer.properties.type,
-                  );
-                  types.filter(type => type === 'host').should.have.lengthOf(2);
-                  types.filter(type => type === 'meet').should.have.lengthOf(1);
+                  offersGetRes.body.features
+                    .map(
+                      (offer: { properties: { type: string } }) =>
+                        offer.properties.type,
+                    )
+                    .sort()
+                    .should.eql(['host', 'host', 'meet']);
                   // Call the assertion callback
                   return done();
                 });
