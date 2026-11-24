@@ -20,5 +20,6 @@
 
 - [x] 4.1 Document determinism, key custody, distribution, and rotation
 - [x] 4.2 Document contact privacy and the independent timestamping follow-up
-- [ ] 4.3 Confirm and publish the existing service public key through the pinned registry and NIP-05
+- [x] 4.3 Pin the existing service public key for the offline verifier
 - [x] 4.4 Limit exported contact records to relationship details and member identifiers and display names
+- [ ] 4.5 Confirm the deployed NIP-05 lookup publishes the pinned service public key
