@@ -27,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.MainActivity
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.nostr.AndroidNostrKeys
@@ -38,6 +39,7 @@ import org.unifiedpush.android.connector.data.PublicKeySet
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
@@ -261,6 +263,59 @@ class MessageAlertPayloadLifecycleTest {
                 assertEquals(emptySet<String>(), preferences.getStringSet(registered, null))
             } finally {
                 keys.remove()
+                restorePreferences(preferences, savedPreferences)
+                NostranslationAlerts.status.value = savedStatus
+            }
+        }
+    }
+
+    @Test
+    fun optingOutRemembersOnlyReviewRegistrationsThatTheServerDidNotRemove() {
+        val retryTransport = "a".repeat(64)
+        val removedTransport = "b".repeat(64)
+        val rejectOnce = AtomicBoolean(true)
+        val session = MemberSession("", MobileMember("review-opt-out", "Review opt-out"), "fixture-review-access")
+        fun requestTransport(request: LocalTransportFixture.Request): String =
+            JSONObject(request.body).getString("transport")
+        LocalTransportFixture { request ->
+            assertEquals("DELETE", request.method)
+            assertEquals("/api/mobile/v0/nostranslation/alerts", request.path)
+            assertEquals("Bearer fixture-review-access", request.authorization)
+            if (requestTransport(request) == retryTransport && rejectOnce.getAndSet(false)) {
+                LocalTransportFixture.Response("{}", status = 503)
+            } else {
+                LocalTransportFixture.Response("", status = 204)
+            }
+        }.use { fixture ->
+            val api = MobileApiClient(fixture.baseURL)
+            val account = nostrAccountScope(api.backendURL, session.member.username).storageAccount
+            val registered = "$account:registered"
+            val preferences = context.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
+            val savedPreferences = preferences.all
+            val savedStatus = NostranslationAlerts.status.value
+            fun awaitRegistrations(expected: Set<String>) {
+                val deadline = SystemClock.elapsedRealtime() + 30_000
+                while (preferences.getStringSet(registered, null) != expected && SystemClock.elapsedRealtime() < deadline) {
+                    Thread.sleep(25)
+                }
+                assertEquals(expected, preferences.getStringSet(registered, null))
+            }
+
+            try {
+                check(preferences.edit().putBoolean(account, true)
+                    .putStringSet(registered, setOf(retryTransport, removedTransport)).commit())
+                NostranslationAlerts.status.value = R.string.nostranslation_alerts_ready
+                NostranslationAlerts.disable(context, api, session)
+                assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+                assertNull(NostranslationAlerts.status.value)
+                awaitRegistrations(setOf(retryTransport))
+                assertEquals(setOf(retryTransport, removedTransport), fixture.requests.map(::requestTransport).toSet())
+
+                NostranslationAlerts.disable(context, api, session)
+                awaitRegistrations(emptySet())
+                assertEquals(retryTransport, requestTransport(fixture.requests.last()))
+                assertEquals(3, fixture.requests.size)
+            } finally {
                 restorePreferences(preferences, savedPreferences)
                 NostranslationAlerts.status.value = savedStatus
             }
