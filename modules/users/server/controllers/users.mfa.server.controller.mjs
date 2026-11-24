@@ -1,9 +1,22 @@
 import mongoose from 'mongoose';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import profileHandler from './users.profile.server.controller.mts';
-import mfaService from '../services/mfa.server.service.mjs';
+import mfaService, {
+  assertMfaConfigured,
+  MfaConfigurationError,
+  mfaConfigurationMessage,
+} from '../services/mfa.server.service.mjs';
 
 const User = mongoose.model('User');
+
+function sendUnavailable(res, error) {
+  return res.status(503).send({
+    message:
+      error instanceof MfaConfigurationError
+        ? mfaConfigurationMessage
+        : 'Authenticator MFA is temporarily unavailable. Try again shortly.',
+  });
+}
 
 function sendInvalidCredentials(res) {
   return res.status(400).send({ message: 'Password confirmation failed.' });
@@ -57,10 +70,8 @@ async function beginEnrollment(req, res) {
     }
     const setup = await mfaService.stageEnrollment(user._id, user.username);
     return res.json(setup);
-  } catch {
-    return res
-      .status(503)
-      .send({ message: 'Authenticator MFA is temporarily unavailable.' });
+  } catch (error) {
+    return sendUnavailable(res, error);
   }
 }
 
@@ -89,16 +100,15 @@ async function verifyEnrollment(req, res) {
         user: profileHandler.sanitizeOwnProfile(result.user),
       });
     });
-  } catch {
-    return res
-      .status(503)
-      .send({ message: 'Authenticator MFA is temporarily unavailable.' });
+  } catch (error) {
+    return sendUnavailable(res, error);
   }
 }
 
 async function settings(req, res) {
   if (!currentMember(req, res) || !forbidUnlessAdmin(req.user, res)) return;
   try {
+    assertMfaConfigured();
     const user = await User.findById(req.user._id)
       .select('+mfaRecoveryCodeHashes')
       .exec();
@@ -107,10 +117,8 @@ async function settings(req, res) {
       enabled: user.mfaEnabled === true,
       recoveryCodesRemaining: user.mfaRecoveryCodeHashes?.length || 0,
     });
-  } catch {
-    return res
-      .status(503)
-      .send({ message: 'Authenticator MFA is temporarily unavailable.' });
+  } catch (error) {
+    return sendUnavailable(res, error);
   }
 }
 
@@ -158,10 +166,8 @@ async function regenerateRecoveryCodes(req, res) {
           .send({ message: 'Could not update the sign-in session.' });
       return res.json({ recoveryCodes: codes });
     });
-  } catch {
-    return res
-      .status(503)
-      .send({ message: 'Authenticator MFA is temporarily unavailable.' });
+  } catch (error) {
+    return sendUnavailable(res, error);
   }
 }
 
@@ -196,10 +202,8 @@ async function disable(req, res) {
           .send({ message: 'Could not end the current session.' });
       return res.json({ enabled: false });
     });
-  } catch {
-    return res
-      .status(503)
-      .send({ message: 'Authenticator MFA is temporarily unavailable.' });
+  } catch (error) {
+    return sendUnavailable(res, error);
   }
 }
 

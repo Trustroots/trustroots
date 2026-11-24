@@ -25,8 +25,13 @@ export default function MfaSettings({
       .then(result => {
         if (active) setStatus(result);
       })
-      .catch(() => {
-        if (active) setError('Could not load authenticator settings.');
+      .catch(reason => {
+        if (active) {
+          setError(
+            readApiError(reason).message ||
+              'Could not load authenticator settings.',
+          );
+        }
       });
     return () => {
       active = false;
@@ -156,7 +161,7 @@ export default function MfaSettings({
           </div>
         )}
         {!status ? (
-          <p>Loading authenticator settings...</p>
+          !error && <p>Loading authenticator settings...</p>
         ) : status.enabled ? (
           <>
             <p>
