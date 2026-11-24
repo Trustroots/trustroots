@@ -361,6 +361,13 @@ describe('Service: email (sent content)', function () {
     });
   }
 
+  it('can sign the welcome sequence with any support volunteer', async function () {
+    sinon.stub(config, 'supportVolunteerNames').value(['Dee', 'Eve']);
+    sinon.stub(Math, 'random').returns(0.99);
+    const email = await send('sendWelcomeSequenceFirst', member);
+    assert.equal((email.from as Address).name, 'Eve');
+  });
+
   it('sends host reactivation without a survey link when none is configured', async function () {
     sinon.stub(config, 'surveyReactivateHosts').value(false);
     const email = await send('sendReactivateHosts', member);

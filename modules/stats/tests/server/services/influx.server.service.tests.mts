@@ -112,6 +112,15 @@ describe('Service: influx', function () {
       );
     });
 
+    for (const option of ['host', 'database'] as const)
+      it(`Getting client returns error without a ${option}`, function (done) {
+        Reflect.deleteProperty(config.influxdb.options, option);
+        influxService._getClient(function (err) {
+          err!.message.should.equal('No InfluxDB configured.');
+          done();
+        });
+      });
+
     it('enforces bounded network requests even when configuration asks for retries', function (done) {
       config.influxdb.options.pool = { requestTimeout: 60000, maxRetries: 10 };
       const constructor = sinon.stub(influx, 'InfluxDB').returns({});

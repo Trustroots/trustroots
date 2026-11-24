@@ -25,16 +25,23 @@ describe('Stats service unit tests', () => {
     const backend = sinon.stub(influxService, 'stat');
     const accepted = sinon.spy();
     const point = { namespace: 'outage', counts: { count: 1 } };
-    for (let i = 0; i < 33; i += 1) statsService.stat(point, accepted);
+    const fill = () => {
+      for (let i = 0; i < 33; i += 1) statsService.stat(point, accepted);
+    };
+    fill();
     backend.callCount.should.equal(32);
     accepted.callCount.should.equal(33);
     backend
       .getCalls()
       .forEach((call: import('sinon').SinonSpyCall) => call.args[1]());
+    // A backend that calls back twice frees its slot only once
     backend.firstCall.args[1]();
-    statsService.stat(point);
-    backend.callCount.should.equal(33);
-    backend.lastCall.args[1]();
+    fill();
+    backend.callCount.should.equal(64);
+    backend
+      .getCalls()
+      .slice(32)
+      .forEach((call: import('sinon').SinonSpyCall) => call.args[1]());
   });
 
   it('acknowledges telemetry when the backend throws synchronously', () => {

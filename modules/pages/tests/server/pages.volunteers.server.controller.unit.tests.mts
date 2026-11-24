@@ -81,8 +81,8 @@ async function loadController(execHandler: ExecHandler) {
     FakeQuery
   >;
   find.returns(query);
-  // A constant comparator result keeps the order of the shuffled lists
-  sinon.stub(Math, 'random').returns(0.5);
+  // Every shuffle comparison is negative, which reverses a two-member list
+  sinon.stub(Math, 'random').returns(0);
   const controller =
     await import('../../server/controllers/pages.volunteers.server.controller.mts');
 
@@ -170,12 +170,12 @@ describe('Volunteers controller unit tests', () => {
       alumni: Array<{ _id: string; firstName: string; username: string }>;
     };
     body.volunteers.should.deepEqual([
-      { _id: 'volunteer-id', firstName: 'Active', username: 'activevol' },
       { _id: 'both-id', firstName: 'Both', username: 'bothvol' },
+      { _id: 'volunteer-id', firstName: 'Active', username: 'activevol' },
     ]);
     body.alumni.should.deepEqual([
-      { _id: 'alumni-id', firstName: 'Former', username: 'formervol' },
       { _id: 'both-id', firstName: 'Both', username: 'bothvol' },
+      { _id: 'alumni-id', firstName: 'Former', username: 'formervol' },
     ]);
   });
 });

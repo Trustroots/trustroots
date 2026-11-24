@@ -6,13 +6,8 @@ type Callback = (error?: Error | null) => void;
 type ClientCallback = (error: Error | null, client?: Influx.InfluxDB) => void;
 type Fields = Record<string, unknown> & { time?: unknown };
 type Tags = Record<string, unknown>;
-const isPlainObject = (value: unknown) => {
-  const prototype =
-    typeof value === 'object' && value !== null
-      ? Object.getPrototypeOf(value)
-      : undefined;
-  return prototype === Object.prototype || prototype === null;
-};
+const isPlainObject = (value: unknown) =>
+  [Object.prototype, null].includes(Object.getPrototypeOf(value ?? 0));
 type Point = {
   fields: Fields;
   tags: Tags;

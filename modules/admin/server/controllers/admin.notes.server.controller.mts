@@ -69,8 +69,7 @@ export const addNote = async (
   req: NoteRequest,
   res: NoteResponse,
 ): Promise<unknown> => {
-  const userId: unknown = req.body?.userId;
-  const note: unknown = req.body?.note;
+  const { userId, note } = req.body ?? {};
   if (typeof note !== 'string' || note.trim() === '') {
     return res.status(400).send({
       message: 'Empty note.',
@@ -100,10 +99,10 @@ export const addNote = async (
  * @esmNamed
  */
 export const getNotes = async (
-  req: NoteRequest,
+  req: NoteRequest & { query: Record<string, unknown> },
   res: NoteResponse,
 ): Promise<unknown> => {
-  const userId: unknown = req.query?.userId;
+  const userId: unknown = req.query.userId;
 
   // Check that the user id is provided
   if (!isValidObjectId(userId)) return errorService.sendInvalidId(res);

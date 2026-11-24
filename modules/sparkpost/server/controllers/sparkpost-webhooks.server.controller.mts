@@ -198,7 +198,7 @@ service.processAndSendMetrics = function (event, callback) {
   }
 
   // Add campaign id to meta if present
-  const campaignId = eventData?.campaign_id;
+  const campaignId = eventData.campaign_id;
   // Stryker disable next-line ConditionalExpression: speakingurl returns an empty string for non-strings, which is also the default
   if (typeof campaignId === 'string') {
     // "Slugify" `campaignId` to ensure we don't get any carbage

@@ -434,6 +434,10 @@ describe('SparkPost webhook controller unit tests', () => {
     await processEvent(controller, {
       msys: { unknown_event: { type: 'open' } },
     });
+    // JSON payloads can carry null where the types expect an event object
+    await processEvent(controller, {
+      msys: { message_event: null },
+    } as unknown as WebhookEvent);
 
     stat.called.should.be.false();
   });

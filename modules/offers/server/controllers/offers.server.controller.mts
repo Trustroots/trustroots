@@ -228,7 +228,6 @@ function sanitizeOffer(
 function isValidCoordinate(coordinate: unknown): boolean {
   const regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
   return (
-    coordinate !== undefined &&
     Number.isFinite(parseFloat(String(coordinate))) &&
     regexp.test(String(coordinate))
   );

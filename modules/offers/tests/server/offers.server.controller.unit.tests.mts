@@ -1097,6 +1097,7 @@ describe('Offers controller unit tests', () => {
         { languages: ['not-a-language', 5] },
         { seen: {} },
         { seen: 'abc' },
+        { seen: null },
       ]) {
         await User.updateOne(
           { _id: owner._id },

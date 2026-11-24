@@ -431,9 +431,8 @@ function getMemberListOptions(
   } = sort ?? {};
 
   if (
-    typeof page !== 'number' ||
     !Number.isInteger(page) ||
-    page < 1 ||
+    (page as number) < 1 ||
     typeof sortColumn !== 'string' ||
     !Object.prototype.hasOwnProperty.call(
       ADMIN_MEMBER_SORT_FIELDS,
@@ -445,7 +444,7 @@ function getMemberListOptions(
   }
 
   return {
-    page,
+    page: page as number,
     sort: {
       column: sortColumn as AdminMemberSortColumn,
       direction: sortDirection,
@@ -947,6 +946,7 @@ export const usernameToUserId = async (
   }
 
   // Get userID based on provided username
+  // Stryker disable next-line ConditionalExpression: a missing or empty username matches no member, so the lookup would find nothing either way
   if (username) {
     const user = await User.findOne({ username: String(username) }).setOptions(
       // Stryker disable next-line ObjectLiteral,BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise

@@ -2327,6 +2327,16 @@ describe('Profile controller unit tests', () => {
       });
     });
 
+    it('accepts cleared legacy provider data', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.additionalProvidersData = null as never;
+
+      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
+
+      should.not.exist(sanitized.additionalProvidersData);
+    });
+
     it('hides external contact details from shadowbanned viewers', async () => {
       const [savedProfile, savedViewer] = await utils.saveUsers(
         utils.generateUsers(2),

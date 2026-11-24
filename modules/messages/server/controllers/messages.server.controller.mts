@@ -903,7 +903,7 @@ service.sync = function (req, res) {
   const created: { $gt?: Date; $lt?: Date } = {};
   if (Object.hasOwn(queryParams, 'dateFrom')) {
     const input = queryParams.dateFrom;
-    dateFrom = typeof input === 'string' ? moment(String(input)) : null;
+    dateFrom = typeof input === 'string' ? moment(input) : null;
 
     // Validate `dateFrom`
     if (!dateFrom?.isValid()) {
@@ -917,7 +917,7 @@ service.sync = function (req, res) {
   }
   if (Object.hasOwn(queryParams, 'dateTo')) {
     const input = queryParams.dateTo;
-    dateTo = typeof input === 'string' ? moment(String(input)) : null;
+    dateTo = typeof input === 'string' ? moment(input) : null;
     // Validate `dateTo`
     if (!dateTo?.isValid()) {
       return res.status(400).send({
