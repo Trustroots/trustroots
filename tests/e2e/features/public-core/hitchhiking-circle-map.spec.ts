@@ -66,24 +66,42 @@ test('circle map stays still without dragging and preserves its view as live pla
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 SpaceAPI-reported places',
   );
-  const marker = map.locator('.maplibregl-marker').first();
-  const position = await marker.getAttribute('style');
-  const box = await map.boundingBox();
+  const canvas = map.locator('.maplibregl-canvas');
+  const marker = map.getByRole('button', { name: 'Example workshop 0' });
+  const distanceFromCenter = async () => {
+    const [pinBox, canvasBox] = await Promise.all([
+      marker.boundingBox(),
+      canvas.boundingBox(),
+    ]);
+    if (!pinBox || !canvasBox) return Infinity;
+    return Math.hypot(
+      pinBox.x + pinBox.width / 2 - (canvasBox.x + canvasBox.width / 2),
+      pinBox.y + pinBox.height / 2 - (canvasBox.y + canvasBox.height / 2),
+    );
+  };
+  // The first marker can render before MapLibre fits the first batch.
+  await expect.poll(distanceFromCenter).toBeLessThan(2);
+  const box = await canvas.boundingBox();
   expectPresent(box);
   await page.mouse.move(box.x + 100, box.y + 100);
   await page.mouse.move(box.x + 200, box.y + 150, { steps: 20 });
-  await expect(marker).toHaveAttribute('style', position!);
+  await expect.poll(distanceFromCenter).toBeLessThan(2);
   expectPresent(publish);
   publish(events[1]);
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '2 SpaceAPI-reported places',
   );
   await expect(map.locator('.maplibregl-marker')).toHaveCount(2);
-  await expect(marker).toHaveAttribute('style', position!);
+  await expect.poll(distanceFromCenter).toBeLessThan(2);
   await page.mouse.down();
   await page.mouse.move(box.x + 280, box.y + 180, { steps: 10 });
   await page.mouse.up();
-  await expect(marker).not.toHaveAttribute('style', position!);
+  await expect
+    .poll(async () => {
+      const distance = await distanceFromCenter();
+      return Number.isFinite(distance) && distance > 20;
+    })
+    .toBe(true);
 });
 
 async function savedView(page: Page): Promise<number[] | null> {
