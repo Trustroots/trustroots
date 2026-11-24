@@ -82,9 +82,13 @@ async function parseUpload(
   uploadField: string,
   maxUploadSize: number,
 ) {
-  const contentType = req.headers['content-type'] ?? '';
-  const mediaType = contentType.split(';', 1)[0]!.trim().toLowerCase();
-  if (mediaType !== 'multipart/form-data') {
+  const contentType = req.headers['content-type'];
+  if (!contentType) {
+    return undefined;
+  }
+  if (
+    contentType.split(';', 1)[0]!.trim().toLowerCase() !== 'multipart/form-data'
+  ) {
     return undefined;
   }
   const limit = maxUploadSize + MULTIPART_OVERHEAD;
@@ -92,13 +96,11 @@ async function parseUpload(
     throw uploadError('LIMIT_FILE_SIZE');
   }
   let received = 0;
-  let tooBig = false;
   async function* body() {
     for await (const chunk of req) {
       received += chunk.length;
       if (received > limit) {
-        tooBig = true;
-        throw uploadError('LIMIT_FILE_SIZE');
+        throw new RangeError();
       }
       yield chunk;
     }
@@ -112,7 +114,9 @@ async function parseUpload(
       duplex: 'half',
     } as RequestInit).formData();
   } catch {
-    throw uploadError(tooBig ? 'LIMIT_FILE_SIZE' : 'INVALID_MULTIPART');
+    throw uploadError(
+      received > limit ? 'LIMIT_FILE_SIZE' : 'INVALID_MULTIPART',
+    );
   }
   const entries = [...form];
   const files = entries.filter(

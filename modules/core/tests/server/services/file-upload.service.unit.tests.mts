@@ -48,7 +48,7 @@ function multipart(parts: Part[], extraHeaders = {}): TestRequest {
   }
   chunks.push(Buffer.from(`--${boundary}--\r\n`));
   const body = Buffer.concat(chunks);
-  return Object.assign(Readable.from([body]), {
+  return Object.assign(Readable.from(chunks), {
     headers: {
       'content-type': `multipart/form-data; boundary=${boundary}`,
       'content-length': String(body.length),
@@ -63,7 +63,12 @@ const image = (content: Buffer, type = 'image/png', name = 'avatar') => ({
   type,
 });
 
-function run(req: TestRequest, maxUploadSize?: number, field = 'avatar') {
+function run(
+  req: TestRequest,
+  maxUploadSize?: number,
+  field = 'avatar',
+  allowedTypes = validMimeTypes,
+) {
   return new Promise<{
     status?: number;
     message?: string;
@@ -79,7 +84,7 @@ function run(req: TestRequest, maxUploadSize?: number, field = 'avatar') {
       },
     };
     uploadFile(
-      validMimeTypes,
+      allowedTypes,
       field,
       req,
       res,
@@ -128,7 +133,7 @@ describe('file-upload.service unit tests', () => {
       const req = multipart([image(png)]);
       req.headers['content-type'] = req.headers['content-type']!.replace(
         'multipart/form-data',
-        'Multipart/Form-Data',
+        'Multipart/Form-Data ',
       );
       const file = await readUpload(req, 'avatar', 1024);
       file!.buffer.equals(png).should.be.true();
@@ -179,13 +184,29 @@ describe('file-upload.service unit tests', () => {
       (req.readableFlowing === null).should.be.true();
     });
 
-    it('stops reading a body that outgrows its declared length', async () => {
-      const req = multipart([image(Buffer.alloc(200 * 1024, 1))], {
-        'content-length': '10',
-      });
+    it('rejects oversized form fields even when the file and declared length fit', async () => {
+      const req = multipart(
+        [image(png), { name: 'note', content: 'a'.repeat(200 * 1024) }],
+        { 'content-length': '10' },
+      );
       await readUpload(req, 'avatar', 100).should.be.rejectedWith({
         code: 'LIMIT_FILE_SIZE',
       });
+    });
+
+    it('accepts a request of exactly the total multipart limit', async () => {
+      const fileLimit = 100;
+      const unpadded = multipart([image(png), { name: 'note' }]);
+      const padding =
+        64 * 1024 + fileLimit - Number(unpadded.headers['content-length']);
+      const req = multipart([
+        image(png),
+        { name: 'note', content: 'a'.repeat(padding) },
+      ]);
+      assert.deepEqual(
+        (await readUpload(req, 'avatar', fileLimit))?.buffer,
+        png,
+      );
     });
 
     it('rejects files in unexpected fields and more than one file', async () => {
@@ -236,6 +257,19 @@ describe('file-upload.service unit tests', () => {
         headers: { 'content-type': 'multipart/form-data; boundary=missing' },
       });
       await readUpload(req, 'avatar', 1024).should.be.rejectedWith({
+        code: 'INVALID_MULTIPART',
+      });
+    });
+
+    it('reports malformed multipart data at the total size limit as invalid', async () => {
+      const fileLimit = 100;
+      const req = Object.assign(
+        Readable.from([Buffer.alloc(64 * 1024 + fileLimit)]),
+        {
+          headers: { 'content-type': 'multipart/form-data; boundary=missing' },
+        },
+      );
+      await readUpload(req, 'avatar', fileLimit).should.be.rejectedWith({
         code: 'INVALID_MULTIPART',
       });
     });
@@ -307,11 +341,53 @@ describe('file-upload.service unit tests', () => {
     it('recognises only the full JPEG and PNG signatures as images', async () => {
       process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
       for (const content of [
+        Buffer.from([0x00, 0xd8, 0xff]),
+        Buffer.from([0xff, 0x00, 0xff]),
         Buffer.from([0xff, 0xd8, 0x00]),
+        Buffer.from([0x00, 0x50, 0x4e, 0x47]),
         Buffer.from([0x89, 0x41, 0x42, 0x43]),
       ]) {
         (await run(multipart([image(content)]))).status!.should.equal(415);
       }
+    });
+
+    it('matches each fallback MIME signature against the caller’s exact allowlist', async () => {
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      for (const [text, mime] of [
+        ['%PDF-1.4', 'application/pdf'],
+        ['  <?xml version="1.0"?>\n<SVG></SVG>', 'image/svg+xml'],
+        ['  <svg></svg>', 'image/svg+xml'],
+        ['x<?xml version="1.0"?><svg></svg>', 'application/octet-stream'],
+        ['text <svg></svg>', 'application/octet-stream'],
+        ['plain text', 'application/octet-stream'],
+      ] as const) {
+        const req = multipart([image(Buffer.from(text), mime)]);
+        (await run(req, undefined, 'avatar', [mime])).passed.should.be.true(
+          text,
+        );
+      }
+    });
+
+    it('uses the requested detector for types that only file-type recognises', async () => {
+      const webp = Buffer.from('RIFF0000WEBPVP8 ');
+      const type = 'application/octet-stream';
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      const fallback = await run(
+        multipart([image(webp, type)]),
+        undefined,
+        'avatar',
+        [type],
+      );
+      fallback.passed.should.be.true();
+
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'false';
+      const native = await run(
+        multipart([image(webp, type)]),
+        undefined,
+        'avatar',
+        [type],
+      );
+      native.status!.should.equal(415);
     });
 
     it('rejects declared types outside the list even when the bytes are an image', async () => {
