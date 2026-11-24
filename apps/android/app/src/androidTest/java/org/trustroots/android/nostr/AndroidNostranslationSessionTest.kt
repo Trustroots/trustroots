@@ -82,7 +82,8 @@ class AndroidNostranslationSessionTest {
             }
 
             val secret = NostrConnectEncryption.conversationKey(clientKey, NostrEventSigner.decodeHex(transport, 32))
-            AndroidNostranslationSession(account, keys, scope, { true }, relay) { timestamp }.use { restored ->
+            var signedIn = true
+            AndroidNostranslationSession(account, keys, scope, { signedIn }, relay) { timestamp }.use { restored ->
                 restored.start()
                 relay.open()
                 assertEquals(listOf(peer), restored.connectedClients)
@@ -143,6 +144,8 @@ class AndroidNostranslationSessionTest {
                 relay.receive(JSONArray().put("EVENT").put("another-subscription").put(input.getJSONObject(2)))
                 relay.receive(JSONArray().put("EVENT").put(subscription))
                 relay.receive(JSONArray().put("EVENT").put(subscription).put(JSONObject()))
+                relay.receive("not a relay frame")
+                relay.receive("x".repeat(32_769))
                 assertEquals(4, relay.frames.size)
 
                 for ((method, params, response) in listOf(
@@ -159,7 +162,33 @@ class AndroidNostranslationSessionTest {
                     assertEquals(method, rpc.getString("id"))
                     assertEquals(response, rpc.getString(if (method == "unknown") "error" else "result"))
                 }
+                val invalidReview = JSONObject(review.toString()).put("created_at", "invalid")
+                relay.receive(requestFrame("invalid-review", "sign_event", JSONArray().put(invalidReview.toString())))
+                val invalidReply = relay.frames.last().getJSONObject(1)
+                val invalidResult = JSONObject(NostrConnectEncryption.decrypt(invalidReply.getString("content"), secret))
+                assertEquals("invalid-review", invalidResult.getString("id"))
+                assertEquals("Authorisation unavailable. Retry in Nostranslation.", invalidResult.getString("error"))
+                assertTrue(restored.reviews.isEmpty())
                 val afterRequests = relay.frames.size
+
+                relay.receive(reviewFrame("sign-out-before-approval"))
+                val signedOutReview = restored.reviews.single()
+                signedIn = false
+                restored.decide(signedOutReview, approved = true)
+                assertTrue(restored.reviews.isEmpty())
+                assertEquals(afterRequests, relay.frames.size)
+                signedIn = true
+
+                relay.receive(reviewFrame("disconnect-before-approval"))
+                val disconnectedReview = restored.reviews.single()
+                relay.closed()
+                relay.closed()
+                restored.decide(disconnectedReview, approved = true)
+                assertTrue(restored.relayFailed)
+                assertTrue(relay.cancelled)
+                assertTrue(restored.reviews.isEmpty())
+                assertEquals(afterRequests, relay.frames.size)
+                assertEquals(listOf(peer), restored.connectedClients)
 
                 restored.revoke(peer)
                 assertTrue(restored.connectedClients.isEmpty())
@@ -213,7 +242,11 @@ internal class RecordingNostranslationRelay : WebSocket.Factory {
         listener.onOpen(socket, response)
     }
 
-    fun receive(frame: JSONArray) = listener.onMessage(socket, frame.toString())
+    fun receive(frame: JSONArray) = receive(frame.toString())
+
+    fun receive(frame: String) = listener.onMessage(socket, frame)
+
+    fun closed() = listener.onClosed(socket, 1000, "Fixture relay closed.")
 
     fun fail() = listener.onFailure(socket, IOException("Fixture relay disconnected."), null)
 }
