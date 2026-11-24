@@ -2,7 +2,15 @@ import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
 
 import '@/config/client/i18n';
+import { Route } from '@/layers/shell/client/routes/safety';
+import { useAuth } from '@/modules/core/client/react-app/auth';
 import Safety from '@/modules/pages/client/components/Safety.component';
+import { recordSafetyPageVisit } from '@/modules/users/client/api/users.api';
+
+vi.mock('@/modules/core/client/react-app/auth', () => ({ useAuth: vi.fn() }));
+vi.mock('@/modules/users/client/api/users.api', () => ({
+  recordSafetyPageVisit: vi.fn(),
+}));
 
 vi.mock('@/modules/core/client/components/Board', async () => {
   const actualReact = await vi.importActual<typeof import('react')>('react');
@@ -73,5 +81,47 @@ describe('<Safety />', () => {
         name: 'show accountability and make amends',
       }),
     ).toHaveAttribute('target', '_blank');
+  });
+});
+
+describe('Safety route visit recording', () => {
+  const SafetyPage = Route.options.component!;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(recordSafetyPageVisit).mockResolvedValue(undefined);
+  });
+
+  function setMember(user: ReturnType<typeof useAuth>['user']) {
+    vi.mocked(useAuth).mockReturnValue({
+      user,
+      isAuthenticated: Boolean(user),
+      setUser: vi.fn(),
+      hasRole: vi.fn(),
+      signOut: vi.fn(),
+    });
+  }
+
+  it('renders the guidance for visitors without recording a visit', () => {
+    setMember(null);
+    render(<SafetyPage />);
+    expect(
+      screen.getByRole('heading', { name: 'Safety Tips for Trustroots' }),
+    ).toBeVisible();
+    expect(recordSafetyPageVisit).not.toHaveBeenCalled();
+  });
+
+  it('records a member visit without blocking the guidance on failure', async () => {
+    setMember({ _id: 'member-id' });
+    vi.mocked(recordSafetyPageVisit).mockRejectedValueOnce(
+      new Error('Offline'),
+    );
+    render(<SafetyPage />);
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Safety Tips for Trustroots',
+      }),
+    ).toBeVisible();
+    expect(recordSafetyPageVisit).toHaveBeenCalledOnce();
   });
 });

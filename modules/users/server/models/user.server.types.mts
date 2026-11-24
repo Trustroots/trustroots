@@ -68,6 +68,7 @@ export interface UserServerRecord {
   additionalProvidersData?: UserProviderData;
   roles: string[];
   seen?: Date;
+  safetyPageVisited?: boolean;
   lastIpHash?: string;
   updated?: Date;
   created?: Date;

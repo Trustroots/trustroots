@@ -80,6 +80,7 @@ describe('Users policy unit tests', () => {
 
   const grants: [string, string[]][] = [
     ['/api/users', ['get', 'put', 'delete']],
+    ['/api/users/me/safety-visit', ['put']],
     ['/api/users/export', ['get']],
     ['/api/users/removal/pending', ['get', 'delete']],
     ['/api/users/nostr/challenge', ['post']],

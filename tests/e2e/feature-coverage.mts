@@ -303,9 +303,14 @@ const features = [
     },
     requiredScenarios: [
       'Safety page loads with precautions, reporting, and emergency guidance.',
+      'A signed-in member’s safety page visit persists across sessions.',
     ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /safety loads'),
+      spec(
+        'react-home-safety.spec.js',
+        'a signed-in safety page visit persists across browser sessions',
+      ),
     ],
   },
   {

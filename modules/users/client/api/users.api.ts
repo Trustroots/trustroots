@@ -9,6 +9,10 @@ import type { ClientOwnProfile } from '../types.ts';
 
 export type UserUpdate = UpdateProfileRequest;
 
+export async function recordSafetyPageVisit(): Promise<void> {
+  await axios.put('/api/users/me/safety-visit');
+}
+
 export async function nostrChallenge(nostrNpub: string) {
   const { data } = await axios.post<{
     event: import('nostr-tools').EventTemplate;
