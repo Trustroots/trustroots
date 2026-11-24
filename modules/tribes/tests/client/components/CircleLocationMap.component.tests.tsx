@@ -13,42 +13,26 @@ import CircleLocationMap, {
 } from '@/modules/tribes/client/components/CircleLocationMap';
 import { useCircleMapEvents } from '@/modules/tribes/client/hooks/useCircleMapEvents';
 import type NostrService from '@/modules/search/client/services/nostr.client.service';
+import type {
+  MapBounds,
+  MapProps,
+} from '@/modules/core/client/components/Map/types';
 
-type MockMapProps = {
-  children?: React.ReactNode;
-  initialViewState: { latitude: number; longitude: number; zoom: number };
-  onClick: (event: { originalEvent: { target: EventTarget } }) => void;
-  onLoad: () => void;
-  onMoveStart: () => void;
-  onMoveEnd: (event: { target: typeof mockMap }) => void;
-};
-const mockMap = {
-  fitBounds: vi.fn(),
-  getCenter: vi.fn(),
-  getZoom: vi.fn(),
-  jumpTo: vi.fn(),
-};
-let mockMapProps: MockMapProps;
-vi.mock('@vis.gl/react-maplibre', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
-  return {
-    __esModule: true,
-    default: React.forwardRef<unknown, MockMapProps>(
-      function MockMap(props, ref) {
-        mockMapProps = props;
-        React.useImperativeHandle(ref, () => mockMap);
-        return React.createElement('div', null, props.children);
-      },
-    ),
-    Marker: ({ children }: { children: React.ReactNode }) => children,
-    NavigationControl: () => null,
-    Popup: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('div', { role: 'dialog' }, children),
-  };
-});
-const mockIsWebGLSupported = vi.fn(() => true);
-vi.mock('@/modules/core/client/utils/map', () => ({
-  isWebGLSupported: () => mockIsWebGLSupported(),
+const mockMap = { fitBounds: vi.fn(), flyTo: vi.fn(), setPointState: vi.fn() };
+let mockMapProps: MapProps;
+vi.mock('@/modules/core/client/components/Map/index', () => ({
+  default: function MockMap(props: MapProps) {
+    mockMapProps = props;
+    React.useImperativeHandle(props.ref, () => mockMap);
+    return (
+      <div>
+        {props.pins?.map(pin => (
+          <React.Fragment key={pin.key}>{pin.children}</React.Fragment>
+        ))}
+        {props.popup && <div role="dialog">{props.popup.children}</div>}
+      </div>
+    );
+  },
 }));
 vi.mock('@/modules/core/client/components/DeviceLocationButton', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
@@ -121,12 +105,16 @@ const props = {
   countLabel: 'places',
 };
 
-const loadMap = () => act(() => mockMapProps.onLoad());
-const moveEnd = (latitude = 12, longitude = 34, zoom = 6) => {
-  mockMap.getCenter.mockReturnValue({ toArray: () => [longitude, latitude] });
-  mockMap.getZoom.mockReturnValue(zoom);
-  act(() => mockMapProps.onMoveEnd({ target: mockMap }));
-};
+const loadMap = () =>
+  act(() => mockMapProps.onLoad!(mockMapProps.view, {} as MapBounds));
+const moveEnd = (latitude = 12, longitude = 34, zoom = 6) =>
+  act(() =>
+    mockMapProps.onMoveEnd!(
+      { latitude, longitude, zoom },
+      {} as MapBounds,
+      true,
+    ),
+  );
 const renderPopup = (popupLocation: CircleLocation) =>
   render(<LocationPopup location={popupLocation} />).container;
 const markerButton = () =>
@@ -135,23 +123,12 @@ const markerButton = () =>
 describe('shared circle map', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsWebGLSupported.mockReturnValue(true);
     sessionStorage.clear();
-  });
-
-  it('shows a notice instead of the map when WebGL is unavailable', () => {
-    mockIsWebGLSupported.mockReturnValue(false);
-    render(<CircleLocationMap {...props} />);
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'This browser cannot show the map because WebGL is not available.',
-    );
-    expect(screen.queryByRole('application')).not.toBeInTheDocument();
-    expect(screen.getByText('1 places')).toBeInTheDocument();
   });
 
   it('restores the chosen view when opening another circle map', () => {
     const { unmount } = render(<CircleLocationMap {...props} />);
-    expect(mockMapProps.initialViewState).toEqual({
+    expect(mockMapProps.view).toEqual({
       latitude: 20,
       longitude: 0,
       zoom: 1,
@@ -160,7 +137,7 @@ describe('shared circle map', () => {
     unmount();
     render(<CircleLocationMap {...props} />);
     loadMap();
-    expect(mockMapProps.initialViewState).toEqual({
+    expect(mockMapProps.view).toEqual({
       latitude: 12,
       longitude: 34,
       zoom: 6,
@@ -178,13 +155,11 @@ describe('shared circle map', () => {
   ])('ignores a saved view that is not usable (%s)', saved => {
     sessionStorage.setItem('circle-map-view', saved);
     render(<CircleLocationMap {...props} />);
-    expect(mockMapProps.initialViewState.zoom).toBe(1);
+    expect(mockMapProps.view.zoom).toBe(1);
   });
 
   it('does not save the automatic initial fit as a chosen view', () => {
-    mockMap.fitBounds.mockImplementationOnce(() =>
-      mockMapProps.onMoveEnd({ target: mockMap }),
-    );
+    mockMap.fitBounds.mockImplementationOnce(() => moveEnd());
     render(<CircleLocationMap {...props} />);
     loadMap();
     expect(mockMap.fitBounds).toHaveBeenCalled();
@@ -225,10 +200,10 @@ describe('shared circle map', () => {
     expect(mockMap.fitBounds).not.toHaveBeenCalled();
     rerender(<CircleLocationMap {...props} locations={locations} />);
     expect(mockMap.fitBounds).toHaveBeenCalledWith(
-      [
-        [-80, -30],
-        [34, 12],
-      ],
+      {
+        northEast: { lat: 12, lng: 34 },
+        southWest: { lat: -30, lng: -80 },
+      },
       { padding: 24, maxZoom: 8, animate: false },
     );
     rerender(<CircleLocationMap {...props} locations={[second]} />);
@@ -250,7 +225,7 @@ describe('shared circle map', () => {
       <CircleLocationMap {...props} state="loading" />,
     );
     loadMap();
-    act(() => mockMapProps.onMoveStart());
+    act(() => mockMapProps.onMoveStart!());
     rerender(<CircleLocationMap {...props} />);
     expect(mockMap.fitBounds).not.toHaveBeenCalled();
   });
@@ -264,7 +239,10 @@ describe('shared circle map', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock device location' }),
     );
-    expect(mockMap.jumpTo).toHaveBeenCalledWith({ center: [0, 0], zoom: 13 });
+    expect(mockMap.flyTo).toHaveBeenCalledWith(
+      { latitude: 0, longitude: 0, zoom: 13 },
+      false,
+    );
     moveEnd(0, 0, 13);
     moveEnd(0.002, 0.003, 14);
     expect(sessionStorage.getItem('circle-map-view')).toBe('[12,34,6]');
@@ -277,10 +255,10 @@ describe('shared circle map', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock approximate location' }),
     );
-    expect(mockMap.jumpTo).toHaveBeenCalledWith({
-      center: [-17, 34],
-      zoom: 6,
-    });
+    expect(mockMap.flyTo).toHaveBeenCalledWith(
+      { latitude: 34, longitude: -17, zoom: 6 },
+      false,
+    );
     moveEnd(34, -17, 6);
     expect(sessionStorage.getItem('circle-map-view')).toBeNull();
   });
@@ -296,19 +274,8 @@ describe('shared circle map', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close popup' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.click(markerButton());
-    // The map reports the marker click too; only clicks elsewhere close it.
-    const marker = document.createElement('div');
-    marker.className = 'maplibregl-marker';
-    marker.append(document.createElement('button'));
-    act(() =>
-      mockMapProps.onClick({ originalEvent: { target: marker.firstChild! } }),
-    );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    act(() =>
-      mockMapProps.onClick({
-        originalEvent: { target: document.createElement('canvas') },
-      }),
-    );
+    act(() => mockMapProps.onClick!([0, 0]));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.click(markerButton());
     rerender(<CircleLocationMap {...props} locations={[]} />);

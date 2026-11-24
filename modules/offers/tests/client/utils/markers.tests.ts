@@ -1,15 +1,6 @@
-import {
-  getOfferHexColor,
-  zoomToPixelMeters,
-} from '@/modules/offers/client/utils/markers';
+import { getOfferHexColor } from '@/modules/offers/client/utils/markers';
 
 describe('offer marker utilities', () => {
-  it('converts meters to pixels for a map zoom level', () => {
-    expect(
-      zoomToPixelMeters({ latitude: 0, meters: 1000, zoom: 10 }),
-    ).toBeCloseTo(6.54, 1);
-  });
-
   it('returns marker colors for offer types and statuses', () => {
     expect(getOfferHexColor({ offerType: 'host', offerStatus: 'yes' })).toBe(
       '#5cb85c',

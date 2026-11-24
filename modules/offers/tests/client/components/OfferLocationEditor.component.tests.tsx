@@ -5,10 +5,14 @@ import OfferLocationEditor from '@/modules/offers/client/components/OfferLocatio
 import type SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import type { MapPoint } from '@/modules/search/client/utils/location';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
+import type {
+  MapBounds,
+  MapProps,
+} from '@/modules/core/client/components/Map/types';
 
 let mockApproximateLocation: MapDefaultLocation | null = null;
 const mockStopDefaultLocation = vi.fn();
-const mockMapLocation = vi.fn<(location: [number, number]) => void>();
+const mockMapView = vi.fn<(view: MapProps['view']) => void>();
 vi.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
   default: (enabled: boolean) => [
@@ -60,20 +64,12 @@ vi.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
 beforeEach(() => {
   mockApproximateLocation = null;
   mockStopDefaultLocation.mockClear();
-  mockMapLocation.mockClear();
+  mockMapView.mockClear();
 });
 
 type LocationChange = React.ComponentProps<
   typeof OfferLocationEditor
 >['onLocationChange'];
-type MockMapProps = {
-  children?: React.ReactNode;
-  height: number | string;
-  location: [number, number];
-  zoom: number;
-  onLocationChange: (location: [number, number]) => void;
-};
-
 vi.mock('@/modules/search/client/components/SearchPlaceInput.component', () => {
   function MockSearchPlaceInput({
     onPlaceSearch,
@@ -119,62 +115,52 @@ vi.mock('@/modules/search/client/components/SearchPlaceInput.component', () => {
 
   return { default: MockSearchPlaceInput };
 });
-vi.mock('@/modules/core/client/components/Map/index', () => {
-  function MockMap({
-    children,
-    height,
-    location,
-    zoom,
-    onLocationChange,
-  }: MockMapProps) {
-    mockMapLocation(location);
+vi.mock('@/modules/core/client/components/Map/index', () => ({
+  default: function MockMap({ view, onClick, onMoveEnd, area }: MapProps) {
+    mockMapView(view);
+    const drag = (latitude: number, longitude: number, dragged = true) =>
+      onMoveEnd?.(
+        { latitude, longitude, zoom: view.zoom },
+        {} as MapBounds,
+        dragged,
+      );
     return (
       <div
         data-testid="offer-map"
-        data-height={height}
-        data-location={location.join(',')}
-        data-zoom={zoom}
+        data-location={`${view.latitude},${view.longitude}`}
+        data-zoom={view.zoom}
+        data-area={area ? `${area.latitude},${area.longitude}` : undefined}
       >
         <button
           type="button"
-          onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
+          onClick={() => drag(48.6908333333, 9.14055555556)}
         >
           Report initial centre
         </button>
-        <button
-          type="button"
-          onClick={() => onLocationChange([48.690834, 9.140556])}
-        >
+        <button type="button" onClick={() => drag(48.690834, 9.140556)}>
           Drag near default
         </button>
-        <button type="button" onClick={() => onLocationChange([50, 10])}>
+        <button type="button" onClick={() => drag(50, 10)}>
           Drag map
         </button>
-        <button
-          type="button"
-          onClick={() => onLocationChange([48.6908333333, 10])}
-        >
+        <button type="button" onClick={() => drag(50, 10, false)}>
+          Zoom map
+        </button>
+        <button type="button" onClick={() => drag(48.6908333333, 10)}>
           Drag map east
         </button>
-        <button type="button" onClick={() => onLocationChange([48.85, 2.35])}>
+        <button type="button" onClick={() => onClick?.([48.85, 2.35])}>
           Click map
         </button>
         <button
           type="button"
-          onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
+          onClick={() => onClick?.([48.6908333333, 9.14055555556])}
         >
           Click initial centre
         </button>
-        {children}
       </div>
     );
-  }
-
-  return { default: MockMap };
-});
-vi.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
-  __esModule: true,
-  default: () => <div data-testid="location-overlay" />,
+  },
 }));
 
 describe('OfferLocationEditor', () => {
@@ -230,7 +216,7 @@ describe('OfferLocationEditor', () => {
       '12,23',
     );
     expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '5');
-    expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+    expect(screen.getByTestId('offer-map')).not.toHaveAttribute('data-area');
     expect(onLocationChange).not.toHaveBeenCalled();
   });
   it('dismisses map guidance on navigation and ignores late device responses after a gesture', () => {
@@ -244,14 +230,14 @@ describe('OfferLocationEditor', () => {
       />,
     );
     const map = screen.getByTestId('offer-map');
-    const initialCentre = mockMapLocation.mock.lastCall?.[0];
+    const initialCentre = mockMapView.mock.lastCall?.[0];
     fireEvent.keyDown(map, { key: 'Tab' });
     expect(screen.getByRole('note')).toHaveTextContent(
       'Set your hosting location on the map.',
     );
     fireEvent.keyDown(map, { key: '+' });
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
-    expect(mockMapLocation.mock.lastCall?.[0]).toBe(initialCentre);
+    expect(mockMapView.mock.lastCall?.[0]).toBe(initialCentre);
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Start location request' }),
@@ -293,12 +279,7 @@ describe('OfferLocationEditor', () => {
   it('shows a map without an offer marker before a location is chosen', () => {
     render(<OfferLocationEditor location={null} onLocationChange={vi.fn()} />);
 
-    expect(screen.getByTestId('offer-map')).toBeInTheDocument();
-    expect(screen.getByTestId('offer-map')).toHaveAttribute(
-      'data-height',
-      '100%',
-    );
-    expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+    expect(screen.getByTestId('offer-map')).not.toHaveAttribute('data-area');
   });
 
   it('waits for a place search or map movement before choosing a location', () => {
@@ -318,6 +299,9 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Click initial centre' }),
     );
+    expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom map' }));
     expect(onLocationChange).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag near default' }));
@@ -345,8 +329,10 @@ describe('OfferLocationEditor', () => {
         /Zoom in, then click or drag the map to place the marker/,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('offer-map')).toBeInTheDocument();
-    expect(screen.getByTestId('location-overlay')).toBeInTheDocument();
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-area',
+      '51.5,-0.12',
+    );
   });
 
   it('updates the location when a place is searched', () => {

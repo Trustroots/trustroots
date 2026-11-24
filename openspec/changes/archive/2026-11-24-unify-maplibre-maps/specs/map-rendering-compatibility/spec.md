@@ -18,5 +18,6 @@ The system SHALL render its React maps with a single installed MapLibre GL JS ve
 #### Scenario: Member uses a browser without WebGL2
 
 - **WHEN** a member opens map search, an offer-location map or a circle map without WebGL2
-- **THEN** the system shows a notice where the map would be, explaining that WebGL is not available
-- **AND** the rest of the page remains usable
+- **THEN** the system loads an interactive Leaflet renderer with OpenStreetMap raster tiles, only for that browser
+- **AND** search, selection, clustering and location editing remain available
+- **AND** an analytics event without personal data records that the fallback was used

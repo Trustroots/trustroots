@@ -1,10 +1,8 @@
-/// <reference types="vite/client" />
-
-import { setWorkerUrl } from 'maplibre-gl';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-
-// MapLibre resolves its worker next to its own module at runtime, which the
-// bundle does not emit; every map imports this file, so point it here.
-setWorkerUrl(workerUrl);
-
 export const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+/** Raster tiles for browsers without WebGL2; OpenFreeMap serves vector tiles only. */
+export const RASTER_TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+};

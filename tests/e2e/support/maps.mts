@@ -174,10 +174,7 @@ export async function waitForSearchMap(page: Page): Promise<void> {
   await expect(page.locator('.maplibregl-canvas')).toBeVisible();
 }
 
-export async function disableWebGL(
-  page: Page,
-  webgl2Only = false,
-): Promise<void> {
+async function disableWebGL(page: Page, webgl2Only = false): Promise<void> {
   await page.addInitScript(webgl2Only => {
     const getContext = window.HTMLCanvasElement.prototype.getContext;
     const replacement = function (
@@ -199,6 +196,22 @@ export async function disableWebGL(
       value: replacement,
     });
   }, webgl2Only);
+}
+
+const RASTER_TILE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** Browsers without WebGL2 get Leaflet with OpenStreetMap raster tiles. */
+export async function prepareRasterMap(
+  page: Page,
+  webgl2Only = false,
+): Promise<void> {
+  await disableWebGL(page, webgl2Only);
+  await page.route('https://tile.openstreetmap.org/**', route =>
+    route.fulfill({ body: RASTER_TILE_PNG, contentType: 'image/png' }),
+  );
 }
 
 export async function stubNostrAuthorVisibility(

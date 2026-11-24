@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState, type ReactNode } from 'react';
-import ReactMapGL, {
-  Marker,
-  NavigationControl,
-  Popup,
-  type MapRef,
-} from '@vis.gl/react-maplibre';
 import { useTranslation } from 'react-i18next';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { MAP_STYLE } from '@/modules/core/client/components/Map/constants';
-import MapUnavailable from '@/modules/core/client/components/Map/MapUnavailable';
-import { isWebGLSupported } from '@/modules/core/client/utils/map';
+import Map from '@/modules/core/client/components/Map/index';
+import type { MapHandle } from '@/modules/core/client/components/Map/types';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import './circle-location-map.less';
 
@@ -130,9 +122,11 @@ interface Props {
 export default function CircleLocationMap(props: Props) {
   const Heading = props.headingAs ?? 'h3';
   const { t } = useTranslation('core');
-  const [webGL] = useState(isWebGLSupported);
   const [savedView] = useState(() => readView(props.viewKey));
-  const mapRef = useRef<MapRef>(null);
+  const [initialView] = useState(
+    () => savedView ?? { latitude: 20, longitude: 0, zoom: 1 },
+  );
+  const mapRef = useRef<MapHandle>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const initialViewSet = useRef(Boolean(savedView));
   const fittingResults = useRef(false);
@@ -162,10 +156,16 @@ export default function CircleLocationMap(props: Props) {
       const longitudes = props.locations.map(({ longitude }) => longitude);
       const latitudes = props.locations.map(({ latitude }) => latitude);
       mapRef.current!.fitBounds(
-        [
-          [Math.min(...longitudes), Math.min(...latitudes)],
-          [Math.max(...longitudes), Math.max(...latitudes)],
-        ],
+        {
+          northEast: {
+            lat: Math.max(...latitudes),
+            lng: Math.max(...longitudes),
+          },
+          southWest: {
+            lat: Math.min(...latitudes),
+            lng: Math.min(...longitudes),
+          },
+        },
         { padding: 24, maxZoom: 8, animate: false },
       );
       fittingResults.current = false;
@@ -176,7 +176,7 @@ export default function CircleLocationMap(props: Props) {
     initialViewSet.current = true;
     // Panning or zooming after a location jump can still reveal that location.
     viewUsesLocation.current = true;
-    mapRef.current?.jumpTo({ center: [longitude, latitude], zoom });
+    mapRef.current?.flyTo({ latitude, longitude, zoom }, false);
   };
 
   return (
@@ -191,120 +191,89 @@ export default function CircleLocationMap(props: Props) {
         <p>{props.description}</p>
       </div>
       <div className="circle-location-map-frame">
-        {webGL ? (
-          <>
-            <div
-              className="circle-location-map tw:overflow-hidden"
-              role="application"
-              aria-label={props.mapLabel}
-            >
-              <ReactMapGL
-                ref={mapRef}
-                mapStyle={MAP_STYLE}
-                initialViewState={
-                  savedView ?? { latitude: 20, longitude: 0, zoom: 1 }
-                }
-                minZoom={1}
-                maxBounds={[-180, -85, 180, 85]}
-                dragRotate={false}
-                style={{ width: '100%', height: '100%' }}
-                onLoad={() => setLoaded(true)}
-                // MapLibre reports marker clicks after the popup has opened,
-                // so its own closeOnClick would close it straight away.
-                onClick={event => {
-                  if (
-                    !(event.originalEvent.target as Element).closest(
-                      '.maplibregl-marker',
-                    )
-                  ) {
-                    setSelectedId(null);
-                  }
-                }}
-                // Preserve any view chosen while the initial results are loading.
-                onMoveStart={() => {
-                  initialViewSet.current = true;
-                }}
-                onMoveEnd={({ target: map }) => {
-                  if (fittingResults.current || viewUsesLocation.current)
-                    return;
-                  const [longitude, latitude] = map.getCenter().toArray();
-                  try {
-                    sessionStorage.setItem(
-                      props.viewKey || VIEW_KEY,
-                      JSON.stringify([latitude, longitude, map.getZoom()]),
-                    );
-                  } catch {
-                    // Maps remain usable when session storage is unavailable.
-                  }
-                }}
-              >
-                <NavigationControl showCompass={false} />
-                {props.locations.map(location => (
-                  <Marker
-                    key={location.id}
-                    latitude={location.latitude}
-                    longitude={location.longitude}
-                    anchor="center"
-                  >
+        <div
+          className="circle-location-map tw:overflow-hidden"
+          role="application"
+          aria-label={props.mapLabel}
+        >
+          <Map
+            ref={mapRef}
+            view={initialView}
+            minZoom={1}
+            worldBounds
+            style={{ width: '100%', height: '100%' }}
+            onLoad={() => setLoaded(true)}
+            onClick={() => setSelectedId(null)}
+            // Preserve any view chosen while the initial results are loading.
+            onMoveStart={() => {
+              initialViewSet.current = true;
+            }}
+            onMoveEnd={({ latitude, longitude, zoom }) => {
+              if (fittingResults.current || viewUsesLocation.current) return;
+              try {
+                sessionStorage.setItem(
+                  props.viewKey || VIEW_KEY,
+                  JSON.stringify([latitude, longitude, zoom]),
+                );
+              } catch {
+                // Maps remain usable when session storage is unavailable.
+              }
+            }}
+            pins={props.locations.map(location => ({
+              key: location.id,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              children: (
+                <button
+                  type="button"
+                  aria-label={location.name}
+                  className="tw:block tw:size-4 tw:cursor-pointer tw:rounded-full tw:border-2 tw:border-white tw:p-0"
+                  style={{
+                    backgroundColor:
+                      location.markerColor ?? props.markerColor ?? '#488261',
+                  }}
+                  onClick={event => {
+                    // Keyboard activation moves focus into the popup.
+                    focusAction.current = event.detail === 0;
+                    setSelectedId(location.id);
+                    if (selectedId === location.id && focusAction.current) {
+                      popupRef.current?.querySelector('a')?.focus();
+                    }
+                  }}
+                />
+              ),
+            }))}
+            popup={
+              selected && {
+                key: selected.id,
+                latitude: selected.latitude,
+                longitude: selected.longitude,
+                children: (
+                  <div ref={popupRef} className="tw:flex tw:items-start">
+                    <LocationPopup location={selected} />
                     <button
                       type="button"
-                      aria-label={location.name}
-                      className="tw:block tw:size-4 tw:cursor-pointer tw:rounded-full tw:border-2 tw:border-white tw:p-0"
-                      style={{
-                        backgroundColor:
-                          location.markerColor ??
-                          props.markerColor ??
-                          '#488261',
-                      }}
-                      onClick={event => {
-                        // Keyboard activation moves focus into the popup.
-                        focusAction.current = event.detail === 0;
-                        setSelectedId(location.id);
-                        if (selectedId === location.id && focusAction.current) {
-                          popupRef.current?.querySelector('a')?.focus();
-                        }
-                      }}
-                    />
-                  </Marker>
-                ))}
-                {selected && (
-                  <Popup
-                    latitude={selected.latitude}
-                    longitude={selected.longitude}
-                    anchor="bottom"
-                    offset={10}
-                    maxWidth="none"
-                    closeButton={false}
-                    closeOnClick={false}
-                  >
-                    <div ref={popupRef} className="tw:flex tw:items-start">
-                      <LocationPopup location={selected} />
-                      <button
-                        type="button"
-                        aria-label={t('Close popup')}
-                        className="tw:-mt-1 tw:-mr-2 tw:ml-1 tw:size-8 tw:shrink-0 tw:cursor-pointer tw:rounded-full tw:border-0 tw:bg-transparent tw:p-0 tw:text-2xl tw:leading-none tw:hover:bg-[#edf6f2] tw:focus-visible:bg-[#edf6f2]"
-                        onClick={() => setSelectedId(null)}
-                      >
-                        <span aria-hidden="true">×</span>
-                      </button>
-                    </div>
-                  </Popup>
-                )}
-              </ReactMapGL>
-            </div>
-            <DeviceLocationButton
-              onRequest={() => {
-                initialViewSet.current = true;
-              }}
-              onLocation={({ lat, lng }) => jumpTo(lat, lng, 13)}
-              onApproximateLocation={({ latitude, longitude, zoom }) =>
-                jumpTo(latitude, longitude, zoom)
+                      aria-label={t('Close popup')}
+                      className="tw:-mt-1 tw:-mr-2 tw:ml-1 tw:size-8 tw:shrink-0 tw:cursor-pointer tw:rounded-full tw:border-0 tw:bg-transparent tw:p-0 tw:text-2xl tw:leading-none tw:hover:bg-[#edf6f2] tw:focus-visible:bg-[#edf6f2]"
+                      onClick={() => setSelectedId(null)}
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+                ),
               }
-            />
-          </>
-        ) : (
-          <MapUnavailable className="circle-location-map" />
-        )}
+            }
+          />
+        </div>
+        <DeviceLocationButton
+          onRequest={() => {
+            initialViewSet.current = true;
+          }}
+          onLocation={({ lat, lng }) => jumpTo(lat, lng, 13)}
+          onApproximateLocation={({ latitude, longitude, zoom }) =>
+            jumpTo(latitude, longitude, zoom)
+          }
+        />
       </div>
       <div className="circle-location-map-footer">
         {props.legend}

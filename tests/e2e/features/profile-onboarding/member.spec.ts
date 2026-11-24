@@ -22,7 +22,7 @@ import {
 } from '../../support/helpers.mts';
 
 import { findOffersByUser, updateUserByUsername } from '../../support/db.mts';
-import { disableWebGL } from '../../support/maps.mts';
+import { prepareRasterMap } from '../../support/maps.mts';
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -293,20 +293,19 @@ test.describe('confirmed member flows', () => {
     await expect(map).toHaveAttribute('data-map-zoom', '12');
   });
 
-  test('profile hosting map shows a notice with WebGL unavailable', async ({
+  test('profile hosting map uses Leaflet with WebGL unavailable', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-accommodation', [
-      'Without WebGL2 a notice replaces the approximate hosting location map.',
+      'Without WebGL2 a Leaflet map shows the approximate hosting location.',
     ]);
-    await disableWebGL(page);
+    await prepareRasterMap(page);
     await page.goto(`/profile/${portland.username}/accommodation`);
-    const notice = page.locator('.offer-view .offer-location');
-    await expect(notice).toHaveText(
-      'This browser cannot show the map because WebGL is not available.',
-    );
+    const map = page.locator('.offer-view .offer-location');
+    await expect(map.locator('.leaflet-container')).toBeVisible();
+    await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(1);
     await expect(page.locator('.maplibregl-canvas')).toHaveCount(0);
-    const box = await notice.boundingBox();
+    const box = await map.boundingBox();
     expectPresent(box);
     expect(box.height).toBe(220);
   });

@@ -27,7 +27,7 @@ import {
   withE2eDb,
 } from '../../support/db.mts';
 import {
-  disableWebGL,
+  prepareRasterMap,
   routeOfflineMapStyle,
   seedMapState,
 } from '../../support/maps.mts';
@@ -929,21 +929,21 @@ test.describe.serial('search offers and circles feature coverage', () => {
     });
   }
 
-  test('hosting map shows a notice when WebGL is unavailable', async ({
+  test('hosting location can be chosen on the Leaflet map without WebGL2', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'offers.host', [
-      'A browser without WebGL2 sees a notice where the hosting map would be.',
+      'A browser without WebGL2 chooses the hosting location on a Leaflet map.',
     ]);
-    await disableWebGL(page, true);
+    await prepareRasterMap(page, true);
     await page.goto('/offer/host#location');
-    const offerMap = page.locator('.offer-map');
+    const surface = page.locator('.offer-map .leaflet-container');
+    await expect(surface).toBeVisible();
+    await expect(page.locator('.offer-map .maplibregl-canvas')).toHaveCount(0);
+    await surface.click({ position: { x: 40, y: 40 } });
     await expect(
-      offerMap.getByText(
-        'This browser cannot show the map because WebGL is not available.',
-      ),
-    ).toBeVisible();
-    await expect(offerMap.locator('.maplibregl-canvas')).toHaveCount(0);
+      page.locator('.offer-map .leaflet-overlay-pane path'),
+    ).toHaveCount(1);
     await expect(
       page.getByRole('button', { name: 'Use my location', exact: true }),
     ).toBeVisible();
