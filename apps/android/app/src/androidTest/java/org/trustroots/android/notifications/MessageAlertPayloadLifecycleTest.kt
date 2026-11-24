@@ -26,6 +26,7 @@ import org.trustroots.android.MainActivity
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.nostr.nostrAccountScope
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
@@ -99,11 +100,7 @@ class MessageAlertPayloadLifecycleTest {
 
     @Test
     fun failedDistributorRegistrationShowsRecoveryInstructions() {
-        val service = MessagePushService()
-        // Framework-created services have an attached base Context for resource access.
-        ContextWrapper::class.java.getDeclaredMethod("attachBaseContext", Context::class.java).apply {
-            isAccessible = true
-        }.invoke(service, context)
+        val service = pushService()
         service.onRegistrationFailed(FailedReason.NETWORK, "anonymous-instance")
 
         assertEquals("Could not turn on message alerts. Try again in Account → Message alerts.", MessageAlerts.status.value)
@@ -111,6 +108,74 @@ class MessageAlertPayloadLifecycleTest {
             MessageAlertStatusMetadata(R.string.message_alerts_registration_error),
             MessageAlerts.statusMetadata.value,
         )
+    }
+
+    @Test
+    fun nostranslationDistributorFailuresStaySeparateFromMessageAlerts() {
+        val previousStatus = NostranslationAlerts.status.value
+        try {
+            val service = pushService()
+            val instance = NostranslationAlerts.instance
+            service.onNewEndpoint(PushEndpoint("https://push.invalid/review", null, temporary = false), instance)
+            assertEquals(R.string.nostranslation_alerts_unavailable, NostranslationAlerts.status.value)
+            NostranslationAlerts.status.value = null
+            service.onRegistrationFailed(FailedReason.NETWORK, instance)
+            assertEquals(R.string.nostranslation_alerts_unavailable, NostranslationAlerts.status.value)
+            NostranslationAlerts.status.value = null
+            service.onUnregistered(instance)
+            assertEquals(R.string.nostranslation_alerts_unavailable, NostranslationAlerts.status.value)
+            assertNull(MessageAlerts.status.value)
+        } finally {
+            NostranslationAlerts.status.value = previousStatus
+        }
+    }
+
+    @Test
+    fun nostranslationReviewNotificationsRequireADecryptedPushAndTheOptedInAccount() {
+        assumeTrue("App notifications must be enabled for this device test", notifications.areNotificationsEnabled())
+        val instance = NostranslationAlerts.instance
+        val preferences = context.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
+        val savedPreferences = preferences.all
+        val backend = "http://127.0.0.1:1"
+        val member = MobileMember("quiet-fox", "Quiet Fox")
+        val store = SecureMobileSessionStore(context)
+        val service = pushService()
+        val payload = """{"type":"nostranslation-review"}""".toByteArray()
+        val review = PushMessage(payload, decrypted = true)
+        notifications.cancel(instance, 0)
+
+        try {
+            preferences.edit().clear().commit()
+            service.onMessage(review, instance)
+            store.save(MemberSession("connect.sid=fake-session", member))
+            service.onMessage(review, instance)
+            preferences.edit().putString("backend", backend).commit()
+            val otherAccount = nostrAccountScope(backend, "other-member").storageAccount
+            preferences.edit().putBoolean(otherAccount, true).commit()
+            service.onMessage(review, instance)
+
+            val account = nostrAccountScope(backend, member.username).storageAccount
+            preferences.edit().putBoolean(account, true).commit()
+            service.onMessage(PushMessage(payload, decrypted = false), instance)
+            service.onMessage(PushMessage("not JSON".toByteArray(), decrypted = true), instance)
+            service.onMessage(PushMessage("""{"type":"other"}""".toByteArray(), decrypted = true), instance)
+            assertFalse(notifications.activeNotifications.any { it.tag == instance })
+
+            service.onMessage(review, instance)
+            val deadline = SystemClock.elapsedRealtime() + 5_000
+            var posted = notifications.activeNotifications.firstOrNull { it.tag == instance }
+            while (posted == null && SystemClock.elapsedRealtime() < deadline) {
+                Thread.sleep(25)
+                posted = notifications.activeNotifications.firstOrNull { it.tag == instance }
+            }
+            val notification = requireNotNull(posted).notification
+            assertEquals(instance, notification.channelId)
+            assertEquals(context.getString(R.string.nostranslation_review_waiting), notification.extras.getCharSequence("android.text"))
+            assertEquals(context.packageName, notification.contentIntent.creatorPackage)
+        } finally {
+            notifications.cancel(instance, 0)
+            restorePreferences(preferences, savedPreferences)
+        }
     }
 
     @Test
@@ -235,6 +300,13 @@ class MessageAlertPayloadLifecycleTest {
             .putString("account", account)
             .putBoolean("enabled", enabled)
             .commit()
+    }
+
+    private fun pushService(): MessagePushService = MessagePushService().also { service ->
+        // Framework-created services have an attached base Context for resource access.
+        ContextWrapper::class.java.getDeclaredMethod("attachBaseContext", Context::class.java).apply {
+            isAccessible = true
+        }.invoke(service, context)
     }
 
     private fun notificationsFor(senderId: String): List<String> =
