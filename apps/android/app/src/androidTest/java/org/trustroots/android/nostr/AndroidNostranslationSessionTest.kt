@@ -226,6 +226,65 @@ class AndroidNostranslationSessionTest {
             keys.remove()
         }
     }
+
+    @Test fun rejectsNewReviewsAtCapacityAndRevokesEveryQueuedApproval() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val account = nostrAccountScope("https://example.test", "queue-${UUID.randomUUID()}")
+        val keys = AndroidNostrKeys(context, account)
+        val clientKey = ByteArray(32).apply { this[31] = 1 }
+        val transportKey = ByteArray(32).apply { this[31] = 2 }
+        val peer = NostrEventSigner.publicKey(clientKey)
+        val transport = NostrEventSigner.publicKey(transportKey)
+        val secret = NostrConnectEncryption.conversationKey(clientKey, NostrEventSigner.decodeHex(transport, 32))
+        val now = 1_800_000_000L
+        val job = Job()
+        val relay = RecordingNostranslationRelay()
+        try {
+            keys.generate()
+            val revision = keys.revision()
+            keys.savePairings(revision, JSONArray().put(JSONObject()
+                .put("peer", peer).put("transport", "0".repeat(63) + "2")
+                .put("signer", requireNotNull(keys.browserPublicKey(revision)))))
+            val scope = CoroutineScope(Dispatchers.Unconfined + job)
+            AndroidNostranslationSession(account, keys, scope, { true }, relay) { now }.use { signer ->
+                signer.start()
+                relay.open()
+                val subscription = relay.frames.single().getString(1)
+                val authorisation = JSONObject().put("kind", 27235).put("created_at", now).put("content", "")
+                    .put("tags", JSONArray(listOf(
+                        listOf("u", "https://nostranslation-api.trustroots.org/api/reviews"),
+                        listOf("method", "POST"),
+                        listOf("payload", "a".repeat(64)),
+                    )))
+                for (index in 1..9) {
+                    val request = JSONObject().put("id", "queued-$index").put("method", "sign_event")
+                        .put("params", JSONArray().put(authorisation.toString()))
+                    val envelope = JSONObject().put("kind", 24133).put("created_at", now)
+                        .put("tags", JSONArray(listOf(listOf("p", transport))))
+                        .put("content", NostrConnectEncryption.encrypt(request.toString(), secret))
+                    relay.receive(JSONArray().put("EVENT").put(subscription).put(NostrEventSigner.sign(envelope, clientKey)))
+                }
+
+                assertEquals((1..8).map { "queued-$it" }, signer.reviews.map { it.id })
+                assertEquals(2, relay.frames.size)
+                val reply = relay.frames.last().getJSONObject(1)
+                val result = JSONObject(NostrConnectEncryption.decrypt(reply.getString("content"), secret))
+                assertEquals("queued-9", result.getString("id"))
+                assertEquals("Authorisation unavailable. Retry in Nostranslation.", result.getString("error"))
+
+                val queued = signer.reviews
+                signer.revoke(peer)
+                assertTrue(signer.reviews.isEmpty())
+                assertTrue(signer.connectedClients.isEmpty())
+                assertTrue(relay.cancelled)
+                queued.forEach { signer.decide(it, approved = true) }
+                assertEquals(2, relay.frames.size)
+            }
+        } finally {
+            job.cancel()
+            keys.remove()
+        }
+    }
 }
 
 internal class RecordingNostranslationRelay : WebSocket.Factory {
