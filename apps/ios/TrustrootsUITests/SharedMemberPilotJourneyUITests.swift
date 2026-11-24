@@ -440,7 +440,6 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
         let app = XCUIApplication()
         app.launchArguments = [
-            "--shared-member-pilot",
             "--shared-home",
             "-trustroots.apiServerURL",
             "http://127.0.0.1:\(port)",
@@ -451,15 +450,11 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         addTeardownBlock { [self] in
             app.terminate()
             app.launch()
-            signOutIfAlreadySignedIn(app)
+            signOutOfNativeAccountIfNeeded(app)
         }
-        signOutIfAlreadySignedIn(app)
-        signIn(app)
+        signOutOfNativeAccountIfNeeded(app)
+        signInNatively(app)
 
-        let exitPilot = app.buttons["Exit shared pilot"]
-        XCTAssertTrue(exitPilot.waitForExistence(timeout: 15), app.debugDescription)
-        exitPilot.tap()
-        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10), app.debugDescription)
         let search = app.buttons["Search"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
         search.tap()
