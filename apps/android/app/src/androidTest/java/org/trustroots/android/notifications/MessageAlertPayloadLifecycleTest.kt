@@ -37,6 +37,7 @@ import org.unifiedpush.android.connector.data.PublicKeySet
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class MessageAlertPayloadLifecycleTest {
@@ -137,6 +138,39 @@ class MessageAlertPayloadLifecycleTest {
     }
 
     @Test
+    fun lateNostranslationEndpointIsIgnoredWithoutAnOptedInSession() {
+        val preferences = context.getSharedPreferences("nostranslation-alerts", Context.MODE_PRIVATE)
+        val savedPreferences = preferences.all
+        val savedStatus = NostranslationAlerts.status.value
+        val backend = "http://127.0.0.1:1"
+        val session = MemberSession("", MobileMember("late-endpoint", "Late Endpoint"), "fixture-access")
+        val service = pushService()
+        val endpoint = PushEndpoint(
+            "https://push.example.test/review", PublicKeySet("fixture-key", "fixture-auth"), temporary = false,
+        )
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        fun deliverEndpoint() {
+            instrumentation.runOnMainSync { service.onNewEndpoint(endpoint, NostranslationAlerts.instance) }
+            assertNull(NostranslationAlerts.status.value)
+        }
+        try {
+            preferences.edit().clear().commit()
+            NostranslationAlerts.status.value = null
+            deliverEndpoint()
+
+            SecureMobileSessionStore(context).save(session)
+            deliverEndpoint()
+
+            preferences.edit().putString("backend", backend).commit()
+            deliverEndpoint()
+            assertFalse(NostranslationAlerts.isEnabled(context, backend, session))
+        } finally {
+            restorePreferences(preferences, savedPreferences)
+            NostranslationAlerts.status.value = savedStatus
+        }
+    }
+
+    @Test
     fun nostranslationEndpointRegistersThePairedTransportAndRemovesStaleRegistrations() {
         val endpoint = "https://push.example.test/review"
         val peer = "c6047f9441ed7d6d3045406e95c07cd85a778e4b8cef3ca7abac09b95c709ee5"
@@ -145,6 +179,7 @@ class MessageAlertPayloadLifecycleTest {
         val nonce = "a".repeat(64)
         val session = MemberSession("", MobileMember("alert-fixture", "Alert Fixture"), "fixture-review-access")
         lateinit var backend: String
+        val beforeChallenge = AtomicReference<(() -> Unit)?>(null)
         LocalTransportFixture { request ->
             assertEquals("Bearer fixture-review-access", request.authorization)
             val body = JSONObject(request.body)
@@ -159,6 +194,7 @@ class MessageAlertPayloadLifecycleTest {
                         .put(JSONArray().put("challenge").put(nonce))
                     val challenge = JSONObject().put("kind", 27235).put("content", "").put("tags", tags)
                         .put("created_at", System.currentTimeMillis() / 1000)
+                    beforeChallenge.getAndSet(null)?.invoke()
                     LocalTransportFixture.Response(JSONObject().put("event", challenge).toString())
                 }
                 "PUT" to alertPath -> LocalTransportFixture.Response("", status = 204)
@@ -205,6 +241,16 @@ class MessageAlertPayloadLifecycleTest {
                     listOf("obsolete-transport", transport),
                     fixture.requests.filter { it.method == "DELETE" }.map { JSONObject(it.body).getString("transport") },
                 )
+
+                keys.generate()
+                keys.savePairings(keys.revision(), JSONArray().put(JSONObject()
+                    .put("peer", peer).put("transport", "0".repeat(63) + "1")))
+                beforeChallenge.set { keys.remove() }
+                NostranslationAlerts.status.value = null
+                pushService().onNewEndpoint(pushEndpoint, NostranslationAlerts.instance)
+                awaitNostranslationRegistration(fixture, R.string.nostranslation_alerts_unavailable)
+                assertEquals(listOf("POST", "PUT", "DELETE", "DELETE", "POST"), fixture.requests.map { it.method })
+                assertEquals(emptySet<String>(), preferences.getStringSet(registered, null))
             } finally {
                 keys.remove()
                 restorePreferences(preferences, savedPreferences)
@@ -392,13 +438,16 @@ class MessageAlertPayloadLifecycleTest {
         }.invoke(service, context)
     }
 
-    private fun awaitNostranslationRegistration(fixture: LocalTransportFixture) {
+    private fun awaitNostranslationRegistration(
+        fixture: LocalTransportFixture,
+        expectedStatus: Int = R.string.nostranslation_alerts_ready,
+    ) {
         val deadline = SystemClock.elapsedRealtime() + 90_000
         while (NostranslationAlerts.status.value == null && SystemClock.elapsedRealtime() < deadline) {
             Thread.sleep(25)
         }
         val requests = fixture.requests.map { "${it.method} ${it.path}" }
-        assertEquals("Alert registration did not settle after requests $requests", R.string.nostranslation_alerts_ready, NostranslationAlerts.status.value)
+        assertEquals("Alert registration did not settle after requests $requests", expectedStatus, NostranslationAlerts.status.value)
     }
 
     private fun notificationsFor(senderId: String): List<String> =
