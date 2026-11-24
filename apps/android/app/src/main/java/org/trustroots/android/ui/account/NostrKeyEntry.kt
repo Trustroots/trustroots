@@ -61,7 +61,7 @@ internal fun NostrKeyEntry(
 private enum class KeyConfirmation { REMOVE_LOCAL, REPLACE_PROFILE, UNLINK_PROFILE }
 
 @Suppress("DEPRECATION") // System credential activity also supports API 26–29.
-private fun deviceCredentialPrompt(context: Context, title: String, message: String): Intent? =
+internal fun deviceCredentialPrompt(context: Context, title: String, message: String): Intent? =
     context.getSystemService(KeyguardManager::class.java)?.createConfirmDeviceCredentialIntent(title, message)
 
 @Composable
