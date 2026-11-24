@@ -82,6 +82,13 @@ internal fun NostranslationDialog(
     val context = LocalContext.current
     val activity = context.findActivity(Activity::class.java)
     val alertStatus by NostranslationAlerts.status.collectAsState()
+    var alertsEnabled by remember(context, api.backendURL, session.member.username) {
+        mutableStateOf(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+    }
+    DisposableEffect(context, api.backendURL, session.member.username) {
+        val stopObserving = NostranslationAlerts.observeEnabled(context, api.backendURL, session) { alertsEnabled = it }
+        onDispose(stopObserving)
+    }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
         if (allowed && activity != null) NostranslationAlerts.enable(activity, api, session)
         else NostranslationAlerts.registrationFailed()
@@ -202,13 +209,12 @@ internal fun NostranslationDialog(
                         }
                     }
                     if (signer.connectedClients.isNotEmpty()) {
-                        val enabled = NostranslationAlerts.isEnabled(context, api.backendURL, session)
                         TextButton(onClick = {
-                            if (enabled) NostranslationAlerts.disable(context, api, session)
+                            if (alertsEnabled) NostranslationAlerts.disable(context, api, session)
                             else if (!context.canPostNotifications()) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                             else if (activity != null) NostranslationAlerts.enable(activity, api, session)
                         }) {
-                            Text(stringResource(if (enabled) R.string.nostranslation_disable_alerts else R.string.nostranslation_enable_alerts))
+                            Text(stringResource(if (alertsEnabled) R.string.nostranslation_disable_alerts else R.string.nostranslation_enable_alerts))
                         }
                         alertStatus?.let { Text(stringResource(it)) }
                     }
