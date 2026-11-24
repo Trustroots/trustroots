@@ -555,7 +555,7 @@ describe('Messages controller unit tests', () => {
     it('returns data for a valid date range', async () => {
       const res = deferredResponse();
       messagesController.sync(
-        { user, query: { dateFrom: '2020-01-01', dateTo: '2021-01-01' } },
+        { user, query: { dateFrom: '2020-01-01', dateTo: '2020-01-01' } },
         res,
       );
       await res.waitForResponse();
