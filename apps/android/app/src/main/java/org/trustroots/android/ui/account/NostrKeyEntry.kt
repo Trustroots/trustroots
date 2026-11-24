@@ -58,7 +58,11 @@ internal fun NostrKeyEntry(
     if (open && enabled) NostrKeyDialog(api, session, credentialPrompt, onClose = { open = false })
 }
 
-private enum class KeyConfirmation { REMOVE_LOCAL, REPLACE_PROFILE, UNLINK_PROFILE }
+private sealed interface KeyConfirmation {
+    data object RemoveLocal : KeyConfirmation
+    data class ReplaceProfile(val publicKey: String) : KeyConfirmation
+    data object UnlinkProfile : KeyConfirmation
+}
 
 @Suppress("DEPRECATION") // System credential activity also supports API 26–29.
 internal fun deviceCredentialPrompt(context: Context, title: String, message: String): Intent? =
@@ -167,9 +171,9 @@ private fun NostrKeyDialog(
     val decision = confirmation
     if (decision != null) {
         val (action, explanation) = when (decision) {
-            KeyConfirmation.REMOVE_LOCAL -> R.string.nostr_remove to R.string.nostr_remove_explanation
-            KeyConfirmation.REPLACE_PROFILE -> R.string.nostr_replace_profile to R.string.nostr_replace_explanation
-            KeyConfirmation.UNLINK_PROFILE -> R.string.nostr_unlink_profile to R.string.nostr_unlink_explanation
+            KeyConfirmation.RemoveLocal -> R.string.nostr_remove to R.string.nostr_remove_explanation
+            is KeyConfirmation.ReplaceProfile -> R.string.nostr_replace_profile to R.string.nostr_replace_explanation
+            KeyConfirmation.UnlinkProfile -> R.string.nostr_unlink_profile to R.string.nostr_unlink_explanation
         }
         AlertDialog(
             onDismissRequest = { confirmation = null },
@@ -180,9 +184,9 @@ private fun NostrKeyDialog(
                     confirmation = null
                     secret = null
                     when (decision) {
-                        KeyConfirmation.REMOVE_LOCAL -> update { store.remove(); null }
-                        KeyConfirmation.REPLACE_PROFILE -> publicKey?.let(::updateProfile)
-                        KeyConfirmation.UNLINK_PROFILE -> updateProfile(null)
+                        KeyConfirmation.RemoveLocal -> update { store.remove(); null }
+                        is KeyConfirmation.ReplaceProfile -> updateProfile(decision.publicKey)
+                        KeyConfirmation.UnlinkProfile -> updateProfile(null)
                     }
                 }) { Text(stringResource(action)) }
             },
@@ -205,23 +209,23 @@ private fun NostrKeyDialog(
                     linked == null -> Text(stringResource(R.string.nostr_loading))
                     linked.isFailure -> Text(stringResource(R.string.nostr_profile_unavailable))
                     else -> SelectionContainer {
-                        Text(linked.getOrNull() ?: stringResource(R.string.nostr_no_profile_key))
+                        Text(linked.getOrThrow() ?: stringResource(R.string.nostr_no_profile_key))
                     }
                 }
                 val npub = publicKey
                 if (linked?.isSuccess == true && session.accessToken != null) {
-                    val current = linked.getOrNull()
+                    val current = linked.getOrThrow()
                     if (npub != null && npub != current) {
                         TextButton(enabled = controlsEnabled, onClick = {
                             if (current == null) updateProfile(npub)
-                            else confirmation = KeyConfirmation.REPLACE_PROFILE
+                            else confirmation = KeyConfirmation.ReplaceProfile(npub)
                         }) {
                             Text(stringResource(if (current == null) R.string.nostr_link_profile else R.string.nostr_replace_profile))
                         }
                     }
                     if (current != null) {
                         TextButton(enabled = controlsEnabled, onClick = {
-                            confirmation = KeyConfirmation.UNLINK_PROFILE
+                            confirmation = KeyConfirmation.UnlinkProfile
                         }) { Text(stringResource(R.string.nostr_unlink_profile)) }
                     }
                 }
@@ -250,7 +254,7 @@ private fun NostrKeyDialog(
                             Text(backup)
                             TextButton(onClick = { secret = null }) { Text(stringResource(R.string.nostr_hide_secret)) }
                         }
-                        TextButton(enabled = controlsEnabled, onClick = { confirmation = KeyConfirmation.REMOVE_LOCAL; secret = null }) {
+                        TextButton(enabled = controlsEnabled, onClick = { confirmation = KeyConfirmation.RemoveLocal; secret = null }) {
                             Text(stringResource(R.string.nostr_remove))
                         }
                     }

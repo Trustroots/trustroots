@@ -4,13 +4,19 @@ import android.app.Activity
 import android.app.KeyguardManager
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
@@ -25,7 +31,14 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
@@ -40,6 +53,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.account.NostrKeyEntry
+import org.trustroots.android.ui.account.deviceCredentialPrompt
 
 @RunWith(AndroidJUnit4::class)
 class NostrKeyJourneyTest {
@@ -136,6 +150,7 @@ class NostrKeyJourneyTest {
     @Test fun importsAndCopiesALocalKeyAndRetriesRefusedProfileLinking() {
         val username = "test-import-member"
         val publicKey = "npub10xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqpkge6d"
+        val challenges = AtomicInteger()
         val writes = AtomicInteger()
         val backendURL = AtomicReference<String>()
         LocalTransportFixture { request ->
@@ -144,6 +159,7 @@ class NostrKeyJourneyTest {
                 "GET" to "/api/mobile/v0/profiles/$username" ->
                     LocalTransportFixture.Response(JSONObject().put("profile", member).toString())
                 "POST" to "/api/mobile/v0/profile/nostr/challenge" -> {
+                    if (challenges.incrementAndGet() == 1) return@LocalTransportFixture LocalTransportFixture.Response("{}")
                     val challenge = JSONObject().put("kind", 27235).put("created_at", System.currentTimeMillis() / 1000)
                         .put("content", "").put("tags", JSONArray()
                             .put(JSONArray().put("u").put("${backendURL.get()}/api/users"))
@@ -164,12 +180,25 @@ class NostrKeyJourneyTest {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             val account = nostrAccountScope(backend, username)
             val keys = AndroidNostrKeys(context, account)
+            val registry = CredentialResultRegistry()
+            val owner = object : ActivityResultRegistryOwner {
+                override val activityResultRegistry = registry
+            }
+            val useTestCredential = AtomicBoolean()
             try {
                 val api = MobileApiClient(backend)
                 val session = MemberSession("", MobileMember(username, "Test Member"), accessToken = "fixture")
-                compose.setContent { NostrKeyEntry(api, session, enabled = true) }
+                compose.setContent {
+                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                        NostrKeyEntry(api, session, enabled = true) { activity, title, message ->
+                            if (useTestCredential.get()) Intent("trustroots.test.CREDENTIAL")
+                            else deviceCredentialPrompt(activity, title, message)
+                        }
+                    }
+                }
                 compose.onNodeWithText("Nostr key").performClick()
                 awaitText("Import private key")
+                awaitText("No linked public key.")
                 val existingKey = keys.generate()
                 compose.onNodeWithText("Generate new key").performScrollTo().performClick()
                 awaitText("The local Nostr key could not be accessed.")
@@ -187,15 +216,32 @@ class NostrKeyJourneyTest {
                 importButton.performScrollTo().performClick()
                 awaitText("Copy public key")
                 compose.onNodeWithText("Copy public key").performScrollTo().performClick()
-                compose.runOnIdle {
-                    val clipboard = context.getSystemService(ClipboardManager::class.java)
-                    assertEquals(publicKey, clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                compose.waitUntil(10_000) {
+                    compose.runOnUiThread { clipboard.primaryClip?.getItemAt(0)?.text?.toString() == publicKey }
                 }
                 if (!context.getSystemService(KeyguardManager::class.java).isDeviceSecure) {
                     compose.onNodeWithText("Back up private key").performScrollTo().performClick()
                     awaitText("Set up a device screen lock to back up your Nostr key.")
                 }
                 val link = compose.onNodeWithText("Link local key to profile")
+                link.performScrollTo()
+                val startLink = requireNotNull(link.fetchSemanticsNode().config[SemanticsActions.OnClick].action)
+                useTestCredential.set(true)
+                compose.onNodeWithText("Back up private key").performScrollTo().performClick()
+                link.assertIsNotEnabled()
+                compose.runOnIdle {
+                    startLink()
+                    registry.respond(Activity.RESULT_CANCELED)
+                }
+                assertEquals(0, challenges.get())
+                compose.runOnIdle {
+                    startLink()
+                    startLink()
+                }
+                awaitText("The profile key could not be updated. Please try again.")
+                assertEquals(1, challenges.get())
+                assertEquals(0, writes.get())
                 for (message in listOf(
                     "The profile update was refused. This public key may already be linked to another member.",
                     "The profile key could not be updated. Please try again.",
@@ -205,6 +251,8 @@ class NostrKeyJourneyTest {
                 }
                 link.performScrollTo().performClick()
                 awaitText("Unlink profile key")
+                assertEquals(4, challenges.get())
+                assertEquals(3, writes.get())
             } finally {
                 keys.remove()
             }
@@ -249,6 +297,21 @@ class NostrKeyJourneyTest {
             val owner = object : ActivityResultRegistryOwner {
                 override val activityResultRegistry = registry
             }
+            val lifecycleOwner = object : LifecycleOwner {
+                override val lifecycle = LifecycleRegistry(this)
+            }
+            val holdBackupRead = AtomicBoolean()
+            val readingBackup = CountDownLatch(1)
+            val releaseBackup = CountDownLatch(1)
+            val pausedPreferences = object : SharedPreferences by preferences {
+                override fun getString(key: String?, defValue: String?): String? {
+                    if (key == scope.storageAccount && holdBackupRead.compareAndSet(true, false)) {
+                        readingBackup.countDown()
+                        check(releaseBackup.await(25, TimeUnit.SECONDS))
+                    }
+                    return preferences.getString(key, defValue)
+                }
+            }
             val enabled = mutableStateOf(true)
             try {
                 val localKey = keys.import("0".repeat(63) + "2")
@@ -256,8 +319,21 @@ class NostrKeyJourneyTest {
                 val record = requireNotNull(preferences.getString(scope.storageAccount, null))
                 val api = MobileApiClient(fixture.baseURL)
                 val session = MemberSession("connect.sid=fixture-session", MobileMember(username, "Test Member"))
+                compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
                 compose.setContent {
-                    CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                    val activityContext = LocalContext.current
+                    val keyContext = remember(activityContext) {
+                        object : ContextWrapper(activityContext) {
+                            override fun getApplicationContext(): Context = this
+                            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                                if (name == "nostr-identities") pausedPreferences else super.getSharedPreferences(name, mode)
+                        }
+                    }
+                    CompositionLocalProvider(
+                        LocalActivityResultRegistryOwner provides owner,
+                        LocalLifecycleOwner provides lifecycleOwner,
+                        LocalContext provides keyContext,
+                    ) {
                         NostrKeyEntry(api, session, enabled.value) { _, _, _ -> Intent("trustroots.test.CREDENTIAL") }
                     }
                 }
@@ -287,10 +363,26 @@ class NostrKeyJourneyTest {
                 compose.onNodeWithText("Hide private key").performScrollTo().performClick()
                 compose.onNodeWithText(backup).assertDoesNotExist()
 
+                reveal.performScrollTo().performClick()
+                compose.runOnIdle {
+                    holdBackupRead.set(true)
+                    registry.respond(Activity.RESULT_OK)
+                }
+                compose.waitUntil(15_000) { readingBackup.count == 0L }
+                compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED }
+                releaseBackup.countDown()
+                compose.waitUntil(10_000) {
+                    compose.onAllNodesWithText("Back up private key").fetchSemanticsNodes().any {
+                        !it.config.contains(SemanticsProperties.Disabled)
+                    }
+                }
+                compose.onNodeWithText(backup).assertDoesNotExist()
+
                 compose.runOnIdle { enabled.value = false }
                 compose.onNodeWithText("Nostr key").assertIsNotEnabled()
                 compose.onNodeWithText("Copy public key").assertDoesNotExist()
             } finally {
+                releaseBackup.countDown()
                 keys.remove()
             }
         }
