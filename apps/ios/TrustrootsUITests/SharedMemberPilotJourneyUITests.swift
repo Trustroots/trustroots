@@ -214,7 +214,19 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         menu.tap()
         let account = app.buttons["account-menu-entry"]
         XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
-        account.tap()
+        XCTAssertTrue(account.isEnabled, app.debugDescription)
+        if account.isHittable {
+            account.tap()
+        } else {
+            // SwiftUI's List can report a visible row without an XCTest hit point.
+            // Send a tap inside the displayed row and verify the destination below.
+            let frame = account.frame
+            XCTAssertFalse(frame.isEmpty, app.debugDescription)
+            XCTAssertTrue(app.frame.contains(frame), app.debugDescription)
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY))
+                .tap()
+        }
         XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10), app.debugDescription)
     }
 
