@@ -4,7 +4,6 @@ import { defineConfig } from 'oxfmt';
 export const ignorePatterns = [
   'node_modules/',
   'coverage/',
-  'coverage-report/',
   'playwright-report/',
   '**/storybook-static/',
   'test-results/',
