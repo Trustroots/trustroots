@@ -146,6 +146,7 @@ class AndroidNostranslationSessionTest {
                 relay.receive(JSONArray().put("EVENT").put(subscription).put(JSONObject()))
                 relay.receive("not a relay frame")
                 relay.receive("x".repeat(32_769))
+                relay.receive(JSONArray().put("OK").put("unrelated-acknowledgement").put(true))
                 assertEquals(4, relay.frames.size)
 
                 for ((method, params, response) in listOf(
@@ -169,6 +170,16 @@ class AndroidNostranslationSessionTest {
                 assertEquals("invalid-review", invalidResult.getString("id"))
                 assertEquals("Authorisation unavailable. Retry in Nostranslation.", invalidResult.getString("error"))
                 assertTrue(restored.reviews.isEmpty())
+
+                relay.receive(reviewFrame("superseded-review"))
+                val superseded = restored.reviews.single()
+                timestamp = superseded.approval.expiresAt + 1
+                relay.receive(reviewFrame("replacement-review"))
+                val replacement = restored.reviews.single()
+                assertEquals("replacement-review", replacement.id)
+                restored.decide(superseded, approved = true)
+                assertEquals(listOf(replacement), restored.reviews)
+                restored.decide(replacement, approved = false)
                 val afterRequests = relay.frames.size
 
                 relay.receive(reviewFrame("sign-out-before-approval"))
@@ -177,12 +188,15 @@ class AndroidNostranslationSessionTest {
                 restored.decide(signedOutReview, approved = true)
                 assertTrue(restored.reviews.isEmpty())
                 assertEquals(afterRequests, relay.frames.size)
+                assertThrows(IllegalStateException::class.java) { restored.revoke(peer) }
+                assertEquals(listOf(peer), restored.connectedClients)
                 signedIn = true
 
                 relay.receive(reviewFrame("disconnect-before-approval"))
                 val disconnectedReview = restored.reviews.single()
                 relay.closed()
                 relay.closed()
+                relay.open()
                 restored.decide(disconnectedReview, approved = true)
                 assertTrue(restored.relayFailed)
                 assertTrue(relay.cancelled)

@@ -160,6 +160,14 @@ class NostranslationEntryJourneyTest {
             compose.onNodeWithText("Nostranslation signing").performClick()
             val scan = compose.onNodeWithText("Scan Nostranslation QR code")
             val pair = compose.onNode(hasText("Pair with Nostranslation") and hasClickAction())
+            val actionFailed = compose.onNodeWithText(
+                "This action could not be completed. Check your local Nostr key and try again.",
+            )
+            compose.runOnIdle { scanner.available = false }
+            scan.performClick()
+            actionFailed.assertIsDisplayed()
+            compose.runOnIdle { scanner.available = true }
+
             scan.performClick()
             compose.runOnIdle { scanner.finish(null) }
             pair.assertDoesNotExist()
@@ -167,8 +175,7 @@ class NostranslationEntryJourneyTest {
             compose.runOnIdle { scanner.finish(connectionLink) }
             pair.assertIsDisplayed()
             pair.performClick()
-            compose.onNodeWithText("This action could not be completed. Check your local Nostr key and try again.")
-                .assertIsDisplayed()
+            actionFailed.assertIsDisplayed()
         } finally {
             keys.remove()
         }
@@ -176,6 +183,7 @@ class NostranslationEntryJourneyTest {
 
     private class ScanResultRegistry : ActivityResultRegistry() {
         private var pendingCode: Int? = null
+        var available = true
 
         override fun <I, O> onLaunch(
             requestCode: Int,
@@ -184,6 +192,7 @@ class NostranslationEntryJourneyTest {
             options: ActivityOptionsCompat?,
         ) {
             assertTrue(input is ScanOptions)
+            check(available) { "No scanner available in the fixture" }
             pendingCode = requestCode
         }
 

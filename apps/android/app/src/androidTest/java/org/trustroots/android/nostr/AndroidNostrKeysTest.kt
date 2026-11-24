@@ -132,8 +132,14 @@ class AndroidNostrKeysTest {
             assertEquals(pairings.toString(), AndroidNostrKeys(context, scope).loadPairings(revision).toString())
 
             first.remove()
+            assertThrows(IllegalStateException::class.java) { first.loadPairings(revision) }
             assertThrows(IllegalStateException::class.java) { first.savePairings(revision, pairings) }
+            val removedRevision = first.revision()
+            assertThrows(IllegalStateException::class.java) { first.loadPairings(removedRevision) }
+            assertThrows(IllegalStateException::class.java) { first.savePairings(removedRevision, pairings) }
+
             first.generate()
+            assertThrows(IllegalStateException::class.java) { first.loadPairings(revision) }
             assertEquals(0, first.loadPairings(first.revision()).length())
         } finally {
             first.remove()
