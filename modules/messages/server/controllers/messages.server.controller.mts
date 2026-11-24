@@ -905,7 +905,7 @@ service.sync = function (req, res) {
   ] as const) {
     if (!Object.hasOwn(queryParams, field)) continue;
     const input = queryParams[field];
-    const date = typeof input === 'string' ? moment(input) : null;
+    const date = typeof input === 'string' ? moment(String(input)) : null;
     if (!date?.isValid()) {
       return res.status(400).send({ message: `Invalid \`${field}\`.` });
     }
