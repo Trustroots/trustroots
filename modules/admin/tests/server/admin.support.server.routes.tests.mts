@@ -301,6 +301,7 @@ describe('Support team access and investigation', () => {
         ...Array.from({ length: 49 }, (_, index) => `Message ${index}`),
       ]);
     first.body.items[0].shadowHidden.should.equal(true);
+    Object.hasOwn(first.body.items[0], 'userFrom').should.equal(false);
     first.body.items[0].userTo.username.should.equal(users[2].username);
     Object.hasOwn(first.body.items[0].userTo, 'email').should.equal(false);
     const second = await agent.get(path).query({ page: 2 }).expect(200);
@@ -320,6 +321,11 @@ describe('Support team access and investigation', () => {
     logs
       .every(log => Object.keys(log.body ?? {}).length === 0)
       .should.equal(true);
+
+    await Message.deleteOne({ ...outgoing, created: windowEnd });
+    const fullPage = await agent.get(path).expect(200);
+    fullPage.body.items.should.have.length(50);
+    fullPage.body.hasMore.should.equal(false);
 
     sinon
       .stub(AuditLog.prototype, 'save')
@@ -347,7 +353,9 @@ describe('Support team access and investigation', () => {
       if (role === 'admin') res.body.items.should.eql([]);
     }
     await agent.get(reviewEndpoint('bad')).expect(400);
-    await agent.get(reviewEndpoint(new mongoose.Types.ObjectId())).expect(404);
+    await agent
+      .get(reviewEndpoint(new mongoose.Types.ObjectId()))
+      .expect(404, { message: 'Message review not found.' });
     await agent.get(path).query({ page: 1_000_000 }).expect(400);
   });
   it('triages requests, records access and keeps resolved investigations available', async () => {
