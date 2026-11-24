@@ -8,6 +8,7 @@ import type {
   OfferPayload,
   OfferReadPayload,
   OfferSearchFeatureCollection,
+  PlaceHostPage,
   UpdateOfferRequest,
 } from '../../shared/offer.ts';
 
@@ -91,6 +92,17 @@ export async function queryOffers(
   const { data } = await axios.get<OfferSearchFeatureCollection>(
     `/api/offers?${params}`,
   );
+  return data;
+}
+
+export async function queryPlaceHosts(
+  params: OfferQuery,
+  signal?: AbortSignal,
+): Promise<PlaceHostPage> {
+  const { data } = await axios.get<PlaceHostPage>('/api/offers', {
+    params: { ...params, view: 'place-hosts' },
+    signal,
+  });
   return data;
 }
 

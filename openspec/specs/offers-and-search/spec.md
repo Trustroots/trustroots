@@ -500,6 +500,28 @@ The system SHALL allow 60 offer searches per member per minute by default in eac
 - **THEN** additional searches return HTTP 429 with a `Retry-After` header before querying for offers
 - **AND** another member on the same network can still search for offers
 
+### Requirement: City-based host results
+
+The system SHALL open a scrollable host list when a member selects a city. The list SHALL use the geocoded city's bounds independently of the map viewport and apply offer eligibility, member visibility and supported search filters.
+
+#### Scenario: Select a city on any screen size
+
+- **WHEN** a member selects a city on desktop or mobile
+- **THEN** the member sees eligible hosting offers inside that city's search area
+- **AND** the member can switch to results for the current map area
+
+#### Scenario: Compare and sort eligible hosts
+
+- **WHEN** the member browses city results
+- **THEN** each row shows the member's identity, hosting status, age if available, approximate distance from the centre, coarse activity and visible public Experience count
+- **AND** results initially sort by name and can sort by recent activity or public Experience count
+- **AND** the member can limit the list to hosts who can host
+
+#### Scenario: Return from an offer
+
+- **WHEN** the member opens a hosting offer and returns to the results
+- **THEN** the city, sort, filter and loaded results remain available
+
 ### Requirement: Share web search criteria
 
 Web map and member search SHALL reflect applied search criteria in URL query parameters and restore those criteria when a link opens.

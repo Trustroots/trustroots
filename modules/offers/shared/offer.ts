@@ -105,6 +105,30 @@ export interface OfferSearchFeatureCollection {
   features: OfferSearchFeature[];
 }
 
+export type PlaceHostSort = 'name' | 'activity' | 'experiences';
+export type PlaceHostActivity =
+  | 'past-month'
+  | 'past-six-months'
+  | 'past-two-years'
+  | 'older';
+
+export interface PlaceHostResult<Id = string, Timestamp = string> {
+  _id: Id;
+  type: 'host';
+  user: Omit<OfferMember<Id, Timestamp>, 'birthdate'>;
+  location: OfferLocation;
+  status?: OfferStatus;
+  volunteering?: boolean;
+  age?: number;
+  activity: PlaceHostActivity;
+  experienceCount: number;
+}
+
+export interface PlaceHostPage<Id = string, Timestamp = string> {
+  offers: PlaceHostResult<Id, Timestamp>[];
+  nextOffset?: number;
+}
+
 export interface OfferMutationResponse {
   message: 'Offer saved.' | 'Offer updated.' | 'Offer removed.';
 }
