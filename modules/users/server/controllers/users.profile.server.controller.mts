@@ -1421,7 +1421,7 @@ function getMemberSearchOfferStages(
           },
           {
             'member.tribe': {
-              $in: _.compact(_.map(user.member, ({ tribe }) => tribe)),
+              $in: user.member.map(({ tribe }) => tribe),
             },
             searchOffers: { $elemMatch: offerConditions },
           },
