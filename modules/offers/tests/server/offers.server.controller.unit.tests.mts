@@ -246,6 +246,7 @@ describe('Offers controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
+      res.body.should.eql({ message: 'Offer saved.' });
       const offer = required(await Offer.findOne({ user: owner._id }));
       required(offer.validUntil).getTime().should.equal(validUntil);
     });
@@ -419,6 +420,95 @@ describe('Offers controller unit tests', () => {
       const updated = required(await Offer.findById(offerReq._id));
       required(updated.locationFuzzy).should.eql(fuzzy);
       required(updated.description).should.equal('Updated');
+    });
+
+    for (const location of [
+      [11, 20],
+      [10, 21],
+    ]) {
+      it(`moves the public host pin when the location changes to ${location.join(', ')}`, async () => {
+        offerReq.type = 'host';
+        const originalFuzzy = [...required(offerReq.locationFuzzy)];
+        const { res } = await runHandler(res =>
+          offersController.update(
+            { user: owner, offer: offerReq, body: { location } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(200);
+        const updated = required(await Offer.findById(offerReq._id));
+        updated.location.should.eql(location);
+        required(updated.locationFuzzy).should.not.eql(originalFuzzy);
+      });
+    }
+
+    it('regenerates the public pin for an unchanged meet offer location', async () => {
+      const location = [...offerReq.location];
+      offerReq.locationFuzzy = location;
+      const { res } = await runHandler(res =>
+        offersController.update(
+          { user: owner, offer: offerReq, body: { location } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      required(updated.locationFuzzy).should.not.eql(location);
+    });
+
+    it('repairs a missing legacy public host pin on the next update', async () => {
+      offerReq.type = 'host';
+      offerReq.locationFuzzy = undefined;
+      const location = [...offerReq.location];
+      const { res } = await runHandler(res =>
+        offersController.update(
+          { user: owner, offer: offerReq, body: { location } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      required(updated.locationFuzzy).should.have.length(2);
+    });
+
+    it('replaces a missing legacy precise host location', async () => {
+      offerReq.type = 'host';
+      offerReq.set('location', undefined);
+      const location = [10, 20];
+      const { res } = await runHandler(res =>
+        offersController.update(
+          { user: owner, offer: offerReq, body: { location } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      updated.location.should.eql(location);
+    });
+
+    it('validates malformed host locations before keeping the public pin', async () => {
+      offerReq.type = 'host';
+      for (const location of [[10, 20, 30], { 0: 10, 1: 20, length: 2 }]) {
+        const { res } = await runHandler(res =>
+          offersController.update(
+            { user: owner, offer: offerReq, body: { location } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(400);
+      }
+    });
+
+    it('rejects an incomplete update when the legacy host has no precise location', async () => {
+      offerReq.type = 'host';
+      offerReq.set('location', undefined);
+      const { res } = await runHandler(res =>
+        offersController.update(
+          { user: owner, offer: offerReq, body: { location: [undefined, 20] } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
     });
 
     it('updates the optional offer fields accepted by the endpoint', async () => {
