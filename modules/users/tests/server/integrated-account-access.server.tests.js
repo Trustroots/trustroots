@@ -185,11 +185,16 @@ describe('Combined account access flows', function () {
         $set: {
           emailTemporary: 'combined-new@example.test',
           emailToken: hashToken(token),
+          emailTokenIssuedAt: new Date(),
+          emailTokenExpires: new Date(Date.now() + 86400000),
         },
       },
     );
     const agent = request.agent(app);
-    await agent.get('/api/auth/confirm-email/' + token).expect(302);
+    await agent
+      .get('/api/auth/confirm-email/' + token)
+      .expect(302)
+      .expect('Location', '/confirm-email/' + token);
     assert.equal((await User.findById(user._id)).email, user.email);
     const result = await agent
       .post('/api/auth/confirm-email/' + token)
