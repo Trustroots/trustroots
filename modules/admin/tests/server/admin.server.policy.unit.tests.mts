@@ -70,7 +70,7 @@ describe('Admin policy unit tests', () => {
       permissions: ['get'],
     });
     support.allows.should.containDeep([
-      { resources: '/api/admin/network-connections', permissions: ['get'] },
+      { resources: '/api/admin/network-connections', permissions: ['post'] },
       {
         resources: '/api/admin/network-connections/:memberId',
         permissions: ['get'],
@@ -162,7 +162,7 @@ describe('Admin policy unit tests', () => {
   describe('grants per role', () => {
     const supportAndAdmin = [
       'get /api/admin/dashboard',
-      'get /api/admin/network-connections',
+      'post /api/admin/network-connections',
       'get /api/admin/network-connections/:memberId',
       'get /api/admin/experiences',
       'post /api/admin/experiences/:id/change-links',

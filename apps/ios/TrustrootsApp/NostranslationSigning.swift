@@ -109,6 +109,21 @@ final class NostranslationSigner: ObservableObject {
         for client in clients { try connect(client) }
     }
 
+    func recoverPending(server: String) async {
+        let api = TrustrootsAPI()
+        for client in clients {
+            guard !Task.isCancelled else { return }
+            guard let connection = connections[client.peer],
+                  let events = try? await api.pendingTranslationAlerts(
+                    serverURLString: server, transport: connection.transportPublicKey
+                  ),
+                  !Task.isCancelled, isCurrent(connection) else { continue }
+            for event in events.prefix(8) {
+                try? await receive(["EVENT", connection.subscription, event], connection: connection)
+            }
+        }
+    }
+
     func pair(_ link: NostranslationLink) throws {
         let knownPeers = Set(clients.map(\.peer)).union(connections.keys)
         guard let publicKey, knownPeers.count < 8, !knownPeers.contains(link.peer) else {
@@ -362,7 +377,12 @@ struct NostranslationSigningSheet: View {
             .navigationTitle("Nostranslation signing")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-        .onAppear { perform { try signer.start() } }
+        .task {
+            perform { try signer.start() }
+            if openedFromAlert && alerts.enabled {
+                await signer.recoverPending(server: serverURLString)
+            }
+        }
         .onDisappear { signer.stop() }
         .onChange(of: signer.clients) { _, _ in alerts.reconcile(server: serverURLString) }
         .sheet(isPresented: $showScanner) {
@@ -459,9 +479,17 @@ final class NostranslationDeviceAlerts: ObservableObject {
 
     func clearAlert() { alertAccount = nil }
 
+    func retryPendingOptOut(server: String) {
+        guard !enabled, syncTask == nil, let account = identity.accountScope?.storageAccount,
+              let pending = defaults.stringArray(forKey: account + ":translation-alert-transports"),
+              !pending.isEmpty else { return }
+        reconcile(server: server)
+    }
+
     func reconcile(server: String) {
         currentServer = server
         syncTask?.cancel()
+        syncTask = nil
         guard let account = identity.accountScope?.storageAccount else {
             UIApplication.shared.unregisterForRemoteNotifications()
             deviceToken = nil
@@ -474,7 +502,12 @@ final class NostranslationDeviceAlerts: ObservableObject {
             return
         }
         let token = enabled ? deviceToken : nil
+        if !enabled {
+            UIApplication.shared.unregisterForRemoteNotifications()
+            deviceToken = nil
+        }
         syncTask = Task {
+            defer { if !Task.isCancelled { syncTask = nil } }
             do {
                 try await sync(server: server, account: account, revision: revision, token: token)
                 try ensureCurrent(revision)
@@ -482,7 +515,11 @@ final class NostranslationDeviceAlerts: ObservableObject {
             } catch is CancellationError {
                 return
             } catch {
-                if identity.isCurrent(revision) { status = "Review alerts could not be updated." }
+                if identity.isCurrent(revision) {
+                    status = token == nil
+                        ? "Review alerts are off on this device. Server removal will retry when you return."
+                        : "Review alerts could not be updated."
+                }
             }
         }
     }

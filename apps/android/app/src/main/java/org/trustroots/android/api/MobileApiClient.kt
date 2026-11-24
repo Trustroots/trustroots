@@ -465,6 +465,15 @@ class MobileApiClient(
         response.opt("androidVapidKey") as? String
     }
 
+    internal suspend fun pendingTranslationAlerts(session: MemberSession, transport: String): JSONArray =
+        withContext(Dispatchers.IO) {
+            val response = jsonRequest(
+                "/api/mobile/v0/nostranslation/alerts/pending", "POST",
+                JSONObject().put("transport", transport).toString(), session,
+            )
+            JSONObject(response.body).getJSONArray("events")
+        }
+
     internal suspend fun unregisterTranslationAlert(session: MemberSession, transport: String): Unit =
         withContext(Dispatchers.IO) {
             jsonRequest(

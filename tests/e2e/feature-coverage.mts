@@ -3283,7 +3283,7 @@ const features = [
       ],
       apiRoutes: [
         apiRoute('GET', '/api/admin/support', source.adminServer),
-        apiRoute('GET', '/api/admin/network-connections', source.adminServer),
+        apiRoute('POST', '/api/admin/network-connections', source.adminServer),
         apiRoute(
           'GET',
           '/api/admin/network-connections/:memberId',

@@ -3,18 +3,7 @@ import assert from 'assert/strict';
 
 import mongoose from 'mongoose';
 import './../../server/models/request-limit.server.model.mts';
-
-type Operation =
-  | 'signup'
-  | 'support'
-  | 'contactRequest'
-  | 'signin'
-  | 'forgotPassword'
-  | 'resetPassword'
-  | 'passwordChange'
-  | 'resendConfirmation'
-  | 'avatarUpload'
-  | 'dataExport';
+import type { Operation } from './../../server/middleware/targeted-request-limit.server.middleware.mts';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -80,6 +69,11 @@ function loadMiddleware(
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       dataExport: { windowMs: 3_600_000, ipLimit: 0, identityLimit: 5 },
+      nostranslationAlertWrite: {
+        windowMs: 3_600_000,
+        ipLimit: 0,
+        identityLimit: 24,
+      },
     },
   };
   (

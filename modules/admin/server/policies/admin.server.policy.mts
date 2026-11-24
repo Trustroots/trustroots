@@ -20,7 +20,7 @@ export const invokeRolesPolicies = () => {
       roles: ['admin', 'support-team'],
       allows: [
         { resources: '/api/admin/dashboard', permissions: ['get'] },
-        { resources: '/api/admin/network-connections', permissions: ['get'] },
+        { resources: '/api/admin/network-connections', permissions: ['post'] },
         {
           resources: '/api/admin/network-connections/:memberId',
           permissions: ['get'],

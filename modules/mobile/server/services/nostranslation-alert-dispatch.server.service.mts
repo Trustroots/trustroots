@@ -16,7 +16,7 @@ export interface TranslationAlertDispatch<
   }) => Promise<Destination[]>;
   claim: (
     destination: Destination,
-    eventId: string,
+    event: TranslationAlertEnvelope['event'],
     expiresAt: Date,
   ) => Promise<boolean>;
   send: (destination: Destination, expiresAt: Date) => Promise<void>;
@@ -42,13 +42,13 @@ export async function dispatchTranslationAlert<
     Math.floor(now() / 1000),
   );
   if (!envelope) return;
-  const { author, recipient, eventId, expiresAt } = envelope;
+  const { author, recipient, event, expiresAt } = envelope;
   const destinations = await dispatch.activeDestinations({ author, recipient });
   const deliveries = await Promise.allSettled(
     destinations.map(async destination => {
       if (
         expiresLater(envelope, now()) &&
-        (await dispatch.claim(destination, eventId, expiresAt)) &&
+        (await dispatch.claim(destination, event, expiresAt)) &&
         expiresLater(envelope, now())
       ) {
         await dispatch.send(destination, expiresAt);

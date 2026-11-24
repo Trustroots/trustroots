@@ -61,6 +61,11 @@ const service = {
       identityLimit: 10000,
     },
     dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },
+    nostranslationAlertWrite: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 0,
+      identityLimit: 24,
+    },
   },
   featureFlags: {
     reference: true,

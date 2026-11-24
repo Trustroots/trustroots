@@ -12,6 +12,9 @@ struct PilotMessageDraftStore {
 
     init(directory: URL = URL.applicationSupportDirectory.appendingPathComponent("Trustroots/PilotMessageDrafts")) {
         self.directory = directory
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try? excludeFromBackup()
+        }
     }
 
     func load(_ key: Key) -> String {
@@ -27,7 +30,15 @@ struct PilotMessageDraftStore {
             return
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try excludeFromBackup()
         try Data(text.utf8).write(to: file, options: [.atomic, .completeFileProtection])
+    }
+
+    private func excludeFromBackup() throws {
+        var draftDirectory = directory
+        var storage = URLResourceValues()
+        storage.isExcludedFromBackup = true
+        try draftDirectory.setResourceValues(storage)
     }
 
     private func fileURL(for key: Key) throws -> URL {

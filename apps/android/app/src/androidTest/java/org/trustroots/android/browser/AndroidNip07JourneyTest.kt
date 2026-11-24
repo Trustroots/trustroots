@@ -7,9 +7,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.webkit.WebViewFeature
@@ -53,11 +57,15 @@ class AndroidNip07JourneyTest {
         try {
             compose.setContent {
                 val scope = rememberCoroutineScope()
+                val installedBridge = remember {
+                    AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
+                }
+                installedBridge.approval?.let { BrowserSigningDialog(it) }
                 AndroidView(factory = { context ->
                     WebView(context).also { view ->
                         web = view
                         view.settings.javaScriptEnabled = true
-                        bridge = AndroidNip07Bridge(session, CoroutineScope(scope.coroutineContext + signingDispatcher))
+                        bridge = installedBridge
                         view.webViewClient = object : WebViewClient() {
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                                 committedURL = null
@@ -89,6 +97,12 @@ class AndroidNip07JourneyTest {
                   } catch (error) { window.radioError = error.message; }
                 })();
             """.trimIndent())
+            compose.waitUntil(10_000) { eval(web, "Boolean(window.radioKey || window.radioError)") == "true" }
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Sign a Nostr event for $base?").assertExists()
+            compose.onNodeWithText("Hello from Android Radio", substring = true).assertExists()
+            assertEquals("null", eval(web, "window.radioResult"))
+            compose.onNodeWithText("Sign event").performClick()
             compose.waitUntil(10_000) { eval(web, "Boolean(window.radioResult || window.radioError)") == "true" }
             assertEquals("null", eval(web, "window.radioError"))
             val event = JSONObject(eval(web, "window.radioResult"))
@@ -100,6 +114,14 @@ class AndroidNip07JourneyTest {
                 update(hash, 0, hash.size)
             }
             assertTrue(verifier.verifySignature(decodeHex(event.getString("sig"))))
+
+            eval(web, """
+                window.nostr.signEvent({kind:1, created_at:1800000000, content:'Declined note', tags:[]})
+                  .then(() => window.denial = 'signed', error => window.denial = error.message);
+            """.trimIndent())
+            compose.waitUntil(10_000) { compose.onAllNodes(hasText("Sign event")).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Cancel").performClick()
+            assertEquals("Nostr signing was not approved.", JSONTokener(awaitValue(web, "window.denial")).nextValue())
 
             val binaryMessagesSupported = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER)
             eval(web, """

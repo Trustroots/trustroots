@@ -1496,6 +1496,7 @@ final class TrustrootsTests: XCTestCase {
         let key = PilotMessageDraftStore.Key(server: "https://example.test", username: "Example-Member", recipientID: "partner-1")
         let draft = "  An unsent reply.\nNext line."
         try store.save(draft, for: key)
+        XCTAssertEqual(try directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)
 
         let reopened = PilotMessageDraftStore(directory: directory)
         XCTAssertEqual(reopened.load(.init(server: key.server, username: "example-member", recipientID: key.recipientID)), draft)

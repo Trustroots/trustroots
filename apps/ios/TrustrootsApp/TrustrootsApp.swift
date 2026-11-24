@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct TrustrootsApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @UIApplicationDelegateAdaptor(NostranslationNotificationDelegate.self) private var notificationDelegate
     @StateObject private var session = MemberSessionStore()
     @ObservedObject private var translationAlerts = NostranslationDeviceAlerts.shared
@@ -23,6 +24,11 @@ struct TrustrootsApp: App {
             .onChange(of: nostrIdentity.revision, initial: true) { _, _ in
                 translationAlerts.reconcile(server: session.serverURLString)
                 if !nostrIdentity.isActive { showTranslationRequest = false }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    translationAlerts.retryPendingOptOut(server: session.serverURLString)
+                }
             }
             .onChange(of: translationAlerts.alertAccount, initial: true) { _, account in
                 if let account, account == nostrIdentity.accountScope?.storageAccount, translationAlerts.enabled {

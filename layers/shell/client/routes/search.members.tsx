@@ -6,4 +6,5 @@ export const Route = createFileRoute('/search/members')({
   staticData: { title: 'Search members', footerHidden: true },
   beforeLoad: requireAuth,
   component: SearchUsers,
+  remountDeps: () => undefined,
 });

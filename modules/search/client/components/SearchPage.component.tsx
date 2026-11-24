@@ -496,7 +496,13 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
     const placeQuery = parseLocationQuery(routeParams.location);
     setSearchQuery(placeQuery);
-    if (!placeQuery) return;
+    if (!placeQuery) {
+      setCity(undefined);
+      setShowCityResults(false);
+      // Device location can also remove the URL parameter and supplies its own camera position.
+      setBounds({});
+      return;
+    }
 
     const requestGeneration = placeSearchGenerationRef.current;
     let isMounted = true;

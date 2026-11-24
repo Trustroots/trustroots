@@ -614,9 +614,7 @@ jobs:
       pages: write
       id-token: write
       actions: read
-    # Serialize all GitHub Pages deployments (across runs and the two deploy
-    # jobs below) so actions/deploy-pages does not fail with "Deployment
-    # failed, try again later." when deployments to this environment overlap.
+    # Serialise GitHub Pages deployments across workflow runs.
     concurrency:
       group: pages-deploy
       cancel-in-progress: false
@@ -657,6 +655,11 @@ jobs:
         with:
           name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
           path: site
+      - name: Wait for site artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
+        run: bash scripts/ci/wait-for-pages-artifact.sh
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

@@ -69,8 +69,28 @@ before concatenation and SHA-256 hashing. Send the original registration and
 the signed `proof` to `PUT /api/mobile/v0/nostranslation/alerts`. The
 challenge is single-use and expires after two minutes. Use
 `DELETE /api/mobile/v0/nostranslation/alerts` with `{ transport }` to unregister.
+When opening a notification, the app can post `{ transport }` to
+`/api/mobile/v0/nostranslation/alerts/pending` using the same mobile session.
+It returns `{ events }` with up to eight unexpired, signed and encrypted
+envelopes for that transport. The device validates and decrypts them locally.
 
-The worker starts watching the relay with `TRUSTROOTS_NOSTRANSLATION_ALERTS=true`.
+Challenge and registration writes share a per-member allowance across mobile
+sessions. Unregistering remains available when the allowance is exhausted.
+
+Before enabling alerts, create and verify the expiry indexes in the target
+database. Production does not create them automatically.
+
+```sh
+pnpm run ensure-indexes NostranslationAlertRegistration
+pnpm run ensure-indexes NostranslationAlertChallenge
+pnpm run ensure-indexes NostranslationAlertClaim
+pnpm run ensure-indexes RequestLimit
+```
+
+Verify the alert collections each have an `expiresAt` TTL index with
+`expireAfterSeconds: 0` and the request-limit collection has its unique key
+and TTL indexes. Verify an alert opens its unexpired review with a closed app
+on the target relay before setting `TRUSTROOTS_NOSTRANSLATION_ALERTS=true`.
 UnifiedPush uses the existing VAPID settings and endpoint host allowlist. APNs
 requires `TRUSTROOTS_APNS_TEAM_ID`, `TRUSTROOTS_APNS_KEY_ID`,
 `TRUSTROOTS_APNS_TOPIC` and `TRUSTROOTS_APNS_PRIVATE_KEY` containing the PEM

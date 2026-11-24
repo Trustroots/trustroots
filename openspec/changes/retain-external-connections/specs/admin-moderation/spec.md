@@ -2,7 +2,7 @@
 
 ### Requirement: Staff external connection investigation
 
-Administrators and support-team members SHALL view current and historical external connections on member detail pages and search across members by network and complete current or previous identifier. Recognised profile URLs SHALL be accepted as search input. Results SHALL be paginated in stable pages of 50 and links SHALL use recognised network domains. Reads SHALL follow staff audit conventions.
+Administrators and support-team members SHALL view current and historical external connections on member detail pages and search across members by network and complete current or previous identifier. Recognised profile URLs SHALL be accepted as search input. Results SHALL be paginated in stable pages of 50 and links SHALL use recognised network domains. Reads SHALL follow staff audit conventions. Cross-member search SHALL accept the identifier only in the POST request body. Search and history responses SHALL prohibit storage in HTTP caches.
 
 The same access and search controls SHALL apply to current and previous email addresses.
 

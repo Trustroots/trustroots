@@ -125,7 +125,7 @@ class AndroidNip07NativeMessageTest {
                 view: WebView, name: String, origins: Set<String>, callback: WebViewCompat.WebMessageListener,
             ) {
                 assertEquals("trustrootsAndroidNip07", name)
-                assertTrue(origins.contains("https://*.trustroots.org"))
+                assertEquals(setOf("https://trustroots.org", "https://www.trustroots.org", "https://hitchwiki.org", "https://www.hitchwiki.org"), origins)
                 listener = callback
             }
 

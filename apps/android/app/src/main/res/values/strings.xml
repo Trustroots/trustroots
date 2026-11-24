@@ -103,4 +103,6 @@
     <string name="nostr_profile_update_error">The profile key could not be updated. Please try again.</string>
     <string name="nostr_profile_key_unavailable">The profile update was refused. This public key may already be linked to another member.</string>
     <string name="screen_radio">Radio</string>
+    <string name="browser_nostr_signing_title">Sign a Nostr event for %1$s?</string>
+    <string name="browser_nostr_sign_event">Sign event</string>
 </resources>

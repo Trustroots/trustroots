@@ -7,6 +7,7 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -109,7 +110,12 @@ class AndroidNostranslationSessionTest {
                 }
 
                 val input = reviewFrame("fixture-review")
-                relay.receive(input)
+                runBlocking {
+                    restored.recoverPending { requestedTransport ->
+                        assertEquals(transport, requestedTransport)
+                        JSONArray().put(input.getJSONObject(2))
+                    }
+                }
                 assertEquals(1, relay.frames.size)
                 restored.decide(restored.reviews.single(), approved = true)
                 val reply = relay.frames.last().getJSONObject(1)

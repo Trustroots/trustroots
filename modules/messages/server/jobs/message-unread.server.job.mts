@@ -19,6 +19,7 @@ interface ReminderMessage {
 }
 interface Notification {
   _id: { userTo: Types.ObjectId; userFrom: Types.ObjectId };
+  latestCreated: Date;
   total: number;
   messages: ReminderMessage[];
   notificationCount: number;
@@ -130,18 +131,24 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   const createdTimeAgo = moment()
     .subtract(moment.duration(timePassed))
     .toDate();
+  const pending = { read: false, notificationCount: { $lte: reminderOrder } };
 
   // Find all the unread messages which fit the reminder config requirements
   const notifications = await Message.aggregate<Notification>([
     {
+      $match: pending,
+    },
+    {
+      $lookup: {
+        from: User.collection.name,
+        localField: 'userTo',
+        foreignField: '_id',
+        as: 'recipient',
+      },
+    },
+    {
       $match: {
-        read: false,
-        // first reminder is sent when notificationCount is 0
-        // second reminder is sent when notificationCount is 0 or 1
-        // etc...
-        notificationCount: {
-          $lte: reminderOrder,
-        },
+        'recipient.messageEmailFrequency': { $nin: ['off', 'daily', 'weekly'] },
       },
     },
     {
@@ -158,14 +165,6 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
         total: {
           $sum: 1,
         },
-        // Collect message contents
-        messages: {
-          $push: {
-            id: '$_id',
-            content: '$content',
-            created: '$created',
-          },
-        },
         // did we already send some notifications for the last unseen message?
         // the last unseen message has the minimum notification count
         // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
@@ -179,6 +178,38 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
         latestCreated: {
           $lt: createdTimeAgo,
         },
+      },
+    },
+    { $sort: { latestCreated: 1, '_id.userTo': 1, '_id.userFrom': 1 } },
+    { $limit: 100 },
+    {
+      // Fetch only a bounded preview after deciding which conversations are due.
+      $lookup: {
+        from: Message.collection.name,
+        let: {
+          recipient: '$_id.userTo',
+          sender: '$_id.userFrom',
+          latest: '$latestCreated',
+        },
+        pipeline: [
+          {
+            $match: {
+              ...pending,
+              $expr: {
+                $and: [
+                  { $eq: ['$userTo', '$$recipient'] },
+                  { $eq: ['$userFrom', '$$sender'] },
+                  { $lte: ['$created', '$$latest'] },
+                ],
+              },
+            },
+          },
+          { $sort: { created: -1, _id: -1 } },
+          { $limit: 20 },
+          { $sort: { created: 1, _id: 1 } },
+          { $project: { _id: 0, content: 1, created: 1, id: '$_id' } },
+        ],
+        as: 'messages',
       },
     },
   ]);
@@ -202,15 +233,9 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // find out whether it is too late to send the further notification
     // we just wrap it to function for clearer organisation
     const isTooLate = (function () {
-      const lastMessage = _.maxBy(
-        notification.messages,
-        function (msg: ReminderMessage) {
-          return msg.created;
-        },
-      ) as ReminderMessage;
       const tooLate = config.limits.unreadMessageRemindersTooLate;
       const tooOld = moment().subtract(moment.duration(tooLate)).toDate();
-      return lastMessage.created < tooOld;
+      return notification.latestCreated < tooOld;
     })();
     if (isThreadReplied || isTooLate) {
       notification.dontSend = true;
@@ -289,7 +314,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // Process email notifications
     //
     // finish early if we don't want to send it
-    if (notification.dontSend === true) {
+    if (notification.dontSend === true || !notification.messages.length) {
       return;
     }
     await new Promise<void>((resolve, reject) => {
@@ -325,20 +350,16 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
       { error: queueError },
     );
   if (!immediateNotifications.length) return;
-  // Holds ids of messages to be set `notified:true`
-  const messageIds: Types.ObjectId[] = [];
-
-  // Collect message ids for updating documents to `notified:true` later
-  for (let i = 0, len = immediateNotifications.length; i < len; i++) {
-    immediateNotifications[i].messages.forEach(function (
-      message: ReminderMessage,
-    ) {
-      messageIds.push(message.id);
-    });
-  }
+  // Update the full batches, including messages omitted from the email preview.
+  const conversations = immediateNotifications
+    .filter(notification => notification.messages.length > 0)
+    .map(({ _id, latestCreated }) => ({
+      ..._id,
+      created: { $lte: latestCreated },
+    }));
 
   // No message ids (shouldn't happen, but just in case)
-  if (!messageIds.length) {
+  if (!conversations.length) {
     // Log the failure to send the notification
     log(
       'warn',
@@ -355,9 +376,8 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   try {
     await Message.updateMany(
       {
-        _id: {
-          $in: messageIds,
-        },
+        ...pending,
+        $or: conversations,
       },
       {
         $set: {
