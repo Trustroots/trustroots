@@ -385,6 +385,8 @@ class NostranslationEntryJourneyTest {
             val keys = AndroidNostrKeys(context, account)
             val previousStatus = NostranslationAlerts.status.value
             var granted = false
+            var permissionAlreadyGranted = false
+            var permissionRequests = 0
             val owner = object : ActivityResultRegistryOwner {
                 override val activityResultRegistry = object : ActivityResultRegistry() {
                     override fun <I, O> onLaunch(
@@ -394,6 +396,7 @@ class NostranslationEntryJourneyTest {
                         options: ActivityOptionsCompat?,
                     ) {
                         assertEquals(Manifest.permission.POST_NOTIFICATIONS, input)
+                        permissionRequests += 1
                         dispatchResult(requestCode, granted)
                     }
                 }
@@ -409,15 +412,16 @@ class NostranslationEntryJourneyTest {
                 val relay = RecordingNostranslationRelay()
                 compose.setContent {
                     val activityContext = LocalContext.current
-                    val deniedContext = remember(activityContext) {
+                    val permissionContext = remember(activityContext) {
                         object : ContextWrapper(activityContext) {
-                            override fun checkSelfPermission(permission: String): Int =
-                                if (permission == Manifest.permission.POST_NOTIFICATIONS) PackageManager.PERMISSION_DENIED
-                                else super.checkSelfPermission(permission)
+                            override fun checkSelfPermission(permission: String): Int {
+                                if (permission != Manifest.permission.POST_NOTIFICATIONS) return super.checkSelfPermission(permission)
+                                return if (permissionAlreadyGranted) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
+                            }
                         }
                     }
                     CompositionLocalProvider(
-                        LocalContext provides deniedContext,
+                        LocalContext provides permissionContext,
                         LocalActivityResultRegistryOwner provides owner,
                     ) {
                         NostranslationDialog(api, session, browser, sockets = relay) {}
@@ -438,6 +442,16 @@ class NostranslationEntryJourneyTest {
                     fixture.requests.isNotEmpty() && compose.onAllNodesWithText(failed).fetchSemanticsNodes().isNotEmpty()
                 }
                 assertEquals(1, fixture.requests.size)
+                compose.runOnIdle {
+                    assertEquals(2, permissionRequests)
+                    permissionAlreadyGranted = true
+                    NostranslationAlerts.status.value = null
+                }
+                enable.performScrollTo().performClick()
+                compose.waitUntil(15_000) {
+                    fixture.requests.size == 2 && compose.onAllNodesWithText(failed).fetchSemanticsNodes().isNotEmpty()
+                }
+                compose.runOnIdle { assertEquals(2, permissionRequests) }
                 assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
             } finally {
                 NostranslationAlerts.status.value = previousStatus
