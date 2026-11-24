@@ -113,6 +113,7 @@ internal class AndroidNip07Bridge(private val session: BrowserNostrSession, priv
             "https://trustroots.org", "https://*.trustroots.org",
             "https://hitchwiki.org", "https://*.hitchwiki.org",
         )
+        @JvmField
         val script = """
             (() => {
               if (window.top !== window || window.nostr || !window.$bridgeName) return;
