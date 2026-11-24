@@ -186,7 +186,7 @@ vi.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
 }));
 
 describe('OfferLocationEditor', () => {
-  it('centres new offers approximately without choosing a location', () => {
+  it('centres new offers approximately without choosing a location', async () => {
     mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
     const onLocationChange = vi.fn();
     render(
@@ -195,7 +195,7 @@ describe('OfferLocationEditor', () => {
         onLocationChange={onLocationChange}
       />,
     );
-    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+    expect(await screen.findByTestId('offer-map')).toHaveAttribute(
       'data-location',
       '34,-17',
     );

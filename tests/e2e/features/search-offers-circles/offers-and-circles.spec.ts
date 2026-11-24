@@ -1536,12 +1536,11 @@ test('member search is reachable by keyboard and explains location matches', asy
     await page.goto('/search');
     await page.getByRole('link', { name: 'Members', exact: true }).click();
     await expect(page).toHaveURL(/\/search\/members$/);
+    await expect(input).toBeVisible();
     await page.getByRole('link', { name: 'Skip to main content' }).focus();
     await page.keyboard.press('Enter');
     await page.keyboard.press('Tab');
-    await expect(
-      page.getByRole('textbox', { name: 'Search members' }),
-    ).toBeFocused();
+    await expect(input).toBeFocused();
   } finally {
     await updateUserByUsername(
       berlin.username,
