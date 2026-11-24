@@ -1,14 +1,14 @@
-# Optional staff passkeys
+# Optional passkeys
 
-Administrators with an enrolled authenticator can add a device passkey or hardware key
+Members with an enrolled authenticator can add a device passkey or hardware key
 from the account settings page. Registration and removal ask for the current
 password and an unused authenticator or recovery code. The authenticator and
 recovery codes remain available after adding or removing a passkey. Disabling
 authenticator MFA deletes that account's passkeys and outstanding ceremonies.
 
-After password sign-in, staff can choose **Use a registered passkey** for the
-second step. Native clients retain their existing authenticator compatibility
-behaviour; this change adds the browser passkey flow.
+After password sign-in, members can choose **Use a registered passkey** for the
+second step. Accounts with two-factor authentication complete sign-in on the
+website.
 
 ## Deployment
 
@@ -20,7 +20,7 @@ Use a stable RP ID: changing it requires members to register credentials again.
 These values are explicit deployment configuration and are never inferred from
 request headers. Missing configuration leaves passkey operations unavailable.
 
-Run the normal `npm run ensure-indexes` deployment step. `MemberPasskey`
+Run the normal `pnpm run ensure-indexes` deployment step. `MemberPasskey`
 credentials have unique identifiers and an owner index. `PasskeyCeremony`
 documents expire after five minutes and have a TTL index; requests independently
 check expiry before consuming them. Account removal deletes both collections'

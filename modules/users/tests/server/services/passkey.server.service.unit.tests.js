@@ -20,7 +20,7 @@ describe('Staff passkey ceremonies', function () {
       _id: new mongoose.Types.ObjectId(),
       id: 'fictional-member',
       username: 'fictional-member',
-      roles: ['user', 'admin'],
+      roles: ['user'],
       mfaEnabled: true,
       authVersion: 0,
       $locals: { mfaVerified: true },
@@ -57,7 +57,6 @@ describe('Staff passkey ceremonies', function () {
     sinon
       .stub(config, 'passkeys')
       .value({ rpId: 'localhost', origins: ['http://localhost:4300'] });
-    sinon.stub(User, 'findById').resolves(user);
     sinon.stub(User, 'findOne').resolves(user);
     sinon.stub(mfa, 'verifyAndConsume').resolves({ user });
     sinon.stub(Key, 'find').callsFake(() => ({
@@ -192,45 +191,28 @@ describe('Staff passkey ceremonies', function () {
       await assert.rejects(service.registrationOptions(req), /not configured/);
     }
   });
-  it('rejects unverified and ordinary members at management entry points', async function () {
-    for (const change of [
-      () => {
-        req.user = null;
-      },
-      () => {
-        user.roles = ['user'];
-      },
-      () => {
-        user.mfaEnabled = false;
-      },
-      () => {
-        user.$locals.mfaVerified = false;
-      },
-    ]) {
-      const saved = {
-        roles: user.roles,
-        mfaEnabled: user.mfaEnabled,
-        $locals: { ...user.$locals },
-      };
-      change();
-      await assert.rejects(service.registrationOptions(req), /verified staff/);
-      await assert.rejects(service.register(req), /verified staff/);
-      if (!req.user || !mfa.isPrivileged(user))
-        await assert.rejects(service.list(req), /Staff account/);
-      Object.assign(user, saved);
-      req.user = user;
-    }
-  });
-  it('rejects a changed, missing or demoted account at confirmation', async function () {
-    for (const stored of [
+  it('requires a member session and verified MFA at management entry points', async function () {
+    for (const member of [
       null,
-      { ...user, authVersion: 1 },
-      { ...user, roles: ['user'] },
       { ...user, mfaEnabled: false },
+      { ...user, $locals: { mfaVerified: false } },
     ]) {
-      User.findById.resolves(stored);
-      await assert.rejects(service.registrationOptions(req), /Sign in again/);
+      req.user = member;
+      await assert.rejects(service.registrationOptions(req), /passkey first/);
+      await assert.rejects(service.register(req), /passkey first/);
     }
+    req.user = null;
+    await assert.rejects(service.list(req), /Sign in again/);
+  });
+  it('rejects confirmation when the active member no longer matches the session', async function () {
+    User.findOne.resolves(null);
+    await assert.rejects(service.registrationOptions(req), /Sign in again/);
+    assert.deepEqual(User.findOne.lastCall.args[0], {
+      _id: user._id,
+      authVersion: user.authVersion,
+      mfaEnabled: true,
+      roles: { $nin: ['suspended'] },
+    });
   });
   it('requires current credentials, a valid unused factor, and a bounded label', async function () {
     for (const password of [null, '', 'x'.repeat(1025)]) {
@@ -258,10 +240,8 @@ describe('Staff passkey ceremonies', function () {
     await assert.rejects(service.registrationOptions(req), /Remove a passkey/);
   });
   it('rejects stale registration state and failed attestation', async function () {
-    for (const stored of [null, { ...user, roles: ['user'] }]) {
-      User.findOne.resolves(stored);
-      await assert.rejects(service.register(req), /Sign in again/);
-    }
+    User.findOne.resolves(null);
+    await assert.rejects(service.register(req), /Sign in again/);
     User.findOne.resolves(user);
     webauthn.verifyRegistrationResponse.resolves({ verified: false });
     await assert.rejects(service.register(req), /not accepted/);
@@ -269,14 +249,12 @@ describe('Staff passkey ceremonies', function () {
     await assert.rejects(service.register(req), /not accepted/);
     assert.equal(Ceremony.findOneAndDelete.lastCall.args[0]._id, '');
   });
-  it('rejects expired password challenges and missing or demoted users', async function () {
+  it('rejects expired password challenges and unavailable accounts', async function () {
     req.session = undefined;
     await assert.rejects(service.authenticationOptions(req), /Sign in again/);
     req.session = { mfaChallenge: mfa.createChallenge(user) };
-    for (const stored of [null, { ...user, roles: ['user'] }]) {
-      User.findOne.resolves(stored);
-      await assert.rejects(service.authenticationOptions(req), /Sign in again/);
-    }
+    User.findOne.resolves(null);
+    await assert.rejects(service.authenticationOptions(req), /Sign in again/);
     User.findOne.resolves(user);
     await assert.rejects(service.authenticationOptions(req), /No passkey/);
   });
@@ -297,12 +275,9 @@ describe('Staff passkey ceremonies', function () {
     Key.findOneAndUpdate.resolves(null);
     await assert.rejects(service.authenticate(req), /Passkey changed/);
     Key.findOneAndUpdate.resolves(key);
-    for (const stored of [null, { ...user, roles: ['user'] }]) {
-      User.findOne.resetBehavior();
-      User.findOne.onFirstCall().resolves(user);
-      User.findOne.onSecondCall().resolves(stored);
-      User.findOne.resetHistory();
-      await assert.rejects(service.authenticate(req), /Sign in again/);
-    }
+    User.findOne.onFirstCall().resolves(user);
+    User.findOne.onSecondCall().resolves(null);
+    User.findOne.resetHistory();
+    await assert.rejects(service.authenticate(req), /Sign in again/);
   });
 });

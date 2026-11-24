@@ -63,6 +63,7 @@ exports.authenticate = function (req, res, next) {
     if (
       !session ||
       !isActiveMember(session.user) ||
+      session.user.mfaEnabled === true ||
       (session.authVersion ?? 0) !== (session.user.authVersion ?? 0)
     ) {
       return unauthorised(res);
@@ -134,6 +135,13 @@ exports.signin = async function (req, res, next) {
     }
     if (!(await user.authenticate(password))) {
       return unauthorised(res);
+    }
+    if (user.mfaEnabled === true) {
+      return noStore(res).status(403).json({
+        code: 'web_sign_in_required',
+        message:
+          'Sign in on the Trustroots website to complete two-factor authentication.',
+      });
     }
     return mobileSession.create(user, function (sessionErr, tokens) {
       if (sessionErr) return next(sessionErr);

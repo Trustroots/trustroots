@@ -648,7 +648,7 @@ SHALL remain removable independently of profile images.
 
 ### Requirement: Authenticator MFA
 
-Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys, and SHALL store recovery codes as HMAC digests bound to that key. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+Signed-in members MAY enable authenticator-app MFA using TOTP. Enrolment SHALL remain pending until the member confirms a valid code. Account settings SHALL explain which sign-in clients support the second step before enrolment. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys, and SHALL store recovery codes as HMAC digests bound to that key. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
 
 #### Scenario: A member enrols an authenticator
 
@@ -683,30 +683,36 @@ Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL 
 - **THEN** the operation cannot establish an MFA-verified session without a successful second factor
 - **AND** credential changes invalidate older sessions
 
+#### Scenario: Native clients cannot complete the second factor
+
+- **WHEN** a member with MFA enabled submits valid credentials through the native sign-in API
+- **THEN** the API directs the member to web sign-in without issuing session tokens
+- **AND** native session tokens cannot be used or refreshed while MFA is enabled
+
 #### Scenario: MFA verification is rate limited
 
 - **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
 - **THEN** the system applies bounded IP and account or challenge limits and returns a retry response
 
-### Requirement: Staff passkey registration
+### Requirement: Member passkey registration
 
-The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle. Passkeys remain optional: the authenticator and recovery codes stay available, and removing the last passkey is allowed while TOTP enrolment remains. Disabling authenticator MFA SHALL remove the member's passkeys and outstanding passkey ceremonies.
+The system SHALL let members with verified authenticator MFA register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle. Passkeys remain optional: the authenticator and recovery codes stay available, and removing the last passkey is allowed while TOTP enrolment remains. Disabling authenticator MFA SHALL remove the member's passkeys and outstanding passkey ceremonies.
 
-#### Scenario: Verified staff member registers a passkey
+#### Scenario: Verified member registers a passkey
 
-- **WHEN** a staff member completes a valid registration ceremony with required user verification
+- **WHEN** a member completes a valid registration ceremony with required user verification
 - **THEN** the system stores a uniquely owned credential with a member-selected label
 - **AND** no authenticator private key is received or stored
 
-#### Scenario: Staff member removes their last passkey
+#### Scenario: Member removes their last passkey
 
-- **WHEN** a staff member removes their only registered passkey while authenticator MFA remains enabled
+- **WHEN** a member removes their only registered passkey while authenticator MFA remains enabled
 - **THEN** the removal succeeds
 - **AND** authenticator codes and recovery codes remain available for sign-in
 
 #### Scenario: Authenticator MFA is disabled
 
-- **WHEN** an administrator disables authenticator MFA
+- **WHEN** a member disables authenticator MFA
 - **THEN** stored passkeys and outstanding passkey ceremonies for that account are deleted
 
 ### Requirement: Verified passkey second factor

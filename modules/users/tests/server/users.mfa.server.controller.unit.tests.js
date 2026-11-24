@@ -78,12 +78,16 @@ describe('Authenticator MFA controller', () => {
       assert.equal(res.statusCode, 403);
     });
 
-    it('rejects a member who is not an administrator', async () => {
+    it('starts enrolment for a regular member who confirms their password', async () => {
       const { user } = member({ roles: ['user'] });
       sinon.stub(User, 'findById').returns(query(user));
+      const setup = { provisioningUri: 'otpauth://totp/Trustroots:member' };
+      const stage = sinon.stub(mfaService, 'stageEnrollment').resolves(setup);
       const res = response();
       await controller.beginEnrollment(request(user), res);
-      assert.equal(res.statusCode, 403);
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, setup);
+      sinon.assert.calledOnceWithExactly(stage, user._id, user.username);
     });
 
     it('requires a matching current password', async () => {

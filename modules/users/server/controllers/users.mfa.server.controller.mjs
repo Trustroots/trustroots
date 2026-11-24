@@ -27,14 +27,6 @@ function currentMember(req, res) {
   return null;
 }
 
-function forbidUnlessAdmin(user, res) {
-  if (mfaService.isPrivileged(user)) return true;
-  res.status(403).send({
-    message: errorService.getErrorMessageByKey('forbidden'),
-  });
-  return false;
-}
-
 async function validatePasswordConfirmation(req, res) {
   const member = currentMember(req, res);
   if (!member) return null;
@@ -49,7 +41,7 @@ async function validatePasswordConfirmation(req, res) {
 async function beginEnrollment(req, res) {
   try {
     const user = await validatePasswordConfirmation(req, res);
-    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (!user) return;
     if (user.mfaEnabled) {
       return res
         .status(409)
@@ -65,7 +57,7 @@ async function beginEnrollment(req, res) {
 }
 
 async function verifyEnrollment(req, res) {
-  if (!currentMember(req, res) || !forbidUnlessAdmin(req.user, res)) return;
+  if (!currentMember(req, res)) return;
   try {
     const result = await mfaService.activateEnrollment(
       req.user._id,
@@ -97,7 +89,7 @@ async function verifyEnrollment(req, res) {
 }
 
 async function settings(req, res) {
-  if (!currentMember(req, res) || !forbidUnlessAdmin(req.user, res)) return;
+  if (!currentMember(req, res)) return;
   try {
     const user = await User.findById(req.user._id)
       .select('+mfaRecoveryCodeHashes')
@@ -117,7 +109,7 @@ async function settings(req, res) {
 async function regenerateRecoveryCodes(req, res) {
   try {
     const user = await validatePasswordConfirmation(req, res);
-    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (!user) return;
     if (!user.mfaEnabled) {
       return res
         .status(409)
@@ -168,7 +160,7 @@ async function regenerateRecoveryCodes(req, res) {
 async function disable(req, res) {
   try {
     const user = await validatePasswordConfirmation(req, res);
-    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (!user) return;
     if (!user.mfaEnabled) {
       return res
         .status(409)

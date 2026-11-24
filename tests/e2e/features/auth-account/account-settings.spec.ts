@@ -1,5 +1,5 @@
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
-import crypto from 'node:crypto';
+import { enrolAuthenticator } from '../../support/mfa.mts';
 
 import {
   DEFAULT_PASSWORD,
@@ -16,36 +16,6 @@ import {
   findActionToken,
   updateUserByUsername,
 } from '../../support/db.mts';
-
-function decodeBase32(value: string): Buffer {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let bits = 0;
-  let buffer = 0;
-  const output = [];
-  for (const character of value) {
-    buffer = (buffer << 5) | alphabet.indexOf(character);
-    bits += 5;
-    if (bits >= 8) {
-      output.push((buffer >>> (bits - 8)) & 255);
-      bits -= 8;
-    }
-  }
-  return Buffer.from(output);
-}
-
-function currentTotp(secret: string): string {
-  const counter = Math.floor(Date.now() / 1000 / 30);
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
-  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
-  const digest = crypto
-    .createHmac('sha1', decodeBase32(secret))
-    .update(counterBuffer)
-    .digest();
-  const offset = digest[digest.length - 1] & 15;
-  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
-  return String(binary % 1000000).padStart(6, '0');
-}
 
 test.describe.serial('account settings feature coverage', () => {
   test('administrators can enrol an authenticator and use it at sign-in', async ({
@@ -67,20 +37,7 @@ test.describe.serial('account settings feature coverage', () => {
       $addToSet: { roles: 'admin' },
     });
     await page.goto('/profile/edit/account');
-    await page.getByLabel('Confirm your password').fill(user.password);
-    await page.getByRole('button', { name: 'Set up authenticator' }).click();
-    const provisioningText = await page.locator('code').first().textContent();
-    if (!provisioningText) {
-      throw new Error('Authenticator setup link is missing.');
-    }
-    const secret = new URL(provisioningText).searchParams.get('secret');
-    if (!secret) throw new Error('Authenticator setup link has no secret.');
-    await page
-      .getByLabel('Current authenticator code')
-      .fill(currentTotp(secret));
-    await page
-      .getByRole('button', { name: 'Enable authenticator MFA' })
-      .click();
+    await enrolAuthenticator(page, user.password);
     await expect(
       page.getByRole('list', { name: 'Recovery codes' }).locator('li'),
     ).toHaveCount(10);
