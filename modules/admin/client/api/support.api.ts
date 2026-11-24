@@ -85,6 +85,16 @@ export interface InvestigationItem {
   public?: boolean;
   shadowHidden?: boolean;
 }
+export interface MessageThrottleReview extends Page<{
+  _id: string;
+  created: string;
+  content?: string;
+  userTo?: { username: string } | null;
+  shadowHidden?: boolean;
+}> {
+  windowStart: string;
+  windowEnd: string;
+}
 export async function load<T>(path: string): Promise<T> {
   const { data } = await http.get<T>(path);
   return data;

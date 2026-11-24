@@ -337,6 +337,7 @@ describe('Messages controller unit tests', () => {
       const originalCount = throttle.count;
       throttle.count = -1;
       try {
+        const distinct = sinon.stub(Message, 'distinct').resolves([]);
         const res = deferredResponse();
         messagesController.send(
           {
@@ -350,7 +351,18 @@ describe('Messages controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(429);
-        notify.calledOnceWithExactly(sender, 0).should.equal(true);
+        const { windowStart, windowEnd } = notify.firstCall.args[2];
+        notify
+          .calledOnceWithExactly(sender, 0, { windowStart, windowEnd })
+          .should.equal(true);
+        distinct.calledOnce.should.equal(true);
+        distinct.firstCall.args.should.eql([
+          'userTo',
+          {
+            userFrom: sender._id,
+            created: { $gte: windowStart, $lte: windowEnd },
+          },
+        ]);
       } finally {
         throttle.count = originalCount;
       }
@@ -2205,7 +2217,16 @@ describe('Messages controller unit tests', () => {
           content: 'Hello there friend',
         });
         overLimit.statusCode.should.equal(429);
-        notify.calledOnceWithExactly(sender, 2).should.equal(true);
+        notify
+          .calledOnceWithExactly(
+            sender,
+            2,
+            sinon.match({
+              windowStart: sinon.match.date,
+              windowEnd: sinon.match.date,
+            }),
+          )
+          .should.equal(true);
       });
 
       it('records the throttle hit in the statistics', async () => {

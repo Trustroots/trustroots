@@ -12,6 +12,132 @@ import {
 } from '../../support/helpers.mts';
 import { withE2eDb } from '../../support/db.mts';
 
+test('support can open the alert link and read only outgoing messages in its window', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can review outgoing messages within a recipient-limit alert window.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const sender = createUser({ firstName: 'Fictional', lastName: 'Sender' });
+  const recipient = createUser({
+    firstName: 'Fictional',
+    lastName: 'Recipient',
+  });
+  const support = createUser({ firstName: 'Fictional', lastName: 'Reviewer' });
+  const rejected = 'Fictional rejected message';
+  const visible = 'Fictional outgoing message';
+  const excluded = [
+    'Fictional earlier message',
+    'Fictional incoming reply',
+    'Fictional later message',
+    rejected,
+  ];
+  try {
+    for (const user of [sender, recipient, support]) {
+      await registerViaApi(context.request, user);
+    }
+    const { senderId, recipientId } = await withE2eDb(async db => {
+      const users = db.collection('users');
+      const senderId = (await users.findOne({ username: sender.username }))!
+        ._id;
+      const recipientId = (await users.findOne({
+        username: recipient.username,
+      }))!._id;
+      await users.updateOne({ _id: senderId }, { $set: { public: true } });
+      await users.updateOne(
+        { username: support.username },
+        { $set: { roles: ['user', 'support-team'] } },
+      );
+      const now = Date.now();
+      await db.collection('messages').insertMany([
+        {
+          userFrom: senderId,
+          userTo: recipientId,
+          created: new Date(now - 1000),
+          content: visible,
+          shadowHidden: true,
+        },
+        ...Array.from({ length: 15 }, () => ({
+          userFrom: senderId,
+          userTo: new ObjectId(),
+          created: new Date(now - 1000),
+          content: 'Fictional recent greeting',
+        })),
+        {
+          userFrom: senderId,
+          userTo: recipientId,
+          created: new Date(now - 2 * 60 * 60 * 1000),
+          content: excluded[0],
+        },
+        {
+          userFrom: recipientId,
+          userTo: senderId,
+          created: new Date(now - 1000),
+          content: excluded[1],
+        },
+      ]);
+      return { senderId, recipientId };
+    });
+    await signInViaApi(page, context.request, sender);
+    const sent = await context.request.post('/api/messages', {
+      data: { userTo: recipientId.toString(), content: rejected },
+    });
+    expect(sent.status(), await sent.text()).toBe(429);
+
+    const reviewPath = await withE2eDb(async db => {
+      const review = (await db
+        .collection('messagethrottlereviews')
+        .findOne({ sender: senderId }))!;
+      const job = (await db.collection('agendaJobs').findOne({
+        name: 'send email',
+        'data.subject': 'Member reached the messaging recipient limit',
+        'data.text': { $regex: `/admin/user\\?id=${senderId}` },
+      }))!;
+      const link = /Review outgoing messages: <(https?:\/\/[^>]+)>/.exec(
+        job.data.text,
+      )?.[1];
+      expect(link).toBeTruthy();
+      expect(job.data.text).not.toContain(visible);
+      expect(job.data.text).not.toContain(recipient.username);
+      await db.collection('messages').insertOne({
+        userFrom: senderId,
+        userTo: recipientId,
+        created: new Date(review.windowEnd.getTime() + 1),
+        content: excluded[2],
+      });
+      const pathname = new URL(link!).pathname;
+      expect(pathname).toBe(`/admin/support/message-reviews/${review._id}`);
+      expect(
+        (
+          await context.request.get(
+            `/api/admin/support-message-reviews/${review._id}`,
+          )
+        ).status(),
+      ).toBe(403);
+      return pathname;
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto(reviewPath);
+    await expect(
+      page.getByRole('heading', { name: 'Review outgoing messages' }),
+    ).toBeVisible();
+    await expect(page.getByRole('main').getByText(/to .* UTC/)).toBeVisible();
+    await expect(
+      page.getByText(`To ${recipient.username}`, { exact: false }),
+    ).toBeVisible();
+    await expect(page.getByText(visible)).toBeVisible();
+    await expect(page.getByText('Hidden message')).toBeVisible();
+    for (const content of excluded) {
+      await expect(page.getByText(content)).toHaveCount(0);
+    }
+  } finally {
+    await context.close();
+  }
+});
+
 test('Support team can open a hidden member profile', async ({
   browser,
   baseURL,

@@ -35,6 +35,7 @@ type ActionRequest = Parameters<Action>[0];
 type MockResponse = {
   statusCode: number;
   body: unknown;
+  set(field: string, value: string): MockResponse;
   status(code: number): MockResponse;
   send(body: unknown): MockResponse;
   json(body: unknown): MockResponse;
@@ -69,6 +70,9 @@ function mockResponse(): MockResponse {
   const res: MockResponse = {
     statusCode: 200,
     body: undefined,
+    set() {
+      return res;
+    },
     status(code) {
       res.statusCode = code;
       return res;

@@ -59,6 +59,10 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/support/:requestId/:kind',
           permissions: ['get'],
         },
+        {
+          resources: '/api/admin/support-message-reviews/:reviewId',
+          permissions: ['get'],
+        },
         { resources: '/api/admin/support-members', permissions: ['get'] },
         {
           resources: '/api/admin/support-flagged-members',

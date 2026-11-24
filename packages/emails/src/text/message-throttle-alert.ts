@@ -3,6 +3,7 @@ import { text } from './text.ts';
 interface Params {
   username?: string;
   adminProfileUrl?: string;
+  reviewUrl?: string;
   timestamp?: string;
   recipientCount?: number;
   limit?: number;
@@ -14,6 +15,7 @@ export default function messageThrottleAlert(p: Params): string {
 
 Member: @${p.username}
 Admin profile: ${p.adminProfileUrl}
+Review outgoing messages: ${p.reviewUrl}
 Time (UTC): ${p.timestamp}
 Distinct recipients in the current window: ${p.recipientCount}
 Configured recipient limit: ${p.limit}

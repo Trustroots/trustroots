@@ -474,20 +474,27 @@ service.inbox = function (req, res) {
  * Count the sender's distinct recipients in the throttle window.
  *
  * @param  {String} userId Message sender user ID
- * @return {number} Number of distinct recipients in the current window.
+ * @return The window and its distinct recipient count.
  */
-async function recentRecipientCount(userId: Types.ObjectId): Promise<number> {
+async function recentRecipients(userId: Types.ObjectId) {
   const { duration } = config.limits.messagesToIndividualsThrottle;
-  const timeLimit = moment().subtract(moment.duration(duration)).toDate();
+  const windowEnd = new Date();
+  const windowStart = moment(windowEnd)
+    .subtract(moment.duration(duration))
+    .toDate();
 
   // Count how many persons this user has already written within the limit
   const writtenTo = await Message.distinct('userTo', {
     created: {
-      $gte: timeLimit,
+      $gte: windowStart,
+      $lte: windowEnd,
     },
     userFrom: userId,
   });
-  return writtenTo.length;
+  return {
+    recipientCount: writtenTo.length,
+    window: { windowStart, windowEnd },
+  };
 }
 
 /**
@@ -532,13 +539,11 @@ service.send = async function (req, res) {
   const isExemptFromThrottle = user.roles.some(role =>
     ['welcome-team', 'admin'].includes(role),
   );
-  const recipientCount = isExemptFromThrottle
-    ? 0
-    : await recentRecipientCount(user._id);
-  const shouldThrottle =
-    !isExemptFromThrottle &&
-    recipientCount > config.limits.messagesToIndividualsThrottle.count;
-  if (shouldThrottle) {
+  const recent = isExemptFromThrottle ? null : await recentRecipients(user._id);
+  if (
+    recent &&
+    recent.recipientCount > config.limits.messagesToIndividualsThrottle.count
+  ) {
     // Record thottle hit in stats
     statService.stat(
       {
@@ -551,7 +556,11 @@ service.send = async function (req, res) {
       () => {},
     );
     try {
-      await messageThrottleAlertService.notify(user, recipientCount);
+      await messageThrottleAlertService.notify(
+        user,
+        recent.recipientCount,
+        recent.window,
+      );
     } catch (error) {
       log('error', 'Failed queuing message throttle notification.', { error });
     }
