@@ -22,11 +22,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.nostr.nostrAccountScope
+import org.unifiedpush.android.connector.UnifiedPush
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
@@ -101,6 +104,70 @@ class NostranslationAlertPreferencesTest {
             assertEquals("fixture-account", NostranslationAlerts.openRequested.value)
         } finally {
             NostranslationAlerts.openRequested.value = previous
+        }
+    }
+
+    @Test
+    @Config(
+        instrumentedPackages = ["org.unifiedpush.android.connector"],
+        shadows = [DistributorChoice::class],
+    )
+    fun onlyRegistersAfterDistributorConsentAndRefreshesTheKeyOnReconcile() {
+        MockWebServer().use { server ->
+            for (key in listOf("declined-key", "first-key", "refreshed-key")) {
+                server.enqueue(MockResponse(body = JSONObject().put("androidVapidKey", key).toString()))
+            }
+            server.start()
+            val api = MobileApiClient(server.url("/").toString())
+            val controller = Robolectric.buildActivity(Activity::class.java).setup()
+            try {
+                NostranslationAlerts.status.value = null
+                NostranslationAlerts.enable(controller.get(), api, session)
+                await { NostranslationAlerts.status.value == R.string.nostranslation_alerts_unavailable }
+                assertFalse(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+                assertTrue(DistributorChoice.registrations.isEmpty())
+
+                DistributorChoice.savedDistributor = "fixture-distributor"
+                NostranslationAlerts.reconcile(context, api, session)
+                DistributorChoice.accepted = true
+                NostranslationAlerts.enable(controller.get(), api, session)
+                await { DistributorChoice.registrations.isNotEmpty() }
+                assertEquals(listOf("first-key"), DistributorChoice.registrations)
+                assertTrue(NostranslationAlerts.isEnabled(context, api.backendURL, session))
+                assertEquals(api.backendURL, preferences.getString("backend", null))
+
+                NostranslationAlerts.reconcile(context, api, session)
+                await { DistributorChoice.registrations.size == 2 }
+                assertEquals(listOf("first-key", "refreshed-key"), DistributorChoice.registrations)
+                assertEquals(3, server.requestCount)
+            } finally {
+                DistributorChoice.registrations.clear()
+                DistributorChoice.accepted = false
+                DistributorChoice.savedDistributor = null
+                controller.pause().stop().destroy()
+            }
+        }
+    }
+
+    @Implements(UnifiedPush::class, isInAndroidSdk = false)
+    class DistributorChoice {
+        companion object {
+            var accepted = false
+            var savedDistributor: String? = null
+            val registrations = mutableListOf<String>()
+
+            @JvmStatic @Implementation
+            fun tryUseCurrentOrDefaultDistributor(activity: Activity, result: (Boolean) -> Unit) = result(accepted)
+
+            @JvmStatic @Implementation
+            fun getSavedDistributor(context: Context): String? = savedDistributor
+
+            @JvmStatic @Implementation
+            fun register(context: Context, instance: String, messageForDistributor: String?, vapid: String) {
+                assertEquals(NostranslationAlerts.instance, instance)
+                assertEquals(context.getString(R.string.nostranslation_signing), messageForDistributor)
+                registrations.add(vapid)
+            }
         }
     }
 
