@@ -12,7 +12,6 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONArray
 import org.json.JSONObject
-import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.shared.nostr.NostrAccountScope
 import org.trustroots.shared.nostr.NostrSigningSession
 import org.trustroots.shared.nostr.NostranslationApproval
@@ -24,8 +23,8 @@ internal class AndroidNostranslationSession(
     private val keys: AndroidNostrKeys,
     private val scope: CoroutineScope,
     private val isSignedIn: () -> Boolean,
-    private val sockets: WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
-    private val now: () -> Long = { System.currentTimeMillis() / 1000 },
+    private val sockets: WebSocket.Factory,
+    private val now: () -> Long,
 ) : AutoCloseable {
     private data class Client(val peer: String, val transportSecret: String, val signingKey: String) {
         fun encode() = JSONObject().put("peer", peer).put("transport", transportSecret).put("signer", signingKey)

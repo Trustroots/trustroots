@@ -163,13 +163,19 @@ class AndroidNostranslationSessionTest {
                     assertEquals(method, rpc.getString("id"))
                     assertEquals(response, rpc.getString(if (method == "unknown") "error" else "result"))
                 }
-                val invalidReview = JSONObject(review.toString()).put("created_at", "invalid")
-                relay.receive(requestFrame("invalid-review", "sign_event", JSONArray().put(invalidReview.toString())))
-                val invalidReply = relay.frames.last().getJSONObject(1)
-                val invalidResult = JSONObject(NostrConnectEncryption.decrypt(invalidReply.getString("content"), secret))
-                assertEquals("invalid-review", invalidResult.getString("id"))
-                assertEquals("Authorisation unavailable. Retry in Nostranslation.", invalidResult.getString("error"))
-                assertTrue(restored.reviews.isEmpty())
+                val malformedReviews = listOf(
+                    JSONObject(review.toString()).put("created_at", "invalid"),
+                    JSONObject(review.toString()).put("tags", JSONArray().put(1)),
+                )
+                malformedReviews.forEachIndexed { index, invalidReview ->
+                    val id = "invalid-review-$index"
+                    relay.receive(requestFrame(id, "sign_event", JSONArray().put(invalidReview.toString())))
+                    val invalidReply = relay.frames.last().getJSONObject(1)
+                    val invalidResult = JSONObject(NostrConnectEncryption.decrypt(invalidReply.getString("content"), secret))
+                    assertEquals(id, invalidResult.getString("id"))
+                    assertEquals("Authorisation unavailable. Retry in Nostranslation.", invalidResult.getString("error"))
+                    assertTrue(restored.reviews.isEmpty())
+                }
 
                 relay.receive(reviewFrame("superseded-review"))
                 val superseded = restored.reviews.single()
@@ -236,7 +242,7 @@ class AndroidNostranslationSessionTest {
         val peer = NostrEventSigner.publicKey(clientKey)
         val transport = NostrEventSigner.publicKey(transportKey)
         val secret = NostrConnectEncryption.conversationKey(clientKey, NostrEventSigner.decodeHex(transport, 32))
-        val now = 1_800_000_000L
+        val now = Int.MAX_VALUE.toLong() + 3_600
         val job = Job()
         val relay = RecordingNostranslationRelay()
         try {
