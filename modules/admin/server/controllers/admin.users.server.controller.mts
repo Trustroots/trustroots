@@ -422,9 +422,9 @@ interface MemberListOptions {
 }
 
 function getMemberListOptions(
-  body: AdminListRequest['body'],
+  body: NonNullable<AdminListRequest['body']>,
 ): MemberListOptions | null {
-  const { page = 1, sort } = body ?? {};
+  const { page = 1, sort } = body;
   const {
     column: sortColumn = DEFAULT_ADMIN_MEMBER_SORT.column,
     direction: sortDirection = DEFAULT_ADMIN_MEMBER_SORT.direction,
@@ -454,11 +454,11 @@ function getMemberListOptions(
 }
 
 async function sendMemberList(
-  req: AdminListRequest,
+  body: NonNullable<AdminListRequest['body']>,
   res: AdminResponse,
   query: QueryFilter<UserRecord>,
 ): Promise<unknown> {
-  const options = getMemberListOptions(req.body);
+  const options = getMemberListOptions(body);
 
   if (!options) {
     return res.status(400).send({
@@ -519,7 +519,7 @@ export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
 
   const regexpSearch = createMemberSearchRegexp(search);
 
-  return sendMemberList(req, res, {
+  return sendMemberList(req.body!, res, {
     $or: [
       { displayName: regexpSearch },
       { email: regexpSearch },
@@ -543,7 +543,7 @@ export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
     });
   }
 
-  return sendMemberList(req, res, {
+  return sendMemberList(req.body!, res, {
     roles: { $in: [role] },
   });
 };
@@ -564,7 +564,7 @@ export const listUsersByLastIpHash = (
     });
   }
 
-  return sendMemberList(req, res, { lastIpHash: ipHash });
+  return sendMemberList(req.body!, res, { lastIpHash: ipHash });
 };
 
 const handleAdminApiError = (res: AdminResponse, err: unknown): unknown =>

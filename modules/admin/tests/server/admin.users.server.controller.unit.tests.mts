@@ -898,6 +898,13 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('changeRole', () => {
+    it('rejects a role change without a request body', async () => {
+      const res = mockResponse();
+      await adminUsers.changeRole({}, res);
+      res.statusCode.should.equal(400);
+      responseField(res, 'message').should.equal('Invalid role.');
+    });
+
     it('adds and removes welcome-team idempotently while preserving other roles and notes', async () => {
       const [admin, target] = await saveMembers(2);
       target.roles = ['user', 'volunteer'];
