@@ -140,6 +140,213 @@ describe('Search users: GET /users?search=string', function () {
         .end(done);
     });
     context('valid request', function () {
+      it('filters eligible availability before limiting ranked member results', async function () {
+        const [
+          noOffer,
+          host,
+          meeting,
+          dualOffer,
+          expiredOffer,
+          circleOffer,
+          blockingOffer,
+          legacyMeeting,
+        ] = await promisify(createUsers)([
+          { username: 'rankedplace', locationLiving: 'Rankedplace' },
+          ...[
+            'openhost',
+            'openmeeting',
+            'dualmember',
+            'expiredmember',
+            'circlemember',
+            'blockingmember',
+            'legacymeeting',
+          ].map(username => ({
+            username,
+            locationLiving: 'Rankedplace',
+          })),
+        ]);
+        const circleId = new mongoose.Types.ObjectId();
+        const location = [51, 0];
+        const Offer = mongoose.model('Offer');
+        await Offer.create([
+          {
+            user: host._id,
+            type: 'host',
+            status: 'maybe',
+            volunteering: true,
+            location,
+          },
+          {
+            user: meeting._id,
+            type: 'host',
+            status: 'no',
+            meetingStatus: 'yes',
+            location,
+          },
+          {
+            user: dualOffer._id,
+            type: 'host',
+            status: 'yes',
+            meetingStatus: 'maybe',
+            volunteering: true,
+            location,
+          },
+          {
+            user: expiredOffer._id,
+            type: 'host',
+            status: 'yes',
+            volunteering: true,
+            validUntil: new Date(0),
+            location,
+          },
+          {
+            user: circleOffer._id,
+            type: 'host',
+            status: 'yes',
+            showOnlyInMyCircles: true,
+            location,
+          },
+          { user: blockingOffer._id, type: 'host', status: 'yes', location },
+          {
+            user: legacyMeeting._id,
+            type: 'meet',
+            validUntil: new Date('2099-01-01'),
+            location,
+          },
+        ]);
+        await Offer.updateOne(
+          { user: legacyMeeting._id },
+          { $unset: { status: 1 } },
+        );
+        await User.updateOne(
+          { _id: circleOffer._id },
+          { $set: { member: [{ tribe: circleId, since: new Date() }] } },
+        );
+        await User.updateOne(
+          { _id: blockingOffer._id },
+          { $set: { blocked: [loggedUser._id] } },
+        );
+
+        async function matches(filters: string) {
+          const response = await agent
+            .get('/api/users?search=Rankedplace' + filters)
+            .expect(200);
+          return (response.body as SearchResponse)
+            .map(member => member.username)
+            .sort();
+        }
+
+        (await matches('&limit=1')).should.eql([noOffer.username]);
+        (await matches('&types=host&limit=1')).should.have.length(1);
+        (await matches('&types=host')).should.eql(['dualmember', 'openhost']);
+        (await matches('&types=meet')).should.eql([
+          'dualmember',
+          'legacymeeting',
+          'openmeeting',
+        ]);
+        (await matches('&types=meet&volunteering=true')).should.eql([
+          'dualmember',
+        ]);
+        (await matches('&volunteering=true')).should.eql([
+          'dualmember',
+          'openhost',
+        ]);
+
+        await mongoose.model('Contact').create({
+          userFrom: loggedUser._id,
+          userTo: host._id,
+          confirmed: true,
+        });
+        const aggregate = sinon.spy(User, 'aggregate');
+        try {
+          const connections = await agent
+            .get(
+              '/api/users?search=Rankedplace&types=host&connectionsOnly=true',
+            )
+            .expect(200);
+          should(aggregate.firstCall.returnValue.options.maxTimeMS).equal(2000);
+          const [connection] = connections.body as SearchResponse;
+          should(connection.username).equal('openhost');
+          should(connection).have.property('score');
+          should(connection).not.have.properties(
+            'blocked',
+            'searchOffers',
+            'email',
+          );
+        } finally {
+          aggregate.restore();
+        }
+
+        await User.updateOne(
+          { _id: loggedUser._id },
+          { $set: { member: [{ tribe: circleId, since: new Date() }] } },
+        );
+        (await matches('&types=host&tribes=' + circleId.toString())).should.eql(
+          ['circlemember'],
+        );
+
+        const offerLookup = sinon
+          .stub(User, 'aggregate')
+          .throws(new Error('Lookup failed'));
+        try {
+          await agent
+            .get('/api/users?search=Rankedplace&types=host')
+            .expect(500);
+        } finally {
+          offerLookup.restore();
+        }
+      });
+
+      it('combines recent activity, language and circle filters before pagination', async function () {
+        const [eligible, inactive, otherLanguage] = await promisify(
+          createUsers,
+        )(
+          ['activewalker', 'inactivewalker', 'languagewalker'].map(
+            username => ({
+              username,
+              locationLiving: 'Filteredford',
+            }),
+          ),
+        );
+        const circleId = new mongoose.Types.ObjectId();
+        await User.updateMany(
+          { _id: { $in: [eligible._id, inactive._id, otherLanguage._id] } },
+          {
+            $set: {
+              member: [{ tribe: circleId, since: new Date() }],
+              seen: new Date(),
+              languages: ['en'],
+            },
+          },
+        );
+        await User.updateOne(
+          { _id: inactive._id },
+          { $set: { seen: new Date(0) } },
+        );
+        await User.updateOne(
+          { _id: otherLanguage._id },
+          { $set: { languages: ['fr'] } },
+        );
+
+        const response = await agent
+          .get(
+            '/api/users?search=Filteredford&onlineRecently=true&languages=en&tribes=' +
+              circleId.toString() +
+              ',',
+          )
+          .expect(200);
+        (response.body as SearchResponse)
+          .map(member => member.username)
+          .should.eql(['activewalker']);
+        const emptyLanguage = await agent
+          .get('/api/users?search=Filteredford&languages=,&limit=1')
+          .expect(200);
+        should(emptyLanguage.body).have.length(1);
+        await agent
+          .get('/api/users?search=Filteredford&tribes=invalid')
+          .expect(400);
+      });
+
       it('restricts results to confirmed contacts and fails closed if the lookup fails', async function () {
         const [confirmed, pending] = await promisify(createUsers)([
           { username: 'fernwalker', locationLiving: 'Exampleville' },

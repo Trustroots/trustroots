@@ -19,7 +19,7 @@ vi.mock('@/modules/core/client/components/LanguageSelect', () => {
       <button
         aria-labelledby={props['aria-labelledby']}
         data-placeholder={props.placeholder}
-        data-selected={props.preSelectedLanguages?.join(',')}
+        data-selected={props.selectedLanguages?.join(',')}
         data-exclude-deprecated={Boolean(props.excludeDeprecated)}
         onClick={() => props.onChangeLanguages?.(['es', 'de'])}
         type="button"

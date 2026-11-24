@@ -456,22 +456,22 @@ const DATELINE_OFFER_FEATURES: OfferSearchFeature[] = [
   {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [179, 0] },
-    properties: { id: 'east' },
+    properties: { id: 'east', type: 'host' },
   },
   {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [-179, 0] },
-    properties: { id: 'west' },
+    properties: { id: 'west', type: 'meet' },
   },
   {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [0, 0] },
-    properties: { id: 'middle' },
+    properties: { id: 'middle', type: 'host' },
   },
   {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [179, 20] },
-    properties: { id: 'north' },
+    properties: { id: 'north', type: 'meet' },
   },
 ];
 
@@ -1197,18 +1197,23 @@ describe('Search', () => {
 
   it('reports only offer pins inside a viewport crossing the dateline', async () => {
     const onVisibleOffersChange = vi.fn();
+    const onVisibleMapCountsChange = vi.fn();
     mockMap.getBounds.mockReturnValue(DATELINE_BOUNDS);
     mockQueryOffers.mockResolvedValue({
       features: DATELINE_OFFER_FEATURES,
       type: 'FeatureCollection',
     });
 
-    renderSearchMap({ onVisibleOffersChange });
+    renderSearchMap({ onVisibleOffersChange, onVisibleMapCountsChange });
     flushMapViewport({ latitude: 0, longitude: 180, zoom: 8 });
 
     await waitFor(() =>
       expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['east', 'west']),
     );
+    expect(onVisibleMapCountsChange).toHaveBeenLastCalledWith({
+      host: 1,
+      meet: 1,
+    });
 
     mockMap.getBounds.mockReturnValue(WORLD_BOUNDS);
     mockQueryOffers.mockResolvedValue({
@@ -1225,6 +1230,10 @@ describe('Search', () => {
         'north',
       ]),
     );
+    expect(onVisibleMapCountsChange).toHaveBeenLastCalledWith({
+      host: 2,
+      meet: 2,
+    });
   });
 
   it('does not query private member map offers', async () => {
@@ -1268,11 +1277,15 @@ describe('Search', () => {
     expect(onOfferClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes an open offer when search filters change', async () => {
+  it('clears the pin highlight when search filters change', async () => {
     const onOfferClose = vi.fn();
     const { rerender } = renderSearchMap({ onOfferClose });
 
-    expect(onOfferClose).not.toHaveBeenCalled();
+    clickOfferPin('offer-id');
+    expect(mockMap.setFeatureState).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'offer-id' }),
+      expect.objectContaining({ selected: true }),
+    );
 
     rerender(
       <SearchMap
@@ -1284,7 +1297,13 @@ describe('Search', () => {
       />,
     );
 
-    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockMap.setFeatureState).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'offer-id' }),
+        expect.objectContaining({ selected: false }),
+      ),
+    );
+    expect(onOfferClose).not.toHaveBeenCalled();
   });
 
   it('ignores hover events that do not identify a new offer point', () => {
@@ -1922,6 +1941,7 @@ describe('Search', () => {
   it('reports visible community note threads from visibility-filtered map features', async () => {
     vi.useFakeTimers();
     const onVisibleCommunityNoteThreadsChange = vi.fn();
+    const onVisibleMapCountsChange = vi.fn();
     const visiblePlusCode = '8FVC9G8F+5W';
     const outsidePlusCode = '7FG49Q00+';
     const visibleArea = new OpenLocationCode().decode(visiblePlusCode);
@@ -1976,6 +1996,7 @@ describe('Search', () => {
 
     renderCommunityNotesMap({
       onVisibleCommunityNoteThreadsChange,
+      onVisibleMapCountsChange,
     });
 
     await flushCommunityNotesViewport({
@@ -1995,6 +2016,11 @@ describe('Search', () => {
         },
       ]),
     );
+    expect(onVisibleMapCountsChange).toHaveBeenLastCalledWith({
+      host: 0,
+      meet: 0,
+      communityNotes: 1,
+    });
     expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
       3,
     );

@@ -26,12 +26,14 @@ type LanguageSelectProps = Pick<
 > & {
   excludeDeprecated?: boolean;
   preSelectedLanguages?: string[];
+  selectedLanguages?: string[];
   onChangeLanguages?: (languages: string[]) => void;
 };
 
 export default function LanguageSelect({
   excludeDeprecated = false,
   preSelectedLanguages = [],
+  selectedLanguages,
   placeholder,
   onChangeLanguages,
   ...props
@@ -53,6 +55,11 @@ export default function LanguageSelect({
   }, [data]);
 
   const languages = data ?? [];
+  const value = selectedLanguages
+    ? selectedLanguages.flatMap(code =>
+        languages.filter(option => option.value === code),
+      )
+    : selected;
   const options = excludeDeprecated
     ? languages.filter(language => !language.deprecated)
     : languages;
@@ -65,11 +72,11 @@ export default function LanguageSelect({
         items={options}
         filteredItems={filtered}
         disabled={!data || isError}
-        value={selected}
+        value={value}
         inputValue={inputValue}
         onInputValueChange={setInputValue}
         onValueChange={value => {
-          setSelected(value);
+          if (!selectedLanguages) setSelected(value);
           onChangeLanguages?.(value.map(option => option.value));
         }}
         emptyMessage={

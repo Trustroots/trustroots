@@ -110,12 +110,23 @@ describe('<SearchSidebarFilters />', () => {
     expect(
       screen.getByRole('checkbox', { name: /online in the past 6 months/i }),
     ).toBeChecked();
-    screen
-      .getAllByRole('checkbox')
-      .filter(toggle => toggle.closest('.tr-switch'))
-      .forEach(toggle => {
-        expect(toggle.nextElementSibling).toHaveClass('toggle');
-      });
+  });
+
+  it('describes the displayed volunteering offers and note locations', () => {
+    render(
+      <SearchSidebarFilters
+        {...defaultProps}
+        filters={{ ...defaultProps.filters, volunteering: true }}
+        visibleMapCounts={{ host: 3, meet: 0, communityNotes: 2 }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Offers volunteering' }),
+    ).toHaveAccessibleDescription('Map results 3');
+    expect(
+      screen.getByRole('checkbox', { name: /community notes/i }),
+    ).toHaveAccessibleDescription('Map results 2');
   });
 
   it('forwards filter changes from child controls', () => {

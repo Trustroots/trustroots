@@ -17,6 +17,7 @@ interface PlaceSuggestion {
 
 interface SearchPlaceInputProps {
   id?: string;
+  onPlaceQueryChange?: (location?: string) => void;
   onPlaceSearch: (
     data: MapBounds | MapPoint,
     type: 'bounds' | 'center',
@@ -27,6 +28,7 @@ interface SearchPlaceInputProps {
 
 export default function SearchPlaceInput({
   id = 'search-query',
+  onPlaceQueryChange,
   onPlaceSearch,
   searchQuery,
   setSearchQuery,
@@ -104,6 +106,7 @@ export default function SearchPlaceInput({
     if (located) {
       track('search_place_selected', { source });
       onPlaceSearch(located.data, located.type);
+      onPlaceQueryChange?.(feature.trTitle);
     }
 
     /* istanbul ignore next -- search suggestions always include display titles. */
@@ -160,6 +163,7 @@ export default function SearchPlaceInput({
               suggestionRequestRef.current += 1;
               skipSuggestionsRef.current = false;
               setSearchQuery('');
+              onPlaceQueryChange?.();
               setSuggestions([]);
               setIsOpen(false);
               setLocationNotFound(false);

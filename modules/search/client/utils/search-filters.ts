@@ -32,7 +32,7 @@ function normalizeTypes(types: SearchType[] = []): string[] {
 
 /**
  * How many filters narrow the search beyond the defaults: circles, languages,
- * connections, volunteering, and leaving out hosts. Used for analytics, which may count filters but not
+ * connections, volunteering, and limiting the offer types. Used for analytics, which may count filters but not
  * know which circles or languages.
  */
 export function countNarrowingFilters(filters: Partial<SearchFilters>): number {
@@ -41,7 +41,7 @@ export function countNarrowingFilters(filters: Partial<SearchFilters>): number {
     Boolean(filters.languages?.length),
     filters.connectionsOnly === true,
     filters.volunteering === true,
-    Boolean(filters.types) && !normalizeTypes(filters.types).includes('host'),
+    Boolean(filters.types) && normalizeTypes(filters.types).length === 1,
   ].filter(Boolean).length;
 }
 
@@ -87,6 +87,43 @@ function writeCachedFilters(
 
 export function getSearchFilters(userId?: string | null): SearchFilters {
   return readCachedFilters(userId);
+}
+
+export function readSearchFiltersParam(value?: string): SearchFilters | null {
+  if (!value) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const filters = parsed as Partial<SearchFilters>;
+  const types = Array.isArray(filters.types)
+    ? normalizeTypes(filters.types.filter(type => typeof type === 'string'))
+    : DEFAULT_FILTERS.types;
+  return {
+    types,
+    tribes: Array.isArray(filters.tribes)
+      ? filters.tribes.filter(
+          id => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id),
+        )
+      : [],
+    languages: Array.isArray(filters.languages)
+      ? filters.languages.filter(language => typeof language === 'string')
+      : [],
+    seen: filters.seen?.months === 24 ? { months: 24 } : DEFAULT_FILTERS.seen,
+    communityNotes:
+      typeof filters.communityNotes === 'boolean'
+        ? filters.communityNotes
+        : DEFAULT_FILTERS.communityNotes,
+    connectionsOnly: filters.connectionsOnly === true,
+    volunteering: types.includes('host') && filters.volunteering === true,
+  };
 }
 
 export function setSearchFilter(

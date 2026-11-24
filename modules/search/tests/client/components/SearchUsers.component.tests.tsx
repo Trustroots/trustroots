@@ -1,15 +1,23 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
 import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import type { MemberSearchFilters } from '@/modules/users/client/api/search-users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
 type MockSearchResponse = { data: UserProfile[] | null };
 const mockSearchUsers =
   vi.fn<
     (
-      ...args: [query: string, connectionsOnly: boolean]
+      ...args: [query: string, filters: MemberSearchFilters]
     ) => Promise<MockSearchResponse>
   >();
 
@@ -19,21 +27,62 @@ vi.mock('@tanstack/react-router', async () =>
   ).mockRouterModule(),
 );
 vi.mock('@/modules/users/client/api/search-users.api', () => ({
-  searchUsers: (query: string, connectionsOnly: boolean) =>
-    mockSearchUsers(query, connectionsOnly),
+  searchUsers: (query: string, filters: MemberSearchFilters) =>
+    mockSearchUsers(query, filters),
 }));
 
+vi.mock('@/modules/tribes/client/api/tribes.api', () => ({
+  read: async () => [{ _id: 'circle-1', label: 'Example circle' }],
+}));
+vi.mock(
+  '@/modules/search/client/components/SearchFilterLanguage.component',
+  () => ({
+    default: ({
+      onChangeLanguages,
+    }: {
+      onChangeLanguages: (languages: string[]) => void;
+    }) => (
+      <>
+        <button type="button" onClick={() => onChangeLanguages(['eng', 'fra'])}>
+          Set spoken languages
+        </button>
+        <button type="button" onClick={() => onChangeLanguages([])}>
+          Clear spoken languages
+        </button>
+      </>
+    ),
+  }),
+);
+
 afterEach(() => {
-  vi.clearAllMocks();
+  mockSearchUsers.mockReset();
 });
+
+function renderSearch() {
+  const client = new QueryClient();
+  return render(
+    <QueryClientProvider client={client}>
+      <SearchUsers />
+    </QueryClientProvider>,
+  );
+}
+
+const defaults = {
+  connectionsOnly: false,
+  types: [],
+  volunteering: false,
+  onlineRecently: false,
+  tribes: [],
+  languages: [],
+} satisfies MemberSearchFilters;
 
 describe('<SearchUsers />', () => {
   beforeEach(() => {
-    window.history.pushState({}, 'Search', '/search');
+    window.history.pushState({}, 'Search', '/search/members');
   });
 
   it('keeps search controls disabled until the query is long enough', () => {
-    render(<SearchUsers />);
+    renderSearch();
 
     const input = screen.getByRole('textbox', { name: 'Search members' });
     expect(input).not.toHaveFocus();
@@ -47,6 +96,8 @@ describe('<SearchUsers />', () => {
 
     expect(searchButton).toBeDisabled();
     expect(clearButton).toBeDisabled();
+    fireEvent.submit(input.closest('form')!);
+    expect(mockSearchUsers).not.toHaveBeenCalled();
 
     fireEvent.change(input, { target: { value: 'al' } });
 
@@ -71,7 +122,7 @@ describe('<SearchUsers />', () => {
       ],
     });
 
-    render(<SearchUsers />);
+    renderSearch();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Search members' }), {
       target: { value: 'alice' },
@@ -84,7 +135,7 @@ describe('<SearchUsers />', () => {
       screen.getByRole('heading', { name: 'Searching members…' }),
     ).toBeInTheDocument();
     await waitFor(() =>
-      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', defaults),
     );
 
     expect(await screen.findByText('1 members found')).toBeInTheDocument();
@@ -95,24 +146,27 @@ describe('<SearchUsers />', () => {
   });
 
   it('runs an initial search from the URL search parameter', async () => {
-    window.history.pushState({}, 'Search', '/search?search=traveler');
+    window.history.pushState({}, 'Search', '/search/members?search=traveler');
     mockSearchUsers.mockResolvedValueOnce({ data: [] });
 
-    render(<SearchUsers />);
+    renderSearch();
 
     expect(screen.getByRole('textbox', { name: 'Search members' })).toHaveValue(
       'traveler',
     );
     await waitFor(() =>
-      expect(mockSearchUsers).toHaveBeenCalledWith('traveler', false),
+      expect(mockSearchUsers).toHaveBeenCalledWith('traveler', defaults),
     );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledTimes(2));
   });
 
   it('shows empty results when the search response has no users array', async () => {
     mockSearchUsers.mockResolvedValueOnce({ data: null });
 
-    render(<SearchUsers />);
+    renderSearch();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Search members' }), {
       target: { value: 'alice' },
@@ -120,15 +174,15 @@ describe('<SearchUsers />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
     await waitFor(() =>
-      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', defaults),
     );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
   it('does not request users for short URL searches', () => {
-    window.history.pushState({}, 'Search', '/search?search=ab');
+    window.history.pushState({}, 'Search', '/search/members?search=ab');
 
-    render(<SearchUsers />);
+    renderSearch();
 
     fireEvent.click(
       screen.getByRole('checkbox', { name: 'My connections only' }),
@@ -149,7 +203,7 @@ describe('<SearchUsers />', () => {
       ],
     });
 
-    render(<SearchUsers />);
+    renderSearch();
 
     const input = screen.getByRole('textbox', { name: 'Search members' });
     fireEvent.change(input, { target: { value: 'alice' } });
@@ -182,7 +236,7 @@ describe('<SearchUsers />', () => {
         ],
       });
 
-    render(<SearchUsers />);
+    renderSearch();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Search members' }), {
       target: { value: 'alice' },
@@ -190,7 +244,7 @@ describe('<SearchUsers />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
     await waitFor(() =>
-      expect(mockSearchUsers).toHaveBeenCalledWith('alice', false),
+      expect(mockSearchUsers).toHaveBeenCalledWith('alice', defaults),
     );
     const error = await screen.findByRole('alert');
     expect(error).toHaveTextContent('Member search unavailable');
@@ -203,9 +257,9 @@ describe('<SearchUsers />', () => {
 });
 
 it('searches again when the connections filter changes after a completed search', async () => {
-  window.history.pushState({}, 'Search', '/search');
+  window.history.pushState({}, 'Search', '/search/members');
   mockSearchUsers.mockResolvedValue({ data: [] });
-  render(<SearchUsers />);
+  renderSearch();
 
   const contacts = screen.getByRole('checkbox', {
     name: 'My connections only',
@@ -216,10 +270,131 @@ it('searches again when the connections filter changes after a completed search'
     target: { value: 'Exampleville' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
-  await waitFor(() => expect(contacts).toBeEnabled());
-  expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', true);
+  await waitFor(() =>
+    expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', {
+      ...defaults,
+      connectionsOnly: true,
+    }),
+  );
 
   fireEvent.click(contacts);
-  await waitFor(() => expect(contacts).toBeEnabled());
-  expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', false);
+  await waitFor(() =>
+    expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', defaults),
+  );
+});
+
+it('shares the submitted query and filters while preserving the existing URL state', async () => {
+  window.history.pushState({}, '', '/search/members?source=map#location');
+  mockSearchUsers.mockResolvedValue({ data: [] });
+  renderSearch();
+
+  const input = screen.getByRole('textbox', { name: 'Search members' });
+  fireEvent.change(input, { target: { value: ' Exampleville ' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Hosts' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Offers volunteering' }),
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Online in the past 6 months' }),
+  );
+  fireEvent.click(screen.getByText('Circles and languages'));
+  fireEvent.click(
+    await screen.findByRole('checkbox', { name: 'Example circle' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Set spoken languages' }));
+
+  expect(mockSearchUsers).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+  expect(await screen.findByText('No members found.')).toBeInTheDocument();
+  expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', {
+    ...defaults,
+    types: ['host', 'meet'],
+    volunteering: true,
+    onlineRecently: true,
+    tribes: ['circle-1'],
+    languages: ['eng', 'fra'],
+  });
+  expect(
+    Object.fromEntries(new URLSearchParams(window.location.search)),
+  ).toEqual({
+    source: 'map',
+    search: 'Exampleville',
+    types: 'host,meet',
+    volunteering: 'true',
+    onlineRecently: 'true',
+    tribes: 'circle-1',
+    languages: 'eng,fra',
+  });
+  expect(window.location.hash).toBe('#location');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Clear members search' }));
+  expect(input).toHaveValue('');
+  expect(new URLSearchParams(window.location.search).has('search')).toBe(false);
+  expect(screen.getByRole('checkbox', { name: 'Hosts' })).toBeChecked();
+
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Hosts' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Meetings' }));
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Offers volunteering' }),
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Online in the past 6 months' }),
+  );
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Example circle' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Clear spoken languages' }),
+  );
+  expect(
+    Object.fromEntries(new URLSearchParams(window.location.search)),
+  ).toEqual({ source: 'map' });
+});
+
+it('restores the query and filters when navigating through search history', async () => {
+  window.history.pushState(
+    {},
+    '',
+    '/search/members?search=Exampleville&types=meet&connectionsOnly=true',
+  );
+  mockSearchUsers.mockResolvedValue({ data: [] });
+  renderSearch();
+  const meetings = screen.getByRole('checkbox', { name: 'Meetings' });
+  expect(meetings).toBeChecked();
+  expect(
+    screen.getByRole('checkbox', { name: 'My connections only' }),
+  ).toBeChecked();
+
+  await waitFor(() =>
+    expect(mockSearchUsers).toHaveBeenLastCalledWith('Exampleville', {
+      ...defaults,
+      connectionsOnly: true,
+      types: ['meet'],
+    }),
+  );
+
+  act(() => {
+    window.history.pushState(
+      {},
+      '',
+      '/search/members?search=Rivertown&types=host',
+    );
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  expect(screen.getByRole('textbox', { name: 'Search members' })).toHaveValue(
+    'Rivertown',
+  );
+  expect(meetings).not.toBeChecked();
+  expect(screen.getByRole('checkbox', { name: 'Hosts' })).toBeChecked();
+
+  await act(async () => {
+    await new Promise<void>(resolve => {
+      window.addEventListener('popstate', () => resolve(), { once: true });
+      window.history.back();
+    });
+  });
+
+  expect(screen.getByRole('textbox', { name: 'Search members' })).toHaveValue(
+    'Exampleville',
+  );
+  expect(meetings).toBeChecked();
 });
