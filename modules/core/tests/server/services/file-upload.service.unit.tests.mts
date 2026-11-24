@@ -245,6 +245,7 @@ describe('file-upload.service unit tests', () => {
       for (const headers of [
         { 'content-type': 'application/json' },
         { 'content-type': 'multipart/form-datax; boundary=ignored' },
+        { 'content-type': 'text/multipart/form-data; boundary=ignored' },
         {},
       ]) {
         const req = Object.assign(Readable.from(['{}']), { headers });
@@ -254,12 +255,17 @@ describe('file-upload.service unit tests', () => {
     });
 
     it('rejects multipart bodies that cannot be parsed', async () => {
-      const req = Object.assign(Readable.from([Buffer.from('broken')]), {
-        headers: { 'content-type': 'multipart/form-data; boundary=missing' },
-      });
-      await readUpload(req, 'avatar', 1024).should.be.rejectedWith({
-        code: 'INVALID_MULTIPART',
-      });
+      for (const contentType of [
+        'multipart/form-data; boundary=missing',
+        'multipart/form-data',
+      ]) {
+        const req = Object.assign(Readable.from([Buffer.from('broken')]), {
+          headers: { 'content-type': contentType },
+        });
+        await readUpload(req, 'avatar', 1024).should.be.rejectedWith({
+          code: 'INVALID_MULTIPART',
+        });
+      }
     });
 
     it('reports malformed multipart data at the total size limit as invalid', async () => {

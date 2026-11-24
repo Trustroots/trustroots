@@ -57,7 +57,7 @@ export async function readUpload(
   uploadField: string,
   maxUploadSize: number,
 ): Promise<{ file: UploadedFile; fields: Record<string, string> } | undefined> {
-  const contentType = req.headers['content-type'] ?? '';
+  const contentType = String(req.headers['content-type']);
   if (!/^multipart\/form-data\s*(;|$)/i.test(contentType)) {
     return undefined;
   }
