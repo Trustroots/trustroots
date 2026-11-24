@@ -42,13 +42,14 @@ internal fun NostranslationEntry(
     activeSession: BrowserNostrSession?,
     enabled: Boolean,
     sockets: WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
+    currentTimeSeconds: () -> Long = { System.currentTimeMillis() / 1000 },
 ) {
     var open by remember(activeSession) { mutableStateOf(false) }
     TextButton(onClick = { open = true }, enabled = enabled && activeSession != null) {
         Text(stringResource(R.string.nostranslation_signing))
     }
     if (open && enabled && activeSession != null) {
-        NostranslationDialog(backend, username, activeSession, sockets) { open = false }
+        NostranslationDialog(backend, username, activeSession, sockets, currentTimeSeconds) { open = false }
     }
 }
 
@@ -58,17 +59,21 @@ private fun NostranslationDialog(
     username: String,
     activeSession: BrowserNostrSession,
     sockets: WebSocket.Factory,
+    currentTimeSeconds: () -> Long,
     close: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val signer = remember(activeSession) {
-        AndroidNostranslationSession(nostrAccountScope(backend, username), activeSession.keys, scope, activeSession::isActive, sockets)
+        AndroidNostranslationSession(
+            nostrAccountScope(backend, username), activeSession.keys, scope, activeSession::isActive, sockets,
+            now = currentTimeSeconds,
+        )
     }
     var input by remember { mutableStateOf("") }
     var pairing by remember { mutableStateOf<NostranslationConnectionLink?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var scanning by remember { mutableStateOf(false) }
-    var now by remember { mutableStateOf(System.currentTimeMillis() / 1000) }
+    var now by remember { mutableStateOf(currentTimeSeconds()) }
     val failed = stringResource(R.string.nostranslation_action_failed)
     val invalid = stringResource(R.string.nostranslation_invalid_link)
     val scanPrompt = stringResource(R.string.nostranslation_scan_qr)
@@ -90,7 +95,7 @@ private fun NostranslationDialog(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!scanning) close() }
     LaunchedEffect(signer) {
         while (true) {
-            now = System.currentTimeMillis() / 1000
+            now = currentTimeSeconds()
             delay(1000)
         }
     }

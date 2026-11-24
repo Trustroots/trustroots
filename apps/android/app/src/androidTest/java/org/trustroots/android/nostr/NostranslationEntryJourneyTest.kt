@@ -18,6 +18,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.zxing.client.android.Intents
@@ -48,9 +52,10 @@ class NostranslationEntryJourneyTest {
             "&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture"
         val relay = RecordingNostranslationRelay()
         val session = mutableStateOf<BrowserNostrSession?>(null)
+        var now = 1_800_000_000L
         try {
             keys.generate()
-            compose.setContent { NostranslationEntry(backend, username, session.value, true, relay) }
+            compose.setContent { NostranslationEntry(backend, username, session.value, true, relay) { now } }
             val entry = compose.onNodeWithText("Nostranslation signing")
             entry.assertIsNotEnabled()
             compose.runOnIdle { session.value = BrowserNostrSession(keys) { true } }
@@ -84,7 +89,7 @@ class NostranslationEntryJourneyTest {
             connected.assertIsDisplayed()
 
             val secret = NostrConnectEncryption.conversationKey(clientKey, NostrEventSigner.decodeHex(transport, 32))
-            val timestamp = System.currentTimeMillis() / 1000
+            val timestamp = now
             val tags = JSONArray()
                 .put(JSONArray().put("u").put("https://nostranslation-api.trustroots.org/api/reviews"))
                 .put(JSONArray().put("method").put("POST"))
@@ -124,7 +129,20 @@ class NostranslationEntryJourneyTest {
                 assertEquals("denied-from-dialog", denied.getString("id"))
                 assertEquals("Authorisation denied.", denied.getString("error"))
             }
-            compose.runOnIdle { relay.fail() }
+            compose.runOnIdle { relay.receive(reviewFrame("expires-in-dialog")) }
+            compose.onNodeWithText("Approve signature").assertIsDisplayed()
+            compose.runOnIdle { now = timestamp + 61 }
+            compose.mainClock.advanceTimeBy(1_050)
+            compose.onNodeWithText("This request expired. Retry in Nostranslation.").assertIsDisplayed()
+            compose.onNodeWithText("Approve signature").assertDoesNotExist()
+            compose.onNodeWithText("Done").performClick()
+            compose.runOnIdle {
+                val reply = relay.frames.last().getJSONObject(1)
+                val expired = JSONObject(NostrConnectEncryption.decrypt(reply.getString("content"), secret))
+                assertEquals("expires-in-dialog", expired.getString("id"))
+                assertEquals("Authorisation denied.", expired.getString("error"))
+                relay.fail()
+            }
             compose.onNodeWithText("The relay connection failed. Close and reopen this screen to retry.")
                 .assertIsDisplayed()
             compose.onNodeWithText("Revoke client").performClick()
@@ -150,10 +168,17 @@ class NostranslationEntryJourneyTest {
         val owner = object : ActivityResultRegistryOwner {
             override val activityResultRegistry = scanner
         }
+        val lifecycleOwner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry(this)
+        }
         val session = BrowserNostrSession(keys) { true }
         try {
+            compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED }
             compose.setContent {
-                CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                CompositionLocalProvider(
+                    LocalActivityResultRegistryOwner provides owner,
+                    LocalLifecycleOwner provides lifecycleOwner,
+                ) {
                     NostranslationEntry(backend, username, session, true, relay)
                 }
             }
@@ -169,13 +194,20 @@ class NostranslationEntryJourneyTest {
             compose.runOnIdle { scanner.available = true }
 
             scan.performClick()
-            compose.runOnIdle { scanner.finish(null) }
+            compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED }
+            scan.assertIsDisplayed()
+            compose.runOnIdle {
+                lifecycleOwner.lifecycle.currentState = Lifecycle.State.RESUMED
+                scanner.finish(null)
+            }
             pair.assertDoesNotExist()
             scan.performClick()
             compose.runOnIdle { scanner.finish(connectionLink) }
             pair.assertIsDisplayed()
             pair.performClick()
             actionFailed.assertIsDisplayed()
+            compose.runOnIdle { lifecycleOwner.lifecycle.currentState = Lifecycle.State.CREATED }
+            scan.assertDoesNotExist()
         } finally {
             keys.remove()
         }
