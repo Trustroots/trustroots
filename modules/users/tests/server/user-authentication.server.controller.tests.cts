@@ -1325,7 +1325,7 @@ describe('Authentication controller OAuth unit tests', () => {
       userField(unchanged, 'emailToken').should.equal(token);
     });
 
-    it('confirms an email when the account already has an auth version', async () => {
+    it('increments the existing auth version when confirming an email', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const token = 'versioned-confirm-token';
       await User.updateOne(
@@ -1355,7 +1355,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
       const reloaded = await findUser(saved._id);
       userField(reloaded, 'public').should.be.true();
-      userField(reloaded, 'authVersion').should.equal(2);
+      userField(reloaded, 'authVersion').should.equal(3);
       should.not.exist(reloaded.emailToken);
     });
 
@@ -1370,6 +1370,8 @@ describe('Authentication controller OAuth unit tests', () => {
             authVersion: 2,
             emailTemporary: 'new@example.test',
             emailToken: 'mfa-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
           },
         },
       );
@@ -1401,6 +1403,8 @@ describe('Authentication controller OAuth unit tests', () => {
             authVersion: 2,
             emailTemporary: 'new@example.test',
             emailToken: 'verified-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
           },
         },
       );
@@ -1434,6 +1438,8 @@ describe('Authentication controller OAuth unit tests', () => {
             mfaSecretEncrypted: 'encrypted-secret',
             emailTemporary: 'legacy-new@example.test',
             emailToken: 'legacy-verified-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
           },
           $unset: { authVersion: '' },
         },
@@ -1471,6 +1477,8 @@ describe('Authentication controller OAuth unit tests', () => {
             authVersion: 2,
             emailTemporary: 'new@example.test',
             emailToken: 'stale-session-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
           },
         },
       );

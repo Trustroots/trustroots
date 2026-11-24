@@ -394,7 +394,6 @@ service.changePassword = function (req, res) {
 
       // Login again and return new user
       function (user: UserServerDocument, done: WaterfallCallback) {
-        user.$locals = user.$locals || {};
         user.$locals.mfaVerified =
           user.mfaEnabled === true && req.user?.$locals?.mfaVerified === true;
         req.login(user, function (err?: Error | null) {

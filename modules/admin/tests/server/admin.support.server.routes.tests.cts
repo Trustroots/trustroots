@@ -256,6 +256,7 @@ describe('Support team access and investigation', () => {
     ).body.length.should.equal(50);
     lookups.should.equal(1);
     sinon.restore();
+    await utils.elevateAdminAccess(agent, raw[0].password);
     await agent
       .post('/api/admin/notes')
       .set('X-Trustroots-Request', '1')

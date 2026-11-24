@@ -70,7 +70,6 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
           if ((user.authVersion || 0) !== sessionData!.authVersion) {
             return done(null, false);
           }
-          user.$locals = user.$locals || {};
           user.$locals.mfaVerified =
             user.mfaEnabled === true && sessionData!.mfaVerified === true;
           return done(null, user);
