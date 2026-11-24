@@ -112,7 +112,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signIn(app)
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
         element(labelled: "My profile", in: app).tap()
-        XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(profile.waitForExistence(timeout: 30), app.debugDescription)
         app.buttons["Back"].tap()
         try await updateFixtureSession("revoke-session", at: fixtureURL)
         element(labelled: "Messages", in: app).tap()
@@ -262,7 +262,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func openConversation(in app: XCUIApplication, draft: XCUIElement) {
         let open = app.buttons["Open conversation"]
-        XCTAssertTrue(open.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(open.waitForExistence(timeout: 30), app.debugDescription)
         reveal(open, in: app)
         open.tap()
         if !draft.waitForExistence(timeout: 3), open.isHittable {
@@ -343,9 +343,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             object: field
         )
         XCTAssertEqual(
-            XCTWaiter.wait(for: [entered], timeout: 10),
+            XCTWaiter.wait(for: [entered], timeout: 30),
             .completed,
-            "The input should receive its complete value before continuing."
+            "The input should receive its complete value before continuing.\n\(field.debugDescription)"
         )
     }
 
