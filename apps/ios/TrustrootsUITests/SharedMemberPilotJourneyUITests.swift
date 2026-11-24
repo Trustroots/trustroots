@@ -214,19 +214,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         menu.tap()
         let account = app.buttons["account-menu-entry"]
         XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(account.isEnabled, app.debugDescription)
-        if account.isHittable {
-            account.tap()
-        } else {
-            // SwiftUI's List can report a visible row without an XCTest hit point.
-            // Send a tap inside the displayed row and verify the destination below.
-            let frame = account.frame
-            XCTAssertFalse(frame.isEmpty, app.debugDescription)
-            XCTAssertTrue(app.frame.contains(frame), app.debugDescription)
-            app.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY))
-                .tap()
-        }
+        account.tap()
         XCTAssertTrue(app.staticTexts["Local public key (npub)"].waitForExistence(timeout: 10), app.debugDescription)
     }
 
@@ -289,6 +277,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func signInNatively(_ app: XCUIApplication) {
         signIn(app, username: app.textFields["Username or email"], password: app.secureTextFields["Password"])
+        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
+        let passwordPrompt = app.sheets["Save Password?"]
+        if passwordPrompt.waitForExistence(timeout: 5) {
+            passwordPrompt.buttons["Not Now"].tap()
+            XCTAssertTrue(passwordPrompt.waitForNonExistence(timeout: 5), app.debugDescription)
+        }
     }
 
     private func signIn(_ app: XCUIApplication, username: XCUIElement, password: XCUIElement) {
