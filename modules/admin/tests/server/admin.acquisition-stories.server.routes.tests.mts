@@ -85,6 +85,7 @@ describe('Admin acquisition stories CRUD tests', () => {
           'suspended',
           'shadowban',
         ]);
+        body.every(row => !Object.hasOwn(row, 'email')).should.equal(true);
         body
           .find(row => row.username === credentialsRegular.username)!
           .restrictionStatuses.should.deepEqual([]);
@@ -143,6 +144,17 @@ describe('Admin acquisition stories CRUD tests', () => {
           .set('X-Trustroots-Request', '1')
           .expect(200);
         body.length.should.equal(acquisitionStories.length);
+        const member = await mongoose
+          .model('User')
+          .findOne({ username: credentialsRegular.username })
+          .exec();
+        should(
+          body.find(row => row.username === credentialsRegular.username),
+        ).have.property('email', member!.email);
+        body
+          .every(row => !Object.hasOwn(row, 'emailTemporary'))
+          .should.equal(true);
+        body.every(row => !Object.hasOwn(row, 'emailToken')).should.equal(true);
         body
           .find(row => row.acquisitionStory === acquisitionStories[2])!
           .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);

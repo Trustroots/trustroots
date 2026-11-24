@@ -40,6 +40,7 @@ type AcquisitionStoryFixture = {
   circleCount?: number;
   created?: string;
   displayName?: string;
+  email?: string;
   emailConfirmed?: boolean;
   hostingLocation?: number[];
   locationFrom?: string;
@@ -94,6 +95,75 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it('filters by member details and displays account emails to administrators', async () => {
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      storyFixture({
+        _id: '1',
+        username: 'river-member',
+        displayName: 'Fictional Traveller',
+        email: 'river+signup@example.test',
+        locationLiving: 'Fictional Forest',
+        locationFrom: 'Fictional Harbour',
+        acquisitionStory: 'Referred by a neighbour',
+      }),
+      storyFixture({ _id: '2', username: 'hill-member' }),
+    ]);
+    render(<AdminAcquisitionStories />);
+
+    const email = await screen.findByText('river+signup@example.test');
+    expect(
+      screen.getByRole('columnheader', { name: 'Email address' }),
+    ).toBeVisible();
+    const search = screen.getByRole('searchbox', { name: 'Search stories' });
+    for (const query of [
+      '  +SIGNUP@EXAMPLE  ',
+      'river-mem',
+      'fictional traveller',
+      'forest',
+      'harbour',
+      'neighbour',
+    ]) {
+      fireEvent.change(search, { target: { value: query } });
+      expect(email).toBeVisible();
+      expect(screen.queryByText('hill-member')).not.toBeInTheDocument();
+    }
+
+    fireEvent.change(search, { target: { value: 'unmatched' } });
+    expect(
+      screen.getByText('No acquisition stories match your search.'),
+    ).toBeVisible();
+    fireEvent.change(search, { target: { value: ' ' } });
+    expect(screen.getByText('hill-member')).toBeVisible();
+  });
+
+  it.each(['welcome-team', 'support-team'])(
+    'lets %s search by username without exposing email',
+    async role => {
+      setViewer({ roles: [role] });
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        storyFixture({
+          _id: '1',
+          username: 'river-member',
+          email: 'fictional@example.test',
+        }),
+      ]);
+      render(<AdminAcquisitionStories />);
+
+      await screen.findByText('river-member');
+      expect(
+        screen.queryByRole('columnheader', { name: 'Email address' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('fictional@example.test'),
+      ).not.toBeInTheDocument();
+      const search = screen.getByRole('searchbox', { name: 'Search stories' });
+      fireEvent.change(search, { target: { value: 'example.test' } });
+      expect(screen.queryByText('river-member')).not.toBeInTheDocument();
+      fireEvent.change(search, { target: { value: 'RIVER' } });
+      expect(screen.getByText('river-member')).toBeVisible();
+    },
+  );
+
   it.each(['admin', 'welcome-team', 'support-team'])(
     'shows restriction badges independently of visibility for %s',
     async role => {

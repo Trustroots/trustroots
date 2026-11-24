@@ -76,6 +76,7 @@ interface AcquisitionStory {
   circleCount: number;
   created?: Date;
   displayName?: string;
+  email?: string;
   emailConfirmed: boolean;
   hostingLocation: number[] | null;
   locationFrom?: string;
@@ -90,6 +91,10 @@ interface AcquisitionStory {
 
 interface SendResponse {
   send(body: unknown): unknown;
+}
+
+interface ListRequest {
+  user?: { roles: string[] };
 }
 
 interface ResendResponse {
@@ -192,6 +197,7 @@ function storyForList(
   hostingLocation: number[] | null,
   restrictedMatches: RestrictedMatch[],
   welcomer: Welcomer | null,
+  includeEmail: boolean,
 ): AcquisitionStory {
   return {
     _id: story._id,
@@ -199,6 +205,7 @@ function storyForList(
     circleCount: story.member.length,
     created: story.created,
     displayName: story.displayName,
+    ...(includeEmail && { email: story.email }),
     emailConfirmed: Boolean(story.public || !story.emailTemporary),
     hostingLocation,
     locationFrom: story.locationFrom,
@@ -214,9 +221,10 @@ function storyForList(
 
 /** @esmNamed */
 export const list = async (
-  _req: unknown,
+  req: ListRequest,
   res: SendResponse,
 ): Promise<unknown> => {
+  const includeEmail = req.user?.roles.includes('admin') === true;
   const stories = await getStories(500);
   // Stryker disable next-line ConditionalExpression: an empty list also yields [] through the full path; this only skips the queries
   if (!stories || stories.length === 0) return res.send([]);
@@ -317,6 +325,7 @@ export const list = async (
         hostingLocationsByUser[story._id.toString()] || null,
         await getRestrictedMatches(story, restrictedUsers),
         welcomersByUser.get(story._id.toString()) || null,
+        includeEmail,
       ),
     );
   }
