@@ -1,3 +1,4 @@
+import { queueHealth } from '../controllers/admin.email.server.controller.mts';
 import unsuspension from '../controllers/admin.unsuspend.server.controller.mts';
 import gravatar from '../controllers/admin.gravatar.server.controller.mts';
 import {
@@ -113,6 +114,10 @@ const registerRoutes = (
     .all(adminPolicy.isAllowed)
     .get(signupReviewRules.list)
     .put(signupReviewRules.save);
+  app
+    .route('/api/admin/email/queue-health')
+    .all(adminPolicy.isAllowed)
+    .get(queueHealth);
   app
     .route('/api/admin/sparkpost/recovery')
     .all(adminPolicy.isAllowed)

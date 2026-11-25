@@ -54,8 +54,11 @@ test.describe('admin moderation page flows', () => {
     ]);
 
     await gotoAdminPage(page, '/admin', /\/admin$/);
+    await page.getByRole('link', { name: 'Email', exact: true }).click();
     await page.getByRole('link', { name: 'Email replies' }).click();
-    await expect(page).toHaveURL(/\/admin\/email-replies$/);
+    await expect(page).toHaveURL(/\/admin\/email\/replies$/);
+    await page.goto('/admin/email-replies');
+    await expect(page).toHaveURL(/\/admin\/email\/replies$/);
     await page.getByRole('button', { name: 'Check mailbox' }).click();
     await expect(page.getByRole('status')).toHaveText(
       'The reply mailbox is not configured.',

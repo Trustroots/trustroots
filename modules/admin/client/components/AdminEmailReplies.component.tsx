@@ -4,6 +4,7 @@ import axios from '@trustroots/core/http-client';
 import type { EmailRepliesPreview } from '../../shared/email-replies';
 import { formatAdminDateTime } from '../utils/admin-date';
 import AdminHeader from './AdminHeader.component';
+import AdminEmailNavigation from './AdminEmailNavigation.component';
 
 export default function AdminEmailReplies() {
   const [result, setResult] = useState<EmailRepliesPreview>();
@@ -32,6 +33,7 @@ export default function AdminEmailReplies() {
       <AdminHeader />
       <div className="tw:page-container">
         <h2>Email replies</h2>
+        <AdminEmailNavigation current="/admin/email/replies" />
         <p>Preview up to 20 unprocessed emails from the reply mailbox.</p>
         <Button disabled={loading} onClick={() => void preview()}>
           Check mailbox

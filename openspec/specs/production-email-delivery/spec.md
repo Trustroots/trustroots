@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change improve-production-email-reliability. Update Purpose after archive.
+Keep queued application email delivery reliable and provide tools to diagnose interruptions.
 
 ## Requirements
 
@@ -33,3 +33,18 @@ Operations SHALL be able to check queue health, worker-side SMTP connectivity an
 
 - **WHEN** a scheduled or post-deployment canary is permitted by the shared rate limit
 - **THEN** it is queued through the normal email worker and the check reports whether the dedicated inbox received it before the deadline
+
+### Requirement: Administrator email queue overview
+
+The system SHALL provide an administrator-only overview at `/admin/email` showing aggregate queue and worker health from the operational mail queue checks. SparkPost diagnostics and the read-only reply mailbox at `/admin/email/replies` SHALL be accessible from the overview. The previous reply mailbox URL SHALL redirect to the new URL. The queue health endpoint SHALL be read-only and return no message payloads or recipients.
+
+#### Scenario: Administrator investigates a delayed queue
+
+- **WHEN** an administrator opens the email overview
+- **THEN** they see the configured mail mode, worker heartbeat state, queued and retrying counts, oldest due job age, stalled attempts, and recent failure and processing metrics
+- **AND** they can open the SparkPost delivery and recovery dashboard or check the reply mailbox
+
+#### Scenario: Member requests email queue diagnostics
+
+- **WHEN** a non-administrator requests the overview or queue diagnostics
+- **THEN** access is denied

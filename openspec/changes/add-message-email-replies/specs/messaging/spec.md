@@ -35,8 +35,8 @@ reply link SHALL remain available.
 
 ### Requirement: Read-only email reply diagnostics
 
-The system SHALL provide `/admin/email-replies` and an administration navigation
-entry labelled Email replies, restricted to administrators on both the page and
+The system SHALL provide `/admin/email/replies` and a link labelled Email replies in the
+Email administration navigation, restricted to administrators on both the page and
 its APIs. It SHALL support pre-activation inspection and ongoing operational
 diagnostics without creating member messages, acknowledging mail, changing read
 flags or triggering retries through inspection actions.

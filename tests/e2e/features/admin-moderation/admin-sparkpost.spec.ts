@@ -120,9 +120,10 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
   );
   try {
     await page.goto('/admin/sparkpost');
+    await expect(page).toHaveURL(/\/admin\/email\/sparkpost$/);
     await expect(page).toHaveTitle(/SparkPost/);
     await expect(
-      page.getByRole('link', { name: 'SparkPost', exact: true }),
+      page.getByRole('link', { name: 'Email', exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     await expect(
       page.getByRole('cell', { name: '53', exact: true }),
@@ -199,4 +200,45 @@ test('ordinary members cannot access SparkPost diagnostics', async ({
   await expect(
     page.getByRole('heading', { name: 'SparkPost email diagnostics' }),
   ).toHaveCount(0);
+});
+
+test('administrators can check the mail queue and open SparkPost', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.email', [
+    'Admin sees queue and worker health and opens SparkPost diagnostics.',
+  ]);
+  await signInViaApi(page, request, SEEDED_ADMIN);
+  await page.goto('/admin/email');
+  await expect(page).toHaveTitle(/Admin - Email/);
+  await expect(
+    page.getByRole('row', { name: /Worker heartbeat/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('row', { name: /Queued jobs/ })).toBeVisible();
+  await expect(
+    page.getByRole('row', { name: /Retries exhausted/ }),
+  ).toBeVisible();
+  const refresh = page.waitForResponse('**/api/admin/email/queue-health');
+  await page.getByRole('button', { name: 'Refresh queue health' }).click();
+  expect((await refresh).status()).toBe(200);
+  await page
+    .getByRole('link', { name: 'SparkPost delivery and recovery' })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/email\/sparkpost$/);
+  await page.getByRole('link', { name: 'Email queue overview' }).click();
+  await expect(page).toHaveURL(/\/admin\/email$/);
+});
+
+test('ordinary members cannot access the email queue overview', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.email', ['Non-admin access is rejected.']);
+  await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  expect((await request.get('/api/admin/email/queue-health')).status()).toBe(
+    403,
+  );
+  await page.goto('/admin/email');
+  await expect(page).toHaveURL(/\/volunteering$/);
 });

@@ -3,6 +3,7 @@ import SignupRecovery from './SignupRecovery.component';
 import SparkpostDaily from './SparkpostDaily.component';
 import React, { useCallback, useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
+import AdminEmailNavigation from './AdminEmailNavigation.component';
 import {
   getSparkpostOverview,
   getSparkpostPreview,
@@ -170,6 +171,7 @@ export default function AdminSparkpost() {
       <AdminHeader />
       <main className="tw:page-container">
         <h2>SparkPost email diagnostics</h2>
+        <AdminEmailNavigation current="/admin/email/sparkpost" />
         <p>
           Inspect email delivery and review recovery candidates. Recovery emails
           are queued only after you review recipients and confirm.

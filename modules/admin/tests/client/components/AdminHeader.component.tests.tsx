@@ -45,16 +45,7 @@ describe('<AdminHeader />', () => {
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
-      [
-        'Outreach',
-        [
-          'Acquisition stories',
-          'Newsletter',
-          'Nostr',
-          'Email replies',
-          'SparkPost',
-        ],
-      ],
+      ['Outreach', ['Acquisition stories', 'Newsletter', 'Nostr', 'Email']],
       [
         'Audit',
         [
@@ -103,7 +94,7 @@ describe('<AdminHeader />', () => {
       screen.queryByRole('link', { name: 'Messages' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: 'Email replies' }),
+      screen.queryByRole('link', { name: 'Email' }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('list', { name: 'Conversations' }),

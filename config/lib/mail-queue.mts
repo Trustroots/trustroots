@@ -50,7 +50,11 @@ const configurationReasons = [
   mailRetriesExhausted + ': ' + mailFailure.configuration,
 ];
 
-export async function inspectMailQueue(jobs: Collection, now = new Date()) {
+export async function inspectMailQueue(
+  jobs: Collection,
+  now = new Date(),
+  options: { timeoutMS?: number } = {},
+) {
   const pending = {
     name: { $in: mailDeliveryJobs },
     disabled: { $ne: true },
@@ -71,52 +75,60 @@ export async function inspectMailQueue(jobs: Collection, now = new Date()) {
     stalledAttempts,
     latency,
   ] = await Promise.all([
-    jobs.countDocuments(pending),
+    jobs.countDocuments(pending, options),
     jobs
-      .find(due, { projection: { nextRunAt: 1 } })
+      .find(due, { ...options, projection: { nextRunAt: 1 } })
       .sort({ nextRunAt: 1 })
       .limit(1)
       .next(),
-    jobs.countDocuments({ ...pending, failCount: { $gt: 0 } }),
-    jobs.countDocuments({
-      ...recent,
-      nextRunAt: null,
-      failReason: { $in: exhaustedReasons },
-    }),
-    jobs.countDocuments({
-      ...recent,
-      failCount: { $gt: 0 },
-      failReason: { $in: configurationReasons },
-    }),
+    jobs.countDocuments({ ...pending, failCount: { $gt: 0 } }, options),
+    jobs.countDocuments(
+      { ...recent, nextRunAt: null, failReason: { $in: exhaustedReasons } },
+      options,
+    ),
+    jobs.countDocuments(
+      {
+        ...recent,
+        failCount: { $gt: 0 },
+        failReason: { $in: configurationReasons },
+      },
+      options,
+    ),
     jobs.findOne(
       { name: recoverEmailJobName, type: 'single' },
-      { projection: { lastFinishedAt: 1, failCount: 1 } },
+      { ...options, projection: { lastFinishedAt: 1, failCount: 1 } },
     ),
-    jobs.countDocuments({
-      name: { $in: mailDeliveryJobs },
-      disabled: { $ne: true },
-      nextRunAt: null,
-      lastRunAt: { $lte: new Date(now.getTime() - 3 * 60_000) },
-      $expr: unfinishedAttempt,
-    }),
+    jobs.countDocuments(
+      {
+        name: { $in: mailDeliveryJobs },
+        disabled: { $ne: true },
+        nextRunAt: null,
+        lastRunAt: { $lte: new Date(now.getTime() - 3 * 60_000) },
+        $expr: unfinishedAttempt,
+      },
+      options,
+    ),
     jobs
-      .aggregate<{ maxProcessingMs: number }>([
-        {
-          $match: {
-            ...recent,
-            lastRunAt: { $type: 'date' },
-            $expr: { $lte: ['$lastRunAt', '$lastFinishedAt'] },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            maxProcessingMs: {
-              $max: { $subtract: ['$lastFinishedAt', '$lastRunAt'] },
+      .aggregate<{ maxProcessingMs: number }>(
+        [
+          {
+            $match: {
+              ...recent,
+              lastRunAt: { $type: 'date' },
+              $expr: { $lte: ['$lastRunAt', '$lastFinishedAt'] },
             },
           },
-        },
-      ])
+          {
+            $group: {
+              _id: null,
+              maxProcessingMs: {
+                $max: { $subtract: ['$lastFinishedAt', '$lastRunAt'] },
+              },
+            },
+          },
+        ],
+        options,
+      )
       .next(),
   ]);
 

@@ -65,6 +65,7 @@ const adminOnly = [
   'POST /api/admin/users',
   'POST /api/admin/users/by-role',
   'POST /api/admin/users/by-last-ip-hash',
+  'GET /api/admin/email/queue-health',
   'GET /api/admin/email-replies',
   'GET /api/admin/reference-threads',
   'GET /api/admin/sparkpost/recovery',

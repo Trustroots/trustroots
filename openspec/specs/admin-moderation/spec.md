@@ -1128,7 +1128,7 @@ Administrators SHALL be able to select all unambiguous suggestions, clear select
 
 ### Requirement: Administrator email delivery diagnostics
 
-The system SHALL provide an administrator-only SparkPost dashboard at `/admin/sparkpost`, adapted from the ROmongous daily email overview, with live application activity and read-only delivery diagnostics.
+The system SHALL provide an administrator-only SparkPost dashboard at `/admin/email/sparkpost`, adapted from the ROmongous daily email overview, with live application activity and read-only delivery diagnostics. The previous dashboard URL SHALL redirect to the new URL.
 
 #### Scenario: Compare application activity and provider metrics
 
