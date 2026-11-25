@@ -18,8 +18,8 @@ function tagName(node: Nodes.ChildNode | undefined): string | undefined {
   return node && tree.isElementNode(node) ? node.tagName : undefined;
 }
 
-function isLineBlock(node: Nodes.ChildNode): boolean {
-  return messageLineBlockTags.has(tagName(node) ?? '');
+function isLineBlock(node: Nodes.Element): boolean {
+  return messageLineBlockTags.has(node.tagName);
 }
 
 function isBreak(node: Nodes.ChildNode): boolean {

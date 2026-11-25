@@ -71,4 +71,12 @@ describe('message formatting', () => {
       'First <item>\nSafety /safety',
     );
   });
+
+  it('omits HTML comments and includes each optional link destination once', () => {
+    const markup =
+      '<p><a href="/safety"></a></p><!-- ignored --><p><a href="/help">/help</a></p>';
+
+    assert.equal(messagePlainText(markup), '/help');
+    assert.equal(messagePlainText(markup, true), '/safety\n/help');
+  });
 });

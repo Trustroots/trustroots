@@ -11,8 +11,8 @@ const { htmlEmails, textEmails } = createRequire(import.meta.url)(
   './registry.ts',
 ) as typeof import('./registry.ts');
 
-interface PlainTextNode {
-  children?: PlainTextNode[];
+interface PlainTextElement {
+  children: unknown[];
 }
 
 interface PlainTextBuilder {
@@ -50,8 +50,8 @@ export async function renderEmail(
     selectors: [{ selector: '.unread-message-content', format: 'messageBody' }],
     formatters: {
       messageBody(
-        element: PlainTextNode,
-        walk: (nodes: PlainTextNode[], builder: PlainTextBuilder) => void,
+        element: PlainTextElement,
+        walk: (nodes: unknown[], builder: PlainTextBuilder) => void,
         builder: PlainTextBuilder,
       ) {
         const content = messages[index++]?.plainText;
@@ -60,7 +60,7 @@ export async function renderEmail(
           leadingLineBreaks: 2,
         });
         if (content === undefined) {
-          walk(element.children ?? [], builder);
+          walk(element.children, builder);
         } else {
           builder.addInline(content);
         }

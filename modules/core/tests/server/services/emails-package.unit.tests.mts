@@ -4,11 +4,23 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { emailColors } from '../../../../../packages/emails/src/colors.ts';
+import { renderEmail } from '../../../../../packages/emails/src/index.ts';
 import '../../../../../packages/emails/src/jsx-loader.ts';
 
 const packageDir = new URL('../../../../../packages/emails/', import.meta.url);
 
 describe('@trustroots/emails', function () {
+  it('renders unread-message HTML when no plain text was supplied', async function () {
+    const { text } = await renderEmail('messages-unread', {
+      userFromName: 'Avery',
+      userToName: 'Rowan',
+      messageCount: 1,
+      messages: [{ content: '<p>First line<br>Second line</p>' }],
+    });
+
+    assert.match(text, /First line\nSecond line/);
+  });
+
   it('uses the web client’s brand colour', function () {
     const less = readFileSync(
       new URL('../../../client/less/global-variables.less', import.meta.url),
