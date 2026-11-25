@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
-import axios from '../../../core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import type { EmailRepliesPreview } from '../../shared/email-replies';
 import { formatAdminDateTime } from '../utils/admin-date';
 import AdminHeader from './AdminHeader.component';

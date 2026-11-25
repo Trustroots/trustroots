@@ -1,5 +1,5 @@
 import type { GravatarPhotoCheck } from '../../shared/gravatar-photo-check.mts';
-import axios from '../../../core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import type { GravatarSort } from '../../shared/gravatar.mts';
 
 export interface GravatarUsage {

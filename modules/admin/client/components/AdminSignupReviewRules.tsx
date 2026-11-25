@@ -1,7 +1,7 @@
 import { Select } from '@trustroots/ui/Select';
 import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useState } from 'react';
-import http, { getErrorMessage } from '../../../core/client/api/http-client';
+import http, { getErrorMessage } from '@trustroots/core/http-client';
 import { Button } from '@trustroots/ui/Button';
 import AdminHeader from './AdminHeader.component';
 

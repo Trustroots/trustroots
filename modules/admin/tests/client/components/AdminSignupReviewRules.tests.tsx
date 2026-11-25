@@ -7,14 +7,14 @@ import {
   waitFor,
 } from '@testing-library/react';
 import AdminSignupReviewRules from '../../../client/components/AdminSignupReviewRules';
-import http from '../../../../core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 
 vi.mock('../../../client/components/AdminHeader.component', () => ({
   default: function Header() {
     return <nav>Admin</nav>;
   },
 }));
-vi.mock('../../../../core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn(), put: vi.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,

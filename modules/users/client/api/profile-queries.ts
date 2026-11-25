@@ -1,6 +1,6 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 
-import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { getErrorResponse } from '@trustroots/core/http-client';
 import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
 import { fetch as fetchProfile } from './users.api';
 

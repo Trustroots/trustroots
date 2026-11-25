@@ -7,7 +7,7 @@ import {
   type VerifiedEvent,
 } from 'nostr-tools';
 import { Relay } from 'nostr-tools/relay';
-import http from '../../../core/client/api/http-client.ts';
+import http from '@trustroots/core/http-client';
 import { withAuthenticatedNostrRelay } from '../../../core/shared/nostr-authenticated-relay.mts';
 import type { NostrEventSigner } from './nostr-proof.client';
 

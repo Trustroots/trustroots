@@ -1,7 +1,7 @@
 import type { Mock, MockInstance } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import {
   act,
   fireEvent,
@@ -62,7 +62,7 @@ vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
     RadioRoom: vi.fn(),
   };
 });
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   default: { get: vi.fn(), post: vi.fn() },
 }));
 const secret = generateSecretKey();

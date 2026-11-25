@@ -1,4 +1,4 @@
-import http from '../../../../core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import {
   listRequests,
   load,
@@ -8,7 +8,7 @@ import {
   setStatus,
   setMemberFlag,
 } from '../../../client/api/support.api';
-vi.mock('../../../../core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   default: { get: vi.fn(), patch: vi.fn(), post: vi.fn() },
 }));
 test('loads support information and updates request status', async () => {

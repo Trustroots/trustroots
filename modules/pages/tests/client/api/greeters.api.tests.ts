@@ -1,11 +1,11 @@
 import { AxiosHeaders } from 'axios';
-import axios from '@/modules/core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import {
   getGreeters,
   type Greeter,
 } from '@/modules/pages/client/api/greeters.api';
 
-vi.mock('@/modules/core/client/api/http-client');
+vi.mock('@trustroots/core/http-client');
 
 const mockedGet = vi.mocked(axios.get);
 

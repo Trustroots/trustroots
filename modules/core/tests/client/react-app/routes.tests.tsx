@@ -80,7 +80,7 @@ const allowedRoles = (path: string) =>
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
 // and make the Jest worker fail to exit gracefully.
-vi.mock('@/modules/core/client/api/http-client', () => {
+vi.mock('@trustroots/core/http-client', () => {
   const pending = () => new Promise(() => {});
   return {
     __esModule: true,

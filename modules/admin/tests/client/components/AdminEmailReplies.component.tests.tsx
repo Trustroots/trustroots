@@ -1,9 +1,9 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import axios from '@/modules/core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import AdminEmailReplies from '@/modules/admin/client/components/AdminEmailReplies.component';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));

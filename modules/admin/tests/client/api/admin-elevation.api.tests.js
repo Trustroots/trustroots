@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import mockAxios from '@/modules/core/client/api/http-client';
+import mockAxios from '@trustroots/core/http-client';
 import {
   cancelAdminPassword,
   isAdminElevationPending,
@@ -8,7 +8,7 @@ import {
   registerAdminElevationInterceptor,
 } from '@/modules/admin/client/api/admin-elevation';
 
-vi.mock('@/modules/core/client/api/http-client', () => {
+vi.mock('@trustroots/core/http-client', () => {
   const mockResponseHandlers = [];
   const mockAxios = vi.fn();
   mockAxios.post = vi.fn();

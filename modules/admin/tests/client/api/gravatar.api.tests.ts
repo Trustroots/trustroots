@@ -1,10 +1,10 @@
-import axios from '@/modules/core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import {
   getGravatarPhotoCheck,
   getGravatarUsage,
   startGravatarPhotoCheck,
 } from '@/modules/admin/client/api/gravatar.api';
-vi.mock('@/modules/core/client/api/http-client');
+vi.mock('@trustroots/core/http-client');
 it('requests the selected page of Gravatar members', async () => {
   const data = {
     accounts: 0,

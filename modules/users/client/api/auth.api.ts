@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import { solveSigninChallenge } from '../utils/signin-challenge';
 import type { SignupExperience } from '../../shared/signup-experience';
 

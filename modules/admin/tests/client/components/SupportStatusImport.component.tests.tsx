@@ -9,10 +9,10 @@ import {
 } from '@testing-library/react';
 
 import SupportStatusImport from '@/modules/admin/client/components/SupportStatusImport';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { post: vi.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,

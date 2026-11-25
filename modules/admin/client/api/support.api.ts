@@ -1,4 +1,4 @@
-import http from '../../../core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import type { SupportStatus } from '../../../support/shared/statuses';
 
 export interface SupportRequest {

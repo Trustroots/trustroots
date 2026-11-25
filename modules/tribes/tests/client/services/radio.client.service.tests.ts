@@ -5,7 +5,7 @@ import {
   type EventTemplate,
 } from 'nostr-tools';
 import { chatTemplate } from '@/modules/tribes/shared/circle-chat';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import { Relay } from 'nostr-tools/relay';
 import {
   activeListeners,
@@ -22,7 +22,7 @@ import {
   tag,
 } from '@/modules/tribes/client/services/radio.client.service';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));

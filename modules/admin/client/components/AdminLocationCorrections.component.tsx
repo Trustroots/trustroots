@@ -13,7 +13,7 @@ import {
   type LocationCorrectionOffer,
 } from '../api/location-corrections.api';
 import AdminHeader from './AdminHeader.component';
-import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { getErrorResponse } from '@trustroots/core/http-client';
 import { Button } from '@trustroots/ui/Button';
 import { Alert } from '@trustroots/ui/Alert';
 

@@ -1,6 +1,4 @@
-import axios, {
-  getErrorResponse,
-} from '../../../core/client/api/http-client.ts';
+import axios, { getErrorResponse } from '@trustroots/core/http-client';
 import type { AxiosRequestConfig } from 'axios';
 import type {
   CreateOfferRequest,

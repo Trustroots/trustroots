@@ -7,12 +7,12 @@ import {
   type EventTemplate,
 } from 'nostr-tools';
 import { Relay } from 'nostr-tools/relay';
-import http from '../../../../core/client/api/http-client.ts';
+import http from '@trustroots/core/http-client';
 import { withAuthenticatedNostrRelay } from '../../../../core/shared/nostr-authenticated-relay.mts';
 import { publishNostrProfile } from '../../../client/services/nostr-profile.client';
 
 vi.mock('nostr-tools/relay', () => ({ Relay: vi.fn() }));
-vi.mock('../../../../core/client/api/http-client.ts', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   default: { get: vi.fn() },
 }));
 vi.mock('../../../../core/shared/nostr-authenticated-relay.mts', () => ({

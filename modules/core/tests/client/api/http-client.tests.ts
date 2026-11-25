@@ -5,7 +5,7 @@ import httpClient, {
   getErrorMessage,
   getErrorResponse,
   onRequestFailure,
-} from '@/modules/core/client/api/http-client';
+} from '@trustroots/core/http-client';
 
 describe('shared module HTTP client', () => {
   it('uses a finite default timeout', () => {

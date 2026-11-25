@@ -5,7 +5,7 @@ import useMapDefaultLocation, {
 
 const mockGet = vi.fn();
 let mockUser: { _id: string } | null;
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },
 }));

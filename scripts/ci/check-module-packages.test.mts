@@ -55,13 +55,14 @@ test('manifest of a module without client tests has no test:client script and no
   assert.deepEqual(Object.keys(manifest.exports), ['./shared/*']);
 });
 
-test('Core exposes named navigation entry points', () => {
+test('Core exposes named navigation and HTTP entry points', () => {
   const { exports } = expectedManifest('core');
   assert.equal(
     exports['./browser-navigation'],
     './client/services/browser-navigation.ts',
   );
   assert.equal(exports['./navigation-links'], './shared/navigation-links.mts');
+  assert.equal(exports['./http-client'], './client/api/http-client.ts');
 });
 
 test('main fails on a missing or drifted manifest and passes after --update', () => {

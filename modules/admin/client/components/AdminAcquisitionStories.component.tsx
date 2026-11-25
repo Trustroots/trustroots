@@ -10,7 +10,7 @@ import {
   getAcquisitionStories,
   resendAcquisitionStoryConfirmation,
 } from '../api/acquisition-stories.api';
-import { getErrorMessage } from '@/modules/core/client/api/http-client';
+import { getErrorMessage } from '@trustroots/core/http-client';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
