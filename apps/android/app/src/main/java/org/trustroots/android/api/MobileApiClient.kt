@@ -117,6 +117,8 @@ data class AccommodationOffer(
     val showOnlyInMyCircles: Boolean = false,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val meetingStatus: String? = null,
+    val volunteering: Boolean = false,
 )
 
 data class HostOfferUpdate(
@@ -1263,6 +1265,8 @@ internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {
         showOnlyInMyCircles = value.optBoolean("showOnlyInMyCircles", false),
         latitude = latitude,
         longitude = longitude,
+        meetingStatus = value.optionalText("meetingStatus"),
+        volunteering = value.optBoolean("volunteering", false),
     )
 }
 

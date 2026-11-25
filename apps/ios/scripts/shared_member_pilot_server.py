@@ -94,6 +94,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
             self._json(200, {"profile": PARTNER})
+        elif route == f'/api/mobile/v0/offers-by/{MEMBER["_id"]}':
+            self._json(200, [{
+                "_id": "offer-pilot-self",
+                "status": "no",
+                "meetingStatus": "maybe",
+                "volunteering": True,
+            }])
         elif route == "/api/mobile/v0/connections":
             self._json(200, {
                 "recent": [dict(PARTNER, activity="today")],

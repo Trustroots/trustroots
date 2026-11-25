@@ -315,11 +315,13 @@ class MobileApiClientTest {
     fun parsesHostingInformation() {
         val offer = parseAccommodationOffer(
             JSONObject(
-                """{"_id":"offer-host","status":"maybe","description":"<p>A sofa</p>","noOfferDescription":"Away","maxGuests":1,"showOnlyInMyCircles":true,"location":[51.5,-0.12]}""",
+                """{"_id":"offer-host","status":"maybe","meetingStatus":"no","volunteering":true,"description":"<p>A sofa</p>","noOfferDescription":"Away","maxGuests":1,"showOnlyInMyCircles":true,"location":[51.5,-0.12]}""",
             ),
         )
         assertEquals("offer-host", offer.id)
         assertEquals("maybe", offer.status)
+        assertEquals("no", offer.meetingStatus)
+        assertTrue(offer.volunteering)
         assertEquals(1, offer.maxGuests)
         assertTrue(offer.showOnlyInMyCircles)
         assertEquals(51.5, offer.latitude!!, 0.0001)
@@ -329,6 +331,8 @@ class MobileApiClientTest {
             JSONObject("""{"location":["unexpected",40.5]}"""),
         )
         assertNull(malformedLocation.latitude)
+        assertNull(malformedLocation.meetingStatus)
+        assertFalse(malformedLocation.volunteering)
         assertEquals(40.5, malformedLocation.longitude!!, 0.0001)
     }
 

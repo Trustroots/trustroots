@@ -37,6 +37,10 @@
     <string name="profile_hosting_yes">Hosting travellers</string>
     <string name="profile_hosting_maybe">Maybe hosting</string>
     <string name="profile_hosting_no">Not hosting currently</string>
+    <string name="profile_meeting_yes">Wants to meet people</string>
+    <string name="profile_meeting_maybe">Maybe up for meeting</string>
+    <string name="profile_meeting_no">Too busy to meet people</string>
+    <string name="profile_offers_volunteering">Offers volunteering</string>
     <plurals name="profile_hosting_guest_space">
         <item quantity="one">Space for 1 guest</item>
         <item quantity="other">Space for up to %1$d guests</item>

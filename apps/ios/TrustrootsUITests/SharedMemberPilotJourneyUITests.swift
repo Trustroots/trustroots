@@ -53,6 +53,28 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Sign in"].exists)
     }
 
+    func testRegularProfileShowsMeetingAvailabilityWhenNotHosting() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let profile = element(labelled: "My profile", in: app)
+        XCTAssertTrue(profile.waitForExistence(timeout: 10))
+        profile.tap()
+
+        XCTAssertTrue(element(labelled: "Maybe up for meeting", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Not hosting currently", in: app).exists)
+        XCTAssertFalse(element(labelled: "Offers volunteering", in: app).exists)
+    }
+
     @MainActor
     func testRegularInboxFiltersMessageContentAndUpdatesUnreadOnReturn() async throws {
         continueAfterFailure = false

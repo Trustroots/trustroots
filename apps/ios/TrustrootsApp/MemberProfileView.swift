@@ -191,11 +191,17 @@ struct MemberProfileView: View {
                             }
 
                             if let accommodationOffer {
+                                if let label = meetingAvailabilityLabel(accommodationOffer.meetingStatus) {
+                                    Label(label, systemImage: "person.2")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(TrustrootsPalette.darkGreen)
+                                }
                                 HostingDetailsView(
                                     status: accommodationOffer.status,
                                     description: accommodationOffer.description,
                                     noOfferDescription: accommodationOffer.noOfferDescription,
-                                    maxGuests: accommodationOffer.maxGuests
+                                    maxGuests: accommodationOffer.maxGuests,
+                                    volunteering: accommodationOffer.volunteering == true
                                 )
                             }
 
@@ -328,6 +334,15 @@ struct MemberProfileView: View {
     private func isOwnProfile(_ profile: MemberProfile) -> Bool {
         guard let signedInUsername = session.member?.username else { return false }
         return profile.username.caseInsensitiveCompare(signedInUsername) == .orderedSame
+    }
+
+    private func meetingAvailabilityLabel(_ status: String?) -> String? {
+        switch status {
+        case "yes": return "Wants to meet people"
+        case "maybe": return "Maybe up for meeting"
+        case "no": return "Too busy to meet people"
+        default: return nil
+        }
     }
 
     private func loadProfile() async {
@@ -733,6 +748,7 @@ struct HostingDetailsView: View {
     let description: String?
     let noOfferDescription: String?
     let maxGuests: Int?
+    var volunteering = false
     var compact = false
 
     private var isHosting: Bool {
@@ -766,6 +782,12 @@ struct HostingDetailsView: View {
             Label(statusLabel, systemImage: "sofa.fill")
                 .font((compact ? Font.subheadline : Font.headline).weight(.semibold))
                 .foregroundStyle(statusColor)
+
+            if isHosting && volunteering {
+                Label("Offers volunteering", systemImage: "hand.raised")
+                    .font(compact ? .caption : .subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
             if let details {
                 Text(details)
