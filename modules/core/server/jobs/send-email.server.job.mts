@@ -1,7 +1,6 @@
 import { canDeliverNotificationEmail } from '../../../users/server/services/notification-email.server.service.mts';
 import type { Job } from 'agenda';
 import type { RenderedEmail } from '../services/email.server.service.mts';
-import _ from 'lodash';
 import nodemailer from 'nodemailer';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -29,7 +28,7 @@ export default function (
     // Get job id from Agenda job attributes
     // Agenda stores Mongo `ObjectId` so turning that into a string here
     const jobId = (
-      _.get(job, 'attrs._id') as NonNullable<Job['attrs']['_id']>
+      job.attrs._id as NonNullable<Job['attrs']['_id']>
     ).toString();
 
     // Log that we're sending an email

@@ -1,6 +1,5 @@
 import crypto from 'node:crypto';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
-import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -138,7 +137,7 @@ const run = function (
       // Agenda stores Mongo `ObjectId` so turning that into a string here
       log('error', 'Failure in finish signup reminder background job.', {
         error: err,
-        jobId: _.get(job, 'attrs._id')!.toString(),
+        jobId: job.attrs._id!.toString(),
       });
     }
     return agendaDone(err);

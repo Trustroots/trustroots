@@ -78,7 +78,7 @@ vi.mock('@/modules/search/client/api/location.api');
 vi.mock('@/modules/tribes/client/api/tribes.api');
 vi.mock('@/modules/offers/client/api/offers.api');
 
-vi.mock('@/modules/search/client/hooks/use-debounced-callback', async () => {
+vi.mock('@/modules/core/client/hooks/use-debounced-callback', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   return {

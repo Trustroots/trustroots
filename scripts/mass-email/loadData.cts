@@ -18,7 +18,6 @@ type StoreConstructor = new (options: {
   filename: string;
   autoload: boolean;
 }) => MailStore;
-const _ = require('lodash') as typeof import('lodash');
 const fs = require('node:fs') as typeof import('node:fs');
 // nedb is a local disk backed mongo alternative for simple local scripts
 const Datastore = require('nedb') as StoreConstructor;
@@ -31,7 +30,7 @@ const lines = fs.readFileSync('data/users.json', { encoding: 'utf-8' });
 const jsons = lines.split('\n');
 
 // Rip off the last element of the array because it's an empty string
-if (_.last(jsons) === '') {
+if (jsons.at(-1) === '') {
   jsons.pop();
 }
 
@@ -39,7 +38,7 @@ let count = 0;
 
 async function loadData(): Promise<void> {
   for (const json of jsons) {
-    let doc: unknown;
+    let doc: Record<string, unknown> & { _id?: { $oid?: string } };
     try {
       doc = JSON.parse(json);
     } catch (e) {
@@ -49,26 +48,28 @@ async function loadData(): Promise<void> {
     }
 
     // If this user is not public, then skip this iteration
-    if (!_.get(doc, 'public', false)) {
+    if (!doc?.public) {
       // Don't pass an error or it will break the async loop
       continue;
     }
 
     // Build a user object for the persistence layer. First pick out the fields we want then merge in the user_id
-    const user = _.extend(
-      _.pick(doc as object, [
-        'displayName',
-        'email',
-        'firstName',
-        'lastName',
-        'locationFrom',
-        'locationLiving',
-        'username',
-      ]),
-      {
-        _id: _.get(doc, '_id.$oid'),
-      },
-    );
+    const user = {
+      ...Object.fromEntries(
+        [
+          'displayName',
+          'email',
+          'firstName',
+          'lastName',
+          'locationFrom',
+          'locationLiving',
+          'username',
+        ]
+          .filter(field => field in doc)
+          .map(field => [field, Reflect.get(doc, field)]),
+      ),
+      _id: doc._id?.$oid,
+    };
 
     // Count how many records we've processed
     count++;

@@ -1,7 +1,11 @@
 import { Textarea } from '@trustroots/ui/Textarea';
 import { Input } from '@trustroots/ui/Input';
-import { useBlocker, useLocation, useSearch } from '@tanstack/react-router';
-import isEqual from 'lodash/isEqual';
+import {
+  deepEqual,
+  useBlocker,
+  useLocation,
+  useSearch,
+} from '@tanstack/react-router';
 import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
@@ -132,7 +136,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
     Number.isInteger(offer.maxGuests) &&
     offer.maxGuests >= 0 &&
     offer.maxGuests <= 99;
-  const isDirty = !isEqual(
+  const isDirty = !deepEqual(
     { ...offer, _id: undefined },
     { ...saved, _id: undefined },
   );
@@ -143,7 +147,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
     shouldBlockFn: ({ current, next }) =>
       shouldWarn &&
       (current.pathname !== next.pathname ||
-        !isEqual(current.search, next.search)) &&
+        !deepEqual(current.search, next.search)) &&
       !window.confirm('Leave without saving your hosting offer changes?'),
   });
 

@@ -219,7 +219,7 @@ describe('Admin messages controller unit tests', () => {
       .returns(referenceThreadFindQuery(async () => []));
 
     const res = mockResponse();
-    adminMessages.getMessages({ body: {} }, res);
+    await adminMessages.getMessages({}, res);
 
     await res.waitForResponse();
     should(sanitizer.calledOnce).equal(true);
@@ -274,6 +274,15 @@ describe('Admin messages controller unit tests', () => {
     should(findUsers.firstCall.args[0]).deepEqual({
       _id: { $in: [recipientId] },
     });
+  });
+
+  it('asks for a username when the request has no body', async () => {
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients({}, res);
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
+    should(responseBody(response).message).equal('Missing `username` field.');
   });
 
   it('returns a generic lookup error when recipient discovery fails', async () => {
@@ -333,13 +342,14 @@ describe('Admin messages controller unit tests', () => {
   });
 
   // A link without an address is dropped, leaving only a blank line.
-  for (const content of [undefined, '<a>x</a><br>'])
-    it(`rejects warning content without text: ${content}`, async () => {
+  for (const body of [
+    undefined,
+    { username: 'scammer' },
+    { username: 'scammer', content: '<a>x</a><br>' },
+  ])
+    it(`rejects warning content without text: ${JSON.stringify(body)}`, async () => {
       const res = mockResponse();
-      await adminMessages.sendScammerWarning(
-        { body: { username: 'scammer', content } },
-        res,
-      );
+      await adminMessages.sendScammerWarning({ body }, res);
       const response = await res.waitForResponse();
 
       response.statusCode.should.equal(400);

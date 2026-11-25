@@ -133,5 +133,11 @@ describe('Text processor tests', function () {
         .stripContactDetails('<b href="https://example.org">bold</b>')
         .should.equal('bold');
     });
+
+    it('keeps the text of an anchor without a destination', function () {
+      textService
+        .stripContactDetails('<a>Link label</a>')
+        .should.equal('Link label');
+    });
   });
 });

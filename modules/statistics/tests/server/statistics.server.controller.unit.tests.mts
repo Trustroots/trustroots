@@ -1588,7 +1588,8 @@ describe('Statistics controller unit tests', () => {
         Object.create({ stats: { version: '1.0.0' } }),
         { collection: 'mobileAppInit' },
       );
-      const bodies: object[] = [
+      const bodies: Array<object | undefined> = [
+        undefined,
         { collection: 'mobileAppInit' },
         { collection: 'mobileAppInit', stats: undefined },
         { collection: 'mobileAppInit', stats: null },

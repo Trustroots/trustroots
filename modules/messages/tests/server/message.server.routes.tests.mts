@@ -1,5 +1,4 @@
 import { once } from 'node:events';
-import _ from 'lodash';
 import should from 'should';
 import request from 'supertest';
 import { addMinutes } from 'date-fns';
@@ -69,7 +68,7 @@ describe('Message CRUD tests', function () {
       password: credentials.password,
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
     userTo = new User({
@@ -81,7 +80,7 @@ describe('Message CRUD tests', function () {
       password: 'password123',
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
 
@@ -288,7 +287,7 @@ describe('Message CRUD tests', function () {
       password: outsiderCredentials.password,
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
     await outsider.save();

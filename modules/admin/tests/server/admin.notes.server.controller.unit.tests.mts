@@ -20,6 +20,7 @@ type MockResponse = {
   body: unknown;
   status(code: number): MockResponse;
   send(body: unknown): MockResponse;
+  json(body: unknown): MockResponse;
   waitForResponse(): Promise<MockResponse>;
 };
 type CallbackQuery<T> = {
@@ -53,6 +54,9 @@ function mockResponse(): MockResponse {
       res.body = body;
       resolveResponse(res);
       return res;
+    },
+    json(body) {
+      return res.send(body);
     },
     waitForResponse: () => promise,
   };
@@ -292,12 +296,13 @@ describe('Admin notes controller unit tests', () => {
     });
 
     it('rejects notes that are missing or not text', async () => {
-      for (const note of [undefined, 5]) {
+      for (const body of [
+        undefined,
+        { userId: new mongoose.Types.ObjectId() },
+        { userId: new mongoose.Types.ObjectId(), note: 5 },
+      ]) {
         const res = mockResponse();
-        await adminNotes.addNote(
-          { body: { userId: new mongoose.Types.ObjectId(), note } },
-          res,
-        );
+        await adminNotes.addNote({ body }, res);
         res.statusCode.should.equal(400);
         should(res.body).deepEqual({ message: 'Empty note.' });
       }

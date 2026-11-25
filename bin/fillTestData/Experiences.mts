@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mts';
 import { parseSeedArgs, readSeedNumber } from './seed-args.mts';
 import { faker } from '@faker-js/faker';
@@ -98,7 +97,7 @@ const experienceGenerator = {
   },
   public: (to = Number.NaN) =>
     Math.random() < 0.9 && !profileType.receivedPrivate(to),
-  created: () => subDays(new Date(), _.random(14)),
+  created: () => subDays(new Date(), Math.floor(Math.random() * 15)),
   feedbackPublic: () => faker.lorem.sentences(),
 };
 

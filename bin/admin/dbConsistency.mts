@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import trshell from './trshell.mts';
-import _ from 'lodash';
 import type { HydratedDocument } from 'mongoose';
 import type { AdminUserRecord } from './model-records.d.mts';
 
@@ -13,8 +12,8 @@ User.find(
     docs: Array<HydratedDocument<AdminUserRecord>>,
   ) {
     console.log("MEMBERS WHO CAN'T JOIN ANY CIRCLES");
-    await _.map(docs, function (d) {
-      _.map(d.member, function (m) {
+    await docs.map(function (d) {
+      d.member.map(function (m) {
         if (!m.tribe) {
           console.log(d.username, m);
         }

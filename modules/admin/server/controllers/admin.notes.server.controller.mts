@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
 import sanitizeHtml from 'sanitize-html';
@@ -15,14 +14,15 @@ interface AdminNoteRecord {
 }
 
 interface NoteRequest {
-  body?: unknown;
-  query?: unknown;
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   user?: { _id: Types.ObjectId | string };
 }
 
 interface NoteResponse {
   status(code: number): NoteResponse;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 
 type ObjectIdInput =
@@ -69,8 +69,7 @@ export const addNote = async (
   req: NoteRequest,
   res: NoteResponse,
 ): Promise<unknown> => {
-  const userId: unknown = _.get(req, ['body', 'userId']);
-  const note: unknown = _.get(req, ['body', 'note']);
+  const { userId, note } = req.body ?? {};
   if (typeof note !== 'string' || note.trim() === '') {
     return res.status(400).send({
       message: 'Empty note.',
@@ -100,10 +99,10 @@ export const addNote = async (
  * @esmNamed
  */
 export const getNotes = async (
-  req: NoteRequest,
+  req: NoteRequest & { query: Record<string, unknown> },
   res: NoteResponse,
 ): Promise<unknown> => {
-  const userId: unknown = _.get(req, ['query', 'userId']);
+  const userId: unknown = req.query.userId;
 
   // Check that the user id is provided
   if (!isValidObjectId(userId)) return errorService.sendInvalidId(res);
@@ -118,7 +117,7 @@ export const getNotes = async (
         select: 'username displayname',
       })
       .exec();
-    res.send(items || []);
+    res.json(items || []);
   } catch (err) {
     return errorService.sendBadRequest(res, err);
   }

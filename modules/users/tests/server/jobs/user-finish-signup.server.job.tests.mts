@@ -1,5 +1,4 @@
 import importedDependency0 from './../../../server/jobs/user-finish-signup.server.job.mts';
-import _ from 'lodash';
 import should from 'should';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
 import config from './../../../../../config/config.mts';
@@ -351,10 +350,10 @@ describe('Job: user finish signup', function () {
         emailTemporary: 'l' + i + _unConfirmedUser.emailTemporary,
         email: 'l' + i + _unConfirmedUser.email,
       };
-      const _unConfirmedUserLooped = _.merge(
-        _.clone(_unConfirmedUser),
-        loopVars,
-      );
+      const _unConfirmedUserLooped = {
+        ..._unConfirmedUser,
+        ...loopVars,
+      };
       _users.push(_unConfirmedUserLooped);
     }
 

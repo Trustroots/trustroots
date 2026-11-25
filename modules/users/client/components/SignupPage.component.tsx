@@ -6,7 +6,6 @@ import { AuthPasswordInput } from './AuthPasswordInput';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@trustroots/ui/cn';
-import shuffle from 'lodash/shuffle';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
@@ -159,11 +158,13 @@ export default function SignupPage() {
 
     async function loadSuggestedTribes(withoutTribeId?: string | null) {
       const tribes = await tribesApi.read({ limit: 40 });
-      const shuffled = shuffle(tribes).filter(
-        suggestedTribe =>
-          suggestedTribe._id !== withoutTribeId &&
-          suggestedTribe.slug !== 'trustroots-volunteers',
-      );
+      const shuffled = tribes
+        .filter(
+          suggestedTribe =>
+            suggestedTribe._id !== withoutTribeId &&
+            suggestedTribe.slug !== 'trustroots-volunteers',
+        )
+        .sort(() => Math.random() - 0.5);
 
       if (isMounted) {
         setSuggestedTribes(shuffled);
