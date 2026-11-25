@@ -5,14 +5,55 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UIView
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberSignInViewController(
+    gateway: PilotGateway,
+    initialError: String?,
+    onJoin: () -> Unit,
+) = ComposeUIViewController {
+    var busy by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        MemberSignIn(
+            gateway = gateway,
+            initialError = initialError,
+            busy = busy,
+            beginAction = {
+                val available = !busy
+                if (available) busy = true
+                available
+            },
+            endAction = { busy = false },
+            usernameKeyboard = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                autoCorrectEnabled = false,
+                platformImeOptions = PlatformImeOptions { textContentType(UITextContentTypeUsername) },
+            ),
+            passwordKeyboard = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                platformImeOptions = PlatformImeOptions { isSecureTextEntry(true) },
+            ),
+            onJoin = onJoin,
+        )
+    }
+}
 
 @OptIn(ExperimentalForeignApi::class)
 fun MainViewController(
