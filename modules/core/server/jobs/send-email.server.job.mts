@@ -1,28 +1,47 @@
 import { canDeliverNotificationEmail } from '../../../users/server/services/notification-email.server.service.mts';
 import type { Job } from 'agenda';
+import { deliverSignupReminder } from '../../../users/server/services/signup-reminder.server.service.mts';
 import type { RenderedEmail } from '../services/email.server.service.mts';
 import nodemailer from 'nodemailer';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
 export default function (
-  job: Pick<Job<RenderedEmail>, 'attrs'>,
+  job: {
+    attrs: Pick<Job<RenderedEmail>['attrs'], 'data'> & {
+      _id?: { toString(): string };
+    };
+  },
   done: (error?: Error | null) => void,
 ) {
   const email = job.attrs.data!;
-  const { notificationEmail, ...mail } = email;
+  const { notificationEmail, signupReminder, ...mail } = email;
+  if (signupReminder) {
+    deliverSignupReminder(
+      signupReminder,
+      mail.to.address,
+      () =>
+        new Promise<void>((resolve, reject) => {
+          send(mail, error => (error ? reject(error) : resolve()));
+        }),
+    ).then(() => done(), done);
+    return;
+  }
   if (!notificationEmail) {
-    send(mail);
+    send(mail, done);
     return;
   }
   canDeliverNotificationEmail(notificationEmail, email.to.address).then(
     allowed => {
-      if (allowed) send(mail);
+      if (allowed) send(mail, done);
       else done();
     },
     done,
   );
 
-  function send(mail: Omit<RenderedEmail, 'notificationEmail'>) {
+  function send(
+    mail: Omit<RenderedEmail, 'notificationEmail' | 'signupReminder'>,
+    done: (error?: Error | null) => void,
+  ) {
     const smtpTransport = nodemailer.createTransport(config.mailer.options);
 
     // Get job id from Agenda job attributes

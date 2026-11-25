@@ -435,14 +435,21 @@ provider data and manage their push-notification registrations.
 
 ### Requirement: Finish-signup reminder delivery
 
-The system SHALL not send finish-signup reminder emails to suspended or
-shadowbanned members.
+The system SHALL send finish-signup reminders only to eligible members with a
+pending signup address. It SHALL exclude suspended and shadowbanned members
+and SHALL replace the current link and count the reminder only after the mail
+server accepts it.
 
 #### Scenario: Restricted member remains incomplete
 
 - **WHEN** a suspended or shadowbanned member otherwise meets a finish-signup
   reminder job's timing and profile criteria
 - **THEN** the job does not select that member for email delivery
+
+#### Scenario: The reminder email fails
+
+- **WHEN** the reminder cannot be queued or the mail server rejects it
+- **THEN** the current link retains its original expiry and the reminder count is unchanged
 
 ### Requirement: Service usernames remain reserved
 
@@ -772,7 +779,11 @@ policy is exceeded.
 
 ### Requirement: Bounded email confirmation lifetime
 
-The system SHALL issue email confirmation credentials with a 24-hour lifetime and SHALL store only their digests. Legacy credentials lacking expiry metadata SHALL be accepted only before 1 November 2026 at 00:00 UTC.
+The system SHALL issue signup, manual resend and email-change confirmation
+credentials with a 24-hour lifetime. Automatic signup reminder credentials
+SHALL remain valid for 72 hours from SMTP acceptance unless replaced or consumed.
+The account SHALL store only credential digests. Legacy credentials lacking
+expiry metadata SHALL be accepted only before 1 November 2026 at 00:00 UTC.
 
 #### Scenario: Link reaches its expiry boundary
 
@@ -786,9 +797,15 @@ The system SHALL issue email confirmation credentials with a 24-hour lifetime an
 
 #### Scenario: Member requests a replacement
 
-- **WHEN** a resend or eligible reminder issues a new confirmation
+- **WHEN** a member requests a resend from account settings
 - **THEN** the new link receives a fresh 24-hour lifetime
 - **AND** earlier links cannot confirm the pending address
+
+#### Scenario: The mail server accepts a signup reminder
+
+- **WHEN** the mail server accepts the email and the pending signup is unchanged
+- **THEN** the new link receives a 72-hour lifetime and replaces the previous link,
+  while the next reminder is eligible after 48 hours
 
 ### Requirement: Atomic confirmation consumption
 

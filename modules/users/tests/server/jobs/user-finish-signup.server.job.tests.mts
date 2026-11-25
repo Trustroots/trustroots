@@ -1,4 +1,9 @@
-import importedDependency0 from './../../../server/jobs/user-finish-signup.server.job.mts';
+import assert from 'node:assert/strict';
+import { promisify } from 'node:util';
+import sendEmailJob from '../../../../core/server/jobs/send-email.server.job.mts';
+import type { RenderedEmail } from '../../../../core/server/services/email.server.service.mts';
+import { emailConfirmationTokenQuery } from '../../../server/services/email-confirmation.server.service.mts';
+import runSignupReminders from '../../../server/jobs/user-finish-signup.server.job.mts';
 import should from 'should';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
 import config from './../../../../../config/config.mts';
@@ -20,15 +25,11 @@ interface SignupReminderUser extends Omit<
   emailTokenExpires?: Date;
 }
 type SignupReminderDocument = HydratedDocument<SignupReminderUser>;
-interface SignupReminderMail {
-  type: 'send email';
-  data: {
-    subject: string;
-    to: { address: string };
-    html: string;
-    text: string;
-  };
-}
+type SignupReminderMail = RenderedEmail & {
+  subject: string;
+  html: string;
+  to: { address: string };
+};
 const User = mongoose.model<SignupReminderUser>('User');
 
 /**
@@ -38,7 +39,6 @@ let unConfirmedUser: SignupReminderDocument;
 let _unConfirmedUser: SignupReminderUser;
 let confirmedUser: SignupReminderDocument;
 let _confirmedUser: SignupReminderUser;
-let userFinishSignupJobHandler: typeof import('./../../../server/jobs/user-finish-signup.server.job.mts').default;
 
 function saveWithCallback(
   document: SignupReminderDocument,
@@ -69,11 +69,28 @@ function findUserByEmail(
 }
 
 describe('Job: user finish signup', function () {
-  const jobs = testutils.catchJobs() as SignupReminderMail[];
-
-  before(function () {
-    userFinishSignupJobHandler = importedDependency0;
+  const jobs = testutils.catchJobs<SignupReminderMail>();
+  testutils.catchEmails();
+  let delivered = 0;
+  beforeEach(() => {
+    delivered = 0;
   });
+
+  const userFinishSignupJobHandler: typeof runSignupReminders = (job, done) => {
+    async function runAndDeliver() {
+      await promisify(runSignupReminders)(job);
+      for (const { data } of jobs.slice(delivered)) {
+        await promisify(sendEmailJob)({
+          attrs: {
+            _id: new mongoose.Types.ObjectId(),
+            data,
+          },
+        });
+        delivered++;
+      }
+    }
+    runAndDeliver().then(() => done(), done);
+  };
 
   // Create an unconfirmed user
   beforeEach(function (done) {
@@ -141,7 +158,7 @@ describe('Job: user finish signup', function () {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
+        jobs[0].type.should.equal('deliver signup reminder');
         jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
         (['html', 'text'] as const).forEach(function (format) {
@@ -162,6 +179,78 @@ describe('Job: user finish signup', function () {
     );
   });
 
+  it('skips hidden members without a pending email', async () => {
+    await User.updateOne(
+      { _id: unConfirmedUser._id },
+      { $unset: { emailTemporary: 1 } },
+    );
+    await promisify(userFinishSignupJobHandler)({
+      attrs: { _id: new mongoose.Types.ObjectId() },
+    });
+    assert.equal(jobs.length, 0);
+  });
+
+  for (const { state, update } of [
+    {
+      state: 'explicit null',
+      update: {
+        $set: {
+          emailToken: null,
+          emailTokenIssuedAt: null,
+          emailTokenExpires: null,
+        },
+      },
+    },
+    {
+      state: 'missing',
+      update: {
+        $unset: {
+          emailToken: 1,
+          emailTokenIssuedAt: 1,
+          emailTokenExpires: 1,
+        },
+      },
+    },
+  ]) {
+    it(`replaces ${state} token metadata on an older signup`, async () => {
+      await User.collection.updateOne({ _id: unConfirmedUser._id }, update);
+      await promisify(userFinishSignupJobHandler)({
+        attrs: { _id: new mongoose.Types.ObjectId() },
+      });
+
+      const member = await User.findById(unConfirmedUser._id).orFail();
+      assert.match(member.emailToken ?? '', /^sha256:[a-f0-9]{64}$/);
+      assert.equal(member.publicReminderCount, 1);
+    });
+  }
+
+  it('keeps a delivered link valid past the next reminder interval', async () => {
+    await promisify(userFinishSignupJobHandler)({
+      attrs: { _id: new mongoose.Types.ObjectId() },
+    });
+    const rawToken = jobs[0]?.data.text.match(
+      /confirm-email\/([a-f0-9]{64})/,
+    )?.[1];
+    assert.ok(rawToken);
+    const member = await User.findById(unConfirmedUser._id).orFail();
+    assert.ok(member.emailTokenIssuedAt);
+    assert.ok(member.emailTokenExpires);
+    const issuedAt = member.emailTokenIssuedAt.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    assert.equal(member.emailTokenExpires.valueOf(), issuedAt + 3 * dayMs);
+    assert.ok(
+      await User.exists(
+        emailConfirmationTokenQuery(rawToken, new Date(issuedAt + 2 * dayMs)),
+      ),
+    );
+    assert.equal(
+      await User.exists(
+        emailConfirmationTokenQuery(rawToken, new Date(issuedAt + 3 * dayMs)),
+      ),
+      null,
+    );
+  });
+
   it('Remind unconfirmed users 2nd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 1;
     unConfirmedUser.publicReminderSent = sub(new Date(), { days: 2, hours: 1 });
@@ -173,7 +262,7 @@ describe('Job: user finish signup', function () {
           if (err) return done(err);
 
           jobs.length.should.equal(1);
-          jobs[0].type.should.equal('send email');
+          jobs[0].type.should.equal('deliver signup reminder');
           jobs[0].data.subject.should.equal(
             'Complete your signup to Trustroots',
           );
@@ -208,7 +297,7 @@ describe('Job: user finish signup', function () {
           if (err) return done(err);
 
           jobs.length.should.equal(1);
-          jobs[0].type.should.equal('send email');
+          jobs[0].type.should.equal('deliver signup reminder');
           jobs[0].data.subject.should.equal(
             'Last chance to complete your signup to Trustroots!',
           );
@@ -264,7 +353,7 @@ describe('Job: user finish signup', function () {
             if (err) return done(err);
 
             jobs.length.should.equal(1);
-            jobs[0].type.should.equal('send email');
+            jobs[0].type.should.equal('deliver signup reminder');
             jobs[0].data.subject.should.equal(
               'Complete your signup to Trustroots',
             );
@@ -300,7 +389,7 @@ describe('Job: user finish signup', function () {
               if (err) return done(err);
 
               jobs.length.should.equal(1);
-              jobs[0].type.should.equal('send email');
+              jobs[0].type.should.equal('deliver signup reminder');
               jobs[0].data.subject.should.equal(
                 'Complete your signup to Trustroots',
               );

@@ -6,13 +6,6 @@ import emailService from './../../../../core/server/services/email.server.servic
 import job from './../../../server/jobs/user-finish-signup.server.job.mts';
 import sinon from 'sinon';
 
-function present<T>(value: T | null | undefined): T {
-  should.exist(value);
-  if (value === null || value === undefined)
-    throw new Error('Expected a value');
-  return value;
-}
-
 function callArgument(
   stub: ReturnType<typeof sinon.stub>,
   index: number,
@@ -27,11 +20,6 @@ function record(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null)
     throw new Error('Expected an object argument');
   return Object.fromEntries(Object.entries(value));
-}
-
-function date(value: unknown): Date {
-  if (!(value instanceof Date)) throw new Error('Expected a date');
-  return value;
 }
 
 describe('Job: user finish signup direct unit tests', function () {
@@ -52,15 +40,6 @@ describe('Job: user finish signup direct unit tests', function () {
     const findUsers = sinon.stub(User, 'find');
     // The production query is replaced by this intentionally partial fake chain.
     findUsers.returns(query as unknown as ReturnType<typeof User.find>);
-    const findByIdAndUpdate = sinon.stub(User, 'findByIdAndUpdate');
-    const updateOne = sinon.stub(User, 'updateOne');
-    updateOne.resolves({
-      acknowledged: true,
-      matchedCount: 1,
-      modifiedCount: 1,
-      upsertedCount: 0,
-      upsertedId: null,
-    });
     const sendSignupEmailReminder = sinon.stub(
       emailService,
       'sendSignupEmailReminder',
@@ -69,13 +48,11 @@ describe('Job: user finish signup direct unit tests', function () {
     const log = sinon.stub(winston.Logger.prototype, 'log');
 
     return {
-      findByIdAndUpdate,
       findUsers,
       job,
       log,
       query,
       sendSignupEmailReminder,
-      updateOne,
     };
   }
 
@@ -128,21 +105,13 @@ describe('Job: user finish signup direct unit tests', function () {
     });
   });
 
-  it('marks each reminded user after sending signup reminders', function (done) {
-    const user: {
-      _id: string;
-      emailToken?: string;
-      emailTokenExpires?: Date;
-      emailTokenIssuedAt?: Date;
-    } = { _id: 'user-id' };
-    const {
-      findByIdAndUpdate,
-      job,
-      log,
-      query,
-      sendSignupEmailReminder,
-      updateOne,
-    } = loadJob({
+  it('queues a candidate token and leaves the current token on the member', async function () {
+    const user = {
+      _id: 'user-id',
+      emailTemporary: 'pending@example.test',
+      emailToken: 'previous-token',
+    };
+    const { job, log, query, sendSignupEmailReminder } = loadJob({
       limits: {
         maxProcessSignupReminders: 2,
         maxSignupReminders: 1,
@@ -150,52 +119,23 @@ describe('Job: user finish signup direct unit tests', function () {
     });
     query.exec.resolves([user]);
     sendSignupEmailReminder.callsArgWith(1, null);
-    findByIdAndUpdate.resolves();
 
-    job(
-      { attrs: { _id: { toString: () => 'job-id' } } },
-      function (err?: Error | null) {
-        try {
-          should.not.exist(err);
-          query.and.firstCall.args[0][0].$or[0].publicReminderCount.$lt.should.equal(
-            1,
-          );
-          sinon.assert.calledOnceWithExactly(query.limit, 2);
-          sinon.assert.calledOnceWithExactly(
-            sendSignupEmailReminder,
-            user,
-            sinon.match.func,
-          );
-          present(user.emailToken).should.match(/^sha256:[a-f0-9]{64}$/);
-          present(user.emailTokenExpires)
-            .getTime()
-            .should.equal(
-              present(user.emailTokenIssuedAt).getTime() + 24 * 60 * 60 * 1000,
-            );
-          const updateFilter = record(callArgument(updateOne, 0));
-          should(updateFilter.public).be.false();
-          for (const field of [
-            'emailToken',
-            'emailTokenIssuedAt',
-            'emailTokenExpires',
-          ]) {
-            record(updateFilter[field]).should.eql({ $exists: false });
-          }
-          const updateSet = record(record(callArgument(updateOne, 1)).$set);
-          date(updateSet.emailTokenExpires)
-            .getTime()
-            .should.equal(present(user.emailTokenExpires).getTime());
-          sinon.assert.calledOnce(findByIdAndUpdate);
-          should(present(callArgument(findByIdAndUpdate, 0))).equal('user-id');
-          record(record(callArgument(findByIdAndUpdate, 1)).$inc).should.eql({
-            publicReminderCount: 1,
-          });
-          sinon.assert.notCalled(log);
-          done();
-        } catch (error) {
-          done(error);
-        }
-      },
+    await new Promise<void>((resolve, reject) =>
+      job({ attrs: {} }, err => (err ? reject(err) : resolve())),
     );
+
+    query.and.firstCall.args[0][0].$or[0].publicReminderCount.$lt.should.equal(
+      1,
+    );
+    sinon.assert.calledOnceWithExactly(query.limit, 2);
+    sinon.assert.calledOnce(sendSignupEmailReminder);
+    const mailUser = record(callArgument(sendSignupEmailReminder, 0));
+    const signupReminder = record(callArgument(sendSignupEmailReminder, 2));
+    should(mailUser.emailToken).match(/^sha256:[a-f0-9]{64}$/);
+    should(signupReminder.emailToken).equal(mailUser.emailToken);
+    should(signupReminder.previousToken).equal('previous-token');
+    should(signupReminder.userId).equal('user-id');
+    user.emailToken.should.equal('previous-token');
+    sinon.assert.notCalled(log);
   });
 });

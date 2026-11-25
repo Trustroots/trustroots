@@ -3,6 +3,10 @@ import {
   type NotificationEmail,
 } from '../../../users/server/services/notification-email.server.service.mts';
 import type { Types } from 'mongoose';
+import {
+  sendSignupReminderJob,
+  type SignupReminder,
+} from '../../../users/server/services/signup-reminder.server.service.mts';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
 import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';
@@ -54,6 +58,7 @@ export interface EmailTemplateParams extends Record<string, unknown> {
   replyTo?: string | { name?: string; address?: string };
   subject?: string;
   notificationEmail?: NotificationEmail;
+  signupReminder?: SignupReminder;
   sparkpostCampaign?: string;
 }
 interface BaseEmailUrls extends Record<string, unknown> {
@@ -72,6 +77,7 @@ export interface RenderedEmail {
   replyTo?: string | { name?: string; address?: string };
   headers?: Record<string, string>;
   notificationEmail?: NotificationEmail;
+  signupReminder?: SignupReminder;
 }
 const agenda = agendaModule as import('agenda').Agenda;
 const log = logModule as (
@@ -465,6 +471,7 @@ function sendSignupEmailReminder(
     created?: Date | string | number;
   },
   callback: MailCallback,
+  signupReminder?: SignupReminder,
 ) {
   const urlConfirm =
     url + '/confirm-email/' + emailToken(user, 'emailToken') + '?signup=true';
@@ -489,6 +496,7 @@ function sendSignupEmailReminder(
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
     reminderCount,
+    signupReminder,
     // This email is a reminder number `n` to this user
     reminderCountMax: config.limits.maxSignupReminders,
     // Max n of reminders system sends
@@ -796,6 +804,7 @@ function renderEmail(
       };
       if (params.notificationEmail)
         email.notificationEmail = params.notificationEmail;
+      if (params.signupReminder) email.signupReminder = params.signupReminder;
       if (result.html) email.html = result.html;
       if (params.replyTo) {
         email.replyTo = params.replyTo;
@@ -831,7 +840,7 @@ function renderEmailAndSend(
   service.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
     agenda
-      .now('send email', email)
+      .now(email?.signupReminder ? sendSignupReminderJob : 'send email', email)
       .then(function (job) {
         callback(null, job);
       })
