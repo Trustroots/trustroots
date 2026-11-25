@@ -33,7 +33,7 @@ interface Recorder {
   params: Array<{ name: string; middleware: NamedHandler }>;
   routes: RecordedRoute[];
 }
-type RouteRegistrar = (app: RecorderApp) => void;
+type RouteRegistrar = (app: RecorderApp, ...dependencies: unknown[]) => void;
 type DependencyReplacements = Record<string, NamedHandler> | NamedHandler;
 
 function handler(name: string): NamedHandler {
@@ -170,12 +170,13 @@ function assertPolicy(
 async function register(
   modulePath: string,
   stubs: Record<string, DependencyReplacements>,
+  ...dependencies: unknown[]
 ) {
   const { app, middlewarePaths, params, routes } = createAppRecorder();
   const { default: registerRoutes } = await proxyquire<{
     default: RouteRegistrar;
   }>(new URL(modulePath, import.meta.url), stubs);
-  registerRoutes(app);
+  registerRoutes(app, ...dependencies);
   return { middlewarePaths, params, routes };
 }
 
@@ -321,17 +322,24 @@ describe('API route registrations', () => {
       'offers',
     );
 
+    const findConnections = async () => [];
+    const createListHandler = sinon.stub().returns(offers.list);
     const { params, routes } = await register(
       './../../../offers/server/routes/offers.server.routes.mts',
       {
-        '../controllers/offers.server.controller': offers,
+        '../controllers/offers.server.controller': {
+          ...offers,
+          createListHandler,
+        },
         '../policies/offers.server.policy': policy,
         '../middleware/offer-search-limit.server.middleware': {
           getOfferSearchLimit: (() => searchLimit) as NamedHandler,
         },
       },
+      findConnections,
     );
 
+    sinon.assert.calledOnceWithExactly(createListHandler, findConnections);
     assertHandlers(routeByPath(routes, '/api/offers-by/:offerUserId').get, [
       offers.listOffersByUser,
     ]);

@@ -80,8 +80,18 @@ export async function initModulesConfiguration(app: Express, db?: Connection) {
 }
 
 export async function initModulesServerRoutes(app: Express) {
+  const connectionRouteFiles = new Set([
+    resolve(offers.directory, 'routes/offers.server.routes.mts'),
+    resolve(mobile.directory, 'routes/mobile-authentication.server.routes.cjs'),
+  ]);
   for (const file of getModuleFiles('routes')) {
     const { default: register } = await import(pathToFileURL(file).href);
-    register(app);
+    if (connectionRouteFiles.has(file)) {
+      const { findSearchConnectionIds } =
+        await import('../../modules/experiences/server/services/search-connections.server.service.mts');
+      register(app, findSearchConnectionIds);
+    } else {
+      register(app);
+    }
   }
 }

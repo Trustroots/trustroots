@@ -42,7 +42,6 @@
     ],
     "offers": [
       "core",
-      "experiences",
       "search",
       "tribes",
       "users"

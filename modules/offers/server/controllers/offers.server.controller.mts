@@ -1,4 +1,3 @@
-import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
 import { readFileSync } from 'node:fs';
 import config from './../../../../config/config.mts';
@@ -411,7 +410,20 @@ function deleteOffer(req: OfferRequest, res: OfferResponse) {
 /**
  * List of Offers
  */
-async function list(req: OfferRequest, res: OfferResponse) {
+type FindOfferConnections = (
+  viewerId: Types.ObjectId,
+) => Promise<Types.ObjectId[]>;
+
+function createListHandler(findConnections: FindOfferConnections) {
+  return (req: OfferRequest, res: OfferResponse) =>
+    list(req, res, findConnections);
+}
+
+async function list(
+  req: OfferRequest,
+  res: OfferResponse,
+  findConnections: FindOfferConnections,
+) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -721,7 +733,7 @@ async function list(req: OfferRequest, res: OfferResponse) {
 
   try {
     if (Reflect.get(filters, 'connectionsOnly') === true) {
-      const connectionIds = await findSearchConnectionIds(req.user._id);
+      const connectionIds = await findConnections(req.user._id);
       query.push({
         $match: {
           'user._id': { $in: connectionIds, $nin: req.user.blocked || [] },
@@ -947,7 +959,7 @@ const service = {
   create,
   delete: deleteOffer,
   getOffer,
-  list,
+  createListHandler,
   listOffersByUser,
   offerById,
   offersByUserId,
@@ -959,11 +971,12 @@ export {
   create,
   deleteOffer as delete,
   getOffer,
-  list,
+  createListHandler,
   listOffersByUser,
   offerById,
   offersByUserId,
   removeAllByUserId,
   update,
 };
+export type { FindOfferConnections };
 export default service;
