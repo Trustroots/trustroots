@@ -92,6 +92,20 @@ Alternative considered: moon. Rejected for now: it brings a second toolchain man
 3. `@` keeps pointing at the repository root, also from `apps/web`, until the shims are dropped.
 4. Each step is useful on its own. Stopping after any step leaves no half-finished state.
 
+### Configuration and i18n extraction assessment
+
+Keep environment selection, local deployment overrides and mail-safety policy in the application configuration. The root `config/config.mts` combines those concerns at startup. Extract individual pure types, defaults or validators only when multiple consumers need the same contract. The application can pass feature-specific settings through module entry points when it composes them.
+
+The supported locale catalogue in `config/shared/locales.json` has browser and server consumers and can move to a private source-only package. Test both the language selector and the member settings validation when it moves. Keep i18next initialization, the language cookie, and DOM and RTL stylesheet updates in the web app. Its locale backend loads `public/locales` over HTTP, so preserve that URL and the extraction pipeline. Any shared formatter needs to depend on shared code, including the relative-time formatter currently owned by core.
+
+### Deployment and caching assessment
+
+Keep the web application entry points at the root until there is a deployment reason to move them. The production image copies the server, worker, Vite config and public assets from the root, and the runtime and deployment scripts use those paths. Evaluate a move with a production-image build, startup smoke tests on each supported MongoDB version and a worker boot check.
+
+Keep third-party dependencies at the root while the feature modules run in the same application and build. Move a dependency to its owning package when that package needs to be consumed independently or when the move measurably improves the install or deployment. Compare the resolved lockfile and production dependency inventory before and after the change.
+
+Turbo currently caches affected lint tasks, while client and server tests have caching disabled in `turbo.json`. Measure affected lint wall time and the share of repeated task hashes before setting up remote caching. The global coverage gate continues to run with fresh reports.
+
 ## Where the current code fights the layout
 
 | Friction                                                                               | Size                                                                                           | Resolution                                                                                                                                                                                                                                                               |
