@@ -34,6 +34,8 @@ PARTNER = {
     "username": "pilot-partner",
     "displayName": "Robin Example",
     "tagline": "A partner profile",
+    "description": "<p>I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers.</p>",
+    "languages": ["eng", "fra"],
 }
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"

@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct MemberProfileView: View {
     @Environment(\.dismiss) private var dismiss
@@ -188,12 +189,7 @@ struct MemberProfileView: View {
                             }
 
                             if let description = profile.description?.plainText, !description.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("About me")
-                                        .font(.headline)
-                                    Text(description)
-                                        .foregroundStyle(.secondary)
-                                }
+                                ProfileTextSection(title: "About me", text: description, tag: "profile-biography")
                             }
 
                             if let accommodationOffer {
@@ -212,17 +208,11 @@ struct MemberProfileView: View {
                             }
 
                             if let languages = profile.languages, !languages.isEmpty {
-                                if languages.count >= 5 {
-                                    Text(languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "))
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Languages")
-                                            .font(.headline)
-                                        Text(languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
+                                ProfileTextSection(
+                                    title: languages.count < 5 ? "Languages" : nil,
+                                    text: languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "),
+                                    tag: "profile-languages"
+                                )
                             }
 
                             if let memberships = profile.member, !memberships.isEmpty {
@@ -523,6 +513,48 @@ struct MemberProfileView: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private struct ProfileTextSection: View {
+    let title: String?
+    let text: String
+    let tag: String
+    @State private var height: CGFloat = 1
+
+    var body: some View {
+        ProfileTextController(title: title, text: text, tag: tag, height: $height)
+            .id(text)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+    }
+}
+
+@MainActor
+private struct ProfileTextController: UIViewControllerRepresentable {
+    let title: String?
+    let text: String
+    let tag: String
+    @Binding var height: CGFloat
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let measuredHeight = $height
+        return MainViewControllerKt.MemberProfileTextViewController(
+            title: title,
+            text: text,
+            accessibilityTag: tag,
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
 private struct ReportMemberView: View {
