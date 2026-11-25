@@ -6,6 +6,7 @@ catalog:
   qs: '6.17.1'
 
 overrides:
+  '@actions/http-client@2>undici': '6.29.1'
   'follow-redirects': '1.16.2'
   '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0>glob': '14.0.6'
   'minimatch@>=9': '11.0.3'
