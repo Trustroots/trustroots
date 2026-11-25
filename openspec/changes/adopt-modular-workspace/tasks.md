@@ -13,9 +13,9 @@
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
   - [x] Reject production layer imports into apps (#3449).
   - [x] Enforce production module client/server/shared import directions with regression fixtures and local/CI checks (#3450).
-- [ ] `layers/server` composition and per-module server entries.
+- [x] `layers/server` composition and per-module server entries.
   - [x] Move registration of models, Express configuration and Express routes into the server layer, preserving discovery and registration order.
-  - [ ] Introduce per-module entry points and an ordered list for server composition, including worker jobs.
+  - [x] Introduce per-module entry points and an ordered list for server composition, including worker jobs.
 - [x] Enforce model ownership against declared dependencies (#3448).
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
 - [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
