@@ -367,6 +367,72 @@ describe('User signup and authentication CRUD tests', function () {
     }
     should.not.exist(await User.findOne({ username: payload.username }));
   });
+
+  for (const [hostingExperience, stayingExperience] of [
+    ['none', 'few'],
+    ['once', undefined],
+    [undefined, 'many'],
+    [undefined, undefined],
+  ]) {
+    it(`stores signup experience answers privately (${hostingExperience}, ${stayingExperience})`, async () => {
+      const username = 'hospitalitymember';
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({
+          ageConfirmed: true,
+          firstName: 'Sample',
+          username,
+          password: 'ExamplePassword123!',
+          email: 'hospitality-member@example.test',
+          hostingExperience,
+          stayingExperience,
+        })
+        .expect(200);
+
+      const stored = await User.findOne({ username }).select(
+        '+hostingExperience +stayingExperience',
+      );
+      assertPresent(stored);
+      should(stored.get('hostingExperience')).equal(hostingExperience);
+      should(stored.get('stayingExperience')).equal(stayingExperience);
+      const projected = await User.findOne({ username });
+      assertPresent(projected);
+      Object.hasOwn(
+        projected.toObject(),
+        'hostingExperience',
+      ).should.be.false();
+      Object.hasOwn(
+        projected.toObject(),
+        'stayingExperience',
+      ).should.be.false();
+      Object.hasOwn(response.body, 'hostingExperience').should.be.false();
+      Object.hasOwn(response.body, 'stayingExperience').should.be.false();
+    });
+  }
+
+  for (const field of ['hostingExperience', 'stayingExperience']) {
+    for (const answer of ['', 'invalid', null, false, 0, ['none']]) {
+      it(`rejects invalid ${field} (${JSON.stringify(answer)})`, async () => {
+        const username = 'invalidhospitality';
+        const response = await agent
+          .post('/api/auth/signup')
+          .send({
+            ageConfirmed: true,
+            firstName: 'Sample',
+            username,
+            password: 'ExamplePassword123!',
+            email: 'invalid-hospitality@example.test',
+            [field]: answer,
+          })
+          .expect(400);
+
+        response.body.message.should.equal(
+          'Please provide valid signup preferences.',
+        );
+        should.not.exist(await User.findOne({ username }));
+      });
+    }
+  }
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';

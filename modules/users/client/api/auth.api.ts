@@ -1,5 +1,6 @@
 import axios from '../../../core/client/api/http-client';
 import { solveSigninChallenge } from '../utils/signin-challenge';
+import type { SignupExperience } from '../../shared/signup-experience';
 
 export interface SigninCredentials {
   username: string;
@@ -11,6 +12,8 @@ export interface SignupCredentials extends SigninCredentials {
   email: string;
   firstName: string;
   lastName?: string;
+  hostingExperience?: SignupExperience;
+  stayingExperience?: SignupExperience;
   [key: string]: unknown;
 }
 

@@ -190,11 +190,12 @@ test.describe.serial('authentication smoke', () => {
     ).toBeVisible();
   });
 
-  test('signup requires adult confirmation before creating an account', async ({
+  test('signup requires adult confirmation and saves separate experience answers', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.signup', [
       'Signup requires explicit adult confirmation.',
+      'New members can give different hosting and staying experience answers.',
     ]);
     const member = createUser();
     await page.goto('/signup');
@@ -207,6 +208,23 @@ test.describe.serial('authentication smoke', () => {
     await page.locator('#email').fill(member.email);
     await page.locator('#username').fill(member.username);
     await page.locator('#password').fill(member.password);
+    const experience = page.getByRole('group', {
+      name: 'Hospitality exchange experience',
+    });
+    const hosting = experience.getByRole('combobox', {
+      name: 'How much experience do you have hosting people you haven’t met before?',
+    });
+    const staying = experience.getByRole('combobox', {
+      name: 'How much experience do you have staying with people you haven’t met before?',
+    });
+    await expect(hosting).toHaveValue('');
+    await expect(staying).toHaveValue('');
+    await expect(staying.locator('option[value="none"]')).toHaveText(
+      'No experience yet',
+    );
+    await hosting.selectOption({ label: 'No experience yet' });
+    await staying.selectOption({ label: 'A few times' });
+    await captureSection(experience, 'signup-hospitality-experience');
     await expect(
       page.getByRole('button', { name: 'Please fill in the form' }),
     ).toBeDisabled();
@@ -229,6 +247,8 @@ test.describe.serial('authentication smoke', () => {
     const stored = await findUserByUsername(member.username);
     expect(stored?.username).toBe(member.username);
     expect(stored?.ageConfirmed).toBeUndefined();
+    expect(stored?.hostingExperience).toBe('none');
+    expect(stored?.stayingExperience).toBe('few');
   });
 
   test('signup uses the Trustroots primary colour', async ({
