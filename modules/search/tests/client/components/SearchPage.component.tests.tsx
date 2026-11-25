@@ -13,13 +13,13 @@ import {
 import '@/config/client/i18n';
 import SearchPage from '@/modules/search/client/components/SearchPage.component';
 import type SearchMap from '@/modules/search/client/components/SearchMap.component';
-import * as locationApiModule from '@/modules/search/client/api/location.api';
+import * as locationApiModule from '@/modules/core/client/api/location.api';
 import * as tribesApiModule from '@/modules/tribes/client/api/tribes.api';
 import * as offersApiModule from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from '@/modules/search/client/components/SearchSidebarResults.component';
 import type { Event as NostrEvent } from 'nostr-tools';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
-import type { MapPoint } from '@/modules/search/client/utils/location';
+import type { MapPoint } from '@/modules/core/client/utils/location';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
@@ -74,7 +74,7 @@ vi.mock('@tanstack/react-router', async () =>
     await import('@/testutils/client/router-location.testutil')
   ).mockRouterModule(),
 );
-vi.mock('@/modules/search/client/api/location.api');
+vi.mock('@/modules/core/client/api/location.api');
 vi.mock('@/modules/tribes/client/api/tribes.api');
 vi.mock('@/modules/offers/client/api/offers.api');
 

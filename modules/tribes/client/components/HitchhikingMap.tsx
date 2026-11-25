@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import NostrService from '@/modules/search/client/services/nostr.client.service';
+import NostrService from '@/modules/core/client/services/nostr.client.service';
 import CircleLocationMap, { type CircleLocation } from './CircleLocationMap';
 import { useCircleMapEvents } from '../hooks/useCircleMapEvents';
 import {

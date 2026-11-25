@@ -4,7 +4,7 @@ import type {
   PlaceHostPage,
   PlaceHostSort,
 } from '@/modules/offers/shared/offer';
-import type { MapBounds } from '../utils/location';
+import type { MapBounds } from '@/modules/core/client/utils/location';
 
 export default function useCityHosts({
   viewer,

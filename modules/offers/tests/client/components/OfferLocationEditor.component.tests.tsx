@@ -2,8 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
-import type SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
-import type { MapPoint } from '@/modules/search/client/utils/location';
+import type SearchPlaceInput from '@/modules/core/client/components/SearchPlaceInput.component';
+import type { MapPoint } from '@/modules/core/client/utils/location';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import type {
   MapBounds,
@@ -70,7 +70,7 @@ beforeEach(() => {
 type LocationChange = React.ComponentProps<
   typeof OfferLocationEditor
 >['onLocationChange'];
-vi.mock('@/modules/search/client/components/SearchPlaceInput.component', () => {
+vi.mock('@/modules/core/client/components/SearchPlaceInput.component', () => {
   function MockSearchPlaceInput({
     onPlaceSearch,
     setSearchQuery,

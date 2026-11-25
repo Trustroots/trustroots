@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
-import SearchPlaceInput from './SearchPlaceInput.component';
+import SearchPlaceInput from '@/modules/core/client/components/SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
 import SearchSidebarResults from './SearchSidebarResults.component';
 import type { VisibleMapCounts } from './SearchMap.component';
@@ -32,10 +32,10 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
   onPlaceQueryChange?: (location?: string) => void;
   onPlaceSearch: (
     data:
-      | import('../utils/location').MapBounds
-      | import('../utils/location').MapPoint,
+      | import('@/modules/core/client/utils/location').MapBounds
+      | import('@/modules/core/client/utils/location').MapPoint,
     type: 'center' | 'bounds',
-    city?: import('../utils/location').CitySearch,
+    city?: import('@/modules/core/client/utils/location').CitySearch,
   ) => void;
   onTabSelect: (tab: 'filters' | 'results') => void;
   onlineInPast6Months: boolean;
