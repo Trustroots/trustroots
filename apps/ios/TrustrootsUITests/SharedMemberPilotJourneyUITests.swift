@@ -71,8 +71,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(biography.waitForExistence(timeout: 10), app.debugDescription)
         reveal(biography, in: app)
         let biographyText = "I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers."
-        let biographyLabel = element(labelled: biographyText, in: app)
+        let biographyLabel = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", biographyText)).firstMatch
         XCTAssertTrue(biographyLabel.isHittable, app.debugDescription)
+        XCTAssertEqual(biographyLabel.label.trimmingCharacters(in: .whitespacesAndNewlines), biographyText)
         XCTAssertLessThanOrEqual(biographyLabel.frame.maxY, biography.frame.maxY + 1)
         let profileText = XCTAttachment(screenshot: biography.screenshot())
         profileText.name = "regular-ios-profile-biography"
