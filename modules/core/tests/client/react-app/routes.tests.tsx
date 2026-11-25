@@ -231,7 +231,7 @@ vi.mock('@/modules/pages/client/components/Volunteering.component', () => ({
 vi.mock('@/modules/tribes/client/components/TopicChat', () => ({
   default: ({ roomName, user }: UserRouteProps & { roomName: string }) => (
     <p>
-      {roomName} chat for {user?.username ?? 'visitor'}
+      {roomName} chat for {user?._id ?? 'visitor'}
       {typeof user?.nostrNpub === 'string' && ` with ${user.nostrNpub}`}
     </p>
   ),
@@ -641,7 +641,7 @@ describe('React route ownership', () => {
     [null, 'volunteering chat for visitor'],
     [
       { _id: 'fictional-volunteer', username: 'river' },
-      'volunteering chat for river',
+      'volunteering chat for fictional-volunteer',
     ],
     [
       {
@@ -649,10 +649,10 @@ describe('React route ownership', () => {
         username: 'river',
         nostrNpub: 'linked-key',
       },
-      'volunteering chat for river with linked-key',
+      'volunteering chat for fictional-volunteer',
     ],
   ])(
-    'passes the available member identity to volunteering chat',
+    'passes the account ID to volunteering chat regardless of a linked key',
     (user, text) => {
       expect(
         renderRoute(findRoute('/volunteering'), user).getByText(text),

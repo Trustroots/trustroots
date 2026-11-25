@@ -292,15 +292,17 @@ export default function TribeDetailPage({
       </section>
       {tribe.slug === 'radio' && (
         <RadioCircle
-          key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+          key={user?._id || 'visitor'}
           user={user}
+          isCircleMember={isMember}
         />
       )}
       {tribe.slug === 'hitchhikers' && (
         <TopicChat
           roomName="hitchhikers"
-          key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+          key={user?._id || 'visitor'}
           user={user}
+          isCircleMember={isMember}
         />
       )}
       {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
@@ -315,8 +317,9 @@ export default function TribeDetailPage({
         {isHackersCircle && (
           <TopicChat
             roomName="hackers"
-            key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+            key={user?._id || 'visitor'}
             user={user}
+            isCircleMember={isMember}
           />
         )}
         {user && isMember && (

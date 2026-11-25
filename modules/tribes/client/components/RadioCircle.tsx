@@ -3,20 +3,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { nip19, type Event } from 'nostr-tools';
-import useCircleSigner from '../hooks/useCircleSigner';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
-import { CircleRoomChat } from './TopicChat';
+import TopicChat from './TopicChat';
 import CircleNostrIdentity from './CircleNostrIdentity';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
   activeListeners,
-  eventType,
   FAVOURITES_KEY,
-  mergeFavourites,
-  RADIO_RELAYS,
   RadioRoom,
   readFavourites,
-  roomTemplate,
   saveFavourites,
   stationFromHash,
   stationGroups,
@@ -26,22 +21,23 @@ import {
 } from '../services/radio.client.service';
 import './radio-circle.less';
 
-export default function RadioCircle({ user }: { user?: UserProfile }) {
+export default function RadioCircle({
+  user,
+  isCircleMember,
+}: {
+  user?: UserProfile;
+  isCircleMember?: boolean;
+}) {
   const { t } = useTranslation('circles');
   const audio = useRef<HTMLAudioElement>(null);
-  const room = useRef<RadioRoom | undefined>(undefined);
   const mounted = useRef(false);
   const playRequest = useRef(0);
-  const localFavouriteActions = useRef(new Map<string, boolean>());
   const hash = useLocation({ select: location => location.hash });
   const navigate = useNavigate();
   const [station, setStation] = useState(() => stationFromHash(hash));
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState('');
-  const [socialError, setSocialError] = useState('');
   const [relayError, setRelayError] = useState(false);
-  const signing = useCircleSigner(user);
-  const { signer } = signing;
   const [events, setEvents] = useState<Event[]>([]);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const favouritesKey = user ? `${FAVOURITES_KEY}:${user._id}` : FAVOURITES_KEY;
@@ -63,10 +59,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
     }
   }, [linkedNpub]);
   const includesLocalListener =
-    playing &&
-    !listeners.some(
-      listener => listener.pubkey === (signer?.publicKey ?? ownPublicKey),
-    );
+    playing && !listeners.some(listener => listener.pubkey === ownPublicKey);
   const listenerCount = listeners.length + Number(includesLocalListener);
 
   useEffect(() => {
@@ -77,15 +70,11 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         setEvents(previous => {
           if (previous.some(item => item.id === event.id)) return previous;
           // Keep the newest listening event per key and bound retained room history.
-          const retained =
-            eventType(event) === 'listening'
-              ? previous.filter(
-                  item =>
-                    eventType(item) !== 'listening' ||
-                    item.pubkey !== event.pubkey ||
-                    item.created_at > event.created_at,
-                )
-              : previous;
+          const retained = previous.filter(
+            item =>
+              item.pubkey !== event.pubkey ||
+              item.created_at >= event.created_at,
+          );
           return [...retained, event]
             .sort((a, b) => a.created_at - b.created_at)
             .slice(-1000);
@@ -93,7 +82,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       },
       () => setRelayError(true),
     );
-    room.current = connection;
     void connection.open();
     const timer = window.setInterval(
       () => setNow(Math.floor(Date.now() / 1000)),
@@ -112,12 +100,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   }, [user]);
 
   useEffect(() => {
-    if (!signer) return;
-    room.current?.setSigner(signer);
-    room.current?.loadFavourites(signer.publicKey);
-  }, [signer, user]);
-
-  useEffect(() => {
     const next = stationFromHash(hash);
     if (next && next.id !== station?.id) {
       playRequest.current++;
@@ -129,46 +111,8 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   }, [hash]);
 
   useEffect(() => {
-    if (!signer) return;
-    setFavourites(previous => {
-      const merged = mergeFavourites(
-        previous,
-        events.filter(event => event.pubkey === signer.publicKey),
-      );
-      // Choices made in this session survive old relay history and failed writes.
-      localFavouriteActions.current.forEach((starred, id) => {
-        const index = merged.indexOf(id);
-        if (starred && index < 0) merged.push(id);
-        if (!starred && index >= 0) merged.splice(index, 1);
-      });
-      return merged;
-    });
-  }, [events, signer]);
-  useEffect(() => {
     saveFavourites(favourites, favouritesKey);
   }, [favourites, favouritesKey]);
-
-  useEffect(() => {
-    if (!signer || !station || !playing) return;
-    let cancelled = false;
-    let timer: number;
-    const share = async () => {
-      try {
-        await room.current!.publish(
-          roomTemplate('listening', station, station.title),
-        );
-      } catch {
-        if (!cancelled)
-          setSocialError(t('Could not share listening activity.'));
-      }
-      if (!cancelled) timer = window.setTimeout(share, 5 * 60 * 1000);
-    };
-    timer = window.setTimeout(share, 10000);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [station, playing, signer, t]);
 
   async function play(next: Station, { pauseIfPlaying = true } = {}) {
     const alreadyPlaying = station?.id === next.id && playing;
@@ -201,26 +145,9 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   }
   function favourite(next: Station) {
     const starred = !favourites.includes(next.id);
-    localFavouriteActions.current.set(next.id, starred);
     setFavourites(previous =>
       starred ? [...previous, next.id] : previous.filter(id => id !== next.id),
     );
-    if (signer)
-      void room
-        .current!.publish(
-          roomTemplate(
-            'favourite',
-            next,
-            `${starred ? '⭐' : '☆'} ${next.title} #radiostr #favorite`,
-            starred,
-          ),
-        )
-        .catch(() => {
-          if (mounted.current)
-            setSocialError(
-              t('Favourite saved on this device, but could not be shared.'),
-            );
-        });
   }
   function stationList(label: string, items: Station[]) {
     return (
@@ -295,14 +222,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       aria-label={t('Trustroots Radio')}
     >
       <div className="radio-player-panel">
-        {user && (
-          <p>
-            {t(
-              'With a connected Nostr identity, listening activity and favourites are sent to {{relays}}.',
-              { relays: RADIO_RELAYS.join(', ') },
-            )}
-          </p>
-        )}
         <div className="radio-now-playing">
           <div>
             <p>{playing ? t('Now playing') : t('Ready to listen')}</p>
@@ -348,7 +267,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           }}
         />
         {error && <p role="alert">{error}</p>}
-        {socialError && <p role="alert">{socialError}</p>}
         <p aria-live="polite">
           {includesLocalListener
             ? listenerCount === 1
@@ -370,7 +288,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         {!user && (
           <p>
             <a href="/signin?redirect=/circles/radio">
-              {t('Log in to see listeners and chat.')}
+              {t('Log in to see listeners.')}
             </a>
           </p>
         )}
@@ -408,10 +326,10 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         {stationGroups.map(group => stationList(group.name, group.stations))}
       </div>
       {user && (
-        <CircleRoomChat
+        <TopicChat
           roomName="radio"
           user={user}
-          signing={signing}
+          isCircleMember={isCircleMember}
           channel={station?.id}
           stationLink={event => {
             const channel = tag(event, 'channel');

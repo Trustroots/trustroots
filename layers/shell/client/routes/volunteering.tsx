@@ -6,22 +6,12 @@ import { useAuth } from '@/modules/core/client/react-app/auth';
 
 function VolunteeringRoute() {
   const { user } = useAuth();
-  const member =
-    user?._id && user.username
-      ? {
-          _id: user._id,
-          username: user.username,
-          nostrNpub:
-            typeof user.nostrNpub === 'string' ? user.nostrNpub : undefined,
-        }
-      : undefined;
-
   return (
     <Volunteering>
       <TopicChat
-        key={member ? `${member._id}:${member.nostrNpub || ''}` : 'visitor'}
+        key={user?._id || 'visitor'}
         roomName="volunteering"
-        user={member}
+        user={user?._id ? { _id: user._id } : undefined}
       />
     </Volunteering>
   );

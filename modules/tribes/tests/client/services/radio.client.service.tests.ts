@@ -2,30 +2,23 @@ import type { Mock } from 'vitest';
 import {
   finalizeEvent,
   generateSecretKey,
-  getPublicKey,
-  nip19,
-  type Event,
   type EventTemplate,
 } from 'nostr-tools';
+import { chatTemplate } from '@/modules/tribes/shared/circle-chat';
 import http from '@/modules/core/client/api/http-client';
 import { Relay } from 'nostr-tools/relay';
 import {
   activeListeners,
-  connectRadioSigner,
-  EVENT_TTL,
-  eventType,
   FAVOURITES_KEY,
   fetchRadioAuthorUsernames,
-  hasTag,
   LISTENER_TTL,
-  mergeFavourites,
   RadioRoom,
   readFavourites,
-  roomTemplate,
   saveFavourites,
   stationFromHash,
   stationGroups,
   stations,
+  type Station,
   tag,
 } from '@/modules/tribes/client/services/radio.client.service';
 
@@ -35,16 +28,32 @@ vi.mock('@/modules/core/client/api/http-client', () => ({
 }));
 vi.mock('nostr-tools/relay', () => ({ Relay: vi.fn() }));
 const secret = generateSecretKey();
-const publicKey = getPublicKey(secret);
 const station = stations[0];
 const second = stations[1];
 const now = Math.floor(Date.now() / 1000);
 const signed = (template: EventTemplate) => finalizeEvent(template, secret);
 
+function listeningTemplate(
+  station: Station,
+  content: string,
+  created_at = now,
+): EventTemplate {
+  return {
+    kind: 1,
+    created_at,
+    content,
+    tags: [
+      ['t', 'radiostr'],
+      ['t', 'nowplaying'],
+      ['radiostr_station', station.id],
+      ['expiration', String(created_at + 30 * 24 * 60 * 60)],
+    ],
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  delete window.nostr;
 });
 
 it('resolves profiles in batches of up to 100 public keys', async () => {
@@ -81,31 +90,14 @@ it('preserves the catalogue, station hashes and existing event formats', () => {
     'https://stream.radioparadise.com/aac-128',
   );
   expect(stationGroups.map(group => group.name)).toContain('SomaFM');
-  expect(
-    eventType(signed(roomTemplate('chat', station, 'Hello', true, now))),
-  ).toBe('chat');
-  expect(roomTemplate('chat', undefined, 'Hello', true, now).tags).toEqual([
-    ['t', 'radiostr'],
-    ['expiration', String(now + EVENT_TTL)],
-  ]);
-  const listening = signed(
-    roomTemplate('listening', station, station.title, true, now),
-  );
-  expect(eventType(listening)).toBe('listening');
+  const listening = signed(listeningTemplate(station, station.title));
   expect(tag(listening, 'radiostr_station')).toBe(station.id);
-  expect(hasTag(listening, 'client', 'radiostr')).toBe(true);
-  expect(eventType({ ...listening, kind: 0 })).toBeNull();
-  expect(eventType({ ...listening, tags: [] })).toBeNull();
   expect(tag(listening, 'absent')).toBeUndefined();
 });
 
 it('deduplicates listeners, chooses newest stations and expires shared activity', () => {
-  const listening = signed(
-    roomTemplate('listening', station, 'Station', true, now),
-  );
-  const newer = signed(
-    roomTemplate('listening', second, 'New station', true, now + 1),
-  );
+  const listening = signed(listeningTemplate(station, 'Station', now));
+  const newer = signed(listeningTemplate(second, 'New station', now + 1));
   expect(activeListeners([listening, newer, listening], now + 1)).toEqual([
     newer,
   ]);
@@ -128,7 +120,7 @@ it('deduplicates listeners, chooses newest stations and expires shared activity'
     ),
   ).toEqual([]);
   expect(
-    activeListeners([signed(roomTemplate('chat', station, 'chat'))]),
+    activeListeners([signed(chatTemplate('radio', 'chat', station.id))]),
   ).toEqual([]);
   expect(
     activeListeners(
@@ -154,46 +146,9 @@ it('deduplicates listeners, chooses newest stations and expires shared activity'
   expect(activeListeners([listening, other], now)).toEqual([listening, other]);
 });
 
-it('reconciles favourite history including remote unstar actions and local-only entries', () => {
-  const star = signed(
-    roomTemplate('favourite', station, '⭐ station', true, now),
-  );
-  const unstar = signed(
-    roomTemplate('favourite', station, '☆ station', false, now + 1),
-  );
-  expect(
-    mergeFavourites([station.id, second.id, 'unknown'], [unstar, star]),
-  ).toEqual([second.id]);
-  expect(mergeFavourites([], [star, star])).toEqual([station.id]);
-  const legacy = {
-    ...star,
-    tags: star.tags.filter(entry => entry[0] !== 'radiostr_action'),
-    content: '☆ station',
-  };
-  expect(mergeFavourites([], [legacy])).toEqual([]);
-  expect(mergeFavourites([], [{ ...legacy, content: '⭐ station' }])).toEqual([
-    station.id,
-  ]);
-  expect(mergeFavourites([], [{ ...star, tags: [] }])).toEqual([]);
-  expect(
-    mergeFavourites(
-      [],
-      [
-        {
-          ...star,
-          tags: star.tags.filter(entry => entry[0] !== 'radiostr_station'),
-        },
-      ],
-    ),
-  ).toEqual([]);
-  expect(
-    mergeFavourites([], [star, { ...star, id: '0', content: 'second' }]),
-  ).toEqual([station.id]);
-});
-
 it('handles corrupt, blocked and unavailable browser storage', () => {
   expect(readFavourites()).toEqual([]);
-  saveFavourites([station.id]);
+  saveFavourites([station.id, station.id, 'unknown']);
   expect(readFavourites()).toEqual([station.id]);
   localStorage.setItem(FAVOURITES_KEY, '{}');
   expect(readFavourites()).toEqual([]);
@@ -206,72 +161,6 @@ it('handles corrupt, blocked and unavailable browser storage', () => {
   fail.mockRestore();
 });
 
-function provider() {
-  window.nostr = {
-    getPublicKey: vi.fn(async () => publicKey),
-    signEvent: vi.fn(async template => ({
-      ...signed(template as unknown as EventTemplate),
-    })),
-  };
-  vi.mocked(http.get).mockResolvedValue({
-    data: { names: { 'fictional-member': publicKey } },
-  });
-  return window.nostr;
-}
-const user = {
-  username: 'fictional-member',
-  nostrNpub: nip19.npubEncode(publicKey),
-};
-
-it('does not allow the signer to mutate the requested tags', async () => {
-  const extension = provider();
-  const signer = await connectRadioSigner(user);
-  extension.signEvent = async value => {
-    const template = value as unknown as EventTemplate;
-    template.tags.push(['extra', 'changed']);
-    return { ...signed(template) };
-  };
-  const template = roomTemplate('chat', station, 'Hello');
-  await expect(signer.sign(template)).rejects.toThrow('unexpected');
-  expect(template.tags.some(entry => entry[0] === 'extra')).toBe(false);
-});
-it('requires a matching linked NIP-05 identity and verifies signed contents', async () => {
-  await expect(connectRadioSigner(user)).rejects.toThrow('extension');
-  provider();
-  await expect(connectRadioSigner({ username: user.username })).rejects.toThrow(
-    'profile settings',
-  );
-  vi.mocked(http.get).mockResolvedValueOnce({ data: { names: {} } });
-  await expect(connectRadioSigner(user)).rejects.toThrow('must match');
-  await expect(
-    connectRadioSigner({ ...user, nostrNpub: nip19.noteEncode(publicKey) }),
-  ).rejects.toThrow('must match');
-  const extension = provider();
-  const signer = await connectRadioSigner(user);
-  const template = roomTemplate('chat', station, 'Hello');
-  expect(await signer.sign(template)).toMatchObject({
-    ...template,
-    pubkey: publicKey,
-  });
-  extension.getPublicKey = async () => '0'.repeat(64);
-  await expect(signer.sign(template)).rejects.toThrow('changed');
-  delete window.nostr;
-  await expect(signer.sign(template)).rejects.toThrow('changed');
-});
-it.each(['pubkey', 'kind', 'content', 'created_at', 'tags', 'sig'])(
-  'rejects a signer that changes %s',
-  async field => {
-    const extension = provider();
-    const signer = await connectRadioSigner(user);
-    const template = roomTemplate('chat', station, 'Hello');
-    extension.signEvent = async () => ({
-      ...signed(template),
-      [field]: field === 'tags' ? [] : 'wrong',
-    });
-    await expect(signer.sign(template)).rejects.toThrow('unexpected');
-  },
-);
-
 function relayFixture(fail = false) {
   const relays: Array<{
     connect: Mock;
@@ -279,7 +168,6 @@ function relayFixture(fail = false) {
     subscribe: Mock;
     publish: Mock;
     onclose?: () => void;
-    onauth?: (template: EventTemplate) => Promise<Event>;
   }> = [];
   vi.mocked(Relay).mockImplementation(function () {
     const relay = {
@@ -303,13 +191,13 @@ it('subscribes visitors only to presence and filters unrelated or expired events
   await room.open();
   const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
   expect(filters[0]['#t']).toEqual(['nowplaying']);
-  const listening = signed(roomTemplate('listening', station, 'Music'));
+  const listening = signed(listeningTemplate(station, 'Music'));
   callbacks.onevent(listening);
   callbacks.onevent({
     ...listening,
     tags: listening.tags.filter(entry => entry[0] !== 'expiration'),
   });
-  callbacks.onevent(signed(roomTemplate('chat', station, 'Chat')));
+  callbacks.onevent(signed(chatTemplate('radio', 'Chat', station.id)));
   callbacks.onevent({ ...listening, kind: 0 });
   callbacks.onevent({ ...listening, created_at: now + 1000 });
   callbacks.onevent({
@@ -320,6 +208,9 @@ it('subscribes visitors only to presence and filters unrelated or expired events
     ],
   });
   expect(receive).toHaveBeenCalledTimes(2);
+  expect(relays.every(relay => relay.publish.mock.calls.length === 0)).toBe(
+    true,
+  );
   callbacks.onclose();
   expect(error).toHaveBeenCalled();
   room.close();
@@ -328,62 +219,7 @@ it('subscribes visitors only to presence and filters unrelated or expired events
   expect(receive).toHaveBeenCalledTimes(2);
   expect(relays[0].close).toHaveBeenCalled();
 });
-it('publishes verified events, restores favourites and tolerates a failed relay', async () => {
-  const relays = relayFixture();
-  const receive = vi.fn();
-  const error = vi.fn();
-  const room = new RadioRoom(receive, error);
-  await expect(
-    room.publish(roomTemplate('chat', station, 'Hi')),
-  ).rejects.toThrow('Connect');
-  provider();
-  const signer = await connectRadioSigner(user);
-  room.setSigner(signer);
-  room.loadFavourites(publicKey);
-  await room.open();
-  room.setSigner(signer);
-  expect(relays[0].subscribe.mock.calls[0][0][0]['#t']).toEqual(['nowplaying']);
-  const chat = signed(roomTemplate('chat', station, 'Shared chat'));
-  relays[0].subscribe.mock.calls[0][1].onevent(chat);
-  expect(receive).not.toHaveBeenCalledWith(chat);
-  const auth = {
-    kind: 22242,
-    content: '',
-    created_at: now,
-    tags: [
-      ['relay', 'wss://relay.trustroots.org'],
-      ['challenge', 'test'],
-    ],
-  };
-  expect(await relays[0].onauth!(auth)).toMatchObject({
-    ...auth,
-    pubkey: publicKey,
-  });
-  room.loadFavourites(publicKey);
-  const favourite = signed(roomTemplate('favourite', station, 'Favourite'));
-  const callback = relays[0].subscribe.mock.calls[1][1];
-  callback.onevent(favourite);
-  callback.onevent(signed(roomTemplate('chat', station, 'Hi')));
-  expect(receive).toHaveBeenCalledWith(favourite);
-  relays[1].publish.mockRejectedValueOnce(new Error('offline'));
-  await room.publish(roomTemplate('chat', station, 'Hi'));
-  expect(receive).toHaveBeenCalledWith(
-    expect.objectContaining({ content: 'Hi', pubkey: publicKey }),
-  );
-  relays.forEach(relay =>
-    relay.publish.mockRejectedValue(new Error('offline')),
-  );
-  await expect(
-    room.publish(roomTemplate('chat', station, 'Hi')),
-  ).rejects.toThrow('Could not publish');
-  relays[0].onclose!();
-  expect(error).not.toHaveBeenCalled();
-  relays[1].onclose!();
-  expect(error).toHaveBeenCalled();
-  room.close();
-  callback.onevent(favourite);
-});
-it('closes pending connections and fails publications after unmount', async () => {
+it('closes pending connections without reporting errors after unmount', async () => {
   const relays = relayFixture();
   const error = vi.fn();
   const room = new RadioRoom(vi.fn(), error);
@@ -400,20 +236,20 @@ it('closes pending connections and fails publications after unmount', async () =
   );
   await connecting;
   next.close();
-  provider();
-  const signer = await connectRadioSigner(user);
-  const last = new RadioRoom(vi.fn(), error);
-  await last.open();
-  last.setSigner({
-    ...signer,
-    sign: async template => {
-      last.close();
-      return signer.sign(template);
-    },
-  });
-  await expect(
-    last.publish(roomTemplate('chat', station, 'Hi')),
-  ).rejects.toThrow('closed');
+});
+
+it('reports disconnection only after the last public relay closes', async () => {
+  const relays = relayFixture();
+  const error = vi.fn();
+  const room = new RadioRoom(vi.fn(), error);
+  await room.open();
+  relays[0].onclose?.();
+  expect(error).not.toHaveBeenCalled();
+  relays[1].onclose?.();
+  expect(error).toHaveBeenCalledOnce();
+  room.close();
+  relays[1].onclose?.();
+  expect(error).toHaveBeenCalledOnce();
 });
 
 it('reports an unavailable room when both connections fail', async () => {
@@ -424,19 +260,4 @@ it('reports an unavailable room when both connections fail', async () => {
   expect(error).toHaveBeenCalled();
   expect(relays.every(relay => relay.close.mock.calls.length > 0)).toBe(true);
   room.close();
-});
-
-it('drops publication callbacks after closing the connection', async () => {
-  const relays = relayFixture();
-  const receive = vi.fn();
-  const room = new RadioRoom(receive, vi.fn());
-  await room.open();
-  provider();
-  room.setSigner(await connectRadioSigner(user));
-  relays[0].publish.mockImplementationOnce(async () => {
-    room.close();
-    return 'ok';
-  });
-  await room.publish(roomTemplate('listening', station, 'Music'));
-  expect(receive).not.toHaveBeenCalled();
 });
