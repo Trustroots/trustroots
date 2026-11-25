@@ -1478,7 +1478,34 @@ describe('Job: message unread', function () {
       ).should.equal(0);
     });
 
+    it('honours a digest preference set after reminder selection', async function () {
+      await ageMessage();
+      const find = User.find.bind(User);
+      const selectedRecipients = sinon
+        .stub(User, 'find')
+        .callsFake((...args) => {
+          const query = find(...args);
+          const exec = query.exec.bind(query);
+          sinon.stub(query, 'exec').callsFake(async () => {
+            await User.updateOne(
+              { _id: userToId },
+              { $set: { messageEmailFrequency: 'daily' } },
+            );
+            return exec();
+          });
+          return query;
+        });
+
+      await runJob();
+
+      sinon.assert.calledOnce(selectedRecipients);
+      jobs.length.should.equal(0);
+      const saved = await Message.findById(message._id).orFail().exec();
+      required(saved.notificationCount).should.equal(0);
+    });
+
     it('bounds the email preview and marks the full conversation notified', async function () {
+      const aggregate = sinon.spy(Message, 'aggregate');
       await ageMessage(60);
       const created = sub(new Date(), { minutes: 30 });
       await Message.create(
@@ -1490,6 +1517,44 @@ describe('Job: message unread', function () {
       );
       await runJob();
 
+      const pipeline = required(aggregate.lastCall.args[0]);
+      pipeline.should.containEql({
+        $match: {
+          'recipient.messageEmailFrequency': {
+            $nin: ['off', 'daily', 'weekly'],
+          },
+        },
+      });
+      required(pipeline.at(-1)).should.deepEqual({
+        $lookup: {
+          from: Message.collection.name,
+          let: {
+            recipient: '$_id.userTo',
+            sender: '$_id.userFrom',
+            latest: '$latestCreated',
+          },
+          pipeline: [
+            {
+              $match: {
+                read: false,
+                notificationCount: { $lte: 0 },
+                $expr: {
+                  $and: [
+                    { $eq: ['$userTo', '$$recipient'] },
+                    { $eq: ['$userFrom', '$$sender'] },
+                    { $lte: ['$created', '$$latest'] },
+                  ],
+                },
+              },
+            },
+            { $sort: { created: -1, _id: -1 } },
+            { $limit: 20 },
+            { $sort: { created: 1, _id: 1 } },
+            { $project: { _id: 0, content: 1, created: 1, id: '$_id' } },
+          ],
+          as: 'messages',
+        },
+      });
       jobs.length.should.equal(1);
       jobs[0].data.text.should.containEql('21 unread messages');
       jobs[0].data.text.should.containEql('Recent preview 0');
