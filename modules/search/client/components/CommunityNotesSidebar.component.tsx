@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
-import { nostrService } from '../services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 import { compactTimeAgo } from '@trustroots/relative-time/compact';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import type { Event } from 'nostr-tools';

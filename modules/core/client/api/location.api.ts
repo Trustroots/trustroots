@@ -1,6 +1,6 @@
-import axios from '@trustroots/core/http-client';
+import axios from './http-client';
 
-import { getMapBoxToken } from '@/modules/core/client/utils/map';
+import { getMapBoxToken } from '../utils/map';
 import {
   getBounds,
   getCenter,

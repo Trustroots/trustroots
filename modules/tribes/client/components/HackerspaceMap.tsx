@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { Event } from 'nostr-tools';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 import CircleLocationMap, { type CircleLocation } from './CircleLocationMap';
 import { currentPlaceEvents } from '../hooks/useCircleMapEvents';
 

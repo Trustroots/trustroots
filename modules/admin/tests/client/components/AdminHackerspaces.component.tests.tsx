@@ -29,7 +29,7 @@ vi.mock('@trustroots/core/http-client', async () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));
-vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/core/client/services/nostr.client.service', () => ({
   HACKER_PLACE_RELAY_URLS: [
     'wss://relay.trustroots.org',
     'wss://relay.nomadwiki.org',
@@ -44,7 +44,7 @@ const http = (await vi.importMock('@trustroots/core/http-client')).default as {
   get: Mock;
 };
 const service = (
-  await vi.importMock('@/modules/search/client/services/nostr.client.service')
+  await vi.importMock('@/modules/core/client/services/nostr.client.service')
 ).nostrService as {
   fetchHackerPlaceEvents: Mock;
   connectHackerPlaceRelays: Mock;

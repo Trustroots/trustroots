@@ -2,8 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
-import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
-import * as locationApi from '@/modules/search/client/api/location.api';
+import SearchPlaceInput from '@/modules/core/client/components/SearchPlaceInput.component';
+import * as locationApi from '@/modules/core/client/api/location.api';
 
 type InputProps = React.ComponentProps<typeof SearchPlaceInput>;
 type PlaceSuggestion = Awaited<
@@ -11,7 +11,7 @@ type PlaceSuggestion = Awaited<
 >[number];
 const locationApiMock = vi.mocked(locationApi);
 
-vi.mock('@/modules/search/client/api/location.api');
+vi.mock('@/modules/core/client/api/location.api');
 vi.mock('@/modules/core/client/hooks/use-debounced-callback', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
