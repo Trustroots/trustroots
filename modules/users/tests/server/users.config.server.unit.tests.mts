@@ -5,6 +5,7 @@ import passport from 'passport';
 import config from '../../../../config/config.mts';
 import usersSuspended from '../../server/controllers/users.suspended.server.controller.mts';
 import '../../server/models/user.server.model.mts';
+import { checkMemberSession } from '../../server/services/member-session.server.service.mts';
 
 interface SessionUser {
   id: string;
@@ -130,11 +131,12 @@ describe('Users Passport session configuration', () => {
     strategies.args
       .map(([strategy]) => (strategy as { name: string }).name)
       .should.deepEqual(['local']);
-    app.use.args.should.have.length(3);
+    app.use.args.should.have.length(4);
     should(app.use.args[0]).deepEqual(['initialize']);
     should(app.use.args[2]).deepEqual([
       usersSuspended.invalidateSuspendedSessions,
     ]);
+    should(app.use.args[3]).deepEqual([checkMemberSession]);
     const browserSessionOnly: Middleware = app.use.args[1][0];
     for (const [path, mobile] of [
       ['/api/mobile/v0', true],

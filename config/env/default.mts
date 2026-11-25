@@ -188,6 +188,11 @@ const service = {
       database: 'trustroots',
     },
   },
+  // Password step-up for /api/admin/* after sign-in. Member sessions keep the
+  // ordinary idle/absolute lifetimes; this window only unlocks admin tooling.
+  adminElevation: {
+    lifetimeMs: 30 * 60 * 1000,
+  },
   experienceApiRequestsPerMinute: 120,
   offerSearchRequestsPerMinute: 60,
   // Set either limit to 0 to disable that counter dimension; windows use ms.
@@ -203,6 +208,11 @@ const service = {
       windowMs: 60 * 60 * 1000,
       ipLimit: 30,
       identityLimit: 5,
+    },
+    manageSessions: {
+      windowMs: 15 * 60 * 1000,
+      ipLimit: 60,
+      identityLimit: 10,
     },
     avatarUpload: { windowMs: 60 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
     dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },

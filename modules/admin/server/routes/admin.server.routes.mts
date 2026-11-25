@@ -36,6 +36,11 @@ import adminHackerspaces from './../controllers/admin.hackerspaces.server.contro
 import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
 import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mts';
 import { publishServiceProfile } from '../controllers/admin.nostr-service.server.controller.mts';
+import {
+  confirmAdminPassword,
+  elevateAdminSession,
+  requireAdminElevation,
+} from '../services/admin-elevation.server.service.mts';
 
 type RouteHandler = (...args: never[]) => unknown;
 
@@ -55,6 +60,8 @@ interface RouteApp {
 /**
  * Module dependencies.
  */
+
+const privileged = [adminPolicy.isAllowed, requireAdminElevation];
 
 const registerRoutes = (app: RouteApp): void => {
   app
@@ -168,8 +175,14 @@ const registerRoutes = (app: RouteApp): void => {
     .get(adminHackerspaces.signerIdentity);
   app
     .route('/api/admin/hackerspaces/preview')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminHackerspaces.preview);
+  // Password step-up unlocks other admin routes for a short elevation window.
+  app
+    .route('/api/admin/elevate')
+    .all(adminPolicy.isAllowed)
+    .post(confirmAdminPassword, elevateAdminSession);
+
   app
     .route('/api/admin/circles')
     .all(adminPolicy.isAllowed)
@@ -192,7 +205,7 @@ const registerRoutes = (app: RouteApp): void => {
 
   app
     .route('/api/admin/acquisition-stories')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
   app
     .route('/api/admin/acquisition-stories/:memberId/resend-confirmation')
@@ -211,14 +224,13 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/location-corrections/send')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminLocationCorrections.send);
-
   app
     .route('/api/admin/audit-log')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.list);
   app
     .route('/api/admin/audit-log/actors')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.actors);
   app
     .route('/api/admin/username-changes')
@@ -227,23 +239,23 @@ const registerRoutes = (app: RouteApp): void => {
 
   app
     .route('/api/admin/dashboard')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminDashboard.getDashboard);
   app
     .route('/api/admin/messages')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminMessages.getMessages);
   app
     .route('/api/admin/messages/scammer-recipients')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminMessages.getScammerRecipients);
   app
     .route('/api/admin/messages/scammer-warning')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminMessages.sendScammerWarning);
   app
     .route('/api/admin/threads')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(
       adminAuditLog.record,
       adminUsers.usernameToUserId,
@@ -251,24 +263,24 @@ const registerRoutes = (app: RouteApp): void => {
     );
   app
     .route('/api/admin/notes')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminNotes.getNotes)
     .post(adminAuditLog.record, adminNotes.addNote);
   app
     .route('/api/admin/users')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminUsers.searchUsers);
   app
     .route('/api/admin/users/by-role')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminUsers.listUsersByRole);
   app
     .route('/api/admin/users/by-last-ip-hash')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminUsers.listUsersByLastIpHash);
   app
     .route('/api/admin/user')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(
       adminAuditLog.record,
       adminUsers.usernameToUserId,
@@ -277,7 +289,7 @@ const registerRoutes = (app: RouteApp): void => {
 
   app
     .route('/api/admin/staff-blockers')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminUsers.listStaffBlockers);
   app
     .route('/api/admin/user/delete')
@@ -285,11 +297,11 @@ const registerRoutes = (app: RouteApp): void => {
     .post(deleteMember);
   app
     .route('/api/admin/user/change-role')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminUsers.changeRole);
   app
     .route('/api/admin/reference-threads')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminReferenceThreads.list);
   app
     .route('/api/admin/experiences')
@@ -313,7 +325,7 @@ const registerRoutes = (app: RouteApp): void => {
 
   app
     .route('/api/admin/newsletter-subscribers/split')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(
       adminAuditLog.record,
       adminNewsletter.uploadSubscribersCsv,
@@ -321,15 +333,15 @@ const registerRoutes = (app: RouteApp): void => {
     );
   app
     .route('/api/admin/newsletter-subscribers')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminNewsletter.list);
   app
     .route('/api/admin/newsletter-subscribers/audience')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .post(adminAuditLog.record, adminNewsletter.audience);
   app
     .route('/api/admin/newsletter-subscribers/circle')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminNewsletter.listCircleMembers);
 };
 export { registerRoutes };

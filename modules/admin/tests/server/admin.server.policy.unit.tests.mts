@@ -26,6 +26,7 @@ const support = [
   'POST /api/admin/notes',
 ];
 const greeters = [
+  'POST /api/admin/elevate',
   'POST /api/admin/acquisition-stories',
   'POST /api/admin/acquisition-stories/:memberId/resend-confirmation',
   'GET /api/admin/location-corrections',

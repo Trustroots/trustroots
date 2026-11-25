@@ -3,6 +3,8 @@ import { cn } from '@trustroots/ui/cn';
 import { useLocation } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../../core/client/react-app/auth';
+import { registerAdminElevationInterceptor } from '../api/admin-elevation';
+import AdminElevationPrompt from './AdminElevationPrompt.component';
 
 export default function AdminHeader() {
   const { hasRole } = useAuth();
@@ -14,6 +16,7 @@ export default function AdminHeader() {
   }).replace(/^\/admin\/?/, '');
 
   useEffect(() => {
+    registerAdminElevationInterceptor();
     const input = document.querySelector<HTMLInputElement>(
       ':is(.container, [class~="tw:page-container"]) input:not([type="hidden"]):not([disabled])',
     );
@@ -125,31 +128,34 @@ export default function AdminHeader() {
   };
 
   return (
-    <nav
-      className="navbar navbar-white navbar-admin"
-      aria-label="Administration"
-    >
-      <div className="tw:page-container">
-        <div className="admin-nav-groups">
-          {groups.map(group => (
-            <div className="admin-nav-group" key={group.id}>
-              <div
-                className="admin-nav-group__label"
-                id={`admin-nav-${group.id}`}
-              >
-                {group.label}
+    <>
+      <AdminElevationPrompt />
+      <nav
+        className="navbar navbar-white navbar-admin"
+        aria-label="Administration"
+      >
+        <div className="tw:page-container">
+          <div className="admin-nav-groups">
+            {groups.map(group => (
+              <div className="admin-nav-group" key={group.id}>
+                <div
+                  className="admin-nav-group__label"
+                  id={`admin-nav-${group.id}`}
+                >
+                  {group.label}
+                </div>
+                <ul
+                  className="nav navbar-nav"
+                  aria-labelledby={`admin-nav-${group.id}`}
+                >
+                  {group.pages.map(renderTab)}
+                </ul>
               </div>
-              <ul
-                className="nav navbar-nav"
-                aria-labelledby={`admin-nav-${group.id}`}
-              >
-                {group.pages.map(renderTab)}
-              </ul>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 

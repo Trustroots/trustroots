@@ -30,6 +30,7 @@ export interface Config {
   sessionSecret: string;
   ipHashSecret: string;
   sessionCollection: string;
+  adminElevation: { lifetimeMs: number };
   domain: string;
   csrfAllowedOrigins: string[];
   supportEmail: string;

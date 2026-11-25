@@ -23,6 +23,11 @@ const service = {
       ipLimit: 30,
       identityLimit: 5,
     },
+    manageSessions: {
+      windowMs: 15 * 60 * 1000,
+      ipLimit: 60,
+      identityLimit: 10,
+    },
     avatarUpload: { windowMs: 60 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
     dataExport: { windowMs: 60 * 60 * 1000, ipLimit: 0, identityLimit: 5 },
   },

@@ -121,11 +121,48 @@ function assertHandlers(
   }
 }
 
+const elevationRoutes = new Set([
+  '/api/admin/hackerspaces/preview',
+  '/api/admin/acquisition-stories',
+  '/api/admin/audit-log',
+  '/api/admin/audit-log/actors',
+  '/api/admin/dashboard',
+  '/api/admin/messages',
+  '/api/admin/messages/scammer-recipients',
+  '/api/admin/messages/scammer-warning',
+  '/api/admin/threads',
+  '/api/admin/notes',
+  '/api/admin/users',
+  '/api/admin/users/by-role',
+  '/api/admin/users/by-last-ip-hash',
+  '/api/admin/user',
+  '/api/admin/staff-blockers',
+  '/api/admin/user/change-role',
+  '/api/admin/reference-threads',
+  '/api/admin/newsletter-subscribers/split',
+  '/api/admin/newsletter-subscribers',
+  '/api/admin/newsletter-subscribers/audience',
+  '/api/admin/newsletter-subscribers/circle',
+]);
+
 function assertPolicy(
   route: RecordedRoute,
   policy: { isAllowed: NamedHandler },
+  requireAdminElevation?: NamedHandler,
 ) {
-  assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
+  const expected = [policy.isAllowed];
+  if (requireAdminElevation && elevationRoutes.has(route.path)) {
+    expected.push(requireAdminElevation);
+  }
+  const handlerNames = (handlers: NamedHandler[]) =>
+    handlers.map(handler =>
+      (handler.routeTestName || handler.name).split('.').pop(),
+    );
+  assert.deepStrictEqual(
+    handlerNames(route.all),
+    handlerNames(expected),
+    `${route.path} policy`,
+  );
 }
 
 async function register(
@@ -585,8 +622,55 @@ describe('API route registrations', () => {
     routes.forEach(route => assertPolicy(route, policy));
   });
 
+  it('registers member session management routes with password confirmation and a dedicated limit', async () => {
+    const [
+      { default: memberSessionRoutes },
+      memberSessionController,
+      { default: targetedRequestLimit },
+    ] = await Promise.all([
+      import('../../../users/server/routes/sessions.server.routes.mts'),
+      import('../../../users/server/controllers/users.sessions.server.controller.mts'),
+      import('../../server/middleware/targeted-request-limit.server.middleware.mts'),
+    ]);
+    const { app, routes } = createAppRecorder();
+    memberSessionRoutes(app);
+
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').get,
+      ),
+      [memberSessionController.requireMember, memberSessionController.list],
+    );
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions,
+        memberSessionController.confirmPassword,
+        memberSessionController.revokeAll,
+      ],
+    );
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/auth/sessions/:id').all.concat(
+        routeByPath(routes, '/api/auth/sessions/:id').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions,
+        memberSessionController.confirmPassword,
+        memberSessionController.revoke,
+      ],
+    );
+  });
+
   it('registers admin routes with audit log middleware where required', async () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const elevation = controller(
+      ['requireAdminElevation', 'confirmAdminPassword', 'elevateAdminSession'],
+      'adminElevation',
+    );
     const support = controller(
       [
         'list',
@@ -664,6 +748,7 @@ describe('API route registrations', () => {
         '../controllers/admin.threads.server.controller': threads,
         '../controllers/admin.users.server.controller': users,
         '../policies/admin.server.policy': policy,
+        '../services/admin-elevation.server.service': elevation,
       },
     );
 
@@ -699,6 +784,11 @@ describe('API route registrations', () => {
       routeByPath(routes, '/api/admin/location-corrections/send').post,
       [auditLog.record, locationCorrections.send],
     );
+    assertHandlers(routeByPath(routes, '/api/admin/elevate').post, [
+      elevation.confirmAdminPassword,
+      elevation.elevateAdminSession,
+    ]);
+
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,
@@ -806,7 +896,9 @@ describe('API route registrations', () => {
       auditLog.record,
       circles.update,
     ]);
-    routes.forEach(route => assertPolicy(route, policy));
+    routes.forEach(route =>
+      assertPolicy(route, policy, elevation.requireAdminElevation),
+    );
   });
 
   it('registers simple integration routes for pages, statistics, and SparkPost', async () => {
