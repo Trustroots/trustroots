@@ -70,16 +70,8 @@ struct TrustrootsApp: App {
         if session.member == nil {
             SignInView(session: session)
         } else {
-            TrustrootsRootView(session: session, sharedHome: Self.sharedHomeLaunchArgumentEnabled)
+            TrustrootsRootView(session: session)
         }
-    }
-
-    private static var sharedHomeLaunchArgumentEnabled: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("--shared-home")
-#else
-        false
-#endif
     }
 
     private static var sharedMemberPilotLaunchArgumentEnabled: Bool {

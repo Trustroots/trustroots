@@ -15,7 +15,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         let username = app.descendants(matching: .any)["pilot-username"]
         XCTAssertTrue(username.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["API: 127.0.0.1"].exists)
+        XCTAssertFalse(app.staticTexts["API: 127.0.0.1"].exists)
+        XCTAssertTrue(app.staticTexts["sign-in-ios-build"].exists)
+        let password = app.descendants(matching: .any)["pilot-password"]
+        let logo = app.descendants(matching: .any)["sign-in-logo"]
+        XCTAssertTrue(logo.exists)
+        XCTAssertGreaterThan(logo.frame.minY, password.frame.maxY)
         XCTAssertFalse(app.buttons["Exit shared pilot"].exists)
         app.buttons["Join"].tap()
         XCTAssertTrue(app.staticTexts["Join Trustroots"].waitForExistence(timeout: 10))
@@ -23,10 +28,71 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(username.waitForExistence(timeout: 10))
 
         signInToRegularApp(app)
+        XCTAssertTrue(app.buttons["Home"].isSelected)
+        XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Search"].exists)
+        XCTAssertTrue(app.buttons["Messages"].exists)
+        app.buttons["Menu"].tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10),
+            app.debugDescription
+        )
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["Home"].isSelected)
         XCTAssertFalse(app.buttons["Sign in"].exists)
+    }
+
+    @MainActor
+    func testRegularInboxFiltersMessageContentAndUpdatesUnreadOnReturn() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", fixtureURL.absoluteString]
+        app.launch()
+        addTeardownBlock { [self] in
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        app.buttons["Messages"].tap()
+
+        let row = app.descendants(matching: .any)["message-thread-thread-pilot-1"]
+        let unread = app.descendants(matching: .any)["unread-thread-pilot-1"]
+        func showsUnread() -> Bool {
+            unread.exists || row.label.contains("Unread") || (row.value as? String)?.contains("Unread") == true
+        }
+        XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(showsUnread(), app.debugDescription)
+
+        let filter = app.descendants(matching: .any)["inbox-filter"]
+        enterText("lanternx", into: filter, in: app)
+        XCTAssertTrue(element(labelled: "No matching conversations.", in: app).waitForExistence(timeout: 10))
+        XCTAssertFalse(row.exists)
+        // The matching word is in an older message, outside the inbox excerpt.
+        app.typeText(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(showsUnread(), app.debugDescription)
+
+        struct InboxReadState: Decodable { let read: Bool }
+        let (data, response) = try await URLSession.shared.data(
+            from: fixtureURL.appendingPathComponent("fixture/inbox-read-state")
+        )
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        XCTAssertFalse(try JSONDecoder().decode(InboxReadState.self, from: data).read)
+
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
+        app.navigationBars.buttons["Back"].tap()
+        XCTAssertTrue(filter.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(filter.value as? String, "lantern")
+        let readAfterReturn = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in row.exists && !showsUnread() },
+            object: row
+        )
+        await fulfillment(of: [readAfterReturn], timeout: 15)
     }
 
     @MainActor
@@ -37,7 +103,6 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [
             "--shared-member-pilot",
-            "--shared-home",
             "-trustroots.apiServerURL",
             fixtureURL.absoluteString,
         ]
@@ -76,7 +141,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         nativeHome.lifetime = .keepAlways
         add(nativeHome)
         app.buttons["Menu"].tap()
-        XCTAssertTrue(app.buttons["Circles"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10))
 
         app.terminate()
         try await updateFixtureSession("expire-access-token", at: fixtureURL)
@@ -473,7 +538,6 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
         let app = XCUIApplication()
         app.launchArguments = [
-            "--shared-home",
             "-trustroots.apiServerURL",
             "http://127.0.0.1:\(port)",
             "-AppleLocale",

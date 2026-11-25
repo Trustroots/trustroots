@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -170,19 +171,6 @@ internal fun MemberSignIn(
                 }
             }
         }
-        Column(
-            Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Image(
-                imageVector = TrustrootsLogo,
-                contentDescription = "Trustroots",
-                colorFilter = if (isSystemInDarkTheme()) ColorFilter.tint(pilotPalette.ink) else null,
-                modifier = Modifier.size(128.dp),
-            )
-            PilotText("Travellers’ community", strong = true)
-        }
         PilotTitle("Sign in")
         PilotInput(
             label = "Username or email",
@@ -219,6 +207,19 @@ internal fun MemberSignIn(
             }
         }
         if (busy) PilotText("Signing in…")
+        Column(
+            Modifier.fillMaxWidth().padding(top = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(
+                imageVector = TrustrootsLogo,
+                contentDescription = "Trustroots",
+                colorFilter = if (isSystemInDarkTheme()) ColorFilter.tint(pilotPalette.ink) else null,
+                modifier = Modifier.size(128.dp).testTag("sign-in-logo"),
+            )
+            PilotText("Travellers’ community", strong = true)
+        }
     }
 }
 

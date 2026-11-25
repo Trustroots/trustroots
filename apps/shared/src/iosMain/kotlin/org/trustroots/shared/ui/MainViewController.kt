@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,11 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PlatformImeOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UIView
+import platform.UIKit.UIViewController
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberSignInViewController(
@@ -52,6 +56,26 @@ fun MemberSignInViewController(
             ),
             onJoin = onJoin,
         )
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberInboxViewController(
+    state: MemberInboxState,
+    onFilter: (String) -> Unit,
+    onOpen: (String) -> Unit,
+    onRetry: () -> Unit,
+    createAvatar: (MemberInboxThread) -> UIViewController,
+) = ComposeUIViewController {
+    MemberInbox(state, onFilter, onOpen, onRetry) { thread ->
+        // Keep UIKit avatar touches inside the Compose row's tap target.
+        key(thread.memberId, thread.name) {
+            UIKitViewController(
+                factory = { createAvatar(thread) },
+                modifier = Modifier.size(46.dp),
+                properties = UIKitInteropProperties(interactionMode = null),
+            )
+        }
     }
 }
 

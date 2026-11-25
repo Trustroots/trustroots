@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct MessageThreadAccumulator {
     private var loadedIDs = Set<String>()
@@ -15,100 +16,73 @@ struct MessageInboxView: View {
     @State private var filterText = ""
     @State private var threadMessages: [String: [DirectMessage]] = [:]
     @State private var isSearchingThreadContent = false
-    @State private var isLoading = false
+    @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var selectedMember: MiniMember?
+    @State private var reloadID = 0
 
     private let api = TrustrootsAPI()
 
     var body: some View {
+        let loadID = reloadID
+        let search = searchRequest
+
         NavigationStack {
-            Group {
-                    if isLoading && threads.isEmpty {
-                        ProgressView("Loading messages…")
-                    } else if let errorMessage, threads.isEmpty {
-                        ContentUnavailableView {
-                            Label("Messages unavailable", systemImage: "exclamationmark.bubble")
-                        } description: {
-                            Text(errorMessage)
-                        } actions: {
-                            Button("Try again") { Task { await loadInbox() } }
-                        }
-                    } else if threads.isEmpty {
-                        ContentUnavailableView(
-                            "No conversations yet",
-                            systemImage: "bubble.left.and.bubble.right",
-                            description: Text("Your Trustroots conversations will appear here.")
-                        )
-                    } else {
-                        List {
-                            if filteredThreads.isEmpty && !isSearchingThreadContent {
-                                ContentUnavailableView(
-                                    "No matching conversations",
-                                    systemImage: "bubble.left.and.bubble.right",
-                                    description: Text("Try another name, username or message.")
-                                )
-                                .listRowSeparator(.hidden)
-                            }
-                            if isSearchingThreadContent {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("Searching message content…")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            ForEach(filteredThreads) { thread in
-                            NavigationLink {
-                                ConversationView(
-                                    otherMember: thread.otherMember(excluding: session.member?.username),
-                                    session: session
-                                )
-                            } label: {
-                                MessageThreadRow(
-                                    thread: thread,
-                                    currentUsername: session.member?.username,
-                                    serverURLString: session.serverURLString
-                                )
-                            }
-                            .listRowInsets(EdgeInsets(top: 2, leading: 9, bottom: 2, trailing: 9))
-                            }
-
-                            if isLoading && !threads.isEmpty {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("Loading older conversations…")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .listRowSeparator(.hidden)
-                            }
-
-                            if let errorMessage, !threads.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Older conversations could not be loaded: \(errorMessage)")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                    Button("Try again") { Task { await loadInbox() } }
-                                }
-                                .listRowSeparator(.hidden)
-                            }
-                        }
-                        .listStyle(.plain)
-                        .scrollDismissesKeyboard(.interactively)
-                    }
+            ComposeMessageInbox(
+                threads: filteredThreads.map(presentationThread),
+                filter: filterText,
+                hasThreads: !threads.isEmpty,
+                isLoading: isLoading,
+                isSearching: isSearchingThreadContent,
+                error: errorMessage,
+                serverURLString: session.serverURLString,
+                onFilter: { filterText = $0 },
+                onOpen: openConversation,
+                onRetry: { reloadID += 1 }
+            )
+            .navigationDestination(isPresented: isConversationOpen) {
+                if let selectedMember {
+                    ConversationView(otherMember: selectedMember, session: session)
+                }
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                BottomFilterField(placeholder: "Filter conversations", text: $filterText)
-            }
-            .task { await loadInbox() }
-            .task(id: filterText) { await loadThreadContentIfNeeded() }
+            .task(id: loadID) { await loadInbox(loadID: loadID) }
+            .task(id: search) { await loadThreadContentIfNeeded(for: search) }
         }
     }
 
+    private var isConversationOpen: Binding<Bool> {
+        Binding(
+            get: { selectedMember != nil },
+            set: { isOpen in
+                guard !isOpen, selectedMember != nil else { return }
+                selectedMember = nil
+                reloadID += 1
+            }
+        )
+    }
+
+    private func openConversation(threadID: String) {
+        guard selectedMember == nil,
+              let thread = threads.first(where: { $0.id == threadID }) else { return }
+        selectedMember = thread.otherMember(excluding: session.member?.username)
+    }
+
+    private func presentationThread(_ thread: MessageThread) -> MemberInboxThread {
+        let member = thread.otherMember(excluding: session.member?.username)
+        let identity = MemberIdentityText(member: member)
+        return MemberInboxThread(
+            id: thread.id,
+            memberId: member.id,
+            name: identity.primary,
+            handle: identity.secondary,
+            excerpt: thread.message.excerpt?.plainText ?? "…",
+            timestamp: thread.updated.relativeDescription,
+            unread: !thread.read
+        )
+    }
+
     private var filteredThreads: [MessageThread] {
-        let query = filterText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = filterQuery
         guard !query.isEmpty else { return threads }
         return threads.filter { thread in
             let member = thread.otherMember(excluding: session.member?.username)
@@ -122,12 +96,32 @@ struct MessageInboxView: View {
         }
     }
 
-    private func loadInbox() async {
-        guard !isLoading else { return }
+    private var filterQuery: String {
+        filterText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private struct SearchRequest: Equatable {
+        struct ThreadVersion: Equatable {
+            let id: String
+            let updated: Date
+        }
+        let query: String
+        let threads: [ThreadVersion]
+    }
+
+    private var searchRequest: SearchRequest {
+        SearchRequest(query: filterQuery, threads: threads.map { .init(id: $0.id, updated: $0.updated) })
+    }
+
+    private func loadInbox(loadID: Int) async {
+        guard loadID == reloadID else { return }
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            if loadID == reloadID { isLoading = false }
+        }
 
+        let previousVersions = Dictionary(uniqueKeysWithValues: threads.map { ($0.id, $0.updated) })
         do {
             let pageSize = 50
             var page = 1
@@ -139,78 +133,111 @@ struct MessageInboxView: View {
                     page: page,
                     limit: pageSize
                 )
+                guard !Task.isCancelled, loadID == reloadID else { return }
+                for thread in pageThreads where previousVersions[thread.id] != thread.updated {
+                    threadMessages.removeValue(forKey: thread.id)
+                }
                 accumulator.append(pageThreads)
                 threads = accumulator.threads
 
-                if !filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    await loadThreadContentIfNeeded()
-                }
                 guard pageThreads.count == pageSize else { break }
                 page += 1
                 await Task.yield()
             }
         } catch {
+            guard !Task.isCancelled, loadID == reloadID else { return }
             errorMessage = error.localizedDescription
         }
     }
 
-    private func loadThreadContentIfNeeded() async {
-        let query = filterText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty, !threads.isEmpty else { return }
-        let needingContent = threads.filter { threadMessages[$0.id] == nil }
-        guard !needingContent.isEmpty else { return }
+    private func loadThreadContentIfNeeded(for search: SearchRequest) async {
+        guard search == searchRequest else { return }
+        let needsContent = threads.filter { threadMessages[$0.id] == nil }
+        isSearchingThreadContent = !search.query.isEmpty && !needsContent.isEmpty
+        guard isSearchingThreadContent else { return }
+        defer {
+            if search == searchRequest { isSearchingThreadContent = false }
+        }
 
-        isSearchingThreadContent = true
-        defer { isSearchingThreadContent = false }
-        var loaded: [String: [DirectMessage]] = [:]
-        for thread in needingContent {
+        for thread in needsContent {
+            guard !Task.isCancelled else { return }
             guard let memberID = thread.otherMember(excluding: session.member?.username).id else { continue }
-            loaded[thread.id] = (try? await api.conversation(
+            let messages = try? await api.conversation(
                 serverURLString: session.serverURLString,
                 memberID: memberID,
                 markRead: false
-            )) ?? []
+            )
+            guard !Task.isCancelled, search == searchRequest else { return }
+            threadMessages[thread.id] = messages
         }
-        guard query == filterText.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
-        threadMessages.merge(loaded) { _, newest in newest }
     }
 }
 
-private struct MessageThreadRow: View {
-    let thread: MessageThread
-    let currentUsername: String?
+@MainActor
+private struct ComposeMessageInbox: UIViewControllerRepresentable {
+    let threads: [MemberInboxThread]
+    let filter: String
+    let hasThreads: Bool
+    let isLoading: Bool
+    let isSearching: Bool
+    let error: String?
     let serverURLString: String
+    let onFilter: (String) -> Void
+    let onOpen: (String) -> Void
+    let onRetry: () -> Void
 
-    var body: some View {
-        let member = thread.otherMember(excluding: currentUsername)
-        HStack(spacing: 9) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    MemberIdentityView(
-                        member: member,
-                        serverURLString: serverURLString,
-                        avatarSize: 40,
-                        primaryFont: .subheadline.weight(thread.read ? .regular : .semibold),
-                        secondaryFont: .caption
-                    )
-                    if !thread.read {
-                        Circle()
-                            .fill(TrustrootsPalette.green)
-                            .frame(width: 7, height: 7)
-                            .accessibilityLabel("Unread")
-                    }
-                }
-                Text(thread.message.excerpt?.plainText ?? "…")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+    final class Coordinator {
+        let state = MemberInboxState()
+        var onFilter: ((String) -> Void)?
+        var onOpen: ((String) -> Void)?
+        var onRetry: (() -> Void)?
+        var serverURLString = ""
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        update(context.coordinator)
+        let coordinator = context.coordinator
+        return MainViewControllerKt.MemberInboxViewController(
+            state: coordinator.state,
+            onFilter: { [weak coordinator] filter in coordinator?.onFilter?(filter) },
+            onOpen: { [weak coordinator] threadID in coordinator?.onOpen?(threadID) },
+            onRetry: { [weak coordinator] in coordinator?.onRetry?() },
+            createAvatar: { [weak coordinator] thread in
+                guard let coordinator else { return UIViewController() }
+                let controller = UIHostingController(rootView: MemberAvatarView(
+                    memberID: thread.memberId,
+                    displayName: thread.name,
+                    serverURLString: coordinator.serverURLString,
+                    size: 44
+                ).accessibilityHidden(true))
+                controller.view.backgroundColor = .clear
+                controller.view.isUserInteractionEnabled = false
+                return controller
             }
-            Spacer(minLength: 8)
-            Text(thread.updated.relativeDescription)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 2)
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onFilter = onFilter
+        coordinator.onOpen = onOpen
+        coordinator.onRetry = onRetry
+        coordinator.serverURLString = serverURLString
+        coordinator.state.update(
+            threads: threads,
+            filter: filter,
+            hasThreads: hasThreads,
+            isLoading: isLoading,
+            isSearching: isSearching,
+            error: error
+        )
     }
 }
 
