@@ -1,4 +1,4 @@
-import locales from '@/config/shared/locales.json';
+import locales from '@trustroots/locales' with { type: 'json' };
 
 export type Locale = {
   label: string;
@@ -7,7 +7,7 @@ export type Locale = {
   production: boolean;
 };
 
-const localeList = locales as Locale[];
+const localeList: Locale[] = locales;
 
 export const deburr = (value: string): string =>
   value?.normalize('NFD').replace(/[\u0300-\u036f]/g, '') ?? '';
