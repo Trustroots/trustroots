@@ -16,7 +16,6 @@
     "@trustroots/core": "workspace:*",
     "@trustroots/experiences": "workspace:*",
     "@trustroots/search": "workspace:*",
-    "@trustroots/tribes": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

@@ -718,14 +718,4 @@ describe('Tribes controller unit tests', () => {
     );
     next.calledOnceWithExactly(error).should.be.true();
   });
-
-  describe('tribePopulateOptions', () => {
-    it('defaults to the public tribe fields', () => {
-      tribesController.tribePopulateOptions().should.eql({
-        path: 'member.tribe',
-        select: tribesController.tribeFields,
-        model: 'Tribe',
-      });
-    });
-  });
 });

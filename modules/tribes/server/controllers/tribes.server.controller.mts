@@ -1,5 +1,6 @@
 import errorService from '../../../core/server/services/error.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mts';
+import { publicTribeFields } from '../../../core/server/services/public-tribe-projection.mts';
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import { subMonths } from 'date-fns';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
@@ -121,12 +122,6 @@ interface PaginatedResponse extends JsonResponse<TribeRecord[]> {
 }
 
 const service = {} as {
-  tribeFields: string;
-  tribePopulateOptions(select?: string): {
-    path: string;
-    select: string;
-    model: string;
-  };
   listTribes(req: ListTribesRequest, res: PaginatedResponse): void;
   getTribe(
     req: TribeRequest,
@@ -168,29 +163,6 @@ const Contact = mongoose.model<ContactRecord>('Contact');
 const Experience = mongoose.model<ExperienceRecord>('Experience');
 const MEMBER_ONLY_TRIBE_SLUGS = ['naturists'];
 
-// Publicly exposed fields from tribes
-service.tribeFields = [
-  '_id',
-  'slug',
-  'label',
-  'count',
-  'color',
-  'image',
-  'attribution',
-  'attribution_url',
-  'description',
-  'created',
-].join(' ');
-
-/** Populate options for the tribe of a member document. */
-service.tribePopulateOptions = function (select = service.tribeFields) {
-  return {
-    path: 'member.tribe',
-    select,
-    model: 'Tribe',
-  };
-};
-
 function visibleTribesQuery(req: TribeRequest): Record<string, unknown> {
   const query: Record<string, unknown> = { public: true };
   if (!req.user) {
@@ -214,7 +186,7 @@ service.listTribes = function (req, res) {
   const query = visibleTribesQuery(req);
 
   Tribe.find(query)
-    .select(service.tribeFields)
+    .select(publicTribeFields)
     .sort(sort)
     .limit(limit)
     .skip((page - 1) * limit)
@@ -313,7 +285,7 @@ service.editTribe = async function (req, res, next) {
       { $set: { label, description, modified: new Date() } },
       { returnDocument: 'after', runValidators: true },
     )
-      .select(service.tribeFields)
+      .select(publicTribeFields)
       .exec();
     if (!updated) return errorService.sendForbidden(res);
     return res.json(updated);
@@ -566,7 +538,7 @@ service.tribeBySlug = function (req, res, next, slug) {
     errorService.sendForbidden(res);
     return;
   }
-  Tribe.findOne({ public: true, slug }, service.tribeFields)
+  Tribe.findOne({ public: true, slug }, publicTribeFields)
     .exec()
     .then(
       tribe => {
@@ -593,8 +565,6 @@ const listMembers = service.listMembers;
 const listConnections = service.listConnections;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
-const tribeFields = service.tribeFields;
-const tribePopulateOptions = service.tribePopulateOptions;
 const updateCount = service.updateCount;
 /** @esmNamed */
 export {
@@ -603,8 +573,6 @@ export {
   listConnections,
   listTribes,
   tribeBySlug,
-  tribeFields,
-  tribePopulateOptions,
   updateCount,
 };
 export default service;
