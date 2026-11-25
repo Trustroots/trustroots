@@ -238,6 +238,37 @@ describe('Offer search tests', function () {
     offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
+  it('uses the same connection policy in web and mobile offer search', async function () {
+    await mongoose.connection.collection('experiences').insertOne({
+      userFrom: user1._id,
+      userTo: user2Id,
+      recommend: 'yes',
+      public: false,
+    });
+    await utils.signIn(credentials, agent);
+    const mobile = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const query = testLocations.Europe.queryBoundingBox;
+    const filters = JSON.stringify({ connectionsOnly: true });
+    const webResponse = await agent
+      .get('/api/offers' + query)
+      .query({ filters })
+      .expect(200);
+    const mobileResponse = await request(app)
+      .get('/api/mobile/v0/offers' + query)
+      .set('Authorization', `Bearer ${mobile.body.accessToken}`)
+      .query({ filters })
+      .expect(200);
+    for (const response of [webResponse, mobileResponse]) {
+      const features = response.body.features as OfferFeature[];
+      features
+        .map(feature => feature.properties.id)
+        .should.eql([String(offer2Id)]);
+    }
+  });
+
   it('shares the offer search allowance across browser and mobile for each member', async function () {
     const originalLimit = config.offerSearchRequestsPerMinute;
     let limitedApp: TestExpressApp;
