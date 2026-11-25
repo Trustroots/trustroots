@@ -9,7 +9,7 @@ vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },
 }));
-vi.mock('@/modules/core/client/react-app/auth', () => ({
+vi.mock('@trustroots/core/auth', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 

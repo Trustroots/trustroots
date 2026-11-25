@@ -1,7 +1,7 @@
 import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 import Avatar from '@/modules/users/client/components/Avatar.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import {
   infoAndSupportHeading,
   infoAndSupportLinks,

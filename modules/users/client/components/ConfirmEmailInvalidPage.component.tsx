@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { Alert } from '@trustroots/ui/Alert';
 
 export default function ConfirmEmailInvalidPage() {

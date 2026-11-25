@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
 type AdminUserFixture = AuthUser;
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

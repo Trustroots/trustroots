@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from '@tanstack/react-router';
 import React from 'react';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import { SupportMemberPage } from '@/modules/admin/client/components/Support.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { requireRole } from '../route-options';
 
 function AdminUserRoute() {

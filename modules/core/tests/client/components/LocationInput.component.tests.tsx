@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import axios from 'axios';
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
-import { useSettings } from '@/modules/core/client/react-app/app-context';
+import { useSettings } from '@trustroots/core/app-context';
 
 type LocationInputProps = ComponentProps<typeof LocationInput>;
 type LocationChange = LocationInputProps['onChange'];
@@ -14,7 +14,7 @@ vi.mock(
   async () => await import('@/modules/core/tests/client/api/axios.mock'),
 );
 
-vi.mock('@/modules/core/client/react-app/app-context', () => ({
+vi.mock('@trustroots/core/app-context', () => ({
   useSettings: vi.fn(() => ({
     mapbox: { publicKey: 'pk.test-mapbox-token' },
   })),

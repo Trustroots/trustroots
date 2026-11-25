@@ -17,7 +17,7 @@ vi.mock('@trustroots/core/http-client', () => ({
   default: { post: vi.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
 }));
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 

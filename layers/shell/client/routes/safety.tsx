@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import Safety from '@/modules/pages/client/components/Safety.component';
 import { recordSafetyPageVisit } from '@/modules/users/client/api/users.api';
 

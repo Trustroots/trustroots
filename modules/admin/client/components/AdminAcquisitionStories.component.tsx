@@ -1,6 +1,6 @@
 import { Input } from '@trustroots/ui/Input';
 import { Select } from '@trustroots/ui/Select';
-import { useAuth } from '../../../core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 

@@ -18,7 +18,7 @@ import {
   update,
 } from '../api/users.api';
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
 import {

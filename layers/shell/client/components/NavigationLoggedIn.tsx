@@ -8,7 +8,7 @@ import {
   useAnalytics,
   type NavigationItem,
 } from '@trustroots/analytics/client';
-import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@trustroots/core/auth';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
 import Icon from '@/modules/core/client/components/Icon';

@@ -9,7 +9,7 @@ import TrEditor from '@/modules/core/client/components/TrEditor';
 import ProfileEditLanguages from './ProfileEditLanguages.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
-import { useSettings } from '@/modules/core/client/react-app/app-context';
+import { useSettings } from '@trustroots/core/app-context';
 import type { UserProfile } from '../types';
 import useProfileSectionForm from '../utils/use-profile-section-form';
 

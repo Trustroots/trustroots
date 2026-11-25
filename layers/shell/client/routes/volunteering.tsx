@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 
 function VolunteeringRoute() {
   const { user } = useAuth();

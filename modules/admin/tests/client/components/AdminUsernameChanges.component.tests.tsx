@@ -11,7 +11,7 @@ import {
 import AdminUsernameChanges from '@/modules/admin/client/components/AdminUsernameChanges.component';
 import * as api from '@/modules/admin/client/api/username-changes.api';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>
