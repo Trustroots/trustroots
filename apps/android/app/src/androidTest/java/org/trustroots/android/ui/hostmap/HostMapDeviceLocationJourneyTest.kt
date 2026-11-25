@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.core.app.ActivityOptionsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -65,11 +66,11 @@ class HostMapDeviceLocationJourneyTest {
         compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Hosting").performClick()
-        compose.onNodeWithText("Offers volunteering").performClick()
+        compose.onNodeWithText("Offers volunteering").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(true, model.state.value.filters.includeHosts) }
         compose.onNodeWithText("Offers volunteering").performClick()
         compose.onNodeWithText("Offers volunteering").performClick()
-        compose.onNodeWithText("My connections only").performClick()
+        compose.onNodeWithText("My connections only").performScrollTo().performClick()
         assertEquals(0, permission.requests)
         compose.onNodeWithContentDescription("Use my location").performClick()
         compose.onNodeWithContentDescription("Use my location").assertIsNotEnabled()
