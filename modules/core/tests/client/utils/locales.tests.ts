@@ -1,4 +1,4 @@
-import locales from '@/config/shared/locales.json';
+import locales from '@trustroots/locales' with { type: 'json' };
 import {
   getLocales,
   getSearchedLocales,

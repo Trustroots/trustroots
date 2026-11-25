@@ -122,7 +122,7 @@ The script tag sets `data-performance="true"`, so the tracker reports LCP, INP, 
 
 | Event                | Data                                                                                                    | When                                                                                                |
 | -------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `language_switched`  | `language`: a code from `config/shared/locales.json`, else `other`; `saved`: yes/no                     | The interface language is switched; `saved` says whether storing it on the account worked.          |
+| `language_switched`  | `language`: a code from `packages/locales/locales.json`, else `other`; `saved`: yes/no                  | The interface language is switched; `saved` says whether storing it on the account worked.          |
 | `navigation_clicked` | `surface`: `top` or `footer`; `item`: a slug from `NAVIGATION_ITEMS`, such as `search` or `support_faq` | A top navigation or footer link itself is used. Clicks in a submenu are not credited to its parent. |
 
 ### Errors

@@ -218,6 +218,9 @@ importers:
       '@trustroots/emails':
         specifier: workspace:*
         version: link:packages/emails
+      '@trustroots/locales':
+        specifier: workspace:*
+        version: link:packages/locales
       '@trustroots/logger':
         specifier: workspace:*
         version: link:packages/logger
@@ -807,6 +810,8 @@ importers:
       storybook:
         specifier: 10.6.8
         version: 10.6.8(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1)
+
+  packages/locales: {}
 
   packages/logger:
     dependencies:
