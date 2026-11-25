@@ -1,5 +1,6 @@
 import MapKit
 import SwiftUI
+import TrustrootsShared
 
 struct CircleDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,156 +12,46 @@ struct CircleDetailView: View {
     @State private var otherMembers: [MiniMember] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var profileUsername: String?
 
     private let api = TrustrootsAPI()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                circleSummary
-
-                VStack(alignment: .leading, spacing: 18) {
-                    if isLoading && contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
-                        ProgressView("Finding circle members…")
-                            .frame(maxWidth: .infinity, minHeight: 180)
-                    } else {
-                        if !contacts.isEmpty {
-                            memberSection(
-                                title: "Your contacts in this circle",
-                                subtitle: "People you already know on Trustroots",
-                                members: contacts
-                            )
-                        }
-
-                        if !positiveExperienceMembers.isEmpty {
-                            memberSection(
-                                title: "People who recommend you",
-                                subtitle: "Members of this circle who left you a positive experience",
-                                members: positiveExperienceMembers
-                            )
-                        }
-
-                        if !otherMembers.isEmpty {
-                            memberSection(
-                                title: "Other active members",
-                                subtitle: "A small selection of members with current offers",
-                                members: otherMembers
-                            )
-                        }
-
-                        if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty,
-                           let errorMessage {
-                            ContentUnavailableView {
-                                Label("Circle members unavailable", systemImage: "person.2.badge.exclamationmark")
-                            } description: {
-                                Text(errorMessage)
-                            } actions: {
-                                Button("Try again") { Task { await loadMembers() } }
-                            }
-                        } else if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
-                            ContentUnavailableView(
-                                "No members to show yet",
-                                systemImage: "person.2",
-                                description: Text("Try again later to discover people in this circle.")
-                            )
-                        }
-                    }
-
-                    if let errorMessage,
-                       !contacts.isEmpty || !positiveExperienceMembers.isEmpty || !otherMembers.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(errorMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                            Button("Try again") { Task { await loadMembers() } }
-                        }
-                    }
-
-                    Button {
-                        NotificationCenter.default.post(
-                            name: .trustrootsOpenWebsite,
-                            object: TrustrootsWebsiteLink(
-                                url: URL(string: "https://wiki.trustroots.org")!,
-                                title: "Trustroots Wiki"
-                            )
-                        )
-                    } label: {
-                        Label("Explore this community on the Trustroots Wiki", systemImage: "book.closed")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .frame(maxWidth: .infinity)
-                            .padding(12)
-                            .background(TrustrootsPalette.paleGreen)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+        ComposeCircleDetail(
+            circle: circle,
+            contacts: contacts,
+            recommenders: positiveExperienceMembers,
+            active: otherMembers,
+            isLoading: isLoading,
+            error: errorMessage,
+            serverURLString: session.serverURLString,
+            onBack: { dismiss() },
+            onProfile: { username in
+                if profileUsername == nil { profileUsername = username }
+            },
+            onRetry: { Task { await loadMembers() } },
+            onWiki: openWiki
+        )
+        .navigationDestination(isPresented: Binding(
+            get: { profileUsername != nil },
+            set: { if !$0 { profileUsername = nil } }
+        )) {
+            if let profileUsername {
+                MemberProfileView(session: session, username: profileUsername)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
         .task { await loadMembers() }
     }
 
-    private var circleSummary: some View {
-        CircleHero(circle: circle, serverURLString: session.serverURLString)
-            .frame(maxWidth: .infinity)
-            .frame(height: 300)
-            .overlay(alignment: .topLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.backward")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .frame(width: 46, height: 46)
-                        .background(.ultraThickMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
-                }
-                .accessibilityLabel("Back")
-                .padding(.leading, 16)
-                .padding(.top, 54)
-            }
-    }
-
-    private func memberSection(title: String, subtitle: String, members: [MiniMember]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
-            Text(subtitle)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            ForEach(members, id: \.stableID) { member in
-                if let username = member.username {
-                    NavigationLink {
-                        MemberProfileView(session: session, username: username)
-                    } label: {
-                        memberRow(member)
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    memberRow(member)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TrustrootsPalette.paleGreen.opacity(0.62))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func memberRow(_ member: MiniMember) -> some View {
-        HStack(spacing: 11) {
-            MemberIdentityView(
-                member: member,
-                serverURLString: session.serverURLString
+    private func openWiki() {
+        NotificationCenter.default.post(
+            name: .trustrootsOpenWebsite,
+            object: TrustrootsWebsiteLink(
+                url: URL(string: "https://wiki.trustroots.org")!,
+                title: "Trustroots Wiki"
             )
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 3)
+        )
     }
 
     private func loadMembers() async {
@@ -292,67 +183,113 @@ private actor CircleMemberCache {
     }
 }
 
-private struct CircleHero: View {
+@MainActor
+private struct ComposeCircleDetail: UIViewControllerRepresentable {
+    let circle: TrustrootsCircle
+    let contacts: [MiniMember]
+    let recommenders: [MiniMember]
+    let active: [MiniMember]
+    let isLoading: Bool
+    let error: String?
+    let serverURLString: String
+    let onBack: () -> Void
+    let onProfile: (String) -> Void
+    let onRetry: () -> Void
+    let onWiki: () -> Void
+
+    final class Coordinator {
+        let state = MemberCircleDetailState()
+        var view: ComposeCircleDetail?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.MemberCircleDetailViewController(
+            state: coordinator.state,
+            onBack: { [weak coordinator] in coordinator?.view?.onBack() },
+            onProfile: { [weak coordinator] in coordinator?.view?.onProfile($0) },
+            onRetry: { [weak coordinator] in coordinator?.view?.onRetry() },
+            onWiki: { [weak coordinator] in coordinator?.view?.onWiki() },
+            createArtwork: { [weak coordinator] in
+                guard let view = coordinator?.view else { return UIViewController() }
+                return UIHostingController(rootView: CircleDetailArtwork(
+                    circle: view.circle,
+                    serverURLString: view.serverURLString
+                ))
+            },
+            createAvatar: { [weak coordinator] member in
+                guard let view = coordinator?.view else { return UIViewController() }
+                return makeSharedMemberAvatarController(
+                    memberID: member.memberId,
+                    name: member.name,
+                    serverURLString: view.serverURLString
+                )
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.view = self
+        coordinator.state.update(
+            name: circle.label,
+            memberCount: "\(circle.count.formatted()) members",
+            description: circle.description?.plainText ?? "",
+            contacts: present(contacts),
+            recommenders: present(recommenders),
+            active: present(active),
+            isLoading: isLoading,
+            error: error
+        )
+    }
+
+    private func present(_ members: [MiniMember]) -> [CircleDetailMember] {
+        members.enumerated().map { index, member in
+            let identity = MemberIdentityText(member: member)
+            return CircleDetailMember(
+                id: member.id ?? member.username ?? String(index),
+                memberId: member.id,
+                username: member.username,
+                name: identity.primary,
+                handle: identity.secondary
+            )
+        }
+    }
+}
+
+private struct CircleDetailArtwork: View {
     let circle: TrustrootsCircle
     let serverURLString: String
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            artwork
-
-            LinearGradient(
-                colors: [.black.opacity(0.28), .black.opacity(0.76)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            HStack(alignment: .bottom, spacing: 18) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(circle.label)
-                        .font(.title2.bold())
-                    Text("\(circle.count) members")
-                        .font(.subheadline.weight(.semibold))
-                    if let description = circle.description?.plainText, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
-                            .lineLimit(3)
+        GeometryReader { geometry in
+            Group {
+                if circle.image,
+                   let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
+                   let url = URL(string: "\(configuration.normalizedURLString)/uploads-circle/\(circle.slug)/742x496.jpg") {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            fallback
+                        }
                     }
+                } else {
+                    fallback
                 }
-                Spacer(minLength: 0)
-                artwork
-                    .frame(width: 112, height: 112)
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle().stroke(.white.opacity(0.9), lineWidth: 2)
-                    }
-                    .shadow(color: .black.opacity(0.3), radius: 8, y: 3)
             }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.7), radius: 2, y: 1)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
     }
 
-    @ViewBuilder
-    private var artwork: some View {
-        if circle.image,
-           let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
-           let url = URL(string: "\(configuration.normalizedURLString)/uploads-circle/\(circle.slug)/742x496.jpg") {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    circleFallback
-                }
-            }
-        } else {
-            circleFallback
-        }
-    }
-
-    private var circleFallback: some View {
+    private var fallback: some View {
         LinearGradient(
             colors: [TrustrootsPalette.green, TrustrootsPalette.darkGreen],
             startPoint: .topLeading,
@@ -364,10 +301,6 @@ private struct CircleHero: View {
                 .foregroundStyle(.white)
         }
     }
-}
-
-private extension MiniMember {
-    var stableID: String { id ?? username ?? displayName ?? UUID().uuidString }
 }
 
 private extension String {

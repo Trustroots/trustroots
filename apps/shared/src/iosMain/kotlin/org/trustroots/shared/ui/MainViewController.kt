@@ -106,6 +106,33 @@ fun MemberCirclesViewController(
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberCircleDetailViewController(
+    state: MemberCircleDetailState,
+    onBack: () -> Unit,
+    onProfile: (String) -> Unit,
+    onRetry: () -> Unit,
+    onWiki: () -> Unit,
+    createArtwork: () -> UIViewController,
+    createAvatar: (CircleDetailMember) -> UIViewController,
+) = ComposeUIViewController {
+    MemberCircleDetail(
+        state, onBack, onProfile, onRetry, onWiki,
+        artwork = { modifier ->
+            UIKitViewController(
+                factory = createArtwork,
+                modifier = modifier,
+                properties = UIKitInteropProperties(interactionMode = null),
+            )
+        },
+        avatar = { member ->
+            key(member.memberId, member.name) {
+                HostedMemberAvatar { createAvatar(member) }
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberInboxViewController(
     state: MemberInboxState,
     onFilter: (String) -> Unit,

@@ -132,7 +132,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
             self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
-            self._json(200, {"profile": PARTNER})
+            self._json(200, {"profile": {**PARTNER, "member": [{"tribe": CIRCLES[0]}]}})
         elif route == "/api/mobile/v0/members":
             params = parse_qs(urlsplit(self.path).query)
             matches = params.get("connectionsOnly") == ["true"] and params.get("search") == ["partner profile"]
@@ -152,6 +152,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "confirmed": False,
                 "user": PARTNER,
             }])
+        elif route == "/api/mobile/v0/experiences":
+            self._json(200, [])
         elif route == "/api/mobile/v0/connections":
             self._json(200, {
                 "recent": [dict(PARTNER, activity="today")],

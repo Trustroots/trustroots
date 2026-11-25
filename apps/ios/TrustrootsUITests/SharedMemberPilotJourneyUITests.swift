@@ -254,7 +254,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         await fulfillment(of: [becameJoined], timeout: 10)
 
         discovery.tap()
-        XCTAssertTrue(app.staticTexts["Night Walkers"].waitForExistence(timeout: 10), app.debugDescription)
+        let detail = app.descendants(matching: .any)["circle-detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(element(labelled: "Night Walkers", in: app).exists)
+        XCTAssertTrue(element(labelled: "42 members", in: app).exists)
+        XCTAssertTrue(element(labelled: "Bring a lantern.", in: app).exists)
+        let member = app.descendants(matching: .any)["circle-detail-member-member-pilot-partner"]
+        XCTAssertTrue(member.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(element(labelled: "Your contacts in this circle", in: app).exists)
+        let capture = XCTAttachment(screenshot: detail.screenshot())
+        capture.name = "regular-ios-circle-detail"
+        capture.lifetime = .keepAlways
+        add(capture)
+        member.tap()
+        XCTAssertTrue(element(labelled: "A partner profile", in: app).waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
+        XCTAssertTrue(member.waitForExistence(timeout: 10), app.debugDescription)
         app.buttons["Back"].tap()
         XCTAssertTrue(filter.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(filter.value as? String, "lantern")
