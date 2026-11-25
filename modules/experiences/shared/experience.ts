@@ -62,6 +62,7 @@ export interface ExperiencePayload<
   recommend?: ExperienceRecommendation;
   feedbackPublic?: string;
   response: ExperienceResponse<Id, Timestamp> | null;
+  replyBlocked?: true;
 }
 
 export type Experience = ExperiencePayload;

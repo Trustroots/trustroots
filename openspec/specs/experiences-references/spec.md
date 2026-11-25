@@ -90,7 +90,9 @@ prevent a duplicate experience from being created.
 ### Requirement: Experiences awaiting a reply on the owner's profile
 
 The web Experiences page SHALL group received Experiences with no reciprocal
-Experience for the signed-in profile owner.
+Experience for the signed-in profile owner. If their reciprocal Experience was
+removed, the received Experience SHALL remain in its ordinary list without a
+reply prompt. The removed content SHALL stay hidden.
 
 #### Scenario: An owner has pending and public Experiences awaiting a reply
 

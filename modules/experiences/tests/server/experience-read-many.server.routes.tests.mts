@@ -14,6 +14,7 @@ import express from './../../../../config/lib/express.mts';
 interface ExperienceListItem {
   userFrom: { _id: string; avatarVersion?: string };
   userTo: { _id: string };
+  replyBlocked?: true;
   response: {
     created: string;
     interactions: { met: boolean; guest: boolean; host: boolean };
@@ -246,6 +247,35 @@ describe('Read experiences by userTo Id', () => {
       );
       should(experience).not.be.undefined();
       should(experience.userFrom.avatarVersion).eql(version);
+    });
+    it('only tells the recipient when a removed reciprocal Experience blocks another reply', async () => {
+      await mongoose.connection
+        .collection('experiences')
+        .updateOne(
+          { userFrom: users[0]._id, userTo: users[1]._id },
+          { $set: { removedAt: new Date() } },
+        );
+
+      const profile = `/api/experiences?userTo=${users[0]._id}`;
+      const { body: ownerRows } = await agent.get(profile).expect(200);
+      const ownerRow = ownerRows.find(
+        (ref: ExperienceListItem) => ref.userFrom._id === users[1].id,
+      );
+      expect(ownerRow).toMatchObject({ response: null, replyBlocked: true });
+      expect(
+        ownerRows.find(
+          (ref: ExperienceListItem) => ref.userFrom._id === users[4].id,
+        ),
+      ).not.toHaveProperty('replyBlocked');
+
+      const visitor = request.agent(app);
+      await utils.signIn(_users[2], visitor);
+      const { body: visitorRows } = await visitor.get(profile).expect(200);
+      const visitorRow = visitorRows.find(
+        (ref: ExperienceListItem) => ref.userFrom._id === users[1].id,
+      );
+      expect(visitorRow).toMatchObject({ response: null });
+      expect(visitorRow).not.toHaveProperty('replyBlocked');
     });
     it('[param userTo] userTo is self, respond with all public and pending experiences to userTo', async () => {
       const { body } = await agent

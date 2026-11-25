@@ -105,7 +105,7 @@ export default function ListExperiences({
   }
 
   const needsReply = (experience: Experience) =>
-    onReceiverProfile && !experience.response;
+    onReceiverProfile && !experience.response && !experience.replyBlocked;
   const pendingAwaitingReply = pendingExperiences.filter(needsReply);
   const otherPending = pendingExperiences.filter(
     experience => !needsReply(experience),

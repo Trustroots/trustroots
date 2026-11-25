@@ -21,21 +21,26 @@ test('only the profile owner sees received Experiences awaiting a reply together
     'The profile owner can find pending and public Experiences awaiting a reply.',
   ]);
 
-  const [owner, pendingAuthor, publicAuthor, answeredAuthor] =
-    await Promise.all(
-      Array.from({ length: 4 }, async () => {
-        const user = createUser();
-        const { _id } = await registerViaApi(request, user);
-        await updateUserByUsername(user.username, {
-          $set: {
-            public: true,
-            description: 'A public profile for this test.',
-          },
-          $unset: { emailTemporary: 1, emailToken: 1 },
-        });
-        return { ...user, id: new ObjectId(_id) };
-      }),
-    );
+  const [
+    owner,
+    pendingAuthor,
+    publicAuthor,
+    answeredAuthor,
+    removedReplyAuthor,
+  ] = await Promise.all(
+    Array.from({ length: 5 }, async () => {
+      const user = createUser();
+      const { _id } = await registerViaApi(request, user);
+      await updateUserByUsername(user.username, {
+        $set: {
+          public: true,
+          description: 'A public profile for this test.',
+        },
+        $unset: { emailTemporary: 1, emailToken: 1 },
+      });
+      return { ...user, id: new ObjectId(_id) };
+    }),
+  );
 
   const experiences = [
     {
@@ -63,6 +68,19 @@ test('only the profile owner sees received Experiences awaiting a reply together
       public: true,
       feedbackPublic: 'We had a good time at the market.',
     },
+    {
+      userFrom: removedReplyAuthor.id,
+      userTo: owner.id,
+      public: true,
+      feedbackPublic: 'We went for a walk in the park.',
+    },
+    {
+      userFrom: owner.id,
+      userTo: removedReplyAuthor.id,
+      public: true,
+      feedbackPublic: 'This removed reply must stay hidden.',
+      removedAt: new Date(),
+    },
   ];
   await withE2eDb(db =>
     db.collection('experiences').insertMany(
@@ -89,6 +107,18 @@ test('only the profile owner sees received Experiences awaiting a reply together
     name: /Write about your experience/,
   });
   await expect(replyLinks).toHaveCount(2);
+  await expect(page.getByText('We went for a walk in the park.')).toBeVisible();
+  await expect(
+    awaitingReply.getByText('We went for a walk in the park.'),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(
+      `a[href="/profile/${removedReplyAuthor.username}/experiences/new"]`,
+    ),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('This removed reply must stay hidden.'),
+  ).toHaveCount(0);
   await expect(replyLinks.nth(0)).toHaveAttribute(
     'href',
     `/profile/${pendingAuthor.username}/experiences/new`,
@@ -102,12 +132,12 @@ test('only the profile owner sees received Experiences awaiting a reply together
     awaitingReply.getByText('We visited the market together.'),
   ).toHaveCount(0);
   await expect(
-    page.getByText('2 members shared their experiences.'),
+    page.getByText('3 members shared their experiences.'),
   ).toBeVisible();
 
   await awaitingReply.getByRole('button', { name: 'Filter by Host' }).click();
   await expect(page.getByRole('status')).toContainText(
-    'Showing 1 of 2 public experiences.',
+    'Showing 1 of 3 public experiences.',
   );
   await expect(awaitingReply.getByText(/days left to respond/)).toBeVisible();
   await expect(
@@ -117,7 +147,7 @@ test('only the profile owner sees received Experiences awaiting a reply together
     0,
   );
   await expect(
-    page.getByText('2 members shared their experiences.'),
+    page.getByText('3 members shared their experiences.'),
   ).toBeVisible();
 
   await signInViaApi(page, request, SEEDED_MEMBERS[0]);
