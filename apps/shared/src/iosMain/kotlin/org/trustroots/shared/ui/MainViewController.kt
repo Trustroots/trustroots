@@ -28,6 +28,16 @@ import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
+fun OfferSearchFiltersViewController(
+    state: OfferSearchFiltersState,
+    onToggle: (OfferSearchToggle) -> Unit,
+    onActivity: (OfferSearchActivity) -> Unit,
+    onLanguages: () -> Unit,
+    onCircle: (String) -> Unit,
+) = ComposeUIViewController {
+    OfferSearchFilters(state, onToggle, onActivity, onLanguages, onCircle)
+}
+
 fun MemberMenuViewController(
     buildInfo: String,
     onSelect: (MemberMenuAction) -> Unit,
