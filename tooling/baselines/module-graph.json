@@ -14,7 +14,6 @@
     ],
     "core": [
       "support",
-      "tribes",
       "users"
     ],
     "experiences": [

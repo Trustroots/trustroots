@@ -555,9 +555,6 @@ importers:
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
-      '@trustroots/tribes':
-        specifier: workspace:*
-        version: link:../tribes
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users

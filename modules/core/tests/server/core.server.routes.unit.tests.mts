@@ -1,9 +1,5 @@
 import assert from 'node:assert/strict';
-import express, {
-  type NextFunction,
-  type Request,
-  type Response,
-} from 'express';
+import express, { type Request, type Response } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { generateSecretKey, getPublicKey, nip19 } from 'nostr-tools';
 import request from 'supertest';
@@ -32,17 +28,6 @@ async function app(signedIn = false) {
         res.send('languages');
       },
     },
-    './../../../tribes/server/controllers/tribes.server.controller.mts': {
-      tribeBySlug(
-        req: TribeRequest,
-        _res: Response,
-        next: NextFunction,
-        slug: string,
-      ) {
-        req.tribe = { slug };
-        next();
-      },
-    },
     'express-rate-limit': {
       ipKeyGenerator,
       rateLimit: (options: Parameters<typeof rateLimit>[0]) =>
@@ -52,6 +37,11 @@ async function app(signedIn = false) {
   const server = express();
   server.use((req, _res, next) => {
     if (signedIn) Object.assign(req, { user: { _id: 'fictional-member' } });
+    next();
+  });
+  // Simulate the app-wide lookup supplied by the Tribes routes.
+  server.param('tribe', (req: TribeRequest, _res, next, slug: string) => {
+    req.tribe = { slug };
     next();
   });
   routes(server);

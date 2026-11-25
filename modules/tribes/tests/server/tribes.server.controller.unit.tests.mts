@@ -96,11 +96,17 @@ describe('Tribes controller unit tests', () => {
       await import('../../server/routes/tribes.server.routes.mts');
     const app = express();
     const route = sinon.spy(app, 'route');
+    const param = sinon.spy(app, 'param');
     register(app);
 
     sinon.assert.calledWithExactly(route, '/api/tribes/discovery/connections');
     sinon.assert.calledWithExactly(route, '/api/tribes/:tribe/members');
     sinon.assert.calledWithExactly(route, '/api/tribes/:tribe');
+    sinon.assert.calledOnceWithExactly(
+      param,
+      'tribe',
+      tribesController.tribeBySlug,
+    );
   });
 
   describe('listTribes', () => {

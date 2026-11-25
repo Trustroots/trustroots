@@ -191,24 +191,40 @@ describe('Core CRUD tests', function () {
     it('redirects /invite to /signup', function (done) {
       agent.get('/invite').expect(301).expect('Location', '/signup').end(done);
     });
-    it('redirects /tribes/:slug to /circles/:slug when tribe exists', function (done) {
+    it('loads a circle once for each legacy redirect, page and API request', async function () {
       const Tribe = mongoose.model<TribeRecord>('Tribe');
-      const tribe = new Tribe({
+      const { slug, label } = await Tribe.create({
         slug: 'testcircle',
         label: 'Test Circle',
         description: 'A test circle',
         public: true,
       });
-      tribe
-        .save()
-        .then(savedTribe => {
-          agent
-            .get('/tribes/' + savedTribe.slug)
-            .expect(301)
-            .expect('Location', '/circles/' + savedTribe.slug)
-            .end(done);
-        })
-        .catch(done);
+      const lookup = sinon.spy(Tribe, 'findOne');
+      try {
+        await request(app)
+          .get('/tribes/' + slug)
+          .expect(301)
+          .expect('Location', '/circles/' + slug);
+        sinon.assert.calledOnce(lookup);
+
+        lookup.resetHistory();
+        const page = await request(app)
+          .get('/circles/' + slug)
+          .expect(200);
+        page.text.should.containEql(
+          `<title>${label} - Trustroots circle</title>`,
+        );
+        sinon.assert.calledOnce(lookup);
+
+        lookup.resetHistory();
+        const detail = await request(app)
+          .get('/api/tribes/' + slug)
+          .expect(200);
+        detail.body.slug.should.equal(slug);
+        sinon.assert.calledOnce(lookup);
+      } finally {
+        lookup.restore();
+      }
     });
     it('redirects unknown tribe slugs to /circles', function (done) {
       agent

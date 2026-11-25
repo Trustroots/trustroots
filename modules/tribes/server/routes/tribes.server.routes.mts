@@ -61,7 +61,7 @@ function register(app: Express) {
     .get(routeHandler(tribes.getTribe))
     .patch(disableDiscoveryCaching, routeHandler(tribes.editTribe));
 
-  // Finish by binding the tribes middleware
+  // This app-wide lookup also supplies circle page metadata and redirects.
   app.param('tribe', parameterHandler(tribes.tribeBySlug));
 }
 export { register };
