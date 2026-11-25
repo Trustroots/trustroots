@@ -10,11 +10,8 @@ import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefau
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import { getOfferHexColor } from '../utils/markers';
-import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
-import type {
-  MapBounds,
-  MapPoint,
-} from '@/modules/search/client/utils/location';
+import SearchPlaceInput from '@/modules/core/client/components/SearchPlaceInput.component';
+import type { MapBounds, MapPoint } from '@/modules/core/client/utils/location';
 
 interface OfferLocationEditorProps {
   location: [number, number] | null;

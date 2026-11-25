@@ -129,7 +129,7 @@ const mockUnsubscribeMapNotes = vi.fn<(...args: []) => void>();
 const mockFilterCommunityNotesByAuthorVisibility = vi.fn<
   (...args: [notes: MockNostrEvent[]]) => Promise<MockNostrEvent[]>
 >(notes => Promise.resolve(notes));
-vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/core/client/services/nostr.client.service', () => ({
   getNostrEventAuthorPubkey: (event: MockNostrEvent) =>
     mockGetNostrEventAuthorPubkey(event),
   nostrService: {

@@ -3,7 +3,6 @@
     "admin": [
       "core",
       "messages",
-      "search",
       "support",
       "tribes",
       "users"
@@ -43,7 +42,6 @@
     "offers": [
       "core",
       "experiences",
-      "search",
       "tribes",
       "users"
     ],
@@ -81,7 +79,6 @@
     ],
     "tribes": [
       "core",
-      "search",
       "users"
     ],
     "users": [
@@ -91,7 +88,6 @@
       "experiences",
       "messages",
       "offers",
-      "search",
       "stats",
       "support",
       "tribes"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 import { compactTimeAgo } from '@trustroots/relative-time/compact';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 

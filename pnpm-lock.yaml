@@ -531,9 +531,6 @@ importers:
       '@trustroots/references-thread':
         specifier: workspace:*
         version: link:../references-thread
-      '@trustroots/search':
-        specifier: workspace:*
-        version: link:../search
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
@@ -633,9 +630,6 @@ importers:
       '@trustroots/experiences':
         specifier: workspace:*
         version: link:../experiences
-      '@trustroots/search':
-        specifier: workspace:*
-        version: link:../search
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
@@ -752,9 +746,6 @@ importers:
       '@trustroots/experiences':
         specifier: workspace:*
         version: link:../experiences
-      '@trustroots/search':
-        specifier: workspace:*
-        version: link:../search
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -779,9 +770,6 @@ importers:
       '@trustroots/offers':
         specifier: workspace:*
         version: link:../offers
-      '@trustroots/search':
-        specifier: workspace:*
-        version: link:../search
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
