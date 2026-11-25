@@ -134,11 +134,11 @@ describe('Combined account access flows', function () {
         }),
       ),
     );
-    assert.deepEqual(attempts.map(result => result.status).sort(), [200, 400]);
-    assert.equal(
-      attempts.find(result => result.status === 200).body.mfaRequired,
-      true,
+    const [success, rejected] = attempts.toSorted(
+      (a, b) => a.status - b.status,
     );
+    assert.deepEqual([success.status, rejected.status], [200, 400]);
+    assert.equal(success.body.mfaRequired, true);
     assert.equal((await signedIn.get('/api/auth/session')).body.userId, null);
     const updated = await User.findById(user._id)
       .select('+resetPasswordToken')
