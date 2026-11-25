@@ -13,7 +13,7 @@ import {
   signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 
 vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
   default: () => null,

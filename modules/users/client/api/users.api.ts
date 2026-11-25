@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.ts';
+import axios from '@trustroots/core/http-client';
 import type {
   MiniProfile,
   OwnProfile,

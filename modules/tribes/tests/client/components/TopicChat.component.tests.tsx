@@ -9,14 +9,14 @@ import {
 } from '@testing-library/react';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import '@/config/client/i18n';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
 import {
   CHAT_ATTRIBUTION_TAG,
   chatTemplate,
 } from '@/modules/tribes/shared/circle-chat';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   default: { get: vi.fn(), post: vi.fn() },
 }));
 const member = { _id: 'member-1', username: 'fictional-member' };

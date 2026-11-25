@@ -55,6 +55,7 @@ export function expectedManifest(name: string, root = ROOT): Manifest {
   const exports: Record<string, string> = {};
   if (name === 'core') {
     exports['./browser-navigation'] = './client/services/browser-navigation.ts';
+    exports['./http-client'] = './client/api/http-client.ts';
     exports['./navigation-links'] = './shared/navigation-links.mts';
   }
   ['client', 'shared'].forEach(folder => {

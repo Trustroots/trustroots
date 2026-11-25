@@ -1,4 +1,4 @@
-import axios, { getErrorResponse } from '../../../core/client/api/http-client';
+import axios, { getErrorResponse } from '@trustroots/core/http-client';
 import type {
   Experience,
   ExperienceMine,

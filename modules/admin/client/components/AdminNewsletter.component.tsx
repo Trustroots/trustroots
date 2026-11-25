@@ -20,7 +20,7 @@ import {
   type NewsletterAudienceCriteria,
 } from '../api/newsletter.api';
 import AdminHeader from './AdminHeader.component';
-import { getErrorMessage } from '@/modules/core/client/api/http-client';
+import { getErrorMessage } from '@trustroots/core/http-client';
 import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 import { Button } from '@trustroots/ui/Button';

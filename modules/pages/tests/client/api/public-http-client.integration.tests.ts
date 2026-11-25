@@ -1,6 +1,6 @@
 import type { MockedFunction } from 'vitest';
 import { AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axios';
-import httpClient from '@/modules/core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import { getVolunteers } from '@/modules/pages/client/api/volunteers.api';
 import { get as getStatistics } from '@/modules/statistics/client/api/statistics.api';
 

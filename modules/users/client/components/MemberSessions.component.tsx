@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
-import axios from '../../../core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 
 interface MemberSession {
   id: string;

@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 
 // Block member
 export async function block(username: string): Promise<unknown> {

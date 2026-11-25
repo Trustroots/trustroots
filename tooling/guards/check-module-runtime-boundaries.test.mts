@@ -56,6 +56,51 @@ test('allows shared imports and client/server imports of shared code', t => {
   assert.deepEqual(analyze(root), []);
 });
 
+test('classifies named exports by their actual runtime tier', t => {
+  const root = makeRepo(t, {
+    'modules/a/package.json': manifest('@trustroots/a'),
+    'modules/a/client/entry.ts': [
+      "import server from '@trustroots/b/client/alias';",
+      "import serverEntry from '@trustroots/c';",
+    ].join('\n'),
+    'modules/a/server/entry.mts':
+      "import http from '@trustroots/b/http-client';",
+    'modules/a/shared/entry.ts':
+      "import data from '@trustroots/b/public-data';",
+    'modules/b/package.json': JSON.stringify({
+      name: '@trustroots/b',
+      exports: {
+        './http-client': './client/http.ts',
+        './client/alias': './server/index.mts',
+        './public-data': './shared/data.ts',
+      },
+    }),
+    'modules/b/client/http.ts': 'export default 1;',
+    'modules/b/server/index.mts': 'export default 2;',
+    'modules/b/shared/data.ts': 'export default 3;',
+    'modules/c/package.json': JSON.stringify({
+      name: '@trustroots/c',
+      exports: './server/index.mts',
+    }),
+    'modules/c/server/index.mts': 'export default 4;',
+  });
+
+  assert.deepEqual(
+    analyze(root).map(({ specifier, message }) => [specifier, message]),
+    [
+      [
+        '@trustroots/b/client/alias',
+        'Module client source cannot import server source.',
+      ],
+      ['@trustroots/c', 'Module client source cannot import server source.'],
+      [
+        '@trustroots/b/http-client',
+        'Module server source cannot import client source.',
+      ],
+    ],
+  );
+});
+
 test('ignores test files and unrelated repository packages', t => {
   const root = makeRepo(t, {
     'modules/a/package.json': manifest('@trustroots/a'),

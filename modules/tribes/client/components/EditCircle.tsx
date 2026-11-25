@@ -10,7 +10,7 @@ import {
   ModalTitle,
 } from '@trustroots/ui/Modal';
 import { Textarea } from '@trustroots/ui/Textarea';
-import { getErrorMessage } from '@/modules/core/client/api/http-client';
+import { getErrorMessage } from '@trustroots/core/http-client';
 import RichText from '@/modules/core/client/components/RichText';
 import { editTribe, type TribeSummary } from '../api/tribes.api';
 

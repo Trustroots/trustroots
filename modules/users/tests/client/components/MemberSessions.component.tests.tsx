@@ -2,13 +2,13 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import MemberSessions from '@/modules/users/client/components/MemberSessions.component';
-import axios from '@/modules/core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 import { vi } from 'vitest';
 
 const mockedAxios = vi.mocked(axios, { partial: true });
 const navigate = vi.hoisted(() => vi.fn());
 
-vi.mock('@/modules/core/client/api/http-client');
+vi.mock('@trustroots/core/http-client');
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
 }));

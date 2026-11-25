@@ -24,8 +24,8 @@ vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({
     return <header />;
   },
 }));
-vi.mock('@/modules/core/client/api/http-client', async () => ({
-  ...(await vi.importActual('@/modules/core/client/api/http-client')),
+vi.mock('@trustroots/core/http-client', async () => ({
+  ...(await vi.importActual('@trustroots/core/http-client')),
   __esModule: true,
   default: { get: vi.fn() },
 }));
@@ -40,8 +40,7 @@ vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
   },
 }));
 
-const http = (await vi.importMock('@/modules/core/client/api/http-client'))
-  .default as {
+const http = (await vi.importMock('@trustroots/core/http-client')).default as {
   get: Mock;
 };
 const service = (

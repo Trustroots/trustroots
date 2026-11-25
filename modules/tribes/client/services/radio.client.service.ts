@@ -1,6 +1,6 @@
 import type { Event, Filter } from 'nostr-tools';
 import { Relay } from 'nostr-tools/relay';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import catalogue from './radio-catalogue.json';
 
 export const RADIO_RELAYS = [

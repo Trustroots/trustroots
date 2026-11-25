@@ -1,6 +1,6 @@
 import { Input } from '@trustroots/ui/Input';
 import React, { useRef, useState } from 'react';
-import http, { getErrorMessage } from '../../../core/client/api/http-client';
+import http, { getErrorMessage } from '@trustroots/core/http-client';
 import { useAuth } from '../../../core/client/react-app/auth';
 import type {
   SupportStatusImportApplyResponse,

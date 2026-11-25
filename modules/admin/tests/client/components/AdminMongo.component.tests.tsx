@@ -1,10 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import httpClient from '@/modules/core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import AdminMongo from '@/modules/admin/client/components/AdminMongo.component';
 import type { MongoServerDiagnostics } from '@/modules/admin/shared/mongo-diagnostics.mts';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   __esModule: true,
   default: { get: vi.fn() },
 }));

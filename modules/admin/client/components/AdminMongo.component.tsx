@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
-import httpClient from '../../../core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import {
   AGENDA_JOB_STATES,
   type AgendaCollectionStorage,

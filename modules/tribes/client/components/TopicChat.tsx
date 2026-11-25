@@ -4,7 +4,7 @@ import type { Event } from 'nostr-tools';
 import { Button } from '@trustroots/ui/Button';
 import { Input } from '@trustroots/ui/Input';
 import { useTranslation } from 'react-i18next';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import type { UserProfile } from '@/modules/users/client/types';
 import { MAX_CHAT_LENGTH, type ChatRoom } from '../../shared/circle-chat';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';

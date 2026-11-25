@@ -1,6 +1,6 @@
 # Module HTTP client
 
-Module API wrappers import `modules/core/client/api/http-client.js`. The client
+Module API wrappers import `@trustroots/core/http-client`. The client
 uses a 120-second request timeout. This is a conservative limit for stalled
 requests; it is not based on measured production latency. Introducing the
 shared client originally added a 15-second limit where Axios previously had no

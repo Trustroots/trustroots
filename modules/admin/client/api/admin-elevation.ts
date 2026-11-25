@@ -1,5 +1,5 @@
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import axios, { getErrorResponse } from '../../../core/client/api/http-client';
+import axios, { getErrorResponse } from '@trustroots/core/http-client';
 
 export const ADMIN_ELEVATION_REQUIRED = 'ADMIN_ELEVATION_REQUIRED';
 
