@@ -129,6 +129,7 @@ internal fun PilotInput(
     enabled: Boolean,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
+    minLines: Int = 1,
     onChange: (String) -> Unit,
 ) {
     val palette = pilotPalette
@@ -146,7 +147,8 @@ internal fun PilotInput(
             textStyle = TextStyle(color = palette.ink, fontSize = 16.sp, lineHeight = 22.sp),
             keyboardOptions = keyboardOptions,
             singleLine = singleLine,
-            maxLines = if (singleLine) 1 else 4,
+            minLines = minLines,
+            maxLines = if (singleLine) 1 else maxOf(minLines, 4),
             visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Password) {
                 PasswordVisualTransformation()
             } else {

@@ -21,6 +21,14 @@ MEMBER = {
     "description": "A fictional profile for simulator testing.",
     "locationLiving": "Example Bay",
 }
+PROFILE_EDITOR_UPDATE = {
+    "displayName": MEMBER["displayName"],
+    "tagline": "A test profile updated",
+    "description": MEMBER["description"] + "\nA second line for the profile fixture.",
+    "locationLiving": MEMBER["locationLiving"],
+    "locationFrom": "",
+    "languages": [],
+}
 PARTNER = {
     "_id": "member-pilot-partner",
     "username": "pilot-partner",
@@ -84,6 +92,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     nostr_challenge = None
     hosting_offer = None
     memberships = {CIRCLES[1]["_id"]}
+    profile_changes = {}
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -124,10 +133,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 drop_profile_response = fixture.drop_profile_response
                 refresh_count = fixture.refresh_count
                 linked_npub = fixture.linked_npub
+                profile_changes = fixture.profile_changes
             if drop_profile_response:
                 self.close_connection = True
                 return
-            profile = {**MEMBER, "nostrNpub": linked_npub}
+            profile = {**MEMBER, **profile_changes, "nostrNpub": linked_npub}
             if refresh_count:
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
             self._json(200, {"profile": profile})
@@ -248,6 +258,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
+                fixture.profile_changes = {}
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -345,6 +356,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(404, {"message": "Fixture route not found."})
             return
         body = self._body()
+        if "displayName" in body:
+            if body != PROFILE_EDITOR_UPDATE:
+                self._json(422, {"message": "Expected the fixture profile edits and its existing preferences."})
+                return
+            fixture = type(self)
+            with fixture.session_lock:
+                fixture.profile_changes = body
+                linked_npub = fixture.linked_npub
+            self._json(200, {**MEMBER, **body, "nostrNpub": linked_npub})
+            return
         npub = body.get("nostrNpub")
         if npub != "":
             pending = type(self).nostr_challenge

@@ -74,6 +74,73 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Sign in"].exists)
     }
 
+    func testRegularProfileEditorSavesComposeText() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let profile = app.descendants(matching: .any)["profile-menu-entry"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
+        profile.tap()
+        let edit = app.buttons["Edit profile"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 10), app.debugDescription)
+        edit.tap()
+
+        let name = app.descendants(matching: .any)["profile-editor-name"]
+        let nameLoaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Mira Example"), object: name)
+        XCTAssertEqual(XCTWaiter.wait(for: [nameLoaded], timeout: 10), .completed, app.debugDescription)
+
+        let languages = app.descendants(matching: .any)["profile-editor-languages"]
+        XCTAssertTrue(languages.exists, app.debugDescription)
+        reveal(languages, in: app)
+        languages.tap()
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Done"].tap()
+
+        let tagline = app.descendants(matching: .any)["profile-editor-tagline"]
+        let biography = app.descendants(matching: .any)["profile-editor-biography"]
+        appendProfileText(" updated", to: tagline, in: app, expected: "A test profile updated")
+        appendProfileText(
+            "\nA second line for the profile fixture.",
+            to: biography,
+            in: app,
+            expected: "A fictional profile for simulator testing.\nA second line for the profile fixture."
+        )
+
+        let screenshot = XCTAttachment(screenshot: biography.screenshot())
+        screenshot.name = "regular-ios-profile-editor-biography"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let save = app.descendants(matching: .any)["profile-editor-save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(save, in: app)
+        save.tap()
+        XCTAssertTrue(edit.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["A test profile updated"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    private func appendProfileText(_ text: String, to field: XCUIElement, in app: XCUIApplication, expected: String) {
+        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(field, in: app)
+        // Place the insertion point after the existing text. For multiline Compose
+        // fields, tap below the first line so focus leaves any previous input.
+        let insertion = field.coordinate(withNormalizedOffset: CGVector(dx: 0.86, dy: 0.75))
+        insertion.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 2) { insertion.tap() }
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+        app.typeText(text)
+        let edited = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", expected), object: field)
+        XCTAssertEqual(XCTWaiter.wait(for: [edited], timeout: 10), .completed, app.debugDescription)
+    }
+
     func testRegularProfileShowsMeetingAvailabilityWhenNotHosting() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
