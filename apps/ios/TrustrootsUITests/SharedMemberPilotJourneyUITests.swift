@@ -192,7 +192,25 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(try JSONDecoder().decode(InboxReadState.self, from: data).read)
 
         row.tap()
-        XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelled: "Hello from the test fixture.", in: app).waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelled: "I left the lantern by the door.", in: app).exists)
+        let history = app.descendants(matching: .any)["conversation-history"]
+        XCTAssertTrue(history.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: history.screenshot())
+        screenshot.name = "regular-ios-conversation-history"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let reply = "Thanks for the lantern."
+        let draft = app.descendants(matching: .any)["conversation-reply"]
+        enterText(reply, into: draft, in: app)
+        let send = app.buttons["Send message"]
+        send.tap()
+        XCTAssertTrue(app.staticTexts["Temporary fixture delivery failure."].waitForExistence(timeout: 10))
+        XCTAssertEqual(draft.value as? String, reply)
+        send.tap()
+        XCTAssertTrue(element(labelled: reply, in: app).waitForExistence(timeout: 15), app.debugDescription)
+
         app.navigationBars.buttons["Back"].tap()
         XCTAssertTrue(filter.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertEqual(filter.value as? String, "lantern")

@@ -245,6 +245,8 @@ struct ConversationView: View {
     @State private var errorMessage: String?
     @State private var draft = ""
     @State private var isSending = false
+    @State private var sendError: String?
+    @State private var historyScrollRequest: Int32 = 0
     @State private var conversationExperience: ConversationExperience?
     @State private var hasCheckedExperience = false
     @State private var showingExperienceForm = false
@@ -262,49 +264,26 @@ struct ConversationView: View {
                 } actions: {
                     Button("Try again") { Task { await loadConversation() } }
                 }
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            if isLoading && messages.isEmpty {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("Loading conversation…")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.top, 16)
-                            }
-                            ForEach(messages.reversed()) { message in
-                                Text(message.displayText)
-                                    .padding(12)
-                                    .foregroundStyle(.primary)
-                                    .background(message.isFrom(username: session.member?.username) ? TrustrootsPalette.green.opacity(0.16) : Color.secondary.opacity(0.12))
-                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                    .frame(maxWidth: .infinity, alignment: message.isFrom(username: session.member?.username) ? .trailing : .leading)
-                            }
-                            Color.clear
-                                .frame(height: 1)
-                                .id("conversation-bottom")
-                        }
-                        .padding()
-                    }
-                    .onChange(of: messages.count) { _, _ in
-                        withAnimation(.easeOut(duration: 0.22)) {
-                            proxy.scrollTo("conversation-bottom", anchor: .bottom)
-                        }
-                    }
-                    .onChange(of: isDraftFocused) { _, focused in
-                        guard focused else { return }
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(220))
-                            withAnimation(.easeOut(duration: 0.22)) {
-                                proxy.scrollTo("conversation-bottom", anchor: .bottom)
-                            }
-                        }
-                    }
+            } else if isLoading && messages.isEmpty {
+                VStack {
+                    ProgressView("Loading conversation…")
+                        .font(.subheadline)
+                        .padding(.top, 16)
+                    Spacer()
                 }
+                .frame(maxWidth: .infinity)
+            } else {
+                ComposeConversationHistory(
+                    messages: messages.map { message in
+                        PilotMessage(
+                            id: message.id,
+                            author: MemberIdentityText(member: message.userFrom).primary,
+                            content: message.displayText,
+                            outgoing: message.isFrom(username: session.member?.username)
+                        )
+                    },
+                    scrollRequest: historyScrollRequest
+                )
             }
         }
         .navigationTitle("")
@@ -364,9 +343,19 @@ struct ConversationView: View {
                     }
                 }
 
+                if let sendError {
+                    Text(sendError)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+
                 HStack(alignment: .bottom, spacing: 10) {
                     TextField("Write a message", text: $draft, axis: .vertical)
                         .lineLimit(1...8)
+                        .accessibilityIdentifier("conversation-reply")
                         .textInputAutocapitalization(.sentences)
                         .focused($isDraftFocused)
                         .padding(10)
@@ -399,6 +388,12 @@ struct ConversationView: View {
         }
         .task {
             await loadConversation()
+        }
+        .task(id: isDraftFocused) {
+            guard isDraftFocused else { return }
+            try? await Task.sleep(for: .milliseconds(220))
+            guard !Task.isCancelled else { return }
+            historyScrollRequest &+= 1
         }
         .sheet(isPresented: $showingExperienceForm) {
             if let memberID = otherMember.id {
@@ -454,7 +449,7 @@ struct ConversationView: View {
         guard !content.isEmpty, let id = otherMember.id, !isSending else { return }
 
         isSending = true
-        errorMessage = nil
+        sendError = nil
         defer { isSending = false }
 
         do {
@@ -463,14 +458,34 @@ struct ConversationView: View {
                 memberID: id,
                 content: content
             )
+            messages.removeAll { $0.id == sentMessage.id }
             messages.insert(sentMessage, at: 0)
             draft = ""
             isDraftFocused = false
             try? await Task.sleep(for: .milliseconds(60))
             isDraftFocused = true
         } catch {
-            errorMessage = error.localizedDescription
+            sendError = error.localizedDescription
         }
+    }
+}
+
+@MainActor
+private struct ComposeConversationHistory: UIViewControllerRepresentable {
+    let messages: [PilotMessage]
+    let scrollRequest: Int32
+
+    func makeCoordinator() -> MemberConversationHistoryState {
+        MemberConversationHistoryState()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        context.coordinator.update(messages: messages, scrollRequest: scrollRequest)
+        return MainViewControllerKt.MemberConversationHistoryViewController(state: context.coordinator)
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        context.coordinator.update(messages: messages, scrollRequest: scrollRequest)
     }
 }
 

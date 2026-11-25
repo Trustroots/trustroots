@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -188,28 +190,7 @@ internal fun Conversation(
                 else -> {
                     val messages = loaded.getOrThrow()
                     if (messages.isEmpty()) PilotText("No messages yet.")
-                    LazyColumn(
-                        state = list,
-                        modifier = Modifier.fillMaxSize(),
-                        reverseLayout = true,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(messages, key = { it.id }) { message ->
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = if (message.outgoing) Alignment.End else Alignment.Start,
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .background(pilotPalette.surface, RoundedCornerShape(12.dp))
-                                        .padding(12.dp),
-                                ) {
-                                    PilotText(if (message.outgoing) "You" else message.author, strong = true)
-                                    PilotText(message.content)
-                                }
-                            }
-                        }
-                    }
+                    ConversationHistory(messages, list)
                 }
             }
         }
@@ -245,6 +226,37 @@ internal fun Conversation(
                         endAction()
                         if (sent.isSuccess) list.scrollToItem(0)
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ConversationHistory(
+    messages: List<PilotMessage>,
+    listState: LazyListState,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+) {
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize().testTag("conversation-history"),
+        reverseLayout = true,
+        contentPadding = contentPadding,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(messages, key = { it.id }) { message ->
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = if (message.outgoing) Alignment.End else Alignment.Start,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(pilotPalette.surface, RoundedCornerShape(12.dp))
+                        .padding(12.dp),
+                ) {
+                    PilotText(if (message.outgoing) "You" else message.author, strong = true)
+                    PilotText(message.content)
                 }
             }
         }

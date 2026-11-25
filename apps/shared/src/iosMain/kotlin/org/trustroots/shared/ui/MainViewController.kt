@@ -2,13 +2,16 @@ package org.trustroots.shared.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +102,30 @@ fun MemberInboxViewController(
         key(thread.memberId, thread.name) {
             HostedMemberAvatar { createAvatar(thread) }
         }
+    }
+}
+
+class MemberConversationHistoryState {
+    internal var messages by mutableStateOf(emptyList<PilotMessage>())
+        private set
+    internal var scrollRequest by mutableStateOf(0)
+        private set
+
+    fun update(messages: List<PilotMessage>, scrollRequest: Int) {
+        this.messages = messages
+        this.scrollRequest = scrollRequest
+    }
+}
+
+fun MemberConversationHistoryViewController(
+    state: MemberConversationHistoryState,
+) = ComposeUIViewController {
+    val messages = state.messages
+    val newestId = messages.firstOrNull()?.id
+    val listState = rememberLazyListState()
+    ConversationHistory(messages, listState, contentPadding = PaddingValues(16.dp))
+    LaunchedEffect(newestId, state.scrollRequest) {
+        if (newestId != null) listState.scrollToItem(0)
     }
 }
 
