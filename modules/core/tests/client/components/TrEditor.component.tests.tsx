@@ -1,281 +1,314 @@
-import type { Mock, MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react';
+import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 
-type EditorEventName = 'editableInput';
-type EditorHandler = (...args: unknown[]) => void;
-type EditorFixture = {
-  subscribe: Mock<(...args: [EditorEventName, EditorHandler]) => void>;
-  unsubscribe: Mock<(...args: [EditorEventName, EditorHandler]) => void>;
-  trigger: (eventName: EditorEventName, ...args: unknown[]) => void;
-  onChange: (value: string) => void;
-  setContent: Mock<(...args: [string]) => void>;
-  destroy: Mock<(...args: []) => void>;
-  readonly text: string;
-};
-
-const mediumEditors: EditorFixture[] = [];
 type TrEditorProps = React.ComponentProps<typeof TrEditor>;
+
+const execCommand = vi.fn<(...args: [string, boolean?, string?]) => boolean>();
+const queryCommandValue = vi.fn<(command: string) => string>();
 
 function onChangeMock(): MockedFunction<TrEditorProps['onChange']> {
   return vi.fn();
 }
 
-function onSubmitShortcutMock(): MockedFunction<
-  NonNullable<TrEditorProps['onSubmitShortcut']>
-> {
-  return vi.fn();
+/** Highlight the first `length` characters of an element. */
+function select(element: Element, length: number) {
+  const range = document.createRange();
+  range.setStart(element.firstChild!, 0);
+  range.setEnd(element.firstChild!, length);
+  document.getSelection()!.removeAllRanges();
+  document.getSelection()!.addRange(range);
+  fireEvent(document, new Event('selectionchange'));
 }
 
-vi.mock('medium-editor', () => {
-  const MediumEditor = vi.fn().mockImplementation(function (
-    element: HTMLElement,
-  ) {
-    const subscribers: Partial<Record<EditorEventName, EditorHandler>> = {};
-    const medium: EditorFixture = {
-      subscribe: vi.fn((eventName: EditorEventName, handler: EditorHandler) => {
-        subscribers[eventName] = handler;
-      }),
-      unsubscribe: vi.fn(
-        (eventName: EditorEventName, handler: EditorHandler) => {
-          if (subscribers[eventName] === handler) delete subscribers[eventName];
-        },
-      ),
-      trigger(eventName: EditorEventName, ...args: unknown[]) {
-        subscribers[eventName]?.(...args);
-      },
-      onChange(value: string) {
-        element.innerHTML = value;
-        medium.trigger('editableInput', new Event('input'), element);
-      },
-      setContent: vi.fn((value: string) => medium.onChange(value)),
-      destroy: vi.fn(),
-      get text() {
-        return element.innerHTML;
-      },
-    };
-    mediumEditors.push(medium);
-    return medium;
-  });
-  return { default: MediumEditor };
-});
+function typeInto(editor: Element, html: string) {
+  editor.innerHTML = html;
+  fireEvent.input(editor);
+}
 
 describe('<TrEditor />', () => {
   beforeEach(() => {
-    mediumEditors.length = 0;
+    execCommand.mockReset();
+    queryCommandValue.mockReset().mockReturnValue('p');
+    Object.assign(document, { execCommand, queryCommandValue });
+    Range.prototype.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 50, y: 100, width: 40, height: 20 });
   });
 
-  it('forwards onChange text without trailing <br></p>', () => {
+  it('forwards input without a trailing <br></p>', () => {
     const onChange = onChangeMock();
+    render(<TrEditor id="bio" onChange={onChange} text="" />);
+    const editor = screen.getByRole('textbox');
+
+    typeInto(editor, '<p>Hello<br></p>');
+    expect(onChange).toHaveBeenLastCalledWith('<p>Hello</p>');
+    typeInto(editor, '<p>Hello<br>there</p>');
+    expect(onChange).toHaveBeenLastCalledWith('<p>Hello<br>there</p>');
+    expect(execCommand).not.toHaveBeenCalled();
+  });
+
+  it('wraps bare text typed into the editor in a paragraph', () => {
+    render(<TrEditor id="bio" onChange={onChangeMock()} text="" />);
+
+    typeInto(screen.getByRole('textbox'), 'Hello');
+
+    expect(execCommand).toHaveBeenCalledExactlyOnceWith(
+      'formatBlock',
+      false,
+      'p',
+    );
+  });
+
+  it('handles Command+Enter and Ctrl+Enter as submit shortcuts', () => {
+    const onSubmitShortcut = vi.fn();
     render(
       <TrEditor
-        id="bio"
-        onChange={onChange}
-        onSubmitShortcut={onSubmitShortcutMock()}
-        text="initial"
-      />,
-    );
-
-    const editor = mediumEditors[0];
-    editor.onChange('<p>hello<br></p>');
-
-    expect(onChange).toHaveBeenCalledWith('<p>hello</p>');
-  });
-
-  it('handles Ctrl+Enter outside composition, even without a legacy key code', () => {
-    const onSubmitShortcut = onSubmitShortcutMock();
-    const { container, unmount } = render(
-      <TrEditor
-        id="bio"
+        id="editor"
+        text="Fictional message"
         onChange={onChangeMock()}
         onSubmitShortcut={onSubmitShortcut}
-        text="initial"
       />,
     );
+    const editor = screen.getByRole('textbox');
 
-    const editable = container.querySelector('.tr-editor')!;
-    fireEvent.keyDown(editable, { key: 'Enter' });
-    fireEvent.keyDown(editable, { key: 'm', ctrlKey: true, keyCode: 77 });
-    fireEvent.keyDown(editable, {
-      key: 'Enter',
-      ctrlKey: true,
-      isComposing: true,
-    });
+    for (const keys of [
+      { key: 'Enter' },
+      { key: 'm', ctrlKey: true },
+      { key: 'Enter', metaKey: true, isComposing: true },
+      { key: 'Enter', metaKey: true, shiftKey: true },
+      { key: 'Enter', ctrlKey: true, altKey: true },
+    ]) {
+      expect(fireEvent.keyDown(editor, keys)).toBe(true);
+    }
+    expect(
+      fireEvent.keyDown(editor, { key: 'Enter', metaKey: true, repeat: true }),
+    ).toBe(false);
     expect(onSubmitShortcut).not.toHaveBeenCalled();
 
-    const shortcut = {
-      key: 'Enter',
-      ctrlKey: true,
-      keyCode: 0,
-    };
-    fireEvent.keyDown(editable, shortcut);
-
-    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
-    unmount();
-    fireEvent.keyDown(editable, shortcut);
-    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
-    expect(mediumEditors[0].destroy).toHaveBeenCalledTimes(1);
+    expect(fireEvent.keyDown(editor, { key: 'Enter', metaKey: true })).toBe(
+      false,
+    );
+    expect(fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true })).toBe(
+      false,
+    );
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(2);
+    expect(onSubmitShortcut.mock.calls[0][0]).toBeInstanceOf(KeyboardEvent);
   });
 
-  it('forwards non-normalized content unchanged', () => {
-    const onChange = onChangeMock();
-    render(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onSubmitShortcut={onSubmitShortcutMock()}
-        text="initial"
-      />,
-    );
-
-    const editor = mediumEditors[0];
-    editor.onChange('<p>Hello</p>');
-
-    expect(onChange).toHaveBeenCalledWith('<p>Hello</p>');
-  });
-
-  it('does not re-render the editor for its own input but accepts external text', async () => {
-    const onChange = onChangeMock();
-    const onSubmitShortcut = onSubmitShortcutMock();
-    const { rerender } = render(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onSubmitShortcut={onSubmitShortcut}
-        text="initial"
-      />,
-    );
-
-    const editor = mediumEditors[0];
-    editor.onChange('<p>initial edit</p>');
-    rerender(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onSubmitShortcut={onSubmitShortcut}
-        text="<p>initial edit</p>"
-      />,
-    );
-
-    expect(mediumEditors).toHaveLength(1);
-
-    rerender(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onSubmitShortcut={onSubmitShortcut}
-        text=""
-      />,
-    );
-
-    await waitFor(() => expect(editor.text).toBe(''));
-    expect(mediumEditors).toHaveLength(1);
-    expect(editor.setContent).toHaveBeenCalledWith('');
-    expect(onChange).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps current callbacks and placeholder without recreating the editor', () => {
-    const firstChange = onChangeMock();
-    const latestChange = onChangeMock();
-    const firstEnter = onSubmitShortcutMock();
-    const latestEnter = onSubmitShortcutMock();
-    const { rerender, container } = render(
-      <TrEditor
-        id="bio"
-        text="initial"
-        onChange={firstChange}
-        onSubmitShortcut={firstEnter}
-      />,
-    );
-    const editor = mediumEditors[0];
-    rerender(
-      <TrEditor
-        id="bio"
-        text="initial"
-        onChange={latestChange}
-        onSubmitShortcut={latestEnter}
-        placeholder="Updated placeholder"
-      />,
-    );
-    editor.onChange('<p>Edited text</p>');
-    fireEvent.keyDown(container.querySelector('.tr-editor')!, {
-      key: 'Enter',
-      ctrlKey: true,
-    });
-    expect(mediumEditors).toHaveLength(1);
-    expect(firstChange).not.toHaveBeenCalled();
-    expect(firstEnter).not.toHaveBeenCalled();
-    expect(latestChange).toHaveBeenCalledWith('<p>Edited text</p>');
-    expect(latestEnter).toHaveBeenCalledTimes(1);
-    expect(container.querySelector('.tr-editor')).toHaveAttribute(
-      'data-placeholder',
-      'Updated placeholder',
-    );
-  });
-
-  it('resets to its original text without reporting external changes as input', () => {
-    const onChange = onChangeMock();
-    const { rerender, container } = render(
-      <TrEditor id="bio" text="<p>Original</p>" onChange={onChange} />,
-    );
-    expect(container.querySelector('.tr-editor')!.innerHTML).toBe(
-      '<p>Original</p>',
-    );
-    const editor = mediumEditors[0];
-    editor.onChange('<p>Edited</p>');
-    rerender(<TrEditor id="bio" text="<p>Edited</p>" onChange={onChange} />);
-    expect(editor.setContent).not.toHaveBeenCalled();
-    rerender(<TrEditor id="bio" text="<p>Original</p>" onChange={onChange} />);
-    expect(editor.text).toBe('<p>Original</p>');
-    expect(onChange).toHaveBeenCalledTimes(1);
-  });
-
-  it('uses translated default placeholder text when none is provided', () => {
-    const { container } = render(
-      <TrEditor
-        id="bio"
-        onChange={onChangeMock()}
-        onSubmitShortcut={onSubmitShortcutMock()}
-        text="initial"
-      />,
-    );
-
-    expect(container.querySelector('.tr-editor')).toHaveAttribute(
-      'data-placeholder',
-      'Type your text',
-    );
-  });
-
-  it('passes through a custom placeholder', () => {
-    const { container } = render(
-      <TrEditor
-        id="bio"
-        onChange={onChangeMock()}
-        onSubmitShortcut={onSubmitShortcutMock()}
-        placeholder="Write a careful reply"
-        text="initial"
-      />,
-    );
-
-    expect(container.querySelector('.tr-editor')).toHaveAttribute(
-      'data-placeholder',
-      'Write a careful reply',
-    );
-  });
-
-  it('preserves Ctrl+Enter when there is no submit callback', () => {
-    const { container } = render(
-      <TrEditor id="bio" onChange={onChangeMock()} text="initial" />,
-    );
+  it('leaves Enter combinations alone when there is no submit callback', () => {
+    render(<TrEditor id="editor" text="" onChange={onChangeMock()} />);
 
     expect(
-      fireEvent.keyDown(container.querySelector('.tr-editor')!, {
+      fireEvent.keyDown(screen.getByRole('textbox'), {
         key: 'Enter',
-        ctrlKey: true,
+        metaKey: true,
       }),
     ).toBe(true);
+  });
+
+  it('uses the latest callbacks and placeholder', () => {
+    const first = { onChange: onChangeMock(), onSubmitShortcut: vi.fn() };
+    const latest = { onChange: onChangeMock(), onSubmitShortcut: vi.fn() };
+    const { rerender } = render(<TrEditor id="bio" text="" {...first} />);
+    const editor = screen.getByRole('textbox');
+    expect(editor).toHaveAttribute('data-placeholder', 'Type your text');
+
+    rerender(
+      <TrEditor
+        id="bio"
+        text=""
+        placeholder="Write a careful reply"
+        {...latest}
+      />,
+    );
+    typeInto(editor, '<p>Edited text</p>');
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+
+    expect(first.onChange).not.toHaveBeenCalled();
+    expect(first.onSubmitShortcut).not.toHaveBeenCalled();
+    expect(latest.onChange).toHaveBeenCalledWith('<p>Edited text</p>');
+    expect(latest.onSubmitShortcut).toHaveBeenCalledTimes(1);
+    expect(editor).toHaveAttribute('data-placeholder', 'Write a careful reply');
+  });
+
+  it('applies the formatting policy to initial and externally replaced content', () => {
+    const onChange = onChangeMock();
+    const { rerender } = render(
+      <TrEditor
+        id="formatted-editor"
+        text={'<p onclick="alert(1)">Initial<img src="/missing"></p>'}
+        onChange={onChange}
+      />,
+    );
+    const editor = screen.getByRole('textbox');
+    expect(editor.innerHTML).toBe('<p>Initial</p>');
+    rerender(
+      <TrEditor
+        id="formatted-editor"
+        text={'<p><b>Replacement</b><a href="javascript:alert(1)">Link</a></p>'}
+        onChange={onChange}
+      />,
+    );
+    expect(editor.innerHTML).toBe('<p><b>Replacement</b><a>Link</a></p>');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['', ''],
+    ['initial', ''],
+    ['initial', 'initial'],
+    ['initial', '<p>Replacement note</p>'],
+  ] as Array<[string, string]>)(
+    'applies external text after typing (%o → %o)',
+    (initial, replacement) => {
+      const onChange = onChangeMock();
+      const { rerender } = render(
+        <TrEditor id="editor" text={initial} onChange={onChange} />,
+      );
+      const editor = screen.getByRole('textbox');
+      const typedText = '<p>Fictional note</p>';
+
+      typeInto(editor, typedText);
+      expect(onChange).toHaveBeenLastCalledWith(typedText);
+      editor.innerHTML = '<p>Fictional note, still typing</p>';
+      rerender(<TrEditor id="editor" text={typedText} onChange={onChange} />);
+      // Its own input echoed back must not reset the editor.
+      expect(editor.innerHTML).toBe('<p>Fictional note, still typing</p>');
+
+      rerender(<TrEditor id="editor" text={replacement} onChange={onChange} />);
+      expect(editor.innerHTML).toBe(replacement);
+      expect(onChange).toHaveBeenCalledTimes(1);
+
+      typeInto(editor, '<p>Another fictional note</p>');
+      rerender(
+        <TrEditor
+          id="editor"
+          text="<p>Another fictional note</p>"
+          onChange={onChange}
+        />,
+      );
+      rerender(<TrEditor id="editor" text="" onChange={onChange} />);
+      expect(editor).toBeEmptyDOMElement();
+      expect(onChange).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('offers formatting tools above highlighted text, without a link tool', () => {
+    render(
+      <>
+        <TrEditor
+          id="editor"
+          text="<p>Fictional note</p>"
+          onChange={onChangeMock()}
+        />
+        <p>Elsewhere</p>
+      </>,
+    );
+    const editor = screen.getByRole('textbox');
+    expect(screen.queryByRole('toolbar')).toBeNull();
+
+    select(editor.querySelector('p')!, 0);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    select(screen.getByText('Elsewhere'), 1);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    select(editor.querySelector('p')!, 1);
+    const toolbar = screen.getByRole('toolbar', { name: 'Formatting' });
+    expect(toolbar).toHaveStyle({ top: '92px', left: '70px' });
+    const buttons = Array.from(toolbar.querySelectorAll('button'));
+    expect(buttons.map(button => button.getAttribute('aria-label'))).toEqual([
+      'Bold',
+      'Italic',
+      'Underline',
+      'Quote',
+      'List',
+    ]);
+
+    // Pressing a tool keeps the selection in the editor.
+    expect(fireEvent.mouseDown(buttons[0])).toBe(false);
+    for (const button of buttons) fireEvent.click(button);
+    expect(execCommand.mock.calls).toEqual([
+      ['bold'],
+      ['italic'],
+      ['underline'],
+      ['formatBlock', false, 'blockquote'],
+      ['insertUnorderedList'],
+    ]);
+
+    queryCommandValue.mockReturnValue('blockquote');
+    fireEvent.click(buttons[3]);
+    expect(queryCommandValue).toHaveBeenCalledWith('formatBlock');
+    expect(execCommand).toHaveBeenLastCalledWith('formatBlock', false, 'p');
+
+    select(editor.querySelector('p')!, 0);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('shows the placeholder only while the editor has no text', () => {
+    const { rerender } = render(
+      <TrEditor
+        id="editor"
+        text="<p>Fictional note</p>"
+        onChange={onChangeMock()}
+      />,
+    );
+    const editor = screen.getByRole('textbox');
+    const placeholderShown = () =>
+      editor.className.includes('tw:before:content-[attr(data-placeholder)]');
+    expect(placeholderShown()).toBe(false);
+
+    typeInto(editor, '<p><br></p>');
+    expect(placeholderShown()).toBe(true);
+    typeInto(editor, '<p>Typed</p>');
+    expect(placeholderShown()).toBe(false);
+    rerender(<TrEditor id="editor" text="" onChange={onChangeMock()} />);
+    expect(placeholderShown()).toBe(true);
+  });
+
+  it('moves lists out of the paragraph they replaced and keeps the selection', () => {
+    const onChange = onChangeMock();
+    render(<TrEditor id="editor" text="" onChange={onChange} />);
+    const editor = screen.getByRole('textbox');
+    // Browsers build this nesting; the HTML parser would not.
+    editor.innerHTML = '<ul><li>First</li><li>Second</li></ul><p>After</p>';
+    const paragraph = document.createElement('p');
+    editor.prepend(paragraph);
+    paragraph.append(editor.querySelector('ul')!);
+    const [first, second] = Array.from(editor.querySelectorAll('li'));
+    document
+      .getSelection()!
+      .setBaseAndExtent(first.firstChild!, 1, second.firstChild!, 2);
+
+    fireEvent.input(editor);
+
+    const html = '<ul><li>First</li><li>Second</li></ul><p>After</p>';
+    expect(editor.innerHTML).toBe(html);
+    expect(onChange).toHaveBeenCalledWith(html);
+    expect(String(document.getSelection())).toBe('irstSe');
+  });
+
+  it('applies the formatting policy to pasted HTML and leaves plain text alone', () => {
+    render(<TrEditor id="editor" text="" onChange={onChangeMock()} />);
+    const editor = screen.getByRole('textbox');
+    const paste = (data: Record<string, string>) => {
+      const event = createEvent.paste(editor, {
+        clipboardData: { getData: (type: string) => data[type] ?? '' },
+      });
+      fireEvent(editor, event);
+      return event.defaultPrevented;
+    };
+
+    expect(paste({ 'text/plain': 'Plain note' })).toBe(false);
+    expect(execCommand).not.toHaveBeenCalled();
+    expect(
+      paste({ 'text/html': '<div style="color:red"><b>Pasted</b> note</div>' }),
+    ).toBe(true);
+    expect(execCommand).toHaveBeenCalledExactlyOnceWith(
+      'insertHTML',
+      false,
+      '<b>Pasted</b> note',
+    );
   });
 });

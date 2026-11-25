@@ -2,6 +2,7 @@
 
 import {
   annotateFeature,
+  captureSection,
   expectPresent,
   expect,
   test,
@@ -277,7 +278,19 @@ test.describe.serial('message action feature coverage', () => {
     const editor = page.locator('#message-reply-content');
     await expect(editor).toBeVisible();
     await editor.click();
+    await page.keyboard.insertText('Fictional greeting');
+    await page.keyboard.press('Enter');
     await page.keyboard.insertText(replyText);
+    await page.keyboard.press('ControlOrMeta+a');
+
+    const toolbar = page.getByRole('toolbar', { name: 'Formatting' });
+    await captureSection(editor, 'message-reply-editor-selection');
+    await captureSection(toolbar, 'message-reply-format-toolbar');
+    await toolbar.getByRole('button', { name: 'Bold' }).click();
+    await expect(editor.locator('b')).toHaveText([
+      'Fictional greeting',
+      replyText,
+    ]);
 
     const sendReply = page.waitForResponse(
       response =>
@@ -286,9 +299,16 @@ test.describe.serial('message action feature coverage', () => {
         response.ok(),
     );
     await page.locator('#messageReplySubmit').click();
-    await sendReply;
+    const sent = (await sendReply).request().postDataJSON() as {
+      content: string;
+    };
+    expect(sent.content).toBe(
+      `<p><b>Fictional greeting</b></p><p><b>${replyText}</b></p>`,
+    );
 
-    await expect(page.getByText(replyText)).toBeVisible();
+    await expect(
+      page.locator('.message-main b', { hasText: replyText }),
+    ).toBeVisible();
   });
 
   for (const shortcut of ['Control+Enter', 'Meta+Enter']) {
