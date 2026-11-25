@@ -1,6 +1,6 @@
 // External dependencies
 import React from 'react';
-import { getAdminUserHref } from '../utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import { useAuth } from '@trustroots/core/auth';
 
 interface UserSummary {

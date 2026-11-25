@@ -1,7 +1,7 @@
 import MemberFlag from './MemberFlag.component';
 // External dependencies
 import { formatRoleLabel } from '../utils/role-label';
-import { getAdminUserHref } from '../utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,

@@ -8,7 +8,7 @@ import React, {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
-import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import { useTranslation } from 'react-i18next';
 
 import AboutMe from './AboutMe.component';
