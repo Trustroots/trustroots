@@ -301,6 +301,9 @@ test.describe('admin acquisition feature coverage', () => {
 
       const page = await context.newPage();
       await page.goto('/admin/acquisition-stories');
+      await page
+        .getByRole('combobox', { name: 'Profile visibility' })
+        .selectOption('all');
       const pendingRow = page.locator('tbody tr').filter({
         has: page.locator(`a[href="/profile/${member.username}"]`),
       });
@@ -395,10 +398,12 @@ test.describe('admin acquisition feature coverage', () => {
     }
   });
 
-  test('admin can filter acquisition stories to unassigned members', async ({
+  test('acquisition stories default to visible unassigned members', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'The default filters show visible, unassigned members.',
+      'Shadowbanned members appear as Hidden even with public profiles.',
       'Unassigned only hides assigned members and restores them when cleared.',
       'Filtering preserves the selected sort order and handles empty results.',
     ]);
@@ -428,6 +433,13 @@ test.describe('admin acquisition feature coverage', () => {
         public: true,
         created: '2026-01-04T00:00:00.000Z',
       },
+      {
+        _id: '555555555555555555555555',
+        username: 'hill-member',
+        public: true,
+        restrictionStatuses: ['shadowban'],
+        created: '2026-01-05T00:00:00.000Z',
+      },
     ];
     let requests = 0;
     await page.route('**/api/admin/acquisition-stories', async route => {
@@ -449,32 +461,45 @@ test.describe('admin acquisition feature coverage', () => {
       'acquisition-visibility-filter',
     );
     const members = page.locator('tbody tr td:nth-child(2)');
-    await expect(checkbox).not.toBeChecked();
-    await expect(visibility).toHaveValue('all');
+    await expect(checkbox).toBeChecked();
+    await expect(visibility).toHaveValue('visible');
     await expect(
       page.getByText(
-        'Hidden profiles have not activated their signup through email confirmation.',
+        'Hidden profiles include unconfirmed signups and shadowbanned accounts.',
       ),
     ).toBeVisible();
-    await expect(members).toHaveCount(3);
-    await page.getByRole('button', { name: 'Member', exact: true }).click();
-    await checkbox.check();
-    await expect(members).toHaveText(['brook-member', 'river-member']);
-    await visibility.selectOption('visible');
     await expect(members).toHaveText(['river-member']);
+    await page.getByRole('button', { name: 'Member', exact: true }).click();
     await visibility.selectOption('hidden');
-    await expect(members).toHaveText(['brook-member']);
+    await expect(members).toHaveText(['brook-member', /hill-member/]);
+    const shadowbannedRow = page.getByRole('row').filter({
+      has: page.getByRole('link', { name: 'hill-member', exact: true }),
+    });
+    await expect(
+      shadowbannedRow.getByRole('cell', { name: 'Hidden', exact: true }),
+    ).toBeVisible();
+    await expect(shadowbannedRow.getByText('Shadowbanned')).toBeVisible();
     await visibility.selectOption('all');
-    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await expect(members).toHaveText([
+      'brook-member',
+      /hill-member/,
+      'river-member',
+    ]);
     await expect(page.locator('tbody tr')).toContainText([
+      'Unassigned',
       'Unassigned',
       'Unassigned',
     ]);
     await page.getByRole('button', { name: 'Member ▲', exact: true }).click();
-    await expect(members).toHaveText(['river-member', 'brook-member']);
+    await expect(members).toHaveText([
+      'river-member',
+      /hill-member/,
+      'brook-member',
+    ]);
     await checkbox.uncheck();
     await expect(members).toHaveText([
       'river-member',
+      /hill-member/,
       'forest-member',
       'brook-member',
     ]);
@@ -482,8 +507,6 @@ test.describe('admin acquisition feature coverage', () => {
 
     stories = [assigned];
     await page.reload();
-    await expect(members).toHaveCount(1);
-    await checkbox.check();
     await expect(
       page.getByText('No unassigned acquisition stories found.'),
     ).toBeVisible();
@@ -501,6 +524,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Text search combines with the profile visibility filter.',
     ]);
     await page.goto('/admin/acquisition-stories');
+    await page.getByRole('checkbox', { name: 'Unassigned only' }).uncheck();
     await expect(
       page.getByRole('columnheader', { name: 'Email address' }),
     ).toBeVisible();
@@ -545,6 +569,7 @@ test.describe('admin acquisition feature coverage', () => {
 
     await page.goto('/admin/acquisition-stories');
     await expect(page).toHaveURL(/\/admin\/acquisition-stories/);
+    await page.getByRole('checkbox', { name: 'Unassigned only' }).uncheck();
     await expect(
       page.getByRole('link', {
         name: 'Open public profile for Alice Contact',
@@ -700,6 +725,9 @@ test.describe('admin acquisition feature coverage', () => {
       expect(sent.ok(), await sent.text()).toBeTruthy();
 
       await welcomerPage.reload();
+      await welcomerPage
+        .getByRole('checkbox', { name: 'Unassigned only' })
+        .uncheck();
       const contactedRow = welcomerPage
         .locator('tr')
         .filter({ hasText: recipient.username });

@@ -160,13 +160,14 @@ describe('<AdminAcquisitionStories />', () => {
       storyFixture({
         _id: '1',
         username: 'river-member',
+        public: true,
         displayName: 'Fictional Traveller',
         email: 'river+signup@example.test',
         locationLiving: 'Fictional Forest',
         locationFrom: 'Fictional Harbour',
         acquisitionStory: 'Referred by a neighbour',
       }),
-      storyFixture({ _id: '2', username: 'hill-member' }),
+      storyFixture({ _id: '2', username: 'hill-member', public: true }),
     ]);
     render(<AdminAcquisitionStories />);
 
@@ -205,6 +206,7 @@ describe('<AdminAcquisitionStories />', () => {
           _id: '1',
           username: 'river-member',
           email: 'fictional@example.test',
+          public: true,
         }),
       ]);
       render(<AdminAcquisitionStories />);
@@ -252,6 +254,10 @@ describe('<AdminAcquisitionStories />', () => {
         { _id: 'older-id', username: 'older-member' },
       ]);
       render(<AdminAcquisitionStories />);
+      fireEvent.change(
+        screen.getByRole('combobox', { name: 'Profile visibility' }),
+        { target: { value: 'all' } },
+      );
       await screen.findByRole('table');
       for (const username of ['restricted-member', 'matched-member']) {
         expect(screen.getByRole('link', { name: username })).toHaveAttribute(
@@ -267,7 +273,7 @@ describe('<AdminAcquisitionStories />', () => {
         'danger',
       );
       expect(within(row).getAllByText('Shadowbanned')).toHaveLength(2);
-      expect(within(row).getByText('Visible', { exact: true })).toBeVisible();
+      expect(within(row).getByText('Hidden', { exact: true })).toBeVisible();
       for (const name of ['active-member', 'older-member']) {
         const activeRow = screen.getByRole('link', { name }).closest('tr')!;
         expect(
@@ -282,17 +288,23 @@ describe('<AdminAcquisitionStories />', () => {
     async role => {
       setViewer({ roles: [role] });
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
-        storyFixture({ _id: 'river-id', username: 'river', welcomer: null }),
+        storyFixture({
+          _id: 'river-id',
+          username: 'river',
+          public: true,
+          welcomer: null,
+        }),
         storyFixture({
           _id: 'forest-id',
           username: 'forest',
+          public: true,
           welcomer: {
             _id: 'greeter-id',
             username: 'greeter',
             created: '2026-01-01T00:00:00.000Z',
           },
         }),
-        storyFixture({ _id: 'brook-id', username: 'brook' }),
+        storyFixture({ _id: 'brook-id', username: 'brook', public: true }),
       ]);
 
       render(<AdminAcquisitionStories />);
@@ -305,11 +317,8 @@ describe('<AdminAcquisitionStories />', () => {
           row => row.querySelector('td:nth-child(2)')?.textContent || '',
         );
 
-      expect(checkbox).not.toBeChecked();
-      fireEvent.click(screen.getByRole('button', { name: 'Member' }));
-      expect(memberOrder()).toEqual(['brook', 'forest', 'river']);
-      fireEvent.click(checkbox);
       expect(checkbox).toBeChecked();
+      fireEvent.click(screen.getByRole('button', { name: 'Member' }));
       expect(memberOrder()).toEqual(['brook', 'river']);
       expect(screen.getAllByText('Unassigned', { exact: true })).toHaveLength(
         2,
@@ -329,6 +338,7 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: 'forest-id',
         username: 'forest',
+        public: true,
         welcomer: {
           _id: 'greeter-id',
           username: 'greeter',
@@ -338,11 +348,9 @@ describe('<AdminAcquisitionStories />', () => {
     ]);
 
     render(<AdminAcquisitionStories />);
-    await screen.findByRole('table');
     const checkbox = screen.getByRole('checkbox', { name: 'Unassigned only' });
-    fireEvent.click(checkbox);
     expect(
-      screen.getByText('No unassigned acquisition stories found.'),
+      await screen.findByText('No unassigned acquisition stories found.'),
     ).toBeVisible();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(checkbox).toBeVisible();
@@ -377,25 +385,19 @@ describe('<AdminAcquisitionStories />', () => {
         row => row.querySelector('td:nth-child(2)')?.textContent || '',
       );
 
-    expect(visibility).toHaveValue('all');
-    expect(memberOrder()).toEqual([
-      'visible-member',
-      'hidden-assigned',
-      'hidden-member',
-    ]);
+    expect(visibility).toHaveValue('visible');
+    expect(memberOrder()).toEqual(['visible-member']);
     expect(
       screen.getByText(
-        'Hidden profiles have not activated their signup through email confirmation.',
+        'Hidden profiles include unconfirmed signups and shadowbanned accounts.',
       ),
     ).toBeVisible();
 
-    fireEvent.change(visibility, { target: { value: 'visible' } });
-    expect(memberOrder()).toEqual(['visible-member']);
     fireEvent.change(visibility, { target: { value: 'hidden' } });
-    expect(memberOrder()).toEqual(['hidden-assigned', 'hidden-member']);
+    expect(memberOrder()).toEqual(['hidden-member']);
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
-    expect(memberOrder()).toEqual(['hidden-member']);
+    expect(memberOrder()).toEqual(['hidden-assigned', 'hidden-member']);
     expect(
       mockedAcquisitionStoriesApi.getAcquisitionStories,
     ).toHaveBeenCalledTimes(1);
@@ -416,7 +418,7 @@ describe('<AdminAcquisitionStories />', () => {
     );
 
     expect(
-      screen.getByText('No acquisition stories found.'),
+      screen.getByText('No unassigned acquisition stories found.'),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('combobox', { name: 'Profile visibility' }),
@@ -439,6 +441,7 @@ describe('<AdminAcquisitionStories />', () => {
           _id: 'member-id',
           username: 'river',
           acquisitionStory: 'Friends',
+          public: true,
           restrictedMatches: [
             {
               _id: 'match-id',
@@ -546,11 +549,13 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: '111111111111111111111111',
         acquisitionStory: 'No date story.',
+        public: true,
         username: 'alice',
       },
       {
         _id: '222222222222222222222222',
         acquisitionStory: 'Invalid date story.',
+        public: true,
         created: 'not-a-date',
         hostingLocation: [1],
         username: 'bob',
@@ -571,6 +576,7 @@ describe('<AdminAcquisitionStories />', () => {
         _id: '333333333333333333333333',
         username: 'casey',
         languages: ['spa', 'eng', 'ger', 'fre'],
+        public: true,
       },
     ]);
 
@@ -605,6 +611,7 @@ describe('<AdminAcquisitionStories />', () => {
           _id: '333333333333333333333333',
           username: 'casey',
           languages: ['fre', 'eng'],
+          public: true,
         },
       ]);
 
@@ -624,7 +631,12 @@ describe('<AdminAcquisitionStories />', () => {
     'shows Not specified for recipient languages %j',
     async languages => {
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
-        { _id: '333333333333333333333333', username: 'casey', languages },
+        {
+          _id: '333333333333333333333333',
+          username: 'casey',
+          languages,
+          public: true,
+        },
       ]);
 
       render(<AdminAcquisitionStories />);
@@ -639,6 +651,7 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: '333333333333333333333333',
         username: 'casey',
+        public: true,
         welcomer: {
           _id: '444444444444444444444444',
           username: 'welcomer',
@@ -649,6 +662,7 @@ describe('<AdminAcquisitionStories />', () => {
     ]);
 
     render(<AdminAcquisitionStories />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
 
     expect(
       await screen.findByRole('link', { name: 'welcomer (Welcomer Example)' }),
@@ -668,16 +682,18 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: '333333333333333333333333',
         username: 'contacted',
+        public: true,
         welcomer: {
           _id: '444444444444444444444444',
           username: 'welcomer',
           created: '2026-03-04T05:06:07.000Z',
         },
       },
-      { _id: '555555555555555555555555', username: 'unassigned' },
+      { _id: '555555555555555555555555', username: 'unassigned', public: true },
     ]);
 
     render(<AdminAcquisitionStories />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
 
     const welcomerLink = await screen.findByRole('link', { name: 'welcomer' });
     expect(welcomerLink).toHaveAttribute('href', '/admin/user/welcomer');
@@ -697,6 +713,7 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: '333333333333333333333333',
         username: 'casey',
+        public: true,
       },
     ]);
 
@@ -731,6 +748,10 @@ describe('<AdminAcquisitionStories />', () => {
     );
 
     render(<AdminAcquisitionStories />);
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      { target: { value: 'all' } },
+    );
     await screen.findByRole('table');
 
     const confirmedRow = screen
@@ -789,6 +810,10 @@ describe('<AdminAcquisitionStories />', () => {
     );
 
     render(<AdminAcquisitionStories />);
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      { target: { value: 'hidden' } },
+    );
     const row = (
       await screen.findByRole('link', { name: 'unconfirmed-member' })
     ).closest('tr')!;
@@ -822,6 +847,10 @@ describe('<AdminAcquisitionStories />', () => {
       .mockRejectedValueOnce(new Error('network failure'));
 
     render(<AdminAcquisitionStories />);
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      { target: { value: 'hidden' } },
+    );
     const successRow = (
       await screen.findByRole('link', { name: 'empty-message-member' })
     ).closest('tr')!;
@@ -860,12 +889,17 @@ describe('<AdminAcquisitionStories />', () => {
         circleCount: 0,
         created: '2026-02-01T00:00:00.000Z',
         displayName: 'Bob Example',
-        public: false,
+        public: true,
+        restrictionStatuses: ['shadowban'],
         username: 'bob',
       },
     ]);
 
     render(<AdminAcquisitionStories />);
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      { target: { value: 'all' } },
+    );
     await screen.findByText('Zebra recommendation');
 
     const storyOrder = () =>
@@ -908,16 +942,18 @@ describe('<AdminAcquisitionStories />', () => {
       {
         _id: '111111111111111111111111',
         username: 'contacted',
+        public: true,
         welcomer: {
           _id: '333333333333333333333333',
           username: 'welcome-team',
           created: '2026-01-01T00:00:00.000Z',
         },
       },
-      { _id: '222222222222222222222222', username: 'unassigned' },
+      { _id: '222222222222222222222222', username: 'unassigned', public: true },
     ]);
 
     render(<AdminAcquisitionStories />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
     await screen.findByText('Unassigned');
 
     const memberOrder = () =>
@@ -944,6 +980,10 @@ describe('<AdminAcquisitionStories />', () => {
     ]);
 
     render(<AdminAcquisitionStories />);
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      { target: { value: 'hidden' } },
+    );
     await screen.findByText('A friend recommended it');
 
     const dateHeading = screen.getByRole('button', { name: 'Date ▼' });
