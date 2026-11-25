@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -28,8 +29,8 @@ class ProfileHostingJourneyTest {
     private val saved = AtomicBoolean(false)
     private val hostingMeetingStatus = AtomicReference("yes")
     private val fixture = LocalTransportFixture { request ->
-        val hostingOffer = """{"_id":"offer-one","status":"yes","meetingStatus":"${hostingMeetingStatus.get()}","volunteering":true,"description":"A quiet guest room","maxGuests":1}"""
-        val unavailableOffer = """{"_id":"offer-one","status":"no","meetingStatus":"maybe","volunteering":true,"noOfferDescription":"Away for now","maxGuests":1}"""
+        val hostingOffer = """{"_id":"offer-one","status":"yes","meetingStatus":"${hostingMeetingStatus.get()}","volunteering":true,"description":"A quiet guest room","maxGuests":1,"location":[41.1,-8.5]}"""
+        val unavailableOffer = """{"_id":"offer-one","status":"no","meetingStatus":"maybe","volunteering":true,"noOfferDescription":"Away for now","maxGuests":1,"location":[41.1,-8.5]}"""
         val body = when {
             request.method == "PUT" && request.path == "/api/offers/offer-one" -> {
                 saved.set(true)
@@ -67,7 +68,7 @@ class ProfileHostingJourneyTest {
         captureUsabilityScreenshot(compose, "android_profile_hosting_shortcut")
         compose.onNodeWithText("Edit hosting").assertIsDisplayed().performClick()
         waitForText("Availability")
-        compose.onNodeWithText("No", ignoreCase = true).performClick()
+        compose.onNodeWithTag("hosting-status-no").performClick()
         compose.onNodeWithContentDescription("Cancel").performClick()
         waitForText("Discard changes?")
         compose.onNodeWithText("Discard changes").performClick()
@@ -75,7 +76,7 @@ class ProfileHostingJourneyTest {
         waitForText("Edit hosting")
         compose.onNodeWithText("Edit hosting").performClick()
         waitForText("Availability")
-        compose.onNodeWithText("No", ignoreCase = true).performClick()
+        compose.onNodeWithTag("hosting-status-no").performClick()
         compose.onNodeWithText("Save changes").performClick()
         waitForText("Hosting offer saved.")
         // Exercise system back as well as toolbar cancellation.

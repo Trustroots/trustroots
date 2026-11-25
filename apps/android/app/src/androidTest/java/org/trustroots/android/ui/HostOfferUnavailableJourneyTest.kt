@@ -71,7 +71,7 @@ class HostOfferUnavailableJourneyTest {
                         request.startsWith("GET /api/users/") ->
                             """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}"""
                         request.startsWith("GET /api/offers-by/") ->
-                            """[{"_id":"offer-one","status":"no","noOfferDescription":"Away this month","showOnlyInMyCircles":false}]"""
+                            """[{"_id":"offer-one","status":"no","noOfferDescription":"Away this month","showOnlyInMyCircles":false,"location":[41.1,-8.5]}]"""
                         else ->
                             """{"_id":"offer-one","status":"no","noOfferDescription":"Taking a break","showOnlyInMyCircles":true}"""
                     }
@@ -109,6 +109,9 @@ class HostOfferUnavailableJourneyTest {
         assertEquals("no", body.getString("status"))
         assertEquals("Taking a break", body.getString("noOfferDescription"))
         assertTrue(body.getBoolean("showOnlyInMyCircles"))
+        val location = body.getJSONArray("location")
+        assertEquals(41.1, location.getDouble(0), 0.0)
+        assertEquals(-8.5, location.getDouble(1), 0.0)
     }
 
     @Test fun showsAnErrorWhenTheMemberProfileHasNoIdentifier() {
