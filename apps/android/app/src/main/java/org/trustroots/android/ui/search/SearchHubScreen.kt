@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -80,6 +81,7 @@ internal fun SearchModeMenu(tab: Int, onSelect: (Int) -> Unit) {
             listOf(hostsMap, members).forEachIndexed { index, label ->
                 DropdownMenuItem(
                     text = { Text(label) },
+                    modifier = Modifier.testTag("searchModeOption-$index"),
                     leadingIcon = {
                         val icon = if (index == 0) R.drawable.ic_material_place else R.drawable.ic_material_person_search
                         Icon(painterResource(icon), null)
@@ -232,6 +234,7 @@ internal fun SearchHubScreen(
                             notesClientFactory = notesClientFactory,
                             mapViewFactory = mapViewFactory,
                             searchModeMenu = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
+                            onSwitchToMembers = { selectMode(1) },
                         )
                     }
                     SearchMode.Members -> MemberSearchScreen(

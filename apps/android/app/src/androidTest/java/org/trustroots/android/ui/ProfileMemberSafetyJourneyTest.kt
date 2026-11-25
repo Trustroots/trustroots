@@ -278,7 +278,7 @@ class ProfileMemberSafetyJourneyTest {
         waitForText("Discover circles")
         compose.onNodeWithTag("navigation-search").performClick()
         compose.onNodeWithContentDescription("Search mode").performClick()
-        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("searchModeOption-1").performClick()
         compose.onNodeWithTag("memberSearchField").performTextReplacement(targetUsername)
         compose.onNodeWithTag("submittedSearchButton").performClick()
         hideTestKeyboard()

@@ -86,19 +86,21 @@ class SearchProfileAndSendTransportJourneysTest {
 
         compose.onNodeWithText("Name or username").performTextInput("quiet fox")
         compose.onNodeWithContentDescription("Search members").performClick()
-        val transportError = awaitTransportFailure(setOf("Name or username"))
-        compose.onNodeWithText(transportError).assertIsDisplayed()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("memberSearchFailure").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("memberSearchFailure").assertIsDisplayed()
         assertEquals(0, invalidations.get())
         assertTrue(local.requests.any { it.path == path })
 
         allowRecovery.set(true)
-        compose.onNodeWithContentDescription("Search members").assertIsEnabled().performClick()
+        compose.onNodeWithTag("memberSearchRetry").assertIsEnabled().performClick()
         compose.waitUntil(10_000) {
             recoveryResponses.get() == 1 &&
                 compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
-        compose.onNodeWithText(transportError).assertDoesNotExist()
+        compose.onNodeWithTag("memberSearchFailure").assertDoesNotExist()
         assertEquals(0, invalidations.get())
         assertEquals(1, recoveryResponses.get())
         val searchRequests = local.requests.filter { it.path.startsWith("/api/users?") }

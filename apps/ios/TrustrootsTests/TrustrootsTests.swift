@@ -1197,6 +1197,34 @@ final class TrustrootsTests: XCTestCase {
 
         XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/offers")
         XCTAssertEqual(seen?["months"] as? Int, 6)
+        XCTAssertNil(filters?["volunteering"])
+        XCTAssertNil(filters?["connectionsOnly"])
+
+        _ = try await api.searchOffers(
+            serverURLString: "https://api.example.test",
+            in: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 38.72, longitude: -9.14),
+                span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+            ),
+            types: ["host", "meet"],
+            tribeIDs: ["circle-one"],
+            seenWithinMonths: nil,
+            languages: ["eng"],
+            volunteering: true,
+            connectionsOnly: true
+        )
+        let selectedFiltersValue = URLComponents(
+            url: try XCTUnwrap(recordedRequest?.url),
+            resolvingAgainstBaseURL: false
+        )?.queryItems?.first(where: { $0.name == "filters" })?.value
+        let selectedData = try XCTUnwrap(selectedFiltersValue?.data(using: .utf8))
+        let selected = try JSONSerialization.jsonObject(with: selectedData) as? [String: Any]
+        XCTAssertEqual(selected?["types"] as? [String], ["host", "meet"])
+        XCTAssertEqual(selected?["tribes"] as? [String], ["circle-one"])
+        XCTAssertEqual(selected?["languages"] as? [String], ["eng"])
+        XCTAssertEqual(selected?["volunteering"] as? Bool, true)
+        XCTAssertEqual(selected?["connectionsOnly"] as? Bool, true)
+        XCTAssertNil(selected?["seen"])
     }
 
     func testAboutRouteUsesTheDedicatedWebsitePage() {
@@ -1278,17 +1306,26 @@ final class TrustrootsTests: XCTestCase {
 
         let members = try await api.searchMembers(
             serverURLString: "https://api.example.test",
-            query: "alex"
+            query: "fictional traveller",
+            filters: MemberSearchFilters(
+                hosts: true, meetings: true, volunteering: true, connectionsOnly: true,
+                onlineRecently: true, circleIDs: ["000000000000000000000001"], languages: ["por", "eng"]
+            )
         )
 
         XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/members")
-        XCTAssertEqual(
-            URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
-                .queryItems?
-                .first(where: { $0.name == "search" })?
-                .value,
-            "alex"
-        )
+        let queryItems = URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
+            .queryItems ?? []
+        let parameters = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        XCTAssertEqual(parameters["search"], "fictional traveller")
+        XCTAssertEqual(parameters["types"], "host,meet")
+        XCTAssertEqual(parameters["volunteering"], "true")
+        XCTAssertEqual(parameters["connectionsOnly"], "true")
+        XCTAssertEqual(parameters["onlineRecently"], "true")
+        XCTAssertEqual(parameters["tribes"], "000000000000000000000001")
+        XCTAssertEqual(parameters["languages"], "eng,por")
         XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
         XCTAssertEqual(members.first?.username, "alex")
         XCTAssertEqual(members.first?.displayName, "Alex Traveller")

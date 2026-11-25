@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.membersearch
 
+import org.trustroots.android.api.MemberSearchFilters
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -57,6 +59,26 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun changingFiltersRefinesTheSubmittedSearchAndResetClearsFilters() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        val model = MemberSearchViewModel(repository, scope)
+        val connectionsOnly = MemberSearchFilters(connectionsOnly = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(connectionsOnly))
+        assertTrue(repository.queries.isEmpty())
+        model.onEvent(MemberSearchEvent.QueryChanged("fictional coast"))
+        model.onEvent(MemberSearchEvent.Submit)
+
+        val updatedFilters = connectionsOnly.copy(meetings = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(updatedFilters))
+        model.onEvent(MemberSearchEvent.FiltersChanged(updatedFilters))
+        assertEquals(listOf(connectionsOnly, updatedFilters), repository.filters)
+        assertEquals(listOf("fictional coast", "fictional coast"), repository.queries)
+
+        model.onEvent(MemberSearchEvent.Reset())
+        assertEquals(MemberSearchFilters(), model.state.value.filters)
+    }
+
+    @Test
     fun queryEditsAndResetClearResultsFailureAndScrollPosition() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
         val viewModel = MemberSearchViewModel(repository, scope)
@@ -102,6 +124,28 @@ class MemberSearchViewModelTest {
         assertEquals(listOf(member("quiet-fox", "Quiet Fox")), viewModel.state.value.results)
         assertNull(viewModel.state.value.failure)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun changingFiltersAfterFailureRetriesTheCurrentQuery() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        val foundMember = member("quiet-fox", "Quiet Fox")
+        repository.searchHandler = { call ->
+            if (call == 1) Result.failure(IOException("A temporary failure."))
+            else Result.success(listOf(foundMember))
+        }
+        val model = MemberSearchViewModel(repository, scope)
+        model.onEvent(MemberSearchEvent.QueryChanged("quiet"))
+        model.onEvent(MemberSearchEvent.Submit)
+        assertEquals(MemberSearchFailureKind.SEARCH, model.state.value.failure?.kind)
+
+        val filters = MemberSearchFilters(hosts = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(filters))
+
+        assertEquals(listOf("quiet", "quiet"), repository.queries)
+        assertEquals(listOf(MemberSearchFilters(), filters), repository.filters)
+        assertEquals(listOf(foundMember), model.state.value.results)
+        assertNull(model.state.value.failure)
     }
 
     @Test
@@ -461,12 +505,14 @@ class MemberSearchViewModelTest {
 
     private class FakeMemberSearchRepository : MemberSearchRepository {
         var queries = mutableListOf<String>()
+        val filters = mutableListOf<MemberSearchFilters>()
         var searchHandler: suspend (Int) -> Result<List<MemberProfile>> = {
             Result.success(listOf(member("quiet-fox", "Quiet Fox")))
         }
 
-        override suspend fun searchMembers(query: String): Result<List<MemberProfile>> {
+        override suspend fun searchMembers(query: String, filters: MemberSearchFilters): Result<List<MemberProfile>> {
             queries += query
+            this.filters += filters
             return searchHandler(queries.size)
         }
     }

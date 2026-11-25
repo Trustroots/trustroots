@@ -1,5 +1,9 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+
 import android.content.Context
 import android.content.res.Configuration
 import android.location.Address
@@ -88,9 +92,14 @@ class HostMapResultsJourneyTest {
         compose.onNodeWithTag("mapResultsToggle").performClick()
         waitForText("Quiet Fox")
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
+        compose.onNodeWithText("Might meet").assertIsDisplayed()
+        compose.onNodeWithText("Offers volunteering").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android-map-current-area-results")
         compose.onNodeWithTag("map-result-offer-one").performClick()
         waitForTag("hostDetailRoute")
+        val detailMeetingBadge = hasText("Might meet").and(hasAnyAncestor(hasTestTag("hostDetailRoute")))
+        compose.waitUntil(10_000) { compose.onAllNodes(detailMeetingBadge).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(detailMeetingBadge).assertIsDisplayed()
         compose.onNodeWithContentDescription("Close host result").performClick()
         waitForTag("hostMapResults")
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
@@ -178,7 +187,20 @@ class HostMapResultsJourneyTest {
     }
 
     @Test fun resultListShowsSearchProgressRetryAndMeetingAndMaybeAvailability() {
-        val local = apiFixture()
+        val local = apiFixture { request ->
+            when (request.path) {
+                "/api/offers/offer-one" -> LocalTransportFixture.Response(
+                    """{"_id":"offer-one","status":"yes","user":{"username":"quiet-fox","displayName":"Quiet Fox"}}""",
+                )
+                "/api/offers/offer-two" -> LocalTransportFixture.Response(
+                    """{"_id":"offer-two","status":"maybe","meetingStatus":"yes","user":{"username":"amber-owl","displayName":"Amber Owl"}}""",
+                )
+                "/api/offers/offer-meet" -> LocalTransportFixture.Response(
+                    """{"_id":"offer-meet","status":"no","meetingStatus":"maybe","description":"<p>Walk by the fictional harbour.</p>","user":{"username":"gentle-hare","displayName":"Gentle Hare"}}""",
+                )
+                else -> null
+            }
+        }
         val loading = mutableStateOf(true)
         val failure = mutableStateOf<UiFailure?>(null)
         val offers = mutableStateOf(emptyList<MapOffer>())
@@ -209,16 +231,22 @@ class HostMapResultsJourneyTest {
                 MapOffer("offer-one", 0.0, 0.0, type = "meet"),
                 MapOffer("offer-two", 0.0, 0.0, status = "yes"),
                 MapOffer("offer-three", 0.0, 0.0, status = "yes"),
+                MapOffer("offer-meet", 0.0, 0.0, type = "meet", status = "no"),
             )
         }
         waitForText("Available to meet")
         compose.onNodeWithTag("hostMapResults").performScrollToNode(androidx.compose.ui.test.hasText("Maybe hosting"))
         compose.onNodeWithText("Maybe hosting").assertIsDisplayed()
+        compose.onNodeWithText("Happy to meet").assertIsDisplayed()
         compose.onNodeWithTag("map-result-offer-two").performClick()
         assertEquals("offer-two", selected.get()?.id)
         compose.onNodeWithTag("hostMapResults").performScrollToNode(androidx.compose.ui.test.hasText("Not hosting currently"))
         compose.onNodeWithText("Not hosting currently").assertIsDisplayed()
         compose.onNodeWithText("A fictional room that is no longer available.").assertDoesNotExist()
+        compose.onNodeWithTag("hostMapResults").performScrollToNode(hasTestTag("map-result-offer-meet"))
+        waitForText("Might meet")
+        compose.onNodeWithText("Might meet").assertIsDisplayed()
+        compose.onNodeWithText("Walk by the fictional harbour.").assertIsDisplayed()
     }
 
     @Test fun replacingTheSessionDiscardsAnInFlightOfferFromThePreviousMember() {
@@ -443,7 +471,7 @@ class HostMapResultsJourneyTest {
                     """{"features":[{"properties":{"id":"offer-one","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}""",
                 )
                 request.path == "/api/offers/offer-one" -> LocalTransportFixture.Response(
-                    """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}""",
+                    """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","meetingStatus":"maybe","volunteering":true,"user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}""",
                 )
                 request.path == "/api/offers/offer-two" -> LocalTransportFixture.Response(
                     """{"_id":"offer-two","status":"maybe","user":{"username":"amber-owl","displayName":"Amber Owl"}}""",

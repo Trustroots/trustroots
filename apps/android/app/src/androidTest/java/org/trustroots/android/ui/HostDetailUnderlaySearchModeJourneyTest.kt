@@ -85,7 +85,7 @@ class HostDetailUnderlaySearchModeJourneyTest {
         // The host preview occupies the lower portion of the screen; tap the actual
         // exposed search-mode control through Compose's pointer dispatch.
         compose.onNodeWithContentDescription("Search mode").performTouchInput { click(center) }
-        compose.onNodeWithText("Members").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("searchModeOption-1").assertIsDisplayed().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Find a member").fetchSemanticsNodes().isNotEmpty()
         }

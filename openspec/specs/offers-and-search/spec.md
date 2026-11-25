@@ -575,3 +575,42 @@ coordinates to the hosting Location section and explain the next step.
 
 - **WHEN** a member saves their first hosting location through Meet people
 - **THEN** the location is saved with hosting off and the editor offers a link to meetups
+
+### Requirement: Native maps and offer results use the same search
+
+Android and iOS offer search SHALL allow switching between the viewport map
+and textual offer results while preserving the current place and filters.
+Both platforms SHALL support filtering by offer type, circle, language,
+recent activity, volunteering and connections. The server SHALL continue to
+apply its existing offer visibility rules.
+
+#### Scenario: Switch between native map and results
+
+- **GIVEN** a member has filtered offers in a selected area
+- **WHEN** the member switches between map and results
+- **THEN** both views show the same matching offers
+- **AND** the member can open a result's offer details
+
+### Requirement: Native search switches between the map and member search
+
+The native search switch SHALL offer both the map and member search. Members
+SHALL be able to submit a name, username, location or tagline, with optional
+hosting, meetings, volunteering, connections, recent activity, circle and
+language filters. The system SHALL use the member-search visibility rules.
+
+#### Scenario: Filter member search from the map
+
+- **GIVEN** a signed-in member is using native map search
+- **WHEN** the member switches to Members and submits text with filters
+- **THEN** the list shows members matching the text and filters
+- **AND** the member can switch back to their map search
+
+### Requirement: Native offer search cards show availability
+
+Native offer result and detail cards SHALL show positive or tentative
+meeting availability and whether the offer includes volunteering.
+
+#### Scenario: A host also welcomes meetings and volunteers
+
+- **WHEN** a member reviews an offer with hosting, meeting and volunteering availability
+- **THEN** the result and detail cards show the applicable availability indicators

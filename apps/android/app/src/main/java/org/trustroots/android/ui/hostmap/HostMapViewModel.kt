@@ -87,7 +87,12 @@ internal data class HostMapFilters(
     val seenMonths: Int? = 6,
     val circleIDs: Set<String> = emptySet(),
     val languages: Set<String> = emptySet(),
-)
+    val volunteering: Boolean = false,
+    val connectionsOnly: Boolean = false,
+) {
+    val showsCommunityNotes: Boolean
+        get() = includeMeet && !connectionsOnly
+}
 
 internal class MobileHostMapRepository(
     private val api: MobileApiClient,
@@ -118,6 +123,8 @@ internal class MobileHostMapRepository(
             filters.circleIDs,
             filters.seenMonths,
             filters.languages,
+            volunteering = filters.volunteering,
+            connectionsOnly = filters.connectionsOnly,
         )
 
     override suspend fun circles() = api.circles(session)
@@ -282,12 +289,7 @@ internal class HostMapViewModel(
                 }
             }
             is HostMapEvent.FiltersChanged -> {
-                val includeMeetChanged = state.value.filters.includeMeet != event.filters.includeMeet
-                mutableState.update { current ->
-                    current.copy(filters = event.filters, communityNotes = if (includeMeetChanged && !event.filters.includeMeet) emptyList() else current.communityNotes,
-                        selectedNotes = if (includeMeetChanged && !event.filters.includeMeet) emptyList() else current.selectedNotes)
-                }
-                if (includeMeetChanged && !event.filters.includeMeet) receivedNotes.clear()
+                mutableState.update { it.copy(filters = event.filters) }
                 reconcileNotesSource()
                 saveCurrentSnapshot()
                 maybeSearch(force = false)
@@ -505,7 +507,7 @@ internal class HostMapViewModel(
 
     private fun reconcileNotesSource() {
         val current = state.value
-        if (current.filters.includeMeet && current.mapVisible && current.ownerStarted && !sessionInvalidationEmitted) {
+        if (current.filters.showsCommunityNotes && current.mapVisible && current.ownerStarted && !sessionInvalidationEmitted) {
             if (notesClient != null) return
             val generation = ++notesGeneration
             mutableState.update { it.copy(noteError = false) }
@@ -514,7 +516,7 @@ internal class HostMapViewModel(
                 { workScope.launch { if (generation == notesGeneration) mutableState.update { it.copy(noteError = true) } } },
             )
         } else {
-            stopNotesSource(clearNotes = !current.filters.includeMeet)
+            stopNotesSource(clearNotes = !current.filters.showsCommunityNotes)
         }
     }
 

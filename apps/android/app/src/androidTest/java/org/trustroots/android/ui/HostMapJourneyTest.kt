@@ -70,7 +70,7 @@ class HostMapJourneyTest {
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Back to map").fetchSemanticsNodes().isEmpty())
         compose.onNodeWithContentDescription("Search mode").performClick()
-        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("searchModeOption-1").performClick()
         compose.onNodeWithText("Find a member").assertIsDisplayed()
         compose.onNodeWithText("Switch to map search").performClick()
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()

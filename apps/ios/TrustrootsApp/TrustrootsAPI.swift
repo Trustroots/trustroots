@@ -257,6 +257,30 @@ struct MiniMember: Decodable {
     }
 }
 
+struct MemberSearchFilters: Equatable {
+    var hosts = false
+    var meetings = false
+    var volunteering = false
+    var connectionsOnly = false
+    var onlineRecently = false
+    var circleIDs: Set<String> = []
+    var languages: Set<String> = []
+
+    var queryItems: [URLQueryItem] {
+        let types = (hosts ? ["host"] : []) + (meetings ? ["meet"] : [])
+        return [
+            ("types", types.joined(separator: ",")),
+            ("volunteering", volunteering ? "true" : ""),
+            ("connectionsOnly", connectionsOnly ? "true" : ""),
+            ("onlineRecently", onlineRecently ? "true" : ""),
+            ("tribes", circleIDs.sorted().joined(separator: ",")),
+            ("languages", languages.sorted().joined(separator: ",")),
+        ].compactMap { name, value in
+            value.isEmpty ? nil : URLQueryItem(name: name, value: value)
+        }
+    }
+}
+
 struct MemberSearchResult: Decodable, Identifiable {
     let id: String?
     let username: String
@@ -391,6 +415,8 @@ struct HostOffer: Decodable {
     let description: String?
     let noOfferDescription: String?
     let maxGuests: Int?
+    let meetingStatus: String?
+    let volunteering: Bool?
     let user: MiniMember
 
     enum CodingKeys: String, CodingKey {
@@ -400,7 +426,17 @@ struct HostOffer: Decodable {
         case description
         case noOfferDescription
         case maxGuests
+        case meetingStatus
+        case volunteering
         case user
+    }
+
+    var meetingLabel: String? {
+        switch meetingStatus {
+        case "yes": return "Happy to meet"
+        case "maybe": return "Might meet"
+        default: return nil
+        }
     }
 }
 
@@ -970,8 +1006,30 @@ final class TrustrootsAPI {
         in region: MKCoordinateRegion,
         types: [String] = ["host"],
         tribeIDs: [String] = [],
-        seenWithinMonths: Int = 6
+        seenWithinMonths: Int? = 6,
+        languages: [String] = [],
+        volunteering: Bool = false,
+        connectionsOnly: Bool = false
     ) async throws -> [MapOffer] {
+        struct Filters: Encodable {
+            struct Seen: Encodable { let months: Int }
+            let types: [String]
+            let tribes: [String]
+            let seen: Seen?
+            let languages: [String]?
+            let volunteering: Bool?
+            let connectionsOnly: Bool?
+        }
+
+        let filters = Filters(
+            types: types,
+            tribes: tribeIDs,
+            seen: seenWithinMonths.map(Filters.Seen.init),
+            languages: languages.isEmpty ? nil : languages,
+            volunteering: volunteering ? true : nil,
+            connectionsOnly: connectionsOnly ? true : nil
+        )
+        let encodedFilters = String(decoding: try encoder.encode(filters), as: UTF8.self)
         let latitudeDelta = region.span.latitudeDelta / 2
         let longitudeDelta = region.span.longitudeDelta / 2
         let response: OfferFeatureCollection = try await get(
@@ -982,11 +1040,7 @@ final class TrustrootsAPI {
                 URLQueryItem(name: "southWestLng", value: String(region.center.longitude - longitudeDelta)),
                 URLQueryItem(name: "northEastLat", value: String(region.center.latitude + latitudeDelta)),
                 URLQueryItem(name: "northEastLng", value: String(region.center.longitude + longitudeDelta)),
-                URLQueryItem(
-                    name: "filters",
-                    value: "{\"types\":\(types.jsonArray),\"tribes\":\(tribeIDs.jsonArray),"
-                        + "\"seen\":{\"months\":\(seenWithinMonths)}}"
-                ),
+                URLQueryItem(name: "filters", value: encodedFilters),
             ]
         )
         return response.features.filter { $0.coordinate != nil }
@@ -1054,7 +1108,8 @@ final class TrustrootsAPI {
     func searchMembers(
         serverURLString: String,
         query: String,
-        limit: Int = 50
+        limit: Int = 50,
+        filters: MemberSearchFilters = MemberSearchFilters()
     ) async throws -> [MemberSearchResult] {
         try await get(
             serverURLString: serverURLString,
@@ -1062,7 +1117,7 @@ final class TrustrootsAPI {
             queryItems: [
                 URLQueryItem(name: "search", value: query),
                 URLQueryItem(name: "limit", value: String(limit)),
-            ]
+            ] + filters.queryItems
         )
     }
 
@@ -1767,13 +1822,6 @@ extension Notification.Name {
     static let trustrootsAuthenticationRequired = Notification.Name(
         "org.trustroots.ios.authentication-required"
     )
-}
-
-private extension Array where Element == String {
-    var jsonArray: String {
-        let data = (try? JSONEncoder().encode(self)) ?? Data("[]".utf8)
-        return String(decoding: data, as: UTF8.self)
-    }
 }
 
 extension URLSession {

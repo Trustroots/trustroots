@@ -26,6 +26,16 @@ data class MobileMember(
     val displayName: String,
 )
 
+internal data class MemberSearchFilters(
+    val hosts: Boolean = false,
+    val meetings: Boolean = false,
+    val volunteering: Boolean = false,
+    val connectionsOnly: Boolean = false,
+    val onlineRecently: Boolean = false,
+    val circleIDs: Set<String> = emptySet(),
+    val languages: Set<String> = emptySet(),
+)
+
 data class AccountDetails(
     val username: String,
     val displayName: String,
@@ -106,6 +116,8 @@ data class HostOffer(
     val description: String?,
     val maxGuests: Int?,
     val user: MessageMember,
+    val meetingStatus: String? = null,
+    val volunteering: Boolean = false,
 )
 
 data class AccommodationOffer(
@@ -504,11 +516,26 @@ class MobileApiClient(
             Unit
         }
 
-    suspend fun searchMembers(session: MemberSession, query: String): Result<List<MemberProfile>> =
+    internal suspend fun searchMembers(
+        session: MemberSession,
+        query: String,
+        filters: MemberSearchFilters = MemberSearchFilters(),
+    ): Result<List<MemberProfile>> =
         withContext(Dispatchers.IO) {
             runCatching {
                 require(query.trim().length >= 3)
-                val path = "/api/users?search=${encode(query.trim())}&limit=50"
+                val params = buildList {
+                    add("search=${encode(query.trim())}")
+                    add("limit=50")
+                    val types = listOfNotNull("host".takeIf { filters.hosts }, "meet".takeIf { filters.meetings })
+                    if (types.isNotEmpty()) add("types=${encode(types.joinToString(","))}")
+                    if (filters.volunteering) add("volunteering=true")
+                    if (filters.connectionsOnly) add("connectionsOnly=true")
+                    if (filters.onlineRecently) add("onlineRecently=true")
+                    if (filters.circleIDs.isNotEmpty()) add("tribes=${encode(filters.circleIDs.sorted().joinToString(","))}")
+                    if (filters.languages.isNotEmpty()) add("languages=${encode(filters.languages.sorted().joinToString(","))}")
+                }
+                val path = "/api/users?${params.joinToString("&")}"
                 val body = jsonRequest(path, "GET", session = session).body
                 parseMembers(JSONArray(body))
             }
@@ -672,6 +699,8 @@ class MobileApiClient(
         circleIDs: Set<String> = emptySet(),
         seenMonths: Int? = 6,
         languages: Set<String> = emptySet(),
+        volunteering: Boolean = false,
+        connectionsOnly: Boolean = false,
     ): Result<List<MapOffer>> = withContext(Dispatchers.IO) {
         runCatching {
             require(south < north && west < east)
@@ -682,6 +711,8 @@ class MobileApiClient(
                 .put("tribes", JSONArray(circleIDs.sorted()))
             if (seenMonths != null) filterObject.put("seen", JSONObject().put("months", seenMonths))
             if (languages.isNotEmpty()) filterObject.put("languages", JSONArray(languages.sorted()))
+            if (volunteering) filterObject.put("volunteering", true)
+            if (connectionsOnly) filterObject.put("connectionsOnly", true)
             val filters = encode(filterObject.toString())
             val path = "/api/offers?southWestLat=$south&southWestLng=$west" +
                 "&northEastLat=$north&northEastLng=$east&filters=$filters"
@@ -1250,6 +1281,8 @@ internal fun parseHostOffer(value: JSONObject): HostOffer = HostOffer(
     description = value.optionalText("description") ?: value.optionalText("noOfferDescription"),
     maxGuests = value.optionalInt("maxGuests"),
     user = parseMessageMember(value.getJSONObject("user")),
+    meetingStatus = value.optionalText("meetingStatus"),
+    volunteering = value.optBoolean("volunteering"),
 )
 
 internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {

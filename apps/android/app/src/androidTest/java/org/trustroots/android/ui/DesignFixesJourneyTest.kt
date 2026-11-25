@@ -88,7 +88,7 @@ class DesignFixesJourneyTest {
             }
         }
         compose.onNodeWithContentDescription("Search mode").performClick()
-        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("searchModeOption-1").performClick()
         compose.onNodeWithText("Find a member").assertIsDisplayed()
         compose.runOnIdle { assertNull((originalMap.tileProvider as MapTileProviderBasic).tileWriter) }
         compose.onNodeWithText("Switch to map search").performClick()

@@ -77,7 +77,7 @@ internal fun HostResultCard(
         ) {
             Column(Modifier.heightIn(max = maxHeight).verticalScroll(rememberScrollState()).padding(12.dp)) {
                 val status = when {
-                    isMeet -> availableToMeet
+                    isMeet -> offer.meetingLabelResource()?.let { stringResource(it) } ?: availableToMeet
                     offer.status == "yes" -> hostingTravellers
                     offer.status == "maybe" -> maybeHosting
                     else -> notHosting
@@ -104,6 +104,12 @@ internal fun HostResultCard(
                                 Spacer(Modifier.width(4.dp))
                                 Text(status, style = MaterialTheme.typography.labelLarge)
                             }
+                        }
+                        if (!isMeet) {
+                            offer.meetingLabelResource()?.let { Text(stringResource(it), style = MaterialTheme.typography.labelLarge) }
+                        }
+                        if (offer.volunteering) {
+                            Text(stringResource(R.string.screen_filter_volunteering), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     IconButton(

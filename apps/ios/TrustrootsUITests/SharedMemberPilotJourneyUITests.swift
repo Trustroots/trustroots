@@ -598,6 +598,47 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         capture.name = "iOS map distance scale"
         capture.lifetime = .keepAlways
         add(capture)
+
+        let display = app.segmentedControls.firstMatch
+        display.buttons["Results"].tap()
+        let volunteer = app.buttons["search-result-offer-pilot-volunteer"]
+        let other = app.buttons["search-result-offer-pilot-other"]
+        XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Search filters"].tap()
+        for label in ["Offers volunteering", "My connections only"] {
+            let filter = app.switches[label]
+            XCTAssertTrue(filter.waitForExistence(timeout: 5))
+            filter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+            XCTAssertEqual(filter.value as? String, "1")
+        }
+        app.buttons["Done"].tap()
+        XCTAssertTrue(other.waitForNonExistence(timeout: 15), app.debugDescription)
+        display.buttons["Map"].tap()
+        XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
+        display.buttons["Results"].tap()
+        XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(other.exists)
+        volunteer.tap()
+        XCTAssertTrue(app.buttons["Dismiss potential host"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Might meet"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Offers volunteering"].firstMatch.exists)
+
+        display.buttons["Members"].tap()
+        app.buttons["Member filters"].tap()
+        let connectedMembers = app.switches["My connections only"]
+        XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5))
+        connectedMembers.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(connectedMembers.value as? String, "1")
+        app.buttons["Done"].tap()
+        let query = app.textFields["member-search-field"]
+        XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
+        query.tap()
+        query.typeText("partner profile")
+        app.buttons["Search members"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["member-search-result-pilot-partner"].waitForExistence(timeout: 10), app.debugDescription)
+        display.buttons["Map"].tap()
+        XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {

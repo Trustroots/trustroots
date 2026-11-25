@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.api.MemberSearchFilters
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
@@ -21,7 +22,7 @@ import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal fun interface MemberSearchRepository {
-    suspend fun searchMembers(query: String): Result<List<MemberProfile>>
+    suspend fun searchMembers(query: String, filters: MemberSearchFilters): Result<List<MemberProfile>>
 }
 
 /** Holds the current session only in memory for requests owned by this Search entry. */
@@ -29,8 +30,8 @@ internal class MobileApiMemberSearchRepository(
     private val api: MobileApiClient,
     private val session: MemberSession,
 ) : MemberSearchRepository {
-    override suspend fun searchMembers(query: String): Result<List<MemberProfile>> =
-        api.searchMembers(session, query)
+    override suspend fun searchMembers(query: String, filters: MemberSearchFilters): Result<List<MemberProfile>> =
+        api.searchMembers(session, query, filters)
 }
 
 internal enum class MemberSearchFailureKind {
@@ -47,6 +48,7 @@ internal data class MemberSearchSessionInvalidation(val id: Long)
 
 internal data class MemberSearchUiState(
     val query: String = "",
+    val filters: MemberSearchFilters = MemberSearchFilters(),
     val results: List<MemberProfile> = emptyList(),
     val isLoading: Boolean = false,
     val hasSearched: Boolean = false,
@@ -57,6 +59,7 @@ internal data class MemberSearchUiState(
 
 internal sealed interface MemberSearchEvent {
     data class QueryChanged(val value: String) : MemberSearchEvent
+    data class FiltersChanged(val filters: MemberSearchFilters) : MemberSearchEvent
     data object Submit : MemberSearchEvent
     data class Reset(val generation: Int? = null) : MemberSearchEvent
     data class ResultsScrolled(val offset: Int) : MemberSearchEvent
@@ -80,7 +83,17 @@ internal class MemberSearchViewModel(
 
     fun onEvent(event: MemberSearchEvent) {
         when (event) {
-            is MemberSearchEvent.QueryChanged -> updateQuery(event.value)
+            is MemberSearchEvent.QueryChanged -> updateQuery(event.value.take(120))
+            is MemberSearchEvent.FiltersChanged -> {
+                val current = state.value
+                if (current.filters != event.filters) {
+                    queryRevision++
+                    mutableState.update {
+                        it.copy(filters = event.filters, results = emptyList(), hasSearched = false, failure = null)
+                    }
+                    if (current.hasSearched || current.failure != null) submit()
+                }
+            }
             MemberSearchEvent.Submit -> submit()
             is MemberSearchEvent.Reset -> {
                 val generation = event.generation
@@ -121,7 +134,7 @@ internal class MemberSearchViewModel(
         val submittedQuery = current.query
         searchRequest.launch {
             mutableState.update { it.copy(isLoading = true, failure = null) }
-            val result = requestResult { repository.searchMembers(submittedQuery) }
+            val result = requestResult { repository.searchMembers(submittedQuery, current.filters) }
             val requestFailure = result.exceptionOrNull()
             if (requestFailure?.isAuthenticationFailure() == true) {
                 emitSessionInvalidation()

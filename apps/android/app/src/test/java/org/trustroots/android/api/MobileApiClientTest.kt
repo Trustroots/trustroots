@@ -268,9 +268,11 @@ class MobileApiClientTest {
         assertEquals(1, offers.size)
         assertEquals(38.7, offers.single().latitude, 0.0001)
         assertEquals("maybe", offers.single().status)
-        val host = parseHostOffer(JSONObject("""{"_id":"offer-one","status":"yes","description":"A spare room","maxGuests":2,"user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}"""))
+        val host = parseHostOffer(JSONObject("""{"_id":"offer-one","status":"yes","description":"A spare room","maxGuests":2,"meetingStatus":"maybe","volunteering":true,"user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}"""))
         assertEquals("Quiet Fox", host.user.displayName)
         assertEquals(2, host.maxGuests)
+        assertEquals("maybe", host.meetingStatus)
+        assertTrue(host.volunteering)
     }
 
     @Test
@@ -1202,6 +1204,42 @@ class MobileApiClientTest {
         }
 
         assertEquals(emptySet<String>(), result.getOrThrow())
+    }
+
+    @Test
+    fun memberSearchSendsTheWebFiltersOnTheProtectedMobileRoute() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 200, body = """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}]"""))
+            server.start()
+            val session = MemberSession(
+                cookieHeader = "",
+                member = MobileMember("steady-heron", "Steady Heron"),
+                accessToken = "fixture-access",
+            )
+            val filters = MemberSearchFilters(
+                hosts = true,
+                meetings = true,
+                volunteering = true,
+                connectionsOnly = true,
+                onlineRecently = true,
+                circleIDs = setOf("000000000000000000000001"),
+                languages = setOf("por", "eng"),
+            )
+            val result = runBlocking {
+                MobileApiClient(server.url("/").toString()).searchMembers(session, "imaginary coast", filters)
+            }
+            val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            val url = requireNotNull(request.url)
+            assertEquals("/api/mobile/v0/members", url.encodedPath)
+            assertEquals("imaginary coast", url.queryParameter("search"))
+            assertEquals("host,meet", url.queryParameter("types"))
+            assertEquals("true", url.queryParameter("volunteering"))
+            assertEquals("true", url.queryParameter("connectionsOnly"))
+            assertEquals("true", url.queryParameter("onlineRecently"))
+            assertEquals("000000000000000000000001", url.queryParameter("tribes"))
+            assertEquals("eng,por", url.queryParameter("languages"))
+            assertEquals("quiet-fox", result.getOrThrow().single().username)
+        }
     }
 
     @Test

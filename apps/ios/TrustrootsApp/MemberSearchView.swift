@@ -2,17 +2,42 @@ import SwiftUI
 
 struct MemberSearchView: View {
     @ObservedObject var session: MemberSessionStore
+    var showsNavigationBar = true
+    var isActive = true
     @State private var query = ""
     @State private var results: [MemberSearchResult] = []
     @State private var isSearching = false
     @State private var hasSearched = false
     @State private var errorMessage: String?
+    @State private var filters = MemberSearchFilters()
+    @State private var submittedFilters = MemberSearchFilters()
+    @State private var showingFilters = false
+    @State private var circles: [TrustrootsCircle] = []
     @FocusState private var isSearchFocused: Bool
 
     private let api = TrustrootsAPI()
 
     var body: some View {
-        NavigationStack {
+        if showsNavigationBar {
+            NavigationStack {
+                content
+                    .navigationTitle("Find members")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 0) {
+            Button("Member filters", systemImage: "slider.horizontal.3") {
+                isSearchFocused = false
+                showingFilters = true
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.horizontal, 12)
+            .disabled(isSearching)
             Group {
                 if isSearching {
                     ProgressView("Finding members…")
@@ -32,13 +57,13 @@ struct MemberSearchView: View {
                     ContentUnavailableView(
                         "No members found",
                         systemImage: "person.2.slash",
-                        description: Text("Try another name or username.")
+                        description: Text("Try a different search or change your filters.")
                     )
                 } else if results.isEmpty {
                     ContentUnavailableView(
                         "Find members",
                         systemImage: "person.crop.circle.badge.magnifyingglass",
-                        description: Text("Search by name or username.")
+                        description: Text("Search by name, username, location or tagline.")
                     )
                 } else {
                     List(results) { member in
@@ -47,15 +72,67 @@ struct MemberSearchView: View {
                         } label: {
                             memberRow(member)
                         }
+                        .accessibilityIdentifier("member-search-result-\(member.username)")
                     }
                     .listStyle(.plain)
                     .scrollDismissesKeyboard(.interactively)
                 }
             }
-            .navigationTitle("Find members")
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                searchForm
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { searchForm }
+        .onChange(of: isActive) { _, active in
+            if !active { isSearchFocused = false }
+        }
+        .sheet(isPresented: $showingFilters, onDismiss: {
+            if hasSearched && filters != submittedFilters {
+                Task { await search() }
+            }
+        }) {
+            filterSheet
+        }
+    }
+
+    private var filterSheet: some View {
+        NavigationStack {
+            List {
+                Section("Members") {
+                    Toggle("Hosts", isOn: $filters.hosts)
+                    Toggle("Meetings", isOn: $filters.meetings)
+                    Toggle("Offers volunteering", isOn: $filters.volunteering)
+                    Toggle("My connections only", isOn: $filters.connectionsOnly)
+                    Toggle("Online in the past 6 months", isOn: $filters.onlineRecently)
+                    NavigationLink {
+                        SearchLanguagePicker(languages: $filters.languages)
+                    } label: {
+                        LabeledContent("Spoken languages", value: filters.languages.isEmpty ? "Any" : String(filters.languages.count))
+                    }
+                }
+                Section("Circles") {
+                    ForEach(circles) { circle in
+                        Toggle(circle.label, isOn: Binding(
+                            get: { filters.circleIDs.contains(circle.id) },
+                            set: { selected in
+                                if selected { filters.circleIDs.insert(circle.id) }
+                                else { filters.circleIDs.remove(circle.id) }
+                            }
+                        ))
+                    }
+                }
+            }
+            .task {
+                if circles.isEmpty {
+                    circles = (try? await api.circles(serverURLString: session.serverURLString)) ?? []
+                }
+            }
+            .navigationTitle("Member filters")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Reset") { filters = MemberSearchFilters() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { showingFilters = false }
+                }
             }
         }
     }
@@ -65,7 +142,8 @@ struct MemberSearchView: View {
             HStack(spacing: 9) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Name or username", text: $query)
+                TextField("Name, username, location or tagline", text: $query)
+                    .accessibilityIdentifier("member-search-field")
                     .focused($isSearchFocused)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -76,6 +154,7 @@ struct MemberSearchView: View {
                         Task { await search() }
                     }
                     .onChange(of: query) {
+                        if query.count > 120 { query = String(query.prefix(120)) }
                         hasSearched = false
                         errorMessage = nil
                     }
@@ -164,14 +243,19 @@ struct MemberSearchView: View {
         isSearching = true
         hasSearched = true
         errorMessage = nil
+        let submittedQuery = trimmedQuery
+        submittedFilters = filters
         defer { isSearching = false }
 
         do {
-            results = try await api.searchMembers(
+            let matches = try await api.searchMembers(
                 serverURLString: session.serverURLString,
-                query: trimmedQuery
+                query: submittedQuery,
+                filters: submittedFilters
             )
+            if submittedQuery == trimmedQuery { results = matches }
         } catch {
+            guard submittedQuery == trimmedQuery else { return }
             results = []
             errorMessage = error.localizedDescription
         }
