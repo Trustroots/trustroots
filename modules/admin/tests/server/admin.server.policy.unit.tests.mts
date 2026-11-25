@@ -58,7 +58,18 @@ describe('Admin policy unit tests', () => {
 
     allow.calledOnce.should.be.true();
     const policies = allow.firstCall.args[0];
-    policies.length.should.equal(3);
+    policies.length.should.equal(4);
+    const greeter = policies.shift();
+    if (!greeter) throw new Error('Expected the greeter-only policy');
+    greeter.should.deepEqual({
+      roles: ['welcome-team'],
+      allows: [
+        {
+          resources: '/api/admin/acquisition-stories/:memberId/flag',
+          permissions: ['post'],
+        },
+      ],
+    });
     const support = policies.shift();
     if (!support) throw new Error('Expected the support policy');
     support.roles.should.deepEqual(['admin', 'support-team']);
@@ -191,6 +202,7 @@ describe('Admin policy unit tests', () => {
       'post /api/admin/location-corrections/send',
       'get /api/admin/staff-blockers',
     ];
+    const greeterOnly = ['post /api/admin/acquisition-stories/:memberId/flag'];
     const adminOnly = [
       'get /api/admin/signup-review-rules',
       'put /api/admin/signup-review-rules',
@@ -231,15 +243,18 @@ describe('Admin policy unit tests', () => {
     const expected: Record<string, string[]> = {
       admin: [...supportAndAdmin, ...welcomeAndSupport, ...adminOnly],
       'support-team': [...supportAndAdmin, ...welcomeAndSupport],
-      'welcome-team': welcomeAndSupport,
+      'welcome-team': [...welcomeAndSupport, ...greeterOnly],
       user: [],
       guest: [],
     };
     const paths = [
       ...new Set(
-        [...supportAndAdmin, ...welcomeAndSupport, ...adminOnly].map(
-          grant => grant.split(' ')[1],
-        ),
+        [
+          ...supportAndAdmin,
+          ...welcomeAndSupport,
+          ...greeterOnly,
+          ...adminOnly,
+        ].map(grant => grant.split(' ')[1]),
       ),
     ];
     const methods = ['get', 'post', 'put', 'patch', 'delete'];

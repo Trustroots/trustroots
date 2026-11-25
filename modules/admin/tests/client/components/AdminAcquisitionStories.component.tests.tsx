@@ -42,6 +42,7 @@ type AcquisitionStoryFixture = {
   displayName?: string;
   email?: string;
   emailConfirmed?: boolean;
+  flagged?: boolean;
   hostingLocation?: number[];
   locationFrom?: string;
   locationLiving?: string;
@@ -95,6 +96,65 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it('lets greeters retry flagging a story and shows its new status', async () => {
+    setViewer({ _id: 'greeter-id', roles: ['welcome-team'] });
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      storyFixture({
+        _id: 'greeter-id',
+        username: 'fictional-greeter',
+        public: true,
+      }),
+      storyFixture({
+        _id: 'member-id',
+        username: 'river-member',
+        public: true,
+      }),
+      storyFixture({
+        _id: 'flagged-id',
+        username: 'hill-member',
+        public: true,
+        flagged: true,
+      }),
+    ]);
+    let resolveFlag = () => {};
+    mockedAcquisitionStoriesApi.flagAcquisitionStoryMember
+      .mockRejectedValueOnce(new Error('Request failed'))
+      .mockReturnValueOnce(
+        new Promise<void>(resolve => {
+          resolveFlag = resolve;
+        }),
+      );
+
+    render(<AdminAcquisitionStories />);
+    const flag = await screen.findByRole('button', {
+      name: 'Flag river-member for follow-up',
+    });
+    const row = within(flag.closest('tr')!);
+    expect(
+      screen.queryByRole('button', {
+        name: 'Flag fictional-greeter for follow-up',
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Flag hill-member for follow-up' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Flagged for follow-up')).toBeVisible();
+
+    fireEvent.click(flag);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not flag this account. Please try again.',
+    );
+    fireEvent.click(flag);
+    expect(flag).toBeDisabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(
+      mockedAcquisitionStoriesApi.flagAcquisitionStoryMember,
+    ).toHaveBeenNthCalledWith(2, 'member-id');
+    resolveFlag();
+    expect(await row.findByText('Flagged for follow-up')).toBeVisible();
+    expect(flag).not.toBeInTheDocument();
+  });
+
   it('filters by member details and displays account emails to administrators', async () => {
     mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       storyFixture({

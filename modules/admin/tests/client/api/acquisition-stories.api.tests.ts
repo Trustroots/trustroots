@@ -1,6 +1,7 @@
 import axios, { type AxiosResponse } from 'axios';
 
 import {
+  flagAcquisitionStoryMember,
   getAcquisitionStories,
   resendAcquisitionStoryConfirmation,
 } from '@/modules/admin/client/api/acquisition-stories.api';
@@ -26,6 +27,16 @@ afterEach(() => {
 });
 
 describe('admin acquisition-stories api', () => {
+  it('flags an acquisition story member for follow-up', async () => {
+    axiosMock.post.mockResolvedValueOnce(response({ flagged: true }));
+
+    await flagAcquisitionStoryMember('member/1');
+
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/admin/acquisition-stories/member%2F1/flag',
+    );
+  });
+
   it('fetches acquisition stories', async () => {
     const data: AcquisitionStory[] = [{ _id: 'story-1' }];
     axiosMock.post.mockResolvedValueOnce(response(data));

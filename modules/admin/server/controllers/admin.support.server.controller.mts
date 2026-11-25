@@ -52,6 +52,7 @@ interface UserRecord {
   emailTemporary?: string;
   public?: boolean;
   roles?: string[];
+  acquisitionStory?: string;
   created?: Date;
   description?: string;
   tagline?: string;
@@ -204,7 +205,10 @@ function handler(action: Action) {
   };
 }
 
-async function audit(req: SupportRequest): Promise<void> {
+async function audit(
+  req: SupportRequest,
+  flagged = req.body?.flagged,
+): Promise<void> {
   // Never log report text, note text or private messages. Fail closed on storage errors.
   await new AuditLog({
     user: req.user._id,
@@ -225,9 +229,7 @@ async function audit(req: SupportRequest): Promise<void> {
     },
     body: {
       ...(req.body?.status ? { status: req.body.status } : {}),
-      ...(typeof req.body?.flagged === 'boolean'
-        ? { flagged: req.body.flagged }
-        : {}),
+      ...(typeof flagged === 'boolean' ? { flagged } : {}),
     },
   }).save();
 }
@@ -736,15 +738,21 @@ export const flaggedMembers = handler(async (req, res) => {
   });
 });
 
-/** @esmNamed */
-export const setFlag = handler(async (req, res) => {
-  const id = objectId(req.params.memberId);
-  const flagged = req.body?.flagged;
-  if (typeof flagged !== 'boolean')
-    throw invalid('A boolean flag is required.');
-  await audit(req);
-  const result = await User.findByIdAndUpdate(
-    id,
+async function updateFlag(
+  req: SupportRequest,
+  res: SupportResponse,
+  id: string,
+  flagged: boolean,
+  acquisitionOnly = false,
+) {
+  await audit(req, flagged);
+  const result = await User.findOneAndUpdate(
+    {
+      _id: id,
+      ...(acquisitionOnly && {
+        acquisitionStory: { $exists: true, $ne: '' },
+      }),
+    },
     flagged
       ? { $addToSet: { roles: 'flagged' } }
       : { $pull: { roles: 'flagged' } },
@@ -757,11 +765,30 @@ export const setFlag = handler(async (req, res) => {
   if (!result)
     throw Object.assign(new Error('Member not found.'), { status: 404 });
   return res.json({ flagged });
+}
+
+/** @esmNamed */
+export const setFlag = handler(async (req, res) => {
+  const id = objectId(req.params.memberId);
+  const flagged = req.body?.flagged;
+  if (typeof flagged !== 'boolean')
+    throw invalid('A boolean flag is required.');
+  return updateFlag(req, res, id, flagged);
+});
+
+/** @esmNamed */
+export const flagAcquisitionMember = handler(async (req, res) => {
+  const id = objectId(req.params.memberId);
+  if (String(req.user._id) === id.toLowerCase()) {
+    throw invalid('You cannot flag your own account.');
+  }
+  return updateFlag(req, res, id, true, true);
 });
 
 const api = {
   flaggedMembers,
   setFlag,
+  flagAcquisitionMember,
   list,
   detail,
   setStatus,

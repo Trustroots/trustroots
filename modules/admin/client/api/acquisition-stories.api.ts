@@ -5,6 +5,12 @@ export async function getAcquisitionStories() {
   return data;
 }
 
+export async function flagAcquisitionStoryMember(userId: string) {
+  await axios.post(
+    `/api/admin/acquisition-stories/${encodeURIComponent(userId)}/flag`,
+  );
+}
+
 export async function resendAcquisitionStoryConfirmation(
   userId: string,
 ): Promise<{ message: string }> {

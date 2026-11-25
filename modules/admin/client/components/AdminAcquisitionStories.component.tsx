@@ -6,6 +6,7 @@ import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
 import {
+  flagAcquisitionStoryMember,
   getAcquisitionStories,
   resendAcquisitionStoryConfirmation,
 } from '../api/acquisition-stories.api';
@@ -69,6 +70,7 @@ interface AcquisitionStory {
   acquisitionStory?: string;
   public?: boolean;
   emailConfirmed: boolean;
+  flagged?: boolean;
   restrictionStatuses?: RestrictionStatus[];
   restrictedMatches?: RestrictedMatch[];
   languages?: string[];
@@ -174,6 +176,7 @@ export default function AdminAcquisitionStories() {
   const { user, hasRole } = useAuth();
   const viewerLanguages = user?.languages || [];
   const isAdmin = hasRole('admin');
+  const isGreeter = hasRole('welcome-team');
   const publicProfile = !isAdmin;
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [sendingConfirmationIds, setSendingConfirmationIds] = useState<
@@ -181,6 +184,9 @@ export default function AdminAcquisitionStories() {
   >(() => new Set());
   const [confirmationFeedback, setConfirmationFeedback] = useState<
     Record<string, { kind: 'success' | 'error'; message: string }>
+  >({});
+  const [flagRequests, setFlagRequests] = useState<
+    Record<string, 'pending' | 'failed' | undefined>
   >({});
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -246,6 +252,23 @@ export default function AdminAcquisitionStories() {
           ? 'descending'
           : 'ascending',
     }));
+  }
+
+  async function flagStory(story: AcquisitionStory) {
+    setFlagRequests(current => ({ ...current, [story._id]: 'pending' }));
+    try {
+      await flagAcquisitionStoryMember(story._id);
+      setStories(current =>
+        current.map(candidate =>
+          candidate._id === story._id
+            ? { ...candidate, flagged: true }
+            : candidate,
+        ),
+      );
+      setFlagRequests(current => ({ ...current, [story._id]: undefined }));
+    } catch {
+      setFlagRequests(current => ({ ...current, [story._id]: 'failed' }));
+    }
   }
 
   async function resendConfirmation(story: AcquisitionStory) {
@@ -409,6 +432,7 @@ export default function AdminAcquisitionStories() {
                   label="Languages"
                   tooltip="Shared languages appear first and in bold, except English"
                 />
+                {isGreeter && <th scope="col">Follow-up</th>}
               </tr>
             </thead>
             <tbody>
@@ -564,6 +588,31 @@ export default function AdminAcquisitionStories() {
                       'Not specified'
                     )}
                   </td>
+                  {isGreeter && (
+                    <td>
+                      {story.flagged ? (
+                        <span role="status">Flagged for follow-up</span>
+                      ) : (
+                        story._id !== user?._id && (
+                          <Button
+                            aria-label={`Flag ${story.username} for follow-up`}
+                            disabled={flagRequests[story._id] === 'pending'}
+                            onClick={() => flagStory(story)}
+                            type="button"
+                          >
+                            {flagRequests[story._id] === 'pending'
+                              ? 'Flagging…'
+                              : 'Flag for follow-up'}
+                          </Button>
+                        )
+                      )}
+                      {flagRequests[story._id] === 'failed' && (
+                        <p role="alert">
+                          Could not flag this account. Please try again.
+                        </p>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

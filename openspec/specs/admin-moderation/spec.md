@@ -1368,7 +1368,7 @@ The system SHALL support a `flagged` role for profiles requiring moderation foll
 
 #### Scenario: Member attempts to manage flags
 
-- **WHEN** a visitor, regular member, greeter or flagged member requests flag management or listing
+- **WHEN** a visitor, regular member, greeter or flagged member requests flag management through the Support API or requests the flagged-member list
 - **THEN** access is denied
 
 #### Scenario: Flagged member uses the site
@@ -1595,3 +1595,19 @@ The MongoDB diagnostics dashboard SHALL show the names and key definitions of in
 - **WHEN** collection index metadata cannot be read
 - **THEN** the dashboard labels the affected information unavailable
 - **AND** the server version, upgrade context and Agenda diagnostics remain available independently
+
+### Requirement: Greeter flags on acquisition stories
+
+Greeters SHALL be able to add the existing internal follow-up flag to another member from their acquisition-story row. The action SHALL be idempotent and audited, and flagged members SHALL appear in Support's flagged-member list. The endpoint SHALL require the greeter role and an existing acquisition story for the target. Only Support staff and administrators SHALL be able to remove the flag or browse the flagged-member list.
+
+#### Scenario: Greeter flags a suspicious account
+
+- **WHEN** a greeter flags a member from Acquisition stories
+- **THEN** the row shows that the member is flagged, including after a reload
+- **AND** Support can find that member in its flagged-member list
+- **AND** other account roles and profile visibility remain unchanged
+
+#### Scenario: Member cannot flag via Acquisition stories
+
+- **WHEN** a regular member attempts to use the acquisition-story flag endpoint
+- **THEN** access is denied
