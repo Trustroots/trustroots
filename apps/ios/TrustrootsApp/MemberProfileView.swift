@@ -138,17 +138,9 @@ struct MemberProfileView: View {
                             }
 
                             if let accommodationOffer {
-                                if let label = meetingAvailabilityLabel(accommodationOffer.meetingStatus) {
-                                    Label(label, systemImage: "person.2")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                                }
-                                HostingDetailsView(
-                                    status: accommodationOffer.status,
-                                    description: accommodationOffer.description,
-                                    noOfferDescription: accommodationOffer.noOfferDescription,
-                                    maxGuests: accommodationOffer.maxGuests,
-                                    volunteering: accommodationOffer.volunteering == true
+                                ProfileHostingSection(
+                                    offer: accommodationOffer,
+                                    meeting: meetingAvailabilityLabel(accommodationOffer.meetingStatus)
                                 )
                             }
 
@@ -570,6 +562,41 @@ private struct ProfileCirclesSection: View {
                 onHeight: { onHeight($0.doubleValue) }
             )
         }
+    }
+}
+
+private struct ProfileHostingSection: View {
+    let offer: AccommodationOffer
+    let meeting: String?
+
+    var body: some View {
+        let hosts = offer.status == "yes" || offer.status == "maybe"
+        let description = (hosts ? offer.description : offer.noOfferDescription)?.plainText
+        let summary = Summary(
+            status: offer.status,
+            meeting: meeting,
+            description: description.flatMap { $0.isEmpty ? nil : $0 },
+            volunteering: offer.volunteering == true,
+            capacity: offer.maxGuests.map { $0 == 1 ? "Space for 1 guest" : "Space for up to \($0) guests" }
+        )
+        MeasuredProfileSection(identity: summary) { onHeight in
+            MainViewControllerKt.MemberProfileHostingViewController(
+                status: summary.status,
+                meeting: summary.meeting,
+                description: summary.description,
+                volunteering: summary.volunteering,
+                capacity: summary.capacity,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Summary: Hashable {
+        let status: String?
+        let meeting: String?
+        let description: String?
+        let volunteering: Bool
+        let capacity: String?
     }
 }
 
