@@ -245,6 +245,7 @@ export default function AdminMessages() {
                       <RichText
                         className="panel-body"
                         content={message.content}
+                        messageFormatting
                       />
                     </div>
                   </div>

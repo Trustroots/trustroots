@@ -57,6 +57,7 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           <RichText
             className="panel-body"
             content={message.content}
+            messageFormatting
             allowTrustrootsLinks
           />
         </div>

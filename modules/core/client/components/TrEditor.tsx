@@ -38,6 +38,7 @@ function removeTrailingBr(value: string): string {
 
 type TrEditorProps = {
   id: string;
+  messageFormatting?: boolean;
   onChange: (value: string) => void;
   onSubmitShortcut?: (event: KeyboardEvent) => void;
   placeholder?: string;
@@ -45,6 +46,7 @@ type TrEditorProps = {
 };
 export default function TrEditor({
   id,
+  messageFormatting = false,
   onChange,
   onSubmitShortcut,
   placeholder,
@@ -52,7 +54,9 @@ export default function TrEditor({
 }: TrEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const latestEditorText = useRef(text);
-  const [initialMarkup] = useState(() => ({ __html: sanitiseRichText(text) }));
+  const [initialMarkup] = useState(() => ({
+    __html: sanitiseRichText(text, messageFormatting),
+  }));
   const [empty, setEmpty] = useState(true);
   const [selection, setSelection] = useState<{
     top: number;
@@ -65,10 +69,10 @@ export default function TrEditor({
     // would disturb the caret and native input composition.
     if (text !== latestEditorText.current) {
       latestEditorText.current = text;
-      ref.current!.innerHTML = sanitiseRichText(text);
+      ref.current!.innerHTML = sanitiseRichText(text, messageFormatting);
     }
     setEmpty(!ref.current!.textContent);
-  }, [text]);
+  }, [text, messageFormatting]);
 
   useEffect(() => {
     // Like the old editor, offer formatting above highlighted text.
@@ -100,7 +104,9 @@ export default function TrEditor({
     }
     unwrapListParagraphs(editable);
     setEmpty(!editable.textContent);
-    const value = removeTrailingBr(editable.innerHTML);
+    const value = messageFormatting
+      ? editable.innerHTML
+      : removeTrailingBr(editable.innerHTML);
     latestEditorText.current = value;
     onChange(value);
   };
@@ -122,9 +128,19 @@ export default function TrEditor({
 
   const onPaste = (event: React.ClipboardEvent) => {
     const html = event.clipboardData.getData('text/html');
-    if (!html) return;
-    event.preventDefault();
-    document.execCommand('insertHTML', false, sanitiseRichText(html));
+    if (html) {
+      event.preventDefault();
+      document.execCommand(
+        'insertHTML',
+        false,
+        sanitiseRichText(html, messageFormatting),
+      );
+    } else if (messageFormatting) {
+      const text = event.clipboardData.getData('text/plain');
+      if (!text) return;
+      event.preventDefault();
+      document.execCommand('insertText', false, text.replace(/\r\n?/g, '\n'));
+    }
   };
 
   const tools: Array<[string, string, () => void]> = [

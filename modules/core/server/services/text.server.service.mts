@@ -76,9 +76,13 @@ export function html(value: unknown): string {
     return '';
   }
 
+  return sanitizeHtml(linkText(content), sanitizeOptions);
+}
+
+export function linkText(content: string): string {
   // Turn URLs/emails/phonenumbers into links
   // @link https://github.com/gregjacobs/Autolinker.js
-  content = Autolinker.link(content, {
+  return Autolinker.link(content, {
     // Don't auto-link mention handles (@username)
     mention: false,
     // Don't auto-link hashtags (#tag)
@@ -107,10 +111,6 @@ export function html(value: unknown): string {
     // Stryker disable next-line BooleanLiteral: sanitizeOptions below drops target and rel from links anyway
     newWindow: false,
   });
-
-  // Some html is allowed
-  content = sanitizeHtml(content, sanitizeOptions);
-  return content;
 }
 
 /**

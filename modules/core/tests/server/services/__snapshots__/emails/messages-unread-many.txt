@@ -2,19 +2,20 @@ Hello Ada & "Bea" <Lov\elace>!
 
 You have 3 unread messages from Ben Fictional http://localhost:3000/profile/ben?utm_source=transactional-email&utm_medium=email&utm_campaign=messages-unread&utm_content=profile at Trustroots.
 
-First line next
+First line
+next
 line
+
+
 
 second line
 
 Visit trustroots.org/circles http://trustroots.org/circles
-
 Head
-
 Second para <script>
 
- * one
- * two
+* one
+* two
 
 Safety note: Trustroots will never ask you for your ID, credit card details, or payment of any kind.
 

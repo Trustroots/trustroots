@@ -13,6 +13,33 @@ export const richTextTags = [
   'blockquote',
 ];
 
+// Some browsers use divs for lines in contenteditable.
+export const messageRichTextTags = [...richTextTags, 'div'];
+export const messageLineBlockTags = new Set([
+  'p',
+  'div',
+  'blockquote',
+  'ul',
+  'li',
+]);
+
+/** Prefer explicit HTML line boundaries over adjacent source indentation. */
+export function normaliseMessageSourceNewlines(
+  text: string,
+  previousTag = '',
+  nextTag = '',
+): string {
+  if (
+    !text.trim() &&
+    (messageLineBlockTags.has(previousTag) || messageLineBlockTags.has(nextTag))
+  ) {
+    return '';
+  }
+  if (previousTag === 'br') text = text.replace(/^[ \t]*\n/, '');
+  if (nextTag === 'br') text = text.replace(/\n[ \t]*$/, '');
+  return text;
+}
+
 export const richTextAttributes: Record<string, string[]> = {
   a: ['href'],
   p: ['data-hosting'],

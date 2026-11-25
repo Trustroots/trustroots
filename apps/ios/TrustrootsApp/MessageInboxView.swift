@@ -277,7 +277,7 @@ struct ConversationView: View {
                                 .padding(.top, 16)
                             }
                             ForEach(messages.reversed()) { message in
-                                Text(message.content.plainText)
+                                Text(message.displayText)
                                     .padding(12)
                                     .foregroundStyle(.primary)
                                     .background(message.isFrom(username: session.member?.username) ? TrustrootsPalette.green.opacity(0.16) : Color.secondary.opacity(0.12))
@@ -365,13 +365,9 @@ struct ConversationView: View {
                 }
 
                 HStack(alignment: .bottom, spacing: 10) {
-                    TextField("Write a message", text: $draft)
-                        .lineLimit(1)
+                    TextField("Write a message", text: $draft, axis: .vertical)
+                        .lineLimit(1...8)
                         .textInputAutocapitalization(.sentences)
-                        .submitLabel(.send)
-                        .onSubmit {
-                            Task { await sendMessage() }
-                        }
                         .focused($isDraftFocused)
                         .padding(10)
                         .background(Color(.secondarySystemBackground))
@@ -393,6 +389,7 @@ struct ConversationView: View {
                     .foregroundStyle(.white)
                     .background(TrustrootsPalette.green)
                     .clipShape(Circle())
+                    .accessibilityLabel("Send message")
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
                 }
                 .padding(.horizontal)

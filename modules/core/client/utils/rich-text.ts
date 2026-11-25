@@ -2,6 +2,9 @@ import DOMPurify from 'dompurify';
 import { findHashtagLinks } from './hashtag-links';
 import {
   richTextTags,
+  messageRichTextTags,
+  messageLineBlockTags,
+  normaliseMessageSourceNewlines,
   richTextAttributes,
   richTextLinkSchemes,
 } from '../../shared/rich-text-policy.mts';
@@ -13,9 +16,12 @@ const allowedUri = new RegExp(
   'i',
 );
 
-export function sanitiseRichText(content: string): string {
+export function sanitiseRichText(
+  content: string,
+  messageFormatting = false,
+): string {
   const fragment = DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: richTextTags,
+    ALLOWED_TAGS: messageFormatting ? messageRichTextTags : richTextTags,
     ALLOWED_ATTR: [],
     ADD_ATTR: (attribute, tag) =>
       richTextAttributes[tag]?.includes(attribute) === true,
@@ -26,6 +32,37 @@ export function sanitiseRichText(content: string): string {
   });
 
   const template = document.createElement('template');
+  if (messageFormatting) {
+    const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+    const lines: Text[] = [];
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      if (node.data.includes('\n')) lines.push(node);
+    }
+    for (const node of lines) {
+      const content = normaliseMessageSourceNewlines(
+        node.data,
+        node.previousSibling?.nodeName.toLowerCase(),
+        node.nextSibling?.nodeName.toLowerCase(),
+      );
+      node.replaceWith(
+        ...content
+          .split('\n')
+          .flatMap((line, index) =>
+            index ? [document.createElement('br'), line] : [line],
+          ),
+      );
+    }
+    const lineBoundarySelector = ['br', ...messageLineBlockTags].join(',');
+    for (const block of fragment.querySelectorAll('p, div')) {
+      if (
+        !block.textContent?.trim() &&
+        !block.querySelector(lineBoundarySelector)
+      ) {
+        block.append(document.createElement('br'));
+      }
+    }
+  }
   template.content.append(fragment);
   return template.innerHTML;
 }

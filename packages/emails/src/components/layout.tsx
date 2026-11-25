@@ -76,12 +76,18 @@ export function CopyPasteUrl({ url }: { url?: string }) {
 }
 
 /** Pre-sanitised HTML from a member, on a grey background. */
-export function MemberHtml({ html }: { html: string }) {
+export function MemberHtml({
+  html,
+  className,
+}: {
+  html: string;
+  className?: string;
+}) {
   return (
     <Section className="my-4 bg-well px-5 py-1 text-[16px] leading-[1.25] text-body">
       {/* The email service sanitises member content with sanitize-html. */}
       {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
-      <div dangerouslySetInnerHTML={{ __html: html }} />
+      <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
     </Section>
   );
 }

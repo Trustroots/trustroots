@@ -70,6 +70,20 @@ class MessageContentTest {
         assertTrue(message.getLinkAnnotations(0, message.length).isEmpty())
     }
 
+    @Test fun serverLineBreaksKeepTrustrootsLinksOnTheirLabels() {
+        val serverText = "First\n\nSafety"
+        val message = messageContent(
+            "<div>First</div><div><br></div><div><a href=\"/safety\">Safety</a></div>",
+            backend,
+            serverText,
+        )
+
+        assertEquals(serverText, message.text)
+        val link = message.getLinkAnnotations(0, message.length).single()
+        assertEquals("Safety", message.text.substring(link.start, link.end))
+        assertEquals("https://preview.example/safety", (link.item as LinkAnnotation.Url).url)
+    }
+
     @Test fun explicitDefaultHttpPortMatchesTheBackend() {
         val message = messageContent(
             "<a href=\"http://preview.example:80/safety\">Safety</a>",

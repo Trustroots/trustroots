@@ -302,6 +302,9 @@ importers:
       open-location-code:
         specifier: 1.0.3
         version: 1.0.3
+      parse5:
+        specifier: 8.1.1
+        version: 8.1.1
       passport:
         specifier: 0.7.0
         version: 0.7.0

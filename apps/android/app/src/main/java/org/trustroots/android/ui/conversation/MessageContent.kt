@@ -14,22 +14,39 @@ import org.trustroots.android.BuildConfig
 
 private val linkStyle = TextLinkStyles(style = SpanStyle(textDecoration = TextDecoration.Underline))
 
-internal fun messageContent(content: String, backendURL: String): AnnotatedString {
+internal fun messageContent(content: String, backendURL: String, plainText: String? = null): AnnotatedString {
     val parsed = Html.fromHtml(content, Html.FROM_HTML_MODE_COMPACT)
     val start = parsed.indexOfFirst { !it.isWhitespace() }
-    if (start < 0) return AnnotatedString("")
+    if (start < 0) return AnnotatedString(plainText.orEmpty())
     val end = parsed.indexOfLast { !it.isWhitespace() } + 1
     val base = URI("$backendURL/")
+    val links = parsed.getSpans(start, end, URLSpan::class.java).mapNotNull { link ->
+        val destination = trustrootsDestination(link.url, base) ?: return@mapNotNull null
+        val linkStart = parsed.getSpanStart(link).coerceAtLeast(start)
+        val linkEnd = parsed.getSpanEnd(link).coerceAtMost(end)
+        Triple(destination, linkStart, linkEnd)
+    }
+    if (links.isEmpty()) return AnnotatedString(plainText ?: parsed.substring(start, end))
+
+    // Android's HTML parser can change whitespace. Preserve link spans only
+    // when their visible characters can be mapped to the server's text.
+    val parsedCharacters = (start until end).filterNot { parsed[it].isWhitespace() }
+    val serverText = plainText ?: parsed.substring(start, end)
+    val plainCharacters = serverText.indices.filterNot { serverText[it].isWhitespace() }
+    val useServerText = plainText != null &&
+        parsedCharacters.map { parsed[it] } == plainCharacters.map { serverText[it] }
 
     return buildAnnotatedString {
-        append(parsed.substring(start, end))
-        for (link in parsed.getSpans(start, end, URLSpan::class.java)) {
-            val destination = trustrootsDestination(link.url, base) ?: continue
-            addLink(
-                LinkAnnotation.Url(destination, linkStyle),
-                parsed.getSpanStart(link).coerceAtLeast(start) - start,
-                parsed.getSpanEnd(link).coerceAtMost(end) - start,
-            )
+        append(if (useServerText) serverText else parsed.substring(start, end))
+        for ((destination, linkStart, linkEnd) in links) {
+            if (useServerText) {
+                val first = parsedCharacters.indexOfFirst { it >= linkStart }
+                val last = parsedCharacters.indexOfLast { it < linkEnd }
+                if (first < 0 || last < first) continue
+                addLink(LinkAnnotation.Url(destination, linkStyle), plainCharacters[first], plainCharacters[last] + 1)
+            } else {
+                addLink(LinkAnnotation.Url(destination, linkStyle), linkStart - start, linkEnd - start)
+            }
         }
     }
 }
