@@ -64,19 +64,6 @@ describe('<InfiniteMessages>', function () {
     });
   }
 
-  function flush(handler: unknown) {
-    if (
-      handler === null ||
-      (typeof handler !== 'function' && typeof handler !== 'object')
-    ) {
-      return;
-    }
-    const flushHandler = Reflect.get(handler, 'flush');
-    if (typeof flushHandler === 'function') {
-      flushHandler.call(handler);
-    }
-  }
-
   function invokeResizeListener(
     listener: EventListenerOrEventListenerObject | undefined,
   ) {
@@ -89,7 +76,7 @@ describe('<InfiniteMessages>', function () {
     } else {
       listener.handleEvent(event);
     }
-    flush(listener);
+    vi.advanceTimersByTime(25);
   }
 
   beforeEach(() => {
@@ -164,7 +151,6 @@ describe('<InfiniteMessages>', function () {
     expect(onScrollCapture.current).toEqual(expect.any(Function));
     act(() => {
       fireEvent.scroll(scroller);
-      flush(onScrollCapture.current);
       vi.advanceTimersByTime(25);
     });
 
@@ -198,7 +184,6 @@ describe('<InfiniteMessages>', function () {
     vi.advanceTimersByTime(25);
 
     fireEvent.scroll(scroller);
-    flush(onScrollCapture.current);
     vi.advanceTimersByTime(25);
 
     expect(onFetchMore).not.toHaveBeenCalled();
@@ -358,7 +343,6 @@ describe('<InfiniteMessages>', function () {
 
     expect(() => {
       fireEvent.scroll(getByTestId('scrollable-without-ref'));
-      flush(onScrollCapture.current);
       vi.advanceTimersByTime(25);
     }).not.toThrow();
     expect(onFetchMore).not.toHaveBeenCalled();
@@ -397,7 +381,6 @@ describe('<InfiniteMessages>', function () {
 
     act(() => {
       fireEvent.scroll(scroller);
-      flush(onScrollCapture.current);
       vi.advanceTimersByTime(25);
     });
 
@@ -413,7 +396,6 @@ describe('<InfiniteMessages>', function () {
 
     act(() => {
       invokeResizeListener(resizeListener);
-      vi.advanceTimersByTime(25);
     });
 
     expect(scroller.scrollTop).toBe(60);

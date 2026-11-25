@@ -2,26 +2,22 @@
 
 ## Purpose
 
-Protect server routes using in-memory role permissions while preserving the
-application's existing access decisions.
+Protect server routes with per-route role permissions declared in each
+module's policy while preserving the application's existing access decisions.
 
 ## Requirements
 
-### Requirement: In-memory route permissions
+### Requirement: Per-route permissions
 
-The application SHALL authorise protected routes using the configured
-in-memory grants for role, route pattern and HTTP method without requiring
-external database-backed ACL packages.
+Each module policy SHALL declare, for every route pattern it protects, the
+HTTP methods each role may call, and one shared check SHALL enforce those
+declarations without registering grants at startup or requiring external
+ACL packages. Requests without a signed-in user are checked as `guest`.
 
 #### Scenario: A role has permission for a route and method
 
 - **WHEN** a request has any role granted its route pattern and HTTP method
 - **THEN** the route policy permits the request
-
-#### Scenario: A role has wildcard permission
-
-- **WHEN** a role has wildcard permission for a route pattern
-- **THEN** the route policy permits each HTTP method for that route
 
 #### Scenario: No role has permission
 

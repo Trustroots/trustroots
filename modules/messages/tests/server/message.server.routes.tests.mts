@@ -1,8 +1,7 @@
 import { once } from 'node:events';
-import _ from 'lodash';
 import should from 'should';
 import request from 'supertest';
-import moment from 'moment';
+import { addMinutes } from 'date-fns';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import winston from 'winston';
@@ -69,7 +68,7 @@ describe('Message CRUD tests', function () {
       password: credentials.password,
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
     userTo = new User({
@@ -81,7 +80,7 @@ describe('Message CRUD tests', function () {
       password: 'password123',
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
 
@@ -288,7 +287,7 @@ describe('Message CRUD tests', function () {
       password: outsiderCredentials.password,
       provider: 'local',
       roles: ['user'],
-      description: _.repeat('.', config.profileMinimumLength),
+      description: '.'.repeat(config.profileMinimumLength),
       public: true,
     });
     await outsider.save();
@@ -1051,7 +1050,7 @@ describe('Message CRUD tests', function () {
       content: 'One',
       userFrom: userFromId,
       userTo: userToId,
-      created: moment('2016-06-06 19:00:00.174Z').toDate(),
+      created: new Date('2016-06-06T19:00:00.174Z'),
       read: false,
       notified: true,
     });
@@ -1059,7 +1058,7 @@ describe('Message CRUD tests', function () {
       content: 'Two',
       userFrom: userFromId,
       userTo: userToId,
-      created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
+      created: addMinutes(new Date('2016-06-06T19:00:00.174Z'), 30),
       read: false,
       notified: true,
     });
@@ -1079,9 +1078,7 @@ describe('Message CRUD tests', function () {
             const newThread = new Thread({
               userFrom: userFromId,
               userTo: userToId,
-              updated: moment('2016-06-06 19:00:00.174Z')
-                .add(30, 'minutes')
-                .toDate(),
+              updated: addMinutes(new Date('2016-06-06T19:00:00.174Z'), 30),
               message: newMessage2Res._id,
               read: false,
             });
@@ -1172,7 +1169,7 @@ describe('Message CRUD tests', function () {
       content: 'One',
       userFrom: userToId,
       userTo: userFromId,
-      created: moment('2016-06-06 19:00:00.174Z').toDate(),
+      created: new Date('2016-06-06T19:00:00.174Z'),
       read: false,
       notified: true,
     });
@@ -1180,7 +1177,7 @@ describe('Message CRUD tests', function () {
       content: 'Two',
       userFrom: userToId,
       userTo: userFromId,
-      created: moment('2016-06-06 19:00:00.174Z').add(30, 'minutes').toDate(),
+      created: addMinutes(new Date('2016-06-06T19:00:00.174Z'), 30),
       read: false,
       notified: true,
     });

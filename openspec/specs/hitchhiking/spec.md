@@ -41,7 +41,7 @@ Hitchhiking and hackerspace circle maps SHALL share map rendering, safe text pop
 
 ### Requirement: Shared circle map view
 
-The hackers and hitchhikers circle maps SHALL restore the centre and zoom chosen on either map during the same browser session. When no view has been chosen, a map SHALL fit its initial results as before.
+The hackers and hitchhikers circle maps SHALL restore a manually chosen centre and zoom from either map during the same browser session. Views based on device or approximate geolocation SHALL stay in the current map without replacing a saved view. When no view has been chosen, a map SHALL fit its initial results as before.
 
 #### Scenario: Visitor switches circle maps
 

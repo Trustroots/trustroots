@@ -41,6 +41,15 @@ describe('Admin threads controller unit tests', () => {
     sinon.restore();
   });
 
+  it('rejects a missing body and ids that are neither text nor ObjectIds', async () => {
+    for (const req of [{}, { body: { userId: new Uint8Array(12) } }]) {
+      const res = mockResponse();
+      await adminThreads.getThreads(req, res);
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
+    }
+  });
+
   it('returns 400 when thread aggregation fails', async () => {
     const query = {
       exec() {

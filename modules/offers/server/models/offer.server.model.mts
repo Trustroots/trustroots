@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import type { OfferLocation } from '../../shared/offer.js';
 import type { OfferServerRecord } from './offer.server.types.mts';
@@ -65,10 +64,10 @@ function getFuzzyLocation(location: OfferLocation): OfferLocation {
  * @returns {Boolean} true on success, false on failure.
  */
 const validateLocation = function (coordinates: number[]) {
-  if (!_.isArray(coordinates) || coordinates.length !== 2) {
+  if (!Array.isArray(coordinates) || coordinates.length !== 2) {
     return false;
   }
-  if (!_.isFinite(coordinates[0]) || !_.isFinite(coordinates[1])) {
+  if (!Number.isFinite(coordinates[0]) || !Number.isFinite(coordinates[1])) {
     return false;
   }
 

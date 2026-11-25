@@ -1,6 +1,8 @@
 import assert from 'assert';
 import mongoose from 'mongoose';
 import realFs from 'node:fs';
+import { IncomingMessage } from 'node:http';
+import { Socket } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import realSharp from 'sharp';
@@ -702,7 +704,10 @@ describe('Admin circles controller', () => {
 
   it('passes JSON requests through the upload middleware', () => {
     const next = sinon.spy();
-    controller.processImageUpload({ is: () => false }, res, next);
+    const req = Object.assign(new IncomingMessage(new Socket()), {
+      is: () => false,
+    });
+    controller.processImageUpload(req, res, next);
     sinon.assert.calledOnce(next);
     sinon.assert.notCalled(uploadFile);
   });
@@ -1035,7 +1040,9 @@ describe('Admin circles controller', () => {
   });
 
   it('validates multipart images through the shared upload handler', () => {
-    const req = { is: sinon.stub().returns(true) };
+    const req = Object.assign(new IncomingMessage(new Socket()), {
+      is: sinon.stub().returns(true),
+    });
     const next = sinon.spy();
     controller.processImageUpload(req, res, next);
     sinon.assert.calledWith(req.is, 'multipart/form-data');

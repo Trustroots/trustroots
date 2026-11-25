@@ -1,6 +1,5 @@
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import _ from 'lodash';
-import moment from 'moment';
+import { formatDistanceStrict } from 'date-fns';
 import type { MessageRecord } from '../models/message.server.model.mts';
 import type { MessageStatRecord } from '../models/message-stat.server.model.mts';
 
@@ -229,7 +228,7 @@ function readMessageStatsOfUser(
 }
 
 function isFiniteNumber(value: unknown): value is number {
-  return _.isFinite(value);
+  return Number.isFinite(value);
 }
 
 function formatStats(stats: ReplyStats): FormattedStats {
@@ -237,7 +236,7 @@ function formatStats(stats: ReplyStats): FormattedStats {
     ? Math.round(stats.replyRate * 100) + '%'
     : '';
   const replyTime = isFiniteNumber(stats.replyTime)
-    ? moment.duration(stats.replyTime).humanize()
+    ? formatDistanceStrict(0, stats.replyTime)
     : '';
   return { replyRate, replyTime };
 }

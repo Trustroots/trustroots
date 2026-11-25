@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import moment from 'moment';
+import { UTCDate } from '@date-fns/utc';
+import { startOfISOWeek, subDays, subMilliseconds, subWeeks } from 'date-fns';
 import request from 'supertest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import express from '../../../../config/lib/express.mts';
@@ -59,17 +60,17 @@ describe('Public statistics charts', () => {
 
   it('buckets retained records in complete UTC weeks and counts latest activity', async () => {
     const app = await express.init(mongoose.connection);
-    const now = moment.utc();
-    const currentWeek = now.clone().startOf('isoWeek');
-    const start = currentWeek.clone().subtract(12, 'weeks');
-    const lastWeek = currentWeek.clone().subtract(1, 'week');
-    const daysAgo = (days: number) =>
-      now.clone().subtract(days, 'days').toDate();
+    const now = new UTCDate();
+    const utcWeek = startOfISOWeek(now);
+    const currentWeek = new Date(utcWeek);
+    const start = new Date(subWeeks(utcWeek, 12));
+    const lastWeek = new Date(subWeeks(utcWeek, 1));
+    const daysAgo = (days: number) => new Date(subDays(now, days));
     const users = [
-      { created: start.toDate(), seen: daysAgo(1) },
-      { created: lastWeek.toDate(), seen: daysAgo(10) },
-      { created: currentWeek.toDate(), seen: daysAgo(25) },
-      { created: start.clone().subtract(1, 'ms').toDate(), seen: daysAgo(90) },
+      { created: start, seen: daysAgo(1) },
+      { created: lastWeek, seen: daysAgo(10) },
+      { created: currentWeek, seen: daysAgo(25) },
+      { created: subMilliseconds(start, 1), seen: daysAgo(90) },
       { created: daysAgo(400), seen: daysAgo(250) },
       { created: daysAgo(400), seen: daysAgo(400) },
       { created: daysAgo(400), seen: daysAgo(-1) },
@@ -81,17 +82,17 @@ describe('Public statistics charts', () => {
     }));
     const conversations = [
       {
-        firstMessageCreated: start.toDate(),
-        firstReplyCreated: lastWeek.toDate(),
+        firstMessageCreated: start,
+        firstReplyCreated: lastWeek,
       },
       {
-        firstMessageCreated: start.clone().subtract(1, 'ms').toDate(),
-        firstReplyCreated: start.toDate(),
+        firstMessageCreated: subMilliseconds(start, 1),
+        firstReplyCreated: start,
       },
-      { firstMessageCreated: lastWeek.toDate(), firstReplyCreated: null },
+      { firstMessageCreated: lastWeek, firstReplyCreated: null },
       {
-        firstMessageCreated: currentWeek.toDate(),
-        firstReplyCreated: currentWeek.toDate(),
+        firstMessageCreated: currentWeek,
+        firstReplyCreated: currentWeek,
       },
     ].map(conversation => ({
       ...conversation,
@@ -130,10 +131,9 @@ describe('Public statistics charts', () => {
         Array.from({ length: 12 }, (_, index) => {
           const hasRecords = index === 0 || index === 11;
           return {
-            weekStarting: start
-              .clone()
-              .add(index, 'weeks')
-              .format('YYYY-MM-DD'),
+            weekStarting: subWeeks(utcWeek, 12 - index)
+              .toISOString()
+              .slice(0, 10),
             signups: hasRecords ? 1 : 0,
             conversationsStarted: hasRecords ? 1 : 0,
             firstReplies: hasRecords ? 1 : 0,

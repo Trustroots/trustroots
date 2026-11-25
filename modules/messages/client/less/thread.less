@@ -184,7 +184,7 @@
     }
   }
 
-  // No color glow on hover with this Medium editor instance
+  // No colour glow on hover in the reply editor
   .tr-editor {
     &:hover {
       background: transparent;
@@ -223,11 +223,6 @@
         box-shadow: none;
         border-color: @brand-primary;
       }
-      &:after {
-        margin: 0;
-        top: 9px;
-        left: 12px;
-      }
       p {
         margin: 0;
       }
@@ -238,10 +233,6 @@
         min-height: 43px;
         border-radius: 0;
         max-height: ~'min(100px, calc(25vh - 61px))';
-        &:after {
-          top: 2px;
-          left: 5px;
-        }
       }
     }
     @media (max-width: @screen-xs-max) {

@@ -130,7 +130,6 @@ export interface Config {
       models: string[];
       routes: string[];
       configs: string[];
-      policies: string[];
     };
   };
   utils: {

@@ -14,7 +14,7 @@ import type {
 } from '../../../../testutils/server/model-contracts.mts';
 import should from 'should';
 import request from 'supertest';
-import moment from 'moment';
+import { addDays, subDays } from 'date-fns';
 import mongoose from 'mongoose';
 import express from './../../../../config/lib/express.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
@@ -118,8 +118,8 @@ function expectDefaultValidUntil(
   validUntil
     .getTime()
     .should.be.within(
-      moment(before).add(30, 'days').valueOf(),
-      moment(after).add(30, 'days').valueOf(),
+      addDays(before, 30).getTime(),
+      addDays(after, 30).getTime(),
     );
 }
 
@@ -626,7 +626,7 @@ describe('Offer CRUD tests', function () {
 
     it('should default to 30 days from now when trying to set `validUntil` to past', async function () {
       await signIn(credentials);
-      const validUntil = moment().subtract(5, 'days').toDate();
+      const validUntil = subDays(new Date(), 5);
 
       const { offer, before, after } = await postMeetOffer(
         meetOfferPayload({ validUntil }),
@@ -645,12 +645,12 @@ describe('Offer CRUD tests', function () {
   });
   describe('Updating offer', function () {
     it('should be able to update `validUntil` value to 31 days from now', async function () {
-      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
+      const saved = await saveMeetOffer(addDays(new Date(), 2));
       await signIn(credentials);
 
       const { offer, before, after } = await putOffer(
         saved._id,
-        meetOfferPayload({ validUntil: moment().add(31, 'days').toDate() }),
+        meetOfferPayload({ validUntil: addDays(new Date(), 31) }),
       );
 
       expectDefaultValidUntil(offer.validUntil, before, after);

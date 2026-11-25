@@ -79,10 +79,10 @@ test('signed-in homepage lays out recent connections and opens hosting offers', 
 
   const hostingMap = page.locator('.home-hosting-map');
   await expect(hostingMap).toBeVisible();
-  const pins = hostingMap.locator('.leaflet-interactive');
+  const pins = hostingMap.locator('.maplibregl-marker button');
   await expect(pins).toHaveCount(2);
   await pins.first().click();
-  const popup = hostingMap.locator('.leaflet-popup-content');
+  const popup = hostingMap.locator('.maplibregl-popup-content');
   await expect(popup.getByText('Older Host', { exact: true })).toBeVisible();
   await captureSection(popup, 'homepage-hosting-member-popup');
   await hostingMap.getByRole('button', { name: 'Close popup' }).press('Enter');
@@ -168,7 +168,7 @@ test('signed-in homepage puts updates first and shows connections happy to meet'
   const map = page.getByRole('region', { name: 'Connections on the map' });
   await expect(map.getByRole('listitem')).toHaveText('Happy to meet');
   await map.getByRole('button', { name: 'Meeting Member' }).click();
-  const popup = map.locator('.leaflet-popup-content');
+  const popup = map.locator('.maplibregl-popup-content');
   await expect(popup.getByText('Happy to meet')).toBeVisible();
   await expect(
     popup.getByRole('link', { name: 'View meeting availability' }),

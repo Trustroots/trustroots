@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express';
-import _ from 'lodash';
 import speakingurl from 'speakingurl';
 import mongoose from 'mongoose';
 import validator from 'validator';
@@ -69,7 +68,7 @@ const service = {} as {
  * @todo Prevent processing duplicate batches.
  */
 service.receiveBatch = function (req, res) {
-  if (!_.isArray(req.body) || !req.body.length) {
+  if (!Array.isArray(req.body) || !req.body.length) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request'),
     });
@@ -99,7 +98,7 @@ service.receiveBatch = function (req, res) {
 
 /** Persist newsletter opt-outs before acknowledging the provider's batch. */
 service.processUnsubscribe = function (event, callback) {
-  const unsubscribe = _.get(event, 'msys.unsubscribe_event');
+  const unsubscribe = event.msys?.unsubscribe_event;
   if (
     !unsubscribe ||
     (unsubscribe.type !== 'list_unsubscribe' &&
@@ -128,7 +127,8 @@ service.processUnsubscribe = function (event, callback) {
  */
 service.processAndSendMetrics = function (event, callback) {
   // When adding a webhook, Sparkpost sends us `[{"msys":{}}]`
-  if (!_.has(event, 'msys') || _.isEmpty(event.msys)) {
+  const { msys } = event;
+  if (!msys || Object.keys(msys).length === 0) {
     return callback();
   }
 
@@ -176,22 +176,17 @@ service.processAndSendMetrics = function (event, callback) {
   ];
 
   // Get what's in first key of `msys` object
-  const eventCategory = _.keys(event.msys)[0];
+  const eventCategory = Object.keys(msys)[0]!;
+  const eventData = Reflect.get(msys, eventCategory);
 
   // Get what's the `type` of that event
-  const eventType = _.get(event, 'msys.' + eventCategory + '.type');
+  const eventType = eventData?.type;
 
   // Validate event category
-  tags.category = _.find(eventCategories, function (category) {
-    // Returns first match from array
-    return category === eventCategory;
-  });
+  tags.category = eventCategories.find(category => category === eventCategory);
 
   // Validate event type
-  tags.type = _.find(eventTypes, function (type) {
-    // Returns first match from array
-    return type === eventType;
-  });
+  tags.type = eventTypes.find(type => type === eventType);
 
   // Didn't validate, don't continue
   if (!tags.category || !tags.type) {
@@ -203,9 +198,9 @@ service.processAndSendMetrics = function (event, callback) {
   }
 
   // Add campaign id to meta if present
-  const campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
+  const campaignId = eventData.campaign_id;
   // Stryker disable next-line ConditionalExpression: speakingurl returns an empty string for non-strings, which is also the default
-  if (_.isString(campaignId)) {
+  if (typeof campaignId === 'string') {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
     meta.campaignId = speakingurl(campaignId, {
@@ -219,8 +214,9 @@ service.processAndSendMetrics = function (event, callback) {
   }
 
   // Add country if present
-  const country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
-  if (_.isString(country) && country.length <= 3) {
+  const country = (eventData?.geo_ip as { country?: unknown } | undefined)
+    ?.country;
+  if (typeof country === 'string' && country.length <= 3) {
     meta.country = country.replace(/\W/g, '').toUpperCase();
   }
   const statObj: StatObject = {
@@ -233,7 +229,7 @@ service.processAndSendMetrics = function (event, callback) {
   };
 
   // Set `time` field to event's timestamp
-  const timestamp = _.get(event, 'msys.' + eventCategory + '.timestamp');
+  const timestamp = eventData?.timestamp as string | undefined;
   if (timestamp) {
     statObj.time = new Date(parseInt(timestamp, 10) * 1000);
   }
@@ -247,7 +243,7 @@ service.processAndSendMetrics = function (event, callback) {
  */
 service.basicAuthenticate = function (req, res, next) {
   const credentials = parseBasicAuth(req.headers.authorization);
-  const enabled = _.get(config, 'sparkpostWebhook.enabled');
+  const enabled = config.sparkpostWebhook.enabled;
 
   // Access denied
   if (

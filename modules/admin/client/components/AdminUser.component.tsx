@@ -1,6 +1,5 @@
 import MemberFlag from './MemberFlag.component';
 // External dependencies
-import get from 'lodash/get';
 import { formatRoleLabel } from '../utils/role-label';
 import { getAdminUserHref } from '../utils/member-url';
 import {
@@ -307,8 +306,7 @@ function getUserId(user: MemberContact['userFrom']): string | undefined {
 }
 
 function getContactOtherMember(contact: MemberContact, currentUserId: string) {
-  const userFrom = get(contact, ['userFrom']);
-  const userTo = get(contact, ['userTo']);
+  const { userFrom, userTo } = contact;
 
   if (getUserId(userFrom) === currentUserId) {
     return userTo;
@@ -318,7 +316,7 @@ function getContactOtherMember(contact: MemberContact, currentUserId: string) {
     return userFrom;
   }
 
-  return get(contact, ['user']) || userTo || userFrom;
+  return contact.user || userTo || userFrom;
 }
 
 function newestFirstByCreated(
@@ -661,7 +659,7 @@ export function useAdminUserReport({
   }
 
   function hasRole(role: string) {
-    return get(state.user, ['profile', 'roles'], []).includes(role);
+    return (state.user ? state.user.profile.roles : []).includes(role);
   }
 
   return {
@@ -712,7 +710,7 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
     user,
   } = state;
   const isProfile = user && user.profile;
-  const isSuspended = isSuspendedUser(get(user, ['profile']));
+  const isSuspended = isSuspendedUser(user ? user.profile : undefined);
   const isShadowbanned = hasRole('shadowban');
   const isProfileVisible =
     isProfile && isProfile.public && !isSuspended && !isShadowbanned;
@@ -729,13 +727,13 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
       visibilityReasons.push('Reason unknown');
     }
   }
-  const isRestricted = get(user, ['profile', 'roles'], []).some(
-    (role: string) => ['shadowban', 'suspended'].includes(role),
+  const isRestricted = (user ? user.profile.roles : []).some(role =>
+    ['shadowban', 'suspended'].includes(role),
   );
   const potentialMatches = user ? user.potentialMatches || [] : [];
   const hasNoMatchingUsers =
     hasSearched && !isSearching && matchingUsers.length === 0;
-  const userId = get(user, ['profile', '_id']);
+  const userId = user ? user.profile._id : '';
   const profileLabel = isProfile
     ? [user.profile.username, user.profile.displayName]
         .filter(Boolean)
@@ -1448,15 +1446,19 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
                         {[...user.contacts]
                           .sort(newestFirstByCreated)
                           .map(contact => {
-                            const contactMember = getContactOtherMember(
+                            const otherMember = getContactOtherMember(
                               contact,
                               userId,
                             );
+                            const contactMember =
+                              typeof otherMember === 'object'
+                                ? otherMember
+                                : undefined;
                             const contactName =
-                              get(contactMember, ['username']) ||
-                              get(contactMember, ['displayName']) ||
+                              contactMember?.username ||
+                              contactMember?.displayName ||
                               'Unknown member';
-                            const contactMemberId = get(contactMember, ['_id']);
+                            const contactMemberId = contactMember?._id;
 
                             return (
                               <tr key={contact._id}>
@@ -1465,9 +1467,7 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
                                     <a
                                       href={getAdminUserHref({
                                         _id: contactMemberId,
-                                        username: get(contactMember, [
-                                          'username',
-                                        ]),
+                                        username: contactMember?.username,
                                       })}
                                     >
                                       {contactName}

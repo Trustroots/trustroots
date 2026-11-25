@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert } from '@trustroots/ui/Alert';
 
-import lazyMap from '@/modules/core/client/components/lazyMap';
+import Map from '@/modules/core/client/components/Map/index';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import useMapDefaultLocation, {
   type MapDefaultLocation,
@@ -9,15 +9,12 @@ import useMapDefaultLocation, {
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
-import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
+import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import type {
   MapBounds,
   MapPoint,
 } from '@/modules/search/client/utils/location';
-
-const Map = lazyMap(() => import('@/modules/core/client/components/Map/index'));
-const OfferLocationOverlay = lazyMap(() => import('./OfferLocationOverlay'));
 
 interface OfferLocationEditorProps {
   location: [number, number] | null;
@@ -27,21 +24,6 @@ interface OfferLocationEditorProps {
   onLocationChange: (location: [number, number]) => void;
 }
 
-interface OfferMapProps {
-  children?: React.ReactNode;
-  'aria-describedby'?: string;
-  className: string;
-  fallbackMarker?: { color: string; location: [number, number] };
-  height: number | string;
-  location: [number, number];
-  onLocationChange?: (location: [number, number]) => void;
-  preferRaster: boolean;
-  scrollZoom: boolean;
-  width: string;
-  zoom: number;
-}
-
-const TypedMap = Map as unknown as React.ComponentType<OfferMapProps>;
 const locationPrivacy =
   'If your offer is visible to another member, the map shows them a point about 100 to 200 metres from the location you choose. Your exact location stays private.';
 
@@ -57,25 +39,29 @@ export default function OfferLocationEditor({
   const [showLocationFeedback, setShowLocationFeedback] = useState(true);
   const [mapSelectionZoom, setMapSelectionZoom] = useState<number | null>(null);
   const applyDeviceLocation = useRef(true);
+  const liveZoom = useRef<number | null>(null);
   const [deviceApproximateLocation, setDeviceApproximateLocation] =
     useState<MapDefaultLocation | null>(null);
   const [approximateLocation, stopDefaultLocation] =
     useMapDefaultLocation(!location);
-  // A new centre asks Leaflet to move, so retain the same tuple while only UI
+  // A new centre asks the map to move, so retain the same tuple while only UI
   // state (such as feedback or the search query) changes.
-  const mapLocation = useMemo<[number, number]>(() => {
-    const approximate = deviceApproximateLocation ?? approximateLocation;
-    if (location && !deviceApproximateLocation) return location;
-    return approximate
-      ? [approximate.latitude, approximate.longitude]
-      : [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng];
-  }, [approximateLocation, deviceApproximateLocation, location]);
   const mapZoom =
     deviceApproximateLocation?.zoom ??
     mapSelectionZoom ??
     (location?.length === 2
       ? 13
       : (approximateLocation?.zoom ?? DEFAULT_LOCATION.zoom));
+  const view = useMemo(() => {
+    const approximate = deviceApproximateLocation ?? approximateLocation;
+    const [latitude, longitude] =
+      location && !deviceApproximateLocation
+        ? location
+        : approximate
+          ? [approximate.latitude, approximate.longitude]
+          : [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng];
+    return { latitude, longitude, zoom: mapZoom };
+  }, [approximateLocation, deviceApproximateLocation, location, mapZoom]);
   const isHosting = offerType === 'host';
   const mapGuidance = (
     <p className={isHosting ? 'offer-map-guidance' : 'lead'} id="offerLocation">
@@ -154,8 +140,8 @@ export default function OfferLocationEditor({
       handleMapInteraction();
       return;
     }
-    // Preserve the live Leaflet zoom when a gesture chooses the first location.
-    selectLocation(nextLocation, mapZoom);
+    // Preserve the live map zoom when a gesture chooses the first location.
+    selectLocation(nextLocation, liveZoom.current ?? mapZoom);
   }
 
   function handleDeviceLocation(location: DeviceLocation) {
@@ -204,35 +190,26 @@ export default function OfferLocationEditor({
             }
           }}
         >
-          <TypedMap
-            aria-describedby="offerLocation"
+          <Map
             className="offer-location"
-            fallbackMarker={
-              location
+            style={{ width: '100%', height: '100%' }}
+            view={view}
+            onClick={handleMapLocationChange}
+            onMoveEnd={({ latitude, longitude, zoom }, _bounds, dragged) => {
+              liveZoom.current = zoom;
+              // Include inertial movement after a drag, but not zooms.
+              if (dragged) handleMapLocationChange([latitude, longitude]);
+            }}
+            area={
+              location && !deviceApproximateLocation
                 ? {
-                    color: getOfferHexColor({ offerType, offerStatus }),
-                    location,
+                    latitude: location[0],
+                    longitude: location[1],
+                    colour: getOfferHexColor({ offerType, offerStatus }),
                   }
-                : undefined
+                : null
             }
-            height="100%"
-            // Some Chromium configurations initialise WebGL but fail to draw
-            // vector map detail. Raster tiles keep location selection usable.
-            preferRaster
-            location={mapLocation}
-            onLocationChange={handleMapLocationChange}
-            scrollZoom
-            width="100%"
-            zoom={mapZoom}
-          >
-            {location?.length === 2 && !deviceApproximateLocation && (
-              <OfferLocationOverlay
-                location={location}
-                offerStatus={offerStatus}
-                offerType={offerType}
-              />
-            )}
-          </TypedMap>
+          />
         </div>
         <div className="offer-location-overlay"></div>
         {showGuide && (

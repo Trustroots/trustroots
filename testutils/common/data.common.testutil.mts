@@ -4,10 +4,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import lodash from 'lodash';
 import type { PublicProviderIdentities } from '../../modules/users/shared/profile.ts';
-
-const { defaultsDeep, range, sample, sampleSize } = lodash;
 
 type FixtureId = string | { toString(): string; toHexString(): string };
 
@@ -199,7 +196,7 @@ export function generateClientUser(
 
 function selectRandom<T>(list: readonly T[], fraction = 0.5): T[] {
   const count = Math.floor(list.length * fraction);
-  return sampleSize(list, count);
+  return faker.helpers.arrayElements(list, count);
 }
 
 export function generateUsers(
@@ -237,7 +234,7 @@ export function generateUsers(
   type: string = 'server',
   tribes: readonly TribeFixture[] = [],
 ): Array<ServerUserFixture | ClientUserFixture | undefined> {
-  return range(count).map(() => {
+  return Array.from({ length: count }, () => {
     switch (type) {
       case 'server':
         return generateServerUser({
@@ -274,9 +271,20 @@ export function generateExperiences(
         guest: faker.datatype.boolean(),
         host: faker.datatype.boolean(),
       },
-      recommend: sample<ExperienceRecommendation>(['yes', 'no', 'unknown']),
+      recommend: faker.helpers.arrayElement<ExperienceRecommendation>([
+        'yes',
+        'no',
+        'unknown',
+      ]),
     };
 
-    return defaultsDeep({}, overrides, defaultExperience);
+    return {
+      ...defaultExperience,
+      ...overrides,
+      interactions: {
+        ...defaultExperience.interactions,
+        ...overrides.interactions,
+      },
+    };
   });
 }

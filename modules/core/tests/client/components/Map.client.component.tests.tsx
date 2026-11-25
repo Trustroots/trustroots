@@ -1,208 +1,55 @@
 import React from 'react';
-import { getMapBoxToken } from '@/modules/core/client/utils/map';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import Map from '@/modules/core/client/components/Map';
-import type MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
-import type LeafletMap from '@/modules/core/client/components/Map/LeafletMap';
+import type { MapProps } from '@/modules/core/client/components/Map/types';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
-type MapProps = React.ComponentProps<typeof Map>;
-type MapStyleControlProps = React.ComponentProps<typeof MapStyleControl>;
-type LeafletMapProps = React.ComponentProps<typeof LeafletMap>;
-
-const mockIsWebGLSupported = vi.fn<(...args: []) => boolean>();
-const mockGetMapBoxToken = vi.mocked(getMapBoxToken);
-beforeEach(() => mockGetMapBoxToken.mockReturnValue('test-token'));
-vi.mock('@/modules/core/client/utils/map', async () => ({
-  ...(await vi.importActual<typeof import('@/modules/core/client/utils/map')>(
-    '@/modules/core/client/utils/map',
-  )),
+const mockIsWebGLSupported = vi.fn<() => boolean>();
+vi.mock('@/modules/core/client/utils/map', () => ({
   isWebGLSupported: () => mockIsWebGLSupported(),
-  getMapBoxToken: vi.fn(() => 'test-token'),
 }));
-
-const mockMapGL = vi.fn<(...args: [props: MapProps]) => void>();
-const mockMapStyleControl =
-  vi.fn<(...args: [props: MapStyleControlProps]) => void>();
-vi.mock('react-map-gl/mapbox', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
-  return {
-    __esModule: true,
-    default: function MockMapGL(props: MapProps) {
-      mockMapGL(props);
-      return <div data-testid="react-map">{props.children}</div>;
-    },
-  };
-});
-
-vi.mock('@/modules/core/client/components/Map/MapNavigationControl', () => ({
-  default: vi.fn(() => <div data-testid="map-navigation-control" />),
+vi.mock('@/modules/core/client/components/Map/MapLibreMap', () => ({
+  default: (props: MapProps) => (
+    <div data-testid="maplibre">{props.children}</div>
+  ),
 }));
-vi.mock('@/modules/core/client/components/Map/MapScaleControl', () => ({
-  default: vi.fn(() => <div data-testid="map-scale-control" />),
-}));
-const mockLeafletMap = vi.fn<(...args: [props: LeafletMapProps]) => void>();
 vi.mock('@/modules/core/client/components/Map/LeafletMap', () => ({
-  default: vi.fn((props: LeafletMapProps) => {
-    mockLeafletMap(props);
-    return <div data-testid="leaflet-map" />;
-  }),
+  default: (props: MapProps) => (
+    <div data-testid="leaflet">{props.children}</div>
+  ),
 }));
-vi.mock('@/modules/core/client/components/Map/MapStyleControl', () => ({
-  __esModule: true,
-  default: (props: MapStyleControlProps) => {
-    mockMapStyleControl(props);
-    return <div data-testid="map-style-control" />;
-  },
-}));
+
+const view = { latitude: 51, longitude: 11, zoom: 5 };
 
 describe('<Map />', () => {
-  beforeEach(() => {
-    mockMapStyleControl.mockClear();
-    mockLeafletMap.mockClear();
+  it('renders MapLibre where WebGL2 is available', async () => {
     mockIsWebGLSupported.mockReturnValue(true);
-  });
-
-  it('passes default viewport and renders map chrome', () => {
+    const { track, wrapper } = fakeAnalytics();
     render(
-      <Map>
-        <div>Map child</div>
+      <Map view={view} className="offer-location" style={{ height: 220 }}>
+        Map child
       </Map>,
+      { wrapper },
     );
 
-    expect(screen.getByText('Map child')).toBeInTheDocument();
-    expect(latestReactMapProps().mapboxAccessToken).toBe('test-token');
-    const disableRotation = vi.fn();
-    act(() =>
-      latestReactMapProps().onLoad!({
-        target: {
-          touchZoomRotate: { disableRotation },
-          scrollZoom: { setWheelZoomRate: vi.fn() },
-        },
-      } as unknown as Parameters<NonNullable<MapProps['onLoad']>>[0]),
+    const placeholder = screen.getByRole('alertdialog').parentElement;
+    expect(placeholder).toHaveClass('offer-location');
+    expect(placeholder).toHaveStyle({ height: '220px' });
+    expect(await screen.findByTestId('maplibre')).toHaveTextContent(
+      'Map child',
     );
-    expect(disableRotation).toHaveBeenCalled();
-    expect(screen.getByTestId('map-navigation-control')).toBeInTheDocument();
-    expect(screen.getByTestId('map-scale-control')).toBeInTheDocument();
-    expect(screen.queryByTestId('map-style-control')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('leaflet')).not.toBeInTheDocument();
+    expect(track).not.toHaveBeenCalled();
   });
 
-  it('renders map style control when showMapStyles is enabled', () => {
-    render(<Map showMapStyles />);
-
-    expect(screen.getByTestId('map-style-control')).toBeInTheDocument();
-    expect(mockMapStyleControl).toHaveBeenCalledWith(
-      expect.objectContaining({
-        setMapstyle: expect.any(Function),
-      }),
-    );
-  });
-
-  it('uses the raster map when WebGL is unavailable', () => {
+  it('falls back to Leaflet without WebGL2 and counts the fallback', async () => {
     mockIsWebGLSupported.mockReturnValue(false);
+    const { track, wrapper } = fakeAnalytics();
+    render(<Map view={view}>Map child</Map>, { wrapper });
 
-    render(
-      <Map
-        fallbackMarker={{ color: '#11b4da', location: [50.12, 19.89] }}
-        location={[50.12, 19.89]}
-        scrollZoom={false}
-        zoom={11}
-      />,
-    );
-
-    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
-    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
-    expect(mockLeafletMap).toHaveBeenCalledWith(
-      expect.objectContaining({
-        location: [50.12, 19.89],
-        marker: { color: '#11b4da', location: [50.12, 19.89] },
-        scrollZoom: false,
-        zoom: 11,
-      }),
-    );
+    expect(await screen.findByTestId('leaflet')).toHaveTextContent('Map child');
+    expect(screen.queryByTestId('maplibre')).not.toBeInTheDocument();
+    expect(track).toHaveBeenCalledExactlyOnceWith('map_raster_fallback');
   });
-
-  it('uses raster tiles without a token even when WebGL is supported', () => {
-    mockGetMapBoxToken.mockReturnValue(undefined);
-    render(<Map />);
-    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
-    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
-  });
-
-  it('can prefer raster tiles even when WebGL is supported', () => {
-    mockIsWebGLSupported.mockReturnValue(true);
-    render(
-      <Map
-        location={[35, -7]}
-        fallbackMarker={{ color: '#11b4da', location: [35, -7] }}
-        preferRaster
-      />,
-    );
-    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
-    expect(mockLeafletMap).toHaveBeenCalledWith(
-      expect.objectContaining({ location: [35, -7] }),
-    );
-  });
-});
-
-function latestReactMapProps(): MapProps {
-  const call = mockMapGL.mock.calls[mockMapGL.mock.calls.length - 1];
-  if (!call) {
-    throw new Error('Expected ReactMapGL to have rendered');
-  }
-  return call[0];
-}
-
-type Viewport = {
-  latitude: number;
-  longitude: number;
-  zoom: number;
-};
-type InteractionState = { isPanning?: boolean; isZooming?: boolean };
-function changeMapViewport(
-  viewport: Viewport = { latitude: 51, longitude: 11, zoom: 15 },
-  interactionState?: InteractionState,
-): void {
-  const props = latestReactMapProps();
-  const event = {
-    viewState: viewport,
-    target: { isZooming: () => interactionState?.isZooming ?? false },
-  } as unknown as Parameters<NonNullable<MapProps['onMove']>>[0];
-  act(() => {
-    props.onMove!(event);
-    if (interactionState?.isPanning) props.onDrag!(event);
-  });
-}
-
-it('synchronises panning and external place searches while retaining zoom', () => {
-  mockIsWebGLSupported.mockReturnValue(true);
-  const onLocationChange = vi.fn();
-  const { rerender } = render(
-    <Map location={[50, 10]} onLocationChange={onLocationChange} />,
-  );
-  changeMapViewport(
-    { latitude: 51, longitude: 11, zoom: 15 },
-    { isPanning: true, isZooming: false },
-  );
-  expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
-  onLocationChange.mockClear();
-  changeMapViewport(
-    { latitude: 51, longitude: 11, zoom: 16 },
-    { isPanning: true, isZooming: true },
-  );
-  expect(onLocationChange).not.toHaveBeenCalled();
-  changeMapViewport({ latitude: 51, longitude: 11, zoom: 16 });
-  expect(onLocationChange).not.toHaveBeenCalled();
-  rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
-  expect(latestReactMapProps()).toEqual(
-    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 16 }),
-  );
-});
-it('allows maps to pan without a location callback', () => {
-  mockIsWebGLSupported.mockReturnValue(true);
-  render(<Map />);
-  changeMapViewport();
-  expect(latestReactMapProps()).toEqual(
-    expect.objectContaining({ latitude: 51, longitude: 11, zoom: 15 }),
-  );
 });

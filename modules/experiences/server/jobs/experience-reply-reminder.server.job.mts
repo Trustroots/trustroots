@@ -1,6 +1,6 @@
 import { promisify } from 'node:util';
 import type { Agenda, Job } from 'agenda';
-import moment from 'moment';
+import { subDays, sub } from 'date-fns';
 import mongoose, { type Types } from 'mongoose';
 
 import config from '../../../../config/config.mts';
@@ -32,8 +32,8 @@ function pendingInReplyWindow(now: Date) {
     public: false,
     removedAt: { $exists: false },
     created: {
-      $gt: moment(now).subtract(config.limits.timeToReplyExperience).toDate(),
-      $lte: moment(now).subtract(11, 'days').toDate(),
+      $gt: sub(now, config.limits.timeToReplyExperience),
+      $lte: subDays(now, 11),
     },
   };
 }

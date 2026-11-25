@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
@@ -433,11 +432,8 @@ service.filterByCommon = async function (req, res, next) {
     // Ensure we have a list of string id's instead of Mongo ObjectId's
     // Otherwise checking if we have certain id in this list using `indexOf`
     // becomes difficult.
-    // authUserContactUsers = _.map(authUserContactUsers, _.toString);
-
     // We have both contact lists, do the matching
-    // @link https://lodash.com/docs/#filter
-    req.contacts = _.filter(contacts, function (contact) {
+    req.contacts = contacts.filter(function (contact) {
       // Check if `contact.user._id` is also on list of authenticated user's
       // contacts list. Returning truthy will let it trough to `req.contacts`,
       // returning falsy will hold it back.

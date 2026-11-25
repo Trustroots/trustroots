@@ -34,6 +34,7 @@ The script tag sets `data-performance="true"`, so the tracker reports LCP, INP, 
 | How often does the message rate limit stop members?                      | `message_send_failed` (`reason: rate_limited`) against `message_sent`                                                           |
 | Is hosting supply growing, and do offer saves fail?                      | `offer_saved` by `status`, `offer_deleted`, `offer_save_failed` by `reason`                                                     |
 | Does anyone use community notes on the map?                              | `search_community_note_opened`, `search_filter_changed` (`community_notes`)                                                     |
+| How many map views need the raster fallback?                             | `map_raster_fallback`                                                                                                           |
 | Which circle surfaces bring members?                                     | `circle_joined` and `circle_left` by `source`                                                                                   |
 | What do members need support for?                                        | `support_request_sent` by `category`                                                                                            |
 | Which interface languages matter for translation?                        | `language_switched`                                                                                                             |
@@ -90,6 +91,7 @@ The script tag sets `data-performance="true"`, so the tracker reports LCP, INP, 
 | `search_offer_previewed`       | none                                                                                            | An offer is opened from the search map or list.                                                                               |
 | `search_offer_not_found`       | none                                                                                            | An offer link on the search map points nowhere.                                                                               |
 | `search_community_note_opened` | none                                                                                            | A community note is opened, from the map or the search sidebar.                                                               |
+| `map_raster_fallback`          | none                                                                                            | A map is drawn with Leaflet raster tiles because the browser has no WebGL2.                                                   |
 
 ### Reaching out
 

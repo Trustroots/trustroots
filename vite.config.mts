@@ -36,7 +36,7 @@ const legacyLessImports = {
   ) {
     class LegacyAliasFileManager extends less.FileManager {
       supports(filename: string): boolean {
-        return /^~(?:less|modules|bootstrap|mapbox-gl)\//.test(filename);
+        return /^~(?:less|modules|bootstrap)\//.test(filename);
       }
 
       async loadFile(
@@ -54,7 +54,6 @@ const legacyLessImports = {
           less: aliases.less,
           modules: aliases.modules,
           bootstrap: resolve(root, 'node_modules/bootstrap'),
-          'mapbox-gl': resolve(root, 'node_modules/mapbox-gl'),
         };
         const directory = base[alias];
         if (!directory)

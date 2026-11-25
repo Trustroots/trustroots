@@ -1,7 +1,7 @@
 import unreadJob from '../../../server/jobs/message-unread.server.job.mts';
 import { queueMessageDigests } from '../../../server/jobs/message-digest.server.job.mts';
 import config from '../../../../../config/config.mts';
-import moment from 'moment';
+import { milliseconds, sub } from 'date-fns';
 import emailService from './../../../../core/server/services/email.server.service.mts';
 import sinon from 'sinon';
 import winston from 'winston';
@@ -114,9 +114,7 @@ describe('Job: message unread', function () {
   });
 
   it('Do not remind user about unread messages which are sent less than 10 minutes ago', async function () {
-    message.created = moment()
-      .subtract(moment.duration({ minutes: 9 }))
-      .toDate();
+    message.created = sub(new Date(), { minutes: 9 });
     await message.save();
     await new Promise<void>((resolve, reject) => {
       messageUnreadJobHandler({}, (err?: Error | null) =>
@@ -127,9 +125,7 @@ describe('Job: message unread', function () {
   });
 
   it('Remind user about unread messages which are sent more than 10 minutes ago', function (done) {
-    message.created = moment()
-      .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-      .toDate();
+    message.created = sub(new Date(), { minutes: 10, seconds: 1 });
     message
       .save()
       .then(function () {
@@ -449,7 +445,7 @@ describe('Job: message unread', function () {
           now.getTime() -
             Math.min(
               ...config.limits.unreadMessageReminders.map(interval =>
-                moment.duration(interval).asMilliseconds(),
+                milliseconds(interval),
               ),
             ),
         );
@@ -609,15 +605,11 @@ describe('Job: message unread', function () {
 
   it('Remind user about multiple unread messages from same user in one notification email', function (done) {
     const message2 = new Message(_message);
-    message2.created = moment()
-      .subtract(moment.duration({ minutes: 11 }))
-      .toDate();
+    message2.created = sub(new Date(), { minutes: 11 });
     message2
       .save()
       .then(function () {
-        message.created = moment()
-          .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-          .toDate();
+        message.created = sub(new Date(), { minutes: 10, seconds: 1 });
         message
           .save()
           .then(function () {
@@ -668,16 +660,12 @@ describe('Job: message unread', function () {
       .save()
       .then(function (user) {
         const message2 = new Message(_message);
-        message2.created = moment()
-          .subtract(moment.duration({ minutes: 11 }))
-          .toDate();
+        message2.created = sub(new Date(), { minutes: 11 });
         message2.userFrom = user._id;
         message2
           .save()
           .then(function () {
-            message.created = moment()
-              .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-              .toDate();
+            message.created = sub(new Date(), { minutes: 10, seconds: 1 });
             message
               .save()
               .then(function () {
@@ -738,9 +726,7 @@ describe('Job: message unread', function () {
   });
 
   it('Ignore notification messages from removed users', function (done) {
-    message.created = moment()
-      .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-      .toDate();
+    message.created = sub(new Date(), { minutes: 10, seconds: 1 });
     message
       .save()
       .then(function () {
@@ -845,18 +831,14 @@ describe('Job: message unread', function () {
 
   it('Ignore notification messages from removed users but do not stop processing other notifications', function (done) {
     const message2 = new Message(_message);
-    message2.created = moment()
-      .subtract(moment.duration({ minutes: 11 }))
-      .toDate();
+    message2.created = sub(new Date(), { minutes: 11 });
 
     // Attach non-existing user to this message
     message2.userFrom = new mongoose.Types.ObjectId();
     message2
       .save()
       .then(function () {
-        message.created = moment()
-          .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-          .toDate();
+        message.created = sub(new Date(), { minutes: 10, seconds: 1 });
         message
           .save()
           .then(function () {
@@ -911,11 +893,11 @@ describe('Job: message unread', function () {
     }
 
     it('waits for the newest pending message and sends the whole batch only once', async function () {
-      message.created = moment().subtract({ minutes: 11 }).toDate();
+      message.created = sub(new Date(), { minutes: 11 });
       await message.save();
       const newer = await new Message({
         ..._message,
-        created: moment().subtract({ minutes: 6 }).toDate(),
+        created: sub(new Date(), { minutes: 6 }),
       }).save();
 
       await runJob();
@@ -939,13 +921,13 @@ describe('Job: message unread', function () {
     });
 
     it('also groups staggered follow-up reminders', async function () {
-      message.created = moment().subtract({ hours: 25 }).toDate();
+      message.created = sub(new Date(), { hours: 25 });
       message.notificationCount = 1;
       await message.save();
       const newer = await new Message({
         ..._message,
         notificationCount: 1,
-        created: moment().subtract({ hours: 23, minutes: 59 }).toDate(),
+        created: sub(new Date(), { hours: 23, minutes: 59 }),
       }).save();
 
       await runJob();
@@ -963,7 +945,7 @@ describe('Job: message unread', function () {
     });
 
     it('does not let read or already notified messages delay the first reminder', async function () {
-      message.created = moment().subtract({ minutes: 11 }).toDate();
+      message.created = sub(new Date(), { minutes: 11 });
       await message.save();
       await Message.create([
         { ..._message, read: true, created: new Date() },
@@ -978,7 +960,7 @@ describe('Job: message unread', function () {
     });
 
     it('does not let fresh messages in another conversation delay a reminder', async function () {
-      message.created = moment().subtract({ minutes: 11 }).toDate();
+      message.created = sub(new Date(), { minutes: 11 });
       await message.save();
       await new Message({
         ..._message,
@@ -994,11 +976,6 @@ describe('Job: message unread', function () {
   });
 
   context('further notifications configured', function () {
-    // helpful function to convert readable (momentjs) duration to milliseconds
-    function milliseconds(duration: moment.DurationInputArg1) {
-      return moment.duration(duration).asMilliseconds();
-    }
-
     beforeEach(function () {
       // Keep the system clock fixed. Only Date is faked so the job's
       // asynchronous queue can still finish.
@@ -1020,7 +997,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1066,7 +1043,7 @@ describe('Job: message unread', function () {
             .save()
             .then(function () {
               // wait for 10 minutes
-              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+              sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
               messageUnreadJobHandler({}, function (err?: Error | null) {
                 if (err) return done(err);
@@ -1117,7 +1094,7 @@ describe('Job: message unread', function () {
             .save()
             .then(function () {
               // wait for 10 minutes
-              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+              sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
               messageUnreadJobHandler({}, function (err?: Error | null) {
                 if (err) return done(err);
@@ -1153,7 +1130,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1195,7 +1172,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 24 hours
-          sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ hours: 24 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1219,7 +1196,7 @@ describe('Job: message unread', function () {
         .save()
         .then(function () {
           // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+          sinon.clock.tick(milliseconds({ minutes: 10 }) + 1);
 
           messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
@@ -1396,9 +1373,7 @@ describe('Job: message unread', function () {
     });
 
     it('fails when marking messages as notified errors', function (done) {
-      message.created = moment()
-        .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-        .toDate();
+      message.created = sub(new Date(), { minutes: 10, seconds: 1 });
       message
         .save()
         .then(function () {
@@ -1420,7 +1395,7 @@ describe('Job: message unread', function () {
       'Sending unread message notifications caused an error. #j38vax';
 
     function ageMessage(minutes = 11) {
-      message.created = moment().subtract({ minutes }).toDate();
+      message.created = sub(new Date(), { minutes });
       return message.save();
     }
     function runJob(): Promise<void> {
@@ -1503,9 +1478,36 @@ describe('Job: message unread', function () {
       ).should.equal(0);
     });
 
+    it('honours a digest preference set after reminder selection', async function () {
+      await ageMessage();
+      const find = User.find.bind(User);
+      const selectedRecipients = sinon
+        .stub(User, 'find')
+        .callsFake((...args) => {
+          const query = find(...args);
+          const exec = query.exec.bind(query);
+          sinon.stub(query, 'exec').callsFake(async () => {
+            await User.updateOne(
+              { _id: userToId },
+              { $set: { messageEmailFrequency: 'daily' } },
+            );
+            return exec();
+          });
+          return query;
+        });
+
+      await runJob();
+
+      sinon.assert.calledOnce(selectedRecipients);
+      jobs.length.should.equal(0);
+      const saved = await Message.findById(message._id).orFail().exec();
+      required(saved.notificationCount).should.equal(0);
+    });
+
     it('bounds the email preview and marks the full conversation notified', async function () {
+      const aggregate = sinon.spy(Message, 'aggregate');
       await ageMessage(60);
-      const created = moment().subtract(30, 'minutes').toDate();
+      const created = sub(new Date(), { minutes: 30 });
       await Message.create(
         Array.from({ length: 20 }, (_, index) => ({
           ..._message,
@@ -1515,6 +1517,44 @@ describe('Job: message unread', function () {
       );
       await runJob();
 
+      const pipeline = required(aggregate.lastCall.args[0]);
+      pipeline.should.containEql({
+        $match: {
+          'recipient.messageEmailFrequency': {
+            $nin: ['off', 'daily', 'weekly'],
+          },
+        },
+      });
+      required(pipeline.at(-1)).should.deepEqual({
+        $lookup: {
+          from: Message.collection.name,
+          let: {
+            recipient: '$_id.userTo',
+            sender: '$_id.userFrom',
+            latest: '$latestCreated',
+          },
+          pipeline: [
+            {
+              $match: {
+                read: false,
+                notificationCount: { $lte: 0 },
+                $expr: {
+                  $and: [
+                    { $eq: ['$userTo', '$$recipient'] },
+                    { $eq: ['$userFrom', '$$sender'] },
+                    { $lte: ['$created', '$$latest'] },
+                  ],
+                },
+              },
+            },
+            { $sort: { created: -1, _id: -1 } },
+            { $limit: 20 },
+            { $sort: { created: 1, _id: 1 } },
+            { $project: { _id: 0, content: 1, created: 1, id: '$_id' } },
+          ],
+          as: 'messages',
+        },
+      });
       jobs.length.should.equal(1);
       jobs[0].data.text.should.containEql('21 unread messages');
       jobs[0].data.text.should.containEql('Recent preview 0');
@@ -1600,9 +1640,10 @@ describe('Job: message unread', function () {
 
     it('still sends a further reminder for a message exactly at the too-late limit', async function () {
       sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
-      const tooOld = moment()
-        .subtract(moment.duration(config.limits.unreadMessageRemindersTooLate))
-        .toDate();
+      const tooOld = sub(
+        new Date(),
+        config.limits.unreadMessageRemindersTooLate,
+      );
       message.created = tooOld;
       message.notificationCount = 1;
       await message.save();
