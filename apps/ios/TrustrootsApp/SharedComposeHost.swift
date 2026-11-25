@@ -3,6 +3,21 @@ import MapKit
 import SwiftUI
 import TrustrootsShared
 
+struct SharedSignInController: UIViewControllerRepresentable {
+    let session: MemberSessionStore
+    let onJoin: () -> Void
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MemberSignInViewController(
+            gateway: SharedMemberPilotGateway(session: session, exit: {}),
+            initialError: session.errorMessage,
+            onJoin: onJoin
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
 struct SharedComposeHost: UIViewControllerRepresentable {
     let session: MemberSessionStore
     let exit: () -> Void

@@ -1,4 +1,4 @@
-package org.trustroots.android.ui.icons
+package org.trustroots.shared.ui.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType.Companion.NonZero

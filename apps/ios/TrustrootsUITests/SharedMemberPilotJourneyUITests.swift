@@ -2,6 +2,33 @@ import Foundation
 import XCTest
 
 final class SharedMemberPilotJourneyUITests: XCTestCase {
+    func testRegularLaunchUsesSharedSignInAndRestoresSession() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+
+        let username = app.descendants(matching: .any)["pilot-username"]
+        XCTAssertTrue(username.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["API: 127.0.0.1"].exists)
+        XCTAssertFalse(app.buttons["Exit shared pilot"].exists)
+        app.buttons["Join"].tap()
+        XCTAssertTrue(app.staticTexts["Join Trustroots"].waitForExistence(timeout: 10))
+        app.buttons["Back"].tap()
+        XCTAssertTrue(username.waitForExistence(timeout: 10))
+
+        signInToRegularApp(app)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Sign in"].exists)
+    }
+
     @MainActor
     func testMemberJourneyRetainsFailedReplyAndUsesSavedSession() async throws {
         continueAfterFailure = false
@@ -20,6 +47,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             signOutIfAlreadySignedIn(app)
         }
         signOutIfAlreadySignedIn(app)
+        XCTAssertTrue(element(labelled: "Trustroots", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Travellers’ community", in: app).exists)
+        let signInScreen = XCTAttachment(screenshot: app.screenshot())
+        signInScreen.name = "shared-member-sign-in"
+        signInScreen.lifetime = .keepAlways
+        add(signInScreen)
         signIn(app)
 
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))
@@ -158,7 +191,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             signOutOfNativeAccountIfNeeded(app)
         }
         signOutOfNativeAccountIfNeeded(app)
-        signInNatively(app)
+        signInToRegularApp(app)
         openNostrAccount(app)
 
         // Simulator Keychain survives reinstall/relaunch. Start with this fixture's
@@ -185,7 +218,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
-        signInNatively(app)
+        signInToRegularApp(app)
         openNostrAccount(app)
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         XCTAssertEqual(localKey.label, publicKey)
@@ -281,8 +314,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signIn(app, username: username, password: password)
     }
 
-    private func signInNatively(_ app: XCUIApplication) {
-        signIn(app, username: app.textFields["Username or email"], password: app.secureTextFields["Password"])
+    private func signInToRegularApp(_ app: XCUIApplication) {
+        signIn(app)
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
         let passwordPrompt = app.sheets["Save Password?"]
         if passwordPrompt.waitForExistence(timeout: 5) {
@@ -453,7 +486,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             signOutOfNativeAccountIfNeeded(app)
         }
         signOutOfNativeAccountIfNeeded(app)
-        signInNatively(app)
+        signInToRegularApp(app)
 
         let search = app.buttons["Search"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
