@@ -240,6 +240,15 @@ other member's profile and then choose **Send a message**.
 | Device behaviour      | Native host with shared controls and shared navigation                                         | Check VoiceOver, TalkBack, dynamic text, keyboard, screen insets and Back on supported devices                               |
 | Distribution          | Uses the existing Android and iOS debug apps                                                   | Verify pinned Xcode CI, APK/app size and startup, followed by repeatable signing and release                                 |
 
+The iOS source confirms gaps that affect a default destination change. SwiftUI
+profiles provide editing, languages, circles, and block and report actions. The
+shared profile shows identity, location and biography, and opens a conversation.
+The SwiftUI inbox also filters by member and message content. The shared inbox
+paginates threads and links to profiles and conversations. See the
+[SwiftUI profile](ios/TrustrootsApp/MemberProfileView.swift),
+[SwiftUI inbox](ios/TrustrootsApp/MessageInboxView.swift) and
+[shared screens](shared/src/commonMain/kotlin/org/trustroots/shared/ui/PilotMemberScreens.kt).
+
 The focused Android journey passed on a Pixel 8 API 36 emulator. The focused
 iOS journey passed on an iPhone 17 Pro iOS 26.5 simulator using ad-hoc signing.
 The tests exercised sign-in, native handoff, profile and inbox navigation,
@@ -257,7 +266,8 @@ if the requested runtime is unavailable so the result cannot be mistaken for
 a run on a newer simulator.
 
 Continue the pilot alongside SwiftUI. The next decision should follow
-a device comparison with current native behaviour.
+a [physical iPhone comparison](ios/compose-pilot-device-comparison.md) with
+current native behaviour.
 Allow the existing estimate of 3–6 engineering days for platform verification
 and corrections, then re-estimate the remaining feature work based on those
 results. A fallback also requires the native integrations and parity gates
