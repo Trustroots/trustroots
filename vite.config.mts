@@ -191,7 +191,8 @@ export default defineConfig({
         },
       },
     },
-    // Start prerenders the SPA shell with this bundle; Express serves pages.
+    // Start prerenders the SPA shell with this bundle and serves requests
+    // through it, handing unmatched ones to Express.
     ssr: { build: { outDir: resolve(root, 'build/start-server') } },
   },
   build: {

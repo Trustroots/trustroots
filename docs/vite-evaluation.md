@@ -20,8 +20,10 @@ generates the route tree, `layers/shell/client/routeTree.gen.ts`, from the
 files in `layers/shell/client/routes/`. Start's router
 entry, `layers/shell/client/start-router.tsx`, gives the browser the app routes
 and gives Start's server bundle only the document shell, so browser-only page
-modules are never imported in Node. Express is still the only server: Start's
-server bundle is used at build time only.
+modules are never imported in Node. Outside development, `server.js` serves
+through Start's built server, `build/start-server/server.js`: Start answers
+its own server routes and hands every other request to Express (the catch-all
+route's middleware in `start-router.tsx`). No routes have moved to Start yet.
 
 `pnpm build:vite` prerenders that shell to `public/assets/_shell.html` and
 emits an ES module entry `react-main-<hash>.js` with its chunks,

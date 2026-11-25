@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import type { Connection } from 'mongoose';
-import type { Server } from 'node:http';
+import { createServer, type Server } from 'node:http';
+import { NodeRequest, sendNodeResponse } from 'srvx/node';
 import config from './../config.mts';
 import mongoose from './mongoose.mts';
 import express from './express.mts';
@@ -32,8 +33,33 @@ function init(callback?: InitCallback) {
     if (callback) callback(app, connection, config as StartupConfiguration);
   });
 }
+const startServerEntry = new URL(
+  '../../build/start-server/server.js',
+  import.meta.url,
+).href;
+
+/**
+ * TanStack Start serves every request. Those no Start route matches come back
+ * marked, and Express answers them on the untouched Node request and response.
+ * In development the Vite server fronts Express instead.
+ */
+async function createHttpServer(app: Express): Promise<Server> {
+  if (process.env.NODE_ENV === 'development') return createServer(app);
+  const { default: startServer } = await import(startServerEntry);
+  const fallbackHeader = 'x-trustroots-express';
+  const express = () =>
+    new Response(null, { headers: { [fallbackHeader]: '1' } });
+  return createServer(async (req, res) => {
+    const response: Response = await startServer.fetch(
+      new NodeRequest({ req, res }),
+      { context: { express } },
+    );
+    if (response.headers.has(fallbackHeader)) app(req, res);
+    else await sendNodeResponse(res, response);
+  });
+}
 function start(this: { init: typeof init }, callback?: InitCallback) {
-  this.init(function (app, db, config) {
+  this.init(async function (app, db, config) {
     const listenArgs: ListenArgument[] = [];
     if (config.fd) {
       // Start the app by listening on a file descriptor (useful for systemd socket activation)
@@ -44,7 +70,8 @@ function start(this: { init: typeof init }, callback?: InitCallback) {
       // Start the app by listening on <port> at <host>
       listenArgs.push(config.port, config.host);
     }
-    (app.listen as (...args: ListenArgument[]) => Server)(
+    const server = await createHttpServer(app);
+    (server.listen as (...args: ListenArgument[]) => Server)(
       ...listenArgs,
       function () {
         // Check in case mailer config is still set to default values (a common problem)
