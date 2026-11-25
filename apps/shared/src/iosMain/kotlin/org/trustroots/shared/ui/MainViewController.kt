@@ -126,6 +126,17 @@ fun MemberProfileCirclesViewController(
     MemberProfileCircles(circles, onOpen, modifier)
 }
 
+fun MemberProfileHostingViewController(
+    status: String?,
+    meeting: String?,
+    description: String?,
+    volunteering: Boolean,
+    capacity: String?,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-hosting-summary", onHeight) { modifier ->
+    MemberProfileHosting(status, meeting, description, volunteering, capacity, modifier)
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(

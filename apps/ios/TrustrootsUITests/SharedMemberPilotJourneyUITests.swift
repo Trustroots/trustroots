@@ -334,9 +334,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(profile.waitForExistence(timeout: 10))
         profile.tap()
 
+        let hosting = app.descendants(matching: .any)["profile-hosting-summary"]
+        XCTAssertTrue(hosting.waitForExistence(timeout: 15), app.debugDescription)
+        revealProfileElement(hosting, in: app)
         XCTAssertTrue(element(labelled: "Maybe up for meeting", in: app).waitForExistence(timeout: 10))
         XCTAssertTrue(element(labelled: "Not hosting currently", in: app).exists)
         XCTAssertFalse(element(labelled: "Offers volunteering", in: app).exists)
+        let hostingScreenshot = XCTAttachment(screenshot: hosting.screenshot())
+        hostingScreenshot.name = "regular-ios-profile-hosting-status"
+        hostingScreenshot.lifetime = .keepAlways
+        add(hostingScreenshot)
     }
 
     @MainActor
