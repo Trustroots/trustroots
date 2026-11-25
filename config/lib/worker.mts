@@ -1,28 +1,16 @@
 import type { Job, Agenda } from 'agenda';
+import { registerWorkerJobs } from '../../layers/server/worker-jobs.mts';
 import { agendaLockLifetime } from './agenda-lock.mts';
-import { pruneAgendaDeliveryJobs } from './agenda-retention.mts';
-import config, { mailMode } from './../config.mts';
-import {
-  deploymentNotificationHandler,
-  deploymentNotificationJob,
-} from './deployment-notifications.mts';
+import config from '../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
-import mongoose from 'mongoose';
 interface WorkerOptions {
   maxAttempts: number;
   retryDelaySeconds: number;
 }
 type Done = (error?: Error | null) => void;
 const gracefulShutdownTimeoutMs = 30_000;
-const pruneAgendaDeliveryJobsName = 'prune agenda delivery jobs';
-type JobDefinitionOptions = {
-  priority?: number | 'lowest' | 'low' | 'normal' | 'high' | 'highest';
-  concurrency?: number;
-  lockLifetime?: number;
-  removeOnComplete?: boolean;
-};
 const service = {
   start,
   unlockAgendaJobs,
@@ -34,226 +22,14 @@ const format = dependency1.format;
 const MongoClient = dependency3.MongoClient;
 let agenda: Agenda;
 
-function defineJob<Data>(
-  name: string,
-  processor: (job: Job<Data>, done: Done) => unknown,
-  options: JobDefinitionOptions = {},
-) {
-  if (typeof processor !== 'function') {
-    throw new TypeError(`Agenda job "${name}" has no handler`);
-  }
-  agenda.define<Data>(
-    name,
-    (job, done) => {
-      processor(job, done as Done);
-    },
-    options,
-  );
-}
-
 async function start(options: WorkerOptions, callback?: Done) {
   // Initialise Agenda inside `start()` so importing worker helpers does not
   // open a database connection.
   ({ default: agenda } = await import('./agenda.mts'));
-  const { default: sendEmailJob } =
-    await import('./../../modules/core/server/jobs/send-email.server.job.mts');
-  const { default: unreadMessagesJob } =
-    await import('./../../modules/messages/server/jobs/message-unread.server.job.mts');
-  const { default: dailyStatisticsJob } =
-    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mts');
-  const { default: signupRemindersJob } =
-    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mts');
-  const { sendSignupReminderJob } =
-    await import('../../modules/users/server/services/signup-reminder.server.service.mts');
-  const { default: reactivateHostsJob } =
-    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mts');
-  const { default: welcomeSequenceFirstJob } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mts');
-  const { default: welcomeSequenceSecondJob } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mts');
-  const { default: welcomeSequenceThirdJob } =
-    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mts');
-  const { default: publishExperiencesJob } =
-    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mts');
-  const {
-    queueExperienceReplyReminders,
-    queueExperienceReplyRemindersJob,
-    sendExperienceReplyReminder,
-    sendExperienceReplyReminderJob,
-  } =
-    await import('../../modules/experiences/server/jobs/experience-reply-reminder.server.job.mts');
-  const { sendSupportMessage: supportMessageJob } =
-    await import('./../../modules/support/server/jobs/send-support-message.server.job.mts');
-  const { pollSupportMailbox: pollSupportMailboxJob } =
-    await import('./../../modules/support/server/jobs/poll-support-mailbox.server.job.mts');
-  const { recoverSupportMessages: recoverSupportMessagesJob } =
-    await import('./../../modules/support/server/jobs/recover-support-messages.server.job.mts');
-
-  const { deliverMessagePush, messagePushJobName } =
-    await import('../../modules/messages/server/jobs/message-push.server.job.mts');
-  const { deliverTest, testPushJobName } =
-    await import('../../modules/users/server/services/unified-push.server.service.mts');
-
-  const { captureAgendaStorage, captureAgendaStorageJob } =
-    await import('../../modules/admin/server/services/agenda-storage.server.service.mts');
-
-  const { captureAgendaInventory } =
-    await import('../../modules/admin/server/services/agenda-inventory.server.service.mts');
-
-  const { queueMessageDigests } =
-    await import('../../modules/messages/server/jobs/message-digest.server.job.mts');
-  const messageDigestJobName = 'queue unread message digests';
-
-  // Define jobs
-
-  agenda.define(
-    pruneAgendaDeliveryJobsName,
-    async () => {
-      const deleted = await pruneAgendaDeliveryJobs(
-        mongoose.connection.db!.collection('agendaJobs'),
-      );
-      if (deleted > 0) {
-        console.log(
-          '[Worker] Pruned %d terminal Agenda delivery jobs.',
-          deleted,
-        );
-      }
-    },
-    { concurrency: 1, lockLifetime: 30 * 60 * 1000 },
-  );
-
-  agenda.define(
-    captureAgendaStorageJob,
-    async () => {
-      // The worker connects Mongoose before registering Agenda jobs.
-      const db = mongoose.connection.db!;
-      await captureAgendaStorage(db);
-      await captureAgendaInventory(db);
-    },
-    { concurrency: 1 },
-  );
-
-  defineJob('send email', sendEmailJob, {
-    priority: 'high',
-    concurrency: 10,
-  });
-  defineJob(
-    deploymentNotificationJob,
-    deploymentNotificationHandler(config.domain, mailMode, sendEmailJob),
-    { priority: 'high', concurrency: 10 },
-  );
-
-  defineJob(sendSignupReminderJob, sendEmailJob, {
-    priority: 'high',
-    concurrency: 10,
-    removeOnComplete: true,
-  });
-
-  agenda.define<Parameters<typeof deliverMessagePush>[0]>(
-    messagePushJobName,
-    async job => {
-      if (job.attrs.data) await deliverMessagePush(job.attrs.data);
-    },
-    { priority: 'high', removeOnComplete: true },
-  );
-  agenda.define<Parameters<typeof deliverTest>[0]>(
-    testPushJobName,
-    async job => {
-      if (job.attrs.data) await deliverTest(job.attrs.data);
-    },
-    { priority: 'high', removeOnComplete: true },
-  );
-
-  agenda.define(messageDigestJobName, async () => queueMessageDigests(), {
-    concurrency: 1,
-    lockLifetime: 60000,
-  });
-  defineJob('check unread messages', unreadMessagesJob, {
-    lockLifetime: 10000,
-  });
-  defineJob('daily statistics', dailyStatisticsJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('send signup reminders', signupRemindersJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('reactivate hosts', reactivateHostsJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('welcome sequence first', welcomeSequenceFirstJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('welcome sequence second', welcomeSequenceSecondJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('welcome sequence third', welcomeSequenceThirdJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  defineJob('publish expired experiences', publishExperiencesJob, {
-    lockLifetime: 10000,
-    concurrency: 1,
-  });
-  agenda.define(
-    queueExperienceReplyRemindersJob,
-    async () => queueExperienceReplyReminders(agenda),
-    { concurrency: 1, lockLifetime: 120000 },
-  );
-  agenda.define(sendExperienceReplyReminderJob, sendExperienceReplyReminder, {
-    concurrency: 2,
-    lockLifetime: 60000,
-  });
-  defineJob('send support message', supportMessageJob, {
-    priority: 'high',
-    concurrency: 2,
-    lockLifetime: 60000,
-  });
-  defineJob('poll support mailbox', pollSupportMailboxJob, {
-    concurrency: 1,
-    lockLifetime: 120000,
-  });
-  defineJob('recover support messages', recoverSupportMessagesJob, {
-    concurrency: 1,
-    lockLifetime: 120000,
-  });
+  const scheduleJobs = await registerWorkerJobs(agenda);
   const startPromise = agenda
     .start()
-    .then(function () {
-      return Promise.all([
-        agenda.every('5 minutes', 'check unread messages'),
-        agenda.every('5 minutes', 'queue unread message digests'),
-        agenda.every('24 hours', 'daily statistics'),
-        agenda.every('*/15 * * * *', pruneAgendaDeliveryJobsName, undefined, {
-          timezone: 'UTC',
-        }),
-        agenda.every('0 3 * * *', captureAgendaStorageJob, undefined, {
-          timezone: 'UTC',
-        }),
-        agenda.every('30 minutes', 'send signup reminders'),
-        agenda.every('30 minutes', 'reactivate hosts'),
-        agenda.every('15 minutes', 'welcome sequence first'),
-        agenda.every('60 minutes', 'welcome sequence second'),
-        agenda.every('60 minutes', 'welcome sequence third'),
-        agenda.every('23 minutes', 'publish expired experiences'),
-        agenda.every('30 minutes', queueExperienceReplyRemindersJob),
-        ...(config.supportInbox.enabled && config.supportInbox.imap.enabled
-          ? [
-              agenda.every(
-                `${config.supportInbox.imap.pollIntervalMinutes} minutes`,
-                'poll support mailbox',
-              ),
-            ]
-          : []),
-        ...(config.supportInbox.enabled
-          ? [agenda.every('1 minute', 'recover support messages')]
-          : []),
-      ]);
-    })
+    .then(scheduleJobs)
     .then(function () {
       if (process.env.NODE_ENV !== 'test') {
         console.log('[Worker] Agenda started processing background jobs');
