@@ -20,6 +20,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             signOutIfAlreadySignedIn(app)
         }
         signOutIfAlreadySignedIn(app)
+        XCTAssertTrue(element(labelled: "Trustroots", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Travellers’ community", in: app).exists)
+        let signInScreen = XCTAttachment(screenshot: app.screenshot())
+        signInScreen.name = "shared-member-sign-in"
+        signInScreen.lifetime = .keepAlways
+        add(signInScreen)
         signIn(app)
 
         XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 15))

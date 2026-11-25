@@ -45,7 +45,7 @@ import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
 import org.trustroots.android.ui.common.rememberBuildDate
-import org.trustroots.android.ui.icons.TrustrootsLogo
+import org.trustroots.shared.ui.icons.TrustrootsLogo
 
 @Composable
 internal fun SignInScreen(

@@ -44,7 +44,7 @@ import org.trustroots.android.ui.common.SharedNavigationLink
 import org.trustroots.android.ui.common.SharedNavigationLinks
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.rememberBuildDate
-import org.trustroots.android.ui.icons.TrustrootsLogo
+import org.trustroots.shared.ui.icons.TrustrootsLogo
 
 @Composable
 internal fun MenuScreen(

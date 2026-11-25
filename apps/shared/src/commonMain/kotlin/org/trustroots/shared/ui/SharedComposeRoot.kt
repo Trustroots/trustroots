@@ -1,6 +1,8 @@
 package org.trustroots.shared.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,11 +27,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.trustroots.shared.ui.icons.TrustrootsLogo
 
 private sealed interface Destination {
     data object Home : Destination
@@ -70,10 +75,10 @@ fun SharedComposeRoot(
         Column(Modifier.widthIn(max = 600.dp).fillMaxSize().padding(horizontal = 16.dp)) {
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = if (username == null) Arrangement.End else Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PilotTitle("Trustroots")
+                if (username != null) PilotTitle("Trustroots")
                 if (history.size > 1) {
                     PilotButton("Back", enabled = !busy, onClick = goBack)
                 } else {
@@ -154,6 +159,19 @@ private fun SignIn(
     val focus = LocalFocusManager.current
 
     PilotForm {
+        Column(
+            Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(
+                imageVector = TrustrootsLogo,
+                contentDescription = "Trustroots",
+                colorFilter = if (isSystemInDarkTheme()) ColorFilter.tint(pilotPalette.ink) else null,
+                modifier = Modifier.size(128.dp),
+            )
+            PilotText("Travellers’ community", strong = true)
+        }
         PilotTitle("Sign in")
         PilotInput(
             label = "Username or email",
@@ -176,6 +194,7 @@ private fun SignIn(
             "Sign in",
             primary = true,
             enabled = !busy && username.isNotBlank() && password.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             if (!beginAction()) return@PilotButton
             val enteredUsername = username.trim()
