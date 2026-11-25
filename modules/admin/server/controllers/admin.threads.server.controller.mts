@@ -151,6 +151,7 @@ export const getThreads = async (
         'votes.userFrom': 1,
         'votes.userTo': 1,
         'votes.reference': 1,
+        'votes.created': 1,
         'userToProfile._id': 1,
         'userToProfile.username': 1,
         'userToProfile.displayName': 1,

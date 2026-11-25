@@ -23,6 +23,7 @@ export interface AdminThread {
     userFrom: string;
     userTo: string;
     reference: 'yes' | 'no';
+    created?: string | null;
   }>;
   [key: string]: unknown;
 }
