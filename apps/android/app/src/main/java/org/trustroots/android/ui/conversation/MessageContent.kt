@@ -43,7 +43,8 @@ internal fun messageContent(content: String, backendURL: String, plainText: Stri
                 val coveredCharacters = linkStart until linkEnd
                 val first = parsedCharacters.indexOfFirst { it in coveredCharacters }
                 if (first < 0) continue
-                val last = parsedCharacters.indexOfLast { it in coveredCharacters }
+                val next = parsedCharacters.indexOfFirst { it >= linkEnd }
+                val last = if (next < 0) parsedCharacters.lastIndex else next - 1
                 addLink(LinkAnnotation.Url(destination, linkStyle), plainCharacters[first], plainCharacters[last] + 1)
             } else {
                 addLink(LinkAnnotation.Url(destination, linkStyle), linkStart - start, linkEnd - start)
