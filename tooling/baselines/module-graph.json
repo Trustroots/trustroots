@@ -39,7 +39,6 @@
     ],
     "offers": [
       "core",
-      "experiences",
       "search",
       "users"
     ],
