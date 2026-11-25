@@ -22,7 +22,6 @@ import ThreadMessages from '@/modules/messages/client/components/ThreadMessages'
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { Message, MessageUser, PageParams } from '../api/messages.api';
@@ -112,7 +111,11 @@ type ThreadCurrentUser = MessageUser & {
   description?: string;
   blocked?: string[];
 };
-type ThreadProps = { user: ThreadCurrentUser; profileMinimumLength: number };
+type ThreadProps = {
+  user: ThreadCurrentUser;
+  profileMinimumLength: number;
+  ReferencePanel: React.ComponentType<{ userToId: string }>;
+};
 
 /** Counts, once per showing, that the reply form is hidden from the member. */
 function MessageGateShown({ reason }: { reason: MessageGateReason }) {
@@ -123,7 +126,11 @@ function MessageGateShown({ reason }: { reason: MessageGateReason }) {
   return null;
 }
 
-export default function Thread({ user, profileMinimumLength }: ThreadProps) {
+export default function Thread({
+  user,
+  profileMinimumLength,
+  ReferencePanel,
+}: ThreadProps) {
   const { t } = useTranslation('messages');
   const { track } = useAnalytics();
 
@@ -466,9 +473,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 }
               />
             </QueryClientProvider>
-            {messages.length > 0 && (
-              <ReferenceThread userToId={otherUser._id} />
-            )}
+            {messages.length > 0 && <ReferencePanel userToId={otherUser._id} />}
             <ReportMember username={otherUser.username as string} />
             <br />
             <br />

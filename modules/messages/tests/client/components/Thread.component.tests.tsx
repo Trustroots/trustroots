@@ -10,7 +10,7 @@ import {
 } from '@testing-library/react';
 
 import '@/config/client/i18n';
-import Thread from '@/modules/messages/client/components/Thread.component';
+import MessageThread from '@/modules/messages/client/components/Thread.component';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import {
@@ -33,6 +33,16 @@ import type {
 let analytics = fakeAnalytics();
 const render = (ui: React.ReactElement) =>
   rtlRender(ui, { wrapper: analytics.wrapper });
+
+function TestReferencePanel({ userToId }: { userToId: string }) {
+  return <div>References for {userToId}</div>;
+}
+
+function Thread(
+  props: Omit<React.ComponentProps<typeof MessageThread>, 'ReferencePanel'>,
+) {
+  return <MessageThread {...props} ReferencePanel={TestReferencePanel} />;
+}
 
 const api = {
   users: { fetch: vi.mocked(usersAPI.fetch) },
@@ -86,12 +96,6 @@ vi.mock('@/modules/users/client/components/BlockMember.component', () => {
     return <button type="button">Block {username}</button>;
   }
   return { default: MockBlockMember };
-});
-vi.mock('@/modules/references-thread/client/components/ReferenceThread', () => {
-  function MockReferenceThread({ userToId }: { userToId: string }) {
-    return <div>References for {userToId}</div>;
-  }
-  return { default: MockReferenceThread };
 });
 vi.mock('@/modules/core/client/components/TrEditor', () => {
   function MockTrEditor({

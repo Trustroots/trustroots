@@ -243,9 +243,27 @@ vi.mock('@/modules/messages/client/components/Inbox.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Inbox {user?.username}</main>,
 }));
+vi.mock(
+  '@/modules/references-thread/client/components/ReferenceThread',
+  () => ({
+    default: ({ userToId }: { userToId: string }) => (
+      <p>References for {userToId}</p>
+    ),
+  }),
+);
 vi.mock('@/modules/messages/client/components/Thread.component', () => ({
   __esModule: true,
-  default: ({ user }: UserRouteProps) => <main>Thread {user?.username}</main>,
+  default: ({
+    user,
+    ReferencePanel,
+  }: UserRouteProps & {
+    ReferencePanel: React.ComponentType<{ userToId: string }>;
+  }) => (
+    <main>
+      Thread {user?.username}
+      <ReferencePanel userToId="thread-member" />
+    </main>
+  ),
 }));
 vi.mock('@/modules/search/client/components/SearchUsers.component', () => ({
   default: () => <main>Search members</main>,
@@ -756,6 +774,11 @@ describe('React route ownership', () => {
   it('renders no message thread when the route has no authenticated user', () => {
     const { container } = renderRoute(findRoute('/messages/bob'), null);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('composes the reference panel into the message thread route', () => {
+    const { container } = renderRoute(findRoute('/messages/bob'));
+    expect(container).toHaveTextContent('References for thread-member');
   });
 
   it('renders circle list and detail routes for guests and members', () => {
