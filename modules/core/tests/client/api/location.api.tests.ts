@@ -5,13 +5,13 @@ import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {
   fetchLocationSuggestions,
   locatePlace,
-} from '@/modules/search/client/api/location.api';
+} from '@/modules/core/client/api/location.api';
 import {
   getBounds,
   getCenter,
   type MapBounds,
   type MapPoint,
-} from '@/modules/search/client/utils/location';
+} from '@/modules/core/client/utils/location';
 
 vi.mock(
   'axios',
@@ -20,7 +20,7 @@ vi.mock(
 vi.mock('@/modules/core/client/utils/map', () => ({
   getMapBoxToken: vi.fn(),
 }));
-vi.mock('@/modules/search/client/utils/location', () => ({
+vi.mock('@/modules/core/client/utils/location', () => ({
   getBounds: vi.fn(),
   getCenter: vi.fn(),
   shortTitle: vi.fn(

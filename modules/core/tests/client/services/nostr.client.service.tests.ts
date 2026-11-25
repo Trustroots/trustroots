@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import NostrService, {
   getNostrEventAuthorPubkey,
-} from '@/modules/search/client/services/nostr.client.service';
+} from '@/modules/core/client/services/nostr.client.service';
 import type { Event } from 'nostr-tools';
 
 interface MockRelaySubscription {

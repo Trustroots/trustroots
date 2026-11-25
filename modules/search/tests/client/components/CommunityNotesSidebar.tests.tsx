@@ -7,7 +7,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import CommunityNotesSidebar from '@/modules/search/client/components/CommunityNotesSidebar.component';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 
 type CommunityNoteEvent = React.ComponentProps<
   typeof CommunityNotesSidebar
@@ -19,7 +19,7 @@ type NostrNoteFixture = Pick<
   Partial<CommunityNoteEvent>;
 type SidebarProps = React.ComponentProps<typeof CommunityNotesSidebar>;
 
-vi.mock('@/modules/search/client/services/nostr.client.service', () => {
+vi.mock('@/modules/core/client/services/nostr.client.service', () => {
   return {
     __esModule: true,
     default: class NostrService {},

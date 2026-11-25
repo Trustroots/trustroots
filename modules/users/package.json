@@ -15,7 +15,6 @@
   "dependencies": {
     "@trustroots/admin": "workspace:*",
     "@trustroots/core": "workspace:*",
-    "@trustroots/search": "workspace:*",
     "@trustroots/stats": "workspace:*"
   }
 }

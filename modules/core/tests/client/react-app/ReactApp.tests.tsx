@@ -281,10 +281,9 @@ vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
     <p>{profile.description}</p>
   ),
 }));
-vi.mock(
-  '@/modules/search/client/components/SearchPlaceInput.component',
-  () => ({ default: () => null }),
-);
+vi.mock('@/modules/core/client/components/SearchPlaceInput.component', () => ({
+  default: () => null,
+}));
 vi.mock('@/modules/search/client/components/SearchSidebar.component', () => ({
   default: ({
     offer,

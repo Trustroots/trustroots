@@ -14,14 +14,20 @@ import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { PlaceHostSort } from '@/modules/offers/shared/offer';
-import { getCitySearch, type CitySearch } from '../utils/location';
+import {
+  getCitySearch,
+  type CitySearch,
+} from '@/modules/core/client/utils/location';
 import useCityHosts from '../hooks/use-city-hosts';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
-import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
+import {
+  fetchLocationSuggestions,
+  locatePlace,
+} from '@/modules/core/client/api/location.api';
 import lazyMap from '@/modules/core/client/components/lazyMap';
 import type { VisibleMapCounts } from './SearchMap.component';
-import SearchPlaceInput from './SearchPlaceInput.component';
+import SearchPlaceInput from '@/modules/core/client/components/SearchPlaceInput.component';
 import SearchSidebar from './SearchSidebar.component';
 import {
   getSearchFilters,

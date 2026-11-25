@@ -12,7 +12,7 @@ import CircleLocationMap, {
   type CircleLocation,
 } from '@/modules/tribes/client/components/CircleLocationMap';
 import { useCircleMapEvents } from '@/modules/tribes/client/hooks/useCircleMapEvents';
-import type NostrService from '@/modules/search/client/services/nostr.client.service';
+import type NostrService from '@/modules/core/client/services/nostr.client.service';
 import type {
   MapBounds,
   MapProps,

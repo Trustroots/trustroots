@@ -5,9 +5,9 @@ import HackerspaceMap, {
   decodeGeohash,
   parseHackerPlace,
 } from '@/modules/tribes/client/components/HackerspaceMap';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 
-vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/core/client/services/nostr.client.service', () => ({
   nostrService: {
     subscribeHackerPlaces: vi.fn(),
     unsubscribeHackerPlaces: vi.fn(),

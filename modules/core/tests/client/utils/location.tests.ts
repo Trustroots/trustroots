@@ -4,7 +4,7 @@ import {
   getCenter,
   getCitySearch,
   shortTitle,
-} from '@/modules/search/client/utils/location';
+} from '@/modules/core/client/utils/location';
 
 describe('location utils', () => {
   it('builds a bounds object from coordinates', () => {

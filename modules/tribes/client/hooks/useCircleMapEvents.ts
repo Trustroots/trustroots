@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Event, Filter } from 'nostr-tools';
-import type NostrService from '@/modules/search/client/services/nostr.client.service';
+import type NostrService from '@/modules/core/client/services/nostr.client.service';
 
 export function currentPlaceEvents(events: Event[]): Event[] {
   const latest = new Map<string, Event>();

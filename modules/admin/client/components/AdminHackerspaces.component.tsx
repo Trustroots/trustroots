@@ -11,7 +11,7 @@ import {
   HACKER_PLACE_RELAY_URLS,
   nostrService,
   type HackerPlaceRelayConnection,
-} from '@/modules/search/client/services/nostr.client.service';
+} from '@/modules/core/client/services/nostr.client.service';
 import {
   buildInactiveSpaceApiPlaceEvent,
   buildSpaceApiPlaceEvent,

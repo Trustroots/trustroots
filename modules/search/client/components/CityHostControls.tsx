@@ -3,7 +3,7 @@ import { Button } from '@trustroots/ui/Button';
 import { Select } from '@trustroots/ui/Select';
 import type { PlaceHostSort } from '@/modules/offers/shared/offer';
 import type useCityHosts from '../hooks/use-city-hosts';
-import type { CitySearch } from '../utils/location';
+import type { CitySearch } from '@/modules/core/client/utils/location';
 
 export interface CityResults {
   city: CitySearch;
