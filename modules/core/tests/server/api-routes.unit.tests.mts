@@ -122,6 +122,8 @@ function assertHandlers(
 }
 
 const elevationRoutes = new Set([
+  '/api/admin/support/:requestId/repeated-messages',
+  '/api/admin/support-message-reviews/:reviewId/repeated-messages',
   '/api/admin/hackerspaces/preview',
   '/api/admin/acquisition-stories',
   '/api/admin/audit-log',
@@ -680,6 +682,8 @@ describe('API route registrations', () => {
         'detail',
         'setStatus',
         'investigation',
+        'reportRepeatedMessages',
+        'throttleRepeatedMessages',
         'searchMembers',
         'flaggedMembers',
         'setFlag',
@@ -778,6 +782,18 @@ describe('API route registrations', () => {
     assertHandlers(
       routeByPath(routes, '/api/admin/support/:requestId/:kind').get,
       [support.investigation],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/support/:requestId/repeated-messages')
+        .get,
+      [support.reportRepeatedMessages],
+    );
+    assertHandlers(
+      routeByPath(
+        routes,
+        '/api/admin/support-message-reviews/:reviewId/repeated-messages',
+      ).get,
+      [support.throttleRepeatedMessages],
     );
     assertHandlers(routeByPath(routes, '/api/admin/location-corrections').get, [
       auditLog.record,
