@@ -64,7 +64,7 @@
     "seed:tribes": "node ./bin/fillTestData/Tribes.mts",
     "seed:users": "node ./bin/fillTestData/Users.mts",
     "seed": "pnpm run seed:tribes 100 && pnpm run seed:users 1000 --userNames admin1 admin2 admin3 && pnpm run seed:messages 2000 10 && pnpm run seed:experiences --re-create",
-    "seed:e2e": "NODE_ENV=test DB_1_PORT_27017_TCP_ADDR=127.0.0.1 TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/e2e/seed.js",
+    "seed:e2e": "NODE_ENV=test DB_1_PORT_27017_TCP_ADDR=127.0.0.1 TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/e2e/seed.mts",
     "start:develop": "pnpm run generate-circle-images && NODE_ENV=development node ./scripts/start-with-nodemon.cts",
     "start:docker": "pnpm run start",
     "start:prod": "NODE_ENV=production node server.js",

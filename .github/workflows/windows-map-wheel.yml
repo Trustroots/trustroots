@@ -90,7 +90,7 @@ jobs:
           TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true'
         run: pnpm exec vite build --config vite.config.mts
       - name: Seed the test database
-        run: node scripts/e2e/seed.js
+        run: node scripts/e2e/seed.mts
       - name: Run Windows wheel scenarios
         run: |
           node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version, playwright: require('@playwright/test/package.json').version })"

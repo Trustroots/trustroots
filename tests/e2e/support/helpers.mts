@@ -34,7 +34,7 @@ export type RegisteredUser = { _id: string };
 
 export const DEFAULT_PASSWORD = E2E_PASSWORD;
 
-// Confirmed members created by scripts/e2e/seed.js before Playwright runs.
+// Confirmed members created by scripts/e2e/seed.mts before Playwright runs.
 const asTestMember = (username: string): SeededMember => {
   const member = MEMBERS.find(member => member.username === username);
   if (!member) {
