@@ -71,8 +71,7 @@
     },
     "modules/*": {
       "entry": [
-        // config/assets/default.mts globs these and config/lib loads them by
-        // path at startup.
+        // The server layer discovers these from module entries at startup.
         "server/models/**/*.{mjs,mts}",
         "server/routes/**/*.{mjs,mts}",
         "server/config/*.{mjs,mts}",
