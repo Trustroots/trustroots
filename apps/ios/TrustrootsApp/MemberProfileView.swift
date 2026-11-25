@@ -12,6 +12,7 @@ struct MemberProfileView: View {
     @State private var experiences: [MemberExperience] = []
     @State private var accommodationOffer: AccommodationOffer?
     @State private var selectedProfileUsername: String?
+    @State private var isConversationOpen = false
     @State private var showAllContacts = false
     @State private var showAllExperiences = false
     @State private var errorMessage: String?
@@ -117,47 +118,16 @@ struct MemberProfileView: View {
                             .padding(.horizontal, -20)
                             .padding(.top, -20)
 
-                            if let editProfile {
-                                Button(action: editProfile) {
-                                    Label("Edit profile", systemImage: "pencil")
-                                        .font(.subheadline.weight(.semibold))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 11)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(TrustrootsPalette.green)
-
-                                Button("Hosting and meetings") {
-                                    showHostingEditor = true
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("edit-hosting-offer")
-                            }
-
-                            if !isOwnProfile(profile), !isBlocked, let memberID = profile.id {
-                                NavigationLink {
-                                    ConversationView(
-                                        otherMember: MiniMember(
-                                            id: memberID,
-                                            username: profile.username,
-                                            displayName: profile.displayName
-                                        ),
-                                        session: session
-                                    )
-                                } label: {
-                                    VStack(spacing: 3) {
-                                        Label("Message", systemImage: "bubble.left.and.bubble.right.fill")
-                                            .font(.subheadline.weight(.semibold))
-                                        Text("Open or start a conversation")
-                                            .font(.caption)
-                                            .opacity(0.85)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 9)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(TrustrootsPalette.green)
-                                .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
+                            let messageLabel = !isOwnProfile(profile) && !isBlocked && profile.id != nil
+                                ? "Open or start a conversation with \(profile.displayName)" : nil
+                            if editProfile != nil || messageLabel != nil {
+                                ProfileActionsSection(
+                                    canEdit: editProfile != nil,
+                                    messageLabel: messageLabel,
+                                    onEdit: editProfile ?? {},
+                                    onHosting: { showHostingEditor = true },
+                                    onMessage: { isConversationOpen = true }
+                                )
                             }
 
                             ProfileDetailsSection(profile: profile, onLocation: openOnSearchMap)
@@ -212,7 +182,13 @@ struct MemberProfileView: View {
                             }
 
                             if !isOwnProfile(profile) {
-                                memberSafetySection(profile)
+                                ProfileSafetySection(
+                                    blockedMessage: isBlocked ? "You have blocked \(profile.displayName)." : nil,
+                                    isUpdating: isUpdatingBlock,
+                                    error: safetyErrorMessage,
+                                    onReport: { showReportMember = true },
+                                    onToggleBlock: { showBlockConfirmation = true }
+                                )
                             }
                         }
                         .padding(20)
@@ -234,6 +210,18 @@ struct MemberProfileView: View {
             }
             .navigationDestination(item: $selectedProfileUsername) { username in
                 MemberProfileView(session: session, username: username)
+            }
+            .navigationDestination(isPresented: $isConversationOpen) {
+                if let profile, let memberID = profile.id {
+                    ConversationView(
+                        otherMember: MiniMember(
+                            id: memberID,
+                            username: profile.username,
+                            displayName: profile.displayName
+                        ),
+                        session: session
+                    )
+                }
             }
             .toolbar(.hidden, for: .navigationBar)
             .onReceive(NotificationCenter.default.publisher(for: .trustrootsReturnToMap)) { _ in
@@ -332,56 +320,6 @@ struct MemberProfileView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    private func memberSafetySection(_ profile: MemberProfile) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Divider()
-
-            if isBlocked {
-                Text("You have blocked \(profile.displayName).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 18) {
-                Button {
-                    showReportMember = true
-                } label: {
-                    Label("Report member to support", systemImage: "flag")
-                }
-                .foregroundStyle(.secondary)
-
-                Button(role: isBlocked ? nil : .destructive) {
-                    showBlockConfirmation = true
-                } label: {
-                    if isUpdatingBlock {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Label(
-                            isBlocked ? "Unblock" : "Block",
-                            systemImage: isBlocked ? "hand.raised.slash" : "hand.raised"
-                        )
-                    }
-                }
-                .foregroundStyle(isBlocked ? Color.secondary : Color.red)
-                .disabled(isUpdatingBlock)
-
-                Spacer()
-            }
-            .font(.footnote)
-            .buttonStyle(.plain)
-            .frame(minHeight: 32)
-
-            if let safetyErrorMessage {
-                Text(safetyErrorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 2)
     }
 
     private func updateBlock(blocked: Bool) async {
@@ -580,6 +518,60 @@ private struct ProfileExperiencesSection: View {
                 recommend: recommend
             )
         }
+    }
+}
+
+private struct ProfileActionsSection: View {
+    let canEdit: Bool
+    let messageLabel: String?
+    let onEdit: () -> Void
+    let onHosting: () -> Void
+    let onMessage: () -> Void
+
+    var body: some View {
+        MeasuredProfileSection(identity: Identity(canEdit: canEdit, messageLabel: messageLabel)) { onHeight in
+            MainViewControllerKt.MemberProfileActionsViewController(
+                canEdit: canEdit,
+                messageLabel: messageLabel,
+                onEdit: onEdit,
+                onHosting: onHosting,
+                onMessage: onMessage,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let canEdit: Bool
+        let messageLabel: String?
+    }
+}
+
+private struct ProfileSafetySection: View {
+    let blockedMessage: String?
+    let isUpdating: Bool
+    let error: String?
+    let onReport: () -> Void
+    let onToggleBlock: () -> Void
+
+    var body: some View {
+        let identity = Identity(blockedMessage: blockedMessage, isUpdating: isUpdating, error: error)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileSafetyViewController(
+                blockedMessage: blockedMessage,
+                isUpdating: isUpdating,
+                error: error,
+                onReport: onReport,
+                onToggleBlock: onToggleBlock,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let blockedMessage: String?
+        let isUpdating: Bool
+        let error: String?
     }
 }
 

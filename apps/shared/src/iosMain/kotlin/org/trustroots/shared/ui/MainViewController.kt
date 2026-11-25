@@ -86,6 +86,28 @@ fun MemberProfileExperiencesViewController(
     }
 }
 
+fun MemberProfileActionsViewController(
+    canEdit: Boolean,
+    messageLabel: String?,
+    onEdit: () -> Unit,
+    onHosting: () -> Unit,
+    onMessage: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-actions", onHeight) { modifier ->
+    MemberProfileActions(canEdit, messageLabel, onEdit, onHosting, onMessage, modifier)
+}
+
+fun MemberProfileSafetyViewController(
+    blockedMessage: String?,
+    isUpdating: Boolean,
+    error: String?,
+    onReport: () -> Unit,
+    onToggleBlock: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-safety", onHeight) { modifier ->
+    MemberProfileSafety(blockedMessage, isUpdating, error, onReport, onToggleBlock, modifier)
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(
