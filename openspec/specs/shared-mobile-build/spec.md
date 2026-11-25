@@ -214,3 +214,16 @@ host’s existing navigation and bounded browser.
 - **WHEN** they select an account or member action
 - **THEN** the corresponding existing iOS screen opens
 - **AND** website links open in the bounded browser and can return to Menu
+
+### Requirement: Regular iOS Contacts uses Compose
+
+The regular iOS Contacts screen SHALL use Compose to show contacts, avatars
+and pending confirmations. It SHALL use the existing iOS API, keep loading
+and empty states and provide a retry action when the request fails. Contacts
+with a username SHALL open the existing iOS profile.
+
+#### Scenario: Open a contact’s profile
+
+- **GIVEN** a signed-in member opens Contacts
+- **WHEN** they select a contact with a username
+- **THEN** the existing iOS profile opens for that contact

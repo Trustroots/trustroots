@@ -208,15 +208,11 @@ private struct ComposeMessageInbox: UIViewControllerRepresentable {
             onRetry: { [weak coordinator] in coordinator?.onRetry?() },
             createAvatar: { [weak coordinator] thread in
                 guard let coordinator else { return UIViewController() }
-                let controller = UIHostingController(rootView: MemberAvatarView(
+                return makeSharedMemberAvatarController(
                     memberID: thread.memberId,
-                    displayName: thread.name,
-                    serverURLString: coordinator.serverURLString,
-                    size: 44
-                ).accessibilityHidden(true))
-                controller.view.backgroundColor = .clear
-                controller.view.isUserInteractionEnabled = false
-                return controller
+                    name: thread.name,
+                    serverURLString: coordinator.serverURLString
+                )
             }
         )
     }
