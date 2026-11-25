@@ -95,7 +95,7 @@ function multipartRequest(field: string, filename: string, content: string) {
     `--${boundary}--`,
     '',
   ].join('\r\n');
-  const request = Readable.from([body]) as unknown as Readable & {
+  const request = Readable.from([Buffer.from(body)]) as unknown as Readable & {
     method: string;
     headers: Record<string, string>;
   };
@@ -165,7 +165,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       const res = mockResponse();
 
       const malformedRequest = Readable.from([
-        'not a multipart body',
+        Buffer.from('not a multipart body'),
       ]) as ReadableStream & {
         method: string;
         headers: Record<string, string>;

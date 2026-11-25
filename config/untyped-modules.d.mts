@@ -137,56 +137,6 @@ declare module 'qs' {
   export default qs;
 }
 
-declare module 'multer' {
-  interface UploadedFile {
-    buffer: Buffer;
-    originalname: string;
-  }
-  interface UploadRequest {
-    file?: UploadedFile;
-  }
-  interface MulterError extends Error {
-    code?: string;
-  }
-  type FileFilterCallback = (error: Error | null, acceptFile?: boolean) => void;
-  type UploadCallback = (error: MulterError | null) => void;
-  interface Multer {
-    single(
-      fieldName: string,
-    ): (req: UploadRequest, res: unknown, callback: UploadCallback) => void;
-  }
-  function multer(options: {
-    limits?: { fileSize?: number };
-    storage: object;
-    fileFilter(
-      req: object,
-      file: { originalname: string },
-      callback: FileFilterCallback,
-    ): void;
-  }): Multer;
-  function multer(options: {
-    dest: string;
-    limits: { fileSize: number; files: number; fields: number; parts: number };
-    fileFilter(
-      req: object,
-      file: { mimetype?: string },
-      callback: FileFilterCallback,
-    ): void;
-  }): {
-    single(
-      fieldName: string,
-    ): (
-      req: { file?: { path?: string } },
-      res: unknown,
-      callback: UploadCallback,
-    ) => void;
-  };
-  namespace multer {
-    function memoryStorage(): object;
-  }
-  export default multer;
-}
-
 declare module 'compression' {
   export default function compression(options: {
     filter(

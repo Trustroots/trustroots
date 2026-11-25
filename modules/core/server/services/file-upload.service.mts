@@ -1,73 +1,130 @@
-// External dependencies
-import multer from 'multer';
-import os from 'node:os';
+import { randomBytes } from 'node:crypto';
+import type { IncomingHttpHeaders } from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import type { Readable } from 'node:stream';
+import { ReadableStream } from 'node:stream/web';
+import { match, P } from 'ts-pattern';
 
-// Internal dependencies
 import config from './../../../../config/config.mts';
 import * as errorService from './error.server.service.mts';
-type MimeCallback = (error: Error | null, mime?: string) => void;
-interface UploadRequest {
-  file?: { path?: string };
+
+export interface UploadedFile {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+  path?: string;
 }
+type UploadBody = Readable & { headers: IncomingHttpHeaders };
+type UploadRequest = UploadBody & {
+  body?: Record<string, unknown>;
+  file?: Partial<UploadedFile>;
+};
 interface UploadResponse {
   status(code: number): { send(body: { message: string }): unknown };
 }
-function detectMimeTypeFallback(filePath: string, callback: MimeCallback) {
-  fs.readFile(filePath, (err, buffer) => {
-    if (err) {
-      return callback(err);
-    }
-    const header = buffer.toString('utf8', 0, 256).trim();
-    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-      return callback(null, 'image/jpeg');
-    }
-    if (buffer[0] === 0x89 && buffer.toString('ascii', 1, 4) === 'PNG') {
-      return callback(null, 'image/png');
-    }
-    if (buffer.toString('ascii', 0, 3) === 'GIF') {
-      return callback(null, 'image/gif');
-    }
-    if (buffer.toString('ascii', 0, 4) === '%PDF') {
-      return callback(null, 'application/pdf');
-    }
-    if (/^<\?xml[\s\S]*<svg|^<svg/i.test(header)) {
-      return callback(null, 'image/svg+xml');
-    }
-    return callback(null, 'application/octet-stream');
-  });
+export type UploadError = Error & {
+  code: 'LIMIT_FILE_SIZE' | 'LIMIT_UNEXPECTED_FILE' | 'INVALID_MULTIPART';
+};
+
+function uploadError(code: UploadError['code']): UploadError {
+  return Object.assign(new Error(code), { code });
 }
-function detectMimeType(filePath: string, callback: MimeCallback) {
-  if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK === 'true') {
-    return detectMimeTypeFallback(filePath, callback);
+
+async function detectMimeType(buffer: Buffer): Promise<string> {
+  if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK !== 'true') {
+    const { fileTypeFromBuffer } = await import('file-type');
+    const detected = await fileTypeFromBuffer(buffer);
+    if (detected) return detected.mime;
   }
-  import('file-type')
-    .then(({ fileTypeFromFile }) => fileTypeFromFile(filePath))
-    .then(result => {
-      if (result) {
-        return callback(null, result.mime);
-      }
-      return detectMimeTypeFallback(filePath, callback);
-    })
-    .catch(callback);
+  return match(buffer.toString('latin1', 0, 256))
+    .with(P.string.startsWith('\xff\xd8\xff'), () => 'image/jpeg')
+    .with(P.string.startsWith('\x89PNG'), () => 'image/png')
+    .with(P.string.startsWith('GIF'), () => 'image/gif')
+    .with(P.string.startsWith('%PDF'), () => 'application/pdf')
+    .with(P.string.regex(/^\s*(<\?xml[\s\S]*)?<svg/i), () => 'image/svg+xml')
+    .otherwise(() => 'application/octet-stream');
 }
 
 /**
- * Upload file handler and validator using Multer and magic-byte detection.
- * Places the file in a temp folder
- *
- * @link https://github.com/expressjs/multer
- * @link https://www.npmjs.com/package/file-type
- *
- * @param {Array} validMimeTypes - List of mime types filter should accept
- * @param {String} uploadField - Name of the POST upload field in the multipart-form
- * @param {Object} req - Express.js middleware request
- * @param {Object} res - Express.js middleware response
- * @param {Function} next — Next middleware function
- * @param {Number} maxUploadSize - Maximum file size in bytes
+ * Read the single file and the text fields of a multipart request with the
+ * standard `Request.formData()`. Rejects with an `UploadError`; resolves to
+ * `undefined` when the request is not multipart or carries no file.
  */
-export const uploadFile = (
+export async function readUpload(
+  req: UploadBody,
+  uploadField: string,
+  maxUploadSize: number,
+): Promise<{ file: UploadedFile; fields: Record<string, string> } | undefined> {
+  const contentType = String(req.headers['content-type']);
+  if (!/^multipart\/form-data\s*(;|$)/i.test(contentType)) {
+    return undefined;
+  }
+  // Room for the multipart boundaries and the other form fields. Computed
+  // per call so Stryker's per-test coverage sees the tests that check it.
+  const limit = maxUploadSize + 64 * 1024;
+  if (Number(req.headers['content-length']) > limit) {
+    throw uploadError('LIMIT_FILE_SIZE');
+  }
+  let received = 0;
+  async function* body() {
+    for await (const chunk of req) {
+      received += chunk.length;
+      if (received > limit) {
+        throw new RangeError();
+      }
+      yield chunk;
+    }
+  }
+  let form: FormData;
+  try {
+    form = await new Request('http://localhost/', {
+      method: 'POST',
+      headers: { 'content-type': contentType },
+      body: ReadableStream.from(body()),
+      duplex: 'half',
+    } as RequestInit).formData();
+  } catch {
+    throw uploadError(
+      received > limit ? 'LIMIT_FILE_SIZE' : 'INVALID_MULTIPART',
+    );
+  }
+  const entries = [...form];
+  const files = entries.filter(
+    (entry): entry is [string, File] =>
+      entry[1] instanceof File && entry[1].name !== '',
+  );
+  if (
+    entries.length > 11 ||
+    files.length > 1 ||
+    files.some(([name]) => name !== uploadField)
+  ) {
+    throw uploadError('LIMIT_UNEXPECTED_FILE');
+  }
+  const file = files[0]?.[1];
+  if (!file) return undefined;
+  if (file.size > maxUploadSize) throw uploadError('LIMIT_FILE_SIZE');
+  return {
+    file: {
+      buffer: Buffer.from(await file.arrayBuffer()),
+      mimetype: file.type,
+      originalname: file.name,
+    },
+    fields: Object.fromEntries(
+      entries.filter(
+        (entry): entry is [string, string] => !(entry[1] instanceof File),
+      ),
+    ),
+  };
+}
+
+/**
+ * Upload file handler and validator: reads the multipart file, checks its
+ * declared type and magic bytes, and places it in a temp folder, with its
+ * path in `req.file.path` and the text fields in `req.body`.
+ */
+export const uploadFile = async (
   validMimeTypes: string[],
   uploadField: string,
   req: UploadRequest,
@@ -75,113 +132,51 @@ export const uploadFile = (
   next: () => void,
   maxUploadSize = config.maxUploadSize,
 ) => {
-  // Create Multer instance
-  // - Destination folder will default to `os.tmpdir()` if no configuration path available
-  // - Destination filename will default to 16 bytes of
-  //   random data as a hex-string (e.g. a087fda2cf19f341ddaeacacab285acc)
-  //   without file-extension.
-  const uploadDirectory = path.resolve(config.uploadTmpDir || os.tmpdir());
-  const upload = multer({
-    dest: uploadDirectory,
-    limits: {
-      fileSize: maxUploadSize,
-      // max file size in bytes
-      files: 1,
-      fields: 10,
-      parts: 11,
-    },
-    // Filter Multer uploads based on mime Type
-    // Note: A proper "magic byte" check is still required after this
-    fileFilter: (req, file, callback) => {
-      // Browsers send application/octet-stream when File.type is empty.
-      // Let the content detector below validate these files by their bytes.
-      if (
-        // Stryker disable next-line ConditionalExpression: a missing mimetype is never in the list, so the check below rejects it too
-        !file.mimetype ||
-        (!validMimeTypes.includes(file.mimetype) &&
-          file.mimetype !== 'application/octet-stream')
-      ) {
-        const err: Error & { code?: string } = new Error(
-          // Stryker disable next-line StringLiteral: the response maps this error by its code, the message is never shown
-          'Please upload a file that is in correct format.',
-        );
-        err.code = 'UNSUPPORTED_MEDIA_TYPE';
-        // Stryker disable next-line BooleanLiteral: Multer rejects the file whenever an error is passed, whatever the flag
-        return callback(err, false);
-      }
-      callback(null, true);
-    },
-  }).single(uploadField);
-  upload(req, res, err => {
-    // An error occurred when uploading
-    // See Multer default error codes:
-    // @link https://github.com/expressjs/multer/blob/805170c61530e1f1cafd818c9b63d16a9dd46c36/lib/multer-error.js
-    if (err) {
-      let errorMessage;
-      let errorStatus;
-
-      // This error code is generated from Multer's fileFilter above
-      if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
-        // Unsupported media type -error
-        errorMessage = errorService.getErrorMessageByKey(
-          'unsupported-media-type',
-        );
-        errorStatus = 415;
-      } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
-        // Too big file
-        const maxUploadSizeMb = (maxUploadSize / (1024 * 1024)).toFixed(2);
-        errorMessage = `Image too big. Please maximum ${maxUploadSizeMb} Mb files.`;
-        errorStatus = 413; // 413: "Request Entity Too Large"
-      } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
-        // Field doesn't exist -error
-        errorMessage = `Missing "${uploadField}" field from the API call.`;
-        errorStatus = 400;
-      } else {
-        // Any other error
-        errorMessage = errorService.getErrorMessageByKey();
-        errorStatus = 400;
-      }
-      return res.status(errorStatus).send({
-        message: errorMessage,
-      });
-    }
-
-    // Multer places the uploaded file in the configured temporary directory.
-    if (!req.file || !req.file.path) {
+  try {
+    const upload = await readUpload(req, uploadField, maxUploadSize);
+    if (!upload) {
       return res.status(422).send({
         message: errorService.getErrorMessageByKey('unprocessable-entity'),
       });
     }
-
-    const uploadPath = path.resolve(req.file.path);
+    const { file, fields } = upload;
+    // Browsers send application/octet-stream when File.type is empty, so the
+    // bytes decide; the declared type is never trusted on its own.
     if (
-      uploadPath === uploadDirectory ||
-      !uploadPath.startsWith(path.join(uploadDirectory, path.sep))
+      (file.mimetype !== 'application/octet-stream' &&
+        !validMimeTypes.includes(file.mimetype)) ||
+      !validMimeTypes.includes(await detectMimeType(file.buffer))
     ) {
-      return res.status(422).send({
-        message: errorService.getErrorMessageByKey('unprocessable-entity'),
+      return res.status(415).send({
+        message: errorService.getErrorMessageByKey('unsupported-media-type'),
       });
     }
-    req.file.path = uploadPath;
-
-    // Validate the uploaded file from its magic bytes.
-    // This is stronger and more secure than lightweight mime check that Multer does
-    // The check is performed with "magic bytes"
-    // @link https://www.npmjs.com/package/file-type
-    detectMimeType(uploadPath, (err, result) => {
-      if (err || !validMimeTypes.includes(result!)) {
-        return fs.unlink(uploadPath, () => {
-          res.status(415).send({
-            message: errorService.getErrorMessageByKey(
-              'unsupported-media-type',
-            ),
-          });
-        });
-      }
-
-      // Everything went fine, call next middleware than can then handle the
-      // file onwards from temp folder
-      next();
-    });
-  });
+    const uploadDirectory = path.resolve(config.uploadTmpDir || os.tmpdir());
+    const uploadPath = path.join(
+      uploadDirectory,
+      randomBytes(16).toString('hex'),
+    );
+    await fs.promises.mkdir(uploadDirectory, { recursive: true });
+    await fs.promises.writeFile(uploadPath, file.buffer, { mode: 0o600 });
+    req.body = fields;
+    req.file = { ...file, path: uploadPath };
+  } catch (error) {
+    const [status, message] = match((error as UploadError).code)
+      .with(
+        'LIMIT_FILE_SIZE',
+        () =>
+          [
+            413,
+            `Image too big. Please maximum ${(maxUploadSize / (1024 * 1024)).toFixed(2)} Mb files.`,
+          ] as const,
+      )
+      .with(
+        'LIMIT_UNEXPECTED_FILE',
+        () =>
+          [400, `Missing "${uploadField}" field from the API call.`] as const,
+      )
+      .otherwise(() => [400, errorService.getErrorMessageByKey()] as const);
+    return res.status(status).send({ message });
+  }
+  next();
 };
