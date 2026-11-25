@@ -741,15 +741,22 @@ private struct ReportMemberView: View {
         NavigationStack {
             Group {
                 if isSent {
-                    ContentUnavailableView(
-                        "Report sent",
-                        systemImage: "checkmark.circle.fill",
-                        description: Text("Thank you. The Trustroots support team will review your report.")
-                    )
+                    MeasuredProfileSection(identity: "report-member-confirmation") { onHeight in
+                        MainViewControllerKt.MemberReportConfirmationViewController(onHeight: { onHeight($0.doubleValue) })
+                    }
+                    .frame(maxWidth: 400)
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Form {
-                        Section("Reported member") {
-                            LabeledContent("Member", value: "\(displayName) (@\(username))")
+                        Section {
+                            let identity = "\(displayName) (@\(username))"
+                            MeasuredProfileSection(identity: identity) { onHeight in
+                                MainViewControllerKt.MemberReportTargetViewController(
+                                    member: identity,
+                                    onHeight: { onHeight($0.doubleValue) }
+                                )
+                            }
                         }
 
                         Section {
@@ -757,37 +764,28 @@ private struct ReportMemberView: View {
                                 .frame(minHeight: 150)
                                 .focused($messageIsFocused)
                                 .accessibilityLabel("Describe your concern")
+                                .accessibilityIdentifier("report-member-details")
                         } header: {
                             Text("What happened?")
                         } footer: {
                             Text("This message goes to Trustroots support, not to the member. Please include enough detail for the support team to understand and investigate.")
                         }
 
-                        if let errorMessage {
-                            Section {
-                                Text(errorMessage)
-                                    .foregroundStyle(.red)
-                            }
-                        }
-
                         Section {
-                            Button {
-                                Task { await sendReport() }
-                            } label: {
-                                HStack {
-                                    Spacer()
-                                    if isSending {
-                                        ProgressView()
-                                    } else {
-                                        Label("Send report", systemImage: "flag.fill")
-                                    }
-                                    Spacer()
-                                }
-                            }
-                            .disabled(
-                                message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    || isSending
+                            let actions = ReportActions(
+                                canSubmit: !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                                isSending: isSending,
+                                error: errorMessage
                             )
+                            MeasuredProfileSection(identity: actions) { onHeight in
+                                MainViewControllerKt.MemberReportActionsViewController(
+                                    canSubmit: actions.canSubmit,
+                                    isSending: actions.isSending,
+                                    error: actions.error,
+                                    onSend: { Task { await sendReport() } },
+                                    onHeight: { onHeight($0.doubleValue) }
+                                )
+                            }
                         } footer: {
                             Text("If anyone is in immediate danger or a crime has occurred, contact local emergency services.")
                         }
@@ -812,6 +810,12 @@ private struct ReportMemberView: View {
                 }
             }
         }
+    }
+
+    private struct ReportActions: Hashable {
+        let canSubmit: Bool
+        let isSending: Bool
+        let error: String?
     }
 
     private func sendReport() async {

@@ -47,6 +47,7 @@ PARTNER = {
     "locationLiving": "Example Harbour",
     "member": [{"tribe": PROFILE_CIRCLE}],
 }
+REPORT_MESSAGE = "A fictional report for the support team."
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
 CIRCLES = [
@@ -103,6 +104,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     conversation_experience = None
     experience_submissions = []
     support_attempts = 0
+    report_attempts = 0
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
@@ -329,6 +331,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.conversation_experience = None
                 fixture.experience_submissions = []
                 fixture.support_attempts = 0
+                fixture.report_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
@@ -379,6 +382,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
             }
             type(self).nostr_challenge = (npub, event)
             self._json(200, {"event": event})
+        elif self.path == "/api/mobile/v0/support" and "reportMember" in body:
+            if body != {"message": REPORT_MESSAGE, "reportMember": PARTNER["username"]}:
+                self._json(422, {"message": "Expected the fixture member report."})
+                return
+            with fixture.session_lock:
+                fixture.report_attempts += 1
+                attempt = fixture.report_attempts
+            if attempt == 1:
+                self._json(503, {"message": "Temporary fixture report delivery failure."})
+            else:
+                self._json(201, {})
         elif self.path == "/api/mobile/v0/support":
             if body != {"message": "A fixture support request."}:
                 self._json(422, {"message": "Expected the fixture support message."})

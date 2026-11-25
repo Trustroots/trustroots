@@ -119,6 +119,29 @@ fun MemberProfileSafetyViewController(
     MemberProfileSafety(blockedMessage, isUpdating, error, onReport, onToggleBlock, modifier)
 }
 
+fun MemberReportTargetViewController(
+    member: String,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-target", onHeight, opaque = false) { modifier ->
+    MemberProfileText("Reported member", member, modifier)
+}
+
+fun MemberReportActionsViewController(
+    canSubmit: Boolean,
+    isSending: Boolean,
+    error: String?,
+    onSend: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-actions", onHeight, opaque = false) { modifier ->
+    MemberReportActions(canSubmit, isSending, error, onSend, modifier)
+}
+
+fun MemberReportConfirmationViewController(
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-confirmation", onHeight, opaque = false) { modifier ->
+    MemberReportConfirmation(modifier)
+}
+
 fun MemberProfileCirclesViewController(
     circles: List<MemberProfileCircle>,
     onOpen: (String) -> Unit,

@@ -203,6 +203,72 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(blocked.exists)
     }
 
+    func testRegularMemberReportKeepsDraftAndRetriesFromCompose() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let contacts = app.descendants(matching: .any)["contacts-menu-entry"]
+        XCTAssertTrue(contacts.waitForExistence(timeout: 10), app.debugDescription)
+        contacts.tap()
+        let contact = app.descendants(matching: .any)["contact-contact-pilot-one"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 15), app.debugDescription)
+        contact.tap()
+
+        let report = app.buttons["Report member to support"]
+        XCTAssertTrue(report.waitForExistence(timeout: 15), app.debugDescription)
+        revealProfileElement(report, in: app)
+        report.tap()
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(report.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(report, in: app)
+        report.tap()
+
+        XCTAssertTrue(element(labelled: "Robin Example (@pilot-partner)", in: app).waitForExistence(timeout: 10))
+        let submit = app.descendants(matching: .any)["report-member-send"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+
+        let message = "A fictional report for the support team."
+        let editor = app.textViews["report-member-details"]
+        enterText(message, into: editor, in: app)
+        let done = app.buttons["Done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), app.debugDescription)
+        done.tap()
+        let keyboardClosed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.keyboards.firstMatch
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [keyboardClosed], timeout: 5), .completed, app.debugDescription)
+
+        reveal(submit, in: app)
+        submit.tap()
+        let failure = element(labelled: "Temporary fixture report delivery failure.", in: app)
+        XCTAssertTrue(failure.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(editor.value as? String, message)
+
+        let actions = app.descendants(matching: .any)["report-member-actions"]
+        XCTAssertTrue(actions.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: actions.screenshot())
+        screenshot.name = "regular-ios-member-report-retry"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        reveal(submit, in: app)
+        submit.tap()
+        XCTAssertTrue(element(labelled: "Report sent", in: app).waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(editor.exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(report.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
     func testRegularSupportOpensFAQAndKeepsMessageForRetry() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
