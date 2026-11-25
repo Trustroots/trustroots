@@ -1,5 +1,6 @@
 package org.trustroots.shared.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,19 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
+
+fun MemberMenuViewController(
+    buildInfo: String,
+    onSelect: (MemberMenuAction) -> Unit,
+) = ComposeUIViewController {
+    Box(
+        Modifier.fillMaxSize()
+            .background(pilotPalette.background)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        MemberMenu(buildInfo, onSelect)
+    }
+}
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberSignInViewController(

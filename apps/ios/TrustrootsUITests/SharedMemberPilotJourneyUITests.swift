@@ -42,7 +42,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10),
             app.debugDescription
         )
-        app.buttons["Frequently asked questions"].tap()
+        let profile = app.descendants(matching: .any)["profile-menu-entry"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
+        profile.tap()
+        XCTAssertTrue(app.buttons["Edit profile"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Menu"].tap()
+        let faq = app.descendants(matching: .any)["faq-menu-entry"]
+        XCTAssertTrue(faq.waitForExistence(timeout: 10), app.debugDescription)
+        faq.tap()
         XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 10))
         app.buttons["Back"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10))
