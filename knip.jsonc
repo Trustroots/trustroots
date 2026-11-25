@@ -15,9 +15,7 @@
   "workspaces": {
     ".": {
       "entry": [
-        // Knip resolves server.mjs to the server.js wrapper by basename.
-        // Declare both runtime entry points so Knip follows both graphs.
-        "server.mjs",
+        "server.js",
         "worker.mjs",
         // Command-line tools run by path from package scripts, shell scripts,
         // Docker, CI and by hand.

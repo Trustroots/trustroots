@@ -325,6 +325,8 @@ export default defineConfig({
     {
       // Native server implementations must not regain CommonJS syntax.
       files: [
+        'server.js',
+        'worker.mjs',
         'modules/*/server/**/*.{mjs,mts}',
         'config/lib/**/*.{mjs,mts}',
         'packages/analytics/server/**/*.mts',

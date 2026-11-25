@@ -13,9 +13,9 @@ interface AssetConfig {
 const service = {
   server: {
     fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
-    workerJS: ['worker.{js,mjs,mts}', 'config/**/*.{js,mts}'],
+    workerJS: ['worker.mjs', 'config/**/*.{js,mts}'],
     allJS: [
-      'server.{js,mjs}',
+      'server.js',
       'config/**/*.{js,mts}',
       'layers/server/**/*.mts',
       'modules/*/server/**/*.{cjs,mts}',
