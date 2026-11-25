@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
-import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import { useTranslation } from 'react-i18next';
 import type { ExperienceAction } from '../profile-experiences';
 import type { ProfileContact, ProfileContacts } from '../profile-contacts';
