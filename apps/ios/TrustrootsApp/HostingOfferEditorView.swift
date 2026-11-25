@@ -2,6 +2,7 @@ import Combine
 import CoreLocation
 import SwiftUI
 import TrustrootsShared
+import UIKit
 
 private enum HostingAvailability: String {
     case yes, maybe, no
@@ -56,10 +57,14 @@ private struct HostingOfferForm: Equatable {
         return [latitude, longitude]
     }
 
+    var descriptionTooShort: Bool {
+        description.trimmingCharacters(in: .whitespacesAndNewlines).count < 5
+    }
+
     var update: HostingOfferUpdate? {
         guard let coordinates,
               (0...99).contains(maxGuests),
-              hosting == .no || description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 5
+              hosting == .no || !descriptionTooShort
         else { return nil }
 
         return HostingOfferUpdate(
@@ -90,6 +95,7 @@ struct HostingOfferEditorView: View {
     @State private var memberID: String?
     @State private var isLoading = false
     @State private var isSaving = false
+    @State private var isHostingTextFocused = false
     @State private var requestedLocation = false
     @State private var attemptedCreation = false
     @State private var error: String?
@@ -148,57 +154,54 @@ struct HostingOfferEditorView: View {
     private var isDirty: Bool { form != savedForm }
 
     private func editor(_ binding: Binding<HostingOfferForm>) -> some View {
-        Form {
-            Section {
-                HostingAvailabilitySection(form: binding, isEnabled: !isSaving)
-            } footer: {
-                Text("You can meet even when you are not hosting. Both use this location and circle visibility.")
-            }
+        ScrollViewReader { proxy in
+            Form {
+                Section {
+                    HostingSettingsSection(form: binding, isEnabled: !isSaving, panel: .availability)
+                } footer: {
+                    Text("You can meet even when you are not hosting. Both use this location and circle visibility.")
+                }
 
-            Section("Hosting details") {
-                TextField("Hosting description", text: binding.description, axis: .vertical)
-                    .lineLimit(3...7)
-                if binding.wrappedValue.hosting == .no {
-                    TextField("Why you are not hosting", text: binding.noOfferDescription, axis: .vertical)
-                        .lineLimit(2...6)
-                } else if binding.wrappedValue.description.trimmingCharacters(in: .whitespacesAndNewlines).count < 5 {
-                    Text("Enter at least five characters in your hosting description.")
+                Section("Hosting details") {
+                    HostingSettingsSection(form: binding, isEnabled: !isSaving, panel: .details) { focused in
+                        if isHostingTextFocused != focused { isHostingTextFocused = focused }
+                    }
+                    .id(HostingSettingsPanel.details)
+                    .onDisappear { isHostingTextFocused = false }
+                }
+
+                Section("Location") {
+                    TextField("Latitude", text: binding.latitude)
+                        .keyboardType(.numbersAndPunctuation)
+                    TextField("Longitude", text: binding.longitude)
+                        .keyboardType(.numbersAndPunctuation)
+                    Button("Use current location") {
+                        requestedLocation = true
+                        location.useCurrentLocation()
+                    }
+                    if requestedLocation, let error = location.errorMessage {
+                        Text(error).foregroundStyle(.red)
+                    }
+                    Text(binding.wrappedValue.coordinates == nil
+                        ? "Enter a latitude from −90 to 90 and a longitude from −180 to 180."
+                        : "Other members see an approximate location.")
                         .foregroundStyle(.secondary)
                 }
-                Toggle("Welcome help from volunteering guests", isOn: binding.volunteering)
-                    .accessibilityIdentifier("hosting-volunteering")
-                if binding.wrappedValue.volunteering {
-                    Text("Explain what help you need, whether it is optional or expected, and what you offer guests.")
-                        .foregroundStyle(.secondary)
-                }
-            }
 
-            Section("Location") {
-                TextField("Latitude", text: binding.latitude)
-                    .keyboardType(.numbersAndPunctuation)
-                TextField("Longitude", text: binding.longitude)
-                    .keyboardType(.numbersAndPunctuation)
-                Button("Use current location") {
-                    requestedLocation = true
-                    location.useCurrentLocation()
+                if let error {
+                    Section { Text(error).foregroundStyle(.red) }
                 }
-                if requestedLocation, let error = location.errorMessage {
-                    Text(error).foregroundStyle(.red)
+                if showSaved && !isDirty {
+                    Section { Text("Hosting and meeting settings saved.") }
                 }
-                Text(binding.wrappedValue.coordinates == nil
-                    ? "Enter a latitude from −90 to 90 and a longitude from −180 to 180."
-                    : "Other members see an approximate location.")
-                    .foregroundStyle(.secondary)
             }
-
-            if let error {
-                Section { Text(error).foregroundStyle(.red) }
-            }
-            if showSaved && !isDirty {
-                Section { Text("Hosting and meeting settings saved.") }
+            .disabled(isSaving)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                if isHostingTextFocused {
+                    proxy.scrollTo(HostingSettingsPanel.details, anchor: .top)
+                }
             }
         }
-        .disabled(isSaving)
     }
 
     private func load() async {
@@ -252,28 +255,52 @@ struct HostingOfferEditorView: View {
     }
 }
 
-private struct HostingAvailabilitySection: View {
+private enum HostingSettingsPanel: Hashable {
+    case availability
+    case details
+}
+
+private struct HostingSettingsSection: View {
     @Binding var form: HostingOfferForm
     let isEnabled: Bool
+    let panel: HostingSettingsPanel
+    var onTextFocus: (Bool) -> Void = { _ in }
     @State private var height: CGFloat = 1
 
     var body: some View {
-        HostingAvailabilityController(form: $form, height: $height, isEnabled: isEnabled)
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .clipped()
+        HostingSettingsController(
+            form: $form,
+            height: $height,
+            isEnabled: isEnabled,
+            panel: panel,
+            onTextFocus: onTextFocus
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
     }
 }
 
 @MainActor
-private struct HostingAvailabilityController: UIViewControllerRepresentable {
+private struct HostingSettingsController: UIViewControllerRepresentable {
     @Binding var form: HostingOfferForm
     @Binding var height: CGFloat
     let isEnabled: Bool
+    let panel: HostingSettingsPanel
+    let onTextFocus: (Bool) -> Void
 
+    @MainActor
     final class Coordinator {
-        let state = HostingAvailabilitySettingsState()
-        var view: HostingAvailabilityController?
+        let availability = HostingAvailabilitySettingsState()
+        let details = HostingDetailsSettingsState()
+        var view: HostingSettingsController?
+
+        func edit(_ change: (inout HostingOfferForm) -> Void) {
+            guard let view, view.isEnabled else { return }
+            var updated = view.form
+            change(&updated)
+            view.form = updated
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -282,37 +309,56 @@ private struct HostingAvailabilityController: UIViewControllerRepresentable {
         let coordinator = context.coordinator
         update(coordinator)
         let currentHeight = $height
-        return HostingAvailabilitySettingsControllerKt.HostingAvailabilitySettingsViewController(
-            state: coordinator.state,
-            onHosting: { [weak coordinator] selection in
-                guard let view = coordinator?.view, view.isEnabled,
-                      let availability = HostingAvailability(rawValue: selection) else { return }
-                view.$form.hosting.wrappedValue = availability
-            },
-            onMeeting: { [weak coordinator] selection in
-                guard let view = coordinator?.view, view.isEnabled,
-                      let availability = MeetingAvailability(rawValue: selection) else { return }
-                view.$form.meeting.wrappedValue = availability
-            },
-            onAdjustGuests: { [weak coordinator] delta in
-                guard let view = coordinator?.view, view.isEnabled, view.form.hosting != .no else { return }
-                let guests = view.form.maxGuests + delta.intValue
-                guard (0...99).contains(guests) else { return }
-                view.$form.maxGuests.wrappedValue = guests
-            },
-            onCirclesOnly: { [weak coordinator] checked in
-                guard let view = coordinator?.view, view.isEnabled else { return }
-                view.$form.onlyMyCircles.wrappedValue = checked.boolValue
-            },
-            onHeight: { value in
-                let measuredHeight = max(1, CGFloat(value.doubleValue))
-                Task { @MainActor in
-                    if currentHeight.wrappedValue != measuredHeight {
-                        currentHeight.wrappedValue = measuredHeight
-                    }
+        let resize: (Double) -> Void = { value in
+            let measuredHeight = max(1, CGFloat(value))
+            Task { @MainActor in
+                if currentHeight.wrappedValue != measuredHeight {
+                    currentHeight.wrappedValue = measuredHeight
                 }
             }
-        )
+        }
+        switch panel {
+        case .availability:
+            return HostingAvailabilitySettingsControllerKt.HostingAvailabilitySettingsViewController(
+                state: coordinator.availability,
+                onHosting: { [weak coordinator] selection in
+                    guard let availability = HostingAvailability(rawValue: selection) else { return }
+                    coordinator?.edit { $0.hosting = availability }
+                },
+                onMeeting: { [weak coordinator] selection in
+                    guard let availability = MeetingAvailability(rawValue: selection) else { return }
+                    coordinator?.edit { $0.meeting = availability }
+                },
+                onAdjustGuests: { [weak coordinator] delta in
+                    coordinator?.edit { draft in
+                        let guests = draft.maxGuests + delta.intValue
+                        guard draft.hosting != .no, (0...99).contains(guests) else { return }
+                        draft.maxGuests = guests
+                    }
+                },
+                onCirclesOnly: { [weak coordinator] checked in
+                    coordinator?.edit { $0.onlyMyCircles = checked.boolValue }
+                },
+                onHeight: { resize($0.doubleValue) }
+            )
+        case .details:
+            return HostingAvailabilitySettingsControllerKt.HostingDetailsSettingsViewController(
+                state: coordinator.details,
+                onDescription: { [weak coordinator] description in
+                    coordinator?.edit { $0.description = description }
+                },
+                onUnavailableReason: { [weak coordinator] reason in
+                    coordinator?.edit { $0.noOfferDescription = reason }
+                },
+                onVolunteering: { [weak coordinator] volunteering in
+                    coordinator?.edit { $0.volunteering = volunteering.boolValue }
+                },
+                onTextFocus: { [weak coordinator] focused in
+                    coordinator?.view?.onTextFocus(focused.boolValue)
+                },
+                onHeight: { resize($0.doubleValue) }
+            )
+        }
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
@@ -321,12 +367,24 @@ private struct HostingAvailabilityController: UIViewControllerRepresentable {
 
     private func update(_ coordinator: Coordinator) {
         coordinator.view = self
-        coordinator.state.update(
-            hosting: form.hosting.rawValue,
-            meeting: form.meeting.rawValue,
-            maxGuests: Int32(clamping: form.maxGuests),
-            circlesOnly: form.onlyMyCircles,
-            enabled: isEnabled
-        )
+        switch panel {
+        case .availability:
+            coordinator.availability.update(
+                hosting: form.hosting.rawValue,
+                meeting: form.meeting.rawValue,
+                maxGuests: Int32(clamping: form.maxGuests),
+                circlesOnly: form.onlyMyCircles,
+                enabled: isEnabled
+            )
+        case .details:
+            coordinator.details.update(
+                description: form.description,
+                unavailableReason: form.noOfferDescription,
+                isUnavailable: form.hosting == .no,
+                descriptionTooShort: form.descriptionTooShort,
+                volunteering: form.volunteering,
+                enabled: isEnabled
+            )
+        }
     }
 }

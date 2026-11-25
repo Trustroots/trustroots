@@ -87,7 +87,9 @@ internal fun HostingAvailabilitySettings(
                 ) { onAdjustGuests(1) }
             }
         }
-        CirclesVisibility(content.circlesOnly, content.enabled, onCirclesOnly)
+        HostingSettingSwitch(
+            "Show only in my circles", "hosting-circles-only", content.circlesOnly, content.enabled, onCirclesOnly,
+        )
     }
 }
 
@@ -120,16 +122,22 @@ private fun AvailabilityOptions(
 }
 
 @Composable
-private fun CirclesVisibility(checked: Boolean, enabled: Boolean, onChecked: (Boolean) -> Unit) {
+internal fun HostingSettingSwitch(
+    label: String,
+    tag: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onChecked: (Boolean) -> Unit,
+) {
     val palette = pilotPalette
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp)
             .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onChecked)
-            .testTag("hosting-circles-only"),
+            .testTag(tag),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PilotText("Show only in my circles", Modifier.weight(1f))
+        PilotText(label, Modifier.weight(1f))
         Box(
             Modifier.size(width = 38.dp, height = 24.dp)
                 .background(if (checked) palette.accent else palette.border, CircleShape)

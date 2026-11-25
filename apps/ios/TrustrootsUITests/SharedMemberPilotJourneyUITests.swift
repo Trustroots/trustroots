@@ -151,11 +151,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         reveal(circlesOnly, in: app)
         circlesOnly.tap()
 
-        let volunteering = app.switches["hosting-volunteering"]
-        if !volunteering.isHittable { app.swipeUp() }
-        XCTAssertEqual(volunteering.value as? String, "1")
-        volunteering.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertEqual(volunteering.value as? String, "0")
+        let volunteering = app.descendants(matching: .any)["hosting-volunteering"]
+        XCTAssertTrue(volunteering.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(volunteering, in: app)
+        volunteering.tap()
 
         let save = app.buttons["save-hosting-offer"]
         XCTAssertTrue(save.isEnabled)
@@ -177,6 +176,45 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertEqual(offer["location"] as? [Double], [41.1, -8.5])
         XCTAssertEqual(offer["description"] as? String, "<p>Fictional offer details.</p>")
         XCTAssertEqual(offer["noOfferDescription"] as? String, "<p>Travelling this month.</p>")
+
+        let reason = app.descendants(matching: .any)["hosting-unavailable-reason"]
+        XCTAssertTrue(reason.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(reason, in: app)
+        XCTAssertEqual(reason.value as? String, "Travelling this month.")
+        let details = app.descendants(matching: .any)["hosting-details-settings"]
+        XCTAssertTrue(details.exists, app.debugDescription)
+        let detailsCapture = XCTAttachment(screenshot: details.screenshot())
+        detailsCapture.name = "regular-ios-hosting-details"
+        detailsCapture.lifetime = .keepAlways
+        add(detailsCapture)
+
+        // The area beyond the first line places the insertion point after the saved reason.
+        reason.coordinate(withNormalizedOffset: CGVector(dx: 0.86, dy: 0.75)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let additionalLine = "\nBack next week."
+        app.typeText(additionalLine)
+        let updatedReason = "Travelling this month." + additionalLine
+        let edited = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", updatedReason),
+            object: reason
+        )
+        await fulfillment(of: [edited], timeout: 10)
+        XCTAssertTrue(save.isEnabled)
+        save.tap()
+        let savedDetails = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isEnabled == false AND label == %@", "Save"),
+            object: save
+        )
+        await fulfillment(of: [savedDetails], timeout: 10)
+
+        let (editedData, editedResponse) = try await URLSession.shared.data(
+            from: fixtureURL.appendingPathComponent("fixture/hosting-offer")
+        )
+        XCTAssertEqual((editedResponse as? HTTPURLResponse)?.statusCode, 200)
+        let editedOffer = try XCTUnwrap(JSONSerialization.jsonObject(with: editedData) as? [String: Any])
+        XCTAssertEqual(editedOffer["noOfferDescription"] as? String, updatedReason)
+        XCTAssertEqual(editedOffer["description"] as? String, "<p>Fictional offer details.</p>")
+        XCTAssertEqual(editedOffer["location"] as? [Double], [41.1, -8.5])
     }
 
     @MainActor
