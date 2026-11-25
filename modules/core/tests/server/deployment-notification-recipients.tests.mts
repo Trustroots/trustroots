@@ -1,10 +1,37 @@
 import assert from 'node:assert/strict';
+import { MongoBackend } from '@agendajs/mongo-backend';
 import mongoose from 'mongoose';
-import { afterEach, test } from 'vitest';
+import { afterEach, test, vi } from 'vitest';
 import { findDeploymentNotificationAddresses } from '../../../../config/lib/deployment-notification-recipients.mts';
+import {
+  deploymentNotificationJob,
+  queueDeploymentNotifications,
+  readDeploymentSuccessReceipt,
+} from '../../../../config/lib/deployment-notifications.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
 
 afterEach(clearDatabase);
+
+const receipt = readDeploymentSuccessReceipt(
+  JSON.stringify({
+    schemaVersion: 1,
+    status: 'succeeded',
+    eventId: '11111111-2222-4333-8444-555555555555',
+    action: 'deploy',
+    origin: 'https://www.trustroots.org',
+    buildCommit: 'c'.repeat(40),
+    readinessSucceededAt: '2026-01-02T03:04:05+00:00',
+  }),
+);
+const from = 'trustroots@example.test';
+
+afterEach(async () => {
+  const db = mongoose.connection.db!;
+  await db.collection('deploymentNotifications').deleteMany({});
+  await db
+    .collection('agendaJobs')
+    .deleteMany({ name: deploymentNotificationJob });
+});
 
 test('deployment recipients are active greeters and admins with unique valid addresses', async () => {
   const db = mongoose.connection.db!;
@@ -48,4 +75,123 @@ test('deployment recipients are active greeters and admins with unique valid add
     await findDeploymentNotificationAddresses(db),
     new Set(['greeter@example.org', 'both@example.org', 'admin@example.org']),
   );
+});
+
+test('concurrent handoffs keep one Agenda job per destination and receipt', async () => {
+  const db = mongoose.connection.db!;
+  await db.collection('users').insertOne({
+    username: 'fictional-greeter',
+    email: 'greeter@example.test',
+    public: true,
+    roles: ['welcome-team', 'admin'],
+  });
+  assert.deepEqual(
+    await Promise.all(
+      Array.from({ length: 4 }, () =>
+        queueDeploymentNotifications(db, receipt, from),
+      ),
+    ),
+    [1, 1, 1, 1],
+  );
+  const collection = db.collection('agendaJobs');
+  const jobs = await collection
+    .find({ deploymentEventId: receipt.eventId })
+    .toArray();
+  assert.equal(jobs.length, 1);
+  const backend = new MongoBackend({ mongo: db, ensureIndex: false });
+  await backend.connect();
+  try {
+    const job = await backend.repository.getJobById(jobs[0]._id.toHexString());
+    assert.equal(job?.name, deploymentNotificationJob);
+    assert.ok(job.nextRunAt instanceof Date);
+    assert.deepEqual(job.data, {
+      to: { address: 'greeter@example.test' },
+      from: { name: 'Trustroots', address: from },
+      subject: 'Trustroots production deployment verified',
+      text: [
+        'The Trustroots production deployment passed readiness and login checks.',
+        '',
+        `Deployed commit: https://github.com/Trustroots/trustroots/commit/${receipt.buildCommit}`,
+        `Readiness verified at: ${receipt.readinessSucceededAt} (UTC)`,
+        'Mail mode: live',
+      ].join('\n'),
+    });
+  } finally {
+    await backend.disconnect();
+  }
+  await assert.rejects(
+    queueDeploymentNotifications(db, { ...receipt, action: 'rollback' }, from),
+    /conflicts with saved notification progress/,
+  );
+  const redeploy = {
+    ...receipt,
+    eventId: '11111111-2222-4333-8444-555555555556',
+  };
+  await queueDeploymentNotifications(db, redeploy, from);
+  assert.equal(
+    await collection.countDocuments({ name: deploymentNotificationJob }),
+    2,
+  );
+});
+
+test('a resumed handoff keeps its snapshot and does not reschedule an inserted job', async () => {
+  const db = mongoose.connection.db!;
+  const users = db.collection('users');
+  await users.insertMany([
+    {
+      username: 'first',
+      email: 'first@example.test',
+      public: true,
+      roles: ['admin'],
+    },
+    {
+      username: 'second',
+      email: 'second@example.test',
+      public: true,
+      roles: ['welcome-team'],
+    },
+  ]);
+  const jobs = db.collection('agendaJobs');
+  const events = db.collection('deploymentNotifications');
+  const collection = vi.spyOn(db, 'collection').mockReturnValueOnce(events);
+  const progressWrite = vi
+    .spyOn(events, 'updateOne')
+    .mockRejectedValueOnce(new Error('Interrupted'));
+  try {
+    await assert.rejects(
+      queueDeploymentNotifications(db, receipt, from),
+      /Interrupted/,
+    );
+  } finally {
+    collection.mockRestore();
+    progressWrite.mockRestore();
+  }
+  const query = { deploymentEventId: receipt.eventId };
+  const inserted = await jobs.findOne(query);
+  assert.ok(inserted);
+  // The worker may have already processed the insert before progress was recorded.
+  const lastFinishedAt = new Date();
+  await jobs.updateOne(
+    { _id: inserted._id },
+    { $set: { nextRunAt: null, lastFinishedAt } },
+  );
+  await users.updateOne(
+    { username: 'second' },
+    { $set: { email: 'changed@example.test' } },
+  );
+  assert.equal(await queueDeploymentNotifications(db, receipt, from), 2);
+  const queued = await jobs
+    .find(query)
+    .sort({ 'data.to.address': 1 })
+    .toArray();
+  assert.deepEqual(
+    queued.map(job => job.data.to.address),
+    ['first@example.test', 'second@example.test'],
+  );
+  assert.equal(queued[0]._id.toHexString(), inserted._id.toHexString());
+  assert.equal(queued[0].nextRunAt, null);
+  assert.deepEqual(queued[0].lastFinishedAt, lastFinishedAt);
+  await jobs.deleteOne({ _id: inserted._id });
+  assert.equal(await queueDeploymentNotifications(db, receipt, from), 2);
+  assert.equal(await jobs.countDocuments(query), 1);
 });

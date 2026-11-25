@@ -239,6 +239,7 @@ class DeploymentTests(unittest.TestCase):
 class DeploymentEventTests(unittest.TestCase):
     commit = 'c' * 40
     images = {name: 'sha256:' + 'b' * 64 for name in deploy.SERVICES}
+    notification_failure = False
 
     def setUp(self):
         self.stack = ExitStack()
@@ -255,8 +256,10 @@ class DeploymentEventTests(unittest.TestCase):
     def main(self, action='deploy', replace_side_effect=None, **kwargs):
         import sys
         argv = ['production-deploy.py', action, '--compose', str(self.args.compose),
-                '--media-mount', str(self.args.compose.parent), '--url', self.args.url]
-        if action == 'record-success':
+                '--url', self.args.url]
+        if action != 'notify-success':
+            argv.extend(['--media-mount', str(self.args.compose.parent)])
+        if action in ('record-success', 'notify-success'):
             argv.extend(['--event-id', self.args.event_id])
         previous = {name: 'sha256:' + 'a' * 64 for name in deploy.SERVICES}
         if action == 'rollback':
@@ -272,6 +275,13 @@ class DeploymentEventTests(unittest.TestCase):
             if 'inspect' in command:
                 return self.images['webapp']
             if 'exec' in command:
+                if 'bin/queue-deployment-notifications.mts' in command:
+                    if self.notification_failure:
+                        raise OSError('private notification failure')
+                    receipt = json.loads(options['input_text'])
+                    self.assertIn(receipt, self.receipts())
+                    self.assertEqual(receipt['status'], 'succeeded')
+                    return 'Loaded "production" environment configuration\nDeployment notification destinations: 2'
                 return self.commit
             return ''
 
@@ -280,7 +290,7 @@ class DeploymentEventTests(unittest.TestCase):
             stack.enter_context(patch.dict(deploy.os.environ, {
                 'TRUSTROOTS_DEPLOY_USERNAME': 'member',
                 'TRUSTROOTS_DEPLOY_PASSWORD': 'fictional-password'}))
-            stack.enter_context(patch.object(deploy, 'preflight'))
+            self.preflight = stack.enter_context(patch.object(deploy, 'preflight'))
             stack.enter_context(patch.object(deploy, 'run', side_effect=docker))
             stack.enter_context(patch.object(deploy, 'image_ids', side_effect=[previous, self.images]
                                            if action == 'deploy' else [self.images, self.images]))
@@ -293,6 +303,48 @@ class DeploymentEventTests(unittest.TestCase):
     def receipts(self):
         return [json.loads(path.read_text()) for path in
                 (self.args.compose.parent / '.trustroots-deployment-events').glob('*.json')]
+
+    def handoff_commands(self):
+        return [command for command in self.commands
+                if 'bin/queue-deployment-notifications.mts' in command]
+
+    def test_production_deployment_redeploy_and_explicit_rollback_handoff(self):
+        self.args.url = 'https://www.trustroots.org'
+        for action in ('deploy', 'deploy', 'rollback'):
+            with self.subTest(action=action):
+                self.main(action=action)
+                self.assertEqual(len(self.handoff_commands()), 1)
+        self.assertEqual(len({event['eventId'] for event in self.receipts()}), 3)
+
+    def test_handoff_failure_keeps_verified_deployment_and_can_resume(self):
+        self.args.url = 'https://www.trustroots.org'
+        self.notification_failure = True
+        with patch('sys.stdout', new_callable=io.StringIO) as output:
+            replacement, _ = self.main()
+        replacement.assert_called_once()
+        self.assertIn('use notify-success to resume', output.getvalue())
+        self.assertNotIn('private notification failure', output.getvalue())
+        event, = self.receipts()
+        self.args.event_id = event['eventId']
+        self.notification_failure = False
+        with patch('sys.stdout', new_callable=io.StringIO) as output:
+            replacement, verification = self.main(action='notify-success')
+        replacement.assert_not_called()
+        verification.assert_not_called()
+        self.preflight.assert_not_called()
+        self.assertEqual(len(self.handoff_commands()), 1)
+        self.assertIn('2 destinations', output.getvalue())
+        self.assertEqual(self.receipts(), [event])
+
+    def test_notifications_refuse_pending_and_failed_production_receipts(self):
+        self.args.url = 'https://www.trustroots.org'
+        path, event = self.begin()
+        for state in ('pending', 'failed'):
+            with self.subTest(state=state):
+                deploy.save_event(path, {**event, 'status': state})
+                with self.assertRaisesRegex(RuntimeError, 'successful receipt|Invalid deployment event'):
+                    self.main(action='notify-success')
+                self.assertEqual(self.handoff_commands(), [])
 
     def test_success_and_same_version_redeploy_are_distinct_events(self):
         self.main()
@@ -316,11 +368,13 @@ class DeploymentEventTests(unittest.TestCase):
         self.main(replace_side_effect=replace)
 
     def test_failed_deployment_is_not_recoverable_as_success(self):
+        self.args.url = 'https://www.trustroots.org'
         with self.assertRaisesRegex(RuntimeError, 'restored and verified'):
             self.main(side_effect=[None, RuntimeError('failed'), None])
         event, = self.receipts()
         self.assertEqual(event['status'], 'failed')
         self.assertNotIn('readinessSucceededAt', event)
+        self.assertEqual(self.handoff_commands(), [])
         self.args.event_id = event['eventId']
         with self.assertRaisesRegex(RuntimeError, 'Invalid deployment event'):
             deploy.recover_event(self.args, 'member', 'fictional-password')

@@ -1,6 +1,10 @@
 import type { Job, Agenda } from 'agenda';
 import { agendaLockLifetime } from './agenda-lock.mts';
-import config from './../config.mts';
+import config, { mailMode } from './../config.mts';
+import {
+  deploymentNotificationHandler,
+  deploymentNotificationJob,
+} from './deployment-notifications.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
@@ -112,6 +116,11 @@ async function start(options: WorkerOptions, callback?: Done) {
     priority: 'high',
     concurrency: 10,
   });
+  defineJob(
+    deploymentNotificationJob,
+    deploymentNotificationHandler(config.domain, mailMode, sendEmailJob),
+    { priority: 'high', concurrency: 10 },
+  );
 
   agenda.define<Parameters<typeof deliverMessagePush>[0]>(
     messagePushJobName,
