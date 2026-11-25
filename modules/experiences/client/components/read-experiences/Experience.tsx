@@ -41,6 +41,7 @@ export default function Experience({
     userFrom,
     userTo,
     response,
+    replyBlocked,
   } = experience;
 
   const createdDate = new Date(created);
@@ -97,14 +98,14 @@ export default function Experience({
                 enim ad minim veniam, quis nostrud exercitation ullamco laboris
                 nisi ut aliquip ex ea commodo consequat...
               </div>
-              {
-                t(
-                  'You have {{count}} days left to respond before their experience will become public.',
-                  { count: getDaysLeft(createdDate) },
-                ) as string
-              }
+              {replyBlocked
+                ? t('This experience is awaiting publication.')
+                : t(
+                    'You have {{count}} days left to respond before their experience will become public.',
+                    { count: getDaysLeft(createdDate) },
+                  )}
             </div>
-            {userFrom?.username && (
+            {!replyBlocked && userFrom?.username && (
               <p>
                 <Button
                   intent="primary"
@@ -154,15 +155,18 @@ export default function Experience({
           </>
         )}
       </div>
-      {!response && isPublicExperience && onReceiverProfile && (
-        <div className="panel-footer text-right">
-          <Button
-            render={<a href={getProfileExperiencesPath(userFrom.username)} />}
-          >
-            {t('Write about your experience') as string}
-          </Button>
-        </div>
-      )}
+      {!response &&
+        !replyBlocked &&
+        isPublicExperience &&
+        onReceiverProfile && (
+          <div className="panel-footer text-right">
+            <Button
+              render={<a href={getProfileExperiencesPath(userFrom.username)} />}
+            >
+              {t('Write about your experience') as string}
+            </Button>
+          </div>
+        )}
     </div>
   );
 }

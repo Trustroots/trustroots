@@ -171,4 +171,36 @@ describe('<Experience />', () => {
       screen.getByRole('link', { name: 'Write about your experience' }),
     ).toHaveAttribute('href', '/profile/alice/experiences/new');
   });
+
+  it.each([true, false])(
+    'omits reply prompts when a removed reply prevents another (public: %s)',
+    isPublic => {
+      render(
+        <Experience
+          onReceiverProfile
+          experience={{
+            _id: 'experience-with-removed-reply',
+            created: '2020-01-01T00:00:00.000Z',
+            public: isPublic,
+            userFrom,
+            userTo,
+            response: null,
+            replyBlocked: true,
+          }}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('link', { name: /Write about your experience/ }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/days left to respond/),
+      ).not.toBeInTheDocument();
+      if (!isPublic) {
+        expect(
+          screen.getByText('This experience is awaiting publication.'),
+        ).toBeVisible();
+      }
+    },
+  );
 });

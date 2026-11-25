@@ -6,8 +6,7 @@ import type {
   ExperienceInteractions,
   ExperienceRecommendation,
 } from '../../../shared/experience';
-import ExperiencesSection from './ExperiencesSection';
-import type { ExperienceTag } from './Meta';
+import type { ExperienceTag, ExperienceTagFilters } from './Meta';
 
 type Interaction = keyof ExperienceInteractions;
 type InteractionFilter = Interaction | '';
@@ -18,10 +17,13 @@ const selectClassName =
 
 export default function PublicExperiencesList({
   experiences,
-  onReceiverProfile,
+  children,
 }: {
   experiences: Experience[];
-  onReceiverProfile: boolean;
+  children: (
+    filtered: Experience[],
+    tagFilters: ExperienceTagFilters,
+  ) => React.ReactNode;
 }) {
   const { t } = useTranslation('experiences');
   const [interaction, setInteraction] = useState<InteractionFilter>('');
@@ -44,6 +46,9 @@ export default function PublicExperiencesList({
       setInteraction(current => (current === tag ? '' : tag));
     }
   }
+
+  const tagFilters = { interaction, recommendation, toggle: toggleTag };
+  if (experiences.length === 0) return children(filtered, tagFilters);
 
   return (
     <>
@@ -102,11 +107,7 @@ export default function PublicExperiencesList({
               total: experiences.length,
             })}
       </p>
-      <ExperiencesSection
-        experiences={filtered}
-        onReceiverProfile={onReceiverProfile}
-        tagFilters={{ interaction, recommendation, toggle: toggleTag }}
-      />
+      {children(filtered, tagFilters)}
     </>
   );
 }

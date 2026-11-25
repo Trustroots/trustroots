@@ -23,7 +23,7 @@ export default function ExperiencesSection({
         <Experience
           experience={experience}
           onReceiverProfile={onReceiverProfile}
-          tagFilters={tagFilters}
+          tagFilters={experience.public ? tagFilters : undefined}
         />
       </div>
     </div>
