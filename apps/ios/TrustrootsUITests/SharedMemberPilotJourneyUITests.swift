@@ -151,6 +151,46 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Sign in"].exists)
     }
 
+    func testRegularProfileBlockAndUnblockUpdatesMessageAction() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let contacts = app.descendants(matching: .any)["contacts-menu-entry"]
+        XCTAssertTrue(contacts.waitForExistence(timeout: 10), app.debugDescription)
+        contacts.tap()
+        let contact = app.descendants(matching: .any)["contact-contact-pilot-one"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 15), app.debugDescription)
+        contact.tap()
+
+        let message = app.descendants(matching: .any)["profile-message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 15), app.debugDescription)
+        let block = app.descendants(matching: .any)["profile-block"]
+        XCTAssertTrue(block.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(block, in: app)
+        let blockScreenshot = XCTAttachment(screenshot: block.screenshot())
+        blockScreenshot.name = "regular-ios-profile-block-action"
+        blockScreenshot.lifetime = .keepAlways
+        add(blockScreenshot)
+        block.tap()
+        app.buttons["Block member"].tap()
+
+        let blocked = element(labelled: "You have blocked Robin Example.", in: app)
+        XCTAssertTrue(blocked.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(message.exists)
+        revealProfileElement(block, in: app)
+        block.tap()
+        app.buttons["Unblock member"].tap()
+        XCTAssertTrue(message.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(blocked.exists)
+    }
+
     func testRegularSupportOpensFAQAndKeepsMessageForRetry() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"

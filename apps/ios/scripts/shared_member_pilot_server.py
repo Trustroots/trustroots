@@ -101,6 +101,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     hosting_offer = None
     memberships = {CIRCLES[1]["_id"]}
     profile_changes = {}
+    partner_blocked = False
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -179,6 +180,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "meetingStatus": "maybe",
                 "volunteering": True,
             }])
+        elif route == "/api/mobile/v0/blocked-users":
+            fixture = type(self)
+            with fixture.session_lock:
+                blocked = fixture.partner_blocked
+            self._json(200, [PARTNER] if blocked else [])
         elif route == f'/api/mobile/v0/contacts/{MEMBER["_id"]}':
             contacts = [{
                 "_id": "contact-pilot-one",
@@ -320,6 +326,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
                 fixture.profile_changes = {}
+                fixture.partner_blocked = False
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -448,6 +455,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
             return
         if not self._authorised():
             return
+        if self.path == f'/api/mobile/v0/blocked-users/{PARTNER["username"]}':
+            self._set_partner_blocked(True)
+            return
         if self.path == f'/api/mobile/v0/offers/{HOSTING_OFFER["_id"]}':
             update = self._body()
             fixture = type(self)
@@ -496,8 +506,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
             with fixture.session_lock:
                 fixture.memberships.discard(CIRCLES[0]["_id"])
             self._json(200, {})
+        elif self.path == f'/api/mobile/v0/blocked-users/{PARTNER["username"]}':
+            self._set_partner_blocked(False)
         else:
             self._json(404, {"message": "Fixture route not found."})
+
+    def _set_partner_blocked(self, blocked):
+        fixture = type(self)
+        with fixture.session_lock:
+            fixture.partner_blocked = blocked
+        self._json(200, {})
 
     def _authorised(self):
         fixture = type(self)
