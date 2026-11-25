@@ -224,6 +224,9 @@ importers:
       '@trustroots/logger':
         specifier: workspace:*
         version: link:packages/logger
+      '@trustroots/relative-time':
+        specifier: workspace:*
+        version: link:packages/relative-time
       '@trustroots/ui':
         specifier: workspace:*
         version: link:packages/ui
@@ -801,6 +804,8 @@ importers:
       winston:
         specifier: 3.19.0
         version: 3.19.0
+
+  packages/relative-time: {}
 
   packages/ui:
     dependencies:

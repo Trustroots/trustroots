@@ -8,7 +8,7 @@ import {
   sendSignupReminderJob,
   type SignupReminder,
 } from './signup-reminder-mail.server.contract.mts';
-import { timeAgo } from '../../shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
