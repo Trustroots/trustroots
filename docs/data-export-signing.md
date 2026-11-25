@@ -66,7 +66,7 @@ Keep the nsec in the deployment environment. With no usable key configured, the 
 
 ## Key distribution
 
-The offline verifier uses the public keys pinned in `config/data-export-signing-keys.json`. The active service key is also published through the [NIP-05 lookup for `_@trustroots.org`](https://www.trustroots.org/.well-known/nostr.json?name=_). When pinning the initial key, confirm it against the deployed circle-chat signer and record its activation date if known.
+The offline verifier uses the public keys pinned in `config/data-export-signing-keys.json`. The active service key is also published through the [NIP-05 lookup for `_@trustroots.org`](https://trustroots.org/.well-known/nostr.json?name=_). The initial key is pinned as active from 24 November 2026.
 
 ## Rotation and revocation
 

@@ -384,26 +384,31 @@ describe('Targeted request limit middleware', function () {
     });
   });
 
-  it('limits data exports per member when a client address is unavailable', async function () {
-    let options: ConsumeOptions | undefined;
-    const middleware = loadMiddleware(
-      async value => {
-        options = value;
-        return { allowed: true };
-      },
-      () => undefined,
-    );
-    await middleware.dataExport(
-      { user: { id: 'fictional-member' } },
-      response(),
-      () => {},
-    );
-    assert.deepEqual(options, {
-      operation: 'dataExport',
-      windowMs: 3_600_000,
-      dimensions: [{ name: 'member', value: 'fictional-member', limit: 5 }],
+  for (const [operation, limit] of [
+    ['dataExport', 5],
+    ['nostranslationAlertWrite', 24],
+  ] as const) {
+    it(`limits ${operation} per member when a client address is unavailable`, async function () {
+      let options: ConsumeOptions | undefined;
+      const middleware = loadMiddleware(
+        async value => {
+          options = value;
+          return { allowed: true };
+        },
+        () => undefined,
+      );
+      await middleware[operation](
+        { user: { id: 'fictional-member' } },
+        response(),
+        () => {},
+      );
+      assert.deepEqual(options, {
+        operation,
+        windowMs: 3_600_000,
+        dimensions: [{ name: 'member', value: 'fictional-member', limit }],
+      });
     });
-  });
+  }
 
   it('skips storage when no configured dimension has an identity', async function () {
     const middleware = loadMiddleware(
