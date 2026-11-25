@@ -88,9 +88,9 @@ const run = function (
         emailTemporary: user.emailTemporary,
         created: user.created,
         publicReminderCount: user.publicReminderCount,
-        emailToken: '',
+        emailToken: crypto.randomBytes(32).toString('hex'),
       };
-      setToken(reminder, 'emailToken', crypto.randomBytes(32).toString('hex'));
+      setToken(reminder, 'emailToken', reminder.emailToken);
       await new Promise<void>((resolve, reject) => {
         emailService.sendSignupEmailReminder(
           reminder,

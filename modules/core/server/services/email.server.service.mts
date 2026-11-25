@@ -839,8 +839,10 @@ function renderEmailAndSend(
 ) {
   service.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
+    if (!email)
+      return callback(new Error('Email renderer returned no message'));
     agenda
-      .now(email?.signupReminder ? sendSignupReminderJob : 'send email', email)
+      .now(email.signupReminder ? sendSignupReminderJob : 'send email', email)
       .then(function (job) {
         callback(null, job);
       })

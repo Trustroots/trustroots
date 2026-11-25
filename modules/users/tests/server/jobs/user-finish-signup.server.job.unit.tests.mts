@@ -113,23 +113,43 @@ describe('Job: user finish signup unit tests', () => {
     assert.equal(member.publicReminderSent, unConfirmedUser.publicReminderSent);
   });
 
-  for (const change of [
-    { public: true },
-    { emailToken: 'newer-confirmation-token' },
-    { emailTemporary: 'newer-pending-address@example.test' },
-    { emailTokenIssuedAt: new Date(0) },
-    { emailTokenExpires: new Date(0) },
-    { roles: ['suspended'] },
+  for (const [state, change] of Object.entries({
+    'public visibility': { public: true },
+    'confirmation token': { emailToken: 'newer-confirmation-token' },
+    'pending email': { emailTemporary: 'newer-pending-address@example.test' },
+    'token issue date': { emailTokenIssuedAt: new Date(0) },
+    'token expiry': { emailTokenExpires: new Date(0) },
+    'suspended role': { roles: ['suspended'] },
+    'shadowban role': { roles: ['shadowban'] },
+  })) {
+    it(`skips a queued reminder after a change to ${state}`, async () => {
+      await run();
+      await User.updateOne({ _id: unConfirmedUser._id }, { $set: change });
+      await deliver();
+      assert.equal(emails.length, 0);
+    });
+  }
+
+  for (const field of [
+    'emailToken',
+    'emailTokenIssuedAt',
+    'emailTokenExpires',
   ]) {
-    it(
-      'skips a queued reminder after ' + Object.keys(change)[0] + ' changes',
-      async () => {
-        await run();
-        await User.updateOne({ _id: unConfirmedUser._id }, { $set: change });
-        await deliver();
-        assert.equal(emails.length, 0);
-      },
-    );
+    it(`skips delivery when missing ${field} changes to null after queueing`, async () => {
+      await User.collection.updateOne(
+        { _id: unConfirmedUser._id },
+        { $unset: { [field]: 1 } },
+      );
+      await run();
+      await User.collection.updateOne(
+        { _id: unConfirmedUser._id },
+        { $set: { [field]: null } },
+      );
+
+      await deliver();
+
+      assert.equal(emails.length, 0);
+    });
   }
 
   it('does not deliver a queued reminder without a recipient', async () => {
@@ -137,8 +157,10 @@ describe('Job: user finish signup unit tests', () => {
     const data = jobs[0]?.data;
     assert.ok(data);
     data.to.address = undefined;
+    const findPendingSignup = sinon.spy(User, 'exists');
 
     await deliver();
+    sinon.assert.notCalled(findPendingSignup);
     assert.equal(emails.length, 0);
   });
 

@@ -1000,6 +1000,19 @@ describe('Service: email', function () {
     );
   });
 
+  it('returns an error without queueing when the renderer supplies no message', function (done) {
+    const service = loadEmailService();
+    sandbox
+      .stub(service, 'renderEmail')
+      .callsFake((_template, _params, callback) => callback(null));
+
+    service.renderEmailAndSend('signup-reminder', {}, function (err) {
+      err!.message.should.equal('Email renderer returned no message');
+      jobs.length.should.equal(0);
+      done();
+    });
+  });
+
   context('Confirm contact email', function () {
     const user = {
       displayName: 'test user',

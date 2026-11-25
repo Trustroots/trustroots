@@ -179,16 +179,18 @@ describe('Job: user finish signup', function () {
     );
   });
 
-  it('skips hidden members without a pending email', async () => {
-    await User.updateOne(
-      { _id: unConfirmedUser._id },
-      { $unset: { emailTemporary: 1 } },
-    );
-    await promisify(userFinishSignupJobHandler)({
-      attrs: { _id: new mongoose.Types.ObjectId() },
+  for (const { state, update } of [
+    { state: 'missing', update: { $unset: { emailTemporary: 1 } } },
+    { state: 'empty', update: { $set: { emailTemporary: '' } } },
+  ]) {
+    it(`skips hidden members with a ${state} pending email`, async () => {
+      await User.collection.updateOne({ _id: unConfirmedUser._id }, update);
+      await promisify(userFinishSignupJobHandler)({
+        attrs: { _id: new mongoose.Types.ObjectId() },
+      });
+      assert.equal(jobs.length, 0);
     });
-    assert.equal(jobs.length, 0);
-  });
+  }
 
   for (const { state, update } of [
     {
