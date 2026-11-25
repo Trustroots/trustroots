@@ -8,8 +8,6 @@ import crypto from 'crypto';
 import mongoose, { type QueryFilter } from 'mongoose';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mts';
 import validator from 'validator';
-import './member-passkey.server.model.mts';
-import './passkey-ceremony.server.model.mts';
 import type {
   UserServerDocument,
   UserServerModel,
