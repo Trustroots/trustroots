@@ -800,11 +800,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
         app.buttons["Search filters"].tap()
-        for label in ["Offers volunteering", "My connections only"] {
-            let filter = app.switches[label]
-            XCTAssertTrue(filter.waitForExistence(timeout: 5))
-            filter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-            XCTAssertEqual(filter.value as? String, "1")
+        let filterScreen = app.descendants(matching: .any)["compose-offer-search-filters"]
+        XCTAssertTrue(filterScreen.waitForExistence(timeout: 10), app.debugDescription)
+        let filtersCapture = XCTAttachment(screenshot: filterScreen.screenshot())
+        filtersCapture.name = "iOS Compose offer search filters"
+        filtersCapture.lifetime = .keepAlways
+        add(filtersCapture)
+        for id in ["offer-filter-hosts", "offer-filter-volunteering", "offer-filter-connections-only"] {
+            let filter = app.descendants(matching: .any)[id]
+            XCTAssertTrue(filter.waitForExistence(timeout: 5), app.debugDescription)
+            reveal(filter, in: app)
+            filter.tap()
         }
         app.buttons["Done"].tap()
         XCTAssertTrue(other.waitForNonExistence(timeout: 15), app.debugDescription)
@@ -832,6 +838,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertLessThanOrEqual(profileBack.frame.maxY + 42, profileIdentity.frame.midY)
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+
+        app.buttons["Dismiss potential host"].tap()
+        app.buttons["Search filters"].tap()
+        app.buttons["Reset"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
 
         display.buttons["Members"].tap()
         app.buttons["Member filters"].tap()
