@@ -28,6 +28,9 @@ PARTNER = {
     "tagline": "A partner profile",
     "description": "<p>I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers.</p>",
     "languages": ["eng", "fra"],
+    "replyRate": "87%",
+    "replyTime": "2 days",
+    "locationLiving": "Example Harbour",
 }
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
