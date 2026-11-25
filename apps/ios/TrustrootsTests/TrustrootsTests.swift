@@ -1141,20 +1141,6 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(requests.last?.httpMethod, "POST")
     }
 
-    func testBrowserHomeRouteDoesNotBehaveLikeAChildPage() {
-        XCTAssertTrue(TrustrootsBrowserRoute.website(path: "/", title: "Trustroots").isHome)
-        XCTAssertTrue(
-            TrustrootsBrowserRoute.website(
-                path: "https://www.trustroots.org/",
-                title: "Trustroots"
-            ).isHome
-        )
-        XCTAssertFalse(
-            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").isHome
-        )
-        XCTAssertFalse(TrustrootsBrowserRoute.join.isHome)
-    }
-
     func testInboxAccumulatorDoesNotDuplicateThreadsWhenInboxReloads() throws {
         let payload = Data(
             #"[{"_id":"thread-1","message":{"excerpt":"Hello"},"read":true,"updated":"2026-07-29T12:00:00Z","userFrom":{"_id":"member-1","username":"first"},"userTo":{"_id":"member-2","username":"second"}}]"#.utf8

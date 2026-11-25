@@ -29,7 +29,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         signInToRegularApp(app)
         XCTAssertTrue(app.buttons["Home"].isSelected)
+        XCTAssertFalse(app.buttons["Trustroots home"].exists)
         XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        let home = XCTAttachment(screenshot: app.screenshot())
+        home.name = "regular-ios-home"
+        home.lifetime = .keepAlways
+        add(home)
         XCTAssertTrue(app.buttons["Search"].exists)
         XCTAssertTrue(app.buttons["Messages"].exists)
         app.buttons["Menu"].tap()
@@ -37,6 +42,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10),
             app.debugDescription
         )
+        app.buttons["Frequently asked questions"].tap()
+        XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 10))
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10))
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))
@@ -308,7 +317,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func openNostrAccount(_ app: XCUIApplication) {
-        let account = app.buttons["gearshape.fill"]
+        let menu = app.buttons["Menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+        menu.tap()
+        let account = app.descendants(matching: .any)["account-menu-entry"]
         XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(account.isHittable, app.debugDescription)
         account.tap()
