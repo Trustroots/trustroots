@@ -6,7 +6,3 @@ export const SUPPORT_CATEGORIES = Object.freeze({
   volunteering: 'Volunteering',
   other: 'Other',
 });
-
-const categories = { SUPPORT_CATEGORIES };
-
-export default categories;

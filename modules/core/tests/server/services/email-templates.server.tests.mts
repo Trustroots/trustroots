@@ -128,6 +128,7 @@ const emails: Record<string, Send> = {
       'ada@example.test',
       {
         category: 'other',
+        categoryLabel: 'Other',
         username: 'ada_l',
         displayName: 'Ada',
         email: 'ada@example.test',
@@ -148,6 +149,7 @@ const emails: Record<string, Send> = {
       'ada@example.test',
       {
         category: 'unknown',
+        categoryLabel: 'Other',
         message: 'Help',
         build: { ...build, branch: 'main' },
       },
@@ -156,7 +158,7 @@ const emails: Record<string, Send> = {
   'support-request-without-build': done =>
     emailService.sendSupportRequest(
       'ada@example.test',
-      { category: 'other', message: 'Hi' },
+      { category: 'other', categoryLabel: 'Other', message: 'Hi' },
       done,
     ),
   'signup-reminder': done =>

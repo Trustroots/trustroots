@@ -586,6 +586,7 @@ describe('Service: email', function () {
   it('can send support request email', function (done) {
     const supportRequest = {
       category: 'reportMember',
+      categoryLabel: 'Report a member',
       message: 'test-support-message',
       username: 'joedoe',
       email: 'test@test.com',
@@ -670,6 +671,7 @@ describe('Service: email', function () {
 
   it('uses a generic support request subject without member identity', function (done) {
     const supportRequest = {
+      categoryLabel: 'Other',
       message: 'test-support-message',
       username: '',
       displayName: '',

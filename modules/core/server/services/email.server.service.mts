@@ -23,7 +23,6 @@ import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
 import logModule from '@trustroots/logger';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
-import categories from '../../../support/shared/categories.ts';
 type MailCallback<Result = import('agenda').Job> = (
   error?: Error | null,
   result?: Result,
@@ -47,7 +46,7 @@ interface UnreadNotification {
   messages: Array<Record<string, unknown> & { content: string }>;
 }
 interface SupportMailRequest extends Record<string, unknown> {
-  category: string;
+  categoryLabel: string;
   username?: string;
   displayName?: string;
 }
@@ -113,8 +112,6 @@ const service = {
  * Module dependencies.
  */
 
-const { SUPPORT_CATEGORIES } = categories;
-const supportCategoryLabels: Record<string, string> = SUPPORT_CATEGORIES;
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
@@ -438,10 +435,7 @@ function sendSupportRequest(
   supportRequest: SupportMailRequest,
   callback: MailCallback,
 ) {
-  let subject = 'Support request';
-  const categoryLabel =
-    supportCategoryLabels[supportRequest.category] || 'Other';
-  subject += ' [' + categoryLabel + ']';
+  let subject = `Support request [${supportRequest.categoryLabel}]`;
 
   if (supportRequest.username) {
     subject += ' from ' + supportRequest.username;
@@ -457,10 +451,7 @@ function sendSupportRequest(
     // `To:`
     replyTo,
     subject,
-    request: {
-      ...supportRequest,
-      categoryLabel,
-    },
+    request: supportRequest,
     sparkpostCampaign: 'support-request',
   };
   service.renderEmailAndSend('support-request', params, callback);
