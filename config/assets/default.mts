@@ -17,6 +17,7 @@ const service = {
     allJS: [
       'server.{js,mjs}',
       'config/**/*.{js,mts}',
+      'layers/server/**/*.mts',
       'modules/*/server/**/*.{cjs,mts}',
     ],
     models: 'modules/*/server/models/**/*.{cjs,mts}',

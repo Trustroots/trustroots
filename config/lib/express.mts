@@ -2,6 +2,10 @@ import type { Connection } from 'mongoose';
 import { readFileSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import config from './../config.mts';
+import {
+  initModulesConfiguration,
+  initModulesServerRoutes,
+} from '../../layers/server/module-registration.mts';
 import errorService from './../../modules/core/server/services/error.server.service.mts';
 import express, {
   type Express,
@@ -262,18 +266,6 @@ async function initLastSeen(app: Express) {
 }
 
 /**
- * Invoke modules server configuration
- */
-async function initModulesConfiguration(app: Express, db?: Connection) {
-  for (const configPath of config.files.server.configs) {
-    const { default: configure } = await import(
-      pathToFileURL(path.resolve(configPath)).href
-    );
-    await configure(app, db);
-  }
-}
-
-/**
  * Set the security headers and the per-request CSP nonce
  */
 function initSecurityHeaders(app: Express) {
@@ -309,19 +301,6 @@ function denyAvatarStagingRequests(
     return res.sendStatus(404);
   }
   return next();
-}
-
-/**
- * Configure the modules server routes
- */
-async function initModulesServerRoutes(app: Express) {
-  // Globbing routing files
-  for (const routePath of config.files.server.routes) {
-    const { default: routes } = await import(
-      pathToFileURL(path.resolve(routePath)).href
-    );
-    routes(app);
-  }
 }
 
 /**

@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import './lib/mail-safety.test.mts';
@@ -42,13 +42,15 @@ function load(
       join(directory, 'node_modules'),
       'dir',
     );
-    mkdirSync(join(directory, 'modules/example/server/routes'), {
-      recursive: true,
-    });
-    writeFileSync(
-      join(directory, 'modules/example/server/routes/example.mts'),
-      '',
-    );
+    for (const route of [
+      'modules/example/server/routes/second.mts',
+      'modules/example/server/routes/first.mts',
+      'modules/core/server/routes/core.mts',
+    ]) {
+      const filename = join(directory, route);
+      mkdirSync(dirname(filename), { recursive: true });
+      writeFileSync(filename, '');
+    }
     if (local) writeFileSync(join(configDirectory, 'env/local.js'), local);
     const result = spawnSync(
       process.execPath,
@@ -108,12 +110,14 @@ function load(
   }
 }
 
-test('runtime configuration discovers TypeScript routes once and deduplicates glob inputs', () => {
+test('runtime configuration discovers TypeScript routes in order with core last and deduplicates glob inputs', () => {
   const result = load('test');
   assert.equal(result.environment, 'test');
   assert.match(result.config.db.uri, /trustroots-test/);
   assert.deepEqual(result.config.files.server.routes, [
-    'modules/example/server/routes/example.mts',
+    'modules/example/server/routes/first.mts',
+    'modules/example/server/routes/second.mts',
+    'modules/core/server/routes/core.mts',
   ]);
   assert.deepEqual(result.paths, ['https://example.org/file']);
 });
