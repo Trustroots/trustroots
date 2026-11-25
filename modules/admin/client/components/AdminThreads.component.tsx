@@ -1,4 +1,5 @@
 import { Select } from '@trustroots/ui/Select';
+import { Button } from '@trustroots/ui/Button';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Badge } from '@trustroots/ui/Badge';
@@ -7,13 +8,72 @@ import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import { isMongoObjectId } from './userSearch.helpers';
-import { formatAdminDateTime } from '../utils/admin-date';
+import {
+  formatAdminDateTime,
+  getAdminDateTimeAttribute,
+} from '../utils/admin-date';
 
-function MessageTime({ value }: { value?: string | null }) {
-  if (!value || Number.isNaN(new Date(value).getTime())) return <>—</>;
-  const date = new Date(value).toISOString();
-  return <time dateTime={date}>{formatAdminDateTime(value)}</time>;
+function ThreadTime({ value }: { value?: string | null }) {
+  const dateTime = getAdminDateTimeAttribute(value);
+  if (!dateTime) return <>—</>;
+  return <time dateTime={dateTime}>{formatAdminDateTime(value)}</time>;
 }
+
+function participantName(profile?: AdminThread['userFromProfile'][number]) {
+  return profile?.username || profile?.displayName || 'Unknown member';
+}
+
+function messageTimestamp(value?: string | null) {
+  const timestamp = Date.parse(value ?? '');
+  return Number.isNaN(timestamp) ? Number.MIN_SAFE_INTEGER : timestamp;
+}
+
+function voteCount(thread: AdminThread) {
+  return thread.votes?.length ?? 0;
+}
+
+const collator = new Intl.Collator('en', { sensitivity: 'base' });
+const sortColumns: Array<{
+  label: string;
+  compare: (first: AdminThread, second: AdminThread) => number;
+}> = [
+  {
+    label: 'From',
+    compare: (first, second) =>
+      collator.compare(
+        participantName(first.userFromProfile[0]),
+        participantName(second.userFromProfile[0]),
+      ),
+  },
+  {
+    label: 'To',
+    compare: (first, second) =>
+      collator.compare(
+        participantName(first.userToProfile[0]),
+        participantName(second.userToProfile[0]),
+      ),
+  },
+  {
+    label: 'Status',
+    compare: (first, second) => Number(!first.read) - Number(!second.read),
+  },
+  {
+    label: 'Thread votes',
+    compare: (first, second) => voteCount(first) - voteCount(second),
+  },
+  {
+    label: 'First message',
+    compare: (first, second) =>
+      messageTimestamp(first.firstMessage) -
+      messageTimestamp(second.firstMessage),
+  },
+  {
+    label: 'Last message',
+    compare: (first, second) =>
+      messageTimestamp(first.lastMessage) -
+      messageTimestamp(second.lastMessage),
+  },
+];
 
 export default function AdminThreads() {
   const params = useSearch({ strict: false });
@@ -31,6 +91,10 @@ export default function AdminThreads() {
   });
   const [username, setUsername] = useState(params.username || '');
   const [threads, setThreads] = useState<AdminThread[]>([]);
+  const [sort, setSort] = useState<{
+    column: (typeof sortColumns)[number];
+    direction: 'ascending' | 'descending';
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const requestedUsername = params.username;
@@ -91,6 +155,13 @@ export default function AdminThreads() {
         vote.reference === (sentiment === 'positive' ? 'yes' : 'no'),
     );
   });
+  if (sort) {
+    const { column, direction } = sort;
+    const multiplier = direction === 'ascending' ? 1 : -1;
+    filteredThreads.sort(
+      (first, second) => multiplier * column.compare(first, second),
+    );
+  }
 
   return (
     <>
@@ -152,12 +223,41 @@ export default function AdminThreads() {
                 >
                   <thead>
                     <tr>
-                      <th scope="col">From</th>
-                      <th scope="col">To</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Thread votes</th>
-                      <th scope="col">First message</th>
-                      <th scope="col">Last message</th>
+                      {sortColumns.map(column => {
+                        const direction =
+                          sort?.column === column ? sort.direction : undefined;
+                        return (
+                          <th
+                            key={column.label}
+                            scope="col"
+                            aria-sort={direction}
+                          >
+                            <Button
+                              variant="link"
+                              size="sm"
+                              type="button"
+                              onClick={() =>
+                                setSort({
+                                  column,
+                                  direction:
+                                    direction === 'ascending'
+                                      ? 'descending'
+                                      : 'ascending',
+                                })
+                              }
+                            >
+                              {column.label}{' '}
+                              <span aria-hidden="true">
+                                {direction === 'ascending'
+                                  ? '↑'
+                                  : direction === 'descending'
+                                    ? '↓'
+                                    : '↕'}
+                              </span>
+                            </Button>
+                          </th>
+                        );
+                      })}
                       <th scope="col">Conversation</th>
                     </tr>
                   </thead>
@@ -188,6 +288,7 @@ export default function AdminThreads() {
                             {thread.votes?.length ? (
                               <ul className="list-unstyled">
                                 {thread.votes.map(vote => {
+                                  const positive = vote.reference === 'yes';
                                   const author = [from, to].find(
                                     member => member?._id === vote.userFrom,
                                   );
@@ -200,15 +301,22 @@ export default function AdminThreads() {
                                       {recipient?.username || 'Deleted member'}:{' '}
                                       <span
                                         className={
-                                          vote.reference === 'yes'
+                                          positive
                                             ? 'text-success'
                                             : 'text-danger'
                                         }
                                       >
-                                        {vote.reference === 'yes'
-                                          ? 'positive'
-                                          : 'negative'}
+                                        <span aria-hidden="true">
+                                          {positive ? '+' : '−'}
+                                        </span>
+                                        <span className="tw:sr-only">
+                                          {positive
+                                            ? 'positive vote'
+                                            : 'negative vote'}
+                                        </span>
                                       </span>
+                                      {' · '}
+                                      <ThreadTime value={vote.created} />
                                     </li>
                                   );
                                 })}
@@ -218,10 +326,10 @@ export default function AdminThreads() {
                             )}
                           </td>
                           <td>
-                            <MessageTime value={thread.firstMessage} />
+                            <ThreadTime value={thread.firstMessage} />
                           </td>
                           <td>
-                            <MessageTime value={thread.lastMessage} />
+                            <ThreadTime value={thread.lastMessage} />
                           </td>
                           <td>
                             {from?.username && to?.username ? (

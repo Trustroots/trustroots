@@ -104,6 +104,7 @@ describe('Admin Thread CRUD tests', () => {
         });
         const first = new Date('2026-10-01T08:09:10Z');
         const last = new Date('2026-10-20T18:30:45Z');
+        const votedAt = new Date('2026-10-21T09:11:12Z');
         await mongoose.connection.collection('messages').insertMany([
           {
             userFrom: userRegular1Id,
@@ -129,6 +130,7 @@ describe('Admin Thread CRUD tests', () => {
           userFrom: userRegular2Id,
           userTo: userRegular1Id,
           reference: 'no',
+          created: votedAt,
         });
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
@@ -144,6 +146,7 @@ describe('Admin Thread CRUD tests', () => {
         );
         voted.votes.length.should.equal(1);
         voted.votes[0].reference.should.equal('no');
+        voted.votes[0].created.should.equal(votedAt.toISOString());
         voted.votes[0].userFrom.should.equal(userRegular2Id.toString());
         body
           .find((item: { _id: string }) => item._id !== thread!._id.toString())

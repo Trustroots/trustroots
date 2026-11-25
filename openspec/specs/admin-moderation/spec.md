@@ -913,7 +913,7 @@ The admin circle catalogue SHALL display circle images, left-aligned names, desc
 
 ### Requirement: Readable member thread overview
 
-The admin thread page SHALL use username-based navigation and display conversations in a table with participants, read status, directional thread votes and first and last message datetimes. Datetimes SHALL use UTC yyyy-mm-dd hh:mm format and SHALL come from actual messages in either direction. Missing values SHALL display a placeholder. The page SHALL omit the member query input and raw thread details.
+The admin thread page SHALL use username-based navigation and display conversations in a table with participants, read status, directional thread votes and first and last message datetimes. Message datetimes SHALL use UTC yyyy-mm-dd hh:mm format and SHALL come from actual messages in either direction. Missing values SHALL display a placeholder. The page SHALL omit the member query input and raw thread details.
 
 #### Scenario: Administrator opens a member's threads
 
@@ -1641,3 +1641,19 @@ Greeters SHALL be able to add the existing internal follow-up flag to another me
 
 - **WHEN** a regular member attempts to use the acquisition-story flag endpoint
 - **THEN** access is denied
+
+### Requirement: Sortable administration thread overview
+
+The admin thread overview SHALL support keyboard sorting on From, To, Status, Thread votes, First message and Last message. It SHALL show the active column and direction visually and through the column header's accessible sort state. Each vote SHALL show its recorded timestamp in UTC yyyy-mm-dd hh:mm format, or a placeholder if unavailable, and SHALL expose the vote's positive or negative meaning to assistive technology.
+
+#### Scenario: Administrator sorts filtered threads
+
+- **WHEN** an administrator activates a sortable heading
+- **THEN** the table sorts by the selected column while retaining the member and vote filters
+- **AND** activating the same heading again reverses the direction
+- **AND** message dates sort chronologically and vote counts sort numerically
+
+#### Scenario: Administrator reads an individual vote
+
+- **WHEN** an administrator views a thread with votes
+- **THEN** each displayed vote shows its sign and recorded date and time alongside the voter and recipient
