@@ -106,13 +106,15 @@ test.describe('admin acquisition feature coverage', () => {
     }
   });
 
-  test('greeters see restriction badges without moderation access', async ({
+  test('greeters see restriction badges and flag accounts for follow-up', async ({
     browser,
     baseURL,
+    page: adminPage,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
       'Greeters see suspended and shadowbanned statuses on members and restricted matches.',
       'Restriction visibility does not grant moderation access.',
+      'Greeters can flag acquisition members for Support follow-up.',
     ]);
     const greeter = createUser();
     const member = createUser();
@@ -177,6 +179,20 @@ test.describe('admin acquisition feature coverage', () => {
         row.getByText('Shadowbanned', { exact: true }),
       ).toBeVisible();
       await expect(row.getByText('Visible', { exact: true })).toBeVisible();
+      await row
+        .getByRole('button', { name: `Flag ${member.username} for follow-up` })
+        .click();
+      await expect(row.getByText('Flagged for follow-up')).toBeVisible();
+      await page.reload();
+      await expect(row.getByText('Flagged for follow-up')).toBeVisible();
+      await adminPage.goto('/admin/support/flagged');
+      await expect(
+        adminPage
+          .getByRole('table', { name: 'Flagged members' })
+          .getByRole('link', {
+            name: member.username,
+          }),
+      ).toHaveAttribute('href', `/admin/support/member/${member.username}`);
       const denied = await context.request.post('/api/admin/user/change-role', {
         headers: { 'X-Trustroots-Request': '1' },
         data: { id: story._id, role: 'suspended', action: 'remove' },
@@ -657,7 +673,9 @@ test.describe('admin acquisition feature coverage', () => {
         .filter({ hasText: recipient.username });
       await expect(row.getByText('Unassigned', { exact: true })).toBeVisible();
 
-      const languages = row.locator('td').last();
+      const languages = row
+        .getByRole('cell')
+        .filter({ has: welcomerPage.getByRole('list') });
       await expect(languages.locator('li')).toHaveText([
         'English',
         'French',
@@ -690,10 +708,7 @@ test.describe('admin acquisition feature coverage', () => {
       );
       await expect(contactedRow).toHaveCSS('opacity', '1');
       await expect(contactedRow).toHaveCSS('color', 'rgb(71, 71, 71)');
-      await expect(contactedRow.locator('td').last()).toHaveCSS(
-        'color',
-        'rgb(71, 71, 71)',
-      );
+      await expect(languages).toHaveCSS('color', 'rgb(71, 71, 71)');
       await expect(
         contactedRow.getByRole('link', { name: 'Fictional Welcomer' }),
       ).toHaveAttribute('href', `/profile/${welcomer.username}`);

@@ -10,6 +10,7 @@ type AcquisitionStoryRow = {
   _id: string;
   username: string;
   acquisitionStory?: string;
+  flagged: boolean;
   restrictionStatuses: string[];
 };
 describe('Admin acquisition stories CRUD tests', () => {
@@ -94,6 +95,79 @@ describe('Admin acquisition stories CRUD tests', () => {
           .set('X-Trustroots-Request', '1')
           .send({ id: target!._id, role: 'shadowban', action: 'remove' })
           .expect(403);
+      });
+      it('lets greeters add an audited flag only to another acquisition-story member', async () => {
+        const User = mongoose.model('User');
+        const target = await User.findOne({
+          acquisitionStory: acquisitionStories[2],
+        }).orFail();
+        const greeter = await User.findOneAndUpdate(
+          { username: credentialsRegular.username },
+          { $set: { roles: ['user', 'welcome-team'] } },
+        ).orFail();
+        const path = `/api/admin/acquisition-stories/${target._id}/flag`;
+
+        await request(app)
+          .post(path)
+          .set('X-Trustroots-Request', '1')
+          .expect(403);
+        await utils.signIn(credentialsAdmin, agent);
+        await agent.post(path).set('X-Trustroots-Request', '1').expect(403);
+        await utils.signOut(agent);
+        await utils.signIn(credentialsRegular, agent);
+        await agent
+          .post('/api/admin/acquisition-stories/invalid/flag')
+          .set('X-Trustroots-Request', '1')
+          .expect(400);
+        await agent
+          .post(`/api/admin/acquisition-stories/${greeter._id}/flag`)
+          .set('X-Trustroots-Request', '1')
+          .expect(400, { message: 'You cannot flag your own account.' });
+
+        const other = await User.findOneAndUpdate(
+          { username: credentialsAdmin.username },
+          { $unset: { acquisitionStory: '' } },
+        ).orFail();
+        await agent
+          .post(`/api/admin/acquisition-stories/${other._id}/flag`)
+          .set('X-Trustroots-Request', '1')
+          .expect(404);
+        await User.updateOne(
+          { _id: other._id },
+          { $set: { acquisitionStory: '' } },
+        );
+        await agent
+          .post(`/api/admin/acquisition-stories/${other._id}/flag`)
+          .set('X-Trustroots-Request', '1')
+          .expect(404);
+        await agent.patch(path).set('X-Trustroots-Request', '1').expect(403);
+
+        await agent
+          .post(path)
+          .set('X-Trustroots-Request', '1')
+          .expect(200, { flagged: true });
+        await agent
+          .post(path)
+          .set('X-Trustroots-Request', '1')
+          .send({ flagged: false })
+          .expect(200, { flagged: true });
+        const saved = await User.findById(target._id).orFail();
+        saved.roles.should.deepEqual([...target.roles, 'flagged']);
+        should(saved.public).equal(target.public);
+        const { body }: { body: AcquisitionStoryRow[] } = await agent
+          .post('/api/admin/acquisition-stories')
+          .set('X-Trustroots-Request', '1')
+          .expect(200);
+        body
+          .find(row => row.username === target.username)!
+          .flagged.should.equal(true);
+        const audits = await mongoose.model('AuditLog').countDocuments({
+          user: greeter._id,
+          route: '/api/admin/acquisition-stories/:memberId/flag',
+          'params.memberId': String(target._id),
+          'body.flagged': true,
+        });
+        audits.should.equal(2);
       });
       it('lets a greeter resend signup confirmation for an unconfirmed acquisition story', async () => {
         const User = mongoose.model('User');

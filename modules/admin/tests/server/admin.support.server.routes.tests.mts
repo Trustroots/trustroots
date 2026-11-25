@@ -153,6 +153,22 @@ describe('Support team access and investigation', () => {
       .expect(200);
   });
 
+  it('omits non-boolean flag values from a Support audit entry', async () => {
+    await agent
+      .patch(endpoint(report._id))
+      .set('X-Trustroots-Request', '1')
+      .send({ status: 'open', flagged: 'fictional text' })
+      .expect(200);
+
+    const audit = await AuditLog.findOne({
+      user: users[0]._id,
+      route: '/api/admin/support/:requestId',
+    })
+      .lean()
+      .orFail();
+    should(audit.body).deepEqual({ status: 'open' });
+  });
+
   it('lists flagged members on bounded stable pages without private content', async () => {
     const fixtures = Array.from({ length: 51 }, (_, index) => ({
       username: `flagged-fixture-${index}`,

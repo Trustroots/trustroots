@@ -78,6 +78,7 @@ interface AcquisitionStory {
   displayName?: string;
   email?: string;
   emailConfirmed: boolean;
+  flagged: boolean;
   hostingLocation: number[] | null;
   locationFrom?: string;
   locationLiving?: string;
@@ -207,6 +208,7 @@ function storyForList(
     displayName: story.displayName,
     ...(includeEmail && { email: story.email }),
     emailConfirmed: Boolean(story.public || !story.emailTemporary),
+    flagged: story.roles.includes('flagged'),
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,

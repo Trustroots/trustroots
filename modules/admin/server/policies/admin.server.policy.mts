@@ -17,6 +17,15 @@ const aclInstance = createMemoryPolicy();
 export const invokeRolesPolicies = () => {
   aclInstance.allow([
     {
+      roles: ['welcome-team'],
+      allows: [
+        {
+          resources: '/api/admin/acquisition-stories/:memberId/flag',
+          permissions: ['post'],
+        },
+      ],
+    },
+    {
       roles: ['admin', 'support-team'],
       allows: [
         { resources: '/api/admin/dashboard', permissions: ['get'] },
