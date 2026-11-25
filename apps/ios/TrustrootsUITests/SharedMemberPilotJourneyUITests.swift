@@ -119,10 +119,37 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(edit.waitForExistence(timeout: 15), app.debugDescription)
         edit.tap()
 
-        let meeting = app.buttons["meeting-availability"]
-        XCTAssertTrue(meeting.waitForExistence(timeout: 15), app.debugDescription)
-        meeting.tap()
-        app.buttons["Maybe"].tap()
+        let settings = app.descendants(matching: .any)["hosting-availability-settings"]
+        let hostingYes = app.descendants(matching: .any)["hosting-availability-yes"]
+        let hostingNo = app.descendants(matching: .any)["hosting-availability-no"]
+        let increaseGuests = app.descendants(matching: .any)["hosting-guests-increase"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15), app.debugDescription)
+        let settingsReady = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isHittable == true"),
+            object: hostingYes
+        )
+        await fulfillment(of: [settingsReady], timeout: 10)
+        XCTAssertFalse(increaseGuests.exists, app.debugDescription)
+        hostingYes.tap()
+        XCTAssertTrue(increaseGuests.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(increaseGuests, in: app)
+        increaseGuests.tap()
+        XCTAssertTrue(element(labelled: "Maximum guests: 1", in: app).waitForExistence(timeout: 10))
+        app.descendants(matching: .any)["hosting-guests-decrease"].tap()
+        XCTAssertTrue(element(labelled: "Maximum guests: 0", in: app).waitForExistence(timeout: 10))
+        let capture = XCTAttachment(screenshot: settings.screenshot())
+        capture.name = "regular-ios-hosting-availability"
+        capture.lifetime = .keepAlways
+        add(capture)
+
+        for _ in 0..<3 where !hostingNo.isHittable { app.swipeDown() }
+        hostingNo.tap()
+        let meetingMaybe = app.descendants(matching: .any)["meeting-availability-maybe"]
+        reveal(meetingMaybe, in: app)
+        meetingMaybe.tap()
+        let circlesOnly = app.descendants(matching: .any)["hosting-circles-only"]
+        reveal(circlesOnly, in: app)
+        circlesOnly.tap()
 
         let volunteering = app.switches["hosting-volunteering"]
         if !volunteering.isHittable { app.swipeUp() }
@@ -146,7 +173,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertEqual(offer["meetingStatus"] as? String, "maybe")
         XCTAssertEqual(offer["volunteering"] as? Bool, false)
         XCTAssertEqual(offer["maxGuests"] as? Int, 0)
-        XCTAssertEqual(offer["showOnlyInMyCircles"] as? Bool, true)
+        XCTAssertEqual(offer["showOnlyInMyCircles"] as? Bool, false)
         XCTAssertEqual(offer["location"] as? [Double], [41.1, -8.5])
         XCTAssertEqual(offer["description"] as? String, "<p>Fictional offer details.</p>")
         XCTAssertEqual(offer["noOfferDescription"] as? String, "<p>Travelling this month.</p>")
