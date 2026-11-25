@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
-import ReportMember from '@/modules/support/client/components/ReportMember.component';
+import ReportMember from '@/modules/core/client/components/ReportMember.component';
 
 type ReportMemberProps = React.ComponentProps<typeof ReportMember>;
 const sampleMember: NonNullable<ReportMemberProps['username']> =

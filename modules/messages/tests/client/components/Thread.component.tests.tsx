@@ -75,7 +75,7 @@ vi.mock('@/modules/users/client/components/Monkeybox', () => {
     },
   };
 });
-vi.mock('@/modules/support/client/components/ReportMember.component', () => {
+vi.mock('@/modules/core/client/components/ReportMember.component', () => {
   function MockReportMember({ username }: { username?: string }) {
     return <button type="button">Report {username}</button>;
   }

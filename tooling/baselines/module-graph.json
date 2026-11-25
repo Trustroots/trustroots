@@ -26,7 +26,6 @@
       "core",
       "references-thread",
       "stats",
-      "support",
       "users"
     ],
     "mobile": [
@@ -92,7 +91,6 @@
       "offers",
       "search",
       "stats",
-      "support",
       "tribes"
     ]
   },

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 
 import '@/config/client/i18n';
-import Icon from '@/modules/core/client/components/Icon';
+import Icon from './Icon';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 
 type ReportMemberProps = {

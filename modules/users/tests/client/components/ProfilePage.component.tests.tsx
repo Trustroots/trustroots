@@ -82,7 +82,7 @@ vi.mock('@/modules/users/client/components/TribesInCommon.component', () => ({
   __esModule: true,
   default: () => <div>Tribes in common</div>,
 }));
-vi.mock('@/modules/support/client/components/ReportMember.component', () => ({
+vi.mock('@/modules/core/client/components/ReportMember.component', () => ({
   __esModule: true,
   default: () => <button type="button">Report</button>,
 }));

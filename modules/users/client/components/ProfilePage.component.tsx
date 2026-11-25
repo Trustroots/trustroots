@@ -51,7 +51,7 @@ import PendingAuthoredExperiences from '@/modules/experiences/client/components/
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
-import ReportMember from '@/modules/support/client/components/ReportMember.component';
+import ReportMember from '@/modules/core/client/components/ReportMember.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import type {
   ContactList as ContactListData,
@@ -82,10 +82,6 @@ async function loadContactList(profileId: string) {
     () => ({ contacts: resolvedContactList([]), failed: true }),
   );
 }
-
-const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
-  username: string;
-}>;
 
 function normalizeContact(contact: ContactRecord | null): ContactState {
   if (!contact) {
@@ -498,7 +494,7 @@ export default function ProfilePage({
             />
             {!isSelf && (
               <div className="profile-flags">
-                <ReportMemberButton username={profile.username} />
+                <ReportMember username={profile.username} />
                 <br />
                 <br />
                 <BlockMember
@@ -581,7 +577,7 @@ export default function ProfilePage({
     return (
       <section className="tw:page-container container-spacer">
         <MemberIdentity user={profile} size={64} heading />
-        <ReportMemberButton username={profile.username} />
+        <ReportMember username={profile.username} />
         {isCreatingExperience ? (
           <CreateExperience userFrom={authUser} userTo={profile} />
         ) : ownExperience ? (
@@ -712,7 +708,7 @@ export default function ProfilePage({
                     />
                     {!isSelf && (
                       <div className="profile-flags">
-                        <ReportMemberButton username={profile.username} />
+                        <ReportMember username={profile.username} />
                         <br />
                         <br />
                         <BlockMember

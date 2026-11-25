@@ -6,16 +6,9 @@ import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 
-import type { ButtonStyleProps } from '@trustroots/ui/Button';
 import BlockMember from './BlockMember.component';
-import ReportMemberImplementation from '@/modules/support/client/components/ReportMember.component';
+import ReportMember from '@/modules/core/client/components/ReportMember.component';
 import { Alert } from '@trustroots/ui/Alert';
-
-const ReportMember =
-  ReportMemberImplementation as unknown as React.ComponentType<{
-    username: string;
-    look?: ButtonStyleProps;
-  }>;
 
 export default function BlockedMemberBanner({
   username,
