@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct CirclesView: View {
     @ObservedObject var session: MemberSessionStore
@@ -7,104 +8,49 @@ struct CirclesView: View {
     @State private var isLoading = false
     @State private var updatingCircleID: String?
     @State private var errorMessage: String?
-    @State private var filterText = ""
+    @State private var detailPath: [String] = []
 
     private let api = TrustrootsAPI()
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading && circles.isEmpty {
-                    ProgressView("Loading circles…")
-                        .frame(maxHeight: .infinity)
-                } else if let errorMessage {
-                    ContentUnavailableView {
-                        Label("Circles unavailable", systemImage: "person.2.badge.gearshape")
-                    } description: {
-                        Text(errorMessage)
-                    } actions: {
-                        Button("Try again") { Task { await loadCircles() } }
-                    }
-                } else {
-                    ScrollView {
-                        VStack(spacing: 6) {
-                            LazyVStack(spacing: 0) {
-                                if filteredCircles.isEmpty {
-                                    ContentUnavailableView {
-                                        Label(
-                                            filterText.isEmpty ? "No circles available" : "No matching circles",
-                                            systemImage: "person.2"
-                                        )
-                                    } description: {
-                                        Text(
-                                            filterText.isEmpty
-                                                ? "Circles will appear here when they are available."
-                                                : "Try another circle name or description."
-                                        )
-                                    } actions: {
-                                        if !filterText.isEmpty {
-                                            Button("Clear filter") { filterText = "" }
-                                        }
-                                    }
-                                }
-                                ForEach(filteredCircles.sorted { lhs, rhs in
-                                memberCircleIDs.contains(lhs.id) && !memberCircleIDs.contains(rhs.id)
-                            }) { circle in
-                                NavigationLink {
-                                    CircleDetailView(session: session, circle: circle)
-                                } label: {
-                                    CircleRow(
-                                        circle: circle,
-                                        serverURLString: session.serverURLString,
-                                        isMember: memberCircleIDs.contains(circle.id),
-                                        isUpdating: updatingCircleID == circle.id,
-                                        updateMembership: { Task { await toggleMembership(circle) } }
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                Divider().padding(.leading, 76)
-                        }
-                            }
-
-                            Button {
-                                NotificationCenter.default.post(
-                                    name: .trustrootsOpenWebsite,
-                                    object: TrustrootsWebsiteLink(
-                                        url: URL(string: "https://wiki.trustroots.org")!,
-                                        title: "Trustroots Wiki"
-                                    )
-                                )
-                            } label: {
-                                Label("Open the Trustroots Wiki", systemImage: "book.closed")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(TrustrootsPalette.darkGreen)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                            }
-                    }
-                    }
-                    .scrollDismissesKeyboard(.interactively)
+        NavigationStack(path: $detailPath) {
+            ComposeCircles(
+                circles: circles,
+                memberCircleIDs: memberCircleIDs,
+                isLoading: isLoading,
+                updatingCircleID: updatingCircleID,
+                error: errorMessage,
+                serverURLString: session.serverURLString,
+                onOpen: { circleID in
+                    if detailPath.isEmpty { detailPath.append(circleID) }
+                },
+                onMembership: { circleID in
+                    Task { await toggleMembership(circleID) }
+                },
+                onRetry: { Task { await loadCircles() } },
+                onWiki: openWiki
+            )
+            .navigationDestination(for: String.self) { circleID in
+                if let circle = circles.first(where: { $0.id == circleID }) {
+                    CircleDetailView(session: session, circle: circle)
                 }
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                BottomFilterField(placeholder: "Filter circles", text: $filterText)
             }
             .task { await loadCircles() }
         }
     }
 
-    private var filteredCircles: [TrustrootsCircle] {
-        let query = filterText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return circles }
-        return circles.filter { circle in
-            [circle.label, circle.description?.plainText ?? ""]
-                .joined(separator: " ")
-                .localizedCaseInsensitiveContains(query)
-        }
+    private func openWiki() {
+        NotificationCenter.default.post(
+            name: .trustrootsOpenWebsite,
+            object: TrustrootsWebsiteLink(
+                url: URL(string: "https://wiki.trustroots.org")!,
+                title: "Trustroots Wiki"
+            )
+        )
     }
 
     private func loadCircles() async {
-        guard !isLoading else { return }
+        guard !isLoading, updatingCircleID == nil else { return }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -113,30 +59,32 @@ struct CirclesView: View {
             async let fetchedCircles = api.circles(serverURLString: session.serverURLString)
             async let memberships = api.circleMemberships(serverURLString: session.serverURLString)
             let (loadedCircles, loadedMemberships) = try await (fetchedCircles, memberships)
-            circles = loadedCircles
-            memberCircleIDs = Set(loadedMemberships.map(\.tribe.id))
+            if !Task.isCancelled {
+                circles = loadedCircles
+                memberCircleIDs = Set(loadedMemberships.map(\.tribe.id))
+            }
         } catch {
-            errorMessage = error.localizedDescription
+            if !Task.isCancelled { errorMessage = error.localizedDescription }
         }
     }
 
-    private func toggleMembership(_ circle: TrustrootsCircle) async {
-        guard updatingCircleID == nil else { return }
-        let isMember = memberCircleIDs.contains(circle.id)
-        updatingCircleID = circle.id
+    private func toggleMembership(_ circleID: String) async {
+        guard !isLoading, updatingCircleID == nil else { return }
+        let isMember = memberCircleIDs.contains(circleID)
+        updatingCircleID = circleID
         errorMessage = nil
         defer { updatingCircleID = nil }
 
         do {
             try await api.setCircleMembership(
                 serverURLString: session.serverURLString,
-                circleID: circle.id,
+                circleID: circleID,
                 isMember: isMember
             )
             if isMember {
-                memberCircleIDs.remove(circle.id)
+                memberCircleIDs.remove(circleID)
             } else {
-                memberCircleIDs.insert(circle.id)
+                memberCircleIDs.insert(circleID)
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -144,52 +92,79 @@ struct CirclesView: View {
     }
 }
 
-private struct CircleRow: View {
-    let circle: TrustrootsCircle
+@MainActor
+private struct ComposeCircles: UIViewControllerRepresentable {
+    let circles: [TrustrootsCircle]
+    let memberCircleIDs: Set<String>
+    let isLoading: Bool
+    let updatingCircleID: String?
+    let error: String?
     let serverURLString: String
-    let isMember: Bool
-    let isUpdating: Bool
-    let updateMembership: () -> Void
+    let onOpen: (String) -> Void
+    let onMembership: (String) -> Void
+    let onRetry: () -> Void
+    let onWiki: () -> Void
 
-    var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            CircleArtwork(circle: circle, serverURLString: serverURLString)
+    final class Coordinator {
+        let state = MemberCirclesState()
+        var onOpen: ((String) -> Void)?
+        var onMembership: ((String) -> Void)?
+        var onRetry: (() -> Void)?
+        var onWiki: (() -> Void)?
+        var circlesByID: [String: TrustrootsCircle] = [:]
+        var serverURLString = ""
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(circle.label)
-                    .font(.headline.weight(.semibold))
-                    .lineLimit(1)
-                if let description = circle.description?.plainText, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.MemberCirclesViewController(
+            state: coordinator.state,
+            onOpen: { [weak coordinator] id in coordinator?.onOpen?(id) },
+            onMembership: { [weak coordinator] id in coordinator?.onMembership?(id) },
+            onRetry: { [weak coordinator] in coordinator?.onRetry?() },
+            onWiki: { [weak coordinator] in coordinator?.onWiki?() },
+            createArtwork: { [weak coordinator] id in
+                guard let coordinator, let circle = coordinator.circlesByID[id] else {
+                    return UIViewController()
                 }
-                Text("\(circle.count.formatted()) members")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                let controller = UIHostingController(rootView: CircleArtwork(
+                    circle: circle,
+                    serverURLString: coordinator.serverURLString
+                ))
+                controller.view.backgroundColor = .clear
+                return controller
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        )
+    }
 
-            Button(action: updateMembership) {
-                if isUpdating {
-                    ProgressView().controlSize(.small).frame(width: 54)
-                } else {
-                    Text(isMember ? "Joined" : "Join")
-                        .font(.caption.weight(.semibold))
-                        .frame(minWidth: 44)
-                }
-            }
-            .buttonStyle(.bordered)
-            .tint(TrustrootsPalette.darkGreen)
-            .controlSize(.small)
-            .disabled(isUpdating)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Color(.systemBackground))
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onOpen = onOpen
+        coordinator.onMembership = onMembership
+        coordinator.onRetry = onRetry
+        coordinator.onWiki = onWiki
+        coordinator.circlesByID = Dictionary(uniqueKeysWithValues: circles.map { ($0.id, $0) })
+        coordinator.serverURLString = serverURLString
+        coordinator.state.update(
+            circles: circles.map { circle in
+                MemberCircle(
+                    id: circle.id,
+                    name: circle.label,
+                    description: circle.description?.plainText ?? "",
+                    memberCount: "\(circle.count.formatted()) members",
+                    isMember: memberCircleIDs.contains(circle.id)
+                )
+            },
+            isLoading: isLoading,
+            updatingCircleId: updatingCircleID,
+            error: error
+        )
     }
 }
 

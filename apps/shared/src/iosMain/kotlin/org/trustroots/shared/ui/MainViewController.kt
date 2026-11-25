@@ -88,6 +88,24 @@ fun MemberContactsViewController(
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberCirclesViewController(
+    state: MemberCirclesState,
+    onOpen: (String) -> Unit,
+    onMembership: (String) -> Unit,
+    onRetry: () -> Unit,
+    onWiki: () -> Unit,
+    createArtwork: (String) -> UIViewController,
+) = ComposeUIViewController {
+    MemberCircles(state, onOpen, onMembership, onRetry, onWiki) { circle ->
+        UIKitViewController(
+            factory = { createArtwork(circle.id) },
+            modifier = Modifier.size(54.dp),
+            properties = UIKitInteropProperties(interactionMode = null),
+        )
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberInboxViewController(
     state: MemberInboxState,
     onFilter: (String) -> Unit,
