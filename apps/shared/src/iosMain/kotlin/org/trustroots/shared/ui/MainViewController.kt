@@ -72,6 +72,20 @@ fun MemberProfileContactsViewController(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileExperiencesViewController(
+    experiences: List<MemberProfileExperience>,
+    expanded: Boolean,
+    onOpen: (String) -> Unit,
+    onToggle: () -> Unit,
+    onHeight: (Double) -> Unit,
+    createAvatar: (MemberProfileExperiencePerson) -> UIViewController,
+) = MeasuredProfileSection("profile-experiences", onHeight) { modifier ->
+    MemberProfileExperiences(experiences, expanded, onOpen, onToggle, modifier) { person ->
+        HostedMemberAvatar { createAvatar(person) }
+    }
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(

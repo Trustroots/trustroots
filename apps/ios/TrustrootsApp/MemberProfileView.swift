@@ -11,7 +11,7 @@ struct MemberProfileView: View {
     @State private var contacts: [TrustrootsContact] = []
     @State private var experiences: [MemberExperience] = []
     @State private var accommodationOffer: AccommodationOffer?
-    @State private var selectedContact: String?
+    @State private var selectedProfileUsername: String?
     @State private var showAllContacts = false
     @State private var showAllExperiences = false
     @State private var errorMessage: String?
@@ -197,28 +197,18 @@ struct MemberProfileView: View {
                                 ProfileContactsSection(
                                     contacts: contacts,
                                     serverURLString: session.serverURLString,
-                                    expanded: $showAllContacts
-                                ) { username in
-                                    if selectedContact == nil { selectedContact = username }
-                                }
+                                    expanded: $showAllContacts,
+                                    onOpen: openRelatedProfile
+                                )
                             }
 
                             if !experiences.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("Experiences")
-                                        .font(.headline)
-                                    ExperienceOverview(experiences: experiences)
-                                    ForEach(showAllExperiences ? experiences : Array(experiences.prefix(6))) { experience in
-                                        ExperienceRow(experience: experience, session: session)
-                                    }
-                                    if experiences.count > 6 {
-                                        profileSectionToggle(
-                                            isExpanded: $showAllExperiences,
-                                            hiddenCount: experiences.count - 6,
-                                            noun: "experiences"
-                                        )
-                                    }
-                                }
+                                ProfileExperiencesSection(
+                                    experiences: experiences,
+                                    serverURLString: session.serverURLString,
+                                    expanded: $showAllExperiences,
+                                    onOpen: openRelatedProfile
+                                )
                             }
 
                             if !isOwnProfile(profile) {
@@ -242,7 +232,7 @@ struct MemberProfileView: View {
                     await loadProfile()
                 }
             }
-            .navigationDestination(item: $selectedContact) { username in
+            .navigationDestination(item: $selectedProfileUsername) { username in
                 MemberProfileView(session: session, username: username)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -441,29 +431,8 @@ struct MemberProfileView: View {
         NotificationCenter.default.post(name: .trustrootsOpenMapLocation, object: location)
     }
 
-    private func profileSectionToggle(
-        isExpanded: Binding<Bool>,
-        hiddenCount: Int,
-        noun: String
-    ) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.wrappedValue.toggle()
-            }
-        } label: {
-            HStack {
-                Text(isExpanded.wrappedValue ? "Show fewer" : "More \(noun) (\(hiddenCount))")
-                Spacer()
-                Image(systemName: isExpanded.wrappedValue ? "chevron.up" : "chevron.down")
-            }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
+    private func openRelatedProfile(_ username: String) {
+        if selectedProfileUsername == nil { selectedProfileUsername = username }
     }
 }
 
@@ -517,6 +486,99 @@ private struct ProfileContactsSection: View {
 
         var presentation: MemberContact {
             MemberContact(id: id, memberId: memberID, username: username, name: name, handle: handle, pending: false)
+        }
+    }
+}
+
+private struct ProfileExperiencesSection: View {
+    let experiences: [MemberExperience]
+    let serverURLString: String
+    @Binding var expanded: Bool
+    let onOpen: (String) -> Void
+
+    var body: some View {
+        let identity = Identity(serverURLString: serverURLString, experiences: experiences.map(Entry.init), expanded: expanded)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileExperiencesViewController(
+                experiences: identity.experiences.map(\.presentation),
+                expanded: identity.expanded,
+                onOpen: onOpen,
+                onToggle: { expanded.toggle() },
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: { person in
+                    makeSharedMemberAvatarController(
+                        memberID: person.id,
+                        name: person.name,
+                        serverURLString: serverURLString
+                    )
+                }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let serverURLString: String
+        let experiences: [Entry]
+        let expanded: Bool
+    }
+
+    private struct Entry: Hashable {
+        let id: String
+        let feedback: Feedback
+        let response: Feedback?
+        let met: Bool
+        let hostedThem: Bool
+        let hostedByThem: Bool
+
+        init(_ experience: MemberExperience) {
+            id = experience.id
+            feedback = Feedback(member: experience.userFrom, text: experience.feedbackPublic, recommend: experience.recommend)
+            if let reply = experience.response, let text = reply.feedbackPublic, !text.plainText.isEmpty {
+                response = Feedback(member: experience.userTo, text: text, recommend: reply.recommend)
+            } else {
+                response = nil
+            }
+            met = experience.interactions?.met == true
+            hostedThem = experience.interactions?.guest == true
+            hostedByThem = experience.interactions?.host == true
+        }
+
+        var presentation: MemberProfileExperience {
+            MemberProfileExperience(
+                id: id,
+                feedback: feedback.presentation,
+                response: response?.presentation,
+                met: met,
+                hostedThem: hostedThem,
+                hostedByThem: hostedByThem
+            )
+        }
+    }
+
+    private struct Feedback: Hashable {
+        let id: String?
+        let username: String?
+        let name: String
+        let handle: String?
+        let text: String?
+        let recommend: String?
+
+        init(member: MiniMember, text: String?, recommend: String?) {
+            let identity = MemberIdentityText(member: member)
+            id = member.id
+            username = member.username
+            name = identity.primary
+            handle = identity.secondary
+            self.text = text?.plainText
+            self.recommend = recommend
+        }
+
+        var presentation: MemberProfileExperienceFeedback {
+            MemberProfileExperienceFeedback(
+                person: MemberProfileExperiencePerson(id: id, username: username, name: name, handle: handle),
+                text: text.flatMap { $0.isEmpty ? nil : $0 },
+                recommend: recommend
+            )
         }
     }
 }
@@ -739,61 +801,6 @@ private struct ReportMemberView: View {
     }
 }
 
-private struct ExperienceOverview: View {
-    let experiences: [MemberExperience]
-
-    private var total: Int { experiences.count }
-
-    private func percentage(_ matches: (MemberExperience) -> Bool) -> Int {
-        guard total > 0 else { return 0 }
-        return Int(Double(experiences.filter(matches).count) / Double(total) * 100)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(total == 1 ? "1 member shared an experience." : "\(total) members shared their experiences.")
-                .font(.subheadline.weight(.medium))
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 8),
-                    GridItem(.flexible(), spacing: 8),
-                ],
-                spacing: 8
-            ) {
-                statistic("Recommend", percentage { $0.recommend == "yes" }, "hand.thumbsup.fill")
-                statistic("Met", percentage { $0.interactions?.met == true }, "person.2.fill")
-                statistic("Hosted them", percentage { $0.interactions?.guest == true }, "house.fill")
-                statistic("Hosted by them", percentage { $0.interactions?.host == true }, "sofa.fill")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func statistic(_ label: String, _ value: Int, _ systemImage: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .foregroundStyle(TrustrootsPalette.darkGreen)
-                .frame(width: 20)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(value)%")
-                    .font(.headline.monospacedDigit())
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(9)
-        .background(Color(.systemBackground).opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
 struct HostingDetailsView: View {
     let status: String?
     let description: String?
@@ -860,81 +867,6 @@ struct HostingDetailsView: View {
         .padding(compact ? 10 : 16)
         .background(statusColor.opacity(0.11))
         .clipShape(RoundedRectangle(cornerRadius: compact ? 12 : 16, style: .continuous))
-    }
-}
-
-private struct ExperienceRow: View {
-    let experience: MemberExperience
-    @ObservedObject var session: MemberSessionStore
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            experiencePersonRow(
-                member: experience.userFrom,
-                label: "Wrote about this member",
-                feedback: experience.feedbackPublic,
-                recommend: experience.recommend
-            )
-            if let response = experience.response,
-               let feedback = response.feedbackPublic?.plainText,
-               !feedback.isEmpty {
-                Divider()
-                experiencePersonRow(
-                    member: experience.userTo,
-                    label: "Their response",
-                    feedback: feedback,
-                    recommend: response.recommend
-                )
-            }
-        }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func experiencePersonRow(
-        member: MiniMember,
-        label: String,
-        feedback: String?,
-        recommend: String?
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            let identity = MemberIdentityView(
-                member: member,
-                serverURLString: session.serverURLString,
-                avatarSize: 38,
-                primaryFont: .subheadline.weight(.semibold),
-                secondaryFont: .caption
-            )
-            if let username = member.username {
-                NavigationLink {
-                    MemberProfileView(session: session, username: username)
-                } label: {
-                    identity
-                }
-                .buttonStyle(.plain)
-            } else {
-                identity
-            }
-            HStack {
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let recommend {
-                    Text(recommend == "yes" ? "Recommends" : recommend == "no" ? "Does not recommend" : "Experience")
-                        .font(.caption)
-                        .foregroundStyle(recommend == "yes" ? TrustrootsPalette.darkGreen : .secondary)
-                }
-            }
-            if let feedback = feedback?.plainText, !feedback.isEmpty {
-                Text(feedback)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(4)
-            }
-        }
     }
 }
 

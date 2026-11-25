@@ -201,7 +201,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 memberships = [{"tribe": circle} for circle in CIRCLES if circle["_id"] in fixture.memberships]
             self._json(200, memberships)
         elif route == "/api/mobile/v0/experiences":
-            self._json(200, [])
+            user_to = parse_qs(urlsplit(self.path).query).get("userTo")
+            self._json(200, [{
+                "_id": "fixture-public-experience",
+                "feedbackPublic": "We shared a <b>good afternoon walk</b>.",
+                "recommend": "yes",
+                "interactions": {"met": True, "guest": True, "host": False},
+                "userFrom": PARTNER,
+                "userTo": MEMBER,
+                "response": {"feedbackPublic": "Thanks for showing me the harbour.", "recommend": "yes"},
+            }] if user_to == [MEMBER["_id"]] else [])
         elif route == "/api/mobile/v0/messages":
             fixture = type(self)
             with fixture.session_lock:

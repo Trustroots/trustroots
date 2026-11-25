@@ -73,6 +73,21 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         fewerContacts.tap()
         XCTAssertTrue(moreContacts.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertFalse(seventhContact.exists)
+        let experienceSummary = element(labelled: "1 member shared an experience.", in: app)
+        XCTAssertTrue(experienceSummary.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(experienceSummary, in: app)
+        XCTAssertTrue(element(labelled: "We shared a good afternoon walk.", in: app).exists, app.debugDescription)
+        XCTAssertTrue(element(labelled: "Thanks for showing me the harbour.", in: app).exists, app.debugDescription)
+        let author = app.descendants(matching: .any)["profile-experience-author-fixture-public-experience"]
+        XCTAssertTrue(author.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(author, in: app)
+        let experienceScreenshot = XCTAttachment(screenshot: author.screenshot())
+        experienceScreenshot.name = "regular-ios-profile-experience-author"
+        experienceScreenshot.lifetime = .keepAlways
+        add(experienceScreenshot)
+        author.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
         app.buttons["Menu"].tap()
         let faq = app.descendants(matching: .any)["faq-menu-entry"]
         XCTAssertTrue(faq.waitForExistence(timeout: 10), app.debugDescription)
