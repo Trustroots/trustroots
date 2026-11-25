@@ -41,6 +41,11 @@ function isBlank(node: Nodes.ChildNode): boolean {
     : tree.isElementNode(node) && node.childNodes.every(isBlank);
 }
 
+function createBreak() {
+  // Stryker disable next-line ArrayDeclaration: the final sanitizer drops attributes added by the mutation
+  return tree.createElement('br', html.NS.HTML, []);
+}
+
 function normaliseLines(parent: Nodes.ParentNode): void {
   const children = [...parent.childNodes];
   for (const [index, node] of children.entries()) {
@@ -52,12 +57,9 @@ function normaliseLines(parent: Nodes.ParentNode): void {
       );
       for (const [lineIndex, line] of content.split('\n').entries()) {
         if (lineIndex > 0) {
-          tree.insertBefore(
-            parent,
-            tree.createElement('br', html.NS.HTML, []),
-            node,
-          );
+          tree.insertBefore(parent, createBreak(), node);
         }
+        // Stryker disable next-line ConditionalExpression: an empty text node has no serialized output
         if (line) tree.insertBefore(parent, tree.createTextNode(line), node);
       }
       tree.detachNode(node);
@@ -68,15 +70,15 @@ function normaliseLines(parent: Nodes.ParentNode): void {
         !node.childNodes.some(hasLineBoundary) &&
         node.childNodes.every(isBlank)
       ) {
-        tree.appendChild(node, tree.createElement('br', html.NS.HTML, []));
+        tree.appendChild(node, createBreak());
       }
     }
   }
 }
 
-function trimEmptyLines(root: Nodes.ParentNode, edge: 'first' | 'last'): void {
+function trimEmptyLines(root: Nodes.ParentNode, fromEnd: boolean): void {
   const nodes = [...root.childNodes];
-  if (edge === 'last') nodes.reverse();
+  if (fromEnd) nodes.reverse();
   const contentIndex = nodes.findIndex(node => !isBlank(node));
   const empty = contentIndex === -1 ? nodes : nodes.slice(0, contentIndex);
   const removeWhitespace = contentIndex === -1 || empty.some(isBreak);
@@ -84,7 +86,7 @@ function trimEmptyLines(root: Nodes.ParentNode, edge: 'first' | 'last'): void {
     if (removeWhitespace || !tree.isTextNode(node)) tree.detachNode(node);
   }
   const content = nodes[contentIndex];
-  if (content && tree.isElementNode(content)) trimEmptyLines(content, edge);
+  if (content && tree.isElementNode(content)) trimEmptyLines(content, fromEnd);
 }
 
 /** Sanitize current and stored message HTML without re-linking existing text. */
@@ -95,8 +97,8 @@ export function sanitiseMessageHtml(
   const rules = { ...options, allowedTags: messageRichTextTags };
   const fragment = parseFragment(sanitizeHtml(content.trim(), rules));
   normaliseLines(fragment);
-  trimEmptyLines(fragment, 'first');
-  trimEmptyLines(fragment, 'last');
+  trimEmptyLines(fragment, false);
+  trimEmptyLines(fragment, true);
   // Keep the existing API serialization for void tags such as <br />.
   return sanitizeHtml(serialize(fragment), rules);
 }

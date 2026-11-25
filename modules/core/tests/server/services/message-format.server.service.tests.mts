@@ -79,4 +79,47 @@ describe('message formatting', () => {
     assert.equal(messagePlainText(markup), '/help');
     assert.equal(messagePlainText(markup, true), '/safety\n/help');
   });
+
+  it('keeps a blank interior div with nested inline formatting', () => {
+    assert.equal(
+      formatMessage('<p>First</p><div>&nbsp;<b></b></div><p>Last</p>'),
+      '<p>First</p><div> <b></b><br /></div><p>Last</p>',
+    );
+  });
+
+  it('removes blank edges while preserving spacing next to text', () => {
+    assert.equal(sanitiseMessageHtml('  A  '), 'A');
+    assert.equal(sanitiseMessageHtml(' &nbsp;'), '');
+    assert.equal(sanitiseMessageHtml('&nbsp;<p>B</p>'), '\u00a0<p>B</p>');
+    assert.equal(sanitiseMessageHtml('<p>A </p><br> &nbsp;'), '<p>A </p>');
+  });
+
+  it('handles whitespace around nested line boundaries in plain text', () => {
+    assert.equal(messagePlainText('A<br>B<p>C</p>'), 'A\nB\nC');
+    assert.equal(messagePlainText('A \t B <br>C'), 'A B\nC');
+    assert.equal(messagePlainText('<p>A</p> <p>B</p>'), 'A\nB');
+    assert.equal(
+      messagePlainText('<p>First</p><div><p></p> </div><p>Last</p>'),
+      'First\n\nLast',
+    );
+    assert.equal(
+      messagePlainText('<p>First</p><div><b><br></b>&nbsp;</div><p>Last</p>'),
+      'First\n\n\nLast',
+    );
+  });
+
+  it('adds destinations for anchors with an href', () => {
+    assert.equal(messagePlainText('<p></p><a title="Hint">C</a>', true), 'C');
+    assert.equal(messagePlainText('<b href="/ignored">Bold</b>', true), 'Bold');
+  });
+
+  it('adds bullets to list items in email text', () => {
+    const markup = '<ul><li>First</li><li>Second</li></ul>';
+    assert.equal(messagePlainText(markup), 'First\nSecond');
+    assert.equal(messagePlainText(markup, true), '* First\n* Second');
+  });
+
+  it('trims excerpt spacing after decoding entities', () => {
+    assert.equal(messageExcerpt('&amp;nbsp;A&amp;nbsp;'), 'A');
+  });
 });
