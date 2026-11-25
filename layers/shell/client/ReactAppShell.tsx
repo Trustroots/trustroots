@@ -11,6 +11,7 @@ import NotFoundPage from '@/modules/core/client/components/NotFoundPage.componen
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
+import LegacyAndroidUpgradeNotice from './components/LegacyAndroidUpgradeNotice';
 import { matchAppRoute } from './route-options';
 import { getClientNavigationTarget } from './shell-helpers';
 
@@ -58,6 +59,7 @@ export default function ReactAppShell() {
           <AppHeader currentPath={currentPath} user={user} />
         )}
         <article className="content" id="tr-main" role="main" tabIndex={-1}>
+          <LegacyAndroidUpgradeNotice />
           {redirectToNotFound ? <NotFoundPage /> : <Outlet />}
         </article>
       </div>
