@@ -100,6 +100,12 @@ interface StaticHeaderProps {
   tooltip: string;
 }
 
+function isProfileVisible(story: AcquisitionStory) {
+  return (
+    story.public === true && !story.restrictionStatuses?.includes('shadowban')
+  );
+}
+
 function formatCoordinates(value?: number[] | null) {
   if (!Array.isArray(value) || value.length < 2) {
     return null;
@@ -122,7 +128,7 @@ const storySortValues: Record<
     return Number.isNaN(timestamp) ? 0 : timestamp;
   },
   member: story => String(story.username).toLowerCase(),
-  public: story => (story.public === true ? 1 : 0),
+  public: story => Number(isProfileVisible(story)),
   welcomer: story => (story.welcomer ? 1 : 0),
 };
 
@@ -191,9 +197,9 @@ export default function AdminAcquisitionStories() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const searchTerm = search.trim().toLowerCase();
-  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [unassignedOnly, setUnassignedOnly] = useState(true);
   const [profileVisibility, setProfileVisibility] =
-    useState<ProfileVisibility>('all');
+    useState<ProfileVisibility>('visible');
   const [sort, setSort] = useState<StorySort>({
     column: 'created',
     direction: 'descending',
@@ -218,8 +224,7 @@ export default function AdminAcquisitionStories() {
       .filter(
         story =>
           profileVisibility === 'all' ||
-          (profileVisibility === 'visible' && story.public === true) ||
-          (profileVisibility === 'hidden' && story.public !== true),
+          isProfileVisible(story) === (profileVisibility === 'visible'),
       )
       .filter(
         story =>
@@ -362,8 +367,8 @@ export default function AdminAcquisitionStories() {
             <option value="hidden">Hidden</option>
           </Select>
           <small className="text-muted tw:mt-1 tw:inline-block tw:text-[.875em]">
-            Hidden profiles have not activated their signup through email
-            confirmation.
+            Hidden profiles include unconfirmed signups and shadowbanned
+            accounts.
           </small>
         </div>
 
@@ -503,7 +508,7 @@ export default function AdminAcquisitionStories() {
                     )}
                   </td>
                   <td>{story.acquisitionStory}</td>
-                  <td>{story.public === true ? 'Visible' : 'Hidden'}</td>
+                  <td>{isProfileVisible(story) ? 'Visible' : 'Hidden'}</td>
                   <td>
                     <span>
                       {story.emailConfirmed === true
@@ -623,7 +628,7 @@ export default function AdminAcquisitionStories() {
           <p>
             {searchTerm
               ? 'No acquisition stories match your search.'
-              : unassignedOnly
+              : unassignedOnly && stories.length > 0
                 ? 'No unassigned acquisition stories found.'
                 : 'No acquisition stories found.'}
           </p>
