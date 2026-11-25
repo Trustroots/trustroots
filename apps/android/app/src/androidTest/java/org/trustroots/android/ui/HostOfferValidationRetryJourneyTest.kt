@@ -5,11 +5,15 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -18,6 +22,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -81,7 +86,7 @@ class HostOfferValidationRetryJourneyTest {
                         }
                         request.startsWith("GET /api/offers-by/") -> {
                             status = "200 OK"
-                            payload = """[{"_id":"offer-one","type":"host","user":"member-one","description":"","maxGuests":2,"showOnlyInMyCircles":false,"location":[48.69,9.14]}]"""
+                            payload = """[{"_id":"offer-one","type":"host","user":"member-one","description":"","noOfferDescription":"<p>Fictional travel dates.</p>","maxGuests":2,"meetingStatus":"yes","volunteering":true,"showOnlyInMyCircles":true,"location":[48.69,9.14]}]"""
                         }
                         index == 2 -> {
                             status = "500 Internal Server Error"
@@ -89,7 +94,7 @@ class HostOfferValidationRetryJourneyTest {
                         }
                         else -> {
                             status = "200 OK"
-                            payload = """{"_id":"offer-one","status":"maybe","description":"A cosy spare room.","maxGuests":20,"showOnlyInMyCircles":false,"location":[48.69,9.14]}"""
+                            payload = """{"message":"Offer updated."}"""
                         }
                     }
                     val bytes = payload.toByteArray()
@@ -111,12 +116,12 @@ class HostOfferValidationRetryJourneyTest {
         }
 
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Write a longer hosting description first.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Yes").assertIsSelected()
+        compose.onNodeWithTag("hosting-status-yes").assertIsSelected()
         compose.onNodeWithText("Save changes").assertIsNotEnabled()
         compose.onNodeWithText("Hosting description").performTextReplacement("Room")
         compose.onNodeWithText("Write a longer hosting description first.").assertIsDisplayed()
         compose.onNodeWithText("Hosting description").performTextReplacement("A cosy spare room.")
-        compose.onNodeWithText("Maybe").performClick()
+        compose.onNodeWithTag("hosting-status-maybe").performClick()
         compose.onNodeWithText("Maximum guests").performTextReplacement("")
         compose.onNodeWithText("Maximum guests").assert(
             SemanticsMatcher.expectValue(
@@ -124,18 +129,27 @@ class HostOfferValidationRetryJourneyTest {
                 AnnotatedString("2"),
             ),
         )
-        compose.onNodeWithText("Maximum guests").performTextReplacement("30")
+        compose.onNodeWithText("Maximum guests").performTextReplacement("120")
+        compose.onNodeWithTag("meeting-status-yes").performScrollTo().assertIsSelected()
+        compose.onNodeWithTag("meeting-status-maybe").performScrollTo().performClick()
+        compose.onNodeWithTag("host-volunteering").performScrollTo().assertIsOn().performClick()
+        compose.onNodeWithTag("host-volunteering").assertIsOff()
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Local save failed.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Local save failed.").assertIsDisplayed()
+        compose.onNodeWithText("Local save failed.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         compose.waitUntil(5_000) { saveBodies.size == 2 }
         assertTrue(saveBodies.all {
-            it.contains("\"status\":\"maybe\"") &&
-                it.contains("\"maxGuests\":20") &&
-                it.contains("\"showOnlyInMyCircles\":false")
+            val body = JSONObject(it)
+            body.getString("status") == "maybe" &&
+                body.getInt("maxGuests") == 99 &&
+                body.getString("meetingStatus") == "maybe" &&
+                !body.getBoolean("volunteering") &&
+                body.getJSONArray("location").toString() == "[48.69,9.14]" &&
+                body.getString("noOfferDescription") == "<p>Fictional travel dates.</p>" &&
+                body.getBoolean("showOnlyInMyCircles")
         })
         responder?.join(1_000)
     }

@@ -40,6 +40,19 @@ EARLIER_MESSAGE = {
     "userFrom": PARTNER,
 }
 
+HOSTING_OFFER = {
+    "_id": "offer-pilot-host",
+    "type": "host",
+    "status": "no",
+    "meetingStatus": "yes",
+    "volunteering": True,
+    "maxGuests": 0,
+    "description": "<p>Fictional offer details.</p>",
+    "noOfferDescription": "<p>Travelling this month.</p>",
+    "showOnlyInMyCircles": True,
+    "location": [41.1, -8.5],
+}
+
 
 class FixtureHandler(BaseHTTPRequestHandler):
     session_lock = Lock()
@@ -52,6 +65,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     send_attempts = 0
     linked_npub = None
     nostr_challenge = None
+    hosting_offer = None
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -72,6 +86,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "authorUsername": "fixture-news",
                 "publishedAt": "2026-11-15T10:00:00Z",
             }])
+            return
+        if route == "/fixture/hosting-offer":
+            with type(self).session_lock:
+                offer = type(self).hosting_offer
+            self._json(200, offer)
             return
         if not self._authorised():
             return
@@ -101,7 +120,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
             matches = params.get("connectionsOnly") == ["true"] and params.get("search") == ["partner profile"]
             self._json(200, [PARTNER] if matches else [])
         elif route == f'/api/mobile/v0/offers-by/{MEMBER["_id"]}':
-            self._json(200, [{
+            with type(self).session_lock:
+                offer = type(self).hosting_offer
+            self._json(200, [offer if offer is not None else {
                 "_id": "offer-pilot-self",
                 "status": "no",
                 "meetingStatus": "maybe",
@@ -186,6 +207,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
             else:
                 self._json(409, {"message": "The fixture has no active token for this action."})
             return
+        if self.path == "/fixture/prepare-hosting-offer":
+            with fixture.session_lock:
+                fixture.hosting_offer = HOSTING_OFFER
+            self._json(200, {"status": "ready"})
+            return
         if self.path == "/api/mobile/v0/auth/signin":
             if body.get("username") != MEMBER["username"] or body.get("password") != "example-password":
                 self._json(401, {"message": "Check the fixture username and password."})
@@ -195,6 +221,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.thread_read = False
                 fixture.send_attempts = 0
                 fixture.refresh_count = 0
+                fixture.hosting_offer = None
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -276,6 +303,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"drop": drop})
             return
         if not self._authorised():
+            return
+        if self.path == f'/api/mobile/v0/offers/{HOSTING_OFFER["_id"]}':
+            update = self._body()
+            fixture = type(self)
+            with fixture.session_lock:
+                fixture.hosting_offer = {**update, "_id": HOSTING_OFFER["_id"]}
+            self._json(200, {"message": "Offer updated."})
             return
         if self.path != "/api/mobile/v0/profile":
             self._json(404, {"message": "Fixture route not found."})

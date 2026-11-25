@@ -1,11 +1,9 @@
 package org.trustroots.android.ui
 
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -99,14 +97,12 @@ class HostOfferUnavailableJourneyTest {
             compose.onAllNodesWithText("Away this month").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Why you are not hosting").performTextReplacement("Taking a break")
-        val circlesRestriction = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox) and
-            SemanticsMatcher.keyIsDefined(SemanticsProperties.ToggleableState)
-        compose.onNode(circlesRestriction).performClick()
+        compose.onNodeWithTag("host-circles-only").performClick()
         compose.onNodeWithText("Save changes").assertIsDisplayed().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         compose.waitUntil(5_000) { !submittedBody.get().isNullOrBlank() }
 
         val body = JSONObject(submittedBody.get())

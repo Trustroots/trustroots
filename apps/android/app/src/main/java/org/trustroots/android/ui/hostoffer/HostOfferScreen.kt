@@ -2,7 +2,9 @@
 
 package org.trustroots.android.ui.hostoffer
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -107,7 +109,7 @@ internal fun HostOfferScreen(
         )
         when {
           state.isLoading -> CircularProgressIndicator()
-          state.original == null -> {
+          state.savedForm == null -> {
             state.failure?.let {
               Text(
                 resolveFailureMessage(it),
@@ -133,11 +135,11 @@ internal fun HostOfferScreen(
                   selected = form.status == value,
                   onClick = { viewModel.onEvent(HostOfferEvent.StatusChanged(value)) },
                   label = { Text(label) },
-                  modifier = Modifier.padding(end = 8.dp),
+                  modifier = Modifier.padding(end = 8.dp).testTag("hosting-status-$value"),
                 )
               }
             }
-            if (form.status != "no") {
+            if (form.status != "no" || form.volunteering) {
               TextField(
                 form.description,
                 { viewModel.onEvent(HostOfferEvent.DescriptionChanged(it)) },
@@ -149,6 +151,16 @@ internal fun HostOfferScreen(
                   .fillMaxWidth()
                   .padding(bottom = 12.dp),
               )
+            }
+            if (state.descriptionTooShort) {
+              Text(
+                longerHostingDescription,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+              )
+            }
+
+            if (form.status != "no") {
               TextField(
                 form.maxGuests.toString(),
                 { viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged(it)) },
@@ -176,7 +188,7 @@ internal fun HostOfferScreen(
               label = showOnlyMyCircles,
               checked = form.showOnlyInMyCircles,
               enabled = !state.isSaving,
-              modifier = Modifier.padding(top = 8.dp),
+              modifier = Modifier.padding(top = 8.dp).testTag("host-circles-only"),
               onCheckedChange = { viewModel.onEvent(HostOfferEvent.ShowOnlyInMyCirclesChanged(it)) },
             )
             state.failure?.let {
@@ -193,13 +205,73 @@ internal fun HostOfferScreen(
                 modifier = Modifier.padding(top = 8.dp)
               )
             }
-            if (state.descriptionTooShort) {
+            Text(
+              stringResource(R.string.form_meeting_availability),
+              style = MaterialTheme.typography.titleMedium,
+              modifier = Modifier.padding(top = 12.dp),
+            )
+            FlowRow(
+              modifier = Modifier.padding(vertical = 8.dp),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+              listOf(
+                "yes" to yesLabel, "maybe" to maybeLabel, "no" to noLabel,
+                "not-set" to stringResource(R.string.form_meeting_not_set),
+              ).forEach { (value, label) ->
+                FilterChip(
+                  enabled = !state.isSaving,
+                  selected = form.meetingStatus == value,
+                  onClick = { viewModel.onEvent(HostOfferEvent.MeetingStatusChanged(value)) },
+                  label = { Text(label) },
+                  modifier = Modifier.testTag("meeting-status-$value"),
+                )
+              }
+            }
+            Text(
+              stringResource(R.string.form_meeting_location_note),
+              style = MaterialTheme.typography.bodySmall,
+            )
+            LabelledCheckbox(
+              label = stringResource(R.string.form_hosts_welcome_volunteering),
+              checked = form.volunteering,
+              enabled = !state.isSaving,
+              modifier = Modifier.padding(top = 8.dp).testTag("host-volunteering"),
+              onCheckedChange = { viewModel.onEvent(HostOfferEvent.VolunteeringChanged(it)) },
+            )
+            if (form.volunteering) {
               Text(
-                longerHostingDescription,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
+                stringResource(R.string.form_host_volunteering_note),
+                style = MaterialTheme.typography.bodySmall,
               )
             }
+            Text(
+              stringResource(R.string.form_host_offer_location),
+              style = MaterialTheme.typography.titleMedium,
+              modifier = Modifier.padding(top = 12.dp),
+            )
+            TextField(
+              form.latitude,
+              { viewModel.onEvent(HostOfferEvent.LatitudeChanged(it)) },
+              enabled = !state.isSaving,
+              label = { Text(stringResource(R.string.form_host_offer_latitude)) },
+              singleLine = true,
+              modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            TextField(
+              form.longitude,
+              { viewModel.onEvent(HostOfferEvent.LongitudeChanged(it)) },
+              enabled = !state.isSaving,
+              label = { Text(stringResource(R.string.form_host_offer_longitude)) },
+              singleLine = true,
+              modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            Text(
+              stringResource(
+                if (form.locationValid) R.string.form_host_offer_location_privacy
+                else R.string.form_host_offer_location_needed,
+              ),
+              style = MaterialTheme.typography.bodySmall,
+            )
 
             if (state.isSaving) CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
           }

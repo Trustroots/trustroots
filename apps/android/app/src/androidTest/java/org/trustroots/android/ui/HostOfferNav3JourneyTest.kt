@@ -6,8 +6,10 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.core.app.ActivityScenario
@@ -22,8 +24,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.HostOfferUpdate
-import org.trustroots.android.ui.hostoffer.DEFAULT_HOST_LATITUDE
-import org.trustroots.android.ui.hostoffer.DEFAULT_HOST_LONGITUDE
 import org.trustroots.android.ui.hostoffer.HostOfferForm
 import org.trustroots.android.ui.hostoffer.HostOfferRepository
 
@@ -76,7 +76,7 @@ class HostOfferNav3JourneyTest {
     fun activityRecreationDuringSaveDoesNotDuplicateTheSubmittedSnapshot() {
         val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
         val repository = JourneyHostOfferRepository(
-            loadHandler = { Result.success(HostOfferForm(id = "existing-entry", description = "A suitable room")) },
+            loadHandler = { Result.success(HostOfferForm(id = "existing-entry", description = "A suitable room", latitude = "40.25", longitude = "-8.5")) },
             saveHandler = { pendingSave.await() },
         )
         launch(repository)
@@ -93,7 +93,7 @@ class HostOfferNav3JourneyTest {
         compose.onNodeWithText("Saving…").assertIsDisplayed()
 
         pendingSave.complete(Result.success(hostOffer("server-returned-id")))
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         assertEquals(1, repository.saveCalls.get())
         assertEquals("existing-entry", repository.submitted.single().id)
     }
@@ -102,12 +102,12 @@ class HostOfferNav3JourneyTest {
     fun notHostingReasonIsDisabledUntilItsSaveCompletes() {
         val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
         val repository = JourneyHostOfferRepository(
-            loadHandler = { Result.success(HostOfferForm(id = "existing-entry")) },
+            loadHandler = { Result.success(HostOfferForm(id = "existing-entry", latitude = "40.25", longitude = "-8.5")) },
             saveHandler = { pendingSave.await() },
         )
         launch(repository)
         compose.onNodeWithText("Open hosting form").performClick()
-        compose.onNodeWithText("No").performClick()
+        compose.onNodeWithTag("hosting-status-no").performClick()
         compose.onNodeWithText("Why you are not hosting").performTextReplacement("Away for a while")
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(5_000) { repository.saveCalls.get() == 1 }
@@ -116,7 +116,7 @@ class HostOfferNav3JourneyTest {
 
         pendingSave.complete(Result.success(hostOffer("existing-entry")))
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Why you are not hosting").assertIsEnabled()
         assertEquals(1, repository.saveCalls.get())
     }
@@ -185,6 +185,6 @@ private fun hostOffer(id: String) = AccommodationOffer(
     noOfferDescription = "",
     maxGuests = 1,
     showOnlyInMyCircles = false,
-    latitude = DEFAULT_HOST_LATITUDE,
-    longitude = DEFAULT_HOST_LONGITUDE,
+    latitude = 40.25,
+    longitude = -8.5,
 )

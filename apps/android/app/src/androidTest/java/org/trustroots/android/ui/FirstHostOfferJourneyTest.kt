@@ -5,8 +5,10 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CountDownLatch
@@ -53,17 +55,17 @@ class FirstHostOfferJourneyTest {
                         """{"_id":"fictional-member-id","username":"steady-heron","displayName":"Steady Heron"}""",
                     )
                 request.method == "GET" && request.path == "/api/offers-by/fictional-member-id?types=host" ->
-                    LocalTransportFixture.Response("[]")
+                    LocalTransportFixture.Response("""{"message":"Not found."}""", status = 404)
                 request.method == "POST" && request.path == "/api/offers" -> {
                     createResponseGate.await(10, TimeUnit.SECONDS)
                     LocalTransportFixture.Response(
-                        """{"_id":"fictional-offer-id","status":"yes","description":"A fictional room for visitors.","maxGuests":1,"showOnlyInMyCircles":false,"location":[39.5,-8.0]}""",
+                        """{"_id":"fictional-offer-id","message":"Offer created."}""",
                     )
                 }
                 request.method == "PUT" && request.path == "/api/offers/fictional-offer-id" -> {
                     updateResponseGate.await(10, TimeUnit.SECONDS)
                     LocalTransportFixture.Response(
-                        """{"_id":"fictional-offer-id","status":"yes","description":"A fictional room with a garden.","maxGuests":1,"showOnlyInMyCircles":false,"location":[39.5,-8.0]}""",
+                        """{"message":"Offer updated."}""",
                     )
                 }
                 else -> LocalTransportFixture.Response("{}", status = 404)
@@ -87,6 +89,9 @@ class FirstHostOfferJourneyTest {
                 compose.onAllNodesWithText("Hosting description").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Hosting description").performTextReplacement("A fictional room for visitors.")
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+        compose.onNodeWithText("Latitude").performScrollTo().performTextReplacement("40.25")
+        compose.onNodeWithText("Longitude").performScrollTo().performTextReplacement("-8.5")
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) {
             local.requests.any { it.method == "POST" && it.path == "/api/offers" } &&
@@ -100,15 +105,16 @@ class FirstHostOfferJourneyTest {
         assertEquals("yes", createBody.getString("status"))
         assertEquals("A fictional room for visitors.", createBody.getString("description"))
         assertEquals(1, createBody.getInt("maxGuests"))
+        assertEquals("[40.25,-8.5]", createBody.getJSONArray("location").toString())
         assertFalse(createBody.getBoolean("showOnlyInMyCircles"))
         createResponseGate.countDown()
 
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Hosting description")
-            .performTextReplacement("A fictional room with a garden.")
+            .performScrollTo().performTextReplacement("A fictional room with a garden.")
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) {
             local.requests.any { it.method == "PUT" && it.path == "/api/offers/fictional-offer-id" } &&
@@ -129,13 +135,23 @@ class FirstHostOfferJourneyTest {
             local.requests.count { it.method == "PUT" } == 1 &&
                 runCatching { compose.onNodeWithText("Save changes").assertIsEnabled() }.isSuccess
         }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("meeting-status-maybe").performScrollTo().performClick()
+        compose.onNodeWithText("Save changes").performClick()
+        compose.waitUntil(10_000) {
+            local.requests.count { it.method == "PUT" } == 2 &&
+                runCatching { compose.onNodeWithText("Save changes").assertIsEnabled() }.isSuccess
+        }
+        val secondUpdate = JSONObject(local.requests.last().body)
+        assertEquals("maybe", secondUpdate.getString("meetingStatus"))
+        assertEquals("[40.25,-8.5]", secondUpdate.getJSONArray("location").toString())
         assertEquals(0, invalidations.get())
         assertEquals(
             listOf(
                 "/api/users/steady-heron",
                 "/api/offers-by/fictional-member-id?types=host",
                 "/api/offers",
+                "/api/offers/fictional-offer-id",
                 "/api/offers/fictional-offer-id",
             ),
             local.requests.map { it.path },

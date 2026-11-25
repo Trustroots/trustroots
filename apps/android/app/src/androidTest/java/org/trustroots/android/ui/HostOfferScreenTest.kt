@@ -169,7 +169,7 @@ class HostOfferScreenTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Hosting offer saved.").performScrollTo().assertIsDisplayed()
         compose.waitUntil(5_000) { saveBodies.size == 1 }
         assertTrue(
             "The saved request should contain the valid draft",
