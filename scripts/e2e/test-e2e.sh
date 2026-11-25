@@ -335,7 +335,7 @@ fi
 if ! NODE_ENV=test \
   DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
   TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-  node ./scripts/e2e/seed.js; then
+  node ./scripts/e2e/seed.mts; then
   exit_with_status \
     "blocked" \
     1 \
