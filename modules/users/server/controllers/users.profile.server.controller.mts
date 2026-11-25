@@ -16,6 +16,10 @@ import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
 import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mts';
+import {
+  publicMemberTribePopulateOptions,
+  publicTribeFields,
+} from '../../../core/server/services/public-tribe-projection.mts';
 import authenticationService from '../services/authentication.server.service.mts';
 import emailServiceModule from './../../../core/server/services/email.server.service.mts';
 import statService from './../../../stats/server/services/stats.server.service.mts';
@@ -833,16 +837,7 @@ service.userByUsername = function (req, res, next, username) {
     );
     const populatedProfile =
       profileLookup && typeof profileLookup.populate === 'function'
-        ? profileLookup.populate({
-            path: 'member.tribe',
-            select: tribesHandler.tribeFields,
-            // Stryker disable next-line StringLiteral: without a model, populate uses the schema ref, which is Tribe
-            model: 'Tribe',
-            // Not possible at the moment due bug in Mongoose
-            // http://mongoosejs.com/docs/faq.html#populate_sort_order
-            // https://github.com/Automattic/mongoose/issues/2202
-            // options: { sort: { count: -1 } }
-          })
+        ? profileLookup.populate(publicMemberTribePopulateOptions())
         : profileLookup;
     const profilePending =
       // Stryker disable next-line ConditionalExpression,StringLiteral: a Mongoose query is thenable, so Promise.resolve settles it like exec() does
@@ -1210,7 +1205,7 @@ function changeTribeMembership(
       // Stryker disable next-line BooleanLiteral: Mongoose ignores the legacy safe option
       { safe: true, new: true },
     ).exec();
-    const pickedTribe = pick(tribe, tribesHandler.tribeFields.split(' '));
+    const pickedTribe = pick(tribe, publicTribeFields.split(' '));
     const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
     statService.stat(
       {
@@ -1255,16 +1250,7 @@ service.getUserMemberships = function (req, res) {
   }
   // Stryker disable next-line StringLiteral: the projection only narrows the lookup; the response only reads member
   User.findById(req.user._id, 'member')
-    .populate({
-      path: 'member.tribe',
-      select: tribesHandler.tribeFields,
-      // Stryker disable next-line StringLiteral: without a model, populate uses the schema ref, which is Tribe
-      model: 'Tribe',
-      // Not possible at the moment due bug in Mongoose
-      // http://mongoosejs.com/docs/faq.html#populate_sort_order
-      // https://github.com/Automattic/mongoose/issues/2202
-      // options: { sort: { count: -1 } }
-    })
+    .populate(publicMemberTribePopulateOptions())
     .exec()
     .then(
       function (profile: UserServerDocument | null) {
