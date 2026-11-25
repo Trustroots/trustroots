@@ -74,8 +74,12 @@ describe('Admin featured Nostr notes', () => {
       admin.post(route).set('X-Trustroots-Request', '1');
     vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', '');
     try {
-      await publishProfile().expect(503);
+      await publishProfile().expect(503, {
+        message: 'The Nostr service key is unavailable.',
+      });
       vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(author));
+      const createdAt = Math.floor(Date.now() / 1000);
+      vi.spyOn(Date, 'now').mockReturnValue(createdAt * 1000 + 123);
       const connect = vi.spyOn(Relay.prototype, 'connect').mockResolvedValue();
       const close = vi
         .spyOn(Relay.prototype, 'close')
@@ -89,14 +93,17 @@ describe('Admin featured Nostr notes', () => {
       assert.equal(verifyEvent(profile), true);
       assert.equal(profile.pubkey, event.pubkey);
       assert.equal(profile.kind, 0);
+      assert.equal(profile.created_at, createdAt);
       assert.deepEqual(JSON.parse(profile.content), {
         name: 'Trustroots',
         nip05: '_@trustroots.org',
       });
-      assert.equal(connect.mock.calls.length, 1);
+      assert.deepEqual(connect.mock.calls, [[{ timeout: 5000 }]]);
       assert.equal(close.mock.calls.length, 1);
       publish.mockRejectedValueOnce(new Error('relay unavailable'));
-      await publishProfile().expect(502);
+      await publishProfile().expect(502, {
+        message: 'The Trustroots relay did not accept the profile.',
+      });
       assert.equal(close.mock.calls.length, 2);
     } finally {
       vi.restoreAllMocks();

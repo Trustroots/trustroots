@@ -3813,7 +3813,7 @@ const features = [
     area: AREA.adminModeration,
     status: STATUS.active,
     description:
-      'Administrators inspect MongoDB version, topology, feature compatibility, collection storage history, and live Agenda job inventory.',
+      'Administrators inspect MongoDB version, topology, feature compatibility, index maintenance and inventory, collection storage history, and live Agenda job inventory.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -3827,6 +3827,7 @@ const features = [
     requiredScenarios: [
       'Admin sees the live MongoDB server version, feature compatibility version, and topology.',
       'Admin sees the ordered 4.4 → 5.0 → 6.0 → 7.0 migration path.',
+      'Admin sees live collection indexes and circle discovery index status.',
       'Admin compares collection storage and refreshes live job counts.',
       'Admin sees saved daily storage and the size and oldest completed run of each job type.',
       'Non-admin access is rejected.',

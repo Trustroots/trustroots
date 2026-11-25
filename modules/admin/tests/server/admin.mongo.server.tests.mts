@@ -8,6 +8,7 @@ import {
   readAgendaStorageHistory,
 } from '../../server/services/agenda-storage.server.service.mts';
 import * as adminMongo from '../../server/controllers/admin.mongo.server.controller.mts';
+import { readMongoIndexInventory } from '../../server/services/mongo-index-inventory.server.service.mts';
 import 'should';
 
 type MongoBody =
@@ -59,6 +60,127 @@ describe('Admin Mongo diagnostics', () => {
     await archived.deleteMany({});
     await history.deleteMany({});
     await inventory.deleteMany({});
+  });
+
+  it('lists collection indexes and verifies the required definitions', async () => {
+    const textIndex = {
+      name: 'sample_text',
+      key: { category: 1, _fts: 'text', _ftsx: 1, created: -1 },
+      weights: { title: 2 },
+    };
+    const list = sinon.stub(db, 'listCollections').returns({
+      toArray: async () => [
+        { name: 'users' },
+        { name: 'system.profile' },
+        { name: 'experiences' },
+      ],
+    } as never);
+    const collection = sinon.stub(db, 'collection');
+    collection.withArgs('users').returns({
+      listIndexes: () => ({
+        toArray: async () => [
+          textIndex,
+          { name: '_ftsx_1', key: { _ftsx: 1 } },
+          {
+            name: 'circle_discovery_member_seen',
+            key: { 'member.tribe': 1, seen: -1, _id: 1 },
+          },
+        ],
+      }),
+    } as never);
+    collection.withArgs('experiences').returns({
+      listIndexes: () => ({
+        toArray: async () => [
+          {
+            name: 'circle_discovery_recommenders',
+            key: { userTo: 1, public: 1, recommend: 1, created: -1 },
+            partialFilterExpression: { recommend: 'yes' },
+          },
+        ],
+      }),
+    } as never);
+
+    const result = await readMongoIndexInventory(db);
+    assert.deepEqual(result.circleDiscovery, [
+      {
+        collection: 'users',
+        name: 'circle_discovery_member_seen',
+        status: 'matches',
+      },
+      {
+        collection: 'experiences',
+        name: 'circle_discovery_recommenders',
+        status: 'different',
+      },
+    ]);
+    assert.deepEqual(
+      result.collections?.map(item => item.name),
+      ['experiences', 'users'],
+    );
+    assert.deepEqual(result.collections?.[1]?.indexes, [
+      {
+        name: 'sample_text',
+        fields: ['category (1)', 'title (text)', 'created (-1)'],
+      },
+      { name: '_ftsx_1', fields: ['_ftsx (1)'] },
+      {
+        name: 'circle_discovery_member_seen',
+        fields: ['member.tribe (1)', 'seen (-1)', '_id (1)'],
+      },
+    ]);
+    sinon.assert.calledOnceWithExactly(
+      list,
+      { type: { $in: ['collection', 'timeseries'] } },
+      { nameOnly: true, timeoutMS: 5_000 },
+    );
+  });
+
+  it('reports changed key order and index options as definition differences', async () => {
+    sinon.stub(db, 'listCollections').returns({
+      toArray: async () => [{ name: 'users' }],
+    } as never);
+    const users = db.collection('users');
+    sinon.stub(db, 'collection').withArgs('users').returns(users);
+    const listIndexes = sinon.stub(users, 'listIndexes');
+    const differences = {
+      'key order': { key: { seen: -1, 'member.tribe': 1, _id: 1 } },
+      uniqueness: { unique: true },
+      sparse: { sparse: true },
+      hidden: { hidden: true },
+      collation: { collation: { locale: 'en' } },
+      expiry: { expireAfterSeconds: 0 },
+    };
+
+    for (const [description, difference] of Object.entries(differences)) {
+      listIndexes.returns({
+        toArray: async () => [
+          {
+            name: 'circle_discovery_member_seen',
+            key: { 'member.tribe': 1, seen: -1, _id: 1 },
+            ...difference,
+          },
+        ],
+      } as never);
+      const result = await readMongoIndexInventory(db);
+      assert.equal(result.circleDiscovery[0]?.status, 'different', description);
+    }
+  });
+
+  it('distinguishes unreadable indexes from missing indexes', async () => {
+    sinon.stub(db, 'listCollections').returns({
+      toArray: async () => [{ name: 'users' }],
+    } as never);
+    const users = db.collection('users');
+    sinon.stub(db, 'collection').withArgs('users').returns(users);
+    const listIndexes = sinon.stub(users, 'listIndexes').throws();
+
+    const result = await readMongoIndexInventory(db);
+    assert.deepEqual(result.collections, [{ name: 'users', indexes: null }]);
+    assert.deepEqual(
+      result.circleDiscovery.map(index => index.status),
+      ['unavailable', 'missing'],
+    );
+    sinon.assert.calledOnceWithExactly(listIndexes, { timeoutMS: 5_000 });
   });
 
   it('reports live Mongo metadata, storage statistics and grouped Agenda states', async () => {
@@ -433,7 +555,7 @@ describe('Admin Mongo diagnostics', () => {
       indexBytes: 6,
       reusableBytes: null,
     });
-    sinon.assert.calledOnceWithExactly(
+    sinon.assert.calledWithExactly(
       list,
       { name: { $in: ['agendaJobs', 'agendaJobsArchived'] } },
       { nameOnly: true, maxTimeMS: 5_000 },
@@ -458,7 +580,7 @@ describe('Admin Mongo diagnostics', () => {
     ]) {
       sinon.assert.calledWithExactly(command, request, { timeoutMS: 5_000 });
     }
-    collection.callCount.should.equal(5);
+    collection.callCount.should.equal(7);
     assert.equal(body.history, null);
   });
 
@@ -510,6 +632,21 @@ describe('Admin Mongo diagnostics', () => {
     const response = mockResponse();
     await adminMongo.diagnostics({} as never, response as never);
     assert.equal(mongoBody(response).server.version, '7.0.1');
+    assert.deepEqual(mongoBody(response).indexInventory, {
+      collections: null,
+      circleDiscovery: [
+        {
+          collection: 'users',
+          name: 'circle_discovery_member_seen',
+          status: 'unavailable',
+        },
+        {
+          collection: 'experiences',
+          name: 'circle_discovery_recommenders',
+          status: 'unavailable',
+        },
+      ],
+    });
     mongoBody(response)
       .collections.every(item => item.status === 'unavailable')
       .should.equal(true);

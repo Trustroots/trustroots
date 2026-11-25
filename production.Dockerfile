@@ -44,7 +44,6 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 COPY tsconfig.json vite.config.mts server.js server.mjs worker.mjs worker.mts ./
 COPY bin bin
 COPY config config
-COPY migrations migrations
 COPY layers layers
 COPY modules modules
 COPY packages packages

@@ -40,7 +40,6 @@ nodemon({
   ext: worker ? 'js, cjs, mjs, mts' : 'js, cjs, mjs, mts, html',
   ignore: [
     'bin/**',
-    'migrations/**',
     'modules/*/client/**',
     'modules/*/tests/client/**/*.js',
     'modules/*/tests/server/**/*.{js,cts,mts}',

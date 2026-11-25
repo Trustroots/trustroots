@@ -45,6 +45,20 @@ export interface AgendaStorageSample {
   collections: AgendaCollectionStorage[];
 }
 
+export interface MongoIndexInventory {
+  collections:
+    | {
+        name: string;
+        indexes: { name: string; fields: string[] }[] | null;
+      }[]
+    | null;
+  circleDiscovery: {
+    collection: string;
+    name: string;
+    status: 'matches' | 'missing' | 'different' | 'unavailable';
+  }[];
+}
+
 export interface MongoDiagnosticsSnapshot {
   capturedAt: string;
   server: MongoServerDiagnostics;
@@ -52,4 +66,5 @@ export interface MongoDiagnosticsSnapshot {
   jobs: AgendaJobCounts[] | null;
   jobsCapturedAt: string | null;
   history: AgendaStorageSample[] | null;
+  indexInventory: MongoIndexInventory;
 }
