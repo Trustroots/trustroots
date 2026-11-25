@@ -40,7 +40,9 @@ function createPlan(
   }
   const relativeFiles = files.map(file => {
     const relative = path.relative(root, path.resolve(root, file));
-    if (!/^modules\/[^/]+\/tests\/server\/.+\.(?:js|cts|mts)$/.test(relative)) {
+    if (
+      !/^modules\/[^/]+\/tests\/server\/.+\.(?:js|cts|mts|mjs)$/.test(relative)
+    ) {
       throw new Error(`Not a server test file: ${file}`);
     }
     return relative;
