@@ -17,7 +17,7 @@ import { setUserRole } from '../../../client/api/users.api';
 import type { SupportRequest } from '../../../client/api/support.api';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 

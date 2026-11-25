@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();

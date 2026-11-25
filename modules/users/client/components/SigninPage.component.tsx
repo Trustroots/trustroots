@@ -10,7 +10,7 @@ import {
   signinFailureReason,
   useAnalytics,
 } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';

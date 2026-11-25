@@ -41,7 +41,7 @@ import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
   SEARCH_STRING_LIMIT,

@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import { Route } from '@/layers/shell/client/routes/safety';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import Safety from '@/modules/pages/client/components/Safety.component';
 import { recordSafetyPageVisit } from '@/modules/users/client/api/users.api';
 
-vi.mock('@/modules/core/client/react-app/auth', () => ({ useAuth: vi.fn() }));
+vi.mock('@trustroots/core/auth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/modules/users/client/api/users.api', () => ({
   recordSafetyPageVisit: vi.fn(),
 }));

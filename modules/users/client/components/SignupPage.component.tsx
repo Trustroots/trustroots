@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@trustroots/ui/cn';
 
 import { useAnalytics } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import * as authApi from '@/modules/users/client/api/auth.api';

@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 import { getBootstrapData } from '../bootstrap';
 import ReactAppShell from '../ReactAppShell';
 

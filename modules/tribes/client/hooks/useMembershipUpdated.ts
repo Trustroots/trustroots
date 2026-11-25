@@ -1,4 +1,4 @@
-import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@trustroots/core/auth';
 
 /** Copies a joined or left circle's member changes into the signed-in member. */
 export default function useMembershipUpdated() {

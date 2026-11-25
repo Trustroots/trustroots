@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { invalidateProfiles } from '@/modules/users/client/api/profile-queries';
 import useUnreadMessageCountPolling from '@/modules/messages/client/services/use-unread-message-count-polling';
 import { createAppRouter } from './router';

@@ -20,7 +20,7 @@ import {
 import * as api from '../api/support.api';
 import { setUserRole } from '../api/users.api';
 import { formatAdminDateTime } from '../utils/admin-date';
-import { useAuth } from '../../../core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import type {
   InvestigationItem,
   MessageThrottleReview,

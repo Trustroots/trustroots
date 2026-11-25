@@ -5,11 +5,11 @@ import '@/config/client/i18n';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 import { setViewer } from '@/testutils/client/auth.testutil';
 import { hoverTooltip } from '@/testutils/client/tooltip.testutil';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

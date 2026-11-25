@@ -8,8 +8,8 @@ import React, { useEffect } from 'react';
 
 import AppHeader from '@/layers/shell/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/app-context';
+import { useAuth } from '@trustroots/core/auth';
+import { useSettings } from '@trustroots/core/app-context';
 import ReactFooter from './ReactFooter';
 import LegacyAndroidUpgradeNotice from './components/LegacyAndroidUpgradeNotice';
 import { matchAppRoute } from './route-options';

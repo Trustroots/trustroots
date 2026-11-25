@@ -7,7 +7,7 @@ import {
   emailConfirmFailureReason,
   useAnalytics,
 } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 
 export default function ConfirmEmailPage() {

@@ -6,7 +6,7 @@ import {
   useAuth,
   userHasRole,
   type AuthUser,
-} from '@/modules/core/client/react-app/auth';
+} from '@trustroots/core/auth';
 
 const mockNavigate = vi.fn();
 vi.mock('@tanstack/react-router', async () => ({

@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import UserLink from '@/modules/admin/client/components/UserLink.component';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 

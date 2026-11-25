@@ -5,7 +5,7 @@ import AdminReferenceThreads from '@/modules/admin/client/components/AdminRefere
 import * as referenceThreadsApi from '@/modules/admin/client/api/admin-reference-threads.api';
 import type { ReferenceThreadsResponse } from '@/modules/admin/client/api/admin-reference-threads.api';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

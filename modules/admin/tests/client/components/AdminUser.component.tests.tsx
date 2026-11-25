@@ -20,7 +20,7 @@ import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserRe
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
 vi.mock('@/modules/admin/client/api/support.api');
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 

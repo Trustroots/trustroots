@@ -3,10 +3,17 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
-import { useBootstrapData } from '@/modules/core/client/react-app/app-context';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useBootstrapData } from '@trustroots/core/app-context';
+import { useAuth } from '@trustroots/core/auth';
+import { useBootstrapData as useDirectBootstrapData } from '@/modules/core/client/react-app/app-context';
+import { useAuth as useDirectAuth } from '@/modules/core/client/react-app/auth';
 
 describe('AppProviders', () => {
+  it('shares context hooks with features that still use direct imports', () => {
+    expect(useBootstrapData).toBe(useDirectBootstrapData);
+    expect(useAuth).toBe(useDirectAuth);
+  });
+
   it('throws when bootstrap hooks are used outside the provider', () => {
     function TestConsumer() {
       useBootstrapData();

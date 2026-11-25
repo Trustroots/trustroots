@@ -2,7 +2,7 @@ import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
-import { useSettings } from '@/modules/core/client/react-app/app-context';
+import { useSettings } from '../react-app/app-context';
 
 type GeocodingContext = { id: string; text: string; short_code?: string };
 type GeocodingFeature = {

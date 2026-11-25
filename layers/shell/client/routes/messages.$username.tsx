@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Thread from '@/modules/messages/client/components/Thread.component';
-import { useSettings } from '@/modules/core/client/react-app/app-context';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useSettings } from '@trustroots/core/app-context';
+import { useAuth } from '@trustroots/core/auth';
 import { requireAuth } from '../route-options';
 
 function ThreadRoute() {

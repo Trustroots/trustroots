@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import React from 'react';
 import OfferShell from '@/modules/offers/client/components/OfferShell.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 
 function OfferLayout() {
   const { user } = useAuth();

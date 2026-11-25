@@ -55,8 +55,10 @@ test('manifest of a module without client tests has no test:client script and no
   assert.deepEqual(Object.keys(manifest.exports), ['./shared/*']);
 });
 
-test('Core exposes named navigation and HTTP entry points', () => {
+test('Core exposes named client entry points', () => {
   const { exports } = expectedManifest('core');
+  assert.equal(exports['./app-context'], './client/react-app/app-context.ts');
+  assert.equal(exports['./auth'], './client/react-app/auth.tsx');
   assert.equal(
     exports['./browser-navigation'],
     './client/services/browser-navigation.ts',

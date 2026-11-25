@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AnyRoute } from '@tanstack/react-router';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 
 import {
   createAppRouter,

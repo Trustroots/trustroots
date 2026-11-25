@@ -11,7 +11,7 @@ import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

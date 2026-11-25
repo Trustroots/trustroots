@@ -14,7 +14,7 @@ import * as api from '@/modules/admin/client/api/network-connections.api';
 import type { Network } from '@/modules/users/shared/network-connections';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
