@@ -159,34 +159,7 @@ struct MemberProfileView: View {
                                 .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
                             }
 
-                            ProfileActivityView(
-                                seen: profile.seen,
-                                replyRate: profile.replyRate,
-                                replyTime: profile.replyTime
-                            )
-
-                            if profile.locationLiving != nil || profile.locationFrom != nil {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    if let living = profile.locationLiving, !living.isEmpty {
-                                        Button {
-                                            openOnSearchMap(living)
-                                        } label: {
-                                            Label("Lives in \(living)", systemImage: "house")
-                                        }
-                                    }
-                                    if let from = profile.locationFrom, !from.isEmpty {
-                                        Button {
-                                            openOnSearchMap(from)
-                                        } label: {
-                                            Label("From \(from)", systemImage: "mappin.and.ellipse")
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(16)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            }
+                            ProfileDetailsSection(profile: profile, onLocation: openOnSearchMap)
 
                             if let description = profile.description?.plainText, !description.isEmpty {
                                 ProfileTextSection(title: "About me", text: description, tag: "profile-biography")
@@ -519,12 +492,68 @@ private struct ProfileTextSection: View {
     let title: String?
     let text: String
     let tag: String
+
+    var body: some View {
+        MeasuredProfileSection(identity: text) { onHeight in
+            MainViewControllerKt.MemberProfileTextViewController(
+                title: title,
+                text: text,
+                accessibilityTag: tag,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+}
+
+private struct ProfileDetailsSection: View {
+    let profile: MemberProfile
+    let onLocation: (String) -> Void
+
+    var body: some View {
+        let details = Details(
+            lastLogin: profile.seen?.formatted(.relative(presentation: .named)) ?? "Long ago",
+            replyRate: Self.nonEmpty(profile.replyRate) ?? "Not available yet",
+            replyTime: Self.nonEmpty(profile.replyTime).map { "Within \($0)" },
+            living: profile.locationLiving.flatMap { $0.isEmpty ? nil : $0 },
+            origin: profile.locationFrom.flatMap { $0.isEmpty ? nil : $0 }
+        )
+        MeasuredProfileSection(identity: details) { onHeight in
+            MainViewControllerKt.MemberProfileDetailsViewController(
+                lastLogin: details.lastLogin,
+                replyRate: details.replyRate,
+                replyTime: details.replyTime,
+                living: details.living,
+                origin: details.origin,
+                onLocation: onLocation,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Details: Hashable {
+        let lastLogin: String
+        let replyRate: String
+        let replyTime: String?
+        let living: String?
+        let origin: String?
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+}
+
+private struct MeasuredProfileSection<ID: Hashable>: View {
+    let identity: ID
+    let makeController: (@escaping (Double) -> Void) -> ProfileSectionHost
     @State private var height: CGFloat = 1
     @State private var origin: CGPoint = .zero
 
     var body: some View {
-        ProfileTextController(title: title, text: text, tag: tag, origin: origin, height: $height)
-            .id(text)
+        ProfileSectionController(makeController: makeController, origin: origin, height: $height)
+            .id(identity)
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .clipped()
@@ -533,10 +562,8 @@ private struct ProfileTextSection: View {
 }
 
 @MainActor
-private struct ProfileTextController: UIViewControllerRepresentable {
-    let title: String?
-    let text: String
-    let tag: String
+private struct ProfileSectionController: UIViewControllerRepresentable {
+    let makeController: (@escaping (Double) -> Void) -> ProfileSectionHost
     let origin: CGPoint
     @Binding var height: CGFloat
 
@@ -548,19 +575,14 @@ private struct ProfileTextController: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIViewController {
         let measuredHeight = $height
-        let host = MainViewControllerKt.MemberProfileTextViewController(
-            title: title,
-            text: text,
-            accessibilityTag: tag,
-            onHeight: { value in
-                let next = max(1, CGFloat(value.doubleValue))
-                Task { @MainActor in
-                    if measuredHeight.wrappedValue != next {
-                        measuredHeight.wrappedValue = next
-                    }
+        let host = makeController { value in
+            let next = max(1, CGFloat(value))
+            Task { @MainActor in
+                if measuredHeight.wrappedValue != next {
+                    measuredHeight.wrappedValue = next
                 }
             }
-        )
+        }
         context.coordinator.host = host
         host.updateOrigin(x: Double(origin.x), y: Double(origin.y))
         return host.viewController
@@ -681,67 +703,6 @@ private struct ReportMemberView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-}
-
-private struct ProfileActivityView: View {
-    let seen: Date?
-    let replyRate: String?
-    let replyTime: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Activity")
-                .font(.headline)
-
-            activityRow(
-                systemImage: "clock.arrow.circlepath",
-                title: "Last login",
-                value: seen?.formatted(.relative(presentation: .named)) ?? "Long ago"
-            )
-            activityRow(
-                systemImage: "arrowshape.turn.up.left.fill",
-                title: "Reply rate",
-                value: nonEmpty(replyRate) ?? "Not available yet"
-            )
-            if let replyTime = nonEmpty(replyTime) {
-                activityRow(
-                    systemImage: "timer",
-                    title: "Usually replies",
-                    value: "Within \(replyTime)"
-                )
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func activityRow(
-        systemImage: String,
-        title: String,
-        value: String
-    ) -> some View {
-        HStack(spacing: 11) {
-            Image(systemName: systemImage)
-                .foregroundStyle(TrustrootsPalette.darkGreen)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.subheadline.weight(.semibold))
-            }
-            Spacer()
-        }
-    }
-
-    private func nonEmpty(_ value: String?) -> String? {
-        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let trimmed, !trimmed.isEmpty else { return nil }
-        return trimmed
     }
 }
 

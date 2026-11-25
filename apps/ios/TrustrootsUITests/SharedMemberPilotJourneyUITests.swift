@@ -67,6 +67,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         contact.tap()
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        let activity = app.descendants(matching: .any)["profile-activity-and-locations"]
+        XCTAssertTrue(activity.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(activity, in: app)
+        XCTAssertTrue(element(labelled: "87%", in: app).exists, app.debugDescription)
+        XCTAssertTrue(element(labelled: "Within 2 days", in: app).exists, app.debugDescription)
+        let activityScreenshot = XCTAttachment(screenshot: activity.screenshot())
+        activityScreenshot.name = "regular-ios-profile-activity"
+        activityScreenshot.lifetime = .keepAlways
+        add(activityScreenshot)
+
         let biography = app.descendants(matching: .any)["profile-biography"]
         XCTAssertTrue(biography.waitForExistence(timeout: 10), app.debugDescription)
         let biographyText = "I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers."
@@ -85,6 +95,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let languageText = element(labelled: "English · French", in: app)
         XCTAssertTrue(languageText.waitForExistence(timeout: 10), app.debugDescription)
         revealProfileElement(languageText, in: app)
+
+        let location = app.buttons["Lives in Example Harbour"]
+        XCTAssertTrue(location.exists, app.debugDescription)
+        revealProfileElement(location, in: app)
+        location.tap()
+        let mapOpened = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isSelected == true"),
+            object: app.buttons["Search"]
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [mapOpened], timeout: 10), .completed, app.debugDescription)
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))

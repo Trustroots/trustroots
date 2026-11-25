@@ -47,6 +47,27 @@ fun OfferSearchFiltersViewController(
     OfferSearchFilters(state, onToggle, onActivity, onLanguages, onCircle)
 }
 
+fun MemberProfileTextViewController(
+    title: String?,
+    text: String,
+    accessibilityTag: String,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection(accessibilityTag, onHeight) { modifier ->
+    MemberProfileText(title, text, modifier)
+}
+
+fun MemberProfileDetailsViewController(
+    lastLogin: String,
+    replyRate: String,
+    replyTime: String?,
+    living: String?,
+    origin: String?,
+    onLocation: (String) -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-activity-and-locations", onHeight) { modifier ->
+    MemberProfileDetails(lastLogin, replyRate, replyTime, living, origin, onLocation, modifier)
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(
@@ -58,11 +79,10 @@ class ProfileSectionHost internal constructor(
     }
 }
 
-fun MemberProfileTextViewController(
-    title: String?,
-    text: String,
+private fun MeasuredProfileSection(
     accessibilityTag: String,
     onHeight: (Double) -> Unit,
+    content: @Composable (Modifier) -> Unit,
 ): ProfileSectionHost {
     val origin = mutableStateOf(Offset.Zero)
     val controller = ComposeUIViewController {
@@ -70,10 +90,8 @@ fun MemberProfileTextViewController(
         val density = LocalDensity.current
         // The enclosing SwiftUI scroll view needs the text's natural height at its current width.
         Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
-            MemberProfileText(
-                title,
-                text,
-                modifier = Modifier.fillMaxWidth()
+            content(
+                Modifier.fillMaxWidth()
                     .testTag(accessibilityTag)
                     // SwiftUI scrolling can move the host without changing Compose's own layout.
                     // Synchronize the window-relative accessibility frames on that movement.
