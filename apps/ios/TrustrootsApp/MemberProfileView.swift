@@ -12,6 +12,7 @@ struct MemberProfileView: View {
     @State private var experiences: [MemberExperience] = []
     @State private var accommodationOffer: AccommodationOffer?
     @State private var selectedProfileUsername: String?
+    @State private var selectedCircle: ProfileCircle?
     @State private var isConversationOpen = false
     @State private var showAllContacts = false
     @State private var showAllExperiences = false
@@ -160,7 +161,9 @@ struct MemberProfileView: View {
                             }
 
                             if let memberships = profile.member, !memberships.isEmpty {
-                                circlesSection(memberships.map(\.tribe))
+                                ProfileCirclesSection(circles: memberships.map(\.tribe)) { circle in
+                                    if selectedCircle == nil { selectedCircle = circle }
+                                }
                             }
 
                             if !contacts.isEmpty {
@@ -210,6 +213,9 @@ struct MemberProfileView: View {
             }
             .navigationDestination(item: $selectedProfileUsername) { username in
                 MemberProfileView(session: session, username: username)
+            }
+            .navigationDestination(item: $selectedCircle) { circle in
+                ProfileCircleDetailView(session: session, circle: circle)
             }
             .navigationDestination(isPresented: $isConversationOpen) {
                 if let profile, let memberID = profile.id {
@@ -338,31 +344,6 @@ struct MemberProfileView: View {
         } catch {
             safetyErrorMessage = error.localizedDescription
         }
-    }
-
-    private func circlesSection(_ circles: [ProfileCircle]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            FlowLayout(spacing: 8) {
-                ForEach(circles) { circle in
-                    NavigationLink {
-                        ProfileCircleDetailView(session: session, circle: circle)
-                    } label: {
-                        Text(circle.label)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .background(TrustrootsPalette.green.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func openOnSearchMap(_ location: String) {
@@ -572,6 +553,23 @@ private struct ProfileSafetySection: View {
         let blockedMessage: String?
         let isUpdating: Bool
         let error: String?
+    }
+}
+
+private struct ProfileCirclesSection: View {
+    let circles: [ProfileCircle]
+    let onOpen: (ProfileCircle) -> Void
+
+    var body: some View {
+        MeasuredProfileSection(identity: circles) { onHeight in
+            MainViewControllerKt.MemberProfileCirclesViewController(
+                circles: circles.map { MemberProfileCircle(id: $0.id, label: $0.label) },
+                onOpen: { id in
+                    if let circle = circles.first(where: { $0.id == id }) { onOpen(circle) }
+                },
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
     }
 }
 

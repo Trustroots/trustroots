@@ -108,6 +108,14 @@ fun MemberProfileSafetyViewController(
     MemberProfileSafety(blockedMessage, isUpdating, error, onReport, onToggleBlock, modifier)
 }
 
+fun MemberProfileCirclesViewController(
+    circles: List<MemberProfileCircle>,
+    onOpen: (String) -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-circles", onHeight) { modifier ->
+    MemberProfileCircles(circles, onOpen, modifier)
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(
