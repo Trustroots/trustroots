@@ -8,6 +8,7 @@
   - [x] Assess configuration and i18n package boundaries and record the extraction candidates in `design.md`.
 - [x] Establish the shared `packages/ui` workspace package and web design tokens.
   - [x] Add source-only primitives (#3453), Storybook (#3536) and shared Tailwind styling; the web client has since removed Bootstrap (#3751).
+  - [x] Own web design tokens in the UI stylesheet and remove the Less token bridge.
 - [x] Enforce tier import directions in `tooling/guards`.
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
