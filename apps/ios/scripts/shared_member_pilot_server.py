@@ -29,6 +29,12 @@ PROFILE_EDITOR_UPDATE = {
     "locationFrom": "",
     "languages": [],
 }
+PROFILE_CIRCLE = {
+    "_id": "fixture-train-circle",
+    "slug": "night-train-travellers",
+    "label": "Night Train Travellers",
+    "description": "A fictional circle for overnight train travellers.",
+}
 PARTNER = {
     "_id": "member-pilot-partner",
     "username": "pilot-partner",
@@ -39,6 +45,7 @@ PARTNER = {
     "replyRate": "87%",
     "replyTime": "2 days",
     "locationLiving": "Example Harbour",
+    "member": [{"tribe": PROFILE_CIRCLE}],
 }
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
@@ -228,7 +235,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "user": PARTNER,
             })
         elif route == "/api/mobile/v0/circles":
-            self._json(200, CIRCLES)
+            self._json(200, [*CIRCLES, PROFILE_CIRCLE])
         elif route == "/api/mobile/v0/memberships":
             fixture = type(self)
             with fixture.session_lock:

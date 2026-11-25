@@ -135,6 +135,18 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(languageText.waitForExistence(timeout: 10), app.debugDescription)
         revealProfileElement(languageText, in: app)
 
+        let profileCircle = app.descendants(matching: .any)["profile-circle-fixture-train-circle"]
+        XCTAssertTrue(profileCircle.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(profileCircle, in: app)
+        let circleScreenshot = XCTAttachment(screenshot: profileCircle.screenshot())
+        circleScreenshot.name = "regular-ios-profile-circle-link"
+        circleScreenshot.lifetime = .keepAlways
+        add(circleScreenshot)
+        profileCircle.tap()
+        XCTAssertTrue(app.staticTexts["A fictional circle for overnight train travellers."].waitForExistence(timeout: 15))
+        app.buttons["Back"].tap()
+        XCTAssertTrue(profileCircle.waitForExistence(timeout: 10), app.debugDescription)
+
         let location = app.buttons["Lives in Example Harbour"]
         XCTAssertTrue(location.exists, app.debugDescription)
         revealProfileElement(location, in: app)
