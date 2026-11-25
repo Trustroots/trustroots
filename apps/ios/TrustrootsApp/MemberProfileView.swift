@@ -76,29 +76,7 @@ struct MemberProfileView: View {
                                     .accessibilityLabel("Back")
                                     .accessibilityIdentifier("profile-header-back")
                                 }
-
-                                MemberIdentityView(
-                                    member: MiniMember(
-                                        id: profile.id,
-                                        username: profile.username,
-                                        displayName: profile.displayName
-                                    ),
-                                    serverURLString: session.serverURLString,
-                                    avatarSize: 84,
-                                    primaryFont: .title.bold(),
-                                    secondaryFont: .subheadline,
-                                    foreground: .white,
-                                    secondaryForeground: .white.opacity(0.86)
-                                )
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("profile-header-identity")
-                                if let tagline = profile.tagline, !tagline.isEmpty {
-                                    Text(tagline.plainText)
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(.white)
-                                        .lineLimit(2)
-                                        .padding(.leading, 94)
-                                }
+                                ProfileHeaderSection(profile: profile, serverURLString: session.serverURLString)
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, username == nil ? 76 : 52)
@@ -344,6 +322,47 @@ struct MemberProfileView: View {
 
     private func openRelatedProfile(_ username: String) {
         if selectedProfileUsername == nil { selectedProfileUsername = username }
+    }
+}
+
+private struct ProfileHeaderSection: View {
+    let profile: MemberProfile
+    let serverURLString: String
+
+    var body: some View {
+        let member = MiniMember(id: profile.id, username: profile.username, displayName: profile.displayName)
+        let text = MemberIdentityText(member: member)
+        let header = Header(
+            id: member.id,
+            name: text.primary,
+            handle: text.secondary,
+            tagline: profile.tagline.map(\.plainText).flatMap { $0.isEmpty ? nil : $0 },
+            serverURLString: serverURLString
+        )
+        MeasuredProfileSection(identity: header) { onHeight in
+            MainViewControllerKt.MemberProfileHeaderViewController(
+                name: header.name,
+                handle: header.handle,
+                tagline: header.tagline,
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: {
+                    makeSharedMemberAvatarController(
+                        memberID: header.id,
+                        name: text.name ?? text.handle ?? "",
+                        serverURLString: header.serverURLString,
+                        size: 84
+                    )
+                }
+            )
+        }
+    }
+
+    private struct Header: Hashable {
+        let id: String?
+        let name: String
+        let handle: String?
+        let tagline: String?
+        let serverURLString: String
     }
 }
 

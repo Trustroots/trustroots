@@ -911,14 +911,21 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let openProfile = app.buttons["View Robin Example's profile"]
         XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
         openProfile.tap()
-        let profileBack = app.buttons["profile-header-back"]
+        let profileHeader = app.descendants(matching: .any)["profile-header-content"]
+        XCTAssertTrue(profileHeader.waitForExistence(timeout: 15), app.debugDescription)
         let profileIdentity = app.descendants(matching: .any)["profile-header-identity"]
-        XCTAssertTrue(profileIdentity.waitForExistence(timeout: 15), app.debugDescription)
+        let profileBack = app.buttons["profile-header-back"]
+        XCTAssertTrue(profileIdentity.exists, app.debugDescription)
         XCTAssertTrue(profileBack.exists, app.debugDescription)
-        // The profile uses an 84-point avatar centred vertically in its identity row.
-        XCTAssertLessThanOrEqual(profileBack.frame.maxY + 42, profileIdentity.frame.midY)
+        XCTAssertLessThanOrEqual(profileBack.frame.maxY, profileIdentity.frame.minY)
+        XCTAssertTrue(app.staticTexts["A partner profile"].exists, app.debugDescription)
+        let headerScreenshot = XCTAttachment(screenshot: profileHeader.screenshot())
+        headerScreenshot.name = "regular-ios-compose-profile-header"
+        headerScreenshot.lifetime = .keepAlways
+        add(headerScreenshot)
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(display.buttons["Members"].waitForExistence(timeout: 10), app.debugDescription)
 
         display.buttons["Members"].tap()
         app.buttons["Member filters"].tap()

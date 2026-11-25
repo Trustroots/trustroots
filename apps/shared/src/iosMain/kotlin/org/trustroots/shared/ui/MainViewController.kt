@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PlatformImeOptions
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -127,6 +128,19 @@ fun MemberProfileHostingViewController(
     MemberProfileHosting(status, meeting, description, volunteering, capacity, modifier)
 }
 
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileHeaderViewController(
+    name: String,
+    handle: String?,
+    tagline: String?,
+    onHeight: (Double) -> Unit,
+    createAvatar: () -> UIViewController,
+) = MeasuredProfileSection("profile-header-content", onHeight, opaque = false) { modifier ->
+    MemberProfileHeader(name, handle, tagline, modifier) {
+        HostedMemberAvatar(size = 84.dp, createView = createAvatar)
+    }
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(
@@ -138,13 +152,15 @@ class ProfileSectionHost internal constructor(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 private fun MeasuredProfileSection(
     accessibilityTag: String,
     onHeight: (Double) -> Unit,
+    opaque: Boolean = true,
     content: @Composable (Modifier) -> Unit,
 ): ProfileSectionHost {
     val origin = mutableStateOf(Offset.Zero)
-    val controller = ComposeUIViewController {
+    val controller = ComposeUIViewController(configure = { this.opaque = opaque }) {
         val currentOrigin = origin.value
         val density = LocalDensity.current
         // The enclosing SwiftUI scroll view needs each section's natural height at its current width.
@@ -289,11 +305,11 @@ fun SharedHomeViewController(
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 @Composable
-private fun HostedMemberAvatar(createView: () -> UIViewController) {
+private fun HostedMemberAvatar(size: Dp = 46.dp, createView: () -> UIViewController) {
     // Keep UIKit avatar touches inside the Compose row's tap target.
     UIKitViewController(
         factory = createView,
-        modifier = Modifier.size(46.dp),
+        modifier = Modifier.size(size),
         properties = UIKitInteropProperties(interactionMode = null),
     )
 }
