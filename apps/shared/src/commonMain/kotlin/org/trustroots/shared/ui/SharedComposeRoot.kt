@@ -88,7 +88,7 @@ fun SharedComposeRoot(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 key(destination) {
                     when (destination) {
-                        null -> SignIn(gateway, initialError, busy, beginAction, endAction)
+                        null -> MemberSignIn(gateway, initialError, busy, beginAction, endAction)
                         Destination.Home -> MemberDashboard(
                             accountKey = gateway,
                             loadNotes = { awaitData(gateway::featuredNotes) },
@@ -145,12 +145,15 @@ fun SharedComposeRoot(
 }
 
 @Composable
-private fun SignIn(
+internal fun MemberSignIn(
     gateway: PilotGateway,
     initialError: String?,
     busy: Boolean,
     beginAction: () -> Boolean,
     endAction: () -> Unit,
+    usernameKeyboard: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, autoCorrectEnabled = false),
+    passwordKeyboard: KeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+    onJoin: (() -> Unit)? = null,
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -159,6 +162,14 @@ private fun SignIn(
     val focus = LocalFocusManager.current
 
     PilotForm {
+        if (onJoin != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                PilotButton("Join", enabled = !busy) {
+                    focus.clearFocus()
+                    onJoin()
+                }
+            }
+        }
         Column(
             Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -178,7 +189,7 @@ private fun SignIn(
             value = username,
             tag = "pilot-username",
             enabled = !busy,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, autoCorrectEnabled = false),
+            keyboardOptions = usernameKeyboard,
             onChange = { username = it },
         )
         PilotInput(
@@ -186,7 +197,7 @@ private fun SignIn(
             value = password,
             tag = "pilot-password",
             enabled = !busy,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = passwordKeyboard,
             onChange = { password = it },
         )
         failure?.let { PilotError(it) }
