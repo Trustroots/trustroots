@@ -6,6 +6,7 @@ import mfaService, {
   MfaConfigurationError,
   mfaConfigurationMessage,
 } from '../services/mfa.server.service.mjs';
+import { recordActivity } from '../services/account-activity.server.service.mts';
 
 const User = mongoose.model('User');
 
@@ -87,6 +88,10 @@ async function verifyEnrollment(req, res) {
         .status(400)
         .send({ message: 'Authenticator code is invalid or has expired.' });
     }
+    await recordActivity({
+      userId: result.user._id,
+      eventType: 'mfa_enabled',
+    });
     result.user.$locals.mfaVerified = true;
     return req.login(result.user, error => {
       if (error) {
@@ -140,6 +145,12 @@ async function regenerateRecoveryCodes(req, res) {
         .status(400)
         .send({ message: 'Authenticator or recovery code is invalid.' });
     }
+    if (verification.recovery) {
+      await recordActivity({
+        userId: user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
     const codes = mfaService.createRecoveryCodes();
     const hashes = codes.map(code =>
       // Stored hashes use the same one-way transformation as verification.
@@ -158,6 +169,10 @@ async function regenerateRecoveryCodes(req, res) {
       return res
         .status(409)
         .send({ message: 'Authenticator MFA changed. Try again.' });
+    await recordActivity({
+      userId: updated._id,
+      eventType: 'recovery_codes_replaced',
+    });
     updated.$locals.mfaVerified = true;
     return req.login(updated, error => {
       if (error)
@@ -189,12 +204,22 @@ async function disable(req, res) {
         .status(400)
         .send({ message: 'Authenticator or recovery code is invalid.' });
     }
+    if (verification.recovery) {
+      await recordActivity({
+        userId: user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
     const removed = await mfaService.removeMfa(user._id, verification.secret);
     if (!removed) {
       return res
         .status(409)
         .send({ message: 'Authenticator MFA changed. Try again.' });
     }
+    await recordActivity({
+      userId: removed._id,
+      eventType: 'mfa_disabled',
+    });
     return req.logout(error => {
       if (error)
         return res

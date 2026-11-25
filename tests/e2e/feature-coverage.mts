@@ -146,6 +146,8 @@ function apiRoute(
 const specPaths: Record<string, string> = {
   'admin-circles.spec.js': 'features/admin-moderation/admin-circles.spec.ts',
   'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.ts',
+  'integrated-account-access.spec.js':
+    'features/auth-account/integrated-account-access.spec.ts',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
@@ -957,6 +959,8 @@ const features = [
     requiredScenarios: [
       'Sign in page links to signup.',
       'Username sign in succeeds.',
+      'Combined proof and second-factor responses do not establish an intermediate session.',
+      'Password recovery keeps second-factor verification required.',
       'Elevated account activity requires a proof before sign-in succeeds.',
       'Email sign in succeeds.',
       'Continue query redirects to the original protected destination.',
@@ -967,6 +971,14 @@ const features = [
         'sign in and sign up pages link to each other',
       ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with username'),
+      spec(
+        'integrated-account-access.spec.js',
+        'combined account checks establish one session and sign out everywhere',
+      ),
+      spec(
+        'integrated-account-access.spec.js',
+        'password recovery leaves an MFA member signed out until a fresh second factor',
+      ),
       spec(
         'signin-challenge.spec.js',
         'a member signs in through the browser after an account-wide challenge',
@@ -1469,6 +1481,34 @@ const features = [
       spec(
         'account-settings.spec.js',
         'members can revoke another active session from account settings',
+      ),
+    ],
+  },
+  {
+    id: 'account.activity',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can review a private, recent history of sign-ins and account changes.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/activity', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Members can see a credential change in account activity.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can review credential activity from account settings',
       ),
     ],
   },

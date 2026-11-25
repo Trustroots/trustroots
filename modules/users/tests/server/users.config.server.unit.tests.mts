@@ -64,6 +64,8 @@ describe('Users Passport session configuration', () => {
     const findOne = sinon.stub();
     sinon.stub(User, 'findOne').callsFake(findOne);
     const { serialize, restore } = await installSessionHandlers();
+    const authenticatedAt = 1_800_000_000_000;
+    sinon.stub(Date, 'now').returns(authenticatedAt);
 
     serialize(
       {
@@ -77,6 +79,7 @@ describe('Users Passport session configuration', () => {
         should(session).deepEqual({
           id: 'member-id',
           authVersion: 3,
+          authenticatedAt,
           mfaVerified: true,
         });
       },
@@ -85,6 +88,7 @@ describe('Users Passport session configuration', () => {
       should(session).deepEqual({
         id: 'member-id',
         authVersion: 0,
+        authenticatedAt,
         mfaVerified: false,
       }),
     );

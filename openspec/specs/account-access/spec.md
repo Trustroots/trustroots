@@ -72,6 +72,43 @@ unchanged sessions, and SHALL refresh their expiry through the session store.
 - **WHEN** a person makes a request without changing an existing session
 - **THEN** the system refreshes the session expiry without rewriting the session
 
+### Requirement: Private account activity history
+
+The system SHALL record successful session and credential lifecycle changes in
+a bounded, owner-only history. It SHALL retain event type, owner, timestamp and
+only the context needed to identify a session event. It SHALL not record
+credentials, action tokens, session-store identifiers, precise location,
+browser fingerprints or private content. The history SHALL support opaque
+cursor pagination of at most 50 events, SHALL avoid shared caching, SHALL
+return only events from the last 90 days, SHALL expire events after 90 days,
+and SHALL remove them when the account is deleted.
+Activity write failures SHALL not reverse a completed account operation, and
+transient failures SHALL be retried with the same event identifier.
+
+#### Scenario: Member reviews recent account changes
+
+- **WHEN** a signed-in member opens account activity
+- **THEN** the system returns only their session and credential events
+- **AND** each page has at most 50 events and identifies new session events
+- **AND** the interface shows event descriptions and local dates
+
+#### Scenario: Activity history is unavailable
+
+- **WHEN** the activity service cannot load the member’s history
+- **THEN** the interface reports that history could not be loaded
+- **AND** it does not present the failure as an empty history
+
+#### Scenario: Activity storage fails after a credential change
+
+- **WHEN** a member’s credential change succeeds but activity storage is temporarily unavailable
+- **THEN** the credential change remains committed
+- **AND** event delivery is retried without recording credential values
+
+#### Scenario: Account is removed
+
+- **WHEN** a member completes account removal
+- **THEN** their account activity rows are deleted
+
 ### Requirement: Account registration
 
 The system SHALL allow a person to create an account with valid, unique
@@ -1091,3 +1128,20 @@ Android and iOS MUST let a member with two-factor authentication complete the we
 
 - **WHEN** the browser has not completed the required second factor, the account credentials change, or the code is expired, unbound or already used
 - **THEN** the service does not issue mobile credentials for that handoff
+
+### Requirement: Combined account access regression coverage
+
+The account-access test suite SHALL exercise recovery, session revocation,
+sign-in challenges and MFA together, including concurrent use of single-use
+credentials and native-client handling of incomplete authentication responses.
+These scenarios SHALL use anonymous fixtures and retain the established
+coverage thresholds.
+
+#### Scenario: Combined account-access flows are exercised
+
+- **WHEN** account-access integration tests run
+- **THEN** they cover password recovery and confirmation on MFA-enabled
+  accounts, session invalidation, sign-in challenge completion and concurrent
+  credential use
+- **AND** a native client that cannot complete a required step does not retain
+  an authenticated session
