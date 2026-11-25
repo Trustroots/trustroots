@@ -752,7 +752,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Dismiss potential host"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["Might meet"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["Offers volunteering"].firstMatch.exists)
-        app.buttons["View Robin Example's profile"].tap()
+        display.buttons["Map"].tap()
+        let mapPin = app.buttons["View potential host"]
+        XCTAssertTrue(mapPin.waitForExistence(timeout: 15), app.debugDescription)
+        mapPin.tap()
+        let openProfile = app.buttons["View Robin Example's profile"]
+        XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
+        openProfile.tap()
         let profileBack = app.buttons["profile-header-back"]
         let profileIdentity = app.descendants(matching: .any)["profile-header-identity"]
         XCTAssertTrue(profileIdentity.waitForExistence(timeout: 15), app.debugDescription)
@@ -760,7 +766,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         // The profile uses an 84-point avatar centred vertically in its identity row.
         XCTAssertLessThanOrEqual(profileBack.frame.maxY + 42, profileIdentity.frame.midY)
         profileBack.tap()
-        XCTAssertTrue(display.buttons["Members"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
 
         display.buttons["Members"].tap()
         app.buttons["Member filters"].tap()
