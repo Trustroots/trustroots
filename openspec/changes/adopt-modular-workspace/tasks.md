@@ -18,7 +18,8 @@
   - [ ] Introduce per-module entry points and an ordered list for server composition, including worker jobs.
 - [x] Enforce model ownership against declared dependencies (#3448).
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
-- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
+- [x] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below.
+  - [x] Give feature modules ownership of stateful route views. The shell's file routes compose those views with URL parameters, guards and loaders.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.
   - [x] Move the router entry, page layout, footer wrapper and navigation helpers into `layers/shell`, preserving old-path exports, route behaviour and coverage.

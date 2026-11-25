@@ -1,17 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
-import { NetworkConnectionSearchPage } from '@/modules/admin/client/components/NetworkConnections.component';
 import { requireRole } from '../route-options';
-
-function NetworkConnectionsRoute() {
-  return (
-    <>
-      <AdminHeader />
-      <NetworkConnectionSearchPage />
-    </>
-  );
-}
+import { NetworkConnectionsRoute } from '@/modules/admin/client/route-views';
 
 export const Route = createFileRoute('/admin/network-connections')({
   staticData: {

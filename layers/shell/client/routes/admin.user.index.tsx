@@ -1,13 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminUser from '@/modules/admin/client/components/AdminUser.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
 import { requireRole } from '../route-options';
-
-function AdminUserSearchRoute() {
-  const { user } = useAuth();
-  return <AdminUser viewer={user} />;
-}
+import { AdminUserSearchRoute } from '@/modules/admin/client/route-views';
 
 export const Route = createFileRoute('/admin/user/')({
   staticData: { title: 'Admin - User', footerVariant: 'admin' },
