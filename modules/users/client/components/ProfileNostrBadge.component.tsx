@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
-import { timeAgo } from '@/modules/search/client/utils/time-ago';
+import { compactTimeAgo } from '@trustroots/relative-time/compact';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 
 interface CommunityNote {
@@ -67,7 +67,7 @@ export default function ProfileNostrBadge({
             <div key={note.id} className="profile-nostr-note">
               <p className="profile-nostr-note-content">{note.content}</p>
               <small className="profile-nostr-note-meta text-muted">
-                {timeAgo(note.created_at)}
+                {compactTimeAgo(note.created_at)}
               </small>
             </div>
           ))}

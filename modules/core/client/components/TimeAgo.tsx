@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { timeAgo } from '../../shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 
 const REFRESH_INTERVAL = 10000;
 

@@ -142,6 +142,7 @@
     "@trustroots/emails": "workspace:*",
     "@trustroots/locales": "workspace:*",
     "@trustroots/logger": "workspace:*",
+    "@trustroots/relative-time": "workspace:*",
     "@trustroots/ui": "workspace:*",
     "@vis.gl/react-maplibre": "8.1.3",
     "agenda": "6.2.8",

@@ -4,7 +4,7 @@
  * @param {number} timestamp
  * @returns {string}
  */
-export function timeAgo(timestamp: number) {
+export function compactTimeAgo(timestamp: number) {
   const seconds = Math.floor(Date.now() / 1000) - timestamp;
   if (seconds < 60) return 'just now';
   if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
