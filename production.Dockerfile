@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM node:24.22.3-bookworm-slim AS node-runtime
 
 FROM phusion/passenger-nodejs:3.2.3 AS builder
@@ -32,9 +34,7 @@ WORKDIR /trustroots
 # - Allows docker to reuse previous build layers if these files do not change
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
-COPY packages/analytics/package.json ./packages/analytics/package.json
-COPY packages/logger/package.json ./packages/logger/package.json
-COPY packages/ui/package.json ./packages/ui/package.json
+COPY --parents modules/*/package.json packages/*/package.json ./
 # This takes FOREVER if it's run in the passenger container, that's why we
 # created the multi stage build with a build container first.
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \

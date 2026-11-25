@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Development image for local `docker compose up` and devcontainer.
 #
 # Node 24, native build deps, pnpm install to seed the `node_modules` named volume.
@@ -42,6 +44,8 @@ RUN npm -g i --force pnpm@12.16.1
 WORKDIR /home/app/trustroots
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
+COPY --parents modules/*/package.json packages/*/package.json ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm install --frozen-lockfile
 

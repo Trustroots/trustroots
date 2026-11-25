@@ -6,7 +6,7 @@ import React from 'react';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
-import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
+import { getProfileExperiencesPath } from '@trustroots/core/navigation-links';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import Meta, { type ExperienceTagFilters } from './Meta';

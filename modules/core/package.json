@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./browser-navigation": "./client/services/browser-navigation.ts",
+    "./navigation-links": "./shared/navigation-links.mts",
     "./client/*": "./client/*",
     "./shared/*": "./shared/*"
   },

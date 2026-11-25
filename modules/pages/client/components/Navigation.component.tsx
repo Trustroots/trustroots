@@ -5,7 +5,7 @@ import { useAuth } from '@/modules/core/client/react-app/auth';
 import {
   infoAndSupportHeading,
   infoAndSupportLinks,
-} from '@/modules/core/shared/navigation-links';
+} from '@trustroots/core/navigation-links';
 import { useTranslation } from 'react-i18next';
 
 interface NavigationProps {

@@ -32,7 +32,7 @@ import {
   getProfileViewTab,
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
-import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
+import { getProfileExperiencesPath } from '@trustroots/core/navigation-links';
 import {
   rememberOutreachSource,
   useAnalytics,
