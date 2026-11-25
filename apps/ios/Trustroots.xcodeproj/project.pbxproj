@@ -30,6 +30,7 @@
 		702E6098414F2BC4B224218A /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7AB2FCB36234867ED449D3 /* ContactsView.swift */; };
 		7125170B263060867C2D9674 /* ContactSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */; };
 		77990193D2DCF1011199162F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */; };
+		2F5D1CA05B29441FA6631610 /* languages.json in Resources */ = {isa = PBXBuildFile; fileRef = 2F5D1CA05B29441FA6631611 /* languages.json */; };
 		7879E8D6BF1D06FFF5E84117 /* ProfileCircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */; };
 		85477EECEF4A09D56449EF8E /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812386EF5BF95842DAAF39C1 /* AccountView.swift */; };
 		8A534189FD434F68070CB955 /* TrustrootsPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */; };
@@ -92,6 +93,7 @@
 		81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CircleDetailView.swift; sourceTree = "<group>"; };
 		85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsPalette.swift; sourceTree = "<group>"; };
 		88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2F5D1CA05B29441FA6631611 /* languages.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = languages.json; path = ../../config/languages/languages.json; sourceTree = SOURCE_ROOT; };
 		92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrustrootsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96D160385B89B56C5385E8E9 /* NostrIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NostrIdentity.swift; sourceTree = "<group>"; };
 		9BFC1FE789D2FB23B886508D /* TrustrootsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrustrootsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -175,6 +177,7 @@
 				C4451489F9D874431A361845 /* TrustrootsRootView.swift */,
 				6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */,
 				88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */,
+				2F5D1CA05B29441FA6631611 /* languages.json */,
 			);
 			name = TrustrootsApp;
 			path = TrustrootsApp;
@@ -353,6 +356,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				77990193D2DCF1011199162F /* Assets.xcassets in Resources */,
+				2F5D1CA05B29441FA6631610 /* languages.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -232,6 +232,7 @@ internal fun SearchHubScreen(
                             notesClientFactory = notesClientFactory,
                             mapViewFactory = mapViewFactory,
                             searchModeMenu = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
+                            onSwitchToMembers = { selectMode(1) },
                         )
                     }
                     SearchMode.Members -> MemberSearchScreen(

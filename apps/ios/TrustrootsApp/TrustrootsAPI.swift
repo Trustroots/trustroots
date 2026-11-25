@@ -257,6 +257,30 @@ struct MiniMember: Decodable {
     }
 }
 
+struct MemberSearchFilters: Equatable {
+    var hosts = false
+    var meetings = false
+    var volunteering = false
+    var connectionsOnly = false
+    var onlineRecently = false
+    var circleIDs: Set<String> = []
+    var languages: Set<String> = []
+
+    var queryItems: [URLQueryItem] {
+        let types = (hosts ? ["host"] : []) + (meetings ? ["meet"] : [])
+        return [
+            ("types", types.joined(separator: ",")),
+            ("volunteering", volunteering ? "true" : ""),
+            ("connectionsOnly", connectionsOnly ? "true" : ""),
+            ("onlineRecently", onlineRecently ? "true" : ""),
+            ("tribes", circleIDs.sorted().joined(separator: ",")),
+            ("languages", languages.sorted().joined(separator: ",")),
+        ].compactMap { name, value in
+            value.isEmpty ? nil : URLQueryItem(name: name, value: value)
+        }
+    }
+}
+
 struct MemberSearchResult: Decodable, Identifiable {
     let id: String?
     let username: String
@@ -391,6 +415,8 @@ struct HostOffer: Decodable {
     let description: String?
     let noOfferDescription: String?
     let maxGuests: Int?
+    let meetingStatus: String?
+    let volunteering: Bool?
     let user: MiniMember
 
     enum CodingKeys: String, CodingKey {
@@ -400,7 +426,17 @@ struct HostOffer: Decodable {
         case description
         case noOfferDescription
         case maxGuests
+        case meetingStatus
+        case volunteering
         case user
+    }
+
+    var meetingLabel: String? {
+        switch meetingStatus {
+        case "yes": return "Happy to meet"
+        case "maybe": return "Might meet"
+        default: return nil
+        }
     }
 }
 
@@ -1072,7 +1108,8 @@ final class TrustrootsAPI {
     func searchMembers(
         serverURLString: String,
         query: String,
-        limit: Int = 50
+        limit: Int = 50,
+        filters: MemberSearchFilters = MemberSearchFilters()
     ) async throws -> [MemberSearchResult] {
         try await get(
             serverURLString: serverURLString,
@@ -1080,7 +1117,7 @@ final class TrustrootsAPI {
             queryItems: [
                 URLQueryItem(name: "search", value: query),
                 URLQueryItem(name: "limit", value: String(limit)),
-            ]
+            ] + filters.queryItems
         )
     }
 

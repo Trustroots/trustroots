@@ -98,17 +98,39 @@ struct MapFilterSheet: View {
     }
 }
 
-private struct SearchLanguagePicker: View {
+struct SearchLanguagePicker: View {
     @Binding var languages: Set<String>
     @State private var query = ""
+
+    private static let catalogue: [String: String] = {
+        if let url = Bundle.main.url(forResource: "languages", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let names = try? JSONDecoder().decode([String: String].self, from: data) {
+            return names
+        }
+        return Dictionary(uniqueKeysWithValues: TrustrootsLanguage.availableCodes.map {
+            ($0, TrustrootsLanguage.displayName(for: $0))
+        })
+    }()
+
+    private var choices: [String] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let codes = needle.isEmpty
+            ? languages.union(TrustrootsLanguage.commonCodes)
+            : Set(Self.catalogue.keys.filter {
+                $0.localizedCaseInsensitiveContains(needle)
+                    || label(for: $0).localizedCaseInsensitiveContains(needle)
+            })
+        return codes.sorted { label(for: $0).localizedStandardCompare(label(for: $1)) == .orderedAscending }
+    }
 
     var body: some View {
         List {
             if !languages.isEmpty {
                 Button("Clear languages") { languages.removeAll() }
             }
-            ForEach(TrustrootsLanguage.availableCodes.filter(matches), id: \.self) { code in
-                Toggle(TrustrootsLanguage.displayName(for: code), isOn: Binding(
+            ForEach(choices, id: \.self) { code in
+                Toggle(label(for: code), isOn: Binding(
                     get: { languages.contains(code) },
                     set: { enabled in
                         if enabled { languages.insert(code) }
@@ -121,8 +143,7 @@ private struct SearchLanguagePicker: View {
         .searchable(text: $query)
     }
 
-    private func matches(_ code: String) -> Bool {
-        query.isEmpty || code.localizedCaseInsensitiveContains(query)
-            || TrustrootsLanguage.displayName(for: code).localizedCaseInsensitiveContains(query)
+    private func label(for code: String) -> String {
+        Self.catalogue[code] ?? TrustrootsLanguage.displayName(for: code)
     }
 }

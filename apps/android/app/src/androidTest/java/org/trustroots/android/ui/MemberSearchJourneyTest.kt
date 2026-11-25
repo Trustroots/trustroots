@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
@@ -64,15 +65,21 @@ class MemberSearchJourneyTest {
     @After fun closeServer() = server.close()
 
     @Test fun searchesAndOpensMemberProfile() {
+        val requestedSearch = AtomicReference("")
         val responder = thread(isDaemon = true) {
-            repeat(16) {
+            repeat(24) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
                 connection.use { socket ->
                     val input = socket.getInputStream().bufferedReader()
                     val request = input.readLine()
                     while (!input.readLine().isNullOrEmpty()) Unit
                     val payload = when {
-                        request.contains("/api/users?") -> """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","locationFrom":"Imaginary Coast"}]"""
+                        request.contains("/api/users?") -> {
+                            requestedSearch.set(request)
+                            """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","locationFrom":"Imaginary Coast"}]"""
+                        }
+                        request.contains("/api/tribes?") -> """[{"_id":"000000000000000000000001","slug":"quiet-circle","label":"Quiet Circle"}]"""
+                        request.contains("/api/offers?") -> """{"features":[]}"""
                         request.contains("/api/offers-by/") -> """[{"status":"yes","description":"<p>Spare <strong>room</strong></p>","maxGuests":2}]"""
                         request.contains("/api/contact-by/") -> null
                         request.contains("/api/contacts/") -> """[{"_id":"contact-one","user":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"}}]"""
@@ -104,19 +111,39 @@ class MemberSearchJourneyTest {
                     api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                     session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                     onSessionInvalidated = {},
-                    initialTab = 1,
                 )
             }
         }
+        compose.onNodeWithTag("mapMembersToggle").performClick()
         compose.onNodeWithText("Name or username").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android_member_search")
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
-        compose.onNodeWithText("Name or username").performTextInput("quiet fox")
+        compose.onNodeWithText("Member filters").performClick()
+        compose.onNodeWithText("Hosting").performClick()
+        compose.onNodeWithText("Meet").performClick()
+        compose.onNodeWithText("Offers volunteering").performClick()
+        compose.onNodeWithText("My connections only").performClick()
+        compose.onNodeWithText("Online in the past 6 months").performClick()
+        compose.onNodeWithTag("memberFilters").performScrollToNode(hasText("Quiet Circle"))
+        repeat(3) { compose.onNodeWithText("Quiet Circle").performClick() }
+        compose.onNodeWithTag("memberFilters").performScrollToNode(hasText("Find a spoken language"))
+        compose.onNodeWithText("Find a spoken language").performTextReplacement("eng")
+        compose.onNodeWithTag("memberFilters").performScrollToNode(hasText("English"))
+        repeat(3) { compose.onNodeWithText("English").performClick() }
+        compose.onNodeWithText("Apply filters").performClick()
+        compose.onNodeWithText("Name or username").performTextInput("imaginary coast")
         compose.onNodeWithContentDescription("Search members").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("From Imaginary Coast").assertIsDisplayed()
+        assertTrue(requestedSearch.get().contains("search=imaginary+coast"))
+        assertTrue(requestedSearch.get().contains("types=host%2Cmeet"))
+        assertTrue(requestedSearch.get().contains("connectionsOnly=true"))
+        assertTrue(requestedSearch.get().contains("volunteering=true"))
+        assertTrue(requestedSearch.get().contains("onlineRecently=true"))
+        assertTrue(requestedSearch.get().contains("tribes=000000000000000000000001"))
+        assertTrue(requestedSearch.get().contains("languages=eng"))
         compose.onNodeWithText("Quiet Fox").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Travelling slowly").fetchSemanticsNodes().isNotEmpty()
@@ -153,6 +180,8 @@ class MemberSearchJourneyTest {
         compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
+        compose.onNodeWithText("Switch to map search").performClick()
+        compose.onNodeWithTag("mapMembersToggle").assertIsDisplayed()
         responder.join(1_000)
     }
 
@@ -241,7 +270,7 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithTag("memberSearchEmpty").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("No members found").assertIsDisplayed()
-        compose.onNodeWithText("Try another name or username.").assertIsDisplayed()
+        compose.onNodeWithText("Try a different search or change your filters.").assertIsDisplayed()
         assertEquals(1, requestCount.get())
         assertTrue(requestedPath.get().contains("/api/users?search=fox&limit=50"))
         responder.join(1_000)
@@ -300,7 +329,7 @@ class MemberSearchJourneyTest {
 
     @Test fun memberSearchScrollPositionFollowsRestoredAndResetViewModelOffset() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val repository = MemberSearchRepository {
+        val repository = MemberSearchRepository { _, _ ->
             Result.success((0 until 40).map { index ->
                 MemberProfile(
                     id = "member-$index",

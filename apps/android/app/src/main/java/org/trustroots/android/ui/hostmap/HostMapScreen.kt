@@ -81,6 +81,7 @@ import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.languageName
+import org.trustroots.android.ui.common.searchFilterLanguages
 import org.trustroots.android.ui.common.mapStatisticsLabel
 import org.trustroots.android.ui.common.messageTime
 
@@ -98,6 +99,7 @@ internal fun HostMapScreen(
     viewModel: HostMapViewModel? = null,
     onOpenHostDetail: (MapOffer) -> Unit = {},
     searchModeMenu: @Composable () -> Unit = {},
+    onSwitchToMembers: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
     geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
@@ -483,7 +485,7 @@ internal fun HostMapScreen(
                                     },
                                     onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(languages = emptySet()))); languageMenuOpen = false },
                                 )
-                                mapFilterLanguages.forEach { code ->
+                                searchFilterLanguages.forEach { code ->
                                     DropdownMenuItem(
                                         text = {
                                             Text(languageName(appContext, code, languageLocale))
@@ -557,15 +559,22 @@ internal fun HostMapScreen(
                     }
                 }
                 if (!showResults && noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
-                TextButton(
-                    onClick = {
-                        closePlaceSearch()
-                        if (!showResults) showResultFilters = false
-                        showResults = !showResults
-                    },
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).testTag("mapResultsToggle"),
-                ) {
-                    Text(stringResource(if (showResults) R.string.screen_back_to_map else R.string.screen_map_show_results))
+                Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+                    TextButton(
+                        onClick = {
+                            closePlaceSearch()
+                            if (!showResults) showResultFilters = false
+                            showResults = !showResults
+                        },
+                        modifier = Modifier.weight(1f).testTag("mapResultsToggle"),
+                    ) {
+                        Text(stringResource(if (showResults) R.string.screen_back_to_map else R.string.screen_map_show_results))
+                    }
+                    if (onSwitchToMembers != null) {
+                        TextButton(onClick = onSwitchToMembers, modifier = Modifier.weight(1f).testTag("mapMembersToggle")) {
+                            Text(stringResource(R.string.screen_search_members))
+                        }
+                    }
                 }
                 if (!showResults) FlowRow(
                     Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp),
@@ -595,10 +604,6 @@ internal fun HostMapScreen(
         }
     }
 }
-
-private val mapFilterLanguages = listOf(
-    "eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr", "fin",
-)
 
 internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapOffer>> {
     return clusterMapItems(offers, map) { GeoPoint(it.latitude, it.longitude) }

@@ -1306,17 +1306,26 @@ final class TrustrootsTests: XCTestCase {
 
         let members = try await api.searchMembers(
             serverURLString: "https://api.example.test",
-            query: "alex"
+            query: "fictional traveller",
+            filters: MemberSearchFilters(
+                hosts: true, meetings: true, volunteering: true, connectionsOnly: true,
+                onlineRecently: true, circleIDs: ["000000000000000000000001"], languages: ["por", "eng"]
+            )
         )
 
         XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/members")
-        XCTAssertEqual(
-            URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
-                .queryItems?
-                .first(where: { $0.name == "search" })?
-                .value,
-            "alex"
-        )
+        let queryItems = URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
+            .queryItems ?? []
+        let parameters = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item in
+            item.value.map { (item.name, $0) }
+        })
+        XCTAssertEqual(parameters["search"], "fictional traveller")
+        XCTAssertEqual(parameters["types"], "host,meet")
+        XCTAssertEqual(parameters["volunteering"], "true")
+        XCTAssertEqual(parameters["connectionsOnly"], "true")
+        XCTAssertEqual(parameters["onlineRecently"], "true")
+        XCTAssertEqual(parameters["tribes"], "000000000000000000000001")
+        XCTAssertEqual(parameters["languages"], "eng,por")
         XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
         XCTAssertEqual(members.first?.username, "alex")
         XCTAssertEqual(members.first?.displayName, "Alex Traveller")

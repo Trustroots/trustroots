@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.membersearch
 
+import org.trustroots.android.api.MemberSearchFilters
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -54,6 +56,26 @@ class MemberSearchViewModelTest {
         assertEquals(listOf(member("quiet-fox", "Quiet Fox")), viewModel.state.value.results)
         assertTrue(viewModel.state.value.hasSearched)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun changingFiltersRefinesTheSubmittedSearchAndResetClearsFilters() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        val model = MemberSearchViewModel(repository, scope)
+        val connectionsOnly = MemberSearchFilters(connectionsOnly = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(connectionsOnly))
+        assertTrue(repository.queries.isEmpty())
+        model.onEvent(MemberSearchEvent.QueryChanged("fictional coast"))
+        model.onEvent(MemberSearchEvent.Submit)
+
+        val updatedFilters = connectionsOnly.copy(meetings = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(updatedFilters))
+        model.onEvent(MemberSearchEvent.FiltersChanged(updatedFilters))
+        assertEquals(listOf(connectionsOnly, updatedFilters), repository.filters)
+        assertEquals(listOf("fictional coast", "fictional coast"), repository.queries)
+
+        model.onEvent(MemberSearchEvent.Reset())
+        assertEquals(MemberSearchFilters(), model.state.value.filters)
     }
 
     @Test
@@ -461,12 +483,14 @@ class MemberSearchViewModelTest {
 
     private class FakeMemberSearchRepository : MemberSearchRepository {
         var queries = mutableListOf<String>()
+        val filters = mutableListOf<MemberSearchFilters>()
         var searchHandler: suspend (Int) -> Result<List<MemberProfile>> = {
             Result.success(listOf(member("quiet-fox", "Quiet Fox")))
         }
 
-        override suspend fun searchMembers(query: String): Result<List<MemberProfile>> {
+        override suspend fun searchMembers(query: String, filters: MemberSearchFilters): Result<List<MemberProfile>> {
             queries += query
+            this.filters += filters
             return searchHandler(queries.size)
         }
     }

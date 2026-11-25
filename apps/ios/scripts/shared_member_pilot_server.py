@@ -96,6 +96,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
             self._json(200, {"profile": PARTNER})
+        elif route == "/api/mobile/v0/members":
+            params = parse_qs(urlsplit(self.path).query)
+            matches = params.get("connectionsOnly") == ["true"] and params.get("search") == ["partner profile"]
+            self._json(200, [PARTNER] if matches else [])
         elif route == f'/api/mobile/v0/offers-by/{MEMBER["_id"]}':
             self._json(200, [{
                 "_id": "offer-pilot-self",
@@ -126,6 +130,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "type": "host",
                 "status": "yes",
                 "description": "A fictional hosting offer.",
+                "meetingStatus": "maybe",
+                "volunteering": route.endswith(VOLUNTEER_OFFER_ID),
                 "user": PARTNER,
             })
         elif route == "/api/mobile/v0/circles":

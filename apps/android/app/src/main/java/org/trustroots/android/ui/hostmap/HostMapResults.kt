@@ -134,7 +134,7 @@ private fun HostMapResultEntry(
                     MemberIdentity(api = api, session = session, member = offer.user)
                     Text(
                         stringResource(when {
-                            mapOffer.type == "meet" -> R.string.screen_host_available_to_meet
+                            mapOffer.type == "meet" -> offer.meetingLabelResource() ?: R.string.screen_host_available_to_meet
                             offer.status == "yes" -> R.string.screen_hosting_travellers
                             offer.status == "maybe" -> R.string.screen_maybe_hosting
                             else -> R.string.screen_not_hosting_currently
@@ -142,6 +142,12 @@ private fun HostMapResultEntry(
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(top = 4.dp),
                     )
+                    if (mapOffer.type == "host") {
+                        offer.meetingLabelResource()?.let { Text(stringResource(it), style = MaterialTheme.typography.labelLarge) }
+                    }
+                    if (offer.volunteering) {
+                        Text(stringResource(R.string.screen_filter_volunteering), style = MaterialTheme.typography.labelLarge)
+                    }
                     offer.description?.takeIf { mapOffer.type == "meet" || offer.status in setOf("yes", "maybe") }?.let { description ->
                         Text(
                             Html.fromHtml(description, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
@@ -163,4 +169,10 @@ private fun HostMapResultEntry(
             }
         }
     }
+}
+
+internal fun HostOffer.meetingLabelResource(): Int? = when (meetingStatus) {
+    "yes" -> R.string.screen_search_happy_to_meet
+    "maybe" -> R.string.screen_search_might_meet
+    else -> null
 }

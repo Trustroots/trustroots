@@ -5,6 +5,10 @@ import org.json.JSONObject
 import java.io.InputStreamReader
 import java.util.Locale
 
+internal val searchFilterLanguages = listOf(
+    "eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr", "fin",
+)
+
 private val legacyLanguageTags = mapOf(
     "ger" to "de", "fre" to "fr", "dut" to "nl", "cze" to "cs", "rum" to "ro",
     "chi" to "zh", "gre" to "el", "alb" to "sq", "arm" to "hy", "baq" to "eu",

@@ -9,7 +9,11 @@
     <string name="screen_search_members_error">Could not search members.</string>
     <string name="screen_member_search_unavailable">Member search unavailable</string>
     <string name="screen_member_search_loading">Searching members…</string>
-    <string name="screen_member_search_loading_description">Please wait while we search by name or username.</string>
+    <string name="screen_member_search_loading_description">Please wait while we search for members.</string>
+    <string name="screen_member_filters">Member filters</string>
+    <string name="screen_member_filter_online_recently">Online in the past 6 months</string>
+    <string name="screen_filter_find_language">Find a spoken language</string>
+    <string name="screen_apply_member_filters">Apply filters</string>
     <string name="screen_search_mode">Search mode</string>
     <string name="screen_search_hosts_map">Hosts map</string>
     <string name="screen_search_members">Members</string>
@@ -26,9 +30,9 @@
     <string name="screen_quick_reply_write_back">Write back</string>
     <string name="screen_enter_at_least_three_characters">Enter at least 3 characters.</string>
     <string name="screen_no_members_found_title">No members found</string>
-    <string name="screen_no_members_found_description">Try another name or username.</string>
+    <string name="screen_no_members_found_description">Try a different search or change your filters.</string>
     <string name="screen_find_member">Find a member</string>
-    <string name="screen_search_name_or_username">Search by name or username</string>
+    <string name="screen_search_name_or_username">Search by name, username, location or tagline</string>
     <string name="screen_switch_to_map_search">Switch to map search</string>
     <string name="screen_join_circle">Join circle</string>
     <string name="screen_circle_join_reason">Why would you like to join? (optional)</string>
@@ -50,6 +54,8 @@
     <string name="screen_joined">Joined</string>
     <string name="screen_join">Join</string>
     <string name="screen_host_available_to_meet">Available to meet</string>
+    <string name="screen_search_happy_to_meet">Happy to meet</string>
+    <string name="screen_search_might_meet">Might meet</string>
     <string name="screen_hosting_travellers">Hosting travellers</string>
     <string name="screen_maybe_hosting">Maybe hosting</string>
     <string name="screen_not_hosting_currently">Not hosting currently</string>

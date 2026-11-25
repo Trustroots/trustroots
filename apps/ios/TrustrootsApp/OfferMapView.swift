@@ -2,6 +2,12 @@ import MapKit
 import SwiftUI
 
 struct OfferMapView: View {
+    private enum SearchMode: Hashable {
+        case map
+        case results
+        case members
+    }
+
     @ObservedObject var session: MemberSessionStore
     let searchLocation: String?
     @State private var position = MapCameraPosition.region(.initialTrustrootsRegion)
@@ -17,7 +23,7 @@ struct OfferMapView: View {
     @State private var volunteering = false
     @State private var connectionsOnly = false
     @State private var selectedLanguages: Set<String> = []
-    @State private var showingResults = false
+    @State private var searchMode = SearchMode.map
     @State private var placeQuery = ""
     @State private var placeSearchFailed = false
     @State private var showingCommunityNotes = true
@@ -37,22 +43,30 @@ struct OfferMapView: View {
     }
 
     private var showsNotes: Bool { showingCommunityNotes && !connectionsOnly }
+    private var showingResults: Bool { searchMode == .results }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Search display", selection: $showingResults) {
-                    Text("Map").tag(false)
-                    Text("Results").tag(true)
+                Picker("Search display", selection: $searchMode) {
+                    Text("Map").tag(SearchMode.map)
+                    Text("Results").tag(SearchMode.results)
+                    Text("Members").tag(SearchMode.members)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
 
-                if showingResults {
-                    resultsView
-                } else {
-                    mapView
+                ZStack {
+                    switch searchMode {
+                    case .map: mapView
+                    case .results: resultsView
+                    case .members: Color.clear
+                    }
+                    MemberSearchView(session: session, showsNavigationBar: false, isActive: searchMode == .members)
+                        .opacity(searchMode == .members ? 1 : 0)
+                        .allowsHitTesting(searchMode == .members)
+                        .accessibilityHidden(searchMode != .members)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -106,8 +120,8 @@ struct OfferMapView: View {
                     Task { await loadOffers(in: region) }
                 }
             }
-            .onChange(of: showingResults) { _, enabled in
-                if enabled { position = .region(visibleRegion) }
+            .onChange(of: searchMode) { previous, _ in
+                if previous == .map { position = .region(visibleRegion) }
                 selectedHost = nil
                 selectedCommunityNote = nil
             }
@@ -394,9 +408,18 @@ private struct OfferSearchResultRow: View {
                 Button { open(details) } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         MemberIdentityView(member: details.user, serverURLString: session.serverURLString)
-                        Text(offer.type == "meet" ? "Available to meet" :
-                             offer.properties.status == "maybe" ? "Maybe hosting" : "Hosting")
-                            .font(.caption.weight(.semibold))
+                        if offer.type == "host" {
+                            Text(offer.properties.status == "maybe" ? "Maybe hosting" : "Hosting")
+                                .font(.caption.weight(.semibold))
+                        }
+                        if let meeting = details.meetingLabel {
+                            Text(meeting).font(.caption.weight(.semibold))
+                        } else if offer.type == "meet" {
+                            Text("Available to meet").font(.caption.weight(.semibold))
+                        }
+                        if details.volunteering == true {
+                            Text("Offers volunteering").font(.caption.weight(.semibold))
+                        }
                         if let description = details.description?.plainText, !description.isEmpty {
                             Text(description).font(.subheadline).lineLimit(3)
                         }
@@ -435,9 +458,15 @@ private struct HostOfferCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(mapType == "meet" ? "Available to meet" : "Potential host")
+                    Text(mapType == "meet" ? host.meetingLabel ?? "Available to meet" : "Potential host")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(TrustrootsPalette.darkGreen)
+                    if mapType == "host", let meeting = host.meetingLabel {
+                        Text(meeting).font(.caption.weight(.semibold))
+                    }
+                    if host.volunteering == true {
+                        Text("Offers volunteering").font(.caption.weight(.semibold))
+                    }
                     if let username = host.user.username {
                         NavigationLink {
                             MemberProfileView(session: session, username: username)
