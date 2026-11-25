@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
-import { getAdminUserHref } from '../utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import { getStaffBlockers } from '../api/staff-blockers.api';
 import { useAuth } from '@trustroots/core/auth';
 import type { StaffBlocker } from '../../shared/staff-blockers';
