@@ -122,12 +122,20 @@ describe('Admin acquisition stories CRUD tests', () => {
         await agent
           .post(`/api/admin/acquisition-stories/${greeter._id}/flag`)
           .set('X-Trustroots-Request', '1')
-          .expect(400);
+          .expect(400, { message: 'You cannot flag your own account.' });
 
         const other = await User.findOneAndUpdate(
           { username: credentialsAdmin.username },
           { $unset: { acquisitionStory: '' } },
         ).orFail();
+        await agent
+          .post(`/api/admin/acquisition-stories/${other._id}/flag`)
+          .set('X-Trustroots-Request', '1')
+          .expect(404);
+        await User.updateOne(
+          { _id: other._id },
+          { $set: { acquisitionStory: '' } },
+        );
         await agent
           .post(`/api/admin/acquisition-stories/${other._id}/flag`)
           .set('X-Trustroots-Request', '1')
