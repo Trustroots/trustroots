@@ -74,6 +74,20 @@ fun MemberSignInViewController(
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberContactsViewController(
+    state: MemberContactsState,
+    onOpen: (String) -> Unit,
+    onRetry: () -> Unit,
+    createAvatar: (MemberContact) -> UIViewController,
+) = ComposeUIViewController {
+    MemberContacts(state, onOpen, onRetry) { contact ->
+        key(contact.memberId, contact.name) {
+            HostedMemberAvatar { createAvatar(contact) }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberInboxViewController(
     state: MemberInboxState,
     onFilter: (String) -> Unit,
@@ -82,13 +96,8 @@ fun MemberInboxViewController(
     createAvatar: (MemberInboxThread) -> UIViewController,
 ) = ComposeUIViewController {
     MemberInbox(state, onFilter, onOpen, onRetry) { thread ->
-        // Keep UIKit avatar touches inside the Compose row's tap target.
         key(thread.memberId, thread.name) {
-            UIKitViewController(
-                factory = { createAvatar(thread) },
-                modifier = Modifier.size(46.dp),
-                properties = UIKitInteropProperties(interactionMode = null),
-            )
+            HostedMemberAvatar { createAvatar(thread) }
         }
     }
 }
@@ -121,8 +130,20 @@ fun SharedHomeViewController(
             loadConnections = { awaitData(gateway::connections) },
             renderConnectionsMap = { ConnectionsMap(it, createConnectionsMap) },
             onConnection = openProfile,
+            showTitle = false,
         )
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+@Composable
+private fun HostedMemberAvatar(createView: () -> UIViewController) {
+    // Keep UIKit avatar touches inside the Compose row's tap target.
+    UIKitViewController(
+        factory = createView,
+        modifier = Modifier.size(46.dp),
+        properties = UIKitInteropProperties(interactionMode = null),
+    )
 }
 
 @OptIn(ExperimentalForeignApi::class)

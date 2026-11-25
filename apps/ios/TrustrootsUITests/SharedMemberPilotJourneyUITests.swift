@@ -28,9 +28,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(username.waitForExistence(timeout: 10))
 
         signInToRegularApp(app)
-        XCTAssertTrue(app.buttons["Home"].isSelected)
+        let homeTab = app.buttons["Home"]
+        XCTAssertTrue(homeTab.isSelected)
         XCTAssertFalse(app.buttons["Trustroots home"].exists)
         XCTAssertTrue(element(labelled: "A fictional Trustroots update.", in: app).waitForExistence(timeout: 10))
+        let homeHeadings = app.staticTexts.matching(identifier: "Home").allElementsBoundByIndex
+        XCTAssertFalse(homeHeadings.contains { $0.frame.midY < homeTab.frame.minY })
         let home = XCTAttachment(screenshot: app.screenshot())
         home.name = "regular-ios-home"
         home.lifetime = .keepAlways
@@ -53,6 +56,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 10))
         app.buttons["Back"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["circles-menu-entry"].waitForExistence(timeout: 10))
+        let contacts = app.descendants(matching: .any)["contacts-menu-entry"]
+        XCTAssertTrue(contacts.waitForExistence(timeout: 10), app.debugDescription)
+        contacts.tap()
+        let contact = app.descendants(matching: .any)["contact-contact-pilot-one"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(
+            contact.label.contains("Awaiting confirmation") || app.staticTexts["Awaiting confirmation"].exists,
+            app.debugDescription
+        )
+        contact.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))

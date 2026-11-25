@@ -1,67 +1,44 @@
 import SwiftUI
+import TrustrootsShared
 
 struct ContactsView: View {
     @ObservedObject var session: MemberSessionStore
     @State private var contacts: [TrustrootsContact] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var profiles: [String] = []
 
     private let api = TrustrootsAPI()
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading && contacts.isEmpty {
-                    ProgressView("Loading contacts…")
-                } else if let errorMessage {
-                    ContentUnavailableView {
-                        Label(
-                            "Contacts unavailable",
-                            systemImage: "person.crop.circle.badge.exclamationmark"
-                        )
-                    } description: {
-                        Text(errorMessage)
-                    } actions: {
-                        Button("Try again") { Task { await loadContacts() } }
-                    }
-                } else if contacts.isEmpty {
-                    ContentUnavailableView(
-                        "No contacts yet",
-                        systemImage: "person.2",
-                        description: Text("People you connect with on Trustroots will appear here.")
-                    )
-                } else {
-                    List(contacts) { contact in
-                        if let username = contact.user.username {
-                            NavigationLink {
-                                MemberProfileView(session: session, username: username)
-                            } label: {
-                                contactRow(contact)
-                            }
-                        } else {
-                            contactRow(contact)
-                        }
-                    }
-                    .listStyle(.plain)
-                }
+        NavigationStack(path: $profiles) {
+            ComposeContacts(
+                contacts: contacts.map(presentationContact),
+                isLoading: isLoading,
+                error: errorMessage,
+                serverURLString: session.serverURLString,
+                onOpen: { username in
+                    if profiles.isEmpty { profiles.append(username) }
+                },
+                onRetry: { Task { await loadContacts() } }
+            )
+            .navigationDestination(for: String.self) { username in
+                MemberProfileView(session: session, username: username)
             }
             .task { await loadContacts() }
         }
     }
 
-    private func contactRow(_ contact: TrustrootsContact) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            MemberIdentityView(
-                member: contact.user,
-                serverURLString: session.serverURLString
-            )
-            if !contact.confirmed {
-                Text("Awaiting confirmation")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-        }
-        .padding(.vertical, 4)
+    private func presentationContact(_ contact: TrustrootsContact) -> MemberContact {
+        let identity = MemberIdentityText(member: contact.user)
+        return MemberContact(
+            id: contact.id,
+            memberId: contact.user.id,
+            username: contact.user.username,
+            name: identity.primary,
+            handle: identity.secondary,
+            pending: !contact.confirmed
+        )
     }
 
     private func loadContacts() async {
@@ -75,9 +52,60 @@ struct ContactsView: View {
             guard let userID = profile.id else {
                 throw TrustrootsAPIError.invalidResponse
             }
-            contacts = try await api.contacts(serverURLString: session.serverURLString, userID: userID)
+            let loaded = try await api.contacts(serverURLString: session.serverURLString, userID: userID)
+            if !Task.isCancelled { contacts = loaded }
         } catch {
-            errorMessage = error.localizedDescription
+            if !Task.isCancelled { errorMessage = error.localizedDescription }
         }
+    }
+}
+
+@MainActor
+private struct ComposeContacts: UIViewControllerRepresentable {
+    let contacts: [MemberContact]
+    let isLoading: Bool
+    let error: String?
+    let serverURLString: String
+    let onOpen: (String) -> Void
+    let onRetry: () -> Void
+
+    final class Coordinator {
+        let state = MemberContactsState()
+        var onOpen: ((String) -> Void)?
+        var onRetry: (() -> Void)?
+        var serverURLString = ""
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.MemberContactsViewController(
+            state: coordinator.state,
+            onOpen: { [weak coordinator] username in coordinator?.onOpen?(username) },
+            onRetry: { [weak coordinator] in coordinator?.onRetry?() },
+            createAvatar: { [weak coordinator] contact in
+                guard let coordinator else { return UIViewController() }
+                return makeSharedMemberAvatarController(
+                    memberID: contact.memberId,
+                    name: contact.name,
+                    serverURLString: coordinator.serverURLString
+                )
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onOpen = onOpen
+        coordinator.onRetry = onRetry
+        coordinator.serverURLString = serverURLString
+        coordinator.state.update(contacts: contacts, isLoading: isLoading, error: error)
     }
 }
