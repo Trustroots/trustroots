@@ -11,7 +11,7 @@
  * Trustroots pages and absolute URLs for external sites. Native apps resolve
  * root-relative paths against `siteUrl`.
  */
-import registry from './navigation-links.json';
+import registry from './navigation-links.json' with { type: 'json' };
 
 export type InfoAndSupportLink = {
   id: string;

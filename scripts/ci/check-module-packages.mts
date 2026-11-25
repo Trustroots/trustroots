@@ -53,6 +53,10 @@ function linkedModules(name: string, root: string): string[] {
 export function expectedManifest(name: string, root = ROOT): Manifest {
   const dir = ['modules', name];
   const exports: Record<string, string> = {};
+  if (name === 'core') {
+    exports['./browser-navigation'] = './client/services/browser-navigation.ts';
+    exports['./navigation-links'] = './shared/navigation-links.mts';
+  }
   ['client', 'shared'].forEach(folder => {
     if (hasDir(root, ...dir, folder)) {
       exports[`./${folder}/*`] = `./${folder}/*`;

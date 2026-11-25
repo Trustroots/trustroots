@@ -1,4 +1,4 @@
-import { getBrowserPath } from '@/modules/core/client/services/browser-navigation';
+import { getBrowserPath } from '@trustroots/core/browser-navigation';
 
 export function getClientNavigationTarget(
   event: MouseEvent,
