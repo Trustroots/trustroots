@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
+import { setToken } from '../services/action-token.server.service.mts';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -41,6 +41,7 @@ const run = function (
     const remindedTimeAgo = subDays(new Date(), 2);
     const users = await User.find({
       public: false,
+      emailTemporary: { $type: 'string', $ne: '' },
       created: {
         $lt: createdTimeAgo,
       },
@@ -82,52 +83,29 @@ const run = function (
       .limit(config.limits.maxProcessSignupReminders || 50)
       .exec();
     for (const user of users) {
-      const previousToken = user.emailToken;
-      const previousEmail = user.emailTemporary;
-      const previousIssuedAt = user.emailTokenIssuedAt;
-      const previousExpires = user.emailTokenExpires;
-      setEmailConfirmationToken(user, crypto.randomBytes(32).toString('hex'));
-      const result = await User.updateOne(
-        {
-          _id: user._id,
-          public: false,
-          emailTemporary: previousEmail,
-          emailToken:
-            previousToken === undefined ? { $exists: false } : previousToken,
-          emailTokenIssuedAt:
-            previousIssuedAt === undefined
-              ? { $exists: false }
-              : previousIssuedAt,
-          emailTokenExpires:
-            previousExpires === undefined
-              ? { $exists: false }
-              : previousExpires,
-        },
-        {
-          $set: {
-            emailToken: user.emailToken,
-            emailTokenIssuedAt: user.emailTokenIssuedAt,
-            emailTokenExpires: user.emailTokenExpires,
-          },
-        },
-      );
-      if (result.matchedCount !== 1) continue;
+      const reminder = {
+        displayName: user.displayName,
+        emailTemporary: user.emailTemporary,
+        created: user.created,
+        publicReminderCount: user.publicReminderCount,
+        emailToken: crypto.randomBytes(32).toString('hex'),
+      };
+      setToken(reminder, 'emailToken', reminder.emailToken);
       await new Promise<void>((resolve, reject) => {
-        emailService.sendSignupEmailReminder(user, err => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-      // Mark reminder sent and update the reminder count
-      await User.findByIdAndUpdate(user._id, {
-        $set: {
-          publicReminderSent: new Date(),
-        },
-        // If the field does not exist, $inc creates the field
-        // and sets the field to the specified value.
-        $inc: {
-          publicReminderCount: 1,
-        },
+        emailService.sendSignupEmailReminder(
+          reminder,
+          err => {
+            if (err) reject(err);
+            else resolve();
+          },
+          {
+            userId: String(user._id),
+            emailToken: reminder.emailToken,
+            previousToken: user.emailToken,
+            previousIssuedAt: user.emailTokenIssuedAt,
+            previousExpires: user.emailTokenExpires,
+          },
+        );
       });
     }
   }

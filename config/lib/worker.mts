@@ -21,6 +21,7 @@ type JobDefinitionOptions = {
   priority?: number | 'lowest' | 'low' | 'normal' | 'high' | 'highest';
   concurrency?: number;
   lockLifetime?: number;
+  removeOnComplete?: boolean;
 };
 const service = {
   start,
@@ -62,6 +63,8 @@ async function start(options: WorkerOptions, callback?: Done) {
     await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mts');
   const { default: signupRemindersJob } =
     await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mts');
+  const { sendSignupReminderJob } =
+    await import('../../modules/users/server/services/signup-reminder.server.service.mts');
   const { default: reactivateHostsJob } =
     await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mts');
   const { default: welcomeSequenceFirstJob } =
@@ -139,6 +142,12 @@ async function start(options: WorkerOptions, callback?: Done) {
     deploymentNotificationHandler(config.domain, mailMode, sendEmailJob),
     { priority: 'high', concurrency: 10 },
   );
+
+  defineJob(sendSignupReminderJob, sendEmailJob, {
+    priority: 'high',
+    concurrency: 10,
+    removeOnComplete: true,
+  });
 
   agenda.define<Parameters<typeof deliverMessagePush>[0]>(
     messagePushJobName,
