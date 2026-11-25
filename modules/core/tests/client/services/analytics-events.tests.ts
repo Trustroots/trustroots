@@ -1,7 +1,7 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 
-import locales from '@/config/shared/locales.json';
+import locales from '@trustroots/locales' with { type: 'json' };
 import {
   ANALYTICS_EVENTS,
   ANALYTICS_LANGUAGES,

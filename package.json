@@ -138,6 +138,7 @@
     "@trustroots/analytics": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/emails": "workspace:*",
+    "@trustroots/locales": "workspace:*",
     "@trustroots/logger": "workspace:*",
     "@trustroots/ui": "workspace:*",
     "@vis.gl/react-maplibre": "8.1.3",
