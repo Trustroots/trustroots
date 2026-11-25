@@ -328,6 +328,27 @@ comparison described above.
 
 ![Shared Home in the regular Android navigation](shared/docs/member-dashboard-android-shell.png)
 
+## Regular iOS rollout verification
+
+The regular iOS app uses shared Compose for sign-in, Home, the Messages
+inbox, Menu and Contacts. It keeps its native session, profile navigation,
+message cache, map and platform services. The combined Home, inbox, Menu and
+Contacts stack passed on the exact minimum iOS 17.0 simulator.
+[Minimum-runtime CI run](https://github.com/Trustroots/trustroots/actions/runs/45663784515)
+
+The regular Compose conversation uses the existing iOS API and protected
+draft storage. The fixture journey verifies profile navigation, cached
+history after relaunch, restored draft text and one delivery after explicit
+retry. The inbox journey verifies that opening a thread updates its read
+state while keeping the filter on return.
+
+Profile editing and member actions, search filters and offer editing, Circle
+details and account screens remain candidates for incremental sharing. Before
+retiring the corresponding native UI, verify the regular app on physical
+devices with VoiceOver and larger text, check keyboard and gesture handling,
+and compare startup and package size. A release-signed device build is needed
+to verify push registration and notification routing.
+
 ## Nostr signing lifecycle extraction (#3633)
 
 The first Nostr increment shares `NostrAccountScope` and `NostrSigningSession`

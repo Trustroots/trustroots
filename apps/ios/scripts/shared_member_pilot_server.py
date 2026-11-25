@@ -97,6 +97,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 thread_read = fixture.thread_read
             self._json(200, {"read": thread_read})
             return
+        if route == "/fixture/reply-state":
+            fixture = type(self)
+            with fixture.session_lock:
+                attempts = fixture.send_attempts
+                deliveries = sum(message["userFrom"] == MEMBER for message in fixture.messages)
+            self._json(200, {"attempts": attempts, "deliveries": deliveries})
+            return
         if route == "/api/nostr/featured-notes":
             self._json(200, [{
                 "id": "fixture-update",
@@ -307,16 +314,19 @@ class FixtureHandler(BaseHTTPRequestHandler):
             if body.get("userTo") != PARTNER["_id"] or not isinstance(content, str) or not content.strip():
                 self._json(422, {"message": "The fixture expects a reply to the configured partner."})
                 return
-            type(self).send_attempts += 1
-            if type(self).send_attempts == 1:
+            with fixture.session_lock:
+                fixture.send_attempts += 1
+                attempt = fixture.send_attempts
+            if attempt == 1:
                 self._json(503, {"message": "Temporary fixture delivery failure."})
                 return
             message = {
-                "_id": f"message-pilot-reply-{type(self).send_attempts}",
+                "_id": f"message-pilot-reply-{attempt}",
                 "content": content,
                 "userFrom": MEMBER,
             }
-            type(self).messages.insert(0, message)
+            with fixture.session_lock:
+                fixture.messages.insert(0, message)
             self._json(201, message)
         else:
             self._json(404, {"message": "Fixture route not found."})

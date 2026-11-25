@@ -242,71 +242,52 @@ struct ConversationView: View {
     @ObservedObject var session: MemberSessionStore
     @State private var messages: [DirectMessage] = []
     @State private var isLoading = false
-    @State private var errorMessage: String?
+    @State private var hasLoaded = false
+    @State private var loadError: String?
+    @State private var sendError: String?
+    @State private var draftError: String?
     @State private var draft = ""
     @State private var isSending = false
     @State private var conversationExperience: ConversationExperience?
     @State private var hasCheckedExperience = false
     @State private var showingExperienceForm = false
-    @FocusState private var isDraftFocused: Bool
 
     private let api = TrustrootsAPI()
+    private let drafts = PilotMessageDraftStore()
 
     var body: some View {
-        Group {
-            if let errorMessage, messages.isEmpty {
-                ContentUnavailableView {
-                    Label("Conversation unavailable", systemImage: "exclamationmark.bubble")
-                } description: {
-                    Text(errorMessage)
-                } actions: {
-                    Button("Try again") { Task { await loadConversation() } }
-                }
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            if isLoading && messages.isEmpty {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("Loading conversation…")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.top, 16)
-                            }
-                            ForEach(messages.reversed()) { message in
-                                Text(message.displayText)
-                                    .padding(12)
-                                    .foregroundStyle(.primary)
-                                    .background(message.isFrom(username: session.member?.username) ? TrustrootsPalette.green.opacity(0.16) : Color.secondary.opacity(0.12))
-                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                    .frame(maxWidth: .infinity, alignment: message.isFrom(username: session.member?.username) ? .trailing : .leading)
-                            }
-                            Color.clear
-                                .frame(height: 1)
-                                .id("conversation-bottom")
-                        }
-                        .padding()
-                    }
-                    .onChange(of: messages.count) { _, _ in
-                        withAnimation(.easeOut(duration: 0.22)) {
-                            proxy.scrollTo("conversation-bottom", anchor: .bottom)
-                        }
-                    }
-                    .onChange(of: isDraftFocused) { _, focused in
-                        guard focused else { return }
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(220))
-                            withAnimation(.easeOut(duration: 0.22)) {
-                                proxy.scrollTo("conversation-bottom", anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let key = draftKey
+        ComposeConversation(
+            messages: messages.map { message in
+                PilotMessage(
+                    id: message.id,
+                    author: MemberIdentityText(member: message.userFrom).primary,
+                    content: message.displayText,
+                    outgoing: message.isFrom(username: key?.username)
+                )
+            },
+            draft: draft,
+            isLoading: !hasLoaded || isLoading,
+            isSending: isSending,
+            loadError: loadError,
+            sendError: sendError ?? draftError,
+            experience: experienceAction?.title,
+            canShareExperience: experienceAction?.canShare == true,
+            onDraft: { value in
+                guard let key, draftKey == key else { return }
+                draft = value
+                storeDraft(value, for: key)
+            },
+            onSend: {
+                guard let key else { return }
+                Task { await sendMessage(for: key) }
+            },
+            onRetry: {
+                guard let key else { return }
+                Task { await loadConversation(for: key) }
+            },
+            onShareExperience: { showingExperienceForm = true }
+        )
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -324,81 +305,10 @@ struct ConversationView: View {
                 }
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                if hasCheckedExperience {
-                    if let conversationExperience,
-                       conversationExperience.userFromID == otherMember.id,
-                       conversationExperience.response == nil {
-                        Button {
-                            showingExperienceForm = true
-                        } label: {
-                            Label("They shared an experience — share yours", systemImage: "heart.text.square.fill")
-                                .font(.caption.weight(.semibold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(TrustrootsPalette.paleGreen)
-                    } else if conversationExperience != nil {
-                        Label("There is an experience between you", systemImage: "checkmark.seal.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(TrustrootsPalette.paleGreen)
-                    } else if messages.count >= 6 {
-                        Button {
-                            showingExperienceForm = true
-                        } label: {
-                            Label("You’ve talked a while — share an experience", systemImage: "heart.text.square")
-                                .font(.caption.weight(.semibold))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(TrustrootsPalette.paleGreen)
-                    }
-                }
-
-                HStack(alignment: .bottom, spacing: 10) {
-                    TextField("Write a message", text: $draft, axis: .vertical)
-                        .lineLimit(1...8)
-                        .textInputAutocapitalization(.sentences)
-                        .focused($isDraftFocused)
-                        .padding(10)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                    Button {
-                        Task { await sendMessage() }
-                    } label: {
-                        if isSending {
-                            ProgressView()
-                                .tint(.white)
-                                .frame(width: 38, height: 38)
-                        } else {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.title2)
-                                .frame(width: 38, height: 38)
-                        }
-                    }
-                    .foregroundStyle(.white)
-                    .background(TrustrootsPalette.green)
-                    .clipShape(Circle())
-                    .accessibilityLabel("Send message")
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-            }
-            .background(.bar)
-        }
-        .task {
-            await loadConversation()
+        .task(id: key) {
+            guard let key else { return }
+            draft = drafts.load(key)
+            await loadConversation(for: key)
         }
         .sheet(isPresented: $showingExperienceForm) {
             if let memberID = otherMember.id {
@@ -414,26 +324,21 @@ struct ConversationView: View {
         }
     }
 
-    private func loadConversation() async {
-        guard !isLoading, let id = otherMember.id else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+    private var draftKey: PilotMessageDraftStore.Key? {
+        guard let username = session.member?.username, let recipientID = otherMember.id,
+              let server = TrustrootsAPIConfiguration(baseURLString: session.serverURLString) else { return nil }
+        return .init(server: server.normalizedURLString, username: username, recipientID: recipientID)
+    }
 
-        do {
-            messages = try await api.conversation(serverURLString: session.serverURLString, memberID: id)
-            try await api.markMessagesRead(
-                serverURLString: session.serverURLString,
-                messageIDs: messages.filter { !$0.isFrom(username: session.member?.username) }.map(\.id)
-            )
-            conversationExperience = try? await api.conversationExperience(
-                serverURLString: session.serverURLString,
-                memberID: id
-            )
-            hasCheckedExperience = true
-        } catch {
-            errorMessage = error.localizedDescription
+    private var experienceAction: (title: String, canShare: Bool)? {
+        guard hasCheckedExperience else { return nil }
+        if let conversationExperience {
+            if conversationExperience.userFromID == otherMember.id, conversationExperience.response == nil {
+                return ("They shared an experience — share yours", true)
+            }
+            return ("There is an experience between you", false)
         }
+        return messages.count >= 6 ? ("You’ve talked a while — share an experience", true) : nil
     }
 
     private var conversationMemberHeader: some View {
@@ -449,28 +354,122 @@ struct ConversationView: View {
         .frame(maxWidth: 220)
     }
 
-    private func sendMessage() async {
-        let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !content.isEmpty, let id = otherMember.id, !isSending else { return }
+    private func loadConversation(for key: PilotMessageDraftStore.Key) async {
+        guard !isLoading, draftKey == key else { return }
+        isLoading = true
+        loadError = nil
+        defer {
+            isLoading = false
+            if !Task.isCancelled { hasLoaded = true }
+        }
 
+        do {
+            let loaded = try await api.conversation(serverURLString: key.server, memberID: key.recipientID)
+            guard !Task.isCancelled, draftKey == key else { return }
+            messages = loaded
+            try? await api.markMessagesRead(
+                serverURLString: key.server,
+                messageIDs: loaded.filter { !$0.isFrom(username: key.username) }.map(\.id)
+            )
+            let experience = try? await api.conversationExperience(
+                serverURLString: key.server,
+                memberID: key.recipientID
+            )
+            guard !Task.isCancelled, draftKey == key else { return }
+            conversationExperience = experience
+            hasCheckedExperience = true
+        } catch {
+            guard !Task.isCancelled, draftKey == key else { return }
+            loadError = error.localizedDescription
+        }
+    }
+
+    private func storeDraft(_ value: String, for key: PilotMessageDraftStore.Key) {
+        do {
+            try drafts.save(value, for: key)
+            draftError = nil
+        } catch {
+            draftError = "Could not save the draft on this device."
+        }
+    }
+
+    private func sendMessage(for key: PilotMessageDraftStore.Key) async {
+        let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard draftKey == key, !content.isEmpty, !isSending, !isLoading else { return }
         isSending = true
-        errorMessage = nil
+        sendError = nil
         defer { isSending = false }
 
         do {
-            let sentMessage = try await api.sendMessage(
-                serverURLString: session.serverURLString,
-                memberID: id,
+            let sent = try await api.sendMessage(
+                serverURLString: key.server,
+                memberID: key.recipientID,
                 content: content
             )
-            messages.insert(sentMessage, at: 0)
+            guard draftKey == key else { return }
+            messages.removeAll { $0.id == sent.id }
+            messages.insert(sent, at: 0)
             draft = ""
-            isDraftFocused = false
-            try? await Task.sleep(for: .milliseconds(60))
-            isDraftFocused = true
+            storeDraft("", for: key)
         } catch {
-            errorMessage = error.localizedDescription
+            guard draftKey == key else { return }
+            sendError = error.localizedDescription
         }
+    }
+}
+
+@MainActor
+private struct ComposeConversation: UIViewControllerRepresentable {
+    let messages: [PilotMessage]
+    let draft: String
+    let isLoading: Bool
+    let isSending: Bool
+    let loadError: String?
+    let sendError: String?
+    let experience: String?
+    let canShareExperience: Bool
+    let onDraft: (String) -> Void
+    let onSend: () -> Void
+    let onRetry: () -> Void
+    let onShareExperience: () -> Void
+
+    final class Coordinator {
+        let state = MemberConversationState()
+        var view: ComposeConversation?
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.MemberConversationViewController(
+            state: coordinator.state,
+            onDraft: { [weak coordinator] in coordinator?.view?.onDraft($0) },
+            onSend: { [weak coordinator] in coordinator?.view?.onSend() },
+            onRetry: { [weak coordinator] in coordinator?.view?.onRetry() },
+            onShareExperience: { [weak coordinator] in coordinator?.view?.onShareExperience() }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.view = self
+        coordinator.state.update(
+            messages: messages,
+            draft: draft,
+            isLoading: isLoading,
+            isSending: isSending,
+            loadError: loadError,
+            sendError: sendError,
+            experience: experience,
+            canShareExperience: canShareExperience
+        )
     }
 }
 

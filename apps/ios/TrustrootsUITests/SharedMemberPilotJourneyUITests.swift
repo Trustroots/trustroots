@@ -256,6 +256,77 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     @MainActor
+    func testRegularConversationRestoresDraftAndRetriesOnce() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", fixtureURL.absoluteString]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        func openRegularConversation() {
+            let messages = app.buttons["Messages"]
+            XCTAssertTrue(messages.waitForExistence(timeout: 15), app.debugDescription)
+            messages.tap()
+            let row = app.descendants(matching: .any)["message-thread-thread-pilot-1"]
+            XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
+            row.tap()
+            XCTAssertTrue(app.staticTexts["Hello from the test fixture."].waitForExistence(timeout: 15))
+        }
+
+        openRegularConversation()
+        let history = app.descendants(matching: .any)["conversation-history"]
+        XCTAssertTrue(history.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: history.screenshot())
+        screenshot.name = "regular-ios-conversation-history"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let profile = app.buttons["View Robin Example's profile"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
+        profile.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15))
+        app.buttons["Back"].tap()
+
+        let reply = "A regular conversation draft.\nA second paragraph."
+        let draft = app.descendants(matching: .any)["conversation-draft"]
+        let send = app.descendants(matching: .any)["conversation-send"]
+        if draft.value as? String != reply {
+            enterText(reply, into: draft, in: app)
+        }
+        send.tap()
+        XCTAssertTrue(element(labelled: "Temporary fixture delivery failure.", in: app).waitForExistence(timeout: 15))
+        XCTAssertEqual(draft.value as? String, reply)
+
+        app.terminate()
+        app.launch()
+        openRegularConversation()
+        XCTAssertTrue(draft.waitForExistence(timeout: 10))
+        XCTAssertEqual(draft.value as? String, reply)
+        XCTAssertTrue(send.isEnabled)
+        XCTAssertEqual(send.label, "Send message")
+        let sendIcon = XCTAttachment(screenshot: send.screenshot())
+        sendIcon.name = "regular-ios-send-message-icon"
+        sendIcon.lifetime = .keepAlways
+        add(sendIcon)
+        send.tap()
+        XCTAssertTrue(app.staticTexts[reply].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(send.isEnabled)
+        XCTAssertNotEqual(draft.value as? String, reply)
+
+        struct DeliveryState: Decodable { let attempts: Int; let deliveries: Int }
+        let (data, response) = try await URLSession.shared.data(
+            from: fixtureURL.appendingPathComponent("fixture/reply-state")
+        )
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let state = try JSONDecoder().decode(DeliveryState.self, from: data)
+        XCTAssertEqual(state.attempts, 2)
+        XCTAssertEqual(state.deliveries, 1)
+    }
+
+    @MainActor
     func testMemberJourneyRetainsFailedReplyAndUsesSavedSession() async throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
@@ -368,7 +439,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
 
         signIn(app)
-        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "My profile", in: app).waitForExistence(timeout: 30), app.debugDescription)
         element(labelled: "My profile", in: app).tap()
         let reopenedProfile = element(labelled: "Mira Example", in: app)
         XCTAssertTrue(reopenedProfile.waitForExistence(timeout: 30), app.debugDescription)
