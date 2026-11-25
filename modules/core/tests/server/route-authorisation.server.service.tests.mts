@@ -1,120 +1,91 @@
-import { createRouteAuthorisation } from './../../server/services/route-authorisation.server.service.mts';
-import should from 'should';
-import type {
-  MemoryPolicy,
-  PolicyDecisionCallback,
-  PolicyRequest,
-  PolicyResponse,
-} from '../../server/services/policy-types.server.mts';
+import 'should';
+import {
+  createRouteAuthorisation,
+  isRouteAllowed,
+} from '../../server/services/route-authorisation.server.service.mts';
 
-void should;
-
-type MockResponse = PolicyResponse & {
-  statusCode: number;
-  body: { message: string } | null;
+const grants = {
+  '/api/examples': { guest: ['get'], member: ['get', 'post'] },
 };
 
-function mockResponse(): MockResponse {
-  const response: MockResponse = {
-    statusCode: 200,
-    body: null,
-    status(code: number) {
-      this.statusCode = code;
-      return this;
-    },
-    json(body: { message: string }) {
-      this.body = body;
-      return this;
-    },
-    send(body: { message: string }) {
-      this.body = body;
-      return this;
-    },
-  };
-  return response;
-}
-
-type AclCall = {
-  roles: string[];
-  path: string;
-  method: string;
-};
-
-function mockAcl(error: Error | null, allowed: boolean) {
-  let call: AclCall | undefined;
-  const acl: MemoryPolicy = {
-    allow() {},
-    areAnyRolesAllowed(
-      roles: string[],
-      path: string,
-      method: string,
-      callback?: PolicyDecisionCallback,
-    ) {
-      call = { roles, path, method };
-      if (callback) callback(error, allowed);
-      return Promise.resolve(allowed);
-    },
-  };
-  return { acl, getCall: () => call };
-}
-
-function policyRequest(
-  roles: string[] | null | undefined,
-  routePath: string,
-  method: string,
-): PolicyRequest {
-  const user =
-    roles === undefined
-      ? undefined
-      : {
-          roles,
-          _id: { valueOf: () => 'fixture-user' },
-        };
+function request(roles: string[] | undefined, path: string, method: string) {
   return {
-    user,
-    route: { path: routePath },
+    user: roles && { roles, _id: { valueOf: () => 'member-id' } },
+    route: { path },
     method,
-  } as PolicyRequest;
+  };
 }
 
-describe('Route authorisation service', function () {
-  it('uses guest permissions when the request has no user', function () {
-    const { acl, getCall } = mockAcl(null, false);
-    const response = mockResponse();
-
-    createRouteAuthorisation(acl)(
-      policyRequest(undefined, '/api/examples', 'GET'),
-      response,
-      function () {},
-    );
-
-    getCall()!.should.deepEqual({
-      roles: ['guest'],
-      path: '/api/examples',
-      method: 'get',
-    });
-    response.statusCode.should.equal(403);
-    response.body!.message.should.equal('Forbidden.');
+describe('Route authorisation service', () => {
+  it('allows a method when any one of the roles grants it', () => {
+    isRouteAllowed(
+      grants,
+      request(['other', 'member'], '/api/examples', 'POST'),
+    ).should.be.true();
+    isRouteAllowed(
+      grants,
+      request(['other'], '/api/examples', 'GET'),
+    ).should.be.false();
   });
 
-  it('returns JSON 500 for unexpected ACL errors by default', function () {
-    const response = mockResponse();
-    let jsonCalled = false;
-    const json = response.json;
-    response.json = function (body: { message: string }) {
-      jsonCalled = true;
-      return json.call(this, body);
+  it('treats signed-out requests and members without roles as guests', () => {
+    isRouteAllowed(
+      grants,
+      request(undefined, '/api/examples', 'GET'),
+    ).should.be.true();
+    isRouteAllowed(
+      grants,
+      request(undefined, '/api/examples', 'POST'),
+    ).should.be.false();
+    const roleless = {
+      ...request([], '/api/examples', 'GET'),
+      user: { _id: { valueOf: () => 'member-id' } },
     };
-    const { acl } = mockAcl(new Error('ACL unavailable'), false);
+    isRouteAllowed(grants, roleless).should.be.true();
+  });
 
-    createRouteAuthorisation(acl)(
-      policyRequest(['member'], '/api/examples', 'GET'),
-      response,
-      function () {},
+  it('denies routes, roles and methods without a grant, including prototype names', () => {
+    isRouteAllowed(
+      grants,
+      request(['member'], '/api/unknown', 'GET'),
+    ).should.be.false();
+    isRouteAllowed(
+      grants,
+      request(['member'], 'constructor', 'GET'),
+    ).should.be.false();
+    isRouteAllowed(
+      grants,
+      request(['constructor', 'toString'], '/api/examples', 'GET'),
+    ).should.be.false();
+    isRouteAllowed(
+      grants,
+      request([], '/api/examples', 'GET'),
+    ).should.be.false();
+  });
+
+  it('answers 403 JSON when no role grants the route', () => {
+    let status = 0;
+    let body: unknown;
+    const res = {
+      status(code: number) {
+        status = code;
+        return res;
+      },
+      json(message: unknown) {
+        body = message;
+        return res;
+      },
+    };
+
+    createRouteAuthorisation(grants)(
+      request(['member'], '/api/examples', 'DELETE'),
+      res,
+      () => {
+        throw new Error('An ungranted method was let through');
+      },
     );
 
-    response.statusCode.should.equal(500);
-    jsonCalled.should.be.true();
-    response.body!.message.should.equal('Unexpected authorization error');
+    status.should.equal(403);
+    (body as object).should.deepEqual({ message: 'Forbidden.' });
   });
 });

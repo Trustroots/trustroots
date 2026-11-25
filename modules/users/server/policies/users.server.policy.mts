@@ -1,4 +1,3 @@
-import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
 import type {
@@ -13,145 +12,29 @@ type UsersRequest = PolicyRequest & {
   };
 };
 
-/**
- * Module dependencies.
- */
-const acl = createMemoryPolicy();
-const authoriseRoute = createRouteAuthorisation(acl);
-
-/**
- * Invoke Users Permissions
- */
-function invokeRolesPolicies() {
-  acl.allow([
-    {
-      roles: ['admin'],
-      allows: [
-        {
-          resources: '/api/users',
-          permissions: [],
-        },
-        {
-          resources: '/api/users/:username',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/:avatarUserId/avatar',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/mini/:userId',
-          permissions: [],
-        },
-        {
-          resources: '/api/users/password',
-          permissions: [],
-        },
-        {
-          resources: '/api/users/accounts/:provider',
-          permissions: [],
-        },
-        {
-          resources: '/api/users/memberships',
-          permissions: [],
-        },
-        {
-          resources: '/api/users/memberships/:tribeId',
-          permissions: [],
-        },
-      ],
-    },
-    {
-      roles: ['user'],
-      allows: [
-        {
-          resources: '/api/users',
-          permissions: ['get', 'put', 'delete'],
-        },
-        {
-          resources: '/api/users/me/safety-visit',
-          permissions: ['put'],
-        },
-        {
-          resources: '/api/users/export',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/removal/pending',
-          permissions: ['get', 'delete'],
-        },
-        {
-          resources: '/api/users/nostr/challenge',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/users/remove/:token',
-          permissions: ['delete'],
-        },
-        {
-          resources: '/api/users/:username',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/:avatarUserId/avatar',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users-avatar',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/users/mini/:userId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/password',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/users/accounts/:provider',
-          permissions: ['delete'],
-        },
-        {
-          resources: '/api/users/memberships',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/memberships/:tribeId',
-          permissions: ['post', 'delete'],
-        },
-        {
-          resources: '/api/users/push/registrations',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/users/push/registrations/:token',
-          permissions: ['delete'],
-        },
-        {
-          resources: '/api/users/unified-push',
-          permissions: ['get', 'post', 'delete'],
-        },
-        {
-          resources: '/api/users/unified-push/test',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/blocked-users',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/blocked-users/:username',
-          permissions: ['put', 'delete'],
-        },
-      ],
-    },
-    {
-      roles: ['support-team'],
-      allows: [{ resources: '/api/users/:username', permissions: ['get'] }],
-    },
-  ]);
-}
+const read = ['get'];
+const authoriseRoute = createRouteAuthorisation({
+  '/api/users': { user: ['get', 'put', 'delete'] },
+  '/api/users/me/safety-visit': { user: ['put'] },
+  '/api/users/export': { user: read },
+  '/api/users/removal/pending': { user: ['get', 'delete'] },
+  '/api/users/nostr/challenge': { user: ['post'] },
+  '/api/users/remove/:token': { user: ['delete'] },
+  '/api/users/:username': { admin: read, user: read, 'support-team': read },
+  '/api/users/:avatarUserId/avatar': { admin: read, user: read },
+  '/api/users-avatar': { user: ['post'] },
+  '/api/users/mini/:userId': { user: read },
+  '/api/users/password': { user: ['post'] },
+  '/api/users/accounts/:provider': { user: ['delete'] },
+  '/api/users/memberships': { user: read },
+  '/api/users/memberships/:tribeId': { user: ['post', 'delete'] },
+  '/api/users/push/registrations': { user: ['post'] },
+  '/api/users/push/registrations/:token': { user: ['delete'] },
+  '/api/users/unified-push': { user: ['get', 'post', 'delete'] },
+  '/api/users/unified-push/test': { user: ['post'] },
+  '/api/blocked-users': { user: read },
+  '/api/blocked-users/:username': { user: ['put', 'delete'] },
+});
 
 export function isSupportProfileRead(req: {
   user?: { roles?: string[] } | null;
@@ -209,10 +92,5 @@ function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
   }
   return authoriseRoute(req, res, next);
 }
-const service = {
-  invokeRolesPolicies,
-  isAllowed,
-};
-export default service;
-export { invokeRolesPolicies, isAllowed };
-export { acl as _acl };
+export default { isAllowed };
+export { isAllowed };

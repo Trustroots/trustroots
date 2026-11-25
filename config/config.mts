@@ -122,7 +122,6 @@ const getGlobalConfigFiles = (
     models: getGlobbedPaths(assets.server.models),
     routes: getGlobbedPaths(assets.server.routes),
     configs: getGlobbedPaths(assets.server.config),
-    policies: getGlobbedPaths(assets.server.policies),
   },
 });
 

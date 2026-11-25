@@ -1,269 +1,77 @@
-/**
- * Module dependencies.
- */
-import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
-import errorService from './../../../core/server/services/error.server.service.mts';
-import type {
-  PolicyNext,
-  PolicyRequest,
-  PolicyResponse,
-} from '../../../core/server/services/policy-types.server.mts';
-const aclInstance = createMemoryPolicy();
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
 
-/**
- * Invoke Users Permissions
- */
-export const invokeRolesPolicies = () => {
-  aclInstance.allow([
-    {
-      roles: ['admin', 'support-team'],
-      allows: [
-        { resources: '/api/admin/dashboard', permissions: ['get'] },
-        { resources: '/api/admin/network-connections', permissions: ['post'] },
-        {
-          resources: '/api/admin/network-connections/:memberId',
-          permissions: ['get'],
-        },
-        { resources: '/api/admin/experiences', permissions: ['get'] },
-        {
-          resources: '/api/admin/experiences/:id/change-links',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/experience-change-requests',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/experience-change-requests/:id/decision',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/support', permissions: ['get'] },
-        {
-          resources: '/api/admin/support/:requestId',
-          permissions: ['get', 'patch'],
-        },
-        {
-          resources: '/api/admin/support/:requestId/conversation',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/support/:requestId/replies',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/support/:requestId/replies/:messageId/retry',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/support/:requestId/:kind',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/support-message-reviews/:reviewId',
-          permissions: ['get'],
-        },
-        { resources: '/api/admin/support-members', permissions: ['get'] },
-        {
-          resources: '/api/admin/support-flagged-members',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/support-members/:memberId/flag',
-          permissions: ['patch'],
-        },
-        {
-          resources: '/api/admin/support-members/:memberId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/user/change-role',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/notes', permissions: ['get', 'post'] },
-      ],
-    },
-    {
-      roles: ['welcome-team', 'support-team'],
-      allows: [
-        {
-          resources: '/api/admin/acquisition-stories',
-          permissions: ['post'],
-        },
-        {
-          resources:
-            '/api/admin/acquisition-stories/:memberId/resend-confirmation',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/location-corrections', permissions: ['get'] },
-        {
-          resources: '/api/admin/location-corrections/send',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
-      ],
-    },
-    {
-      roles: ['admin'],
-      allows: [
-        {
-          resources: '/api/admin/signup-review-rules',
-          permissions: ['get', 'put'],
-        },
-        {
-          resources: '/api/admin/support-import/preview',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/support-import/apply', permissions: ['post'] },
-        { resources: '/api/admin/circles', permissions: ['get', 'post'] },
-        { resources: '/api/admin/nostr/featured-notes', permissions: ['post'] },
-        {
-          resources: '/api/admin/nostr/service-profile',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/nostr/featured-notes/:id',
-          permissions: ['delete', 'put'],
-        },
-        {
-          resources: '/api/admin/nostr/featured-notes/:id/deletion',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/circles/:circle',
-          permissions: ['get', 'put'],
-        },
-        {
-          resources: '/api/admin/hackerspaces/preview',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/hackerspaces/signer',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/acquisition-stories',
-          permissions: ['post'],
-        },
-        {
-          resources:
-            '/api/admin/acquisition-stories/:memberId/resend-confirmation',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/location-corrections', permissions: ['get'] },
-        {
-          resources: '/api/admin/location-corrections/send',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
-        { resources: '/api/admin/audit-log', permissions: ['get'] },
-        { resources: '/api/admin/audit-log/actors', permissions: ['get'] },
-        { resources: '/api/admin/username-changes', permissions: ['get'] },
-        { resources: '/api/admin/gravatar', permissions: ['get'] },
-        {
-          resources: '/api/admin/gravatar/photo-check',
-          permissions: ['get', 'post'],
-        },
-        { resources: '/api/admin/messages', permissions: ['post'] },
-        {
-          resources: '/api/admin/messages/scammer-recipients',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/messages/scammer-warning',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/threads',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/user',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/user/unsuspend', permissions: ['post'] },
-        {
-          resources: '/api/admin/user/delete',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/users',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/users/by-role',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/users/by-last-ip-hash',
-          permissions: ['post'],
-        },
-        { resources: '/api/admin/email-replies', permissions: ['get'] },
-        { resources: '/api/admin/reference-threads', permissions: ['get'] },
-        {
-          resources: '/api/admin/sparkpost/recovery',
-          permissions: ['get', 'post'],
-        },
-        {
-          resources: '/api/admin/sparkpost/:action',
-          permissions: ['get'],
-        },
-        { resources: '/api/admin/mongo', permissions: ['get'] },
-        {
-          resources: '/api/admin/newsletter-subscribers',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/newsletter-subscribers/circle',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/admin/newsletter-subscribers/audience',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/admin/newsletter-subscribers/split',
-          permissions: ['post'],
-        },
-      ],
-    },
-  ]);
-};
+const admin = (...methods: string[]) => ({ admin: methods });
+const support = (...methods: string[]) => ({
+  admin: methods,
+  'support-team': methods,
+});
+const greeters = (...methods: string[]) => ({
+  admin: methods,
+  'support-team': methods,
+  'welcome-team': methods,
+});
 
-/**
- * Check If Users Policy Allows
- */
-export const isAllowed = (
-  req: PolicyRequest,
-  res: PolicyResponse,
-  next: PolicyNext,
-) => {
-  // Check for user roles
-  const roles = req.user?.roles ?? ['guest'];
-  aclInstance.areAnyRolesAllowed(
-    roles,
-    req.route.path,
-    req.method.toLowerCase(),
-    (err, isAllowed) => {
-      if (err) {
-        // An authorization error occurred.
-        return res.status(500).send({
-          message: 'Unexpected authorization error',
-        });
-      } else {
-        if (isAllowed) {
-          // Access granted! Invoke next middleware
-          return next();
-        } else {
-          return res.status(403).json({
-            message: errorService.getErrorMessageByKey('forbidden'),
-          });
-        }
-      }
-    },
-  );
-};
-export default {
-  invokeRolesPolicies,
-  isAllowed,
-};
-export { aclInstance as _acl };
+export const isAllowed = createRouteAuthorisation({
+  '/api/admin/dashboard': support('get'),
+  '/api/admin/network-connections': support('post'),
+  '/api/admin/network-connections/:memberId': support('get'),
+  '/api/admin/experiences': support('get'),
+  '/api/admin/experiences/:id/change-links': support('post'),
+  '/api/admin/experience-change-requests': support('get'),
+  '/api/admin/experience-change-requests/:id/decision': support('post'),
+  '/api/admin/support': support('get'),
+  '/api/admin/support/:requestId': support('get', 'patch'),
+  '/api/admin/support/:requestId/conversation': support('get'),
+  '/api/admin/support/:requestId/replies': support('post'),
+  '/api/admin/support/:requestId/replies/:messageId/retry': support('post'),
+  '/api/admin/support/:requestId/:kind': support('get'),
+  '/api/admin/support-message-reviews/:reviewId': support('get'),
+  '/api/admin/support-members': support('get'),
+  '/api/admin/support-flagged-members': support('get'),
+  '/api/admin/support-members/:memberId/flag': support('patch'),
+  '/api/admin/support-members/:memberId': support('get'),
+  '/api/admin/user/change-role': support('post'),
+  '/api/admin/notes': support('get', 'post'),
+  '/api/admin/acquisition-stories': greeters('post'),
+  '/api/admin/acquisition-stories/:memberId/resend-confirmation':
+    greeters('post'),
+  '/api/admin/location-corrections': greeters('get'),
+  '/api/admin/location-corrections/send': greeters('post'),
+  '/api/admin/staff-blockers': greeters('get'),
+  '/api/admin/signup-review-rules': admin('get', 'put'),
+  '/api/admin/support-import/preview': admin('post'),
+  '/api/admin/support-import/apply': admin('post'),
+  '/api/admin/circles': admin('get', 'post'),
+  '/api/admin/nostr/featured-notes': admin('post'),
+  '/api/admin/nostr/service-profile': admin('post'),
+  '/api/admin/nostr/featured-notes/:id': admin('delete', 'put'),
+  '/api/admin/nostr/featured-notes/:id/deletion': admin('post'),
+  '/api/admin/circles/:circle': admin('get', 'put'),
+  '/api/admin/hackerspaces/preview': admin('get'),
+  '/api/admin/hackerspaces/signer': admin('get'),
+  '/api/admin/audit-log': admin('get'),
+  '/api/admin/audit-log/actors': admin('get'),
+  '/api/admin/username-changes': admin('get'),
+  '/api/admin/gravatar': admin('get'),
+  '/api/admin/gravatar/photo-check': admin('get', 'post'),
+  '/api/admin/messages': admin('post'),
+  '/api/admin/messages/scammer-recipients': admin('post'),
+  '/api/admin/messages/scammer-warning': admin('post'),
+  '/api/admin/threads': admin('post'),
+  '/api/admin/user': admin('post'),
+  '/api/admin/user/unsuspend': admin('post'),
+  '/api/admin/user/delete': admin('post'),
+  '/api/admin/users': admin('post'),
+  '/api/admin/users/by-role': admin('post'),
+  '/api/admin/users/by-last-ip-hash': admin('post'),
+  '/api/admin/email-replies': admin('get'),
+  '/api/admin/reference-threads': admin('get'),
+  '/api/admin/sparkpost/recovery': admin('get', 'post'),
+  '/api/admin/sparkpost/:action': admin('get'),
+  '/api/admin/mongo': admin('get'),
+  '/api/admin/newsletter-subscribers': admin('get'),
+  '/api/admin/newsletter-subscribers/circle': admin('get'),
+  '/api/admin/newsletter-subscribers/audience': admin('post'),
+  '/api/admin/newsletter-subscribers/split': admin('post'),
+});
+export default { isAllowed };
