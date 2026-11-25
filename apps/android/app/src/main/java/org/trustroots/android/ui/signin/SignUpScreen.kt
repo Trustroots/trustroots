@@ -14,7 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,10 +27,16 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -34,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.SignUpExperience
 import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.rememberBuildDate
@@ -83,6 +94,12 @@ internal fun SignUpScreen(
                 R.string.signup_acquisition, "acquisition", form.acquisitionStory, editable,
                 { form.acquisitionStory = it.take(500) },
             )
+            SignUpExperienceField(R.string.signup_hosting_experience, "hosting-experience", form.hostingExperience, editable) {
+                form.hostingExperience = it
+            }
+            SignUpExperienceField(R.string.signup_staying_experience, "staying-experience", form.stayingExperience, editable) {
+                form.stayingExperience = it
+            }
             LabelledCheckbox(
                 label = stringResource(R.string.signup_newsletter),
                 checked = form.newsletter,
@@ -118,6 +135,60 @@ internal fun SignUpScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SignUpExperienceField(
+    question: Int,
+    tag: String,
+    value: SignUpExperience?,
+    enabled: Boolean,
+    onChange: (SignUpExperience?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = stringResource(question)
+    Column {
+        Text(label)
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            TextField(
+                value = stringResource(value.labelResource),
+                onValueChange = {},
+                enabled = enabled,
+                readOnly = true,
+                singleLine = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = enabled)
+                    .semantics { contentDescription = label }
+                    .testTag("signup-$tag"),
+            )
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                (listOf(null) + SignUpExperience.entries).forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(option.labelResource)) },
+                        onClick = {
+                            onChange(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val SignUpExperience?.labelResource: Int
+    get() = when (this) {
+        null -> R.string.signup_experience_unanswered
+        SignUpExperience.NONE -> R.string.signup_experience_none
+        SignUpExperience.ONCE -> R.string.signup_experience_once
+        SignUpExperience.FEW -> R.string.signup_experience_few
+        SignUpExperience.MANY -> R.string.signup_experience_many
+    }
 
 @Composable
 private fun SignUpField(

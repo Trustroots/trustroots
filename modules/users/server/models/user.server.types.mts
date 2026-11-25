@@ -1,5 +1,6 @@
 import type { HydratedDocument, Model, Types } from 'mongoose';
 import type { ConnectionHistoryEntry } from '../../shared/network-connections.js';
+import type { SignupExperience } from '../../shared/signup-experience.ts';
 
 export interface UserMemberRecord {
   tribe: Types.ObjectId;
@@ -98,6 +99,8 @@ export interface UserServerRecord {
   pushRegistration: UserPushRegistrationRecord[];
   blocked: Types.ObjectId[];
   acquisitionStory?: string;
+  hostingExperience?: SignupExperience;
+  stayingExperience?: SignupExperience;
 }
 
 export interface UserServerMethods {

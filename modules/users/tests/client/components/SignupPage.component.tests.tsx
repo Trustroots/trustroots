@@ -781,6 +781,21 @@ describe('SignupPage', () => {
       acquisitionStory: 'A friend told me',
       newsletter: true,
     });
+    const hosting = screen.getByRole('combobox', {
+      name: 'How much experience do you have hosting people you haven’t met before?',
+    });
+    const staying = screen.getByRole('combobox', {
+      name: 'How much experience do you have staying with people you haven’t met before?',
+    });
+    expect(hosting).toHaveValue('');
+    expect(staying).toHaveValue('');
+    expect(hosting).not.toBeRequired();
+    expect(staying).not.toBeRequired();
+    expect(
+      screen.getAllByRole('option', { name: 'No experience yet' }),
+    ).toHaveLength(2);
+    fireEvent.change(hosting, { target: { value: 'none' } });
+    fireEvent.change(staying, { target: { value: 'few' } });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => {
@@ -789,9 +804,11 @@ describe('SignupPage', () => {
           acquisitionStory: 'A friend told me',
           email: 'ada@example.test',
           firstName: 'Ada',
+          hostingExperience: 'none',
           lastName: 'Lovelace',
           newsletter: true,
           password: 'password-123',
+          stayingExperience: 'few',
           username: 'ada',
         }),
       );

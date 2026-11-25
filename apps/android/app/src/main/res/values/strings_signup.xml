@@ -5,6 +5,13 @@
     <string name="signup_username">Username</string>
     <string name="signup_password">Password (at least 8 characters)</string>
     <string name="signup_acquisition">How did you hear about us? (optional)</string>
+    <string name="signup_hosting_experience">How much experience do you have hosting people you haven’t met before?</string>
+    <string name="signup_staying_experience">How much experience do you have staying with people you haven’t met before?</string>
+    <string name="signup_experience_unanswered">Select an answer (optional)</string>
+    <string name="signup_experience_none">No experience yet</string>
+    <string name="signup_experience_once">Once</string>
+    <string name="signup_experience_few">A few times</string>
+    <string name="signup_experience_many">Many times</string>
     <string name="signup_newsletter">Subscribe to community news</string>
     <string name="signup_age">I am 18 years old or older</string>
     <string name="signup_rules_agreement">By signing up, you agree to follow the Trustroots rules.</string>

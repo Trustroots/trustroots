@@ -54,7 +54,16 @@ internal class SignUpDetails(
     val newsletter: Boolean,
     val acquisitionStory: String,
     val locale: String,
+    val hostingExperience: SignUpExperience?,
+    val stayingExperience: SignUpExperience?,
 )
+
+internal enum class SignUpExperience(val apiValue: String) {
+    NONE("none"),
+    ONCE("once"),
+    FEW("few"),
+    MANY("many"),
+}
 
 data class MemberSession(
     val cookieHeader: String,
@@ -249,6 +258,8 @@ class MobileApiClient(
                         .put("newsletter", details.newsletter)
                         .put("acquisitionStory", details.acquisitionStory)
                         .put("locale", details.locale)
+                        .put("hostingExperience", details.hostingExperience?.apiValue)
+                        .put("stayingExperience", details.stayingExperience?.apiValue)
                         .toString(),
                 )
                 Unit
