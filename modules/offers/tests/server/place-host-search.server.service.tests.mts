@@ -22,6 +22,12 @@ describe('City host search age', () => {
       age: 24,
     },
     {
+      day: 'February 29 for a February 28 birthdate',
+      birthdate: '1999-02-28T12:00:00',
+      anniversary: '2024-02-29T12:00:00',
+      age: 25,
+    },
+    {
       day: 'a regular birthday',
       birthdate: '2000-06-15T12:00:00',
       anniversary: '2025-06-15T12:00:00',
