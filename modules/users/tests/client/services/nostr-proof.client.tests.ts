@@ -205,7 +205,7 @@ describe('Nostr proof signing transports', () => {
       expect.objectContaining({
         clientPubkey: expect.stringMatching(/^[0-9a-f]{64}$/),
         secret: expect.any(String),
-        perms: ['sign_event:27235'],
+        perms: ['sign_event:27235', 'sign_event:22242', 'sign_event:0'],
       }),
     );
     expect(BunkerSigner.fromURI).toHaveBeenCalledWith(

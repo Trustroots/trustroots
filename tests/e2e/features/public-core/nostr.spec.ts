@@ -3,6 +3,8 @@ import {
   generateSecretKey,
   getPublicKey,
   nip19,
+  verifyEvent,
+  type Event,
   type EventTemplate,
 } from 'nostr-tools';
 
@@ -19,6 +21,7 @@ import {
   createNostrProof,
   installNostrRelayStub,
 } from '../../support/nostr.mts';
+import { updateUserByUsername } from '../../support/db.mts';
 
 declare global {
   interface Window {
@@ -226,6 +229,9 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     ]);
     const secret = generateSecretKey();
     const pubkey = getPublicKey(secret);
+    await page.route('**/.well-known/nostr.json?*', route =>
+      route.fulfill({ json: { names: {} } }),
+    );
     await page.exposeFunction('signProfileChallenge', (event: EventTemplate) =>
       finalizeEvent(event, secret),
     );
@@ -411,6 +417,124 @@ test.describe('nostr community notes badge on the profile view', () => {
   });
 });
 
+test('publishes a linked Trustroots address through the authenticated relay and retries a rejected write', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.edit-networks', [
+    'A linked Nostr address is published after retrying a rejected relay write.',
+  ]);
+  const user = createUser();
+  await registerViaApi(request, user);
+  await updateUserByUsername(user.username, { $set: { public: true } });
+  await signInViaApi(page, request, user);
+  const secret = generateSecretKey();
+  const pubkey = getPublicKey(secret);
+  const previous = finalizeEvent(
+    {
+      kind: 0,
+      content: JSON.stringify({
+        name: 'Example Walker',
+        about: 'I like hills.',
+      }),
+      created_at: Math.floor(Date.now() / 1000) - 60,
+      tags: [['alt', 'Profile']],
+    },
+    secret,
+  );
+  await page.exposeFunction('signProfileChallenge', (event: EventTemplate) =>
+    finalizeEvent(event, secret),
+  );
+  await page.addInitScript(key => {
+    window.nostr = {
+      getPublicKey: async () => key,
+      signEvent: event => window.signProfileChallenge(event),
+    };
+  }, pubkey);
+
+  const published: Event[] = [];
+  const relay = 'wss://nip42.trustroots.org/';
+  const challenge = 'fixture-challenge';
+  await page.routeWebSocket(relay, socket => {
+    let authenticated = false;
+    socket.onMessage(raw => {
+      const [type, payload] = JSON.parse(String(raw));
+      if (type === 'AUTH') {
+        const event = payload as Event;
+        authenticated =
+          verifyEvent(event) &&
+          event.pubkey === pubkey &&
+          event.kind === 22242 &&
+          event.tags.some(
+            ([tag, value]) => tag === 'relay' && value === relay,
+          ) &&
+          event.tags.some(
+            ([tag, value]) => tag === 'challenge' && value === challenge,
+          );
+        socket.send(JSON.stringify(['OK', event.id, authenticated, '']));
+      }
+      if (type === 'REQ') {
+        socket.send(
+          JSON.stringify(
+            authenticated
+              ? ['EOSE', payload]
+              : ['CLOSED', payload, 'auth-required: fixture'],
+          ),
+        );
+      }
+      if (type === 'EVENT') {
+        const event = payload as Event;
+        published.push(event);
+        const accepted =
+          authenticated && verifyEvent(event) && published.length > 1;
+        socket.send(
+          JSON.stringify([
+            'OK',
+            event.id,
+            accepted,
+            accepted ? '' : 'fixture rejection',
+          ]),
+        );
+      }
+    });
+    socket.send(JSON.stringify(['AUTH', challenge]));
+  });
+  await page.routeWebSocket('wss://relay.trustroots.org/', socket => {
+    socket.onMessage(raw => {
+      const [type, id] = JSON.parse(String(raw));
+      if (type === 'REQ') {
+        socket.send(JSON.stringify(['EVENT', id, previous]));
+        socket.send(JSON.stringify(['EOSE', id]));
+      }
+    });
+  });
+
+  await page.goto('/profile/edit/networks');
+  await page.getByRole('button', { name: 'Link with browser signer' }).click();
+  await expect(page.getByText('Hospitality networks updated.')).toBeVisible();
+  await expect(
+    page.getByText('Could not publish your Nostr address. You can try again.'),
+  ).toBeVisible();
+  await expect(page.getByLabel('nostr npub')).toHaveValue(
+    nip19.npubEncode(pubkey),
+  );
+  await page.getByRole('button', { name: 'Publish Nostr address' }).click();
+  await expect(
+    page.getByText('Your Trustroots Nostr address is published.'),
+  ).toBeVisible();
+
+  expect(published).toHaveLength(2);
+  expect(published[1]).toMatchObject({ kind: 0, pubkey, tags: previous.tags });
+  expect(JSON.parse(published[1].content)).toEqual({
+    ...JSON.parse(previous.content),
+    nip05: `${user.username}@trustroots.org`,
+  });
+  await page.reload();
+  await expect(page.getByLabel('nostr npub')).toHaveValue(
+    nip19.npubEncode(pubkey),
+  );
+});
+
 test('verifies a new npub through a browser signer and rejects unsigned API changes', async ({
   page,
   request,
@@ -448,6 +572,11 @@ test('verifies a new npub through a browser signer and rejects unsigned API chan
   await page.locator('#nostrNpub').fill(npub);
   await page.locator('.profile-editor-save').click();
   await expect(page.getByText(/networks updated/i)).toBeVisible();
+  await expect(
+    page.getByText(
+      'Your Trustroots Nostr address is unavailable in the public lookup.',
+    ),
+  ).toBeVisible();
   await page.reload();
   await expect(page.locator('#nostrNpub')).toHaveValue(npub);
 });
