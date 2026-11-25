@@ -25,20 +25,6 @@ export interface LegacyMongoose {
   disconnect(): Promise<void>;
   model<T>(name: string): Model<T>;
 }
-export interface ConnectionHelper {
-  connect(callback: Done): void;
-  disconnect(callback: Done): void;
-}
-export interface DayGroup {
-  _id: { year: number; month: number; day: number; dayOfYear?: number };
-  count: number;
-}
-export interface AggregatedDayGroup extends DayGroup {
-  _id: DayGroup['_id'] & { dayOfYear: number };
-}
-export interface CountUsers {
-  created: Date;
-}
 export interface HistoricalMessage {
   _id: Types.ObjectId;
   userFrom: Types.ObjectId;

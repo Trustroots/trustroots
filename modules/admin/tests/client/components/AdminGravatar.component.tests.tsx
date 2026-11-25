@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   act,
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -30,7 +31,10 @@ const usage: api.GravatarUsage = {
   ],
 };
 beforeEach(() => vi.mocked(api.getGravatarPhotoCheck).mockResolvedValue(null));
-afterEach(() => vi.resetAllMocks());
+afterEach(() => {
+  cleanup();
+  vi.resetAllMocks();
+});
 
 it('shows the count, measurement time, member links and pagination', async () => {
   getUsage.mockResolvedValueOnce(usage);
