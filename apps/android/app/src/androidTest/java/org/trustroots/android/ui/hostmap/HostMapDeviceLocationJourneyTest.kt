@@ -64,6 +64,12 @@ class HostMapDeviceLocationJourneyTest {
         }
         compose.onNodeWithTag("openFilters").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
+        compose.onNodeWithText("Hosting").performClick()
+        compose.onNodeWithText("Offers volunteering").performClick()
+        compose.runOnIdle { assertEquals(true, model.state.value.filters.includeHosts) }
+        compose.onNodeWithText("Offers volunteering").performClick()
+        compose.onNodeWithText("Offers volunteering").performClick()
+        compose.onNodeWithText("My connections only").performClick()
         assertEquals(0, permission.requests)
         compose.onNodeWithContentDescription("Use my location").performClick()
         compose.onNodeWithContentDescription("Use my location").assertIsNotEnabled()
@@ -78,7 +84,8 @@ class HostMapDeviceLocationJourneyTest {
         compose.waitUntil(15_000) {
             searches.any { (bounds, filters) ->
                 bounds.south < 60.0 && bounds.north > 60.0 &&
-                    bounds.west < 24.0 && bounds.east > 24.0 && filters.seenMonths == null
+                    bounds.west < 24.0 && bounds.east > 24.0 && filters.seenMonths == null &&
+                    filters.volunteering && filters.connectionsOnly
             }
         }
         assertEquals(1, permission.requests)
@@ -86,6 +93,11 @@ class HostMapDeviceLocationJourneyTest {
             val viewport = model.state.value.viewport
             abs(viewport.latitude - 60.0) < 0.01 && abs(viewport.longitude - 24.0) < 0.01
         }
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        compose.onNodeWithTag("hostMapResults").assertIsDisplayed()
+        compose.onNodeWithTag("mapResultsToggle").performClick()
+        val filters = model.state.value.filters
+        assertEquals(true, filters.volunteering && filters.connectionsOnly)
     }
 
     @Test fun deniedPermissionKeepsMapAndAllowsPlaceSearch() {

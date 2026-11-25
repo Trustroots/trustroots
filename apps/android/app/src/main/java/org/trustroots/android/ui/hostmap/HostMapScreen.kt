@@ -370,9 +370,38 @@ internal fun HostMapScreen(
                         itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
                         MultiChoiceSegmentedButtonRow {
-                            SegmentedButton(checked = includeHosts, onCheckedChange = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(includeHosts = it))) }, shape = SegmentedButtonDefaults.itemShape(0, 2), label = { Text(hostingLabel) })
+                            SegmentedButton(
+                                checked = includeHosts,
+                                onCheckedChange = { enabled ->
+                                    mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(
+                                        includeHosts = enabled,
+                                        volunteering = false,
+                                    )))
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(0, 2),
+                                label = { Text(hostingLabel) },
+                            )
                             SegmentedButton(checked = includeMeet, onCheckedChange = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(includeMeet = it))) }, shape = SegmentedButtonDefaults.itemShape(1, 2), label = { Text(meetLabel) })
                         }
+                        FilterChip(
+                            selected = mapState.filters.volunteering,
+                            onClick = {
+                                mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(
+                                    includeHosts = true,
+                                    volunteering = !mapState.filters.volunteering,
+                                )))
+                            },
+                            label = { Text(stringResource(R.string.screen_filter_volunteering)) },
+                        )
+                        FilterChip(
+                            selected = mapState.filters.connectionsOnly,
+                            onClick = {
+                                mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(
+                                    connectionsOnly = !mapState.filters.connectionsOnly,
+                                )))
+                            },
+                            label = { Text(stringResource(R.string.screen_filter_connections_only)) },
+                        )
                         FilterChip(
                             selected = seenMonths != null,
                             onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (activityMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },

@@ -27,6 +27,8 @@ PARTNER = {
     "displayName": "Robin Example",
     "tagline": "A partner profile",
 }
+VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
+OTHER_OFFER_ID = "offer-pilot-other"
 INCOMING_MESSAGE = {
     "_id": "message-pilot-incoming",
     "content": "Hello from the test fixture.",
@@ -108,7 +110,24 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "meetings": [],
             })
         elif route == "/api/mobile/v0/offers":
-            self._json(200, {"features": []})
+            filters = json.loads(parse_qs(urlsplit(self.path).query).get("filters", ["{}"])[0])
+            ids = []
+            if "host" in filters.get("types", ["host"]):
+                ids.append(VOLUNTEER_OFFER_ID)
+                if not filters.get("volunteering") and not filters.get("connectionsOnly"):
+                    ids.append(OTHER_OFFER_ID)
+            self._json(200, {"features": [{
+                "properties": {"id": offer_id, "type": "host", "status": "yes"},
+                "geometry": {"coordinates": [-9.14, 38.72]},
+            } for offer_id in ids]})
+        elif route in (f"/api/mobile/v0/offers/{VOLUNTEER_OFFER_ID}", f"/api/mobile/v0/offers/{OTHER_OFFER_ID}"):
+            self._json(200, {
+                "_id": route.rsplit("/", 1)[1],
+                "type": "host",
+                "status": "yes",
+                "description": "A fictional hosting offer.",
+                "user": PARTNER,
+            })
         elif route == "/api/mobile/v0/circles":
             self._json(200, [])
         elif route == "/api/mobile/v0/messages":

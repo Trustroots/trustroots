@@ -34,6 +34,8 @@ class MobileHostMapRepositoryFiltersTest {
                 val result = repository.searchOffers(bounds, HostMapFilters(
                     includeHosts = "host" in types,
                     includeMeet = "meet" in types,
+                    volunteering = types == setOf("host"),
+                    connectionsOnly = true,
                 ))
 
                 assertTrue(result.getOrThrow().isEmpty())
@@ -41,6 +43,8 @@ class MobileHostMapRepositoryFiltersTest {
                 val filters = JSONObject(requireNotNull(request.url.queryParameter("filters")))
                 val actual = filters.getJSONArray("types")
                 assertEquals(types.sorted(), List(actual.length()) { actual.getString(it) })
+                assertEquals(types == setOf("host"), filters.optBoolean("volunteering"))
+                assertTrue(filters.getBoolean("connectionsOnly"))
             }
 
             val invalid = repository.searchOffers(bounds, HostMapFilters(includeHosts = false, includeMeet = false))

@@ -731,6 +731,24 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun connectionsOnlySuspendsCommunityNotesUntilDisabled() = withViewModel { viewModel, _, notesConnections ->
+        val meetOffers = HostMapFilters(includeMeet = true)
+        viewModel.onEvent(HostMapEvent.FiltersChanged(meetOffers))
+        viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+        val connection = notesConnections.connections.single()
+        connection.emit(note("fictional-note"))
+        assertEquals(listOf("fictional-note"), viewModel.state.value.communityNotes.map { it.id })
+
+        viewModel.onEvent(HostMapEvent.FiltersChanged(meetOffers.copy(connectionsOnly = true)))
+
+        assertEquals(1, connection.closeCalls)
+        assertTrue(viewModel.state.value.communityNotes.isEmpty())
+
+        viewModel.onEvent(HostMapEvent.FiltersChanged(meetOffers))
+        assertEquals(2, notesConnections.opened)
+    }
+
+    @Test
     fun notesConnectionClosesReopensAndIgnoresCallbacksFromStoppedConnection() = withViewModel { viewModel, _, notesConnections ->
         viewModel.onEvent(HostMapEvent.FiltersChanged(HostMapFilters(includeMeet = true)))
         viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))

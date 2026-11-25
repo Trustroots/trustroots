@@ -195,6 +195,8 @@
     <string name="screen_show_filters">Show filters</string>
     <string name="screen_hosting">Hosting</string>
     <string name="screen_meet">Meet</string>
+    <string name="screen_filter_volunteering">Offers volunteering</string>
+    <string name="screen_filter_connections_only">My connections only</string>
     <string name="screen_last_active_one_month">Last active: 1 month</string>
     <string name="screen_last_active_six_months">Last active: 6 months</string>
     <string name="screen_last_active_any_time">Last active: any time</string>

@@ -9,15 +9,23 @@ struct OfferMapView: View {
     @State private var offers: [MapOffer] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var selectedHost: HostOffer?
+    @State private var selectedHost: (offer: HostOffer, mapType: String)?
     @State private var isLoadingHost = false
     @State private var showingFilters = false
     @State private var showingHosts = true
+    @State private var showingMeet = false
+    @State private var volunteering = false
+    @State private var connectionsOnly = false
+    @State private var selectedLanguages: Set<String> = []
+    @State private var showingResults = false
+    @State private var placeQuery = ""
+    @State private var placeSearchFailed = false
     @State private var showingCommunityNotes = true
-    @State private var onlineInPastSixMonths = true
+    @State private var activityMonths: Int? = 6
     @State private var circles: [TrustrootsCircle] = []
     @State private var selectedCircleIDs: Set<String> = []
     @State private var searchGeneration = 0
+    @State private var placeSearchGeneration = 0
     @StateObject private var currentLocation = CurrentLocationManager()
     @StateObject private var communityNotes = CommunityNotesStore()
     @State private var selectedCommunityNote: CommunityNote?
@@ -28,118 +36,28 @@ struct OfferMapView: View {
         HostCluster.group(offers, in: visibleRegion)
     }
 
+    private var showsNotes: Bool { showingCommunityNotes && !connectionsOnly }
+
     var body: some View {
         NavigationStack {
-            MetricScaleMap {
-                Map(position: $position) {
-                    ForEach(clusters) { cluster in
-                        Annotation("", coordinate: cluster.coordinate) {
-                            Button {
-                                Task { await select(cluster) }
-                            } label: {
-                                HostMapDot(count: cluster.count, color: cluster.color)
-                            }
-                            .accessibilityLabel(cluster.count == 1 ? "View potential host" : "View \(cluster.count) potential hosts")
-                        }
-                    }
-                    if showingCommunityNotes {
-                        ForEach(CommunityNoteCluster.group(communityNotes.notes, in: visibleRegion)) { cluster in
-                            Annotation("", coordinate: cluster.coordinate) {
-                                Button {
-                                    if cluster.notes.count > 1 {
-                                        position = .region(cluster.zoomedRegion(from: visibleRegion))
-                                    } else {
-                                        selectedHost = nil
-                                        selectedCommunityNote = cluster.notes.first
-                                    }
-                                } label: {
-                                    HostMapDot(count: cluster.notes.count, color: TrustrootsPalette.communityNote)
-                                }
-                                .accessibilityLabel(cluster.notes.count == 1 ? "View Community Note" : "View \(cluster.notes.count) Community Notes")
-                            }
-                        }
-                    }
+            VStack(spacing: 0) {
+                Picker("Search display", selection: $showingResults) {
+                    Text("Map").tag(false)
+                    Text("Results").tag(true)
                 }
-                .mapStyle(.standard(elevation: .realistic))
-                .onMapCameraChange(frequency: .onEnd) { context in
-                    visibleRegion = context.region
-                    Task { await loadOffers(in: context.region) }
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                VStack(alignment: .trailing, spacing: 8) {
-                    if isLoading || !offers.isEmpty {
-                        HStack(spacing: 6) {
-                            if isLoading {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Circle()
-                                    .fill(resultCountColor)
-                                    .frame(width: 9, height: 9)
-                            }
-                            Text(isLoading ? "Searching this area…" : resultCountLabel)
-                                .font(.caption.weight(.semibold))
-                        }
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 8)
-                        .background(.regularMaterial)
-                        .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-                    }
-                    if !isLoading && !offers.isEmpty {
-                        MapOfferLegend(
-                            showingHosts: showingHosts,
-                            showingCommunityNotes: showingCommunityNotes
-                        )
-                    }
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.white)
-                            .padding(10)
-                            .background(.red.opacity(0.9))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
-                }
-                .padding(.top, 5)
-                .padding(.trailing, 12)
-            }
-            .overlay(alignment: .topLeading) {
-                VStack(spacing: 8) {
-                    Button {
-                        showingFilters = true
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .padding(9)
-                            .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
-                    }
-                    .accessibilityLabel("Search filters")
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
 
-                    Button {
-                        currentLocation.useCurrentLocation()
-                    } label: {
-                        Image(systemName: "location.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .padding(9)
-                            .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
-                    }
-                    .accessibilityLabel("Use current location")
+                if showingResults {
+                    resultsView
+                } else {
+                    mapView
                 }
-                .padding(.leading, 5)
-                .padding(.top, 3)
             }
             .safeAreaInset(edge: .bottom) {
                 if let selectedHost {
-                    HostOfferCard(host: selectedHost, session: session) {
+                    HostOfferCard(host: selectedHost.offer, mapType: selectedHost.mapType, session: session) {
                         self.selectedHost = nil
                     }
                 } else if let selectedCommunityNote {
@@ -151,33 +69,49 @@ struct OfferMapView: View {
                 }
             }
             .task {
-                await loadOffers(in: .initialTrustrootsRegion)
+                await loadOffers(in: visibleRegion)
                 await loadCircles()
-                if showingCommunityNotes { communityNotes.connect() }
+                if showsNotes { communityNotes.connect() }
             }
             .task(id: searchLocation) {
                 guard let searchLocation, !searchLocation.isEmpty else { return }
                 await focus(on: searchLocation)
             }
             .sheet(isPresented: $showingFilters, onDismiss: {
+                selectedHost = nil
+                selectedCommunityNote = nil
                 Task { await loadOffers(in: visibleRegion) }
             }) {
                 MapFilterSheet(
                     showingHosts: $showingHosts,
+                    showingMeet: $showingMeet,
                     showingCommunityNotes: $showingCommunityNotes,
-                    onlineInPastSixMonths: $onlineInPastSixMonths,
+                    activityMonths: $activityMonths,
                     circles: circles,
-                    selectedCircleIDs: $selectedCircleIDs
+                    selectedCircleIDs: $selectedCircleIDs,
+                    languages: $selectedLanguages,
+                    volunteering: $volunteering,
+                    connectionsOnly: $connectionsOnly
                 )
             }
             .onChange(of: currentLocation.coordinate?.latitude) { _, _ in
                 guard let coordinate = currentLocation.coordinate else { return }
-                position = .region(MKCoordinateRegion(
+                let region = MKCoordinateRegion(
                     center: coordinate,
                     span: MKCoordinateSpan(latitudeDelta: 1.2, longitudeDelta: 1.2)
-                ))
+                )
+                position = .region(region)
+                if showingResults {
+                    visibleRegion = region
+                    Task { await loadOffers(in: region) }
+                }
             }
-            .onChange(of: showingCommunityNotes) { _, enabled in
+            .onChange(of: showingResults) { _, enabled in
+                if enabled { position = .region(visibleRegion) }
+                selectedHost = nil
+                selectedCommunityNote = nil
+            }
+            .onChange(of: showsNotes) { _, enabled in
                 selectedCommunityNote = nil
                 if enabled { communityNotes.connect() } else { communityNotes.disconnect() }
             }
@@ -196,14 +130,168 @@ struct OfferMapView: View {
         }
     }
 
+    private var mapView: some View {
+        MetricScaleMap {
+            Map(position: $position) {
+                ForEach(clusters) { cluster in
+                    Annotation("", coordinate: cluster.coordinate) {
+                        Button {
+                            Task { await select(cluster) }
+                        } label: {
+                            HostMapDot(
+                                count: cluster.count,
+                                color: cluster.color,
+                                icon: cluster.offers.first?.type == "meet" ? "cup.and.saucer.fill" : "sofa.fill"
+                            )
+                        }
+                        .accessibilityLabel(cluster.accessibilityLabel)
+                    }
+                }
+                if showsNotes {
+                    ForEach(CommunityNoteCluster.group(communityNotes.notes, in: visibleRegion)) { cluster in
+                        Annotation("", coordinate: cluster.coordinate) {
+                            Button {
+                                if cluster.notes.count > 1 {
+                                    position = .region(cluster.zoomedRegion(from: visibleRegion))
+                                } else {
+                                    selectedHost = nil
+                                    selectedCommunityNote = cluster.notes.first
+                                }
+                            } label: {
+                                HostMapDot(count: cluster.notes.count, color: TrustrootsPalette.communityNote)
+                            }
+                            .accessibilityLabel(cluster.notes.count == 1 ? "View Community Note" : "View \(cluster.notes.count) Community Notes")
+                        }
+                    }
+                }
+            }
+            .mapStyle(.standard(elevation: .realistic))
+            .onMapCameraChange(frequency: .onEnd) { context in
+                visibleRegion = context.region
+                Task { await loadOffers(in: context.region) }
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            VStack(alignment: .trailing, spacing: 8) {
+                if isLoading || !offers.isEmpty {
+                    HStack(spacing: 6) {
+                        if isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Circle()
+                                .fill(resultCountColor)
+                                .frame(width: 9, height: 9)
+                        }
+                        Text(isLoading ? "Searching this area…" : resultCountLabel)
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+                }
+                if !isLoading && !offers.isEmpty {
+                    MapOfferLegend(
+                        showingHosts: showingHosts,
+                        showingMeet: showingMeet,
+                        showingCommunityNotes: showsNotes
+                    )
+                }
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.white)
+                        .padding(10)
+                        .background(.red.opacity(0.9))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+            }
+            .padding(.top, 5)
+            .padding(.trailing, 12)
+        }
+        .overlay(alignment: .topLeading) {
+            VStack(spacing: 8) {
+                Button {
+                    showingFilters = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(TrustrootsPalette.darkGreen)
+                        .padding(9)
+                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
+                }
+                .accessibilityLabel("Search filters")
+
+                Button {
+                    currentLocation.useCurrentLocation()
+                } label: {
+                    Image(systemName: "location.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(TrustrootsPalette.darkGreen)
+                        .padding(9)
+                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
+                }
+                .accessibilityLabel("Use current location")
+            }
+            .padding(.leading, 5)
+            .padding(.top, 3)
+        }
+    }
+
+    private var resultsView: some View {
+        List {
+            Section {
+                TextField("Search for a place", text: $placeQuery)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        let query = placeQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !query.isEmpty {
+                            Task { await focus(on: query) }
+                        }
+                    }
+                if placeSearchFailed {
+                    Text("Could not find that place.").foregroundStyle(.red)
+                }
+                Button("Search filters") { showingFilters = true }
+            }
+            Section("Offers in this area") {
+                if isLoading {
+                    ProgressView("Searching this area…")
+                }
+                if let errorMessage {
+                    Text(errorMessage).foregroundStyle(.red)
+                    Button("Try again") { Task { await loadOffers(in: visibleRegion) } }
+                }
+                if !isLoading && offers.isEmpty && errorMessage == nil {
+                    Text("No matching offers in this area.")
+                }
+                ForEach(offers) { offer in
+                    OfferSearchResultRow(offer: offer, session: session, api: api) { host in
+                        selectedCommunityNote = nil
+                        selectedHost = (host, offer.type)
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
     private func loadOffers(in region: MKCoordinateRegion) async {
-        let types = showingHosts ? ["host"] : []
+        let types = (showingHosts ? ["host"] : []) + (showingMeet ? ["meet"] : [])
         searchGeneration += 1
         let generation = searchGeneration
         guard !types.isEmpty else {
             offers = []
             selectedHost = nil
             isLoading = false
+            errorMessage = nil
             return
         }
         isLoading = true
@@ -220,7 +308,10 @@ struct OfferMapView: View {
                 in: region,
                 types: types,
                 tribeIDs: selectedCircleIDs.sorted(),
-                seenWithinMonths: onlineInPastSixMonths ? 6 : 24
+                seenWithinMonths: activityMonths,
+                languages: selectedLanguages.sorted(),
+                volunteering: volunteering,
+                connectionsOnly: connectionsOnly
             )
             guard generation == searchGeneration else { return }
             offers = fetchedOffers
@@ -231,7 +322,7 @@ struct OfferMapView: View {
     }
 
     private var resultCountLabel: String {
-        return "\(offers.count) hosts in this area"
+        "\(offers.count) offers in this area"
     }
 
     private var resultCountColor: Color {
@@ -243,22 +334,37 @@ struct OfferMapView: View {
     }
 
     private func focus(on location: String) async {
-        guard let placemark = try? await CLGeocoder().geocodeAddressString(location).first,
-              let coordinate = placemark.location?.coordinate else { return }
-        position = .region(MKCoordinateRegion(
+        placeSearchGeneration += 1
+        let generation = placeSearchGeneration
+        placeSearchFailed = false
+        let placemark = try? await CLGeocoder().geocodeAddressString(location).first
+        guard !Task.isCancelled, generation == placeSearchGeneration else { return }
+        guard let coordinate = placemark?.location?.coordinate else {
+            placeSearchFailed = showingResults
+            return
+        }
+        selectedHost = nil
+        selectedCommunityNote = nil
+        let region = MKCoordinateRegion(
             center: coordinate,
             span: MKCoordinateSpan(latitudeDelta: 1.4, longitudeDelta: 1.4)
-        ))
+        )
+        position = .region(region)
+        if showingResults {
+            visibleRegion = region
+            await loadOffers(in: region)
+        }
     }
 
-    private func loadHost(offerID: String) async {
+    private func loadHost(for offer: MapOffer) async {
         guard !isLoadingHost else { return }
         isLoadingHost = true
         errorMessage = nil
         defer { isLoadingHost = false }
 
         do {
-            selectedHost = try await api.offer(serverURLString: session.serverURLString, offerID: offerID)
+            let details = try await api.offer(serverURLString: session.serverURLString, offerID: offer.id)
+            selectedHost = (details, offer.type)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -267,14 +373,61 @@ struct OfferMapView: View {
     private func select(_ cluster: HostCluster) async {
         if cluster.count > 1 {
             position = .region(cluster.zoomedRegion(from: visibleRegion))
-        } else if let offerID = cluster.offers.first?.id {
-            await loadHost(offerID: offerID)
+        } else if let offer = cluster.offers.first {
+            await loadHost(for: offer)
+        }
+    }
+}
+
+private struct OfferSearchResultRow: View {
+    let offer: MapOffer
+    @ObservedObject var session: MemberSessionStore
+    let api: TrustrootsAPI
+    let open: (HostOffer) -> Void
+    @State private var details: HostOffer?
+    @State private var failed = false
+    @State private var attempt = 0
+
+    var body: some View {
+        Group {
+            if let details {
+                Button { open(details) } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        MemberIdentityView(member: details.user, serverURLString: session.serverURLString)
+                        Text(offer.type == "meet" ? "Available to meet" :
+                             offer.properties.status == "maybe" ? "Maybe hosting" : "Hosting")
+                            .font(.caption.weight(.semibold))
+                        if let description = details.description?.plainText, !description.isEmpty {
+                            Text(description).font(.subheadline).lineLimit(3)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("search-result-\(offer.id)")
+            } else if failed {
+                Button("Retry loading offer") { attempt += 1 }
+            } else {
+                ProgressView("Loading offer…")
+            }
+        }
+        .task(id: attempt) {
+            if details != nil { return }
+            failed = false
+            do {
+                let loaded = try await api.offer(serverURLString: session.serverURLString, offerID: offer.id)
+                if !Task.isCancelled { details = loaded }
+            } catch {
+                if !Task.isCancelled { failed = true }
+            }
         }
     }
 }
 
 private struct HostOfferCard: View {
     let host: HostOffer
+    let mapType: String
     @ObservedObject var session: MemberSessionStore
     let dismiss: () -> Void
 
@@ -282,7 +435,7 @@ private struct HostOfferCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Potential host")
+                    Text(mapType == "meet" ? "Available to meet" : "Potential host")
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(TrustrootsPalette.darkGreen)
                     if let username = host.user.username {
@@ -305,16 +458,22 @@ private struct HostOfferCard: View {
                         .background(Color.secondary.opacity(0.12))
                         .clipShape(Circle())
                 }
-                .accessibilityLabel("Dismiss potential host")
+                .accessibilityLabel(mapType == "meet" ? "Dismiss meeting offer" : "Dismiss potential host")
             }
 
-            HostingDetailsView(
-                status: host.status,
-                description: host.description,
-                noOfferDescription: host.noOfferDescription,
-                maxGuests: host.maxGuests,
-                compact: true
-            )
+            if mapType == "meet" {
+                if let description = host.description {
+                    Text(description.plainText).font(.subheadline)
+                }
+            } else {
+                HostingDetailsView(
+                    status: host.status,
+                    description: host.description,
+                    noOfferDescription: host.noOfferDescription,
+                    maxGuests: host.maxGuests,
+                    compact: true
+                )
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 18)
@@ -338,6 +497,7 @@ private struct HostOfferCard: View {
 private struct HostMapDot: View {
     let count: Int
     let color: Color
+    var icon = "sofa.fill"
 
     var body: some View {
         ZStack {
@@ -348,7 +508,7 @@ private struct HostMapDot: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white)
             } else {
-                Image(systemName: "sofa.fill")
+                Image(systemName: icon)
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white)
             }
@@ -362,6 +522,7 @@ private struct HostMapDot: View {
 
 private struct MapOfferLegend: View {
     let showingHosts: Bool
+    let showingMeet: Bool
     let showingCommunityNotes: Bool
 
     var body: some View {
@@ -369,6 +530,9 @@ private struct MapOfferLegend: View {
             if showingHosts {
                 LegendItem(color: TrustrootsPalette.hostYes, label: "Hosting")
                 LegendItem(color: TrustrootsPalette.hostMaybe, label: "Maybe")
+            }
+            if showingMeet {
+                LegendItem(color: .orange, label: "Meet")
             }
             if showingCommunityNotes {
                 LegendItem(color: TrustrootsPalette.communityNote, label: "Notes")
@@ -471,6 +635,11 @@ private struct HostCluster: Identifiable {
 
     var count: Int { offers.count }
 
+    var accessibilityLabel: String {
+        if count > 1 { return "View \(count) offers" }
+        return offers.first?.type == "meet" ? "View meeting offer" : "View potential host"
+    }
+
     var color: Color {
         if offers.allSatisfy({
             $0.type == "host" && $0.properties.status == "maybe"
@@ -485,6 +654,8 @@ private struct HostCluster: Identifiable {
             return TrustrootsPalette.hostYes
         case ("host", "maybe"):
             return TrustrootsPalette.hostMaybe
+        case ("meet", _):
+            return .orange
         default:
             return .gray
         }
