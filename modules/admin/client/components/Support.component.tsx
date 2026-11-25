@@ -25,6 +25,7 @@ import type {
   InvestigationItem,
   MessageThrottleReview,
   Page,
+  RepeatedMessageReview,
   SupportMember,
   SupportConversationItem,
   SupportQueueResponse,
@@ -624,11 +625,108 @@ function CaseMemberStatus({
   );
 }
 
-export function SupportMessageReviewPage({ id }: { id: string }) {
+function RepeatedMessages({ path }: { path: string }) {
+  const [page, setPage] = useState(1);
+  const { data, failed, reload } = useResource<RepeatedMessageReview>(
+    `${path}/repeated-messages?page=${page}`,
+  );
+  return (
+    <section
+      className="support-inbox__investigation"
+      aria-label="Repeated messages"
+    >
+      <h3>Identical messages sent to at least three recipients</h3>
+      {data ? (
+        <>
+          <p>
+            {formatAdminDateTime(data.windowStart)} to{' '}
+            {formatAdminDateTime(data.windowEnd)} UTC
+          </p>
+          {data.items.length === 0 && <p>No repeated messages found.</p>}
+          {data.items.map(message => (
+            <article className="panel panel-default" key={message.content}>
+              <div className="panel-body">
+                <p>
+                  {message.sendCount} sends · {message.recipientCount}{' '}
+                  recipients
+                </p>
+                <p>
+                  First sent {formatAdminDateTime(message.firstSent)} UTC · Last
+                  sent {formatAdminDateTime(message.lastSent)} UTC
+                </p>
+                <div
+                  style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                >
+                  {plainText(message.content)}
+                </div>
+              </div>
+            </article>
+          ))}
+          <Pager page={data.page} hasMore={data.hasMore} onPage={setPage} />
+        </>
+      ) : (
+        <>
+          <ResourceState failed={failed} />
+          {failed && <Button onClick={reload}>Retry</Button>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function OutgoingMessages({ path }: { path: string }) {
   const [page, setPage] = useState(1);
   const { data, failed, reload } = useResource<MessageThrottleReview>(
-    `/api/admin/support-message-reviews/${encodeURIComponent(id)}?page=${page}`,
+    `${path}?page=${page}`,
   );
+  return (
+    <>
+      {data ? (
+        <>
+          <p>
+            <time dateTime={data.windowStart}>
+              {formatAdminDateTime(data.windowStart)}
+            </time>
+            {' to '}
+            <time dateTime={data.windowEnd}>
+              {formatAdminDateTime(data.windowEnd)}
+            </time>
+            {' UTC'}
+          </p>
+          {data.items.length === 0 && <p>No outgoing messages found.</p>}
+          {data.items.map(message => (
+            <article className="panel panel-default" key={message._id}>
+              <div className="panel-body">
+                <p>
+                  To {message.userTo?.username ?? 'Deleted member'} ·{' '}
+                  <time dateTime={message.created}>
+                    {formatAdminDateTime(message.created)}
+                  </time>
+                </p>
+                {message.shadowHidden && <p>Hidden message</p>}
+                <div
+                  style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                >
+                  {plainText(message.content)}
+                </div>
+              </div>
+            </article>
+          ))}
+          <Pager page={data.page} hasMore={data.hasMore} onPage={setPage} />
+        </>
+      ) : (
+        <>
+          <ResourceState failed={failed} />
+          {failed && <Button onClick={reload}>Retry</Button>}
+        </>
+      )}
+    </>
+  );
+}
+
+export function SupportMessageReviewPage({ id }: { id: string }) {
+  const [showRepeated, setShowRepeated] = useState(false);
+  const path = `/api/admin/support-message-reviews/${encodeURIComponent(id)}`;
   return (
     <>
       <AdminHeader />
@@ -637,44 +735,28 @@ export function SupportMessageReviewPage({ id }: { id: string }) {
           <a href="/admin/support">Support inbox</a>
         </p>
         <h1>Review outgoing messages</h1>
-        {data ? (
-          <>
-            <p>
-              <time dateTime={data.windowStart}>
-                {formatAdminDateTime(data.windowStart)}
-              </time>
-              {' to '}
-              <time dateTime={data.windowEnd}>
-                {formatAdminDateTime(data.windowEnd)}
-              </time>
-              {' UTC'}
-            </p>
-            {data.items.length === 0 && <p>No outgoing messages found.</p>}
-            {data.items.map(message => (
-              <article className="panel panel-default" key={message._id}>
-                <div className="panel-body">
-                  <p>
-                    To {message.userTo?.username ?? 'Deleted member'} ·{' '}
-                    <time dateTime={message.created}>
-                      {formatAdminDateTime(message.created)}
-                    </time>
-                  </p>
-                  {message.shadowHidden && <p>Hidden message</p>}
-                  <div
-                    style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
-                  >
-                    {plainText(message.content)}
-                  </div>
-                </div>
-              </article>
-            ))}
-            <Pager page={data.page} hasMore={data.hasMore} onPage={setPage} />
-          </>
+        <div
+          className="support-inbox__views"
+          role="group"
+          aria-label="Review views"
+        >
+          <Button
+            aria-pressed={!showRepeated}
+            onClick={() => setShowRepeated(false)}
+          >
+            Outgoing messages
+          </Button>
+          <Button
+            aria-pressed={showRepeated}
+            onClick={() => setShowRepeated(true)}
+          >
+            Repeated messages
+          </Button>
+        </div>
+        {showRepeated ? (
+          <RepeatedMessages key={id} path={path} />
         ) : (
-          <>
-            <ResourceState failed={failed} />
-            {failed && <Button onClick={reload}>Retry</Button>}
-          </>
+          <OutgoingMessages key={id} path={path} />
         )}
       </main>
     </>
@@ -693,7 +775,9 @@ function RequestDetails({
     failed,
     reload,
   } = useResource<SupportRequest>(`/api/admin/support/${id}`);
-  const [kind, setKind] = useState<'messages' | 'experiences' | null>(null);
+  const [kind, setKind] = useState<
+    'messages' | 'experiences' | 'repeated' | null
+  >(null);
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   if (!report) return <ResourceState failed={failed} />;
@@ -872,8 +956,20 @@ function RequestDetails({
             >
               View experiences
             </Button>
+            <Button
+              aria-pressed={kind === 'repeated'}
+              onClick={() => setKind('repeated')}
+            >
+              Repeated messages
+            </Button>
           </div>
-          {kind && <Investigation key={kind} id={id} kind={kind} />}
+          {kind === 'repeated' ? (
+            <RepeatedMessages
+              path={`/api/admin/support/${encodeURIComponent(id)}`}
+            />
+          ) : (
+            kind && <Investigation key={kind} id={id} kind={kind} />
+          )}
         </>
       ) : (
         report.category === 'reportMember' && (

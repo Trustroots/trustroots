@@ -209,6 +209,49 @@ test('renders paginated outgoing messages and retries a failed review load', asy
   );
 });
 
+test('reviews repeat groups with counts, pagination and retry', async () => {
+  const windowStart = '2026-01-02T12:00:00.000Z';
+  const windowEnd = '2026-01-02T13:00:00.000Z';
+  const emptyPage = { windowStart, windowEnd, items: [], hasMore: false };
+  load
+    .mockResolvedValueOnce({ ...emptyPage, page: 1 })
+    .mockRejectedValueOnce(new Error('Request failed'))
+    .mockResolvedValueOnce({
+      ...emptyPage,
+      page: 1,
+      hasMore: true,
+      items: [
+        {
+          content: '<p>Fictional repeated message</p>',
+          sendCount: 5,
+          recipientCount: 3,
+          firstSent: windowStart,
+          lastSent: windowEnd,
+        },
+      ],
+    })
+    .mockResolvedValueOnce({ ...emptyPage, page: 2 });
+
+  render(<SupportMessageReviewPage id="review-1" />);
+  await screen.findByText('No outgoing messages found.');
+  fireEvent.click(screen.getByRole('button', { name: 'Repeated messages' }));
+  const repeats = within(
+    screen.getByRole('region', { name: 'Repeated messages' }),
+  );
+  expect(await repeats.findByRole('alert')).toBeVisible();
+  fireEvent.click(repeats.getByRole('button', { name: 'Retry' }));
+  expect(await repeats.findByText('Fictional repeated message')).toBeVisible();
+  expect(repeats.getByText('5 sends · 3 recipients')).toBeVisible();
+  fireEvent.click(repeats.getByRole('button', { name: 'Next' }));
+  expect(await repeats.findByText('No repeated messages found.')).toBeVisible();
+  expect(load).toHaveBeenLastCalledWith(
+    '/api/admin/support-message-reviews/review-1/repeated-messages?page=2',
+  );
+  load.mockResolvedValueOnce({ ...emptyPage, page: 1 });
+  fireEvent.click(screen.getByRole('button', { name: 'Outgoing messages' }));
+  expect(await screen.findByText('No outgoing messages found.')).toBeVisible();
+});
+
 test('triages a report and reads its whole conversation and unpublished experiences', async () => {
   let resolved = false;
   load.mockImplementation(async path => {

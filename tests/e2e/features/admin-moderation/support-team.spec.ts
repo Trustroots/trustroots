@@ -133,6 +133,13 @@ test('support can open the alert link and read only outgoing messages in its win
     for (const content of excluded) {
       await expect(page.getByText(content)).toHaveCount(0);
     }
+    await page.getByRole('button', { name: 'Repeated messages' }).click();
+    const repeated = page.getByRole('region', { name: 'Repeated messages' });
+    await expect(repeated.getByText('Fictional recent greeting')).toHaveCount(
+      1,
+    );
+    await expect(repeated.getByText('15 sends · 15 recipients')).toBeVisible();
+    await expect(repeated.getByText(visible)).toHaveCount(0);
   } finally {
     await context.close();
   }
@@ -242,6 +249,17 @@ test('support can triage a report and investigate only its verified member pair'
           { $set: { roles: ['user', 'shadowban'], public: false } },
         );
       await db.collection('messages').insertMany([
+        ...[
+          reporterDoc._id,
+          supportDoc._id,
+          observerDoc._id,
+          reporterDoc._id,
+        ].map(userTo => ({
+          userFrom: targetDoc._id,
+          userTo,
+          content: '<p>Fictional repeated invitation</p>',
+          created: new Date(Date.now() - 1000),
+        })),
         {
           userFrom: targetDoc._id,
           userTo: reporterDoc._id,
@@ -445,6 +463,13 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByRole('button', { name: 'Reopen request' }),
     ).toBeVisible();
+    await page.getByRole('button', { name: 'Repeated messages' }).click();
+    const repeated = page.getByRole('region', { name: 'Repeated messages' });
+    await expect(
+      repeated.getByText('Fictional repeated invitation'),
+    ).toHaveCount(1);
+    await expect(repeated.getByText('4 sends · 3 recipients')).toBeVisible();
+    await expect(repeated.getByText('Unrelated conversation')).toHaveCount(0);
     await page.getByRole('button', { name: 'View experiences' }).click();
     await expect(
       page.getByText('Fictional unpublished feedback'),

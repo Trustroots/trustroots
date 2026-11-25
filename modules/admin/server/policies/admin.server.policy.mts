@@ -25,8 +25,11 @@ export const isAllowed = createRouteAuthorisation({
   '/api/admin/support/:requestId/conversation': support('get'),
   '/api/admin/support/:requestId/replies': support('post'),
   '/api/admin/support/:requestId/replies/:messageId/retry': support('post'),
+  '/api/admin/support/:requestId/repeated-messages': support('get'),
   '/api/admin/support/:requestId/:kind': support('get'),
   '/api/admin/support-message-reviews/:reviewId': support('get'),
+  '/api/admin/support-message-reviews/:reviewId/repeated-messages':
+    support('get'),
   '/api/admin/support-members': support('get'),
   '/api/admin/support-flagged-members': support('get'),
   '/api/admin/support-members/:memberId/flag': support('patch'),
