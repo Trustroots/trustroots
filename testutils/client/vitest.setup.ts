@@ -72,7 +72,3 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     dispatchEvent: () => false,
   }));
 }
-
-if (typeof window !== 'undefined') {
-  Reflect.set(globalThis, 'L', (await import('leaflet')).default);
-}

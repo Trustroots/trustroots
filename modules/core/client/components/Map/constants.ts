@@ -1,11 +1,8 @@
-import { getMapBoxToken } from '../../utils/map';
-import osmStyle from './osm.json';
+export const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
-export const MAP_STYLE_MAPBOX_OUTDOORS = 'mapbox://styles/mapbox/outdoors-v11';
-export const MAP_STYLE_MAPBOX_SATELLITE =
-  'mapbox://styles/mapbox/satellite-streets-v11';
-export const MAP_STYLE_MAPBOX_STREETS = 'mapbox://styles/mapbox/streets-v11';
-export const MAP_STYLE_OSM = osmStyle;
-export const MAP_STYLE_DEFAULT = getMapBoxToken()
-  ? MAP_STYLE_MAPBOX_STREETS
-  : MAP_STYLE_OSM;
+/** Raster tiles for browsers without WebGL2; OpenFreeMap serves vector tiles only. */
+export const RASTER_TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+};

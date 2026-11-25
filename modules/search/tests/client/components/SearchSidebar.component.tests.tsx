@@ -9,7 +9,7 @@ const analyticsWrapper = fakeAnalytics().wrapper;
 const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
   rtlRender(ui, { wrapper: analyticsWrapper, ...options });
 
-vi.mock('@/modules/search/client/hooks/use-debounced-callback', async () => {
+vi.mock('@/modules/core/client/hooks/use-debounced-callback', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
   return {

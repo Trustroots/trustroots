@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 
-import useDebouncedCallback from '@/modules/search/client/hooks/use-debounced-callback';
+import useDebouncedCallback from '@/modules/core/client/hooks/use-debounced-callback';
 
 describe('useDebouncedCallback', () => {
   beforeEach(() => vi.useFakeTimers());

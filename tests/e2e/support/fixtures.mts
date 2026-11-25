@@ -14,6 +14,7 @@ import {
   useElementScreenshot,
   useViewportScreenshot,
 } from './screenshot-capture.mts';
+import { routeOfflineMapStyle } from './maps.mts';
 
 type CoverageRange = {
   startOffset: number;
@@ -58,6 +59,10 @@ export const test = base.extend<{ screenshotCapture: void }>({
     },
     { auto: process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true' },
   ],
+  context: async ({ context }, use) => {
+    await routeOfflineMapStyle(context);
+    await use(context);
+  },
   page: async (
     { page, browserName }: { page: Page; browserName: string },
     use: (page: Page) => Promise<void>,

@@ -1,5 +1,4 @@
 /** Module dependencies. */
-import _ from 'lodash';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import errorService, {
@@ -112,7 +111,7 @@ export const getScammerRecipients = async (
 ): Promise<unknown> => {
   try {
     const { scammer, recipients } = await findScammerRecipients(
-      _.get(req, ['body', 'username']),
+      req.body?.username,
       req.user && req.user._id,
     );
     return res.send({
@@ -137,17 +136,16 @@ export const sendScammerWarning = async (
   req: AdminRequest,
   res: AdminResponse,
 ): Promise<unknown> => {
-  const content: unknown = _.get(req, ['body', 'content']);
-  const cleanContent: string = textService.html(_.toString(content));
+  const { content, username, requestId } = req.body ?? {};
+  const cleanContent: string = textService.html(String(content ?? ''));
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
   try {
     const { scammer, recipients } = await findScammerRecipients(
-      _.get(req, ['body', 'username']),
+      username,
       req.user && req.user._id,
     );
-    const requestId = _.get(req, ['body', 'requestId']);
     if (typeof requestId !== 'string' || !/^[a-f0-9]{32}$/.test(requestId)) {
       return res.status(400).send({
         message: 'A valid warning request ID is required.',
@@ -171,7 +169,7 @@ export const sendScammerWarning = async (
           .digest('hex')
           .slice(0, 24);
         return Message.findOneAndUpdate(
-          { _id: id },
+          { _id: new mongoose.Types.ObjectId(id) },
           {
             $setOnInsert: {
               content: cleanContent,
@@ -275,8 +273,7 @@ export const getMessages = async (
   req: AdminRequest,
   res: AdminResponse,
 ): Promise<unknown> => {
-  const user1: unknown = _.get(req, ['body', 'user1']);
-  const user2: unknown = _.get(req, ['body', 'user2']);
+  const { user1, user2 } = req.body ?? {};
   // Check that all provided IDs are valid.
   if (
     ![user1, user2].every(

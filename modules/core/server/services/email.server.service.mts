@@ -4,8 +4,7 @@ import {
 } from '../../../users/server/services/notification-email.server.service.mts';
 import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
-import _ from 'lodash';
-import moment from 'moment';
+import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
 import sanitizeHtml from 'sanitize-html';
@@ -116,7 +115,9 @@ const url = (config.https ? 'https' : 'http') + '://' + config.domain;
  * @return String
  */
 function getSupportVolunteerName() {
-  return _.sample(config.supportVolunteerNames);
+  return config.supportVolunteerNames[
+    Math.floor(Math.random() * config.supportVolunteerNames.length)
+  ];
 }
 function defangUrl(value: string) {
   return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
@@ -136,8 +137,8 @@ function messagePreview(content: string) {
     replaceFn(match) {
       const destination = trustrootsLink(he.decode(match.getAnchorHref()), url);
       return destination
-        ? `<a href="${_.escape(destination.href)}">${_.escape(he.decode(match.getMatchedText()))}</a>`
-        : _.escape(defangUrl(he.decode(match.getMatchedText())));
+        ? `<a href="${he.escape(destination.href)}">${he.escape(he.decode(match.getMatchedText()))}</a>`
+        : he.escape(defangUrl(he.decode(match.getMatchedText())));
     },
   });
   // The sanitiser and autolinker above produce anchors with at most one attribute.
@@ -149,13 +150,13 @@ function messagePreview(content: string) {
           email: false,
           phone: false,
           replaceFn: match =>
-            _.escape(defangUrl(he.decode(match.getMatchedText()))),
+            he.escape(defangUrl(he.decode(match.getMatchedText()))),
         });
       }
       const decoded = he.decode(href);
       const destination = trustrootsLink(decoded, url);
-      if (!destination) return _.escape(defangUrl(decoded));
-      return `<a href="${_.escape(destination.href)}">${label}</a>`;
+      if (!destination) return he.escape(defangUrl(decoded));
+      return `<a href="${he.escape(destination.href)}">${label}</a>`;
     },
   );
   return { content: html };
@@ -430,11 +431,10 @@ function sendSupportRequest(
     supportCategoryLabels[supportRequest.category] || 'Other';
   subject += ' [' + categoryLabel + ']';
 
-  // I miss CoffeeSscript
-  if (_.has(supportRequest, 'username') && supportRequest.username) {
+  if (supportRequest.username) {
     subject += ' from ' + supportRequest.username;
   }
-  if (_.has(supportRequest, 'displayName') && supportRequest.displayName) {
+  if (supportRequest.displayName) {
     subject += ' (' + supportRequest.displayName + ')';
   }
   const params = {
@@ -456,7 +456,7 @@ function sendSupportRequest(
 function sendSignupEmailReminder(
   user: MailUser & {
     publicReminderCount?: number;
-    created?: import('moment').MomentInput;
+    created?: Date | string | number;
   },
   callback: MailCallback,
 ) {
@@ -486,7 +486,7 @@ function sendSignupEmailReminder(
     // This email is a reminder number `n` to this user
     reminderCountMax: config.limits.maxSignupReminders,
     // Max n of reminders system sends
-    timeAgo: moment(user.created).fromNow(), // A string, e.g. `3 days ago`
+    timeAgo: timeAgo(new Date(user.created ?? Date.now())), // A string, e.g. `3 days ago`
   });
 
   // This will be the last reminder, mention that at the email subject line

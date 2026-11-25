@@ -1,11 +1,15 @@
 /**
  * Module dependencies.
  */
-import multer from 'multer';
+import type { IncomingMessage } from 'node:http';
 import mongoose, { type Types } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
+import {
+  readUpload,
+  type UploadError,
+} from './../../../core/server/services/file-upload.service.mts';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 interface NewsletterUser {
@@ -103,24 +107,6 @@ const UNSUBSCRIBED_CSV_COLUMNS = [
 ] satisfies NewsletterCsvColumn[];
 const RECIPIENT_UPLOAD_EXTENSIONS = ['.csv', '.jsonl', '.ndjson'];
 const JSON_LINES_EXTENSIONS = ['.jsonl', '.ndjson'];
-const newsletterRecipientUpload = multer({
-  limits: {
-    fileSize: config.maxUploadSize,
-  },
-  storage: multer.memoryStorage(),
-  fileFilter: (_req, file, callback) => {
-    const extension = path.extname(file.originalname).toLowerCase();
-    if (!RECIPIENT_UPLOAD_EXTENSIONS.includes(extension)) {
-      const err: Error & CodedError = new Error(
-        // Stryker disable next-line StringLiteral: clients get the 415 message for the code; this text is never read
-        'Unsupported recipient file type.',
-      );
-      err.code = 'UNSUPPORTED_MEDIA_TYPE';
-      return callback(err);
-    }
-    return callback(null, true);
-  },
-}).single('newsletterCsv');
 function isNewsletterSubscriber(
   user: NewsletterUser | null | undefined,
 ): boolean {
@@ -672,40 +658,44 @@ function toCodedError(error: unknown): CodedError {
 }
 
 /** @esmNamed */
-export const uploadSubscribersCsv = (
-  req: NewsletterRequest,
+export const uploadSubscribersCsv = async (
+  req: NewsletterRequest & IncomingMessage,
   res: NewsletterResponse,
   next: (error?: Error | null) => void,
-): void => {
-  newsletterRecipientUpload(req, res, err => {
-    if (!err && req.file && req.file.buffer) {
-      return next();
+): Promise<void> => {
+  try {
+    const file = (await readUpload(req, 'newsletterCsv', config.maxUploadSize))
+      ?.file;
+    if (!file) {
+      return void res.status(422).send({
+        message: errorService.getErrorMessageByKey('unprocessable-entity'),
+      });
     }
-    if (err && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
-      return res.status(415).send({
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (!RECIPIENT_UPLOAD_EXTENSIONS.includes(extension)) {
+      return void res.status(415).send({
         message: errorService.getErrorMessageByKey('unsupported-media-type'),
       });
     }
-    if (err && err.code === 'LIMIT_FILE_SIZE') {
+    req.file = file;
+  } catch (error) {
+    const { code } = error as UploadError;
+    if (code === 'LIMIT_FILE_SIZE') {
       const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(2);
-      return res.status(413).send({
+      return void res.status(413).send({
         message: `File too big. Please maximum ${maxUploadSizeMb} Mb files.`,
       });
     }
-    if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).send({
+    if (code === 'LIMIT_UNEXPECTED_FILE') {
+      return void res.status(400).send({
         message: 'Missing "newsletterCsv" field from the API call.',
       });
     }
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessageByKey(),
-      });
-    }
-    return res.status(422).send({
-      message: errorService.getErrorMessageByKey('unprocessable-entity'),
+    return void res.status(400).send({
+      message: errorService.getErrorMessageByKey(),
     });
-  });
+  }
+  next();
 };
 /** @esmNamed */
 export const splitSubscribers = async (

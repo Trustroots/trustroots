@@ -1,5 +1,4 @@
 /** Module dependencies. */
-import _ from 'lodash';
 import mongoose from 'mongoose';
 import type { Request, Response } from 'express';
 import errorService from './../../../core/server/services/error.server.service.mts';
@@ -52,8 +51,8 @@ export const list = (
         const volunteers = filterAndCleanVolunteers(users, 'volunteer');
         const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
         res.send({
-          volunteers: _.shuffle(volunteers),
-          alumni: _.shuffle(alumni),
+          volunteers: [...volunteers].sort(() => Math.random() - 0.5),
+          alumni: [...alumni].sort(() => Math.random() - 0.5),
         });
       },
       err =>

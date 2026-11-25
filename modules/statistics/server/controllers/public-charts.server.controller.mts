@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
-import moment from 'moment';
+import { UTCDate } from '@date-fns/utc';
+import { startOfISOWeek, subDays, subMonths, subWeeks } from 'date-fns';
 import mongoose, { type Model } from 'mongoose';
 import type { PublicCharts } from '../../shared/public-charts.mts';
 
@@ -40,20 +41,18 @@ async function countByWeek(
 async function getCharts(now: Date): Promise<PublicCharts> {
   const User = mongoose.model('User');
   const MessageStat = mongoose.model('MessageStat');
-  const currentWeek = moment.utc(now).startOf('isoWeek');
-  const boundaries = Array.from({ length: weeksToShow + 1 }, (_, index) =>
-    currentWeek
-      .clone()
-      .subtract(weeksToShow - index, 'weeks')
-      .toDate(),
+  const asOf = new UTCDate(now);
+  const currentWeek = startOfISOWeek(asOf);
+  const boundaries = Array.from(
+    { length: weeksToShow + 1 },
+    (_, index) => new Date(subWeeks(currentWeek, weeksToShow - index)),
   );
-  const asOf = moment.utc(now);
   const since = {
-    past7Days: asOf.clone().subtract(7, 'days').toDate(),
-    past14Days: asOf.clone().subtract(14, 'days').toDate(),
-    past30Days: asOf.clone().subtract(30, 'days').toDate(),
-    past6Months: asOf.clone().subtract(6, 'months').toDate(),
-    past12Months: asOf.clone().subtract(12, 'months').toDate(),
+    past7Days: new Date(subDays(asOf, 7)),
+    past14Days: new Date(subDays(asOf, 14)),
+    past30Days: new Date(subDays(asOf, 30)),
+    past6Months: new Date(subMonths(asOf, 6)),
+    past12Months: new Date(subMonths(asOf, 12)),
   };
   const counts = Object.fromEntries(
     Object.entries(since).map(([key, date]) => [

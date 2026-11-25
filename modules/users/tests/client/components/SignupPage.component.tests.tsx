@@ -22,7 +22,6 @@ vi.mock('@tanstack/react-router', async () =>
     await import('@/testutils/client/router-location.testutil')
   ).mockRouterModule(),
 );
-vi.mock('lodash/shuffle', () => ({ default: vi.fn(items => items) }));
 vi.mock('@/modules/users/client/api/auth.api');
 vi.mock('@/modules/tribes/client/api/tribes.api');
 const signup = vi.mocked(authApi.signup);
@@ -80,6 +79,8 @@ describe('SignupPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // A constant comparator result keeps the order of the shuffled circles
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
     window.history.pushState({}, '', '/signup');
     readTribes.mockResolvedValue(suggestedTribes);
     // Keep the default missing-circle response persistent so per-test circle

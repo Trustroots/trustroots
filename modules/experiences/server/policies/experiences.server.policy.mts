@@ -1,112 +1,43 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
+import { isRouteAllowed } from '../../../core/server/services/route-authorisation.server.service.mts';
 import type {
   PolicyNext,
   PolicyRequest,
   PolicyResponse,
 } from '../../../core/server/services/policy-types.server.mts';
-const acl = memoryPolicy();
-function invokeRolesPolicies() {
-  acl.allow([
-    {
-      roles: ['user', 'admin'],
-      allows: [
-        {
-          resources: '/api/experiences',
-          permissions: ['get', 'post'],
-        },
-        {
-          resources: '/api/experiences/count',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/experiences/suggestion',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/experiences/reply-recipient/:recipientUsername',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/my-experience',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/experiences/:experienceId',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/experiences/:id/change-access',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/experiences/:id/change-requests',
-          permissions: ['post'],
-        },
-        {
-          resources: '/api/experiences/:id/change-requests/mine',
-          permissions: ['get'],
-        },
-      ],
-    },
-  ]);
-}
-async function isAllowed(
-  req: PolicyRequest,
-  res: PolicyResponse,
-  next: PolicyNext,
-) {
-  try {
-    const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
-    const isAllowed = await acl.areAnyRolesAllowed(
-      roles,
-      req.route.path,
-      req.method.toLowerCase(),
-    );
-    if (isAllowed && req.user!.public) {
-      // Access granted! Invoke next middleware
-      return next();
-    }
-    return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
-  } catch (e) {
-    return next(e);
-  }
-}
 
-async function isAllowedChange(
-  req: PolicyRequest,
-  res: PolicyResponse,
-  next: PolicyNext,
-) {
-  try {
-    const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
-    if (
-      req.user &&
-      (await acl.areAnyRolesAllowed(
-        roles,
-        req.route.path,
-        req.method.toLowerCase(),
-      ))
-    ) {
-      return next();
-    }
-    return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
-  } catch (error) {
-    return next(error);
-  }
-}
-
-const service = {
-  invokeRolesPolicies,
-  isAllowed,
-  isAllowedChange,
+const members = (...methods: string[]) => ({ user: methods, admin: methods });
+const grants = {
+  '/api/experiences': members('get', 'post'),
+  '/api/experiences/count': members('get'),
+  '/api/experiences/suggestion': members('get'),
+  '/api/experiences/reply-recipient/:recipientUsername': members('get'),
+  '/api/my-experience': members('get'),
+  '/api/experiences/:experienceId': members('get'),
+  '/api/experiences/:id/change-access': members('get'),
+  '/api/experiences/:id/change-requests': members('post'),
+  '/api/experiences/:id/change-requests/mine': members('get'),
 };
-export { invokeRolesPolicies, isAllowed, isAllowedChange };
-export default service;
 
-// Expose the ACL dependency for native ESM boundary stubs.
-export { acl as _acl };
+function forbid(res: PolicyResponse) {
+  return res.status(403).json({
+    message: errorService.getErrorMessageByKey('forbidden'),
+  });
+}
+
+/** Granted routes for published members only. */
+function isAllowed(req: PolicyRequest, res: PolicyResponse, next: PolicyNext) {
+  return req.user?.public && isRouteAllowed(grants, req) ? next() : forbid(res);
+}
+
+/** Granted routes for any signed-in member, published or not. */
+function isAllowedChange(
+  req: PolicyRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) {
+  return req.user && isRouteAllowed(grants, req) ? next() : forbid(res);
+}
+
+export { isAllowed, isAllowedChange };
+export default { isAllowed, isAllowedChange };

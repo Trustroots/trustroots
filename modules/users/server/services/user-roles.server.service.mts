@@ -1,12 +1,11 @@
-import _ from 'lodash';
 export const restrictedMessagingRoles: string[] = ['suspended', 'shadowban'];
 type RoleUser = { roles?: string[] } | null | undefined;
 
 export function hasRole(user: RoleUser, role: string): boolean {
-  return _.get(user, 'roles', [] as string[]).includes(role);
+  return !!user?.roles?.includes(role);
 }
 export function hasAnyRole(user: RoleUser, roles: string[]): boolean {
-  return _.intersection(_.get(user, 'roles', [] as string[]), roles).length > 0;
+  return !!user?.roles?.some(userRole => roles.includes(userRole));
 }
 export function hasRestrictedMessagingRole(user: RoleUser): boolean {
   return hasAnyRole(user, restrictedMessagingRoles);

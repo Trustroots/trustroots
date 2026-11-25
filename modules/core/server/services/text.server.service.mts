@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-import _ from 'lodash';
 import { Autolinker } from 'autolinker';
 import sanitizeHtml, { type SanitizeOptions } from 'sanitize-html';
 import * as he from 'he';
@@ -37,7 +36,7 @@ export const sanitizeOptions: SanitizeOptions = {
     // - `<a>http://trustroots.org</a>`
     if (
       frame.tag === 'a' &&
-      (!frame.text.trim() || !_.has(frame, 'attribs.href'))
+      (!frame.text.trim() || !Object.hasOwn(frame.attribs, 'href'))
     ) {
       return true;
     }
@@ -63,8 +62,7 @@ export const sanitizeOptions: SanitizeOptions = {
  * @returns {String}
  */
 export function html(value: unknown): string {
-  // @link https://lodash.com/docs/4.17.4#toString
-  let content = _.toString(value);
+  let content = String(value ?? '');
 
   // Replace "&nbsp;", "<p><br></p>" and trim
   // This will catch most of the actually empty strings
@@ -118,13 +116,11 @@ export function html(value: unknown): string {
 /**
  * Check if string has content even when html and whitespace is stripped away
  *
- * @link https://lodash.com/docs/#isEmpty
- *
  * @param {String} value - String to be evaluated
  * @return {Boolean} `true` when empty, `false` when it has content.
  */
 export function isEmpty(value: unknown): boolean {
-  return _.isEmpty(plainText(value));
+  return plainText(value) === '';
 }
 
 /**
@@ -137,8 +133,7 @@ export function isEmpty(value: unknown): boolean {
  */
 export function plainText(value: unknown, cleanWhitespace?: boolean): string {
   // Force string
-  // @link https://lodash.com/docs/4.17.4#toString
-  let content = _.toString(value);
+  let content = String(value ?? '');
 
   // Replace HTML breaklines
   content = content.replace(/<br\s*[/]?>/gi, '\n');
@@ -173,7 +168,7 @@ export function plainText(value: unknown, cleanWhitespace?: boolean): string {
  * @returns {String} Plain text with detected contact details removed.
  */
 export function stripContactDetails(value: unknown): string {
-  let content = sanitizeHtml(_.toString(value), {
+  let content = sanitizeHtml(String(value ?? ''), {
     allowedTags: sanitizeOptions.allowedTags,
     allowedAttributes: sanitizeOptions.allowedAttributes,
     exclusiveFilter(frame) {
@@ -181,7 +176,7 @@ export function stripContactDetails(value: unknown): string {
         frame.tag === 'a' &&
         /^(?:(?:https?|s?ftp|mailto|tel):|\/\/)/i.test(
           // Stryker disable next-line StringLiteral: any fallback without a scheme or // prefix fails the test, like ''
-          _.get(frame, 'attribs.href', ''),
+          frame.attribs.href ?? '',
         )
       );
     },

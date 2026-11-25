@@ -1,6 +1,6 @@
 import mongoose, { type UpdateQuery } from 'mongoose';
 import type { NextFunction, Request, Response } from 'express';
-import moment from 'moment';
+import { milliseconds } from 'date-fns';
 import net from 'net';
 import { hashIpAddress } from '../../../core/server/services/ip-hash.server.service.mts';
 import config from './../../../../config/config.mts';
@@ -40,9 +40,9 @@ const updateLastSeen = function (
   // is user logged in?
   if (req.user) {
     // has enough time passed since the last update?
-    const expectedTimeToPass = moment
-      .duration(config.limits.timeToUpdateLastSeenUser)
-      .asMilliseconds();
+    const expectedTimeToPass = milliseconds(
+      config.limits.timeToUpdateLastSeenUser,
+    );
     const isTimePassed =
       !req.user.seen ||
       Date.now() - req.user.seen.getTime() > expectedTimeToPass;

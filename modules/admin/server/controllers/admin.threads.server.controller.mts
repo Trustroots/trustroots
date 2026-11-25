@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
 
@@ -32,7 +31,7 @@ interface ThreadResult {
 
 interface ThreadRequest {
   userIdFromUsername?: unknown;
-  body?: unknown;
+  body?: Record<string, unknown>;
 }
 
 interface HttpResponse {
@@ -52,10 +51,14 @@ export const getThreads = async (
 ): Promise<unknown> => {
   // See `usernameToUserId` middleware from admin.users.server.controller.js
   // req.userId can get placed in request when `req.body.username` is set.
-  const userId = req.userIdFromUsername || _.get(req, ['body', 'userId']);
+  const userId = req.userIdFromUsername || req.body?.userId;
 
   // Check that provided ID is valid
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+  if (
+    (typeof userId !== 'string' &&
+      !(userId instanceof mongoose.Types.ObjectId)) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  )
     return errorService.sendInvalidId(res);
 
   Thread.aggregate<ThreadResult>([

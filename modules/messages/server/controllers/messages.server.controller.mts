@@ -1,6 +1,5 @@
-import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import log from '@trustroots/logger';
@@ -479,9 +478,7 @@ service.inbox = function (req, res) {
 async function recentRecipients(userId: Types.ObjectId) {
   const { duration } = config.limits.messagesToIndividualsThrottle;
   const windowEnd = new Date();
-  const windowStart = moment(windowEnd)
-    .subtract(moment.duration(duration))
-    .toDate();
+  const windowStart = sub(windowEnd, duration);
 
   // Count how many persons this user has already written within the limit
   const writtenTo = await Message.distinct('userTo', {
@@ -899,37 +896,24 @@ service.sync = function (req, res) {
 
   const queryParams = req.query!;
   // Validate and construct date filters
-  let dateFrom;
-  let dateTo;
-  const queryDate = {};
-  if (_.has(req, 'query.dateFrom')) {
-    dateFrom = moment(queryParams.dateFrom as Parameters<typeof moment>[0]);
-
-    // Validate `dateFrom`
-    if (!dateFrom.isValid()) {
-      return res.status(400).send({
-        message: 'Invalid `dateFrom`.',
-      });
+  const created: { $gt?: Date; $lt?: Date } = {};
+  for (const [field, operator] of [
+    ['dateFrom', '$gt'],
+    ['dateTo', '$lt'],
+  ] as const) {
+    if (!Object.hasOwn(queryParams, field)) continue;
+    const input = queryParams[field];
+    const date = typeof input === 'string' ? new Date(String(input)) : null;
+    if (!date || Number.isNaN(date.getTime())) {
+      return res.status(400).send({ message: `Invalid \`${field}\`.` });
     }
-
-    // Append dateFrom to date query
-    _.set(queryDate, 'created.$gt', dateFrom.toDate());
-  }
-  if (_.has(req, 'query.dateTo')) {
-    dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
-    // Validate `dateTo`
-    if (!dateTo.isValid()) {
-      return res.status(400).send({
-        message: 'Invalid `dateTo`.',
-      });
-    }
-
-    // Append dateTo to date query
-    _.set(queryDate, 'created.$lt', dateTo.toDate());
+    created[operator] = date;
   }
 
-  // Validate correct order of dates
-  if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+  // A missing bound leaves that end of the range open.
+  const earliest = created.$gt?.getTime() ?? -Infinity;
+  const latest = created.$lt?.getTime() ?? Infinity;
+  if (earliest > latest) {
     return res.status(400).send({
       message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
     });
@@ -958,10 +942,10 @@ service.sync = function (req, res) {
 
   // Filter only by user or also by date?
   // Stryker disable next-line ConditionalExpression: an empty date filter inside $and matches every document, so always taking this branch gives the same results
-  if (_.has(queryDate, 'created')) {
+  if (Object.keys(created).length > 0) {
     // Construct query with date limits
     messageQuery = {
-      $and: [queryUsers, queryDate],
+      $and: [queryUsers, { created }],
     };
   } else {
     // Construct query without date limit
@@ -984,24 +968,23 @@ service.sync = function (req, res) {
     let userIds: string[] = [];
 
     // Re-group messages by users
-    const groupedMessages = _.groupBy(messages, function (row) {
+    const groupedMessages = new Map<string, typeof messages>();
+    for (const row of messages) {
       // Collect user id
       userIds.push(row.userTo.toString());
       userIds.push(row.userFrom.toString());
 
       // Determines key of the group
-      if (row.userTo === user!._id) {
-        return row.userFrom;
-      }
-      return row.userTo;
-    });
+      const key = String(row.userTo === user!._id ? row.userFrom : row.userTo);
+      groupedMessages.set(key, [...(groupedMessages.get(key) ?? []), row]);
+    }
 
     // Ensure we have only one of each user ids
-    userIds = _.uniq(userIds);
+    userIds = [...new Set(userIds)];
     const users = await User.find({ _id: { $in: userIds } })
       .select(userMiniService.userMiniProfileFields)
       .exec();
-    return { messages: groupedMessages, users };
+    return { messages: Object.fromEntries(groupedMessages), users };
   }
   collect().then(
     data => res.json(data),

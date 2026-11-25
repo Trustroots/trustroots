@@ -3,7 +3,7 @@ import type {
   ExperienceModel,
   ExperienceRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-import moment from 'moment';
+import { milliseconds, type Duration } from 'date-fns';
 import mongoose from 'mongoose';
 import should from 'should';
 import sinon from 'sinon';
@@ -64,8 +64,8 @@ describe('Job: Set experience to public after a given period of time', () => {
     return experiences.length;
   }
 
-  function wait(duration: import('moment').DurationInputArg1): void {
-    sinon.clock.tick(moment.duration(duration).asMilliseconds());
+  function wait(duration: Duration): void {
+    sinon.clock.tick(milliseconds(duration));
   }
 
   async function runJobAndExpectPublicExperiences(

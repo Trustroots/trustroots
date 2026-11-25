@@ -1,6 +1,6 @@
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import log from '@trustroots/logger';
 import mongoose, { type Types } from 'mongoose';
 import type { OfferServerRecord } from '../models/offer.server.types.mts';
@@ -48,10 +48,7 @@ const Offer = mongoose.model<OfferServerRecord>(
 function run(_job: unknown, agendaDone: Done): void {
   async function reactivate(): Promise<void> {
     // Ignore only offers modified within past X days
-    // Has to be a JS Date object, not a Moment object
-    const updatedTimeAgo = moment()
-      .subtract(moment.duration(config.limits.timeToReactivateHosts))
-      .toDate();
+    const updatedTimeAgo = sub(new Date(), config.limits.timeToReactivateHosts);
     const offers = await Offer.find({
       type: 'host',
       status: 'no',

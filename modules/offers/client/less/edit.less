@@ -152,13 +152,6 @@
       margin-inline: -0.75rem;
     }
 
-    // Overlap the 256px raster tiles to cover gaps at fractional positions.
-    .offer-map img.leaflet-tile {
-      width: 257px !important;
-      height: 257px !important;
-      mix-blend-mode: normal;
-    }
-
     .offer-panel-map {
       background: transparent;
       border: 0;
@@ -244,8 +237,6 @@
     top: 0;
     width: 100%;
     height: 100%;
-    // Same as `.leaflet-marker-pane  { z-index: 600; }` at:
-    // @link https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L93
     z-index: 600;
     // Vignetting shadow, darker from sides and bright from the middle:
     box-shadow: inset 0 0 (@offer-map-height * 0.45) rgba(0, 0, 0, 0.45);

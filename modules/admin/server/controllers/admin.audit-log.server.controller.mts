@@ -6,7 +6,6 @@ import errorService, {
 } from './../../../core/server/services/error.server.service.mts';
 import log from '@trustroots/logger';
 import mongoose, { type Types } from 'mongoose';
-import _ from 'lodash';
 import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
 import { hashIpAddress } from '../../../core/server/services/ip-hash.server.service.mts';
 
@@ -66,11 +65,17 @@ export const record = (
   next: (error?: Error | null) => void,
 ): void => {
   const omittedAddressFields = ['ip', 'ipAddress', 'ipHash'];
+  const omitAddressFields = (value: unknown) =>
+    Object.fromEntries(
+      Object.entries(value ?? {}).filter(
+        ([key]) => !omittedAddressFields.includes(key),
+      ),
+    );
   const auditLogItem = new AuditLog({
-    body: _.omit(req.body as Record<string, unknown>, omittedAddressFields),
+    body: omitAddressFields(req.body),
     ipHash: hashIpAddress(getClientIpAddress(req)),
     params: req.params,
-    query: _.omit(req.query as Record<string, unknown>, omittedAddressFields),
+    query: omitAddressFields(req.query),
     route: req.route.path,
     user: req.user._id,
   });

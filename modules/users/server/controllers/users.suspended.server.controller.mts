@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mts';
 
 interface SuspendedRequest {
@@ -35,8 +34,8 @@ service.invalidateSuspendedSessions = function (req, res, next) {
   // User is suspended
   if (
     req.user &&
-    _.isArray(req.user.roles) &&
-    req.user.roles.indexOf('suspended') > -1
+    Array.isArray(req.user.roles) &&
+    req.user.roles.includes('suspended')
   ) {
     // Passport 0.6+ requires logout errors to be handled asynchronously.
     return req.logout!(function (err) {

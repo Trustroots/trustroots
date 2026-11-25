@@ -13,7 +13,7 @@ import statsService from './../../../stats/server/services/stats.server.service.
 import statistics from './../controllers/statistics.server.controller.mts';
 import log from '@trustroots/logger';
 import type { StatObject } from '../../../stats/server/services/stats.server.service.mts';
-import type moment from 'moment';
+import type { Duration } from 'date-fns';
 
 type JobDone = (error?: Error | null) => void;
 type StatisticsService =
@@ -170,7 +170,7 @@ function writeDailyStat(statObject: StatObject, callback: JobDone): void {
  * Collect Last Seen Stats
  */
 function collectLastSeen(
-  seenSinceDays: moment.DurationInputArg1,
+  seenSinceDays: Duration,
   namespace: string,
   totalUserCount: number | undefined,
   callback: JobDone,

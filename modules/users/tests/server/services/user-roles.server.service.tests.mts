@@ -14,6 +14,10 @@ describe('Service: user-roles', function () {
     it('returns false when the user has no roles defined', function () {
       userRoles.hasRole({}, 'admin').should.be.false();
     });
+
+    it('returns false when the user is missing', function () {
+      userRoles.hasRole(null, 'admin').should.be.false();
+    });
   });
 
   describe('hasAnyRole', function () {
@@ -30,6 +34,11 @@ describe('Service: user-roles', function () {
       userRoles
         .hasAnyRole({ roles: ['user'] }, ['suspended', 'shadowban'])
         .should.be.false();
+    });
+
+    it('returns false for a missing user or a user without roles', function () {
+      userRoles.hasAnyRole(null, ['admin']).should.be.false();
+      userRoles.hasAnyRole({}, ['admin']).should.be.false();
     });
   });
 

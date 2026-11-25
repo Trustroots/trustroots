@@ -3,13 +3,13 @@ import type {
   TestExpressApp,
   UserDocument,
 } from '../../../../testutils/server/model-contracts.mts';
-import _ from 'lodash';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import should from 'should';
 import sinon from 'sinon';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
+import { pick } from '../../../users/server/lib/pick.server.mts';
 import express from './../../../../config/lib/express.mts';
 describe('Read a single experience by experience id', () => {
   let app: TestExpressApp;
@@ -112,11 +112,11 @@ describe('Read a single experience by experience id', () => {
         .slice(2)
         .filter(field => field !== 'avatarVersion');
       const userFromExp = {
-        ..._.pick(users[1], userFields),
+        ...pick(users[1], userFields),
         _id: users[1]._id.toString(),
       };
       const userToExp = {
-        ..._.pick(users[2], userFields),
+        ...pick(users[2], userFields),
         _id: users[2]._id.toString(),
       };
       should(body).eql({

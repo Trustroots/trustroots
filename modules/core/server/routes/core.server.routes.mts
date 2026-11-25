@@ -1,7 +1,6 @@
 import type { DecodedResult } from 'nostr-tools/nip19';
 import type { Application } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
-import _ from 'lodash';
 import core from './../controllers/core.server.controller.mts';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import authenticationService from './../../../users/server/services/authentication.server.service.mts';
@@ -62,7 +61,8 @@ export default function (app: Application) {
   redirect('/faq/tribes', '/faq/circles');
   redirect('/tribes', '/circles');
   app.route('/tribes/:tribe').get(function (req, res) {
-    const tribe = _.get(req, ['tribe', 'slug']);
+    const tribe = (req as typeof req & { tribe?: { slug?: string } }).tribe
+      ?.slug;
     const route = tribe ? '/circles/' + tribe : '/circles';
     res.redirect(301, route);
   });
