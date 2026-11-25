@@ -6,49 +6,33 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import L from 'leaflet';
 import type { Event } from 'nostr-tools';
 import CircleLocationMap, {
-  locationPopup,
+  LocationPopup,
   type CircleLocation,
 } from '@/modules/tribes/client/components/CircleLocationMap';
 import { useCircleMapEvents } from '@/modules/tribes/client/hooks/useCircleMapEvents';
 import type NostrService from '@/modules/search/client/services/nostr.client.service';
+import type {
+  MapBounds,
+  MapProps,
+} from '@/modules/core/client/components/Map/types';
 
-vi.mock('leaflet', () => {
-  const map = {
-    setView: vi.fn().mockReturnThis(),
-    remove: vi.fn(),
-    fitBounds: vi.fn(),
-    on: vi.fn(),
-    setMinZoom: vi.fn(),
-    getCenter: vi.fn(() => ({ lat: 12, lng: 34 })),
-    getZoom: vi.fn(() => 6),
-  };
-  const group = { addTo: vi.fn().mockReturnThis(), clearLayers: vi.fn() };
-  return {
-    __esModule: true,
-    default: {
-      map: vi.fn(() => map),
-      control: { scale: vi.fn(() => ({ addTo: vi.fn() })) },
-      tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
-      layerGroup: vi.fn(() => group),
-      circleMarker: vi.fn(() => ({
-        bindPopup: vi.fn().mockReturnThis(),
-        on: vi.fn().mockReturnThis(),
-        addTo: vi.fn().mockReturnThis(),
-        openPopup: vi.fn(),
-        getPopup: vi.fn(() => ({ options: { autoPan: true } })),
-      })),
-      latLngBounds: vi.fn(value => value),
-    },
-  };
-});
-vi.mock('@/modules/core/client/utils/map', () => ({
-  getRasterMapTiles: () => ({
-    url: 'https://tiles.test/{z}/{x}/{y}',
-    options: {},
-  }),
+const mockMap = { fitBounds: vi.fn(), flyTo: vi.fn(), setPointState: vi.fn() };
+let mockMapProps: MapProps;
+vi.mock('@/modules/core/client/components/Map/index', () => ({
+  default: function MockMap(props: MapProps) {
+    mockMapProps = props;
+    React.useImperativeHandle(props.ref, () => mockMap);
+    return (
+      <div>
+        {props.pins?.map(pin => (
+          <React.Fragment key={pin.key}>{pin.children}</React.Fragment>
+        ))}
+        {props.popup && <div role="dialog">{props.popup.children}</div>}
+      </div>
+    );
+  },
 }));
 vi.mock('@/modules/core/client/components/DeviceLocationButton', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
@@ -121,6 +105,21 @@ const props = {
   countLabel: 'places',
 };
 
+const loadMap = () =>
+  act(() => mockMapProps.onLoad!(mockMapProps.view, {} as MapBounds));
+const moveEnd = (latitude = 12, longitude = 34, zoom = 6) =>
+  act(() =>
+    mockMapProps.onMoveEnd!(
+      { latitude, longitude, zoom },
+      {} as MapBounds,
+      true,
+    ),
+  );
+const renderPopup = (popupLocation: CircleLocation) =>
+  render(<LocationPopup location={popupLocation} />).container;
+const markerButton = () =>
+  screen.getByRole('button', { name: '<b>Example</b>' });
+
 describe('shared circle map', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -129,29 +128,42 @@ describe('shared circle map', () => {
 
   it('restores the chosen view when opening another circle map', () => {
     const { unmount } = render(<CircleLocationMap {...props} />);
-    const map = vi.mocked(L.map).mock.results[0].value;
-    const moveEnd = map.on.mock.calls.find(
-      ([name]: [string]) => name === 'moveend',
-    )[1];
-    act(() => moveEnd());
+    expect(mockMapProps.view).toEqual({
+      latitude: 20,
+      longitude: 0,
+      zoom: 1,
+    });
+    moveEnd();
     unmount();
-    vi.clearAllMocks();
     render(<CircleLocationMap {...props} />);
-    const nextMap = vi.mocked(L.map).mock.results[0].value;
-    expect(nextMap.setView).toHaveBeenCalledWith([12, 34], 6);
-    expect(nextMap.fitBounds).not.toHaveBeenCalled();
+    loadMap();
+    expect(mockMapProps.view).toEqual({
+      latitude: 12,
+      longitude: 34,
+      zoom: 6,
+    });
+    expect(mockMap.fitBounds).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '{"latitude":12,"longitude":34}',
+    '{"latitude":12,"longitude":34,"zoom":0}',
+    '{"latitude":86,"longitude":34,"zoom":6}',
+    '{"latitude":12,"longitude":181,"zoom":6}',
+    '{"latitude":12,"longitude":34,"zoom":25}',
+    '[12, 34, 6]',
+    'not json',
+  ])('ignores a saved view that is not usable (%s)', saved => {
+    sessionStorage.setItem('circle-map-view', saved);
+    render(<CircleLocationMap {...props} />);
+    expect(mockMapProps.view.zoom).toBe(1);
   });
 
   it('does not save the automatic initial fit as a chosen view', () => {
-    vi.mocked(L.map)(document.createElement('div'));
-    const map = vi.mocked(L.map).mock.results[0].value;
-    map.fitBounds.mockImplementationOnce(() => {
-      const moveEnd = map.on.mock.calls.find(
-        ([name]: [string]) => name === 'moveend',
-      )[1];
-      moveEnd();
-    });
+    mockMap.fitBounds.mockImplementationOnce(() => moveEnd());
     render(<CircleLocationMap {...props} />);
+    loadMap();
+    expect(mockMap.fitBounds).toHaveBeenCalled();
     expect(sessionStorage.getItem('circle-map-view')).toBeNull();
   });
 
@@ -168,11 +180,7 @@ describe('shared circle map', () => {
       });
     try {
       render(<CircleLocationMap {...props} />);
-      const map = vi.mocked(L.map).mock.results[0].value;
-      const moveEnd = map.on.mock.calls.find(
-        ([name]: [string]) => name === 'moveend',
-      )[1];
-      expect(() => act(() => moveEnd())).not.toThrow();
+      expect(() => moveEnd()).not.toThrow();
     } finally {
       getItem.mockRestore();
       setItem.mockRestore();
@@ -183,99 +191,129 @@ describe('shared circle map', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} locations={[]} state="loading" />,
     );
-    const map = vi.mocked(L.map).mock.results[0].value;
+    loadMap();
     rerender(<CircleLocationMap {...props} state="loading" />);
     const second = { ...location, id: 'second', latitude: -30, longitude: -80 };
     const locations = [location, second];
     rerender(
       <CircleLocationMap {...props} locations={locations} state="loading" />,
     );
-    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(mockMap.fitBounds).not.toHaveBeenCalled();
     rerender(<CircleLocationMap {...props} locations={locations} />);
-    expect(map.fitBounds).toHaveBeenCalledWith(
-      [
-        [12, 34],
-        [-30, -80],
-      ],
-      { padding: [24, 24], maxZoom: 8, animate: false },
+    expect(mockMap.fitBounds).toHaveBeenCalledWith(
+      {
+        northEast: { lat: 12, lng: 34 },
+        southWest: { lat: -30, lng: -80 },
+      },
+      { padding: 24, maxZoom: 8, animate: false },
     );
     rerender(<CircleLocationMap {...props} locations={[second]} />);
-    expect(map.fitBounds).toHaveBeenCalledTimes(1);
-    expect(L.circleMarker).toHaveBeenLastCalledWith(
-      [-30, -80],
-      expect.any(Object),
-    );
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getAllByRole('button', { name: '<b>Example</b>' }),
+    ).toHaveLength(1);
+  });
+
+  it('waits for the map to load before fitting results', () => {
+    render(<CircleLocationMap {...props} />);
+    expect(mockMap.fitBounds).not.toHaveBeenCalled();
+    loadMap();
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
   });
 
   it('preserves a view chosen before the initial locations finish loading', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} state="loading" />,
     );
-    const map = vi.mocked(L.map).mock.results[0].value;
-    const moveStart = map.on.mock.calls.find(
-      ([name]: [string]) => name === 'movestart',
-    )[1];
-    act(() => moveStart());
+    loadMap();
+    act(() => mockMapProps.onMoveStart!());
     rerender(<CircleLocationMap {...props} />);
-    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(mockMap.fitBounds).not.toHaveBeenCalled();
   });
+
   it('centres precisely on device location and keeps late relay results from resetting the view', () => {
     const { rerender } = render(
       <CircleLocationMap {...props} locations={[]} state="loading" />,
     );
-    const map = vi.mocked(L.map).mock.results[0].value;
+    loadMap();
+    moveEnd();
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock device location' }),
     );
-    expect(map.setView).toHaveBeenCalledWith([0, 0], 13, { animate: false });
+    expect(mockMap.flyTo).toHaveBeenCalledWith(
+      { latitude: 0, longitude: 0, zoom: 13 },
+      false,
+    );
+    moveEnd(0, 0, 13);
+    moveEnd(0.002, 0.003, 14);
+    expect(sessionStorage.getItem('circle-map-view')).toBe(
+      '{"latitude":12,"longitude":34,"zoom":6}',
+    );
     rerender(<CircleLocationMap {...props} />);
-    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(mockMap.fitBounds).not.toHaveBeenCalled();
   });
+
   it('uses the approximate fallback location and zoom after a device failure', () => {
     render(<CircleLocationMap {...props} locations={[]} state="loading" />);
-    const map = vi.mocked(L.map).mock.results[0].value;
     fireEvent.click(
       screen.getByRole('button', { name: 'Mock approximate location' }),
     );
-    expect(map.setView).toHaveBeenCalledWith([34, -17], 6, { animate: false });
-  });
-  it('keeps the selected popup open when locations are refreshed', () => {
-    const { rerender } = render(<CircleLocationMap {...props} />);
-    const marker = vi.mocked(L.circleMarker).mock.results[0].value;
-    const notify = (name: string) =>
-      marker.on.mock.calls.find(([event]: [string]) => event === name)[1]();
-    act(() => notify('popupopen'));
-    rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
-    expect(
-      vi.mocked(L.circleMarker).mock.results[1].value.openPopup,
-    ).toHaveBeenCalled();
-    act(() => notify('popupclose'));
-    rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
-    expect(
-      vi.mocked(L.circleMarker).mock.results[2].value.openPopup,
-    ).not.toHaveBeenCalled();
+    expect(mockMap.flyTo).toHaveBeenCalledWith(
+      { latitude: 34, longitude: -17, zoom: 6 },
+      false,
+    );
+    moveEnd(34, -17, 6);
+    expect(sessionStorage.getItem('circle-map-view')).toBeNull();
   });
 
-  it('renders markers, safe text popups and attribution, and removes its map', () => {
-    const { unmount, rerender } = render(
+  it('opens a popup for the selected marker and keeps it open when locations are refreshed', () => {
+    const { rerender } = render(<CircleLocationMap {...props} />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(markerButton(), { detail: 1 });
+    expect(screen.getByRole('dialog')).toHaveTextContent('<b>Example</b>');
+    expect(screen.getByRole('link', { name: 'Source' })).not.toHaveFocus();
+    rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Close popup' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(markerButton());
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    act(() => mockMapProps.onClick!([0, 0]));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(markerButton());
+    rerender(<CircleLocationMap {...props} locations={[]} />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('moves keyboard focus to the popup action', () => {
+    render(
+      <CircleLocationMap
+        {...props}
+        locations={[{ ...location, popupHeading: <span>Custom heading</span> }]}
+      />,
+    );
+    fireEvent.click(markerButton(), { detail: 0 });
+    expect(screen.getByText('Custom heading')).toBeInTheDocument();
+    const action = screen.getByRole('link', { name: 'Source' });
+    expect(action).toHaveFocus();
+    markerButton().focus();
+    fireEvent.click(markerButton(), { detail: 0 });
+    expect(action).toHaveFocus();
+    markerButton().focus();
+    fireEvent.click(markerButton(), { detail: 1 });
+    expect(action).not.toHaveFocus();
+  });
+
+  it('renders markers, attribution, legend and status text', () => {
+    const { rerender } = render(
       <CircleLocationMap {...props} attribution="Source attribution" />,
     );
     expect(screen.getByText('1 places')).toBeInTheDocument();
     expect(screen.getByText(/Source attribution/)).toBeInTheDocument();
-    expect(L.circleMarker).toHaveBeenCalledWith([12, 34], expect.any(Object));
-    expect(L.map).toHaveBeenCalledWith(
-      expect.any(HTMLElement),
-      expect.objectContaining({
-        scrollWheelZoom: true,
-        touchZoom: true,
-        minZoom: 3,
-        maxBoundsViscosity: 1,
-      }),
+    expect(screen.getByRole('application')).toHaveAccessibleName(
+      'Locations map',
     );
-    expect(L.circleMarker).toHaveBeenCalledWith(
-      [12, 34],
-      expect.objectContaining({ fillColor: '#488261' }),
-    );
+    expect(markerButton()).toHaveStyle({ backgroundColor: '#488261' });
     rerender(
       <CircleLocationMap
         {...props}
@@ -286,10 +324,7 @@ describe('shared circle map', () => {
     expect(screen.getByLabelText('Circle locations')).toHaveClass(
       'circle-location-map-panel--brand',
     );
-    expect(L.circleMarker).toHaveBeenCalledWith(
-      [12, 34],
-      expect.objectContaining({ fillColor: '#12b591' }),
-    );
+    expect(markerButton()).toHaveStyle({ backgroundColor: '#12b591' });
     rerender(
       <CircleLocationMap
         {...props}
@@ -303,44 +338,45 @@ describe('shared circle map', () => {
       'Circle locations',
     );
     expect(screen.getByText('Meeting location')).toBeInTheDocument();
-    expect(L.circleMarker).toHaveBeenLastCalledWith(
-      [12, 34],
-      expect.objectContaining({ fillColor: '#b16a19' }),
-    );
-    const accommodation = '/profile/sample/accommodation';
-    const internalLink = locationPopup({
-      ...location,
-      link: { url: accommodation, label: 'Hosting' },
-    }).querySelector('a');
-    expect(internalLink).toHaveAttribute('href', accommodation);
-    expect(internalLink).not.toHaveAttribute('target');
-    const popup = locationPopup(location);
-    expect(popup.querySelector('b')).toBeNull();
-    expect(popup.querySelector('script')).toBeNull();
-    expect(popup.querySelector('a')).toHaveAttribute(
-      'rel',
-      'noopener noreferrer',
-    );
-    expect(
-      locationPopup({
-        ...location,
-        link: { url: 'javascript:alert(1)', label: 'Bad' },
-      }).querySelector('a'),
-    ).toBeNull();
-    expect(
-      locationPopup({ ...location, link: undefined }).querySelector('a'),
-    ).toBeNull();
+    expect(markerButton()).toHaveStyle({ backgroundColor: '#b16a19' });
     rerender(<CircleLocationMap {...props} locations={[]} />);
     expect(screen.getByText('Empty')).toBeInTheDocument();
     rerender(<CircleLocationMap {...props} state="loading" />);
     expect(screen.getByText('Loading')).toBeInTheDocument();
     rerender(<CircleLocationMap {...props} state="error" />);
     expect(screen.getByText('Unavailable')).toBeInTheDocument();
-    unmount();
-    expect(vi.mocked(L.map).mock.results[0].value.remove).toHaveBeenCalled();
   });
+
+  it('renders popup text and links safely', () => {
+    const accommodation = '/profile/sample/accommodation';
+    const internalLink = renderPopup({
+      ...location,
+      link: { url: accommodation, label: 'Hosting' },
+    }).querySelector('a');
+    expect(internalLink).toHaveAttribute('href', accommodation);
+    expect(internalLink).not.toHaveAttribute('target');
+    const popup = renderPopup(location);
+    expect(popup).toHaveTextContent('<b>Example</b>');
+    expect(popup).toHaveTextContent('<script>untrusted</script>');
+    expect(popup.querySelector('b, script')).toBeNull();
+    expect(popup.querySelector('a')).toHaveAttribute(
+      'rel',
+      'noopener noreferrer',
+    );
+    expect(popup.querySelector('a')).toHaveAttribute('target', '_blank');
+    expect(
+      renderPopup({
+        ...location,
+        link: { url: 'javascript:alert(1)', label: 'Bad' },
+      }).querySelector('a'),
+    ).toBeNull();
+    expect(
+      renderPopup({ ...location, link: undefined }).querySelector('a'),
+    ).toBeNull();
+  });
+
   it('renders labelled popup facts as safe text and handles empty facts', () => {
-    const popup = locationPopup({
+    const popup = renderPopup({
       ...location,
       facts: [{ label: '<b>Signal</b>', value: '<img src=x>Thumb' }],
     });
@@ -348,22 +384,12 @@ describe('shared circle map', () => {
     expect(popup.querySelector('dd')).toHaveTextContent('<img src=x>Thumb');
     expect(popup.querySelector('img')).toBeNull();
     expect(
-      locationPopup({ ...location, facts: [] }).querySelector('dl'),
+      renderPopup({ ...location, facts: [] }).querySelector('dl'),
     ).toBeNull();
   });
-  it('keeps tiles filling a map resized beyond the minimum zoom world size', () => {
-    render(<CircleLocationMap {...props} />);
-    const element = screen.getByRole('application');
-    Object.defineProperty(element, 'clientWidth', { value: 2500 });
-    const map = vi.mocked(L.map).mock.results.slice(-1)[0].value;
-    const resize = map.on.mock.calls
-      .filter(([name]: [string]) => name === 'resize')
-      .slice(-1)[0][1];
-    act(() => resize());
-    expect(map.setMinZoom).toHaveBeenCalledWith(4);
-  });
+
   it('renders linked fact lists safely and leaves anonymous and unsafe URLs unlinked', () => {
-    const popup = locationPopup({
+    const popup = renderPopup({
       ...location,
       facts: [
         {

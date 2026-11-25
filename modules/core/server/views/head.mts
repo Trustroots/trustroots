@@ -65,7 +65,7 @@ export function Head(locals: PageLocals): ReactNode {
           __html: `<script async src="${he.escape(umami.scriptSrc)}" data-website-id="${he.escape(umami.websiteId)}" data-do-not-track="true" data-performance="true" data-exclude-search="true" data-exclude-hash="true" data-before-send="trUmamiBeforeSend" nonce="${he.escape(locals.nonce)}"></script>`,
         },
       }),
-    h('link', { rel: 'dns-prefetch', href: '//api.tiles.mapbox.com' }),
+    h('link', { rel: 'dns-prefetch', href: '//tiles.openfreemap.org' }),
     h('link', { rel: 'dns-prefetch', href: '//gravatar.com' }),
     h('meta', { name: 'description', content: description }),
     h('meta', { name: 'application-name', content: title }),
