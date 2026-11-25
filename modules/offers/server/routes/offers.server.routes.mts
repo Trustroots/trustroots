@@ -1,7 +1,9 @@
 import type { Express, RequestHandler, RequestParamHandler } from 'express';
 
 import offersPolicy from './../policies/offers.server.policy.mts';
-import offers from './../controllers/offers.server.controller.mts';
+import offers, {
+  type FindOfferConnections,
+} from '../controllers/offers.server.controller.mts';
 import { getOfferSearchLimit } from '../middleware/offer-search-limit.server.middleware.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
@@ -17,7 +19,7 @@ const parameterHandler = <T extends MiddlewareCallback>(
 /**
  * Module dependencies.
  */
-function register(app: Express) {
+function register(app: Express, findConnections: FindOfferConnections) {
   app
     .route('/api/offers-by/:offerUserId')
     .all(routeHandler(offersPolicy.isAllowed))
@@ -25,7 +27,10 @@ function register(app: Express) {
   app
     .route('/api/offers')
     .all(routeHandler(offersPolicy.isAllowed))
-    .get(getOfferSearchLimit(app), routeHandler(offers.list))
+    .get(
+      getOfferSearchLimit(app),
+      routeHandler(offers.createListHandler(findConnections)),
+    )
     .post(routeHandler(offers.create));
   app
     .route('/api/offers/:offerId')

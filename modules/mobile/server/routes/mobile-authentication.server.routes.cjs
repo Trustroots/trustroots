@@ -48,7 +48,7 @@ const userAvatar =
 const unifiedPush =
   require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
-module.exports = function (app) {
+module.exports = function (app, findOfferConnections) {
   app.post(
     '/api/mobile/v0/nostranslation/alerts/challenge',
     mobileAuthentication.authenticate,
@@ -231,7 +231,7 @@ module.exports = function (app) {
       mobileAuthentication.prepareResource,
       resourcePolicy(offersPolicy.isAllowed, '/api/offers'),
       getOfferSearchLimit(app),
-      offers.list,
+      offers.createListHandler(findOfferConnections),
     )
     .post(
       mobileAuthentication.authenticate,
