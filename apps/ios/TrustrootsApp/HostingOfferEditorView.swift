@@ -1,18 +1,15 @@
 import Combine
 import CoreLocation
 import SwiftUI
+import TrustrootsShared
 
-private enum HostingAvailability: String, CaseIterable {
+private enum HostingAvailability: String {
     case yes, maybe, no
-
-    var label: String { rawValue.capitalized }
 }
 
-private enum MeetingAvailability: String, CaseIterable {
+private enum MeetingAvailability: String {
     case yes, maybe, no
     case notSet = "not-set"
-
-    var label: String { self == .notSet ? "Not set" : rawValue.capitalized }
 }
 
 private struct HostingOfferForm: Equatable {
@@ -153,20 +150,7 @@ struct HostingOfferEditorView: View {
     private func editor(_ binding: Binding<HostingOfferForm>) -> some View {
         Form {
             Section {
-                Picker("Hosting availability", selection: binding.hosting) {
-                    ForEach(HostingAvailability.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.menu)
-                .accessibilityIdentifier("hosting-availability")
-                Picker("Meeting availability", selection: binding.meeting) {
-                    ForEach(MeetingAvailability.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.menu)
-                .accessibilityIdentifier("meeting-availability")
-                if binding.wrappedValue.hosting != .no {
-                    Stepper("Maximum guests: \(binding.wrappedValue.maxGuests)", value: binding.maxGuests, in: 0...99)
-                }
-                Toggle("Show only in my circles", isOn: binding.onlyMyCircles)
+                HostingAvailabilitySection(form: binding, isEnabled: !isSaving)
             } footer: {
                 Text("You can meet even when you are not hosting. Both use this location and circle visibility.")
             }
@@ -265,5 +249,84 @@ struct HostingOfferEditorView: View {
         } catch {
             if !Task.isCancelled { self.error = error.localizedDescription }
         }
+    }
+}
+
+private struct HostingAvailabilitySection: View {
+    @Binding var form: HostingOfferForm
+    let isEnabled: Bool
+    @State private var height: CGFloat = 1
+
+    var body: some View {
+        HostingAvailabilityController(form: $form, height: $height, isEnabled: isEnabled)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+    }
+}
+
+@MainActor
+private struct HostingAvailabilityController: UIViewControllerRepresentable {
+    @Binding var form: HostingOfferForm
+    @Binding var height: CGFloat
+    let isEnabled: Bool
+
+    final class Coordinator {
+        let state = HostingAvailabilitySettingsState()
+        var view: HostingAvailabilityController?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let currentHeight = $height
+        return HostingAvailabilitySettingsControllerKt.HostingAvailabilitySettingsViewController(
+            state: coordinator.state,
+            onHosting: { [weak coordinator] selection in
+                guard let view = coordinator?.view, view.isEnabled,
+                      let availability = HostingAvailability(rawValue: selection) else { return }
+                view.$form.hosting.wrappedValue = availability
+            },
+            onMeeting: { [weak coordinator] selection in
+                guard let view = coordinator?.view, view.isEnabled,
+                      let availability = MeetingAvailability(rawValue: selection) else { return }
+                view.$form.meeting.wrappedValue = availability
+            },
+            onAdjustGuests: { [weak coordinator] delta in
+                guard let view = coordinator?.view, view.isEnabled, view.form.hosting != .no else { return }
+                let guests = view.form.maxGuests + delta.intValue
+                guard (0...99).contains(guests) else { return }
+                view.$form.maxGuests.wrappedValue = guests
+            },
+            onCirclesOnly: { [weak coordinator] checked in
+                guard let view = coordinator?.view, view.isEnabled else { return }
+                view.$form.onlyMyCircles.wrappedValue = checked.boolValue
+            },
+            onHeight: { value in
+                let measuredHeight = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if currentHeight.wrappedValue != measuredHeight {
+                        currentHeight.wrappedValue = measuredHeight
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.view = self
+        coordinator.state.update(
+            hosting: form.hosting.rawValue,
+            meeting: form.meeting.rawValue,
+            maxGuests: Int32(clamping: form.maxGuests),
+            circlesOnly: form.onlyMyCircles,
+            enabled: isEnabled
+        )
     }
 }
