@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
@@ -25,20 +26,19 @@ import org.trustroots.android.ui.profile.MemberProfileScreen
 class ProfileHostingJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val saved = AtomicBoolean(false)
+    private val hostingMeetingStatus = AtomicReference("yes")
     private val fixture = LocalTransportFixture { request ->
-        val offer = if (saved.get()) {
-            """{"_id":"offer-one","status":"no","noOfferDescription":"Away for now","maxGuests":1}"""
-        } else {
-            """{"_id":"offer-one","status":"yes","description":"A quiet guest room","maxGuests":1}"""
-        }
+        val hostingOffer = """{"_id":"offer-one","status":"yes","meetingStatus":"${hostingMeetingStatus.get()}","volunteering":true,"description":"A quiet guest room","maxGuests":1}"""
+        val unavailableOffer = """{"_id":"offer-one","status":"no","meetingStatus":"maybe","volunteering":true,"noOfferDescription":"Away for now","maxGuests":1}"""
         val body = when {
             request.method == "PUT" && request.path == "/api/offers/offer-one" -> {
                 saved.set(true)
-                """{"_id":"offer-one","status":"no","noOfferDescription":"Away for now","maxGuests":1}"""
+                unavailableOffer
             }
             request.path == "/api/users/quiet-fox" ->
                 """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","languages":[]}"""
-            request.path.startsWith("/api/offers-by/") -> "[$offer]"
+            request.path.startsWith("/api/offers-by/") ->
+                if (saved.get()) "[$unavailableOffer]" else "[$hostingOffer]"
             else -> "[]"
         }
         LocalTransportFixture.Response(body)
@@ -46,16 +46,23 @@ class ProfileHostingJourneyTest {
 
     @After fun closeFixture() = fixture.close()
 
+    @Test fun hostingProfileShowsMeetingAvailabilityAndVolunteering() {
+        showProfile()
+        waitForText("Offers volunteering")
+        compose.onNodeWithText("Wants to meet people").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Offers volunteering").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun hostingProfileShowsWhenMemberIsTooBusyToMeet() {
+        hostingMeetingStatus.set("no")
+        showProfile()
+        waitForText("Too busy to meet people")
+        compose.onNodeWithText("Too busy to meet people").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Hosting travellers").performScrollTo().assertIsDisplayed()
+    }
+
     @Test fun hostingShortcutCancelsAndReturnsSavedAvailabilityToRetainedProfile() {
-        compose.setContent {
-            NativeTestAppFrame(Destination.Menu) {
-                MemberProfileScreen(
-                    api = MobileApiClient(fixture.baseURL),
-                    session = MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox")),
-                    username = "quiet-fox", onSessionInvalidated = {}, onBack = {},
-                )
-            }
-        }
+        showProfile()
         waitForText("Edit hosting")
         captureUsabilityScreenshot(compose, "android_profile_hosting_shortcut")
         compose.onNodeWithText("Edit hosting").assertIsDisplayed().performClick()
@@ -77,10 +84,24 @@ class ProfileHostingJourneyTest {
         compose.onNodeWithText("About").performClick()
         waitForText("Not hosting currently")
         compose.onNodeWithText("Not hosting currently").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Maybe up for meeting").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Offers volunteering").assertDoesNotExist()
         captureUsabilityScreenshot(compose, "android_profile_saved_hosting")
         // The editor loads its own profile twice; returning never reloads the parent's profile.
         assertEquals(3, fixture.requests.count { it.path == "/api/users/quiet-fox" })
         assertEquals(1, fixture.requests.count { it.method == "PUT" && it.path == "/api/offers/offer-one" })
+    }
+
+    private fun showProfile() {
+        compose.setContent {
+            NativeTestAppFrame(Destination.Menu) {
+                MemberProfileScreen(
+                    api = MobileApiClient(fixture.baseURL),
+                    session = MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox")),
+                    username = "quiet-fox", onSessionInvalidated = {}, onBack = {},
+                )
+            }
+        }
     }
 
     private fun waitForText(text: String) {

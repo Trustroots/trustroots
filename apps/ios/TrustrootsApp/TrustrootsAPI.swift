@@ -410,6 +410,8 @@ struct AccommodationOffer: Decodable, Identifiable {
     let description: String?
     let noOfferDescription: String?
     let maxGuests: Int?
+    let meetingStatus: String?
+    let volunteering: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
@@ -417,6 +419,8 @@ struct AccommodationOffer: Decodable, Identifiable {
         case description
         case noOfferDescription
         case maxGuests
+        case meetingStatus
+        case volunteering
     }
 }
 

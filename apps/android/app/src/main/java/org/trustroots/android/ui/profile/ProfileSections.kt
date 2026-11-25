@@ -220,6 +220,13 @@ internal fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: 
         CircularProgressIndicator()
         return
     }
+    val meetingLabel = when (hosting?.meetingStatus) {
+        "yes" -> R.string.profile_meeting_yes
+        "maybe" -> R.string.profile_meeting_maybe
+        "no" -> R.string.profile_meeting_no
+        else -> null
+    }
+    meetingLabel?.let { Text(stringResource(it), fontWeight = FontWeight.Medium) }
     val status = when (hosting?.status) {
         "yes" -> stringResource(R.string.profile_hosting_yes)
         "maybe" -> stringResource(R.string.profile_hosting_maybe)
@@ -227,7 +234,11 @@ internal fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: 
     }
     Text(status, fontWeight = FontWeight.Bold)
     hosting?.let { offer ->
-        val details = if (offer.status == "yes" || offer.status == "maybe") {
+        val canHost = offer.status == "yes" || offer.status == "maybe"
+        if (canHost && offer.volunteering) {
+            Text(stringResource(R.string.profile_offers_volunteering))
+        }
+        val details = if (canHost) {
             offer.description
         } else {
             offer.noOfferDescription
@@ -235,7 +246,7 @@ internal fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: 
         details?.let {
             Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
         }
-        if (offer.status == "yes" || offer.status == "maybe") {
+        if (canHost) {
             offer.maxGuests?.let {
                 Text(pluralStringResource(R.plurals.profile_hosting_guest_space, it, it))
             }
