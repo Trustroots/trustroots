@@ -404,6 +404,52 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
     }
 
+    func testRegularAccountSavesComposeEmailAndNewsletterPreferences() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let field = app.descendants(matching: .any)["account-email"]
+        let newsletter = app.descendants(matching: .any)["account-newsletter"]
+        let save = app.descendants(matching: .any)["account-save-preferences"]
+        XCTAssertTrue(newsletter.waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(newsletter, in: app)
+
+        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(field.value as? String, "pilot-member@example.test")
+        reveal(field, in: app)
+        let fieldEnd = field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        fieldEnd.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 2) { fieldEnd.tap() }
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+        app.typeText("x")
+        let edited = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "pilot-member@example.testx"),
+            object: field
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [edited], timeout: 10), .completed, app.debugDescription)
+
+        tapAccountButton(save, in: app)
+        let confirmation = element(labelled: "Account settings saved.", in: app)
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 10), app.debugDescription)
+        let pending = element(labelled: "Email confirmation is pending for pilot-member@example.testx.", in: app)
+        XCTAssertTrue(pending.exists, app.debugDescription)
+
+        let section = app.descendants(matching: .any)["account-preferences"]
+        XCTAssertTrue(section.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: section.screenshot())
+        screenshot.name = "regular-ios-account-preferences-saved"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testNostrLocalKeySurvivesSignOutAndRemovalKeepsProfileSeparate() throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"

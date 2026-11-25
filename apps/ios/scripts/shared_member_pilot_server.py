@@ -21,6 +21,8 @@ MEMBER = {
     "description": "A fictional profile for simulator testing.",
     "locationLiving": "Example Bay",
 }
+MEMBER_EMAIL = "pilot-member@example.test"
+REQUESTED_EMAIL = "pilot-member@example.testx"
 PARTNER = {
     "_id": "member-pilot-partner",
     "username": "pilot-partner",
@@ -84,6 +86,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
     nostr_challenge = None
     hosting_offer = None
     memberships = {CIRCLES[1]["_id"]}
+    newsletter = False
+    pending_email = None
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -113,10 +117,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if not self._authorised():
             return
         if route == "/api/mobile/v0/me":
+            fixture = type(self)
+            with fixture.session_lock:
+                newsletter = fixture.newsletter
             self._json(200, {"member": {
                 **MEMBER,
-                "email": "pilot-member@example.test",
-                "newsletter": False,
+                "email": MEMBER_EMAIL,
+                "newsletter": newsletter,
             }})
         elif route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
             fixture = type(self)
@@ -124,10 +131,18 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 drop_profile_response = fixture.drop_profile_response
                 refresh_count = fixture.refresh_count
                 linked_npub = fixture.linked_npub
+                newsletter = fixture.newsletter
+                pending_email = fixture.pending_email
             if drop_profile_response:
                 self.close_connection = True
                 return
-            profile = {**MEMBER, "nostrNpub": linked_npub}
+            profile = {
+                **MEMBER,
+                "email": MEMBER_EMAIL,
+                "newsletter": newsletter,
+                "emailTemporary": pending_email,
+                "nostrNpub": linked_npub,
+            }
             if refresh_count:
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
             self._json(200, {"profile": profile})
@@ -248,6 +263,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
+                fixture.newsletter = False
+                fixture.pending_email = None
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -333,6 +350,23 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"drop": drop})
             return
         if not self._authorised():
+            return
+        if self.path == "/api/mobile/v0/account":
+            if self._body() != {"email": REQUESTED_EMAIL, "newsletter": True}:
+                self._json(422, {"message": "Expected the fixture account preferences."})
+                return
+            fixture = type(self)
+            with fixture.session_lock:
+                fixture.newsletter = True
+                fixture.pending_email = REQUESTED_EMAIL
+                linked_npub = fixture.linked_npub
+            self._json(200, {
+                **MEMBER,
+                "email": MEMBER_EMAIL,
+                "emailTemporary": REQUESTED_EMAIL,
+                "newsletter": True,
+                "nostrNpub": linked_npub,
+            })
             return
         if self.path == f'/api/mobile/v0/offers/{HOSTING_OFFER["_id"]}':
             update = self._body()
