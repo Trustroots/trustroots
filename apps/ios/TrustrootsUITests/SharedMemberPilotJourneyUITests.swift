@@ -153,6 +153,58 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     @MainActor
+    func testRegularCirclesFiltersOpensDetailsAndChangesMembership() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        app.buttons["Menu"].tap()
+        let circles = app.descendants(matching: .any)["circles-menu-entry"]
+        XCTAssertTrue(circles.waitForExistence(timeout: 10), app.debugDescription)
+        circles.tap()
+
+        let joined = app.descendants(matching: .any)["circle-circle-pilot-garden"]
+        let discovery = app.descendants(matching: .any)["circle-circle-pilot-night"]
+        XCTAssertTrue(joined.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(discovery.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertLessThan(joined.frame.minY, discovery.frame.minY)
+
+        let filter = app.descendants(matching: .any)["circles-filter"]
+        enterText("lanternx", into: filter, in: app)
+        XCTAssertTrue(element(labelled: "No matching circles", in: app).waitForExistence(timeout: 10))
+        app.typeText(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertTrue(discovery.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(joined.exists)
+
+        let membership = app.descendants(matching: .any)["circle-membership-circle-pilot-night"]
+        XCTAssertEqual(membership.label, "Join")
+        membership.tap()
+        let becameJoined = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Joined"), object: membership
+        )
+        await fulfillment(of: [becameJoined], timeout: 10)
+
+        discovery.tap()
+        XCTAssertTrue(app.staticTexts["Night Walkers"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Back"].tap()
+        XCTAssertTrue(filter.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(filter.value as? String, "lantern")
+        XCTAssertTrue(discovery.exists)
+        XCTAssertFalse(joined.exists)
+        XCTAssertEqual(membership.label, "Joined")
+        membership.tap()
+        let becameAvailable = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Join"), object: membership
+        )
+        await fulfillment(of: [becameAvailable], timeout: 10)
+        XCTAssertTrue(element(labelled: "Open the Trustroots Wiki", in: app).exists)
+    }
+
+    @MainActor
     func testRegularInboxFiltersMessageContentAndUpdatesUnreadOnReturn() async throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"

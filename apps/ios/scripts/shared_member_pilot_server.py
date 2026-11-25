@@ -29,6 +29,23 @@ PARTNER = {
 }
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
+CIRCLES = [
+    {
+        "_id": "circle-pilot-night",
+        "slug": "night-walkers",
+        "label": "Night Walkers",
+        "description": "<p>Bring a lantern.</p>",
+        "count": 42,
+    },
+    {
+        "_id": "circle-pilot-garden",
+        "slug": "garden-friends",
+        "label": "Garden Friends",
+        "description": "<p>Share seeds.</p>",
+        "count": 18,
+    },
+]
+CIRCLE_ROUTE = "/api/mobile/v0/memberships/"
 INCOMING_MESSAGE = {
     "_id": "message-pilot-incoming",
     "content": "Hello from the test fixture.",
@@ -66,6 +83,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
+    memberships = {CIRCLES[1]["_id"]}
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -162,6 +180,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "user": PARTNER,
             })
         elif route == "/api/mobile/v0/circles":
+            self._json(200, CIRCLES)
+        elif route == "/api/mobile/v0/memberships":
+            fixture = type(self)
+            with fixture.session_lock:
+                memberships = [{"tribe": circle} for circle in CIRCLES if circle["_id"] in fixture.memberships]
+            self._json(200, memberships)
+        elif route == "/api/mobile/v0/experiences":
             self._json(200, [])
         elif route == "/api/mobile/v0/messages":
             fixture = type(self)
@@ -222,6 +247,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.send_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
+                fixture.memberships = {CIRCLES[1]["_id"]}
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -245,6 +271,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
             with fixture.session_lock:
                 fixture.access_token = None
                 fixture.refresh_token = None
+            self._json(200, {})
+        elif self.path == CIRCLE_ROUTE + CIRCLES[0]["_id"]:
+            with fixture.session_lock:
+                fixture.memberships.add(CIRCLES[0]["_id"])
             self._json(200, {})
         elif self.path == "/api/mobile/v0/profile/nostr/challenge":
             npub = body.get("nostrNpub")
@@ -333,6 +363,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
         type(self).nostr_challenge = None
         type(self).linked_npub = npub or None
         self._json(200, {**MEMBER, "nostrNpub": type(self).linked_npub})
+
+    def do_DELETE(self):  # noqa: N802 - BaseHTTPRequestHandler API
+        if not self._authorised():
+            return
+        if self.path == CIRCLE_ROUTE + CIRCLES[0]["_id"]:
+            fixture = type(self)
+            with fixture.session_lock:
+                fixture.memberships.discard(CIRCLES[0]["_id"])
+            self._json(200, {})
+        else:
+            self._json(404, {"message": "Fixture route not found."})
 
     def _authorised(self):
         fixture = type(self)
