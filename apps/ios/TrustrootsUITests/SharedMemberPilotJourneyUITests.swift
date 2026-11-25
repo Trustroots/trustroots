@@ -456,6 +456,45 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         add(screenshot)
     }
 
+    func testRegularAccountPasswordActionsUseNativeRecoveryAndSecureInput() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let recovery = app.descendants(matching: .any)["account-password-recovery"]
+        tapAccountButton(recovery, in: app)
+        XCTAssertTrue(app.staticTexts["Reset password"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Back"].tap()
+
+        let submit = app.descendants(matching: .any)["account-change-password"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+        enterText("example-password", into: app.secureTextFields["Current password"], in: app, secure: true)
+        enterText("fixture-password-2", into: app.secureTextFields["New password"], in: app, secure: true)
+        enterText("fixture-password-2", into: app.secureTextFields["Repeat new password"], in: app, secure: true)
+
+        tapAccountButton(submit, in: app)
+        let failure = element(labelled: "Temporary fixture password update failure.", in: app)
+        XCTAssertTrue(failure.waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(submit, in: app)
+        let success = element(labelled: "Your password has been changed.", in: app)
+        XCTAssertTrue(success.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+
+        let actions = app.descendants(matching: .any)["account-password-actions"]
+        XCTAssertTrue(actions.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: actions.screenshot())
+        screenshot.name = "regular-ios-password-actions-saved"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testNostrLocalKeySurvivesSignOutAndRemovalKeepsProfileSeparate() throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"

@@ -23,6 +23,11 @@ MEMBER = {
 }
 MEMBER_EMAIL = "pilot-member@example.test"
 REQUESTED_EMAIL = "pilot-member@example.testx"
+PASSWORD_UPDATE = {
+    "currentPassword": "example-password",
+    "newPassword": "fixture-password-2",
+    "verifyPassword": "fixture-password-2",
+}
 PARTNER = {
     "_id": "member-pilot-partner",
     "username": "pilot-partner",
@@ -88,6 +93,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     memberships = {CIRCLES[1]["_id"]}
     newsletter = False
     pending_email = None
+    password_attempts = 0
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -265,6 +271,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.memberships = {CIRCLES[1]["_id"]}
                 fixture.newsletter = False
                 fixture.pending_email = None
+                fixture.password_attempts = 0
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -289,6 +296,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.access_token = None
                 fixture.refresh_token = None
             self._json(200, {})
+        elif self.path == "/api/mobile/v0/account/password":
+            if body != PASSWORD_UPDATE:
+                self._json(422, {"message": "Expected the fixture password update."})
+                return
+            with fixture.session_lock:
+                fixture.password_attempts += 1
+                attempt = fixture.password_attempts
+            if attempt == 1:
+                self._json(503, {"message": "Temporary fixture password update failure."})
+            else:
+                self._json(200, {})
         elif self.path == CIRCLE_ROUTE + CIRCLES[0]["_id"]:
             with fixture.session_lock:
                 fixture.memberships.add(CIRCLES[0]["_id"])

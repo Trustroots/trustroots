@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -41,22 +42,33 @@ fun MemberAccountPreferencesViewController(
     onNewsletter: (Boolean) -> Unit,
     onSave: () -> Unit,
     onHeight: (Double) -> Unit,
+) = AccountSectionViewController("account-preferences", position, onHeight) { modifier ->
+    MemberAccountPreferences(
+        state,
+        emailKeyboard = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Done,
+            autoCorrectEnabled = false,
+            platformImeOptions = PlatformImeOptions { textContentType(UITextContentTypeEmailAddress) },
+        ),
+        onEmail = onEmail,
+        onNewsletter = onNewsletter,
+        onSave = onSave,
+        modifier = modifier,
+    )
+}
+
+internal fun AccountSectionViewController(
+    accessibilityTag: String,
+    position: AccountSectionPosition,
+    onHeight: (Double) -> Unit,
+    content: @Composable (Modifier) -> Unit,
 ) = ComposeUIViewController {
     val density = LocalDensity.current
     Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
-        MemberAccountPreferences(
-            state,
-            emailKeyboard = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None,
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Done,
-                autoCorrectEnabled = false,
-                platformImeOptions = PlatformImeOptions { textContentType(UITextContentTypeEmailAddress) },
-            ),
-            onEmail = onEmail,
-            onNewsletter = onNewsletter,
-            onSave = onSave,
-            modifier = Modifier.fillMaxWidth().testTag("account-preferences")
+        content(
+            Modifier.fillMaxWidth().testTag(accessibilityTag)
                 // The enclosing SwiftUI scroll view moves this host without relaying layout to Compose.
                 .semantics { this[AccountSectionOrigin] = position.origin }
                 .onSizeChanged { onHeight(with(density) { it.height.toDp().value.toDouble() }) },
