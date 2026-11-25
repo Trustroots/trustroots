@@ -2,12 +2,17 @@ import sinon from 'sinon';
 import assert from 'node:assert/strict';
 import 'should';
 import path from 'node:path';
+import winston from 'winston';
+import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
+import * as nip19 from 'nostr-tools/nip19';
+import { vi } from 'vitest';
 import config from './../../../../../config/config.mts';
 import mongoose from 'mongoose';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
 import contactsService from './../../../../contacts/server/controllers/contacts.server.controller.mts';
 import profilesService from './../../../server/controllers/users.profile.server.controller.mts';
 import controller from './../../../server/controllers/users.export.server.controller.mts';
+import * as verification from '../../../server/services/data-export-verification.server.service.mts';
 
 config.files.server.models.forEach(
   async modelPath => (await import(path.resolve(modelPath))).default,
@@ -44,6 +49,12 @@ interface ExportBody {
   hostingOffers: ExportRecord[];
   messages: ExportRecord[];
   experiences: ExportRecord[];
+  signature: {
+    root: string;
+    signed: string[];
+    sections: Record<string, string>;
+    event: { pubkey: string; tags: string[][] };
+  } | null;
 }
 interface MockResponse {
   body: ExportBody | null;
@@ -144,8 +155,209 @@ function responseBody(response: MockResponse): ExportBody {
 describe('Member data export controller', () => {
   const user = { _id: 'member-id', username: 'member' };
   const exportedAt = new Date('2026-01-02T03:04:00.000Z');
+  const secretKey = generateSecretKey();
+  const publicKey = getPublicKey(secretKey);
+  const exportedContact = {
+    _id: 'contact-1',
+    userFrom: user._id,
+    userTo: 'other-member-id',
+    confirmed: true,
+    created: '2026-01-01T00:00:00.000Z',
+    user: {
+      _id: 'other-member-id',
+      username: 'other-member',
+      displayName: 'Contact Example',
+    },
+  };
+  const contactWithPrivateFields = {
+    ...exportedContact,
+    privateNote: 'Fictional note',
+    user: {
+      ...exportedContact.user,
+      locationFrom: 'Fictional hometown',
+      locationLiving: 'Fictional city',
+      emailHash: 'fictional-hash',
+      facebookId: 'fictional-facebook-id',
+      avatarSource: 'facebook',
+    },
+  };
 
-  afterEach(() => sinon.restore());
+  afterEach(() => {
+    sinon.restore();
+    vi.unstubAllEnvs();
+  });
+
+  for (const [reason, nsec] of [
+    ['missing', ''],
+    ['malformed', 'invalid-test-key'],
+    ['unusable', nip19.nsecEncode(new Uint8Array(32))],
+  ]) {
+    it(`serves an unsigned export and warns when the signing key is ${reason}`, async () => {
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nsec);
+      const log = sinon.stub(winston, 'log');
+      const loaded = loadController({
+        profile: (_req, _res, next) => next(),
+        contacts: (req, _res, next) => {
+          req.contacts = [contactWithPrivateFields];
+          next();
+        },
+      });
+      const response = mockResponse();
+      const next = sinon.stub();
+
+      await loaded.download({ user } as never, response as never, next);
+
+      assert.equal(responseBody(response).signature, null);
+      assert.deepEqual(responseBody(response).contacts, [exportedContact]);
+      assert.equal(next.called, false);
+      sinon.assert.calledOnceWithExactly(
+        log,
+        'warn',
+        'Serving an unsigned export because no usable signing key is configured.',
+      );
+    });
+  }
+
+  it('signs all six delivered sections and detects changes in each of them', async () => {
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));
+    const log = sinon.stub(winston, 'log');
+    const loaded = loadController({
+      profile: (req, _res, next) => {
+        req.profile = {
+          username: user.username,
+          member: [{ tribe: 'circle-1' }],
+        };
+        next();
+      },
+      contacts: (req, _res, next) => {
+        req.contacts = [contactWithPrivateFields];
+        next();
+      },
+      offers: [{ _id: 'offer-1', description: 'Guest bed' }],
+      messages: [{ _id: 'message-1', content: 'Hello' }],
+      experiences: [{ _id: 'experience-1', recommend: 'yes' }],
+    });
+    const response = mockResponse();
+    await loaded.download(
+      { user } as never,
+      response as never,
+      sinon.stub() as never,
+    );
+    const file = responseBody(response);
+    assert.deepEqual(file.contacts, [exportedContact]);
+    const keyHistory = [{ pubkey: publicKey, status: 'active' }];
+    assert.equal(verification.verifyExport(file, { keyHistory }).valid, true);
+    assert.equal(file.signature?.event.pubkey, publicKey);
+    assert.deepEqual(
+      file.signature?.event.tags.find(([tag]) => tag === 'd'),
+      ['d', user.username],
+    );
+    sinon.assert.neverCalledWith(log, 'warn', sinon.match(/unsigned export/));
+    for (const section of [
+      'profile',
+      'circles',
+      'contacts',
+      'hostingOffers',
+      'messages',
+      'experiences',
+    ] as const) {
+      assert.ok(file.signature?.signed.includes(section));
+      const altered = {
+        ...file,
+        [section]: section === 'profile' ? { username: 'changed' } : [],
+      };
+      const report = verification.verifyExport(altered, { keyHistory });
+      assert.equal(report.valid, false);
+      assert.equal(report.sections[section].status, 'mismatch');
+    }
+    const withNewTimestamp = {
+      ...file,
+      exportedAt: '2026-10-15T00:00:00.000Z',
+    };
+    assert.equal(
+      verification.verifyExport(withNewTimestamp, { keyHistory }).valid,
+      true,
+    );
+    assert.equal(file.signature?.signed.includes('exportedAt'), false);
+  });
+
+  it('attests the same content when request time and list order change', async () => {
+    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(secretKey));
+    const clock = sinon.useFakeTimers(exportedAt);
+    const offers = [{ _id: 'offer-b' }, { _id: 'offer-a' }];
+    const messages = [{ _id: 'message-b' }, { _id: 'message-a' }];
+    const experiences = [{ _id: 'experience-b' }, { _id: 'experience-a' }];
+    const contacts = [
+      { ...exportedContact, _id: 'contact-b' },
+      { ...exportedContact, _id: 'contact-a' },
+    ];
+    const memberships = [{ tribe: 'circle-b' }, { tribe: 'circle-a' }];
+    const loaded = loadController({
+      profile: (req, _res, next) => {
+        req.profile = { username: user.username, member: memberships };
+        next();
+      },
+      contacts: (req, _res, next) => {
+        req.contacts = contacts;
+        next();
+      },
+      offers,
+      messages,
+      experiences,
+    });
+    const first = mockResponse();
+    await loaded.download(
+      { user } as never,
+      first as never,
+      sinon.stub() as never,
+    );
+    clock.tick(60000);
+    for (const list of [offers, messages, experiences, contacts])
+      list.reverse();
+    const second = mockResponse();
+    await loaded.download(
+      { user } as never,
+      second as never,
+      sinon.stub() as never,
+    );
+    assert.notEqual(
+      responseBody(first).exportedAt,
+      responseBody(second).exportedAt,
+    );
+    assert.equal(
+      responseBody(first).signature?.root,
+      responseBody(second).signature?.root,
+    );
+    for (const section of [
+      'circles',
+      'contacts',
+      'hostingOffers',
+      'messages',
+      'experiences',
+    ] as const) {
+      assert.deepEqual(
+        responseBody(first)[section],
+        responseBody(second)[section],
+      );
+    }
+  });
+
+  it('forwards canonicalisation errors without sending an incomplete export', async () => {
+    const loaded = loadController({
+      profile: (req, _res, next) => {
+        const profile: ExportProfile = { username: user.username };
+        profile.cyclic = profile;
+        req.profile = profile;
+        next();
+      },
+      contacts: (_req, _res, next) => next(),
+    });
+    const response = mockResponse();
+    const next = sinon.stub();
+    await loaded.download({ user } as never, response as never, next);
+    assert.equal(response.body, null);
+    assert.ok(next.firstCall.args[0] instanceof TypeError);
+  });
 
   it('returns the current member’s sanitised profile, contacts, and offers', async () => {
     sinon.useFakeTimers(exportedAt);
@@ -166,7 +378,7 @@ describe('Member data export controller', () => {
     };
     const contacts: Middleware = (req, _res, next, userId) => {
       assert.equal(userId, user._id);
-      req.contacts = [{ displayName: 'Contact Example' }];
+      req.contacts = [contactWithPrivateFields];
       next();
     };
     const controller = loadController({
@@ -196,7 +408,7 @@ describe('Member data export controller', () => {
     );
     responseBody(response).should.containEql({
       format: 'trustroots-data-export',
-      version: 1,
+      version: 2,
       exportedAt: '2026-01-02T03:04:00.000Z',
       profile: {
         username: user.username,
@@ -217,7 +429,7 @@ describe('Member data export controller', () => {
           since: '2020-01-01T00:00:00.000Z',
         },
       ],
-      contacts: [{ displayName: 'Contact Example' }],
+      contacts: [exportedContact],
       hostingOffers: [
         {
           _id: 'offer-1',

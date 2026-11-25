@@ -55,7 +55,8 @@ type ContactResponseBody =
   | ContactListItem[]
   | { message: string; confirmed?: boolean }
   | Record<string, never>;
-interface ContactListItem {
+interface ContactListItem extends Partial<ContactRecord> {
+  _id?: Types.ObjectId;
   user: ContactPerson & { locationFrom?: string; locationLiving?: string };
 }
 type ContactMiddleware = (

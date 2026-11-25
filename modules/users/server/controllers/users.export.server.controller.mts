@@ -1,3 +1,6 @@
+import log from '@trustroots/logger';
+import * as canonical from '../services/data-export-canonical.server.service.mts';
+import * as signing from '../services/data-export-signing.server.service.mts';
 import type { NextFunction, Response } from 'express';
 import mongoose, { type Types } from 'mongoose';
 import type {
@@ -99,18 +102,6 @@ type ExportMiddleware<
   next: NextFunction,
   value: Value,
 ) => unknown;
-
-interface ExportBody {
-  format: 'trustroots-data-export';
-  version: 1;
-  exportedAt: string;
-  profile: unknown;
-  circles: ExportRecord[];
-  contacts: unknown;
-  hostingOffers: ExportRecord[];
-  messages: ExportRecord[];
-  experiences: ExportRecord[];
-}
 
 interface UserExportService {
   download(
@@ -340,21 +331,40 @@ service.download = async function (
       service.memberOffers(req.user._id),
     ]);
     const exportedAt = new Date();
-    const body: ExportBody = {
-      format: 'trustroots-data-export',
-      version: 1,
-      exportedAt: exportedAt.toISOString(),
+    const body = canonical.buildSignedPayload({
       profile,
       circles: circlesFromProfile(profile),
-      contacts: req.contacts || [],
+      contacts: (req.contacts || []).map(
+        ({ _id, confirmed, created, userFrom, userTo, user }) => ({
+          _id,
+          confirmed,
+          created,
+          userFrom,
+          userTo,
+          user: {
+            _id: user._id,
+            username: user.username,
+            displayName: user.displayName,
+          },
+        }),
+      ),
       hostingOffers,
       messages,
       experiences,
-    };
+    });
+    const signature = signing.signPayload(body, {
+      username: req.user.username,
+    });
+    if (!signature) {
+      log(
+        'warn',
+        'Serving an unsigned export because no usable signing key is configured.',
+      );
+    }
     res
       .type('application/json')
       .attachment(buildExportFilename(req.user.username, exportedAt))
-      .send(body);
+      .send({ ...body, exportedAt: exportedAt.toISOString(), signature });
   } catch (error) {
     next(error);
   }

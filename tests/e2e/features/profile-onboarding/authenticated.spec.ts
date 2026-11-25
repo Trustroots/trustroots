@@ -1,5 +1,7 @@
 import path from 'node:path';
 import type { Request } from '@playwright/test';
+import { getPublicKey, nip19 } from 'nostr-tools';
+import { verifyExport } from '../../../../modules/users/server/services/data-export-verification.server.service.mts';
 import {
   annotateFeature,
   captureSection,
@@ -17,7 +19,12 @@ import {
   signInViaApi,
   waitForTribesList,
 } from '../../support/helpers.mts';
-import { updateUserByUsername } from '../../support/db.mts';
+import {
+  findContactByUsers,
+  findUserByUsername,
+  insertContact,
+  updateUserByUsername,
+} from '../../support/db.mts';
 
 test.describe('authenticated member flows', () => {
   let authenticatedMember: ReturnType<typeof createUser> | undefined;
@@ -135,14 +142,39 @@ test.describe('authenticated member flows', () => {
 
   test('member can download their combined data export', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.data-export', [
       'The combined export is an attachment with the documented filename.',
       'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
+      'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
+      'The export carries a signature that verifies against the configured signing key.',
+      'A profile-only export verifies with the original attestation.',
+      'Exported contacts contain relationship details, usernames, and display names.',
     ]);
 
     if (!authenticatedMember)
       throw new Error('Expected authenticated member fixture');
+
+    const member = await findUserByUsername(authenticatedMember.username);
+    if (!member)
+      throw new Error('Expected authenticated member in the database');
+    const contact = createUser();
+    const { _id: contactUserId } = await registerViaApi(request, contact);
+    const displayName = 'Contact Example';
+    await updateUserByUsername(contact.username, {
+      $set: {
+        displayName,
+        locationFrom: 'Fictional hometown',
+        locationLiving: 'Fictional city',
+        emailHash: 'fictional-hash',
+        facebookId: 'fictional-facebook-id',
+      },
+    });
+    const memberId = member._id.toString();
+    const contactId = await insertContact(memberId, contactUserId, true);
+    const relationship = await findContactByUsers(memberId, contactUserId);
+    if (!relationship) throw new Error('Expected contact relationship');
 
     const response = await page.request.get('/api/users/export');
 
@@ -155,7 +187,7 @@ test.describe('authenticated member flows', () => {
     const data = await response.json();
     expect(data).toMatchObject({
       format: 'trustroots-data-export',
-      version: 1,
+      version: 2,
       profile: expect.any(Object),
       circles: expect.any(Array),
       contacts: expect.any(Array),
@@ -164,6 +196,55 @@ test.describe('authenticated member flows', () => {
       experiences: expect.any(Array),
     });
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+    expect(data.contacts).toEqual([
+      {
+        _id: contactId.toString(),
+        confirmed: true,
+        created: relationship.created.toISOString(),
+        userFrom: memberId,
+        userTo: contactUserId,
+        user: { _id: contactUserId, username: contact.username, displayName },
+      },
+    ]);
+
+    // playwright.config.cts gives the e2e server a throwaway signing key.
+    const { data: secretKey } = nip19.decode(
+      process.env.TRUSTROOTS_NOSTR_SERVICE_NSEC as `nsec1${string}`,
+    );
+    const pubkey = getPublicKey(secretKey);
+    const keyHistory = [{ pubkey, status: 'active' }];
+    const report = verifyExport(data, { keyHistory });
+
+    expect(report).toMatchObject({
+      problems: [],
+      valid: true,
+      partial: false,
+      event: { status: 'verified', pubkey },
+    });
+
+    const { format, version, profile, signature } = data;
+    expect(
+      verifyExport({ format, version, profile, signature }, { keyHistory }),
+    ).toMatchObject({
+      valid: true,
+      partial: true,
+      sections: {
+        profile: { status: 'verified' },
+        contacts: { status: 'absent' },
+      },
+    });
+
+    // The signed part of the file must not vary between downloads, otherwise
+    // the signature attests something other than the member's data.
+    const second = await (await page.request.get('/api/users/export')).json();
+
+    expect(second.exportedAt).toEqual(expect.any(String));
+    expect(second.signature.root).toEqual(signature.root);
+    expect({ ...second, exportedAt: null, signature: null }).toEqual({
+      ...data,
+      exportedAt: null,
+      signature: null,
+    });
   });
 
   test('member profile API publishes place labels without precise coordinates', async ({

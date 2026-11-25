@@ -5,6 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sinon from 'sinon';
+import { vi } from 'vitest';
 
 import {
   getStartShell,
@@ -13,10 +14,8 @@ import {
 } from '../../../server/services/start-shell.server.service.mts';
 
 describe('Start shell service', function () {
-  const environment = { ...process.env };
-
   afterEach(function () {
-    process.env = { ...environment };
+    vi.unstubAllEnvs();
   });
 
   describe('renderStartShell', function () {
@@ -73,7 +72,7 @@ describe('Start shell service', function () {
     });
 
     it('uses an empty document in tests without a client build', async function () {
-      process.env.NODE_ENV = 'test';
+      vi.stubEnv('NODE_ENV', 'test');
 
       assert.equal(
         await readBuiltShell(join(directory, 'missing.html')),
@@ -82,7 +81,7 @@ describe('Start shell service', function () {
     });
 
     it('fails outside tests when the shell has not been built', async function () {
-      process.env.NODE_ENV = 'production';
+      vi.stubEnv('NODE_ENV', 'production');
 
       await assert.rejects(readBuiltShell(join(directory, 'missing.html')), {
         code: 'ENOENT',
@@ -90,7 +89,7 @@ describe('Start shell service', function () {
     });
 
     it('fails on read errors other than a missing file', async function () {
-      process.env.NODE_ENV = 'test';
+      vi.stubEnv('NODE_ENV', 'test');
 
       await assert.rejects(readBuiltShell(directory), { code: 'EISDIR' });
     });
@@ -117,9 +116,9 @@ describe('Start shell service', function () {
 
     it('fetches the shell from the Vite development server on every request', async function () {
       const address = server.address() as { port: number };
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      process.env.TRUSTROOTS_VITE_URL = `http://127.0.0.1:${address.port}`;
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      vi.stubEnv('TRUSTROOTS_VITE_URL', `http://127.0.0.1:${address.port}`);
 
       assert.equal(await getStartShell(), '<html>vite shell</html>');
       assert.equal(await getStartShell(), '<html>vite shell</html>');
@@ -127,10 +126,10 @@ describe('Start shell service', function () {
     });
 
     it('expects the Vite development server on port 3000 by default', async function () {
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      delete process.env.TRUSTROOTS_VITE_URL;
-      delete process.env.PORT;
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      vi.stubEnv('TRUSTROOTS_VITE_URL', undefined);
+      vi.stubEnv('PORT', undefined);
       const fetch = sinon
         .stub(globalThis, 'fetch')
         .resolves(new Response('<html>default</html>'));
@@ -148,10 +147,10 @@ describe('Start shell service', function () {
 
     it('expects the Vite development server on the port Vite reads from PORT', async function () {
       const address = server.address() as { port: number };
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      delete process.env.TRUSTROOTS_VITE_URL;
-      process.env.PORT = String(address.port);
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      vi.stubEnv('TRUSTROOTS_VITE_URL', undefined);
+      vi.stubEnv('PORT', String(address.port));
 
       assert.equal(await getStartShell(), '<html>vite shell</html>');
       assert.deepEqual(requestedPaths, ['/assets/_shell']);
@@ -159,9 +158,9 @@ describe('Start shell service', function () {
 
     it('rejects an error response from the Vite development server', async function () {
       const address = server.address() as { port: number };
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      process.env.TRUSTROOTS_VITE_URL = `http://127.0.0.1:${address.port}`;
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      vi.stubEnv('TRUSTROOTS_VITE_URL', `http://127.0.0.1:${address.port}`);
       server.removeAllListeners('request');
       server.on('request', (_req, res) => {
         res.statusCode = 500;
@@ -176,16 +175,16 @@ describe('Start shell service', function () {
 
     it('caches the built shell unless the development server is enabled in development', async function () {
       const address = server.address() as { port: number };
-      process.env.NODE_ENV = 'test';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'true';
-      process.env.TRUSTROOTS_VITE_URL = `http://127.0.0.1:${address.port}`;
+      vi.stubEnv('NODE_ENV', 'test');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'true');
+      vi.stubEnv('TRUSTROOTS_VITE_URL', `http://127.0.0.1:${address.port}`);
 
       const shell = getStartShell();
       assert.equal(getStartShell(), shell);
       assert.match(await shell, /^<!DOCTYPE html><html lang="en"><head>/);
 
-      process.env.NODE_ENV = 'development';
-      process.env.TRUSTROOTS_VITE_DEV_SERVER = 'false';
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('TRUSTROOTS_VITE_DEV_SERVER', 'false');
       assert.equal(await getStartShell(), await shell);
       assert.deepEqual(requestedPaths, []);
     });
