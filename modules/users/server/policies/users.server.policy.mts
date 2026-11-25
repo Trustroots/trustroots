@@ -17,6 +17,7 @@ const authoriseRoute = createRouteAuthorisation({
   '/api/users': { user: ['get', 'put', 'delete'] },
   '/api/users/me/safety-visit': { user: ['put'] },
   '/api/users/export': { user: read },
+  '/api/users/activity': { user: read },
   '/api/users/removal/pending': { user: ['get', 'delete'] },
   '/api/users/nostr/challenge': { user: ['post'] },
   '/api/users/remove/:token': { user: ['delete'] },

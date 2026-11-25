@@ -1,3 +1,4 @@
+import { recordActivity } from '../services/account-activity.server.service.mts';
 import { pick } from '../lib/pick.server.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
@@ -550,6 +551,12 @@ service.verifyMfa = async function (req, res) {
         .status(400)
         .send({ message: 'Authenticator or recovery code is invalid.' });
     }
+    if (result.recovery) {
+      await recordActivity({
+        userId: result.user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
     delete req.session!.mfaChallenge;
     result.user.$locals.mfaVerified = true;
     return req.login!(result.user, error => {
@@ -582,9 +589,15 @@ service.session = function (req, res) {
  * Signout
  */
 service.signout = function (req, res, next) {
+  const userId = req.user?._id;
   req.logout!(function (err) {
     if (err) {
       return next(err);
+    }
+    if (userId) {
+      return recordActivity({ userId, eventType: 'session_revoked' }).then(() =>
+        res.redirect('/'),
+      );
     }
     return res.redirect('/');
   });
@@ -854,11 +867,18 @@ service.confirmEmail = function (req, res) {
         .send({ message: 'Email confirm token is invalid or has expired.' });
       return;
     }
+    if (user.public && oldEmailKey && oldEmailKey !== newEmailKey) {
+      await recordActivity({
+        userId: modifiedUser._id,
+        eventType: 'email_changed',
+      });
+    }
     if (modifiedUser.mfaEnabled === true) {
       const browserUser = req.user;
       if (
         !browserUser ||
         String(browserUser._id) !== String(modifiedUser._id) ||
+        (browserUser.authVersion || 0) !== authVersion ||
         browserUser.$locals?.mfaVerified !== true
       ) {
         res.json({ ...result, mfaRequired: true });
