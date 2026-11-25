@@ -68,6 +68,20 @@ fun MemberProfileDetailsViewController(
     MemberProfileDetails(lastLogin, replyRate, replyTime, living, origin, onLocation, modifier)
 }
 
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileContactsViewController(
+    contacts: List<MemberContact>,
+    expanded: Boolean,
+    onOpen: (String) -> Unit,
+    onToggle: () -> Unit,
+    onHeight: (Double) -> Unit,
+    createAvatar: (MemberContact) -> UIViewController,
+) = MeasuredProfileSection("profile-contacts", onHeight) { modifier ->
+    MemberProfileContacts(contacts, expanded, onOpen, onToggle, modifier) { contact ->
+        HostedMemberAvatar { createAvatar(contact) }
+    }
+}
+
 private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
 
 class ProfileSectionHost internal constructor(
@@ -88,7 +102,7 @@ private fun MeasuredProfileSection(
     val controller = ComposeUIViewController {
         val currentOrigin = origin.value
         val density = LocalDensity.current
-        // The enclosing SwiftUI scroll view needs the text's natural height at its current width.
+        // The enclosing SwiftUI scroll view needs each section's natural height at its current width.
         Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
             content(
                 Modifier.fillMaxWidth()
