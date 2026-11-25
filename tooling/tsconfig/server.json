@@ -11,6 +11,7 @@
     "../../layers/server/**/*.mts",
     "../../packages/analytics/server/**/*.mts",
     "../../packages/logger/**/*.mts",
-    "../../worker.mts"
+    "../../server.js",
+    "../../worker.mjs"
   ]
 }
