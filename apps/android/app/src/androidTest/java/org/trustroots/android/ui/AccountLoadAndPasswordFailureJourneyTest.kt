@@ -176,7 +176,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
                 )
                 request.method == "GET" && request.path == "/api/offers-by/member-one?types=host" -> FixtureResponse(
                     200,
-                    """[{"_id":"offer-fresh","status":"yes","description":"A fresh fictional room","maxGuests":2}]""",
+                    """[{"_id":"offer-fresh","status":"yes","description":"A fresh fictional room","maxGuests":2,"location":[41.1,-8.5]}]""",
                 )
                 else -> FixtureResponse(404, "")
             }
@@ -230,7 +230,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
                     """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}""",
                 )
                 "/api/offers-by/member-one?types=host" -> LocalTransportFixture.Response(
-                    """[{"_id":"backend-offer","status":"yes","description":"A recovered backend room","maxGuests":2}]""",
+                    """[{"_id":"backend-offer","status":"yes","description":"A recovered backend room","maxGuests":2,"location":[41.2,-8.6]}]""",
                 )
                 else -> LocalTransportFixture.Response("[]", 404)
             }

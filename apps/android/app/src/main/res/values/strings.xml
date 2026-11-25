@@ -48,6 +48,16 @@
     <string name="form_hosting_description">Hosting description</string>
     <string name="form_maximum_guests">Maximum guests</string>
     <string name="form_not_hosting_reason">Why you are not hosting</string>
+    <string name="form_meeting_availability">Meeting availability</string>
+    <string name="form_meeting_not_set">Not set</string>
+    <string name="form_meeting_location_note">Meetings use your hosting location and circle visibility. You can meet even when you are not hosting.</string>
+    <string name="form_hosts_welcome_volunteering">Welcome help from volunteering guests</string>
+    <string name="form_host_volunteering_note">Explain in your hosting description what help you need, whether it is optional or expected, and what you offer guests.</string>
+    <string name="form_host_offer_location">Location</string>
+    <string name="form_host_offer_latitude">Latitude</string>
+    <string name="form_host_offer_longitude">Longitude</string>
+    <string name="form_host_offer_location_privacy">Other members see an approximate location.</string>
+    <string name="form_host_offer_location_needed">Enter a latitude from −90 to 90 and a longitude from −180 to 180.</string>
     <string name="form_public_experience_optional">Public experience (optional)</string>
     <string name="form_email_address">Email address</string>
     <string name="form_current_password">Current password</string>

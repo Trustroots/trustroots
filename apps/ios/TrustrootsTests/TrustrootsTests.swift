@@ -1454,6 +1454,48 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(offer?.maxGuests, 2)
     }
 
+    func testHostingOfferAPIHandlesNoOfferAndRetainsIDOnUpdate() async throws {
+        let credentials = InMemoryMobileCredentialStore()
+        XCTAssertTrue(credentials.save(
+            MobileCredentials(accessToken: "fictional-access", refreshToken: "fictional-refresh")
+        ))
+        let api = makeMobileAPI(store: credentials)
+        let server = "https://api.example.test"
+        let update = HostingOfferUpdate(
+            status: "no", meetingStatus: "yes", description: "Fictional details",
+            noOfferDescription: "", maxGuests: 0, volunteering: true,
+            showOnlyInMyCircles: true, location: [41.1, -8.5]
+        )
+
+        var requests: [URLRequest] = []
+        MobileAPIURLProtocol.handler = { request in
+            requests.append(request)
+            switch request.httpMethod {
+            case "GET":
+                return self.mobileResponse(request, status: 404, body: #"{"message":"Not found."}"#)
+            case "POST":
+                return self.mobileResponse(request, status: 200, body: #"{"_id":"fictional-offer","message":"Offer created."}"#)
+            default:
+                return self.mobileResponse(request, status: 200, body: #"{"message":"Offer updated."}"#)
+            }
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let existing = try await api.accommodationOffer(serverURLString: server, userID: "fictional-member", allowSaved: false)
+        XCTAssertNil(existing)
+        let created = try await api.saveHostingOffer(serverURLString: server, offerID: nil, update: update)
+        XCTAssertEqual(created, "fictional-offer")
+        let saved = try await api.saveHostingOffer(serverURLString: server, offerID: created, update: update)
+        XCTAssertEqual(saved, created)
+        XCTAssertEqual(requests.map(\.httpMethod), ["GET", "POST", "PUT"])
+        XCTAssertEqual(requests.map { $0.url?.path }, [
+            "/api/mobile/v0/offers-by/fictional-member",
+            "/api/mobile/v0/offers",
+            "/api/mobile/v0/offers/fictional-offer",
+        ])
+        XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "Bearer fictional-access" })
+    }
+
     private var rotatedSessionJSON: String {
         #"{"accessToken":"rotated-access","refreshToken":"rotated-refresh","accessTokenExpiresAt":"2026-07-16T11:00:00Z","member":{"username":"traveller","displayName":"A Traveller","public":true}}"#
     }

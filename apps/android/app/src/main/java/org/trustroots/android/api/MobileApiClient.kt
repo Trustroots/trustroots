@@ -148,6 +148,8 @@ data class HostOfferUpdate(
     val showOnlyInMyCircles: Boolean,
     val latitude: Double,
     val longitude: Double,
+    val meetingStatus: String = "not-set",
+    val volunteering: Boolean = false,
 )
 
 data class ExperienceCreate(
@@ -735,13 +737,25 @@ class MobileApiClient(
             }
         }
 
-    suspend fun accommodationOffer(session: MemberSession, memberID: String): Result<AccommodationOffer?> =
+    suspend fun accommodationOffer(
+        session: MemberSession,
+        memberID: String,
+        allowSaved: Boolean = true,
+    ): Result<AccommodationOffer?> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val offers = JSONArray(jsonRequest(
-                    "/api/offers-by/${encode(memberID)}?types=host", "GET",
-                    session = session,
-                ).body)
+                val body = try {
+                    jsonRequest(
+                        "/api/offers-by/${encode(memberID)}?types=host",
+                        "GET",
+                        session = session,
+                        allowResponseCache = allowSaved,
+                    ).body
+                } catch (error: MobileApiException) {
+                    if (error.statusCode == HttpURLConnection.HTTP_NOT_FOUND) return@runCatching null
+                    throw error
+                }
+                val offers = JSONArray(body)
                 if (offers.length() == 0) null else parseAccommodationOffer(offers.getJSONObject(0))
             }
         }
@@ -750,14 +764,17 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 require(update.status in setOf("yes", "maybe", "no"))
-                require(update.maxGuests in 1..20)
-                require(isValidWorldCoordinates(update.latitude, update.longitude))
+                require(update.maxGuests in 0..99)
+                require(update.meetingStatus in setOf("yes", "maybe", "no", "not-set"))
+                require(isValidHostOfferLocation(update.latitude, update.longitude))
                 val body = JSONObject()
                     .put("type", "host")
                     .put("status", update.status)
                     .put("description", update.description.trim())
                     .put("noOfferDescription", update.noOfferDescription.trim())
                     .put("maxGuests", update.maxGuests)
+                    .put("meetingStatus", update.meetingStatus)
+                    .put("volunteering", update.volunteering)
                     .put("showOnlyInMyCircles", update.showOnlyInMyCircles)
                     .put("location", JSONArray(listOf(update.latitude, update.longitude)))
                     .toString()

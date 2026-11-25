@@ -448,6 +448,8 @@ struct AccommodationOffer: Decodable, Identifiable {
     let maxGuests: Int?
     let meetingStatus: String?
     let volunteering: Bool?
+    let showOnlyInMyCircles: Bool?
+    let location: [Double]?
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
@@ -457,7 +459,21 @@ struct AccommodationOffer: Decodable, Identifiable {
         case maxGuests
         case meetingStatus
         case volunteering
+        case showOnlyInMyCircles
+        case location
     }
+}
+
+struct HostingOfferUpdate: Encodable {
+    let type = "host"
+    let status: String
+    let meetingStatus: String
+    let description: String
+    let noOfferDescription: String
+    let maxGuests: Int
+    let volunteering: Bool
+    let showOnlyInMyCircles: Bool
+    let location: [Double]
 }
 
 struct TrustrootsCircle: Decodable, Identifiable {
@@ -1102,13 +1118,60 @@ final class TrustrootsAPI {
         return response.profile
     }
 
-    func accommodationOffer(serverURLString: String, userID: String) async throws -> AccommodationOffer? {
+    func accommodationOffer(
+        serverURLString: String,
+        userID: String,
+        allowSaved: Bool = true
+    ) async throws -> AccommodationOffer? {
         let offers: [AccommodationOffer] = try await get(
             serverURLString: serverURLString,
             path: "api/mobile/v0/offers-by/\(userID)",
-            queryItems: [URLQueryItem(name: "types", value: "host")]
+            queryItems: [URLQueryItem(name: "types", value: "host")],
+            useOfflineCache: allowSaved,
+            notFound: []
         )
         return offers.first
+    }
+
+    func saveHostingOffer(
+        serverURLString: String,
+        offerID: String?,
+        update: HostingOfferUpdate
+    ) async throws -> String {
+        struct CreatedOffer: Decodable {
+            let id: String
+            enum CodingKeys: String, CodingKey { case id = "_id" }
+        }
+
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/offers")
+        var request = URLRequest(url: offerID.map { endpoint.appendingPathComponent($0) } ?? endpoint)
+        request.httpMethod = offerID == nil ? "POST" : "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try encoder.encode(update)
+        authorise(&request)
+
+        do {
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode)
+            }
+            if let offerID { return offerID }
+            guard let created = try? decoder.decode(CreatedOffer.self, from: data), !created.id.isEmpty else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            return created.id
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
     }
 
     func searchMembers(
@@ -1654,7 +1717,8 @@ final class TrustrootsAPI {
         path: String,
         queryItems: [URLQueryItem] = [],
         requiresAuthentication: Bool = true,
-        useOfflineCache: Bool = true
+        useOfflineCache: Bool = true,
+        notFound: Response? = nil
     ) async throws -> Response {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
@@ -1688,6 +1752,7 @@ final class TrustrootsAPI {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
+            if httpResponse.statusCode == 404, let notFound { return notFound }
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw decodedError(from: data, statusCode: httpResponse.statusCode)
             }

@@ -97,6 +97,62 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     @MainActor
+    func testEditingMeetingAndVolunteeringPreservesWebHostingOffer() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", fixtureURL.absoluteString]
+        app.launch()
+        addTeardownBlock { [self] in
+            app.terminate()
+            app.launch()
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        try await updateFixtureSession("prepare-hosting-offer", at: fixtureURL)
+
+        app.buttons["Menu"].tap()
+        app.buttons["My profile"].tap()
+        let edit = app.buttons["edit-hosting-offer"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 15), app.debugDescription)
+        edit.tap()
+
+        let meeting = app.buttons["meeting-availability"]
+        XCTAssertTrue(meeting.waitForExistence(timeout: 15), app.debugDescription)
+        meeting.tap()
+        app.buttons["Maybe"].tap()
+
+        let volunteering = app.switches["hosting-volunteering"]
+        if !volunteering.isHittable { app.swipeUp() }
+        XCTAssertEqual(volunteering.value as? String, "1")
+        volunteering.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        XCTAssertEqual(volunteering.value as? String, "0")
+
+        let save = app.buttons["save-hosting-offer"]
+        XCTAssertTrue(save.isEnabled)
+        save.tap()
+        let saved = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isEnabled == false AND label == %@", "Save"),
+            object: save
+        )
+        await fulfillment(of: [saved], timeout: 10)
+
+        let (data, response) = try await URLSession.shared.data(from: fixtureURL.appendingPathComponent("fixture/hosting-offer"))
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let offer = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(offer["status"] as? String, "no")
+        XCTAssertEqual(offer["meetingStatus"] as? String, "maybe")
+        XCTAssertEqual(offer["volunteering"] as? Bool, false)
+        XCTAssertEqual(offer["maxGuests"] as? Int, 0)
+        XCTAssertEqual(offer["showOnlyInMyCircles"] as? Bool, true)
+        XCTAssertEqual(offer["location"] as? [Double], [41.1, -8.5])
+        XCTAssertEqual(offer["description"] as? String, "<p>Fictional offer details.</p>")
+        XCTAssertEqual(offer["noOfferDescription"] as? String, "<p>Travelling this month.</p>")
+    }
+
+    @MainActor
     func testRegularInboxFiltersMessageContentAndUpdatesUnreadOnReturn() async throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"

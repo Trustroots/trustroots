@@ -1257,7 +1257,7 @@ Navigation 3 menu entry. The ViewModel SHALL expose immutable UI state and
 explicit events and SHALL use an injectable repository. The repository SHALL
 load the member profile before the accommodation offer and SHALL normalise
 offer HTML into trimmed editable text outside the ViewModel. The ViewModel
-SHALL preserve the existing offer defaults, validation and save payload. It
+SHALL validate and save the complete offer. It
 SHALL retain no session credential or translated fallback string in UI or
 saved state. API failures SHALL retain nonblank server text and failure kind
 until Compose resolves an XML fallback at render time. Removing the menu entry
@@ -1273,11 +1273,11 @@ or signing out SHALL cancel its outstanding work and clear its state.
 
 #### Scenario: Member starts with no Host offer
 
-- **WHEN** the profile and accommodation-offer reads succeed and no offer
-  exists
+- **WHEN** the profile read succeeds and offers-by returns an empty list or
+  HTTP 404
 - **THEN** availability defaults to `yes`, descriptions are empty, maximum
-  guests is `1`, show-only-in-my-circles is false, and the existing default
-  coordinates are used
+  guests is `1`, show-only-in-my-circles is false, and the location is blank
+- **AND** the member must enter valid coordinates before saving
 - **AND** the form is not treated as a failed load
 
 #### Scenario: Host offer load fails
@@ -1293,12 +1293,12 @@ or signing out SHALL cancel its outstanding work and clear its state.
 #### Scenario: Member edits and validates a Host offer
 
 - **WHEN** the member edits availability, descriptions, maximum guests or the
-  circle-only setting
+  circle-only setting or location
 - **THEN** dirty state compares the current complete offer with the loaded or
   last-saved baseline
 - **AND** hosting availability requires at least five trimmed description
   characters while `no` availability does not
-- **AND** maximum guests remains constrained to the existing range of 1–20
+- **AND** maximum guests accepts whole numbers in the range of 0–99
 
 #### Scenario: Member saves a Host offer
 
@@ -2162,3 +2162,19 @@ Android map search SHALL initially show its filters in wrapping rows without hor
 - **AND** the member can explicitly reopen the result filters
 - **AND** selecting an offer and returning preserves the results
 - **AND** Back to map restores the map's previous filter expansion state and selections
+
+### Requirement: Android can edit ongoing meeting availability and volunteering
+
+The Android hosting editor SHALL load and save ongoing meeting availability
+and volunteering as part of its existing host offer. It SHALL preserve the
+saved coordinates, accept a member-chosen location for new offers and support
+hosting availability of No with ongoing meeting availability enabled.
+
+#### Scenario: Edit an offer created on the web
+
+- **GIVEN** the member already has a host offer with meeting availability and
+  volunteering set
+- **WHEN** the member opens the hosting editor, edits availability and saves
+- **THEN** the editor uses the existing offer identifier and saved coordinates
+- **AND** the saved meeting and volunteering values match the controls
+- **AND** a subsequent edit still updates the same offer.

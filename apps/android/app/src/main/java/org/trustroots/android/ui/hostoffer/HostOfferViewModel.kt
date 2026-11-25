@@ -20,6 +20,7 @@ import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.isValidHostOfferLocation
 import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
@@ -27,9 +28,6 @@ import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
-
-internal const val DEFAULT_HOST_LATITUDE = 48.6908333333
-internal const val DEFAULT_HOST_LONGITUDE = 9.14055555556
 
 internal val LocalHostOfferRepository = compositionLocalOf<HostOfferRepository?> { null }
 
@@ -40,19 +38,33 @@ internal data class HostOfferForm(
     val noOfferDescription: String = "",
     val maxGuests: Int = 1,
     val showOnlyInMyCircles: Boolean = false,
-    val latitude: Double = DEFAULT_HOST_LATITUDE,
-    val longitude: Double = DEFAULT_HOST_LONGITUDE,
+    val latitude: String = "",
+    val longitude: String = "",
+    val meetingStatus: String = "not-set",
+    val volunteering: Boolean = false,
+    val savedDescription: SavedHostDescription? = null,
+    val savedNoOfferDescription: SavedHostDescription? = null,
 ) {
+    private val latitudeValue get() = latitude.trim().toDoubleOrNull() ?: Double.NaN
+    private val longitudeValue get() = longitude.trim().toDoubleOrNull() ?: Double.NaN
+    val locationValid get() = isValidHostOfferLocation(latitudeValue, longitudeValue)
+
     fun toUpdate(): HostOfferUpdate = HostOfferUpdate(
         id = id,
         status = status,
-        description = description,
-        noOfferDescription = noOfferDescription,
+        description = savedDescription?.valueFor(description) ?: description,
+        noOfferDescription = savedNoOfferDescription?.valueFor(noOfferDescription) ?: noOfferDescription,
         maxGuests = maxGuests,
         showOnlyInMyCircles = showOnlyInMyCircles,
-        latitude = latitude,
-        longitude = longitude,
+        latitude = latitudeValue,
+        longitude = longitudeValue,
+        meetingStatus = meetingStatus,
+        volunteering = volunteering,
     )
+}
+
+internal data class SavedHostDescription(val source: String, val editable: String) {
+    fun valueFor(text: String): String = if (text == editable) source else text
 }
 
 internal fun interface HostOfferDescriptionDecoder {
@@ -79,17 +91,21 @@ internal class MobileApiHostOfferRepository(
 ) : HostOfferRepository {
     private var api = api
     private var session = session
+    private var memberID: String? = null
+    private var attemptedCreation = false
 
     override fun updateApi(api: MobileApiClient): Boolean {
         val changedBackend = this.api.backendURL != api.backendURL
         this.api = api
+        if (changedBackend) clearOfferIdentity()
         return changedBackend
     }
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.credentialKey != session.credentialKey ||
-            this.session.member.username != session.member.username
+        val changedAccount = this.session.member.username != session.member.username
+        val changed = this.session.credentialKey != session.credentialKey || changedAccount
         this.session = session
+        if (changedAccount) clearOfferIdentity()
         return changed
     }
 
@@ -98,26 +114,53 @@ internal class MobileApiHostOfferRepository(
         val activeSession = session
         val profile = activeApi.profile(activeSession, activeSession.member.username).getOrElse { return Result.failure(it) }
         val memberID = profile.id ?: return Result.failure(MissingHostOfferMemberID())
-        val offer = activeApi.accommodationOffer(activeSession, memberID).getOrElse { return Result.failure(it) }
+        val offer = activeApi.accommodationOffer(activeSession, memberID, allowSaved = false)
+            .getOrElse { return Result.failure(it) }
+        currentCoroutineContext().ensureActive()
+        this.memberID = memberID
         return Result.success(offer?.toForm() ?: HostOfferForm())
     }
 
     override suspend fun save(update: HostOfferUpdate): Result<AccommodationOffer> {
         val activeApi = api
         val activeSession = session
-        return activeApi.saveHostOffer(activeSession, update)
+        val offerID = if (update.id == null && attemptedCreation) {
+            val memberID = memberID ?: return Result.failure(MissingHostOfferMemberID())
+            // A successful create can lose its response before the app receives the ID.
+            activeApi.accommodationOffer(activeSession, memberID, allowSaved = false)
+                .getOrElse { return Result.failure(it) }?.id
+        } else {
+            update.id
+        }
+        currentCoroutineContext().ensureActive()
+        if (offerID == null) attemptedCreation = true
+        return activeApi.saveHostOffer(activeSession, update.copy(id = offerID))
+            .map { saved -> saved.copy(id = saved.id ?: offerID) }
     }
 
-    private fun AccommodationOffer.toForm(): HostOfferForm = HostOfferForm(
-        id = id,
-        status = status ?: "yes",
-        description = descriptionDecoder.decode(description),
-        noOfferDescription = descriptionDecoder.decode(noOfferDescription),
-        maxGuests = maxGuests ?: 1,
-        showOnlyInMyCircles = showOnlyInMyCircles,
-        latitude = latitude ?: DEFAULT_HOST_LATITUDE,
-        longitude = longitude ?: DEFAULT_HOST_LONGITUDE,
-    )
+    private fun clearOfferIdentity() {
+        memberID = null
+        attemptedCreation = false
+    }
+
+    private fun AccommodationOffer.toForm(): HostOfferForm {
+        val editableDescription = descriptionDecoder.decode(description)
+        val editableNoOfferDescription = descriptionDecoder.decode(noOfferDescription)
+        return HostOfferForm(
+            id = id,
+            status = status ?: "yes",
+            description = editableDescription,
+            noOfferDescription = editableNoOfferDescription,
+            maxGuests = maxGuests ?: 1,
+            showOnlyInMyCircles = showOnlyInMyCircles,
+            latitude = latitude?.toString().orEmpty(),
+            longitude = longitude?.toString().orEmpty(),
+            meetingStatus = meetingStatus?.takeIf { it in setOf("yes", "maybe", "no", "not-set") } ?: "not-set",
+            volunteering = volunteering,
+            savedDescription = description?.let { SavedHostDescription(it, editableDescription) },
+            savedNoOfferDescription = noOfferDescription?.let { SavedHostDescription(it, editableNoOfferDescription) },
+        )
+    }
 }
 
 private class MissingHostOfferMemberID : Exception()
@@ -128,20 +171,24 @@ internal data class HostOfferUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val form: HostOfferForm = HostOfferForm(),
-    val original: HostOfferUpdate? = null,
+    val savedForm: HostOfferForm? = null,
     val failure: UiFailure? = null,
     val saveSucceeded: Boolean = false,
     val pendingSessionInvalidation: HostOfferSessionInvalidation? = null,
 ) {
     val current: HostOfferUpdate get() = form.toUpdate()
-    val isDirty: Boolean get() = original != null && current != original
+    val isDirty: Boolean get() = savedForm != null && form != savedForm
     val descriptionTooShort: Boolean get() = form.status != "no" && form.description.trim().length < 5
     val canSave: Boolean
-        get() = !isLoading && !isSaving && original != null && !descriptionTooShort && pendingSessionInvalidation == null
+        get() = !isLoading && !isSaving && savedForm != null && !descriptionTooShort && form.locationValid && pendingSessionInvalidation == null
 }
 
 internal sealed interface HostOfferEvent {
     data class StatusChanged(val value: String) : HostOfferEvent
+    data class MeetingStatusChanged(val value: String) : HostOfferEvent
+    data class LatitudeChanged(val value: String) : HostOfferEvent
+    data class LongitudeChanged(val value: String) : HostOfferEvent
+    data class VolunteeringChanged(val value: Boolean) : HostOfferEvent
     data class DescriptionChanged(val value: String) : HostOfferEvent
     data class NoOfferDescriptionChanged(val value: String) : HostOfferEvent
     data class MaximumGuestsChanged(val value: String) : HostOfferEvent
@@ -199,7 +246,7 @@ internal class HostOfferViewModel(
                 current.copy(
                     isLoading = false,
                     isSaving = false,
-                    failure = if (current.original == null) {
+                    failure = if (current.savedForm == null) {
                         UiFailure(fallback = UiFailureFallback.HOST_OFFER_LOAD)
                     } else {
                         null
@@ -214,14 +261,18 @@ internal class HostOfferViewModel(
     fun onEvent(event: HostOfferEvent) {
         when (event) {
             is HostOfferEvent.StatusChanged -> edit { copy(status = event.value) }
+            is HostOfferEvent.MeetingStatusChanged -> edit { copy(meetingStatus = event.value) }
+            is HostOfferEvent.LatitudeChanged -> edit { copy(latitude = event.value) }
+            is HostOfferEvent.LongitudeChanged -> edit { copy(longitude = event.value) }
+            is HostOfferEvent.VolunteeringChanged -> edit { copy(volunteering = event.value) }
             is HostOfferEvent.DescriptionChanged -> edit { copy(description = event.value) }
             is HostOfferEvent.NoOfferDescriptionChanged -> edit { copy(noOfferDescription = event.value) }
             is HostOfferEvent.MaximumGuestsChanged -> edit {
                 val parsed = event.value.filter(Char::isDigit).toIntOrNull()
-                copy(maxGuests = parsed?.coerceIn(1, 20) ?: maxGuests)
+                copy(maxGuests = parsed?.coerceIn(0, 99) ?: maxGuests)
             }
             is HostOfferEvent.ShowOnlyInMyCirclesChanged -> edit { copy(showOnlyInMyCircles = event.value) }
-            HostOfferEvent.RetryLoad -> if (mutableState.value.original == null) load()
+            HostOfferEvent.RetryLoad -> if (mutableState.value.savedForm == null) load()
             HostOfferEvent.Save -> save()
             is HostOfferEvent.SessionInvalidationDelivered -> mutableState.update { current ->
                 if (current.pendingSessionInvalidation?.id == event.id) {
@@ -250,11 +301,10 @@ internal class HostOfferViewModel(
             val result = requestResult { repository.load() }
             result.fold(
                 onSuccess = { loaded ->
-                    val baseline = loaded.toUpdate()
                     mutableState.value = HostOfferUiState(
                         isLoading = false,
                         form = loaded,
-                        original = baseline,
+                        savedForm = loaded,
                     )
                 },
                 onFailure = { error ->
@@ -277,11 +327,13 @@ internal class HostOfferViewModel(
             val result = requestResult { repository.save(submitted) }
             result.fold(
                 onSuccess = { saved ->
+                    val offerID = saved.id ?: submitted.id
+                    val savedForm = beforeSave.form.copy(id = offerID)
                     mutableState.update { current ->
                         current.copy(
                             isSaving = false,
-                            form = current.form.copy(id = saved.id),
-                            original = submitted.copy(id = saved.id),
+                            form = savedForm,
+                            savedForm = savedForm,
                             saveSucceeded = true,
                             failure = null,
                         )

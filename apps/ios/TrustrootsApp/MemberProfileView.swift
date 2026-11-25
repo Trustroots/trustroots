@@ -18,6 +18,7 @@ struct MemberProfileView: View {
     @State private var isUpdatingBlock = false
     @State private var showBlockConfirmation = false
     @State private var showReportMember = false
+    @State private var showHostingEditor = false
     @State private var safetyErrorMessage: String?
 
     private let api = TrustrootsAPI()
@@ -124,6 +125,12 @@ struct MemberProfileView: View {
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .tint(TrustrootsPalette.green)
+
+                                Button("Hosting and meetings") {
+                                    showHostingEditor = true
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("edit-hosting-offer")
                             }
 
                             if !isOwnProfile(profile), !isBlocked, let memberID = profile.id {
@@ -290,6 +297,11 @@ struct MemberProfileView: View {
             .toolbar(.hidden, for: .navigationBar)
             .onReceive(NotificationCenter.default.publisher(for: .trustrootsReturnToMap)) { _ in
                 dismiss()
+            }
+            .sheet(isPresented: $showHostingEditor) {
+                HostingOfferEditorView(session: session) {
+                    Task { await loadProfile() }
+                }
             }
             .sheet(isPresented: $showReportMember) {
                 if let profile {

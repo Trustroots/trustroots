@@ -3,6 +3,7 @@ package org.trustroots.android.api
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MobileApiHostOfferValidationTest {
@@ -15,8 +16,9 @@ class MobileApiHostOfferValidationTest {
     @Test fun rejectsUnknownStatusesAndGuestCountsOutsideTheSupportedRange() {
         listOf(
             "unknown host status" to update(status = "available"),
-            "zero guests" to update(maxGuests = 0),
-            "more than twenty guests" to update(maxGuests = 21),
+            "negative guests" to update(maxGuests = -1),
+            "more than ninety-nine guests" to update(maxGuests = 100),
+            "unknown meeting status" to update(meetingStatus = "available"),
         ).forEach { (case, hostOffer) ->
             assertValidationFailure(case, hostOffer)
         }
@@ -30,9 +32,16 @@ class MobileApiHostOfferValidationTest {
             "longitude below -180" to update(longitude = -180.0001),
             "longitude above 180" to update(longitude = 180.0001),
             "NaN longitude" to update(longitude = Double.NaN),
+            "web map placeholder" to update(latitude = 48.6908333333, longitude = 9.14055555556),
         ).forEach { (case, hostOffer) ->
             assertValidationFailure(case, hostOffer)
         }
+    }
+
+    @Test fun rejectsOnlyTheExactWebMapPlaceholderWithinItsArea() {
+        assertFalse(isValidHostOfferLocation(48.6908333333, 9.14055555556))
+        assertTrue(isValidHostOfferLocation(48.6908333333, 9.15))
+        assertTrue(isValidHostOfferLocation(48.69, 9.14055555556))
     }
 
     private fun assertValidationFailure(case: String, hostOffer: HostOfferUpdate) {
@@ -50,6 +59,7 @@ class MobileApiHostOfferValidationTest {
     private fun update(
         status: String = "yes",
         maxGuests: Int = 2,
+        meetingStatus: String = "not-set",
         latitude: Double = 51.5,
         longitude: Double = -0.12,
     ) = HostOfferUpdate(
@@ -57,6 +67,7 @@ class MobileApiHostOfferValidationTest {
         description = "A quiet place to rest.",
         noOfferDescription = "Away this week.",
         maxGuests = maxGuests,
+        meetingStatus = meetingStatus,
         showOnlyInMyCircles = false,
         latitude = latitude,
         longitude = longitude,

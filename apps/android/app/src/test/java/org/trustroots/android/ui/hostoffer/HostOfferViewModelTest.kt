@@ -48,8 +48,8 @@ class HostOfferViewModelTest {
             noOfferDescription = AndroidHostOfferDescriptionDecoder.decode("<b>Unavailable</b>"),
             maxGuests = 2,
             showOnlyInMyCircles = true,
-            latitude = 47.0,
-            longitude = 8.0,
+            latitude = "47.0",
+            longitude = "8.0",
         )
         val repository = FakeHostOfferRepository(loadResult = Result.success(form))
         withScope { scope ->
@@ -58,7 +58,7 @@ class HostOfferViewModelTest {
             assertFalse(viewModel.state.value.isLoading)
             assertEquals("A quiet room", viewModel.state.value.form.description)
             assertEquals("Unavailable", viewModel.state.value.form.noOfferDescription)
-            assertEquals(form.toUpdate(), viewModel.state.value.original)
+            assertEquals(form.toUpdate(), viewModel.state.value.savedForm?.toUpdate())
             assertFalse(viewModel.state.value.isDirty)
             viewModel.onEvent(HostOfferEvent.RetryLoad)
             assertEquals("A loaded baseline should not be fetched again", 1, repository.loadCalls)
@@ -118,7 +118,7 @@ class HostOfferViewModelTest {
 
         assertSame(newApi, repository.currentApi)
         assertEquals(2, repository.loadCalls)
-        assertEquals("new-backend-offer", viewModel.state.value.original?.id)
+        assertEquals("new-backend-offer", viewModel.state.value.savedForm?.id)
         assertEquals("", viewModel.state.value.form.description)
         assertFalse(viewModel.state.value.isDirty)
         assertFalse(viewModel.state.value.isLoading)
@@ -126,14 +126,14 @@ class HostOfferViewModelTest {
 
     @Test
     fun freshOfferUsesCurrentDefaultsAndValidation() = withScope { scope ->
-        val repository = FakeHostOfferRepository()
+        val repository = FakeHostOfferRepository(loadResult = Result.success(HostOfferForm()))
         val viewModel = HostOfferViewModel(repository, scope)
 
         assertEquals(HostOfferForm(), viewModel.state.value.form)
         assertTrue(viewModel.state.value.descriptionTooShort)
         assertFalse(viewModel.state.value.isDirty)
-        assertEquals(DEFAULT_HOST_LATITUDE, viewModel.state.value.form.latitude, 0.0)
-        assertEquals(DEFAULT_HOST_LONGITUDE, viewModel.state.value.form.longitude, 0.0)
+        assertEquals("", viewModel.state.value.form.latitude)
+        assertEquals("", viewModel.state.value.form.longitude)
         viewModel.onEvent(HostOfferEvent.Save)
         assertEquals("An invalid default offer must not be submitted", 0, repository.saveCalls)
         assertFalse(viewModel.state.value.isSaving)
@@ -145,6 +145,11 @@ class HostOfferViewModelTest {
         assertTrue(viewModel.state.value.descriptionTooShort)
         viewModel.onEvent(HostOfferEvent.DescriptionChanged(" A room "))
         assertFalse(viewModel.state.value.descriptionTooShort)
+        assertFalse(viewModel.state.value.canSave)
+        viewModel.onEvent(HostOfferEvent.LatitudeChanged("40.25"))
+        assertFalse(viewModel.state.value.canSave)
+        viewModel.onEvent(HostOfferEvent.LongitudeChanged("-8.5"))
+        assertTrue(viewModel.state.value.canSave)
     }
 
     @Test
@@ -173,13 +178,13 @@ class HostOfferViewModelTest {
         val refreshedSession = MemberSession("connect.sid=new", MobileMember("quiet-fox", "Quiet Fox"))
         val viewModel = HostOfferViewModel(repository, scope, api, firstSession)
         viewModel.onEvent(HostOfferEvent.DescriptionChanged("A retained fictional draft"))
-        val original = viewModel.state.value.original
+        val original = viewModel.state.value.savedForm?.toUpdate()
 
         viewModel.updateEnvironment(api, refreshedSession)
 
         assertEquals(1, repository.loadCalls)
         assertEquals("A retained fictional draft", viewModel.state.value.form.description)
-        assertEquals(original, viewModel.state.value.original)
+        assertEquals(original, viewModel.state.value.savedForm?.toUpdate())
         assertTrue(viewModel.state.value.isDirty)
         assertFalse(viewModel.state.value.isSaving)
     }
@@ -202,7 +207,7 @@ class HostOfferViewModelTest {
         val viewModel = HostOfferViewModel(repository, scope)
 
         assertFalse(viewModel.state.value.isLoading)
-        assertNull(viewModel.state.value.original)
+        assertNull(viewModel.state.value.savedForm?.toUpdate())
         assertEquals(
             UiFailure(apiKind = ApiFailureKind.REQUEST_REJECTED, fallback = UiFailureFallback.HOST_OFFER_LOAD),
             viewModel.state.value.failure,
@@ -210,7 +215,7 @@ class HostOfferViewModelTest {
         viewModel.onEvent(HostOfferEvent.RetryLoad)
 
         assertEquals(2, repository.loadCalls)
-        assertEquals("offer-loaded", viewModel.state.value.original?.id)
+        assertEquals("offer-loaded", viewModel.state.value.savedForm?.id)
         assertNull(viewModel.state.value.failure)
         viewModel.onEvent(HostOfferEvent.RetryLoad)
         assertEquals("A loaded baseline must not be replaced by a redundant retry", 2, repository.loadCalls)
@@ -318,11 +323,11 @@ class HostOfferViewModelTest {
         val viewModel = HostOfferViewModel(FakeHostOfferRepository(), scope)
 
         viewModel.onEvent(HostOfferEvent.DescriptionChanged("A quiet room"))
-        viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("30"))
+        viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("120"))
         assertTrue(viewModel.state.value.isDirty)
-        assertEquals(20, viewModel.state.value.form.maxGuests)
+        assertEquals(99, viewModel.state.value.form.maxGuests)
         viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged(""))
-        assertEquals(20, viewModel.state.value.form.maxGuests)
+        assertEquals(99, viewModel.state.value.form.maxGuests)
         viewModel.onEvent(HostOfferEvent.DescriptionChanged(""))
         viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("1"))
 
@@ -330,17 +335,17 @@ class HostOfferViewModelTest {
     }
 
     @Test
-    fun maximumGuestsInputFiltersTextClampsTheLowerBoundAndKeepsTheLastValueOnOverflow() = withScope { scope ->
+    fun maximumGuestsInputFiltersTextAcceptsZeroAndKeepsTheLastValueOnOverflow() = withScope { scope ->
         val viewModel = HostOfferViewModel(FakeHostOfferRepository(), scope)
 
         viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("guests 5"))
         assertEquals(5, viewModel.state.value.form.maxGuests)
 
         viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("0"))
-        assertEquals(1, viewModel.state.value.form.maxGuests)
+        assertEquals(0, viewModel.state.value.form.maxGuests)
 
         viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("999999999999999999999"))
-        assertEquals(1, viewModel.state.value.form.maxGuests)
+        assertEquals(0, viewModel.state.value.form.maxGuests)
     }
 
     @Test
@@ -364,10 +369,26 @@ class HostOfferViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.isSaving)
         assertEquals("server-issued-id", state.form.id)
-        assertEquals(submitted.copy(id = "server-issued-id"), state.original)
+        assertEquals(submitted.copy(id = "server-issued-id"), state.savedForm?.toUpdate())
         assertEquals(submitted.copy(id = "server-issued-id"), state.current)
         assertFalse(state.isDirty)
         assertTrue(state.saveSucceeded)
+    }
+
+    @Test
+    fun aSuccessfulUpdateWithoutAnIdRetainsThePreviousOfferId() = withScope { scope ->
+        val repository = FakeHostOfferRepository(
+            loadResult = Result.success(LOCATED_OFFER.copy(id = "existing-offer")),
+        ).apply { saveHandler = { Result.success(hostOffer("unused").copy(id = null)) } }
+        val viewModel = HostOfferViewModel(repository, scope)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals("existing-offer", repository.submitted.single().id)
+        assertEquals("existing-offer", viewModel.state.value.savedForm?.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
+        assertFalse(viewModel.state.value.isDirty)
     }
 
     @Test
@@ -464,14 +485,14 @@ class HostOfferViewModelTest {
         viewModel.onEvent(HostOfferEvent.Save)
 
         assertEquals(submitted, viewModel.state.value.current)
-        assertEquals(HostOfferForm().toUpdate(), viewModel.state.value.original)
+        assertEquals(LOCATED_OFFER.toUpdate(), viewModel.state.value.savedForm?.toUpdate())
         assertTrue(viewModel.state.value.isDirty)
         assertEquals(UiFailure(fallback = UiFailureFallback.HOST_OFFER_SAVE), viewModel.state.value.failure)
 
         viewModel.onEvent(HostOfferEvent.Save)
         assertEquals(2, repository.saveCalls)
         assertEquals("returned-id", viewModel.state.value.form.id)
-        assertEquals(submitted.copy(id = "returned-id"), viewModel.state.value.original)
+        assertEquals(submitted.copy(id = "returned-id"), viewModel.state.value.savedForm?.toUpdate())
         assertFalse(viewModel.state.value.isDirty)
     }
 
@@ -544,7 +565,7 @@ class HostOfferViewModelTest {
 
         obsoleteSave.complete(Result.success(hostOffer("obsolete")))
         assertEquals(submitted, viewModel.state.value.current)
-        assertEquals(HostOfferForm().toUpdate(), viewModel.state.value.original)
+        assertEquals(LOCATED_OFFER.toUpdate(), viewModel.state.value.savedForm?.toUpdate())
         assertEquals(1, repository.saveCalls)
 
         viewModel.onEvent(HostOfferEvent.Save)
@@ -614,7 +635,7 @@ class HostOfferViewModelTest {
     private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class FakeHostOfferRepository(
-        private val loadResult: Result<HostOfferForm> = Result.success(HostOfferForm()),
+        private val loadResult: Result<HostOfferForm> = Result.success(LOCATED_OFFER),
     ) : HostOfferRepository {
         var loadCalls = 0
         var saveCalls = 0
@@ -658,3 +679,5 @@ private fun hostOffer(id: String) = AccommodationOffer(
     latitude = 47.0,
     longitude = 8.0,
 )
+
+private val LOCATED_OFFER = HostOfferForm(latitude = "40.25", longitude = "-8.5")
