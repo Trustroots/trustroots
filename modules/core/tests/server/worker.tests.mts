@@ -131,6 +131,15 @@ describe('Worker tests', function () {
     schedule.notCalled.should.equal(true);
   });
 
+  it('registers Agenda delivery retention every 15 minutes', function () {
+    const name = 'prune agenda delivery jobs';
+    definedJobs.map(job => job.name).should.containEql(name);
+    scheduledJobs.should.containEql({
+      name,
+      repeat: '*/15 * * * *',
+    });
+  });
+
   it('schedules unread-message digests', function () {
     scheduledJobs.should.containEql({
       name: 'queue unread message digests',
@@ -154,7 +163,7 @@ describe('Worker tests', function () {
     });
 
   it('defines right number of repeating jobs', function () {
-    scheduledJobs.length.should.equal(11);
+    scheduledJobs.length.should.equal(12);
     scheduledJobs.should.containEql({
       name: 'capture agenda storage',
       repeat: '0 3 * * *',

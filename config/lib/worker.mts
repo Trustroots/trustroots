@@ -1,5 +1,6 @@
 import type { Job, Agenda } from 'agenda';
 import { agendaLockLifetime } from './agenda-lock.mts';
+import { pruneAgendaDeliveryJobs } from './agenda-retention.mts';
 import config, { mailMode } from './../config.mts';
 import {
   deploymentNotificationHandler,
@@ -15,6 +16,7 @@ interface WorkerOptions {
 }
 type Done = (error?: Error | null) => void;
 const gracefulShutdownTimeoutMs = 30_000;
+const pruneAgendaDeliveryJobsName = 'prune agenda delivery jobs';
 type JobDefinitionOptions = {
   priority?: number | 'lowest' | 'low' | 'normal' | 'high' | 'highest';
   concurrency?: number;
@@ -100,6 +102,22 @@ async function start(options: WorkerOptions, callback?: Done) {
   const messageDigestJobName = 'queue unread message digests';
 
   // Define jobs
+
+  agenda.define(
+    pruneAgendaDeliveryJobsName,
+    async () => {
+      const deleted = await pruneAgendaDeliveryJobs(
+        mongoose.connection.db!.collection('agendaJobs'),
+      );
+      if (deleted > 0) {
+        console.log(
+          '[Worker] Pruned %d terminal Agenda delivery jobs.',
+          deleted,
+        );
+      }
+    },
+    { concurrency: 1, lockLifetime: 30 * 60 * 1000 },
+  );
 
   agenda.define(
     captureAgendaStorageJob,
@@ -201,6 +219,9 @@ async function start(options: WorkerOptions, callback?: Done) {
         agenda.every('5 minutes', 'check unread messages'),
         agenda.every('5 minutes', 'queue unread message digests'),
         agenda.every('24 hours', 'daily statistics'),
+        agenda.every('*/15 * * * *', pruneAgendaDeliveryJobsName, undefined, {
+          timezone: 'UTC',
+        }),
         agenda.every('0 3 * * *', captureAgendaStorageJob, undefined, {
           timezone: 'UTC',
         }),
