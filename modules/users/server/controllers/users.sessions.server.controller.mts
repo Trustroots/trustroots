@@ -99,15 +99,16 @@ export async function revoke(
   next: NextFunction,
 ) {
   try {
-    if (!/^[a-f0-9]{64}$/.test(req.params.id)) return res.sendStatus(404);
+    const id = String(req.params.id);
+    if (!/^[a-f0-9]{64}$/.test(id)) return res.sendStatus(404);
     const record = await mongoose
       .model('MemberSession')
       .findOneAndUpdate(
-        { _id: req.params.id, user: req.user._id, revoked: false },
+        { _id: id, user: req.user._id, revoked: false },
         { $set: { revoked: true } },
       );
     if (!record) return res.sendStatus(404);
-    if (req.params.id === sessionId(req.sessionID))
+    if (id === sessionId(req.sessionID))
       return req.session.destroy(error =>
         error ? next(error) : res.sendStatus(204),
       );
