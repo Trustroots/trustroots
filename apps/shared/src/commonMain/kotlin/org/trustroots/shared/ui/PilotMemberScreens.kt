@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,8 +24,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -195,20 +198,20 @@ internal fun Conversation(
             }
         }
         if (loaded?.isSuccess == true) {
-            PilotInput(
-                label = "Write a message",
-                value = draft,
+            ConversationReply(
+                draft = draft,
                 tag = "pilot-draft",
-                enabled = !busy,
-                singleLine = false,
+                sendLabel = "Send reply",
+                busy = busy,
+                error = sendError,
+                inputEnabled = !busy,
+                onDraft = {
+                    draft = it
+                    gateway.saveDraft(partner, it)
+                },
             ) {
-                draft = it
-                gateway.saveDraft(partner, it)
-            }
-            sendError?.let { PilotError(it) }
-            PilotButton("Send reply", primary = true, enabled = !busy && draft.isNotBlank()) {
                 val content = draft.trim()
-                if (!beginAction()) return@PilotButton
+                if (!beginAction()) return@ConversationReply
                 sendError = null
                 focus.clearFocus()
                 scope.launch {
@@ -230,6 +233,32 @@ internal fun Conversation(
             }
         }
     }
+}
+
+@Composable
+internal fun ConversationReply(
+    draft: String,
+    tag: String,
+    sendLabel: String,
+    busy: Boolean,
+    error: String?,
+    inputEnabled: Boolean = true,
+    onFocus: () -> Unit = {},
+    onDraft: (String) -> Unit,
+    onSend: () -> Unit,
+) {
+    PilotInput(
+        label = "Write a message",
+        value = draft,
+        tag = tag,
+        enabled = inputEnabled,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        singleLine = false,
+        modifier = Modifier.onFocusChanged { if (it.isFocused) onFocus() },
+        onChange = onDraft,
+    )
+    error?.let { PilotError(it) }
+    PilotButton(sendLabel, primary = true, enabled = !busy && draft.isNotBlank(), onClick = onSend)
 }
 
 @Composable

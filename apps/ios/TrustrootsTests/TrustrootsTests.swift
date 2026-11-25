@@ -1646,7 +1646,12 @@ final class TrustrootsTests: XCTestCase {
         let directory = URL.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = PilotMessageDraftStore(directory: directory)
-        let key = PilotMessageDraftStore.Key(server: "https://example.test", username: "Example-Member", recipientID: "partner-1")
+        let key = try XCTUnwrap(PilotMessageDraftStore.Key(
+            serverURLString: "https://example.test/",
+            username: "Example-Member",
+            recipientID: "partner-1"
+        ))
+        XCTAssertEqual(key.server, "https://example.test")
         let draft = "  An unsent reply.\nNext line."
         try store.save(draft, for: key)
         XCTAssertEqual(try directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)

@@ -178,14 +178,15 @@ class FixtureHandler(BaseHTTPRequestHandler):
             }])
         elif route == f'/api/mobile/v0/messages/{PARTNER["_id"]}':
             fixture = type(self)
-            # Lose the conversation connection after the first rejected reply.
-            # The pilot must read its saved copy until the member retries.
-            if self.send_attempts == 1:
+            mark_read = parse_qs(request.query).get("markRead") != ["false"]
+            # Drop an open conversation after the first rejected reply. Inbox
+            # filter requests can still read its contents without marking it read.
+            if self.send_attempts == 1 and mark_read:
                 self.log_message("Dropping the conversation connection for the draft recovery test.")
                 self.close_connection = True
                 return
             with fixture.session_lock:
-                if parse_qs(request.query).get("markRead") != ["false"]:
+                if mark_read:
                     fixture.thread_read = True
                 messages = list(fixture.messages)
             self._json(200, messages)

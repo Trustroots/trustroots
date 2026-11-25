@@ -287,10 +287,12 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
     }
 
     private func draftKey(for partner: PilotPerson) -> PilotMessageDraftStore.Key? {
-        guard isActive, let username = session.member?.username,
-              let recipientID = partner.id, !recipientID.isEmpty,
-              let server = TrustrootsAPIConfiguration(baseURLString: session.serverURLString) else { return nil }
-        return .init(server: server.normalizedURLString, username: username, recipientID: recipientID)
+        guard isActive else { return nil }
+        return .init(
+            serverURLString: session.serverURLString,
+            username: session.member?.username,
+            recipientID: partner.id
+        )
     }
 
     private static func optionalDisplayText(_ value: String?) -> String? {

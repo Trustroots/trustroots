@@ -129,6 +129,7 @@ internal fun PilotInput(
     enabled: Boolean,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
+    modifier: Modifier = Modifier,
     onChange: (String) -> Unit,
 ) {
     val palette = pilotPalette
@@ -138,7 +139,7 @@ internal fun PilotInput(
         BasicTextField(
             value,
             onValueChange = onChange,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .testTag(tag)
                 .semantics { contentDescription = label },

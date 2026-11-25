@@ -1,11 +1,14 @@
 package org.trustroots.shared.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,9 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -105,26 +110,77 @@ fun MemberInboxViewController(
     }
 }
 
-class MemberConversationHistoryState {
-    internal var messages by mutableStateOf(emptyList<PilotMessage>())
-        private set
-    internal var scrollRequest by mutableStateOf(0)
+data class MemberConversationContent(
+    val messages: List<PilotMessage> = emptyList(),
+    val draft: String = "",
+    val isLoading: Boolean = false,
+    val isSending: Boolean = false,
+    val loadError: String? = null,
+    val replyError: String? = null,
+    val experienceLabel: String? = null,
+    val canShareExperience: Boolean = false,
+)
+
+class MemberConversationState {
+    internal var content by mutableStateOf(MemberConversationContent())
         private set
 
-    fun update(messages: List<PilotMessage>, scrollRequest: Int) {
-        this.messages = messages
-        this.scrollRequest = scrollRequest
+    fun update(content: MemberConversationContent) {
+        this.content = content
+    }
+
+    internal fun editDraft(draft: String) {
+        content = content.copy(draft = draft)
     }
 }
 
-fun MemberConversationHistoryViewController(
-    state: MemberConversationHistoryState,
+fun MemberConversationViewController(
+    state: MemberConversationState,
+    onDraft: (String) -> Unit,
+    onSend: () -> Unit,
+    onRetry: () -> Unit,
+    onShareExperience: () -> Unit,
 ) = ComposeUIViewController {
-    val messages = state.messages
-    val newestId = messages.firstOrNull()?.id
+    val content = state.content
+    val newestId = content.messages.firstOrNull()?.id
     val listState = rememberLazyListState()
-    ConversationHistory(messages, listState, contentPadding = PaddingValues(16.dp))
-    LaunchedEffect(newestId, state.scrollRequest) {
+    var scrollRequest by remember { mutableIntStateOf(0) }
+    Column(
+        modifier = Modifier.fillMaxSize().background(pilotPalette.background)
+            .imePadding().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
+            when {
+                content.messages.isNotEmpty() ->
+                    ConversationHistory(content.messages, listState, contentPadding = PaddingValues(vertical = 8.dp))
+                content.isLoading -> PilotText("Loading conversation…", Modifier.padding(top = 8.dp))
+                content.loadError != null -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PilotTitle("Conversation unavailable")
+                    PilotError(content.loadError)
+                    PilotButton("Try again", onClick = onRetry)
+                }
+            }
+        }
+        content.experienceLabel?.let { label ->
+            if (content.canShareExperience) PilotButton(label, onClick = onShareExperience)
+            else PilotText(label, strong = true)
+        }
+        ConversationReply(
+            draft = content.draft,
+            tag = "conversation-reply",
+            sendLabel = "Send message",
+            busy = content.isSending,
+            error = content.replyError,
+            onFocus = { scrollRequest++ },
+            onDraft = { draft ->
+                state.editDraft(draft)
+                onDraft(draft)
+            },
+            onSend = onSend,
+        )
+    }
+    LaunchedEffect(newestId, scrollRequest) {
         if (newestId != null) listState.scrollToItem(0)
     }
 }

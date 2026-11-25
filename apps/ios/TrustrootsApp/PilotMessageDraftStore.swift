@@ -47,3 +47,12 @@ struct PilotMessageDraftStore {
         return directory.appendingPathComponent(digest, isDirectory: false)
     }
 }
+
+extension PilotMessageDraftStore.Key {
+    init?(serverURLString: String, username: String?, recipientID: String?) {
+        guard let username, !username.isEmpty,
+              let recipientID, !recipientID.isEmpty,
+              let server = TrustrootsAPIConfiguration(baseURLString: serverURLString) else { return nil }
+        self.init(server: server.normalizedURLString, username: username, recipientID: recipientID)
+    }
+}

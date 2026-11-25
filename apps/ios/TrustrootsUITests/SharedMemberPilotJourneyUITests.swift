@@ -206,8 +206,18 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         enterText(reply, into: draft, in: app)
         let send = app.buttons["Send message"]
         send.tap()
-        XCTAssertTrue(app.staticTexts["Temporary fixture delivery failure."].waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Temporary fixture delivery failure.", in: app).waitForExistence(timeout: 10))
         XCTAssertEqual(draft.value as? String, reply)
+
+        app.navigationBars.buttons["Back"].tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 15), app.debugDescription)
+        row.tap()
+        let restoredDraft = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", reply),
+            object: draft
+        )
+        await fulfillment(of: [restoredDraft], timeout: 10)
+        XCTAssertTrue(element(labelled: "Hello from the test fixture.", in: app).waitForExistence(timeout: 15))
         send.tap()
         XCTAssertTrue(element(labelled: reply, in: app).waitForExistence(timeout: 15), app.debugDescription)
 
@@ -219,6 +229,11 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             object: row
         )
         await fulfillment(of: [readAfterReturn], timeout: 15)
+
+        row.tap()
+        XCTAssertTrue(element(labelled: reply, in: app).waitForExistence(timeout: 15))
+        XCTAssertTrue(draft.exists, app.debugDescription)
+        XCTAssertNotEqual(draft.value as? String, reply)
     }
 
     @MainActor
