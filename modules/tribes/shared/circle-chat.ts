@@ -1,6 +1,5 @@
 import type { EventTemplate } from 'nostr-tools';
 
-export const CIRCLE_CHAT_RELAY = 'wss://nip42.trustroots.org';
 export const MAX_CHAT_LENGTH = 500;
 export const CHAT_ATTRIBUTION_TAG = 'trustroots_username';
 

@@ -10,7 +10,11 @@ import {
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
-import { signWithConnectedNostr } from '@/modules/users/client/services/nostr-proof.client';
+import {
+  signWithConnectedNostr,
+  withConnectedNostr,
+} from '@/modules/users/client/services/nostr-proof.client';
+import { publishNostrProfile } from '@/modules/users/client/services/nostr-profile.client';
 import type { UserProfile } from '@/modules/users/client/types';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
@@ -20,7 +24,13 @@ vi.mock('@/modules/users/client/services/nostr-proof.client', async () => ({
   ...(await vi.importActual<
     typeof import('@/modules/users/client/services/nostr-proof.client')
   >('@/modules/users/client/services/nostr-proof.client')),
-  signNostrProof: vi.fn().mockResolvedValue({ id: 'signed-proof' }),
+  signNostrProof: vi.fn<
+    typeof import('@/modules/users/client/services/nostr-proof.client').signNostrProof
+  >(async (_event, npub, _method, _uri, _onAuth, _signal, complete) => {
+    const proof = { id: 'signed-proof' };
+    await complete?.({ npub, proof }, vi.fn());
+    return proof;
+  }),
   signWithConnectedNostr: vi.fn(
     (
       await vi.importActual<
@@ -28,6 +38,16 @@ vi.mock('@/modules/users/client/services/nostr-proof.client', async () => ({
       >('@/modules/users/client/services/nostr-proof.client')
     ).signWithConnectedNostr,
   ),
+  withConnectedNostr: vi.fn(
+    (
+      await vi.importActual<
+        typeof import('@/modules/users/client/services/nostr-proof.client')
+      >('@/modules/users/client/services/nostr-proof.client')
+    ).withConnectedNostr,
+  ),
+}));
+vi.mock('@/modules/users/client/services/nostr-profile.client', () => ({
+  publishNostrProfile: vi.fn().mockResolvedValue('published'),
 }));
 
 const mockedUsersApi = vi.mocked(usersApi);
@@ -164,6 +184,7 @@ describe('ProfileEditNetworks', () => {
       ),
     );
     await screen.findByText('Hospitality networks updated.');
+    expect(publishNostrProfile).not.toHaveBeenCalled();
     expect(screen.queryByLabelText('Signing method')).not.toBeInTheDocument();
     mockedUsersApi.update.mockClear();
     mockedUsersApi.nostrChallenge.mockClear();
@@ -236,6 +257,7 @@ describe('ProfileEditNetworks', () => {
       'bunker://fictional',
       expect.any(Function),
       expect.any(AbortSignal),
+      expect.any(Function),
     );
   });
 
@@ -436,6 +458,7 @@ describe('ProfileEditNetworks', () => {
       expect.any(Function),
       expect.any(Function),
       expect.any(AbortSignal),
+      expect.any(Function),
     );
     expect(
       screen.getByRole('img', { name: 'Remote signer connection QR code' }),
@@ -450,6 +473,93 @@ describe('ProfileEditNetworks', () => {
       ).not.toBeInTheDocument();
     });
     expect(mockedUsersApi.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps a saved key when publication fails and retries without saving again', async () => {
+    window.nostr = {
+      getPublicKey: vi.fn().mockResolvedValue('f'.repeat(64)),
+      signEvent: vi.fn().mockResolvedValue({ id: 'browser-proof' }),
+    };
+    mockedUsersApi.update.mockResolvedValue({
+      ...user,
+      nostrNpub: 'npub1suggestedkey',
+    });
+    vi.mocked(publishNostrProfile).mockRejectedValueOnce(new Error('offline'));
+    renderPage();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Link with browser signer' }),
+    );
+    await screen.findByText('Hospitality networks updated.');
+    await screen.findByText(
+      'Could not publish your Nostr address. You can try again.',
+    );
+    expect(screen.getByLabelText('nostr npub')).toHaveValue(
+      'npub1suggestedkey',
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Publish Nostr address' }),
+    );
+    await screen.findByText('Your Trustroots Nostr address is published.');
+    expect(publishNostrProfile).toHaveBeenCalledTimes(2);
+    expect(mockedUsersApi.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('explains when the saved key is absent from the public lookup', async () => {
+    window.nostr = {
+      getPublicKey: vi.fn().mockResolvedValue('f'.repeat(64)),
+      signEvent: vi.fn(),
+    };
+    vi.mocked(publishNostrProfile).mockResolvedValueOnce('unavailable');
+    renderPage({ nostrNpub: 'npub1suggestedkey' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Publish Nostr address' }),
+    );
+    await screen.findByText(
+      'Your Trustroots Nostr address is unavailable in the public lookup.',
+    );
+    expect(mockedUsersApi.update).not.toHaveBeenCalled();
+  });
+
+  it('uses a paired signer for a saved key and refuses a different key', async () => {
+    vi.mocked(withConnectedNostr).mockImplementationOnce(
+      (_method, _onPairing, _onAuth, _signal, work) =>
+        work('npub1different', vi.fn()),
+    );
+    renderPage({ nostrNpub: 'npub1suggestedkey' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Publish Nostr address' }),
+    );
+    await screen.findByText('The signer public key does not match this npub.');
+    expect(withConnectedNostr).toHaveBeenCalledWith(
+      'pair',
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(AbortSignal),
+      expect.any(Function),
+    );
+    expect(publishNostrProfile).not.toHaveBeenCalled();
+  });
+
+  it('ignores a duplicate form submission while the save is in progress', async () => {
+    let resolveSave: (
+      profile: Awaited<ReturnType<typeof usersApi.update>>,
+    ) => void;
+    mockedUsersApi.update.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSave = resolve;
+        }),
+    );
+    renderPage();
+    fireEvent.change(screen.getByLabelText('couchers.org/user/'), {
+      target: { value: 'fictional-member' },
+    });
+    const save = screen.getByRole('button', { name: 'Save' });
+    fireEvent.click(save);
+    fireEvent.submit(save.closest('form')!);
+    expect(mockedUsersApi.update).toHaveBeenCalledTimes(1);
+    resolveSave!({ ...user, extSitesCouchers: 'fictional-member' });
+    await screen.findByText('Hospitality networks updated.');
   });
 
   it('opens other hospitality test links in new tabs and warns before Couchsurfing', async () => {

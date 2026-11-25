@@ -1641,7 +1641,8 @@ const features = [
     id: 'profile.edit-networks',
     area: AREA.profileOnboarding,
     status: STATUS.active,
-    description: 'Members can edit profile network links and Nostr public key.',
+    description:
+      'Members can edit profile network links and publish their Trustroots Nostr address.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1658,6 +1659,7 @@ const features = [
       'Networks edit form is reachable.',
       'Invalid Nostr secret key is rejected.',
       'Valid npub is saved and shown on profile view.',
+      'A linked Nostr address is published after retrying a rejected relay write.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit networks page is reachable'),
@@ -1673,6 +1675,10 @@ const features = [
       spec(
         'nostr.spec.js',
         'links the saved npub to nos.trustroots.org on the profile view',
+      ),
+      spec(
+        'nostr.spec.js',
+        'publishes a linked Trustroots address through the authenticated relay and retries a rejected write',
       ),
     ],
   },

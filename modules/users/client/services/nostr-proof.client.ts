@@ -8,6 +8,22 @@ import {
 
 export class NostrSigningError extends Error {}
 
+export type NostrEventSigner = (event: EventTemplate) => Promise<unknown>;
+type LinkProof = { npub: string; proof: unknown };
+type CompleteLink = (link: LinkProof, sign: NostrEventSigner) => Promise<void>;
+
+function activeSigner(
+  sign: NostrEventSigner,
+  checkActive: () => void,
+): NostrEventSigner {
+  return async event => {
+    checkActive();
+    const signed = await sign(event);
+    checkActive();
+    return signed;
+  };
+}
+
 function browserSigner() {
   const signer = window.nostr;
   if (
@@ -102,6 +118,7 @@ export async function signNostrProof(
   bunkerUri: string,
   onAuth: (url: string) => void,
   signal: AbortSignal,
+  complete?: CompleteLink,
 ): Promise<unknown> {
   const decoded = nip19.decode(npub);
   if (decoded.type !== 'npub')
@@ -112,6 +129,12 @@ export async function signNostrProof(
     onAuth,
     async ({ checkActive, setCleanup, authorise }) => {
       checkActive();
+      async function prove(signEvent: NostrEventSigner) {
+        const sign = activeSigner(signEvent, checkActive);
+        const proof = await sign(event);
+        await complete?.({ npub, proof }, sign);
+        return proof;
+      }
       if (method === 'browser') {
         const signer = requireBrowserSigner();
         const signerPubkey = await signer.getPublicKey();
@@ -120,7 +143,7 @@ export async function signNostrProof(
           throw new NostrSigningError(
             'The signer public key does not match this npub.',
           );
-        return signer.signEvent({ ...event });
+        return prove(template => signer.signEvent({ ...template }));
       }
       const uri = new URL(bunkerUri.trim());
       const relays = uri.searchParams.getAll('relay');
@@ -170,17 +193,17 @@ export async function signNostrProof(
         throw new NostrSigningError(
           'The signer public key does not match this npub.',
         );
-      return signer.signEvent(event);
+      return prove(template => signer.signEvent(template));
     },
   );
 }
 
-export async function signWithConnectedNostr(
+export async function withConnectedNostr<T>(
   method: 'browser' | 'pair',
-  requestChallenge: (npub: string) => Promise<EventTemplate>,
   onPairing: (connection: { uri: string; qr: string } | undefined) => void,
   onAuth: (url: string) => void,
   signal: AbortSignal,
+  work: (npub: string, sign: NostrEventSigner) => Promise<T>,
 ) {
   return runNostrSigning(
     signal,
@@ -206,7 +229,7 @@ export async function signWithConnectedNostr(
           clientPubkey: getPublicKey(key),
           relays: ['wss://relay.trustroots.org'],
           secret: crypto.randomUUID(),
-          perms: ['sign_event:27235'],
+          perms: ['sign_event:27235', 'sign_event:22242', 'sign_event:0'],
           name: 'Trustroots',
           url: window.location.origin,
         });
@@ -236,9 +259,32 @@ export async function signWithConnectedNostr(
 
       const npub = nip19.npubEncode(await signer.getPublicKey());
       checkActive();
-      const challenge = await requestChallenge(npub);
-      checkActive();
-      return { npub, proof: await signer.signEvent(challenge) };
+      return work(
+        npub,
+        activeSigner(event => signer.signEvent(event), checkActive),
+      );
+    },
+  );
+}
+
+export async function signWithConnectedNostr(
+  method: 'browser' | 'pair',
+  requestChallenge: (npub: string) => Promise<EventTemplate>,
+  onPairing: (connection: { uri: string; qr: string } | undefined) => void,
+  onAuth: (url: string) => void,
+  signal: AbortSignal,
+  complete?: CompleteLink,
+) {
+  return withConnectedNostr(
+    method,
+    onPairing,
+    onAuth,
+    signal,
+    async (npub, sign) => {
+      const proof = await sign(await requestChallenge(npub));
+      const link = { npub, proof };
+      await complete?.(link, sign);
+      return link;
     },
   );
 }

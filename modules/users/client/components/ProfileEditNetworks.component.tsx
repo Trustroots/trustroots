@@ -13,7 +13,10 @@ import {
   NostrSigningError,
   signNostrProof,
   signWithConnectedNostr,
+  withConnectedNostr,
+  type NostrEventSigner,
 } from '../services/nostr-proof.client';
+import { publishNostrProfile } from '../services/nostr-profile.client';
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
@@ -52,6 +55,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [publicationMessage, setPublicationMessage] = useState('');
   const [savedNpub, setSavedNpub] = useState(normalizeNpub(user.nostrNpub));
   const [browserSignerAvailable, setBrowserSignerAvailable] = useState(
     hasBrowserNostrSigner,
@@ -98,7 +102,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
       return;
     }
 
-    await saveNetworks(async signal => {
+    await saveNetworks(async (signal, save) => {
       let proof: unknown;
       if (npub && npub !== savedNpub) {
         if (signingMethod === 'external') {
@@ -112,69 +116,157 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
         } else {
           const event = await nostrChallenge(npub);
           signal.throwIfAborted();
-          proof = await signNostrProof(
+          await signNostrProof(
             event,
             npub,
             signingMethod,
             bunkerUri,
             setAuthUrl,
             signal,
+            save,
           );
+          return;
         }
       }
-      return { npub, proof };
+      await save({ npub, proof });
     });
   }
 
   async function saveNetworks(
     getProof: (
       signal: AbortSignal,
-    ) => Promise<{ npub: string; proof: unknown }>,
+      save: (
+        link: { npub: string; proof: unknown },
+        sign?: NostrEventSigner,
+      ) => Promise<void>,
+    ) => Promise<unknown>,
   ) {
     setStatusMessage('');
+    let didSave = false;
+    await runNetworkOperation(
+      signal =>
+        getProof(signal, async ({ npub, proof }, sign) => {
+          signal.throwIfAborted();
+          const savedUser = await update({
+            nostrNpub: npub,
+            ...(proof === undefined ? {} : { nostrProof: proof }),
+            extSitesCouchers: draftUser.extSitesCouchers,
+            extSitesBW: draftUser.extSitesBW,
+            extSitesCS: draftUser.extSitesCS,
+            extSitesWS: draftUser.extSitesWS,
+            extSitesServas: draftUser.extSitesServas,
+            extSitesHitchwikiMaps: draftUser.extSitesHitchwikiMaps,
+            extSitesHitchwiki: draftUser.extSitesHitchwiki,
+          });
+          setUser(current => ({ ...current, ...savedUser }));
+          setDraftUser({ ...savedUser });
+          setSavedNpub(normalizeNpub(savedUser.nostrNpub));
+          setHasChanges(false);
+          setStatusMessage(t('Hospitality networks updated.'));
+          track('profile_section_saved', { section: 'networks' });
+          didSave = true;
+          if (
+            sign &&
+            savedUser.nostrNpub &&
+            savedUser.nostrNpub !== savedNpub
+          ) {
+            await publishAddress(
+              savedUser.username,
+              savedUser.nostrNpub,
+              sign,
+              signal,
+            );
+          }
+        }),
+      error => {
+        if (didSave) {
+          showPublicationError();
+          return;
+        }
+        track('profile_save_failed', {
+          section: 'networks',
+          reason: saveFailureReason(error),
+        });
+        const { message } = readApiError(error);
+        setStatusMessage(
+          message ||
+            (error instanceof NostrSigningError
+              ? t(error.message)
+              : t('Something went wrong. Please try again!')),
+        );
+      },
+    );
+  }
+
+  async function runNetworkOperation(
+    work: (signal: AbortSignal) => Promise<unknown>,
+    onError: (error: unknown) => void,
+  ) {
+    if (operation.current) return;
+    setPublicationMessage('');
     setAuthUrl('');
     setBusy(true);
     const controller = new AbortController();
     operation.current = controller;
-
     try {
-      const { npub, proof } = await getProof(controller.signal);
-      controller.signal.throwIfAborted();
-      const savedUser = await update({
-        nostrNpub: npub,
-        ...(proof === undefined ? {} : { nostrProof: proof }),
-        extSitesCouchers: draftUser.extSitesCouchers,
-        extSitesBW: draftUser.extSitesBW,
-        extSitesCS: draftUser.extSitesCS,
-        extSitesWS: draftUser.extSitesWS,
-        extSitesServas: draftUser.extSitesServas,
-        extSitesHitchwikiMaps: draftUser.extSitesHitchwikiMaps,
-        extSitesHitchwiki: draftUser.extSitesHitchwiki,
-      });
-      setUser(current => ({ ...current, ...savedUser }));
-      setDraftUser({ ...savedUser });
-      setSavedNpub(normalizeNpub(savedUser.nostrNpub));
-      setHasChanges(false);
-      setStatusMessage(t('Hospitality networks updated.'));
-      track('profile_section_saved', { section: 'networks' });
-    } catch (error: unknown) {
-      track('profile_save_failed', {
-        section: 'networks',
-        reason: saveFailureReason(error),
-      });
-      const { message } = readApiError(error);
-      setStatusMessage(
-        message ||
-          (error instanceof NostrSigningError
-            ? t(error.message)
-            : t('Something went wrong. Please try again!')),
-      );
+      await work(controller.signal);
+    } catch (error) {
+      if (!controller.signal.aborted) onError(error);
     } finally {
+      controller.abort();
       operation.current = null;
       setBusy(false);
       setAuthUrl('');
       setPairing(undefined);
     }
+  }
+
+  function showPublicationError() {
+    setPublicationMessage(
+      t('Could not publish your Nostr address. You can try again.'),
+    );
+  }
+
+  async function publishAddress(
+    username: string,
+    npub: string,
+    sign: NostrEventSigner,
+    signal: AbortSignal,
+  ) {
+    const result = await publishNostrProfile(
+      { username, nostrNpub: npub },
+      sign,
+      signal,
+    );
+    setPublicationMessage(
+      result === 'published'
+        ? t('Your Trustroots Nostr address is published.')
+        : t(
+            'Your Trustroots Nostr address is unavailable in the public lookup.',
+          ),
+    );
+  }
+
+  function publishSavedAddress() {
+    return runNetworkOperation(
+      signal =>
+        withConnectedNostr(
+          browserSignerAvailable ? 'browser' : 'pair',
+          setPairing,
+          setAuthUrl,
+          signal,
+          async (npub, sign) => {
+            if (npub !== savedNpub) {
+              setPublicationMessage(
+                t('The signer public key does not match this npub.'),
+              );
+              return;
+            }
+            await publishAddress(draftUser.username, savedNpub, sign, signal);
+          },
+        ),
+      showPublicationError,
+    );
   }
 
   async function prepareExternalChallenge() {
@@ -220,13 +312,14 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
 
   function linkNostr() {
     const method = browserSignerAvailable ? 'browser' : 'pair';
-    return saveNetworks(signal =>
+    return saveNetworks((signal, save) =>
       signWithConnectedNostr(
         method,
         nostrChallenge,
         setPairing,
         setAuthUrl,
         signal,
+        save,
       ),
     );
   }
@@ -283,6 +376,24 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       : t('Connect a Nostr signer')}
                   </Button>
                 </p>
+                <p className="help-block">
+                  {t(
+                    'Link a signer to publish your public Trustroots Nostr address to the Trustroots relay.',
+                  )}
+                </p>
+                {savedNpub &&
+                  normalizeNpub(draftUser.nostrNpub) === savedNpub && (
+                    <p>
+                      <Button type="button" onClick={publishSavedAddress}>
+                        {t('Publish Nostr address')}
+                      </Button>
+                    </p>
+                  )}
+                {publicationMessage && (
+                  <p className="help-block" role="status">
+                    {publicationMessage}
+                  </p>
+                )}
                 <div className="form-group">
                   <div data-slot="input-group" className="tw:input-group">
                     <label
@@ -566,7 +677,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
             <div className="panel-footer">
               <small className="text-muted">
                 {t(
-                  'Adding links to other hospitality networks or a Nostr public key is absolutely optional. We will never send your profile data to these services.',
+                  'Adding links to other hospitality networks or a Nostr public key is optional.',
                 )}
               </small>
             </div>

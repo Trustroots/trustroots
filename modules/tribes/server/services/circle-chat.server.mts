@@ -1,12 +1,12 @@
 import type { Event, EventTemplate } from 'nostr-tools';
 import { getNostrServiceSigner } from '../../../core/server/services/nostr-service-signer.server.mts';
+import { withAuthenticatedNostrRelay } from '../../../core/shared/nostr-authenticated-relay.mts';
 import {
   CHAT_ATTRIBUTION_TAG,
   chatTemplate,
   chatTopics,
   type ChatRoom,
 } from '../../shared/circle-chat.ts';
-import { withCircleChatRelay } from '../../shared/circle-chat-relay.ts';
 
 function requireServiceSigner() {
   const signer = getNostrServiceSigner();
@@ -21,7 +21,7 @@ function requireServiceSigner() {
 
 export async function readCircleChat(room: ChatRoom) {
   const { publicKey, sign } = requireServiceSigner();
-  const messages = await withCircleChatRelay(sign, relay => {
+  const messages = await withAuthenticatedNostrRelay(sign, relay => {
     return new Promise<Event[]>((resolve, reject) => {
       const limit = 200;
       const messages = new Map<string, Event>();
@@ -65,6 +65,6 @@ export async function publishCircleChat(
   const template = chatTemplate(room, content, channel);
   template.tags.push([CHAT_ATTRIBUTION_TAG, username]);
   const event = await sign(template);
-  await withCircleChatRelay(sign, relay => relay.publish(event));
+  await withAuthenticatedNostrRelay(sign, relay => relay.publish(event));
   return event;
 }
