@@ -76,11 +76,13 @@ export async function list(
       createdAt: { $gte: new Date(Date.now() - RETENTION_MS) },
     };
     if (cursor) {
+      const cursorDate = new Date(Number(cursor.createdAt));
+      const cursorId = String(cursor.id);
       filter.$and = [
         {
           $or: [
-            { createdAt: { $lt: cursor.createdAt } },
-            { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
+            { createdAt: { $lt: cursorDate } },
+            { createdAt: cursorDate, _id: { $lt: cursorId } },
           ],
         },
       ];
