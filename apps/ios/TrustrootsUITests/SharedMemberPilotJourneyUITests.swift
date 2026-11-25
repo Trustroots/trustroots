@@ -67,6 +67,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         contact.tap()
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        let biography = app.descendants(matching: .any)["profile-biography"]
+        XCTAssertTrue(biography.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(biography, in: app)
+        let biographyText = "I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers."
+        let biographyLabel = element(labelled: biographyText, in: app)
+        XCTAssertTrue(biographyLabel.isHittable, app.debugDescription)
+        XCTAssertLessThanOrEqual(biographyLabel.frame.maxY, biography.frame.maxY + 1)
+        let profileText = XCTAttachment(screenshot: biography.screenshot())
+        profileText.name = "regular-ios-profile-biography"
+        profileText.lifetime = .keepAlways
+        add(profileText)
+
+        let languages = app.descendants(matching: .any)["profile-languages"]
+        XCTAssertTrue(languages.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(languages, in: app)
+        XCTAssertTrue(element(labelled: "English · French", in: app).isHittable, app.debugDescription)
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))

@@ -61,7 +61,7 @@ internal fun Profile(
                 PilotText("@$username")
                 profile.tagline?.let { PilotText(it, strong = true) }
                 profile.location?.let { PilotText(it) }
-                profile.about?.let { PilotText(it) }
+                profile.about?.let { MemberProfileText(title = null, text = it) }
                 if (!isOwnProfile) profile.person.id?.let { memberId ->
                     PilotButton("Send a message", primary = true) { onConversation(profile.person, memberId) }
                 }
