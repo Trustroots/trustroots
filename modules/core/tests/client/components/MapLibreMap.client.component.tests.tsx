@@ -35,13 +35,16 @@ const mockMap = {
   scrollZoom: { setWheelZoomRate: vi.fn() },
 };
 let glProps!: GLProps;
+let glReady = true;
 const layerProps: Record<string, Record<string, unknown>> = {};
 vi.mock('@vis.gl/react-maplibre', () => ({
   default: function MockReactMapGL(
     props: GLProps & { ref: React.Ref<unknown> },
   ) {
     glProps = props;
-    React.useImperativeHandle(props.ref, () => ({ getMap: () => mockMap }));
+    React.useImperativeHandle(props.ref, () =>
+      glReady ? { getMap: () => mockMap } : null,
+    );
     return <div data-testid="gl-map">{props.children}</div>;
   },
   Source: ({ children }: { children: React.ReactNode }) => children,
@@ -108,6 +111,7 @@ const target = { target: mockMap } as never;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  glReady = true;
 });
 
 describe('<MapLibreMap />', () => {
@@ -159,6 +163,21 @@ describe('<MapLibreMap />', () => {
     expect(mockMap.jumpTo).not.toHaveBeenCalled();
     rerender(<MapLibreMap view={{ latitude: 1, longitude: 2, zoom: 3 }} />);
     expect(mockMap.jumpTo).toHaveBeenCalledWith({ center: [2, 1], zoom: 3 });
+  });
+
+  it('applies a new view when the map finishes initialising', () => {
+    glReady = false;
+    const { rerender } = renderMap();
+    const nextView = { latitude: 0, longitude: 0, zoom: 13 };
+    rerender(<MapLibreMap view={nextView} />);
+    expect(mockMap.jumpTo).not.toHaveBeenCalled();
+
+    glReady = true;
+    rerender(<MapLibreMap view={nextView} />);
+    expect(mockMap.jumpTo).toHaveBeenCalledExactlyOnceWith({
+      center: [0, 0],
+      zoom: 13,
+    });
   });
 
   it('moves the camera and point state through its handle', () => {

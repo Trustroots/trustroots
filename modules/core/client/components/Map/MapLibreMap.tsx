@@ -1,5 +1,11 @@
 /// <reference types="vite/client" />
-import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import ReactMapGL, {
   Layer,
   Marker,
@@ -119,20 +125,33 @@ export default function MapLibreMap(props: MapProps) {
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [settled, setSettled] = useState(view);
   const appliedView = useRef(view);
+  const latestView = useRef(view);
+  latestView.current = view;
   const dragged = useRef(false);
   const hovered = useRef<MapGeoJSONFeature | null>(null);
   usePageWheel(surfaceRef, true);
   const map = () => mapRef.current?.getMap();
 
-  useEffect(() => {
-    if (view !== appliedView.current) {
-      appliedView.current = view;
-      map()?.jumpTo({
-        center: [view.longitude, view.latitude],
-        zoom: view.zoom,
-      });
-    }
-  }, [view]);
+  const applyView = useCallback((next: MapView) => {
+    const current = mapRef.current?.getMap();
+    if (!current || next === appliedView.current) return;
+    appliedView.current = next;
+    current.jumpTo({
+      center: [next.longitude, next.latitude],
+      zoom: next.zoom,
+    });
+  }, []);
+
+  // The renderer can supply its map ref after the view has already changed.
+  const attachMap = useCallback(
+    (instance: MapRef | null) => {
+      mapRef.current = instance;
+      applyView(latestView.current);
+    },
+    [applyView],
+  );
+
+  useEffect(() => applyView(view), [applyView, view]);
 
   useEffect(() => {
     const surface = surfaceRef.current!;
@@ -216,7 +235,7 @@ export default function MapLibreMap(props: MapProps) {
       data-map-zoom={settled.zoom}
     >
       <ReactMapGL
-        ref={mapRef}
+        ref={attachMap}
         reuseMaps
         dragRotate={false}
         mapStyle={MAP_STYLE}
