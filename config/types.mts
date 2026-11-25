@@ -126,13 +126,6 @@ export interface Config {
   };
   umami: { scriptSrc: string; websiteId: string };
   db: DatabaseConfig;
-  files: {
-    server: {
-      models: string[];
-      routes: string[];
-      configs: string[];
-    };
-  };
   utils: {
     getGlobbedPaths: (
       patterns: string | string[],
@@ -141,7 +134,7 @@ export interface Config {
   };
 }
 
-export type DefaultConfig = Omit<Config, 'db' | 'files' | 'utils'>;
+export type DefaultConfig = Omit<Config, 'db' | 'utils'>;
 export type ConfigOverrides = Partial<DefaultConfig> & { db?: DatabaseConfig };
 export type DeepPartial<T> = T extends readonly (infer U)[]
   ? DeepPartial<U>[]

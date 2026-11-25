@@ -2,7 +2,6 @@ import { createRequire } from 'node:module';
 
 import fs from 'fs';
 import { globSync } from 'node:fs';
-import defaultAssets from './assets/default.mts';
 import defaultConfig from './env/default.mts';
 import developmentConfig from './env/development.mts';
 import productionConfig from './env/production.mts';
@@ -113,19 +112,6 @@ const validateEnvironmentVariable = function (): void {
 };
 
 /**
- * Initialize global configuration files
- */
-const getGlobalConfigFiles = (
-  assets: typeof defaultAssets,
-): Config['files'] => ({
-  server: {
-    models: getGlobbedPaths(assets.server.models),
-    routes: getGlobbedPaths(assets.server.routes),
-    configs: getGlobbedPaths(assets.server.config),
-  },
-});
-
-/**
  * Initialize global configuration
  */
 const initGlobalConfig = function () {
@@ -153,7 +139,6 @@ const initGlobalConfig = function () {
     `[Mail] mode=${mailMode}${mailMode === 'capture' ? '; outgoing delivery disabled' : ''}`,
   );
   const service: Config = Object.assign(config, {
-    files: getGlobalConfigFiles(defaultAssets),
     utils: { getGlobbedPaths },
   });
   return { service, mailMode };
