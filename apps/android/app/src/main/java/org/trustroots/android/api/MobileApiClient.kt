@@ -6,10 +6,14 @@ import java.net.URLEncoder
 import java.io.IOException
 import java.time.Instant
 import java.util.UUID
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import org.json.JSONArray
 import org.json.JSONObject
 import org.trustroots.shared.ui.PilotConnection
@@ -235,13 +239,28 @@ class MobileApiClient(
                 val request = JSONObject()
                     .put("username", usernameOrEmail)
                     .put("password", password)
-                    .toString()
-                val response = jsonRequest(
-                        path = "/api/mobile/v0/auth/signin",
-                        method = "POST",
-                        body = request,
+                fun send(acceptedStatusCode: Int? = null) = jsonRequest(
+                    path = "/api/mobile/v0/auth/signin",
+                    method = "POST",
+                    body = request.toString(),
+                    failureKind = ApiFailureKind.SIGN_IN_REJECTED,
+                    acceptedStatusCode = acceptedStatusCode,
+                )
+                val initial = send(429)
+                val response = if (initial.statusCode == 429) {
+                    val payload = runCatching { JSONObject(initial.body) }.getOrNull()
+                    val challenge = payload?.optJSONObject("signinChallenge") ?: throw MobileApiException(
+                        statusCode = 429,
+                        serverMessage = payload?.optString("message"),
                         failureKind = ApiFailureKind.SIGN_IN_REJECTED,
                     )
+                    val token = challenge.optString("token")
+                    val solution = solveSigninChallenge(token, challenge.optInt("difficulty", -1))
+                    request.put("signinProof", JSONObject().put("token", token).put("solution", solution))
+                    send()
+                } else {
+                    initial
+                }
                 val bearerSession = JSONObject(response.body)
                 val accessToken = bearerSession.optString("accessToken").takeIf(String::isNotBlank)
                 if (accessToken != null) {
@@ -818,6 +837,7 @@ class MobileApiClient(
     private data class JsonResponse(
         val body: String,
         val sessionCookie: String?,
+        val statusCode: Int,
     )
 
     private fun jsonRequest(
@@ -828,13 +848,14 @@ class MobileApiClient(
         requestHeaders: Map<String, String> = emptyMap(),
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
         allowResponseCache: Boolean = true,
+        acceptedStatusCode: Int? = null,
     ): JsonResponse {
         val current = if (session?.refreshToken != null && sessionStore != null) {
             sessionStore.currentBearerSession(session)
         } else session
         fun send(credentials: MemberSession?) = sendJsonRequest(
             path, method, body, credentials?.cookieHeader, credentials?.accessToken,
-            requestHeaders, failureKind, allowResponseCache,
+            requestHeaders, failureKind, allowResponseCache, acceptedStatusCode,
         )
         return try {
             send(current)
@@ -854,6 +875,7 @@ class MobileApiClient(
         requestHeaders: Map<String, String>,
         failureKind: ApiFailureKind,
         allowResponseCache: Boolean,
+        acceptedStatusCode: Int?,
     ): JsonResponse {
         val requestPath = if (accessToken != null) mobileApiPath(path, method, body) else path
         val endpoint = URL("$baseURL$requestPath")
@@ -889,7 +911,7 @@ class MobileApiClient(
                 connection.errorStream
             }
             var responseBody = responseStream?.use { it.reader().readText() }.orEmpty()
-            if (!successful) {
+            if (!successful && responseCode != acceptedStatusCode) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
                     .orEmpty()
@@ -929,12 +951,13 @@ class MobileApiClient(
             return JsonResponse(
                 body = responseBody.ifBlank { "{}" },
                 sessionCookie = sessionCookieFrom(connection.headerFields),
+                statusCode = responseCode,
             )
         } catch (error: IOException) {
             val cached = readCacheScope?.let { it.cache.load(baseURL, it.account, path) }
             if (cached != null) {
                 mutableOfflineSavedAt.value = cached.savedAt
-                return JsonResponse(cached.body, null)
+                return JsonResponse(cached.body, null, HttpURLConnection.HTTP_OK)
             }
             throw error
         } finally {
@@ -942,6 +965,32 @@ class MobileApiClient(
         }
     }
 
+}
+
+internal suspend fun solveSigninChallenge(
+    token: String,
+    difficulty: Int,
+    maximumSolution: Long = 4_194_304,
+    timeoutMillis: Long = 25_000,
+): Long {
+    if (token.isBlank() || token.length > 2048 || difficulty != 14) {
+        throw MobileApiException(429, "Sign-in check was invalid. Please try again later.")
+    }
+    return withContext(Dispatchers.Default) {
+        withTimeoutOrNull(timeoutMillis) {
+            val digest = MessageDigest.getInstance("SHA-256")
+            var solution = 0L
+            do {
+                currentCoroutineContext().ensureActive()
+                val hash = digest.digest("$token:$solution".toByteArray(Charsets.UTF_8))
+                if (hash[0].toInt() == 0 && (hash[1].toInt() and 0xfc) == 0) {
+                    return@withTimeoutOrNull solution
+                }
+                solution++
+            } while (solution <= maximumSolution)
+            throw MobileApiException(429, "Sign-in check could not be completed. Please try again.")
+        } ?: throw MobileApiException(429, "Sign-in check timed out. Please try again.")
+    }
 }
 
 internal fun sessionCookieFrom(headers: Map<String?, List<String>>): String? =

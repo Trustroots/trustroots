@@ -640,6 +640,92 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun solvesTheSignInChallengeAndRetriesTheBearerEndpointOnce() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 429, body = signInChallengeResponse))
+            server.enqueue(MockResponse(
+                body = """{"accessToken":"example-access","refreshToken":"example-refresh","member":{"username":"quiet-fox","displayName":"Quiet Fox"}}""",
+            ))
+            server.start()
+            val session = runBlocking {
+                MobileApiClient(server.url("/").toString()).signIn("quiet-fox", "fictional password")
+            }.getOrThrow()
+
+            assertEquals("example-access", session.accessToken)
+            assertEquals("example-refresh", session.refreshToken)
+            val initial = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            val retried = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            assertEquals("/api/mobile/v0/auth/signin", initial.target)
+            assertEquals(initial.target, retried.target)
+            assertFalse(JSONObject(requireNotNull(initial.body).utf8()).has("signinProof"))
+            val body = JSONObject(requireNotNull(retried.body).utf8())
+            assertEquals("quiet-fox", body.getString("username"))
+            assertEquals("fictional password", body.getString("password"))
+            assertEquals("fictional-challenge", body.getJSONObject("signinProof").getString("token"))
+            assertEquals(13049L, body.getJSONObject("signinProof").getLong("solution"))
+        }
+    }
+
+    @Test
+    fun doesNotRetryAgainWhenTheChallengeResponseRepeats() {
+        MockWebServer().use { server ->
+            repeat(2) { server.enqueue(MockResponse(code = 429, body = signInChallengeResponse)) }
+            server.start()
+            val result = runBlocking {
+                MobileApiClient(server.url("/").toString()).signIn("quiet-fox", "fictional password")
+            }
+
+            val error = result.exceptionOrNull() as MobileApiException
+            assertEquals(429, error.statusCode)
+            assertEquals(ApiFailureKind.SIGN_IN_REJECTED, error.failureKind)
+            assertEquals(2, server.requestCount)
+        }
+    }
+
+    @Test
+    fun keepsOrdinaryRateLimitErrorsWithoutRetrying() {
+        for ((body, message) in listOf(
+            """{"message":"Try again later."}""" to "Try again later.",
+            "not JSON" to null,
+        )) {
+            val (result, _) = withApiResponse(status = 429, responseBody = body) { baseURL ->
+                runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") }
+            }
+
+            val error = result.exceptionOrNull() as MobileApiException
+            assertEquals(429, error.statusCode)
+            assertEquals(ApiFailureKind.SIGN_IN_REJECTED, error.failureKind)
+            assertEquals(message, error.serverMessage)
+        }
+    }
+
+    @Test
+    fun rejectsSignInChallengesOutsideTheSupportedFormat() {
+        for ((token, difficulty) in listOf("" to 14, "x".repeat(2049) to 14, "token" to 13)) {
+            val error = assertThrows(MobileApiException::class.java) {
+                runBlocking { solveSigninChallenge(token, difficulty) }
+            }
+            assertEquals("Sign-in check was invalid. Please try again later.", error.serverMessage)
+        }
+    }
+
+    @Test
+    fun boundsTheSignInChallengeByTheSearchSpaceAndTimeLimit() {
+        val exhausted = assertThrows(MobileApiException::class.java) {
+            runBlocking { solveSigninChallenge("fictional-challenge", 14, maximumSolution = 0) }
+        }
+        assertEquals("Sign-in check could not be completed. Please try again.", exhausted.serverMessage)
+
+        val timeout = assertThrows(MobileApiException::class.java) {
+            runBlocking { solveSigninChallenge("fictional-challenge", 14, timeoutMillis = 0) }
+        }
+        assertEquals("Sign-in check timed out. Please try again.", timeout.serverMessage)
+    }
+
+    private val signInChallengeResponse =
+        """{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"""
+
+    @Test
     fun sendsBearerCredentialsOnMappedResourcesWithoutBrowserCookies() {
         val session = MemberSession(
             cookieHeader = "connect.sid=unused",
