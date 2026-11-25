@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 import config from './../config.mts';
-import path from 'path';
+import { loadModuleModels } from '../../layers/server/module-registration.mts';
 import log from '@trustroots/logger';
 import mongoose from 'mongoose';
 import semver from 'semver';
@@ -41,10 +40,7 @@ async function loadModels(callback?: () => void) {
     autoIndex: mongoConnectionOptions.autoIndex,
   });
 
-  // Globbing model files
-  for (const modelPath of config.files.server.models) {
-    await import(pathToFileURL(path.resolve(modelPath)).href);
-  }
+  await loadModuleModels();
 
   // Array of registered models
   const models = mongoose.connection.modelNames();

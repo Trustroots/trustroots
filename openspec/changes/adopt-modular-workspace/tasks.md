@@ -3,16 +3,19 @@
 - [x] Land the initial proposal and migration direction (#3250). Remaining layout decisions stay open in `design.md`.
 - [x] Workspace in place plus Turborepo (#3251).
 - [ ] Shared root code into `packages/*` with re-export shims (separate pull request).
-  - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve ESM/CommonJS compatibility paths, shared instance identity, runtime installation and coverage.
-- [ ] `packages/ui` with design tokens (separate pull request).
-  - [x] Add source-only Button, Alert, Badge and Spinner primitives and migrate the language warning. The existing token bridge remains in the web stylesheet pending extraction.
-- [ ] Tier guards in `tooling/guards` (separate pull request).
+  - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve shared instance identity, runtime installation and coverage. The obsolete CommonJS exports were removed later (#3694).
+  - [x] Add shared analytics (#3487) and transactional email rendering (#3721) workspace packages.
+- [x] Establish the shared `packages/ui` workspace package and web design tokens.
+  - [x] Add source-only primitives (#3453), Storybook (#3536) and shared Tailwind styling; the web client has since removed Bootstrap (#3751).
+- [x] Enforce tier import directions in `tooling/guards`.
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
-  - [x] Reject production layer imports into apps.
-  - [x] Enforce production module client/server/shared import directions with regression fixtures and local/CI checks.
-- [ ] `layers/server` composition and per-module server entries (separate pull request).
-- [ ] Model-ownership guard (separate pull request).
+  - [x] Reject production layer imports into apps (#3449).
+  - [x] Enforce production module client/server/shared import directions with regression fixtures and local/CI checks (#3450).
+- [ ] `layers/server` composition and per-module server entries.
+  - [x] Move registration of models, Express configuration and Express routes into the server layer, preserving discovery and registration order.
+  - [ ] Introduce per-module entry points and an ordered list for server composition, including worker jobs.
+- [x] Enforce model ownership against declared dependencies (#3448).
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
 - [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
@@ -20,8 +23,9 @@
   - [x] Move the router entry, page layout, footer wrapper and navigation helpers into `layers/shell`, preserving old-path exports, route behaviour and coverage.
   - [x] Move application provider composition and window bootstrap reading into `layers/shell`, keeping a single bootstrap context and the existing core authentication context through compatibility exports.
   - [x] Give feature-facing context/hooks and browser navigation core-owned implementations; update all repository consumers and remove obsolete core-to-shell re-exports.
+  - [x] Adopt generated file-based routing in the shell (#3716) and colocate route policy with its route (#3756).
 - [ ] `apps/web` move (separate pull request, needs a production-image check).
-- [ ] Untangling and shim removal, one module at a time.
+- [ ] Untangling and shim removal, one module at a time. The server import extension migration (#3714) and later entry cleanup (#3837) removed obsolete shims.
 
 Progress and follow-up PRs are tracked in [#3358](https://github.com/Trustroots/trustroots/issues/3358). The overall proposal remains open until the agreed migration is complete.
 
