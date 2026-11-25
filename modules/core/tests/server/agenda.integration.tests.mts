@@ -13,6 +13,20 @@ import config from './../../../../config/config.mts';
 import worker from './../../../../config/lib/worker.mts';
 import { shutdownDashboard } from './../../../../config/lib/dashboard.mts';
 import 'should';
+import assert from 'node:assert/strict';
+import { deploymentNotificationJob } from '../../../../config/lib/deployment-notifications.mts';
+import { agendaLockLifetime } from '../../../../config/lib/agenda-lock.mts';
+import {
+  MailDeliveryError,
+  mailFailure,
+  mailRetriesExhausted,
+} from '../../../../config/lib/mail-delivery-error.mts';
+import {
+  inspectMailQueue,
+  recoverEmailJobName,
+  recoverInterruptedEmailJobs,
+  sendEmailJobName,
+} from '../../../../config/lib/mail-queue.mts';
 
 interface StoredJob {
   name: string;
@@ -20,6 +34,7 @@ interface StoredJob {
   data?: Record<string, unknown>;
   priority?: number;
   failCount?: number;
+  failReason?: string;
   repeatInterval?: string;
   repeatTimezone?: string | null;
   lastModifiedBy?: string;
@@ -51,6 +66,8 @@ describe('Agenda integration tests', function () {
     productionShapedJobName,
     restartedJobName,
     retryJobName,
+    sendEmailJobName,
+    recoverEmailJobName,
   ];
   // Agenda schedules the first human-interval run as "now"; by the time the
   // document is persisted that timestamp can already be slightly in the past.
@@ -271,6 +288,110 @@ describe('Agenda integration tests', function () {
     persistedDate(persisted.nextRunAt)
       .getTime()
       .should.be.above(Date.now() + retryDelaySeconds * 1000 - 1000);
+  });
+
+  it('persists temporary SMTP retries and exposes exhausted delivery attempts', async function () {
+    const retryOptions = { maxAttempts: 2, retryDelaySeconds: 2 };
+    const failure = new MailDeliveryError({
+      command: 'RCPT TO',
+      responseCode: 450,
+    });
+    const scheduled: Date[] = [];
+    agenda.on(`fail:${sendEmailJobName}`, schedule);
+    function schedule(error: Error, job: AgendaJob) {
+      const next = worker.scheduleRetry(error, job, retryOptions);
+      if (next) scheduled.push(next);
+    }
+
+    agenda.define(sendEmailJobName, async () => {
+      throw failure;
+    });
+    const first = new Promise<void>(resolve =>
+      agenda.once(`complete:${sendEmailJobName}`, resolve),
+    );
+    try {
+      await agenda.start();
+      await agenda.now(sendEmailJobName, undefined);
+      await first;
+      const persisted = await jobsCollection.findOne({
+        name: sendEmailJobName,
+      });
+      assert.equal(persisted?.failCount, 1);
+      assert.deepEqual(persisted?.nextRunAt, scheduled[0]);
+      assert.equal(
+        (await inspectMailQueue(mongoClient.db().collection(collection)))
+          .retrying,
+        1,
+      );
+
+      const next = new Promise<void>(resolve =>
+        agenda.once(`complete:${sendEmailJobName}`, resolve),
+      );
+      await next;
+      const exhausted = await jobsCollection.findOne({
+        name: sendEmailJobName,
+      });
+      assert.equal(exhausted?.failCount, 2);
+      assert.equal(exhausted.nextRunAt, null);
+      assert.equal(
+        exhausted.failReason,
+        mailRetriesExhausted + ': ' + mailFailure.temporary,
+      );
+      assert.equal(
+        (await inspectMailQueue(mongoClient.db().collection(collection)))
+          .exhausted,
+        1,
+      );
+    } finally {
+      agenda.off(`fail:${sendEmailJobName}`, schedule);
+    }
+  });
+
+  it('recovers interrupted sends after restart and keeps scheduled and finished sends intact', async function () {
+    const mailJobs = mongoClient.db().collection('agendaRestartRecoveryJobs');
+    const now = new Date();
+    const stale = new Date(now.getTime() - agendaLockLifetime - 1000);
+    const earlier = new Date(stale.getTime() - 1000);
+    const future = new Date(now.getTime() + 3600_000);
+    const job = { name: sendEmailJobName, nextRunAt: null, lastRunAt: stale };
+    const { insertedIds } = await mailJobs.insertMany([
+      { ...job, lockedAt: stale },
+      {
+        ...job,
+        name: deploymentNotificationJob,
+        lockedAt: null,
+        lastFinishedAt: earlier,
+        failCount: 2,
+      },
+      { ...job, nextRunAt: future, lastFinishedAt: earlier },
+      { ...job, lastFinishedAt: stale, failCount: 1 },
+      { ...job, lockedAt: now, lastRunAt: now },
+      { ...job, lockedAt: stale, disabled: true },
+      { name: recoverEmailJobName, type: 'single', lastFinishedAt: now },
+    ]);
+
+    try {
+      assert.equal((await inspectMailQueue(mailJobs, now)).stalledAttempts, 2);
+      const result = await recoverInterruptedEmailJobs(mailJobs, now);
+      assert.equal(result.modifiedCount, 2);
+      const jobs = await Promise.all(
+        Object.values(insertedIds).map(_id => mailJobs.findOne({ _id })),
+      );
+      assert.deepEqual(
+        jobs.map(job => job?.nextRunAt),
+        [now, now, future, null, null, null, undefined],
+      );
+      assert.equal(jobs[1]?.failCount, 2);
+      assert.equal(
+        (await recoverInterruptedEmailJobs(mailJobs, now)).modifiedCount,
+        0,
+      );
+      const status = await inspectMailQueue(mailJobs, now);
+      assert.equal(status.workerHealthy, true);
+      assert.equal(status.stalledAttempts, 0);
+    } finally {
+      await mailJobs.deleteMany({});
+    }
   });
 
   it('serves the Agenda 6 dashboard middleware from the shared jobs collection', async function () {

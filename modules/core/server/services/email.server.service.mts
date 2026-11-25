@@ -38,8 +38,11 @@ interface MailUser {
   roles?: string[];
   description?: string;
   emailToken?: string;
+  emailTokenExpires?: Date;
   resetPasswordToken?: string;
+  resetPasswordExpires?: Date | number;
   removeProfileToken?: string;
+  removeProfileExpires?: Date;
 }
 interface UnreadNotification {
   notificationCount?: number;
@@ -52,6 +55,7 @@ interface SupportMailRequest extends Record<string, unknown> {
   displayName?: string;
 }
 export interface EmailTemplateParams extends Record<string, unknown> {
+  deliveryDeadline?: Date;
   name?: string;
   email?: string;
   from?: string | { name?: string; address?: string };
@@ -69,6 +73,7 @@ interface BaseEmailUrls extends Record<string, unknown> {
   profileUrl?: string;
 }
 export interface RenderedEmail {
+  deliveryDeadline?: Date;
   to: { name?: string; address?: string };
   from: string | { name?: string; address?: string };
   subject?: string;
@@ -311,6 +316,7 @@ function sendRemoveProfile(user: MailUser, callback: MailCallback) {
   const campaign = 'remove-profile';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm removing your Trustroots profile',
+    deliveryDeadline: user.removeProfileExpires,
     urlCancel: url + '/profile/edit/account#remove',
     name: user.displayName,
     email: user.email,
@@ -357,6 +363,9 @@ function sendResetPassword(user: MailUser, callback: MailCallback) {
       campaign,
     }),
   });
+  if (user.resetPasswordExpires) {
+    params.deliveryDeadline = new Date(user.resetPasswordExpires);
+  }
   service.renderEmailAndSend('reset-password', params, callback);
 }
 function sendResetPasswordConfirm(user: MailUser, callback: MailCallback) {
@@ -381,6 +390,7 @@ function sendChangeEmailConfirmation(user: MailUser, callback: MailCallback) {
   const campaign = 'confirm-email';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm email change',
+    deliveryDeadline: user.emailTokenExpires,
     name: user.displayName,
     email: user.emailTemporary,
     urlConfirmPlainText: urlConfirm,
@@ -400,6 +410,7 @@ function sendSignupEmailConfirmation(user: MailUser, callback: MailCallback) {
   const campaign = 'confirm-email';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
+    deliveryDeadline: user.emailTokenExpires,
     name: user.displayName,
     email: user.emailTemporary || user.email,
     urlConfirmPlainText: urlConfirm,
@@ -477,6 +488,7 @@ function sendSignupEmailReminder(
     : 1;
   const params = service.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
+    deliveryDeadline: user.emailTokenExpires,
     name: user.displayName,
     email: user.emailTemporary || user.email,
     urlConfirmPlainText: urlConfirm,
@@ -794,6 +806,8 @@ function renderEmail(
         subject: params.subject,
         text: result.text,
       };
+      if (params.deliveryDeadline)
+        email.deliveryDeadline = params.deliveryDeadline;
       if (params.notificationEmail)
         email.notificationEmail = params.notificationEmail;
       if (params.signupReminder) email.signupReminder = params.signupReminder;

@@ -175,6 +175,20 @@ def verify(args, username, password):
             raise RuntimeError(service + ' is not running')
 
 
+def check_deployed_mail(args):
+    # Mail checks run after the application readiness and rollback paths.
+    if urllib.parse.urlsplit(args.url).hostname not in ('trustroots.org', 'www.trustroots.org'):
+        return
+    for action, timeout in [('verify', 60), *([('canary', 330)] if args.mail_canary else [])]:
+        try:
+            run(compose(args) + ['exec', '-T', 'worker', 'node',
+                                 'bin/check-production-mail.mts', action],
+                timeout=timeout, capture=False)
+        except (OSError, subprocess.SubprocessError):
+            print('WARNING: Production mail ' + action + ' check failed. '
+                  'Application readiness has already passed.', flush=True)
+
+
 def save_state(path, images):
     with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, delete=False) as file:
         json.dump(images, file)
@@ -300,11 +314,15 @@ def fail_event(path, event):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['preflight', 'deploy', 'rollback', 'record-success', 'notify-success'])
+    parser.add_argument('--mail-canary', action='store_true',
+                        help='Check the dedicated inbox after deployment or rollback')
     parser.add_argument('--event-id', help='Receipt UUID for record-success or notify-success')
     parser.add_argument('--compose', type=Path, required=True)
     parser.add_argument('--media-mount', type=Path, help='Required media filesystem for deployment and readiness checks')
     parser.add_argument('--url', required=True, help='Canonical public HTTPS origin')
     args = parser.parse_args()
+    if args.mail_canary and args.action not in ('deploy', 'rollback'):
+        parser.error('--mail-canary requires deploy or rollback')
     if args.action in ('record-success', 'notify-success'):
         try:
             if str(uuid.UUID(args.event_id)) != args.event_id:
@@ -350,7 +368,8 @@ def main():
                 fail_event(path, event)
                 raise
             complete_event(args, path, event)
-            print('Rollback verified.')
+            print('Rollback verified.', flush=True)
+            check_deployed_mail(args)
             return
         # Verify credentials and the existing deployment before changing anything.
         verify(args, username, password)
@@ -376,7 +395,8 @@ def main():
             verify(args, username, password)
             raise RuntimeError('Deployment failed; previous images restored and verified') from None
         complete_event(args, path, event)
-        print('Deployment and login session verified.')
+        print('Deployment and login session verified.', flush=True)
+        check_deployed_mail(args)
 
 
 def validate_images(images):
