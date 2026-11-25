@@ -49,6 +49,7 @@ test('only the profile owner sees received Experiences awaiting a reply together
       userTo: owner.id,
       public: true,
       feedbackPublic: 'We had a picnic by the river.',
+      interactions: { met: true, host: true, guest: false },
     },
     {
       userFrom: answeredAuthor.id,
@@ -66,10 +67,10 @@ test('only the profile owner sees received Experiences awaiting a reply together
   await withE2eDb(db =>
     db.collection('experiences').insertMany(
       experiences.map(experience => ({
-        ...experience,
         created: new Date(),
         recommend: 'yes',
         interactions: { met: true, host: false, guest: false },
+        ...experience,
       })),
     ),
   );
@@ -100,6 +101,21 @@ test('only the profile owner sees received Experiences awaiting a reply together
   await expect(
     awaitingReply.getByText('We visited the market together.'),
   ).toHaveCount(0);
+  await expect(
+    page.getByText('2 members shared their experiences.'),
+  ).toBeVisible();
+
+  await awaitingReply.getByRole('button', { name: 'Filter by Host' }).click();
+  await expect(page.getByRole('status')).toContainText(
+    'Showing 1 of 2 public experiences.',
+  );
+  await expect(awaitingReply.getByText(/days left to respond/)).toBeVisible();
+  await expect(
+    awaitingReply.getByText('We had a picnic by the river.'),
+  ).toBeVisible();
+  await expect(page.getByText('We visited the market together.')).toHaveCount(
+    0,
+  );
   await expect(
     page.getByText('2 members shared their experiences.'),
   ).toBeVisible();

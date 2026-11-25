@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
@@ -137,11 +137,71 @@ describe('<ListExperiences />', () => {
     expect(screen.getByText('pending-answered')).toBeInTheDocument();
   });
 
+  it('filters and sorts public Experiences when all of them are awaiting the owner’s reply', async () => {
+    readExperiencesMock.mockResolvedValueOnce([
+      {
+        ...makeExperience('newer-public', true),
+        created: '2024-01-03T00:00:00.000Z',
+        recommend: 'no',
+      },
+      {
+        ...makeExperience('older-public', true),
+        created: '2024-01-02T00:00:00.000Z',
+      },
+      makeExperience('pending', false),
+    ]);
+
+    render(<ListExperiences profile={profile} authenticatedUser={profile} />);
+
+    const awaitingReply = await screen.findByRole('region', {
+      name: 'Experiences awaiting your reply',
+    });
+    expect(awaitingReply).toHaveTextContent(
+      'pending, newer-public, older-public',
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('Showing 2 of 2');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort by date' }), {
+      target: { value: 'oldest' },
+    });
+    expect(awaitingReply).toHaveTextContent(
+      'pending, older-public, newer-public',
+    );
+
+    const recommendation = screen.getByRole('combobox', {
+      name: 'Recommendation',
+    });
+    fireEvent.change(recommendation, { target: { value: 'yes' } });
+    expect(awaitingReply).toHaveTextContent('pending, older-public');
+    expect(awaitingReply).not.toHaveTextContent('newer-public');
+    expect(screen.getByRole('status')).toHaveTextContent('Showing 1 of 2');
+
+    fireEvent.change(recommendation, { target: { value: 'unknown' } });
+    expect(within(awaitingReply).getByText('pending')).toBeInTheDocument();
+    expect(awaitingReply).not.toHaveTextContent('older-public');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'No public experiences match these filters.',
+    );
+    expect(screen.getByText('public count: 2')).toBeInTheDocument();
+  });
+
   it('labels the empty incoming list on the owner’s profile', async () => {
     readExperiencesMock.mockResolvedValueOnce([]);
     render(<ListExperiences profile={profile} authenticatedUser={profile} />);
     expect(
       await screen.findByText('No experiences received yet.'),
     ).toBeInTheDocument();
+  });
+
+  it('shows pending Experiences without public filter controls when none have been published', async () => {
+    readExperiencesMock.mockResolvedValueOnce([
+      makeExperience('pending', false),
+    ]);
+    render(<ListExperiences profile={profile} authenticatedUser={profile} />);
+
+    expect(await screen.findByText('pending')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('group', { name: 'Public experience filters' }),
+    ).not.toBeInTheDocument();
   });
 });

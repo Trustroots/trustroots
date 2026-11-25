@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import '@/config/client/i18n';
+import ExperiencesSection from '@/modules/experiences/client/components/read-experiences/ExperiencesSection';
 import PublicExperiencesList from '@/modules/experiences/client/components/read-experiences/PublicExperiencesList';
 import type { Experience } from '@/modules/experiences/shared/experience';
 
@@ -31,10 +32,15 @@ const experiences: Experience[] = [
 
 function renderPublicList() {
   return render(
-    <PublicExperiencesList
-      experiences={experiences}
-      onReceiverProfile={false}
-    />,
+    <PublicExperiencesList experiences={experiences}>
+      {(filtered, tagFilters) => (
+        <ExperiencesSection
+          experiences={filtered}
+          onReceiverProfile={false}
+          tagFilters={tagFilters}
+        />
+      )}
+    </PublicExperiencesList>,
   );
 }
 
