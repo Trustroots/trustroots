@@ -555,9 +555,15 @@ importers:
 
   modules/core:
     dependencies:
+<<<<<<< HEAD
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+=======
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+>>>>>>> 0c4c1f6dea (Register the circle slug parameter only in Tribes)
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users

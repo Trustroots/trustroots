@@ -13,7 +13,11 @@
       "users"
     ],
     "core": [
+<<<<<<< HEAD
       "tribes",
+=======
+      "support",
+>>>>>>> 0c4c1f6dea (Register the circle slug parameter only in Tribes)
       "users"
     ],
     "experiences": [
