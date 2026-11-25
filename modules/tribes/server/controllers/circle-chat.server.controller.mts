@@ -53,7 +53,7 @@ const requireChatMembership: RequestHandler = async (
   res,
   next,
 ) => {
-  const slug = req.params.room;
+  const slug = String(req.params.room);
   if (slug === 'volunteering') return next();
   const tribeIds = req.user!.member?.map(({ tribe }) => tribe) ?? [];
   try {
