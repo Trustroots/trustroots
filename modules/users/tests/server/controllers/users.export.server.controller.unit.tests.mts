@@ -1,12 +1,11 @@
 import sinon from 'sinon';
 import assert from 'node:assert/strict';
 import 'should';
-import path from 'node:path';
 import winston from 'winston';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
 import { vi } from 'vitest';
-import config from './../../../../../config/config.mts';
+import { loadModuleModels } from '../../../../../layers/server/module-registration.mts';
 import mongoose from 'mongoose';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
 import contactsService from './../../../../contacts/server/controllers/contacts.server.controller.mts';
@@ -14,9 +13,7 @@ import profilesService from './../../../server/controllers/users.profile.server.
 import controller from './../../../server/controllers/users.export.server.controller.mts';
 import * as verification from '../../../server/services/data-export-verification.server.service.mts';
 
-config.files.server.models.forEach(
-  async modelPath => (await import(path.resolve(modelPath))).default,
-);
+await loadModuleModels();
 
 type ExportRecord = Record<string, unknown>;
 interface ExportProfile {
