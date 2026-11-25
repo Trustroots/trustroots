@@ -2,13 +2,13 @@
 
 import mongoose from 'mongoose';
 import {
-  canPreviewDeploymentNotificationRecipients,
+  canSendDeploymentNotifications,
   findDeploymentNotificationAddresses,
 } from '../config/lib/deployment-notification-recipients.mts';
 
 try {
   const { default: config, mailMode } = await import('../config/config.mts');
-  if (!canPreviewDeploymentNotificationRecipients(config.domain, mailMode)) {
+  if (!canSendDeploymentNotifications(config.domain, mailMode)) {
     console.error(
       'Recipient preview requires explicit production tier, production runtime, a canonical domain and live mail.',
     );

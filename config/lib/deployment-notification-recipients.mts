@@ -5,7 +5,7 @@ import {
   type applyMailSafety,
 } from './mail-safety.mts';
 
-export function canPreviewDeploymentNotificationRecipients(
+export function canSendDeploymentNotifications(
   domain: string,
   mailMode: ReturnType<typeof applyMailSafety>,
   env: NodeJS.ProcessEnv = process.env,

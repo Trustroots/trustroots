@@ -237,14 +237,63 @@ are excluded. Only the current email field is used. The preview trims and
 lowercases it, excludes syntactically invalid addresses and counts each
 destination once. It prints no addresses and does not verify inbox delivery.
 
-[#3502](https://github.com/Trustroots/trustroots/issues/3502) still needs a handoff
-from successful receipts to individual queued emails and shared durable
-notification progress. The preview reads no receipts and creates no jobs. A
-host-local receipt alone is insufficient to deduplicate queueing across replicas.
-Recovery must avoid re-enqueueing completed recipients. Ambiguous SMTP
-acceptance can still cause duplicate delivery. The emails will supplement the
-inbox canary proposed in [#3500](https://github.com/Trustroots/trustroots/issues/3500)
-and independent failure monitoring.
+#### Queue and verify deployment notifications
+
+Install this version of the host helper and deploy compatible app and worker
+images. Set the explicit production tier and live mail mode on both services.
+Before the first rollout, run the recipient preview above from the production
+Compose directory and verify that its output gives a count without listing
+addresses. The first successful deployment using the updated helper starts
+notifications. Previous receipts are left alone unless an operator explicitly
+selects one for recovery.
+
+After the helper saves a successful receipt for the canonical production origin,
+it runs the handoff in the worker container. The worker's production and live
+mail gates apply both to queueing and to delivery. The handoff records the
+destination snapshot and queueing progress in MongoDB under the receipt UUID.
+Agenda processes one job per destination using the regular SMTP handler. A
+same-version redeploy or a verified explicit rollback gets a new UUID and
+notification. Automatic restoration after a failed deployment creates no
+notification. Ordinary container restarts create no receipts or notifications.
+
+Check deployment output for `Deployment notification queueing complete` and
+the destination count. A count of zero means there were no eligible destinations
+in the snapshot. To verify the first send, check worker logs for the
+`send deployment notification email` job outcome and ask an eligible team member
+to confirm receipt and the commit link, readiness time and live mode in the
+message. Queueing confirms MongoDB accepted the job. A successful worker job
+indicates SMTP acceptance. Inbox receipt is a separate check. Keep the independent
+failure monitoring and the inbox canary tracked in
+[#3500](https://github.com/Trustroots/trustroots/issues/3500).
+
+#### Recover deployment notifications
+
+A handoff warning contains the receipt UUID. The deployment remains verified.
+Check the worker image and its live mail mode, and confirm MongoDB is reachable.
+After resolving the failure, resume that same receipt from the Compose directory:
+
+```bash
+sudo python3 production-deploy.py notify-success \
+  --event-id 11111111-2222-4333-8444-555555555555 \
+  --compose /var/local/tr-deploy/compose.yml \
+  --url https://www.trustroots.org
+```
+
+This command uses the current worker and requires a completed receipt with the
+matching origin. It needs no verification-account credentials. If the receipt is
+pending, use `record-success` first to repeat readiness checks. If a rollback
+uses an older image without the handoff command, preserve the receipt and resume
+after a compatible worker is available. Let operators know if that notification
+will arrive late. Preserve Agenda jobs and their progress records during handoff
+recovery, including jobs that already ran. Keep database access restricted,
+since the saved destination snapshot and Agenda jobs contain addresses.
+
+For delivery failures after queueing completes, inspect the worker log and the
+Agenda job by ID. Resolve the cause and retry the existing failed job through
+the private jobs dashboard if another attempt is appropriate. Running
+`notify-success` resumes queueing only. Check provider events before retrying
+an ambiguous SMTP failure. If the SMTP provider accepted a message before a
+connection failure or worker interruption, a retry can produce a duplicate.
 
 ### Adopt independent log shipping
 
