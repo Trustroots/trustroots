@@ -6,6 +6,7 @@
   - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve shared instance identity, runtime installation and coverage. The obsolete CommonJS exports were removed later (#3694).
   - [x] Add shared analytics (#3487) and transactional email rendering (#3721) workspace packages.
   - [x] Assess configuration and i18n package boundaries and record the extraction candidates in `design.md`.
+  - [x] Extract the supported locale catalogue into a source-only workspace package used by the browser and server.
 - [x] Establish the shared `packages/ui` workspace package and web design tokens.
   - [x] Add source-only primitives (#3453), Storybook (#3536) and shared Tailwind styling; the web client has since removed Bootstrap (#3751).
 - [x] Enforce tier import directions in `tooling/guards`.

@@ -127,7 +127,7 @@ export const NAVIGATION_ITEMS = [
 export type NavigationItem = (typeof NAVIGATION_ITEMS)[number];
 
 /**
- * Interface languages, the codes in `config/shared/locales.json`. A unit
+ * Interface languages, the codes in `packages/locales/locales.json`. A unit
  * test keeps the two lists equal. Anything else is sent as `other`.
  */
 export const ANALYTICS_LANGUAGES = [

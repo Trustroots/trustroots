@@ -6,7 +6,7 @@ import {
 } from '../services/action-token.server.service.mts';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
-import { readFileSync } from 'node:fs';
+import locales from '@trustroots/locales' with { type: 'json' };
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mts';
@@ -60,13 +60,6 @@ import {
   isConnectionHistoryWriteConflict,
 } from '../services/connection-history.server.service.mts';
 
-const locales: Array<{ code: string }> = JSON.parse(
-  readFileSync(
-    new URL('../../../../config/shared/locales.json', import.meta.url),
-    // Stryker disable next-line StringLiteral: with no encoding readFileSync returns a Buffer, which JSON.parse reads as UTF-8 text anyway
-    'utf8',
-  ),
-);
 const service = {} as UserProfileController;
 const emailService = emailServiceModule as {
   sendChangeEmailConfirmation(

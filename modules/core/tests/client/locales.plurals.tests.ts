@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 import i18n from '@/config/client/i18n';
 
 const localesRoot = path.join(__dirname, '../../../../public/locales');
