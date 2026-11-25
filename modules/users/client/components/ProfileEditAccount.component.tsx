@@ -29,6 +29,7 @@ import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import { Alert } from '@trustroots/ui/Alert';
 import MfaSettings from './MfaSettings.component';
 import PasskeySettings from './PasskeySettings.component';
+import AccountActivity from './AccountActivity.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -651,6 +652,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
       <MemberSessions />
+      <AccountActivity />
     </ProfileEditPage>
   );
 }

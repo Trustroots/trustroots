@@ -72,3 +72,17 @@ Android and iOS open the system browser to complete this step with an
 authenticator, recovery code or passkey. After confirmation, the app exchanges
 a single-use code for its own session. See
 [staff passkey deployment and verification](operations/staff-passkeys.md).
+
+## Member account activity indexes
+
+Before deploying member account activity, create its TTL and pagination
+indexes with `npm run ensure-indexes -- AccountActivity`. See
+[the account activity deployment guide](operations/account-activity.md) for
+the 90-day retention behaviour and stored fields.
+
+Authenticator MFA is optional for members. Admin, moderator, and welcome-team
+permissions require a session that has completed MFA. Existing privileged
+members should enrol an authenticator before relying on those permissions.
+An incomplete `202` or `mfaRequired` response does not create a mobile
+session. The mobile sign-in API requests browser continuation with the
+`web_sign_in_required` response.

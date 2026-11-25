@@ -2,6 +2,7 @@ import type { AreaResult } from './report-types.mts';
 import path from 'path';
 
 const AREA_BY_SPEC: Record<string, string> = {
+  'integrated-account-access.spec.js': 'Authentication',
   'hashed-action-tokens.spec.js': 'Authentication',
   'csp.spec.js': 'Public pages',
   'signin-challenge.spec.js': 'Authentication',

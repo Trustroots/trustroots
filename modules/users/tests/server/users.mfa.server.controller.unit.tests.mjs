@@ -6,7 +6,9 @@ const mongoose = require('mongoose');
 const sinon = require('sinon');
 const config = require('../../../../config/config.mts').default;
 require('../../server/models/user.server.model.mts');
+require('../../server/models/account-activity.server.model.mts');
 const User = mongoose.model('User');
+const AccountActivity = mongoose.model('AccountActivity');
 
 let controller;
 let mfaService;
@@ -313,6 +315,31 @@ describe('Authenticator MFA controller', () => {
       assert.deepEqual(res.body, { recoveryCodes: ['ABCDEF0123456789'] });
     });
 
+    it('records when a recovery code is used to regenerate the code set', async () => {
+      const { user } = member({
+        _id: new mongoose.Types.ObjectId(),
+        mfaEnabled: true,
+      });
+      sinon.stub(User, 'findById').returns(query(user));
+      sinon
+        .stub(mfaService, 'verifyAndConsume')
+        .resolves({ secret: 'ciphertext', recovery: true });
+      sinon.stub(mfaService, 'createRecoveryCodes').returns([]);
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .returns(query({ ...user, $locals: {} }));
+      const res = response();
+      await controller.regenerateRecoveryCodes(request(user), res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(
+        await AccountActivity.countDocuments({
+          user: user._id,
+          eventType: 'recovery_code_used',
+        }),
+        1,
+      );
+    });
+
     it('rejects a stale recovery-code update', async () => {
       const { user } = member({ mfaEnabled: true });
       sinon.stub(User, 'findById').returns(query(user));
@@ -405,6 +432,28 @@ describe('Authenticator MFA controller', () => {
       await controller.disable(req, res);
       assert.equal(loggedOut, true);
       assert.deepEqual(res.body, { enabled: false });
+    });
+
+    it('records when a recovery code is used to disable MFA', async () => {
+      const { user } = member({
+        _id: new mongoose.Types.ObjectId(),
+        mfaEnabled: true,
+      });
+      sinon.stub(User, 'findById').returns(query(user));
+      sinon
+        .stub(mfaService, 'verifyAndConsume')
+        .resolves({ secret: 'ciphertext', recovery: true });
+      sinon.stub(mfaService, 'removeMfa').resolves(user);
+      const res = response();
+      await controller.disable(request(user), res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(
+        await AccountActivity.countDocuments({
+          user: user._id,
+          eventType: 'recovery_code_used',
+        }),
+        1,
+      );
     });
 
     it('reports logout errors and removal failures', async () => {

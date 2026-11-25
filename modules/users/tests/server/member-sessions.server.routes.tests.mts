@@ -18,6 +18,7 @@ import * as sessionsController from '../../server/controllers/users.sessions.ser
 
 const User = mongoose.model('User');
 const MemberSession = mongoose.model('MemberSession');
+const AccountActivity = mongoose.model('AccountActivity');
 
 describe('Member session controls', function () {
   let app: Awaited<ReturnType<typeof express.init>>;
@@ -42,6 +43,7 @@ describe('Member session controls', function () {
     updatedRecord?: SessionRecord | null;
     requestUserId?: mongoose.Types.ObjectId;
     createdAt?: number;
+    legacySession?: boolean;
     authVersion?: number;
     destroyed?: boolean;
     destroyError?: Error;
@@ -91,7 +93,9 @@ describe('Member session controls', function () {
       user,
       sessionID: 'opaque-session-id',
       session: {
-        memberSessionCreatedAt: options.createdAt || now,
+        memberSessionCreatedAt: options.legacySession
+          ? undefined
+          : options.createdAt || now,
         destroy(callback) {
           options.destroyed = true;
           callback(options.destroyError);
@@ -154,6 +158,23 @@ describe('Member session controls', function () {
     return result;
   }
 
+  it('initialises the lifetime of a legacy session on its first request', async function () {
+    const now = Date.now();
+    sinon.stub(Date, 'now').returns(now);
+    const result = await runMiddleware(activeSessionRecord(), {
+      legacySession: true,
+    });
+    assert.equal(result.req.session.memberSessionCreatedAt, now);
+    assert.equal(result.nextCalled, true);
+    assert.equal(result.nextError, undefined);
+    const { $setOnInsert: inserted } = result.sessionUpserter.firstCall
+      .args[1] as {
+      $setOnInsert: { createdAt: Date; lastSeenAt: Date };
+    };
+    assert.equal(inserted.createdAt.getTime(), now);
+    assert.equal(inserted.lastSeenAt.getTime(), now);
+  });
+
   it('uses deterministic opaque identifiers and equal member lifetimes', function () {
     const expectedId = crypto
       .createHmac('sha256', config.sessionSecret)
@@ -186,6 +207,46 @@ describe('Member session controls', function () {
     result.nextCalled.should.equal(true);
     should.not.exist(result.nextError);
     result.req.user._id.should.equal(record.user);
+  });
+
+  it('keeps the activity event id when recording fails so a later request can retry', async function () {
+    const record = activeSessionRecord();
+    const eventId = 'stable-session-event-id';
+    sinon.stub(MemberSession, 'updateOne').resolves({
+      acknowledged: true,
+      matchedCount: 1,
+      modifiedCount: 0,
+      upsertedCount: 0,
+      upsertedId: null,
+    });
+    sinon.stub(MemberSession, 'findById').resolves(record);
+    sinon.stub(MemberSession, 'findOneAndUpdate').resolves(record);
+    const updateActivity = sinon
+      .stub(AccountActivity, 'updateOne')
+      .rejects(new Error('activity store unavailable'));
+    const req: MemberBrowserRequest = {
+      user: { _id: record.user, authVersion: 0 },
+      sessionID: 'opaque-session-id',
+      session: {
+        memberSessionCreatedAt: Date.now(),
+        memberActivityEventId: eventId,
+        destroy(callback) {
+          callback();
+        },
+      },
+    };
+    let nextCalled = false;
+    let nextError;
+
+    await checkMemberSession(req, {}, error => {
+      nextCalled = true;
+      nextError = error;
+    });
+
+    assert.equal(nextCalled, true);
+    should.not.exist(nextError);
+    assert.equal(req.session.memberActivityEventId, eventId);
+    assert.equal(updateActivity.callCount, 2);
   });
 
   it('passes storage failures and a missing record to error handling', async function () {
@@ -583,7 +644,7 @@ describe('Member session controls', function () {
   });
 
   it('requires the current password and revokes the selected session', async function () {
-    const { credentials } = await createMember();
+    const { credentials, user } = await createMember();
     const current = request.agent(app);
     const other = request.agent(app);
     await signIn(current, credentials);
@@ -607,6 +668,12 @@ describe('Member session controls', function () {
     const revoked = await MemberSession.findById(otherSession.id);
     should.exist(revoked);
     revoked.revoked.should.equal(true);
+    (
+      await AccountActivity.countDocuments({
+        user: user._id,
+        eventType: 'session_revoked',
+      })
+    ).should.equal(1);
     (await other.get('/api/users/export').expect(403)).status.should.equal(403);
     (await current.get('/api/users/export').expect(200)).status.should.equal(
       200,
@@ -642,6 +709,12 @@ describe('Member session controls', function () {
     (
       await MemberSession.countDocuments({ user: user._id, revoked: true })
     ).should.equal(2);
+    (
+      await AccountActivity.countDocuments({
+        user: user._id,
+        eventType: 'sessions_signed_out',
+      })
+    ).should.equal(1);
     const currentSession = await current.get('/api/auth/session').expect(200);
     should(currentSession.body.userId).equal(null);
     (await other.get('/api/users/export').expect(403)).status.should.equal(403);

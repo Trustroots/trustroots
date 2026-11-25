@@ -69,6 +69,7 @@ describe('Users policy unit tests', () => {
       'user POST /api/users/memberships/:tribeId',
       'user DELETE /api/users/memberships/:tribeId',
       'user GET /api/users/export',
+      'user GET /api/users/activity',
       'user GET /api/users/removal/pending',
       'user DELETE /api/users/removal/pending',
       'user POST /api/users/nostr/challenge',

@@ -1,3 +1,4 @@
+import { recordActivity } from '../services/account-activity.server.service.mts';
 import {
   matchToken,
   setToken,
@@ -238,7 +239,7 @@ service.reset = async function (req, res) {
       $inc: { authVersion: 1 },
     },
     { new: true, runValidators: true },
-    (err: Error | null, user: UserServerDocument | null) => {
+    async (err: Error | null, user: UserServerDocument | null) => {
       if (err || !user) {
         const passwordError = err as PasswordError | null;
         return res.status(passwordError?.status || 400).send({
@@ -248,6 +249,7 @@ service.reset = async function (req, res) {
         });
       }
 
+      await recordActivity({ userId: user._id, eventType: 'password_reset' });
       if (user.mfaEnabled === true) {
         // Password recovery changes a credential, but it cannot satisfy the
         // second factor. Force a fresh password + MFA sign-in.
@@ -345,6 +347,10 @@ service.changePassword = function (req, res) {
       { new: true, runValidators: true },
     );
     if (!updatedUser) throw new Error('Current password is incorrect.');
+    await recordActivity({
+      userId: updatedUser._id,
+      eventType: 'password_changed',
+    });
     if (!req.mobileSession) {
       if (updatedUser.mfaEnabled === true) {
         updatedUser.$locals.mfaVerified = hasVerifiedMfa;

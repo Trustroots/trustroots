@@ -67,6 +67,7 @@ async function findUser(id: unknown): Promise<AuthenticationUserDocument> {
   if (!user) throw new Error('Expected test user to exist');
   return user;
 }
+const AccountActivity = mongoose.model('AccountActivity');
 
 async function stubControllerDependencies(
   dependencyStubs: Record<string, Record<string, unknown>>,
@@ -2036,7 +2037,7 @@ describe('Authentication controller OAuth unit tests', () => {
         userField(unchanged, 'emailToken').should.equal(token);
       });
 
-    it('confirms an email when the account already has an auth version', async () => {
+    it('increments the existing auth version when confirming an email', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const token = 'versioned-confirm-token';
       await User.collection.updateOne(
@@ -2080,6 +2081,158 @@ describe('Authentication controller OAuth unit tests', () => {
         },
       ]);
       should.not.exist(reloaded.emailToken);
+    });
+
+    it('does not create a session when confirming email for an MFA account', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
+            emailTemporary: 'new@example.test',
+            emailToken: 'mfa-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'mfa-confirm-token' },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      responseField(res, 'mfaRequired').should.be.true();
+      login.called.should.be.false();
+    });
+
+    it('preserves an already MFA-verified session for a changed email', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
+            public: true,
+            emailTemporary: 'new@example.test',
+            emailToken: 'verified-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'verified-confirm-token' },
+          user: Object.assign((await User.findById(saved._id))!, {
+            $locals: { mfaVerified: true },
+          }),
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      should(responseBody(res).mfaRequired).equal(undefined);
+      login.calledOnce.should.be.true();
+      (
+        await AccountActivity.countDocuments({
+          user: saved._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(1);
+    });
+
+    it('preserves a legacy MFA session without an authVersion field', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            emailTemporary: 'legacy-new@example.test',
+            emailToken: 'legacy-verified-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+          $unset: { authVersion: '' },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'legacy-verified-confirm-token' },
+          user: Object.assign(await findUser(saved._id), {
+            _id: saved._id,
+            authVersion: undefined,
+            $locals: { mfaVerified: true },
+          }),
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      should(responseBody(res).mfaRequired).equal(undefined);
+      login.calledOnce.should.be.true();
+    });
+
+    it('does not preserve an MFA session with a stale authVersion', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
+            emailTemporary: 'new@example.test',
+            emailToken: 'stale-session-confirm-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'stale-session-confirm-token' },
+          user: Object.assign(await findUser(saved._id), {
+            _id: saved._id,
+            authVersion: 1,
+            $locals: { mfaVerified: true },
+          }),
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      responseField(res, 'mfaRequired').should.be.true();
+      login.called.should.be.false();
     });
 
     it('returns 400 when the token is invalid', async () => {

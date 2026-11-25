@@ -598,6 +598,9 @@ export async function deleteUserAccount(
   user: UserServerDocument,
   adminDeletion = false,
 ): Promise<{ cleanupIncomplete: boolean }> {
+  const removeActivity = () =>
+    mongoose.model('AccountActivity').deleteMany({ user: user._id });
+  if (!adminDeletion) await removeActivity();
   const deleted = await User.findOneAndDelete({
     _id: user._id,
     ...(adminDeletion
@@ -624,6 +627,7 @@ export async function deleteUserAccount(
       });
     }
   }
+  if (adminDeletion) await cleanup(removeActivity);
   await cleanup(async () => {
     await mongoose
       .model('UnifiedPushRegistration')
