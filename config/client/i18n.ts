@@ -2,7 +2,7 @@ import { differenceInYears, format as formatDate } from 'date-fns';
 import { initReactI18next } from 'react-i18next';
 import i18n, { type FormatFunction } from 'i18next';
 import { match } from 'ts-pattern';
-import { timeAgo } from '../../modules/core/shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import { languageCookie, localeBackend } from './i18n-resources';
 
 const isTest = process.env.NODE_ENV === 'test';

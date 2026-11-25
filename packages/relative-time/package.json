@@ -1,0 +1,10 @@
+{
+  "name": "@trustroots/relative-time",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./relative-time.mts",
+    "./compact": "./compact-time-ago.mts"
+  }
+}

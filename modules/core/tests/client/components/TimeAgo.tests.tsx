@@ -2,7 +2,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 
 import i18n from '@/config/client/i18n';
-import { timeAgo } from '@/modules/core/shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 
 beforeEach(() => vi.useFakeTimers());

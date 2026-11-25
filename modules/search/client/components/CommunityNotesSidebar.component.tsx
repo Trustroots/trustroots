@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { nostrService } from '../services/nostr.client.service';
-import { timeAgo } from '../utils/time-ago';
+import { compactTimeAgo } from '@trustroots/relative-time/compact';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import type { Event } from 'nostr-tools';
 
@@ -120,7 +120,7 @@ export default function CommunityNotesSidebar({
                   </span>
                 )}
                 <span className="community-notes-sidebar-time text-muted">
-                  {timeAgo(note.created_at)}
+                  {compactTimeAgo(note.created_at)}
                 </span>
               </div>
               <p className="community-notes-sidebar-note-content">

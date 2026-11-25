@@ -34,6 +34,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
 COPY packages/analytics/package.json ./packages/analytics/package.json
 COPY packages/logger/package.json ./packages/logger/package.json
+COPY packages/relative-time/package.json ./packages/relative-time/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 # This takes FOREVER if it's run in the passenger container, that's why we
 # created the multi stage build with a build container first.

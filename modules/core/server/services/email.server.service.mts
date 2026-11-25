@@ -8,7 +8,7 @@ import {
   type SignupReminder,
 } from '../../../users/server/services/signup-reminder.server.service.mts';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
-import { timeAgo } from '../../shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
