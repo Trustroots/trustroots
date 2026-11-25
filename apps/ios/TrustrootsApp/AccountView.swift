@@ -14,7 +14,9 @@ struct AccountView: View {
     @State private var isSavingAccount = false
     @State private var isChangingPassword = false
     @State private var emailSectionHeight: CGFloat = 1
+    @State private var passwordActionsHeight: CGFloat = 1
     @State private var emailSectionPosition = AccountSectionPosition()
+    @State private var passwordActionsPosition = AccountSectionPosition()
     @State private var accountConfirmation: String?
     @State private var accountError: String?
     @State private var confirmation: String?
@@ -80,41 +82,29 @@ struct AccountView: View {
             SecureField("New password", text: $newPassword)
             SecureField("Repeat new password", text: $verifyPassword)
 
-            Button(isChangingPassword ? "Changing password…" : "Change password") {
-                Task { await changePassword() }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(TrustrootsPalette.green)
-            .disabled(isChangingPassword || currentPassword.isEmpty || newPassword.isEmpty || verifyPassword.isEmpty)
-
-            Button("Forgot your password?") {
-                openPasswordRecovery()
-            }
-            .font(.subheadline.weight(.semibold))
+            ComposePasswordActions(
+                height: $passwordActionsHeight,
+                position: passwordActionsPosition,
+                canSubmit: hasPasswordInputs,
+                isChanging: isChangingPassword,
+                confirmation: confirmation,
+                error: errorMessage,
+                onChangePassword: { Task { await changePassword() } },
+                onRecoverPassword: openPasswordRecovery
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: passwordActionsHeight)
+            .clipped()
+            .trackAccountSectionPosition(passwordActionsPosition)
         }
         .textFieldStyle(.roundedBorder)
         .padding(16)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(alignment: .bottomLeading) {
-            if let confirmation {
-                Text(confirmation)
-                    .font(.footnote)
-                    .foregroundStyle(TrustrootsPalette.green)
-                    .padding(.top, 8)
-                    .offset(y: 30)
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(.top, 8)
-                    .offset(y: 30)
-            }
-        }
-        .padding(.bottom, confirmation == nil && errorMessage == nil ? 0 : 24)
+    }
+
+    private var hasPasswordInputs: Bool {
+        !currentPassword.isEmpty && !newPassword.isEmpty && !verifyPassword.isEmpty
     }
 
     private var signOutSection: some View {
@@ -211,7 +201,7 @@ struct AccountView: View {
     }
 
     private func changePassword() async {
-        guard !isChangingPassword else { return }
+        guard hasPasswordInputs, !isChangingPassword else { return }
         isChangingPassword = true
         errorMessage = nil
         confirmation = nil
@@ -230,6 +220,61 @@ struct AccountView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+@MainActor
+private struct ComposePasswordActions: UIViewControllerRepresentable {
+    @Binding var height: CGFloat
+    let position: AccountSectionPosition
+    let canSubmit: Bool
+    let isChanging: Bool
+    let confirmation: String?
+    let error: String?
+    let onChangePassword: () -> Void
+    let onRecoverPassword: () -> Void
+
+    final class Coordinator {
+        let state = MemberAccountPasswordActionsState()
+        var onChangePassword: (() -> Void)?
+        var onRecoverPassword: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return MemberAccountPasswordActionsViewControllerKt.MemberAccountPasswordActionsViewController(
+            state: coordinator.state,
+            position: position,
+            onChangePassword: { [weak coordinator] in coordinator?.onChangePassword?() },
+            onRecoverPassword: { [weak coordinator] in coordinator?.onRecoverPassword?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onChangePassword = onChangePassword
+        coordinator.onRecoverPassword = onRecoverPassword
+        coordinator.state.update(
+            canSubmit: canSubmit,
+            isChanging: isChanging,
+            confirmation: confirmation,
+            error: error
+        )
     }
 }
 
