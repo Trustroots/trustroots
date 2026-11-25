@@ -3,6 +3,7 @@ package org.trustroots.android.api
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MobileApiHostOfferValidationTest {
@@ -35,6 +36,12 @@ class MobileApiHostOfferValidationTest {
         ).forEach { (case, hostOffer) ->
             assertValidationFailure(case, hostOffer)
         }
+    }
+
+    @Test fun rejectsOnlyTheExactWebMapPlaceholderWithinItsArea() {
+        assertFalse(isValidHostOfferLocation(48.6908333333, 9.14055555556))
+        assertTrue(isValidHostOfferLocation(48.6908333333, 9.15))
+        assertTrue(isValidHostOfferLocation(48.69, 9.14055555556))
     }
 
     private fun assertValidationFailure(case: String, hostOffer: HostOfferUpdate) {

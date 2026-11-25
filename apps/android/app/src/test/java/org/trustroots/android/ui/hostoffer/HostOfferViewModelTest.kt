@@ -376,6 +376,22 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun aSuccessfulUpdateWithoutAnIdRetainsThePreviousOfferId() = withScope { scope ->
+        val repository = FakeHostOfferRepository(
+            loadResult = Result.success(LOCATED_OFFER.copy(id = "existing-offer")),
+        ).apply { saveHandler = { Result.success(hostOffer("unused").copy(id = null)) } }
+        val viewModel = HostOfferViewModel(repository, scope)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals("existing-offer", repository.submitted.single().id)
+        assertEquals("existing-offer", viewModel.state.value.savedForm?.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
+        assertFalse(viewModel.state.value.isDirty)
+    }
+
+    @Test
     fun retryLoadDuringSaveDoesNotReplaceThePendingSave() = withScope { scope ->
         val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
         val repository = FakeHostOfferRepository().apply { saveHandler = { pendingSave.await() } }
