@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
@@ -25,8 +26,9 @@ import org.trustroots.android.ui.profile.MemberProfileScreen
 class ProfileHostingJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val saved = AtomicBoolean(false)
+    private val hostingMeetingStatus = AtomicReference("yes")
     private val fixture = LocalTransportFixture { request ->
-        val hostingOffer = """{"_id":"offer-one","status":"yes","meetingStatus":"maybe","volunteering":true,"description":"A quiet guest room","maxGuests":1}"""
+        val hostingOffer = """{"_id":"offer-one","status":"yes","meetingStatus":"${hostingMeetingStatus.get()}","volunteering":true,"description":"A quiet guest room","maxGuests":1}"""
         val unavailableOffer = """{"_id":"offer-one","status":"no","meetingStatus":"maybe","volunteering":true,"noOfferDescription":"Away for now","maxGuests":1}"""
         val body = when {
             request.method == "PUT" && request.path == "/api/offers/offer-one" -> {
@@ -47,8 +49,16 @@ class ProfileHostingJourneyTest {
     @Test fun hostingProfileShowsMeetingAvailabilityAndVolunteering() {
         showProfile()
         waitForText("Offers volunteering")
-        compose.onNodeWithText("Maybe up for meeting").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Wants to meet people").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Offers volunteering").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun hostingProfileShowsWhenMemberIsTooBusyToMeet() {
+        hostingMeetingStatus.set("no")
+        showProfile()
+        waitForText("Too busy to meet people")
+        compose.onNodeWithText("Too busy to meet people").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Hosting travellers").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun hostingShortcutCancelsAndReturnsSavedAvailabilityToRetainedProfile() {
