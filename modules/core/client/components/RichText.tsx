@@ -12,6 +12,7 @@ type RichTextProps = Omit<
   'children' | 'dangerouslySetInnerHTML'
 > & {
   content: string;
+  messageFormatting?: boolean;
   allowTrustrootsLinks?: boolean;
   allowLinks?: boolean;
   allowMarkdownLinks?: boolean;
@@ -20,6 +21,7 @@ type RichTextProps = Omit<
 
 export default function RichText({
   content,
+  messageFormatting = false,
   allowTrustrootsLinks = false,
   allowLinks = false,
   allowMarkdownLinks = false,
@@ -30,7 +32,7 @@ export default function RichText({
     // Resolve labelled links before Autolinker sees their destinations as bare URLs.
     const source =
       allowLinks && allowMarkdownLinks
-        ? linkMarkdown(sanitiseRichText(content))
+        ? linkMarkdown(sanitiseRichText(content, messageFormatting))
         : content;
     const linked = allowLinks
       ? Autolinker.link(source, {
@@ -48,7 +50,7 @@ export default function RichText({
           },
         })
       : source;
-    const sanitised = sanitiseRichText(linked);
+    const sanitised = sanitiseRichText(linked, messageFormatting);
     const html = allowLinks
       ? sanitised
       : disableUserContentLinks(sanitised, allowTrustrootsLinks);
@@ -59,6 +61,7 @@ export default function RichText({
     allowMarkdownLinks,
     allowTrustrootsLinks,
     hashtagLinks,
+    messageFormatting,
   ]);
   // DOMPurify sanitises user content. Generated destinations come from application code.
   // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml

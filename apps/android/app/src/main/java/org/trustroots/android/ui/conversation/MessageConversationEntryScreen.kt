@@ -219,8 +219,8 @@ internal fun MessageConversationEntryScreen(
                             ) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(
-                                        remember(message.content, api.backendURL) {
-                                            messageContent(message.content, api.backendURL)
+                                        remember(message.content, message.plainText, api.backendURL) {
+                                            messageContent(message.content, api.backendURL, message.plainText)
                                         },
                                     )
                                     message.createdAt?.let { created ->

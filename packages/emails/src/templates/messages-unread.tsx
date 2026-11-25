@@ -8,16 +8,16 @@ import {
 } from '../components/layout.tsx';
 import { previewParams } from './_preview.ts';
 
-interface Props extends EmailParams {
+export interface MessagesUnreadProps extends EmailParams {
   userToName?: string;
   userFromName?: string;
   messageCount: number;
-  messages: Array<{ content: string }>;
+  messages: Array<{ content: string; plainText?: string }>;
   urlReply?: string;
   urlUserFromProfile?: string;
 }
 
-export default function MessagesUnread(p: Props) {
+export default function MessagesUnread(p: MessagesUnreadProps) {
   return (
     <EmailLayout params={p}>
       <P>Hello {p.userToName}!</P>
@@ -31,7 +31,11 @@ export default function MessagesUnread(p: Props) {
         at Trustroots.
       </P>
       {p.messages.map((message, index) => (
-        <MemberHtml key={index} html={message.content} />
+        <MemberHtml
+          key={index}
+          html={message.content}
+          className="unread-message-content"
+        />
       ))}
       <P>
         <strong>Safety note:</strong> Trustroots will never ask you for your ID,
@@ -60,4 +64,4 @@ MessagesUnread.PreviewProps = {
   urlReply: 'https://www.trustroots.org/messages/sam',
   urlUserFromProfile: 'https://www.trustroots.org/profile/sam',
   unsubscribeUrl: 'https://www.trustroots.org/email/unsubscribe/token',
-} satisfies Props;
+} satisfies MessagesUnreadProps;

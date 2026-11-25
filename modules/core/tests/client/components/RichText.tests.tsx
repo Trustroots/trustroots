@@ -204,3 +204,25 @@ test('presentation unwraps all links and retains their formatted labels', () => 
   rerender(<RichText content="" />);
   expect(container.firstChild).toBeEmptyDOMElement();
 });
+
+test('retains browser line blocks and literal newlines in message content', () => {
+  const content =
+    '<div onclick="alert(1)">First</div>\n<div></div><div>Second\r\nThird</div>';
+  const { container } = render(
+    <RichText content={content} messageFormatting />,
+  );
+  expect(container.firstElementChild?.innerHTML).toBe(
+    '<div>First</div><div><br></div><div>Second<br>Third</div>',
+  );
+});
+
+test('does not add blank lines around explicit HTML breaks or nested blank blocks', () => {
+  const content =
+    '<div>First<br>\nSecond</div><div><div><br></div></div><div>Last</div>';
+  const { container } = render(
+    <RichText content={content} messageFormatting />,
+  );
+  expect(container.firstElementChild?.innerHTML).toBe(
+    '<div>First<br>Second</div><div><div><br></div></div><div>Last</div>',
+  );
+});

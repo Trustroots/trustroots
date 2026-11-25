@@ -7,10 +7,13 @@ import { emailToken } from '../../../users/server/services/action-token.server.s
 import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
-import sanitizeHtml from 'sanitize-html';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
 import analyticsHandler from './../controllers/analytics.server.controller.mts';
 import textService from './text.server.service.mts';
+import {
+  messagePlainText,
+  sanitiseMessageHtml,
+} from './message-format.server.service.mts';
 import { renderEmail as renderTemplate } from '@trustroots/emails';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
@@ -123,7 +126,7 @@ function defangUrl(value: string) {
   return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
 }
 function messagePreview(content: string) {
-  const sanitised = sanitizeHtml(content, {
+  const sanitised = sanitiseMessageHtml(content, {
     ...textService.sanitizeOptions,
     // Retain labels when the sanitiser removes an invalid href.
     exclusiveFilter: undefined,
@@ -159,7 +162,10 @@ function messagePreview(content: string) {
       return `<a href="${he.escape(destination.href)}">${label}</a>`;
     },
   );
-  return { content: html };
+  return {
+    content: html.replace(/<p(?=[ >])/g, '<p style="margin:0"'),
+    plainText: messagePlainText(html, true),
+  };
 }
 function sendMessagesUnread(
   userFrom: MailUser,

@@ -185,7 +185,8 @@ const config: PlaywrightTestConfig = defineConfig({
     },
     {
       name: 'message-actions',
-      testMatch: /features\/messages\/message-actions\.spec\.ts/,
+      testMatch:
+        /features\/messages\/message-(?:actions|line-breaks)\.spec\.ts/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
         ['messages'],

@@ -2699,6 +2699,7 @@ const features = [
       'Members can preview and edit a formatted draft without sending it.',
       'Sending from preview sends the original draft and returns to editing.',
       'Preview follows message link rules on desktop and mobile.',
+      'Typed and pasted lines keep their spacing through Preview, Send and reload.',
     ],
     relatedSpecs: [
       spec(
@@ -2708,6 +2709,10 @@ const features = [
       spec(
         'message-actions.spec.js',
         'mobile members can preview, edit and send a formatted draft',
+      ),
+      spec(
+        'message-line-breaks.spec.js',
+        'line breaks survive draft, preview, send and reload',
       ),
     ],
   },

@@ -106,7 +106,13 @@ data class MessageThread(
     val updatedAt: Long? = null,
 )
 
-data class DirectMessage(val id: String, val content: String, val sender: MessageMember, val createdAt: Long? = null)
+data class DirectMessage(
+    val id: String,
+    val content: String,
+    val sender: MessageMember,
+    val createdAt: Long? = null,
+    val plainText: String? = null,
+)
 
 data class MapOffer(val id: String, val latitude: Double, val longitude: Double, val type: String = "host", val status: String = "yes")
 
@@ -1210,6 +1216,7 @@ internal fun parseMessage(value: JSONObject): DirectMessage = DirectMessage(
     content = value.getString("content"),
     sender = parseMessageMember(value.getJSONObject("userFrom")),
     createdAt = value.optionalTimestamp("created"),
+    plainText = value.optionalText("plainText"),
 )
 
 internal fun parseMessages(values: JSONArray): List<DirectMessage> =

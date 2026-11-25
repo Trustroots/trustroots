@@ -29,6 +29,14 @@ function typeInto(editor: Element, html: string) {
   fireEvent.input(editor);
 }
 
+function pasteInto(editor: Element, data: Record<string, string>) {
+  const event = createEvent.paste(editor, {
+    clipboardData: { getData: (type: string) => data[type] ?? '' },
+  });
+  fireEvent(editor, event);
+  return event.defaultPrevented;
+}
+
 describe('<TrEditor />', () => {
   beforeEach(() => {
     execCommand.mockReset();
@@ -292,23 +300,40 @@ describe('<TrEditor />', () => {
   it('applies the formatting policy to pasted HTML and leaves plain text alone', () => {
     render(<TrEditor id="editor" text="" onChange={onChangeMock()} />);
     const editor = screen.getByRole('textbox');
-    const paste = (data: Record<string, string>) => {
-      const event = createEvent.paste(editor, {
-        clipboardData: { getData: (type: string) => data[type] ?? '' },
-      });
-      fireEvent(editor, event);
-      return event.defaultPrevented;
-    };
 
-    expect(paste({ 'text/plain': 'Plain note' })).toBe(false);
+    expect(pasteInto(editor, { 'text/plain': 'Plain note' })).toBe(false);
     expect(execCommand).not.toHaveBeenCalled();
     expect(
-      paste({ 'text/html': '<div style="color:red"><b>Pasted</b> note</div>' }),
+      pasteInto(editor, {
+        'text/html': '<div style="color:red"><b>Pasted</b> note</div>',
+      }),
     ).toBe(true);
     expect(execCommand).toHaveBeenCalledExactlyOnceWith(
       'insertHTML',
       false,
       '<b>Pasted</b> note',
+    );
+  });
+
+  it('preserves message line breaks from editor input and plain-text paste', () => {
+    const onChange = onChangeMock();
+    render(
+      <TrEditor id="message" text="" onChange={onChange} messageFormatting />,
+    );
+    const editor = screen.getByRole('textbox');
+    const markup = '<p>First<br></p><p><br></p><p>Second<br>Third</p>';
+
+    typeInto(editor, markup);
+    expect(onChange).toHaveBeenLastCalledWith(markup);
+    expect(pasteInto(editor, {})).toBe(false);
+    expect(execCommand).not.toHaveBeenCalled();
+    expect(
+      pasteInto(editor, { 'text/plain': 'First\r\n\r\nSecond\rThird' }),
+    ).toBe(true);
+    expect(execCommand).toHaveBeenCalledExactlyOnceWith(
+      'insertText',
+      false,
+      'First\n\nSecond\nThird',
     );
   });
 });

@@ -217,7 +217,7 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
                 PilotMessage(
                     id: message.id,
                     author: Self.displayText(message.userFrom.displayName, fallback: message.userFrom.username ?? "Member"),
-                    content: Self.displayText(message.content, fallback: ""),
+                    content: message.plainText ?? Self.displayText(message.content, fallback: ""),
                     outgoing: message.isFrom(username: account)
                 )
             }
@@ -242,7 +242,7 @@ private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGat
             PilotMessage(
                 id: message.id,
                 author: Self.displayText(message.userFrom.displayName, fallback: message.userFrom.username ?? "Member"),
-                content: Self.displayText(message.content, fallback: ""),
+                content: message.plainText ?? Self.displayText(message.content, fallback: ""),
                 outgoing: message.isFrom(username: account)
             )
         }

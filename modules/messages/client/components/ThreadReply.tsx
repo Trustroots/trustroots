@@ -238,6 +238,7 @@ export default function ThreadReply({
                       <RichText
                         className="panel-body"
                         content={previewContent}
+                        messageFormatting
                         allowTrustrootsLinks
                       />
                     </div>
@@ -250,6 +251,7 @@ export default function ThreadReply({
               <TrEditor
                 key={editorKeyCounter}
                 id="message-reply-content"
+                messageFormatting
                 text={content}
                 onChange={text => onChange(text)}
                 onSubmitShortcut={send}

@@ -252,9 +252,24 @@ test('reviews repeat groups with counts, pagination and retry', async () => {
   expect(await screen.findByText('No outgoing messages found.')).toBeVisible();
 });
 
-test('triages a report and reads its whole conversation and unpublished experiences', async () => {
+test('triages a report and opens the investigation views, including repeats after resolution', async () => {
   let resolved = false;
+  const repeatedMessagesPath =
+    '/api/admin/support/report-1/repeated-messages?page=1';
   load.mockImplementation(async path => {
+    if (path === repeatedMessagesPath)
+      return {
+        items: [
+          {
+            content: '<p>Repeated fictional message</p>',
+            sendCount: 4,
+            recipientCount: 3,
+            firstSent: report.sent,
+            lastSent: report.sent,
+          },
+        ],
+        hasMore: false,
+      };
     if (path.includes('/messages'))
       return {
         items: [
@@ -330,6 +345,18 @@ test('triages a report and reads its whole conversation and unpublished experien
   fireEvent.click(screen.getByRole('button', { name: 'Mark solved' }));
   await screen.findByRole('button', { name: 'Reopen request' });
   expect(setStatus).toHaveBeenCalledWith('report-1', 'solved');
+  expect(load).not.toHaveBeenCalledWith(repeatedMessagesPath);
+  const repeatedMessages = screen.getByRole('button', {
+    name: 'Repeated messages',
+  });
+  fireEvent.click(repeatedMessages);
+  const repeats = within(
+    screen.getByRole('region', { name: 'Repeated messages' }),
+  );
+  expect(await repeats.findByText('Repeated fictional message')).toBeVisible();
+  expect(repeats.getByText('4 sends · 3 recipients')).toBeVisible();
+  expect(repeatedMessages).toHaveAttribute('aria-pressed', 'true');
+  expect(load).toHaveBeenCalledWith(repeatedMessagesPath);
   resolved = false;
   fireEvent.click(screen.getByRole('button', { name: 'Reopen request' }));
   await screen.findByRole('button', { name: 'Mark solved' });

@@ -4,11 +4,43 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { emailColors } from '../../../../../packages/emails/src/colors.ts';
+import { renderEmail } from '../../../../../packages/emails/src/index.ts';
 import '../../../../../packages/emails/src/jsx-loader.ts';
 
 const packageDir = new URL('../../../../../packages/emails/', import.meta.url);
 
 describe('@trustroots/emails', function () {
+  it('normalises unread-message HTML and keeps block spacing when no plain text was supplied', async function () {
+    const { text } = await renderEmail('messages-unread', {
+      userFromName: 'Avery',
+      userToName: 'Rowan',
+      messageCount: 1,
+      messages: [
+        {
+          content:
+            '<p>First   line<br>Second line</p>' +
+            '<span class="unread-message-content">Nested   fallback</span>Inline after',
+        },
+      ],
+    });
+
+    assert.match(
+      text,
+      /First line\nSecond line\n\nNested fallback\n\nInline after/,
+    );
+  });
+
+  it('keeps contact-request HTML on the standard formatter', async function () {
+    const { text } = await renderEmail('confirm-contact', {
+      name: 'Rowan',
+      meName: 'Avery',
+      messageHTML:
+        '<p class="unread-message-content">An ordinary   contact message.</p>',
+    });
+
+    assert.match(text, /\n\nAn ordinary contact message\.\n\n/);
+  });
+
   it('uses the web client’s brand colour', function () {
     const less = readFileSync(
       new URL('../../../client/less/global-variables.less', import.meta.url),

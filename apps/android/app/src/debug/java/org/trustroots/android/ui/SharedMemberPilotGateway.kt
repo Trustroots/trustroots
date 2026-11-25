@@ -148,7 +148,7 @@ internal class SharedMemberPilotGateway(
                         PilotMessage(
                             id = message.id,
                             author = clean(message.sender.username ?: message.sender.displayName),
-                            content = clean(message.content),
+                            content = message.plainText ?: clean(message.content),
                             outgoing = message.sender.username.equals(active.member.username, ignoreCase = true),
                         )
                     }, null)
@@ -170,7 +170,7 @@ internal class SharedMemberPilotGateway(
                         PilotMessage(
                             message.id,
                             clean(message.sender.username ?: message.sender.displayName),
-                            clean(message.content),
+                            message.plainText ?: clean(message.content),
                             true,
                         ),
                         null,

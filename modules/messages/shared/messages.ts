@@ -40,6 +40,7 @@ export interface MessagePayload<
 > {
   _id: Id;
   content: string;
+  plainText?: string;
   created: Timestamp;
   read: boolean;
   userFrom: Member;

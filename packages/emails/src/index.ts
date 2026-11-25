@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { createElement } from 'react';
 import { render, toPlainText } from 'react-email';
 import './jsx-loader.ts';
+import type { MessagesUnreadProps } from './templates/messages-unread.tsx';
 
 // Load the templates only once the JSX loader is registered, so not with a
 // static import (linked before any module runs) or top-level await (CommonJS
@@ -9,6 +10,16 @@ import './jsx-loader.ts';
 const { htmlEmails, textEmails } = createRequire(import.meta.url)(
   './registry.ts',
 ) as typeof import('./registry.ts');
+
+interface PlainTextElement {
+  children: unknown[];
+}
+
+interface PlainTextBuilder {
+  openBlock(options: { isPre: boolean; leadingLineBreaks: number }): void;
+  addInline(text: string): void;
+  closeBlock(options: { trailingLineBreaks: number }): void;
+}
 
 export interface RenderedEmail {
   html?: string;
@@ -31,5 +42,31 @@ export async function renderEmail(
     '<!-- -->',
     '',
   );
-  return { html, text: toPlainText(html) };
+  if (name !== 'messages-unread') return { html, text: toPlainText(html) };
+
+  let index = 0;
+  const { messages } = props as MessagesUnreadProps;
+  const text = toPlainText(html, {
+    selectors: [{ selector: '.unread-message-content', format: 'messageBody' }],
+    formatters: {
+      messageBody(
+        element: PlainTextElement,
+        walk: (nodes: unknown[], builder: PlainTextBuilder) => void,
+        builder: PlainTextBuilder,
+      ) {
+        const content = messages[index++]?.plainText;
+        builder.openBlock({
+          isPre: content !== undefined,
+          leadingLineBreaks: 2,
+        });
+        if (content === undefined) {
+          walk(element.children, builder);
+        } else {
+          builder.addInline(content);
+        }
+        builder.closeBlock({ trailingLineBreaks: 2 });
+      },
+    },
+  });
+  return { html, text };
 }

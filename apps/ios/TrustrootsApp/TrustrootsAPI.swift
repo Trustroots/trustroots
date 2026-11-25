@@ -602,12 +602,18 @@ struct MessageThread: Decodable, Identifiable {
 struct DirectMessage: Decodable, Identifiable {
     let id: String
     let content: String
+    let plainText: String?
     let userFrom: MiniMember
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case content
+        case plainText
         case userFrom
+    }
+
+    var displayText: String {
+        plainText ?? content.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
     }
 
     func isFrom(username: String?) -> Bool {

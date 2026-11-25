@@ -1,4 +1,3 @@
-import sanitizeHtml from 'sanitize-html';
 import { sub } from 'date-fns';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
@@ -9,6 +8,12 @@ import { queueMessagePush } from '../jobs/message-push.server.job.mts';
 import messageThrottleAlertService from '../services/message-throttle-alert.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
+import {
+  formatMessage,
+  messageExcerpt,
+  messagePlainText,
+  sanitiseMessageHtml,
+} from '../../../core/server/services/message-format.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mts';
@@ -305,10 +310,7 @@ function sanitizeMessages<Message extends { content: string }>(
 
   // Sanitize each outgoing message's contents
   messages.forEach(function (message) {
-    message.content = sanitizeHtml(
-      message.content,
-      textService.sanitizeOptions,
-    );
+    message.content = sanitiseMessageHtml(message.content);
     messagesCleaned.push(message);
   });
   return messagesCleaned;
@@ -375,9 +377,7 @@ function sanitizeThreads(
       const messageContent = (
         plainThread.message as Pick<MessageEndpointRecord, 'content'>
       ).content;
-      excerpt = messageContent
-        ? textService.plainText(messageContent, true).substring(0, 100)
-        : '…';
+      excerpt = messageContent ? messageExcerpt(messageContent) : '…';
     } else {
       // Ensure this works even if messages couldn't be found for some reason
       excerpt = '…';
@@ -526,7 +526,9 @@ service.send = async function (req, res) {
   }
 
   // No content or test if content is actually empty (when html is stripped out)
-  if (!body.content || textService.isEmpty(body.content as string)) {
+  const content =
+    typeof body.content === 'string' ? formatMessage(body.content) : '';
+  if (!content) {
     return res.status(400).send({
       message: 'Please write a message.',
     });
@@ -612,7 +614,7 @@ service.send = async function (req, res) {
       prepareNewMessageFields(
         {
           userTo: body.userTo as string,
-          content: textService.html(body.content as string),
+          content,
         },
         user._id,
       ),
@@ -694,7 +696,7 @@ service.send = async function (req, res) {
     const populated = await message.populate([
       userMiniService.miniUserPopulate('userFrom userTo'),
     ]);
-    return res.json(prepareMessageForClient(populated.toObject()));
+    return res.json(prepareMessageResponse(populated.toObject()));
   } catch (err) {
     log(
       'error',
@@ -705,6 +707,15 @@ service.send = async function (req, res) {
   }
 };
 
+function prepareMessageResponse<Id, Timestamp, Member>(
+  message: MessagePayload<Id, Timestamp, Member>,
+) {
+  return {
+    ...prepareMessageForClient(message),
+    plainText: messagePlainText(message.content),
+  };
+}
+
 /**
  * Thread of messages
  */
@@ -713,7 +724,7 @@ service.thread = function (req, res) {
   const messages = sanitizeMessages(
     req.messages as MessageEndpointRecord[] | undefined,
   );
-  res.json(messages.map(message => prepareMessageForClient(message)));
+  res.json(messages.map(prepareMessageResponse));
 };
 
 /**
@@ -1013,11 +1024,12 @@ service.preview = function (req, res) {
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-  const content = req.body?.content;
-  if (typeof content !== 'string' || textService.isEmpty(content)) {
+  const draft = req.body?.content;
+  const content = typeof draft === 'string' ? formatMessage(draft) : '';
+  if (!content) {
     return res.status(400).json({ message: 'Please write a message.' });
   }
-  return res.json(preparePreviewMessageResponse(textService.html(content)));
+  return res.json(preparePreviewMessageResponse(content));
 };
 const preview = service.preview;
 const inbox = service.inbox;

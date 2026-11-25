@@ -5,6 +5,15 @@ import MapKit
 @testable import Trustroots
 
 final class TrustrootsTests: XCTestCase {
+    func testDirectMessageDecodesMultilineTextAndSupportsOlderServers() throws {
+        let decoder = JSONDecoder()
+        let current = Data(#"{"_id":"message-1","content":"<p>First</p><p>Second</p>","plainText":"First\n\nSecond","userFrom":{"_id":"member-1","username":"first"}}"#.utf8)
+        let legacy = Data(#"{"_id":"message-1","content":"<p>Legacy message</p>","userFrom":{"_id":"member-1","username":"first"}}"#.utf8)
+
+        XCTAssertEqual(try decoder.decode(DirectMessage.self, from: current).displayText, "First\n\nSecond")
+        XCTAssertEqual(try decoder.decode(DirectMessage.self, from: legacy).displayText, "Legacy message")
+    }
+
     func testNostranslationConnectionLinkRequiresThePinnedClientAndRelay() {
         let peer = String(repeating: "a", count: 64)
         let valid = "nostrconnect://\(peer)?relay=wss%3A%2F%2Frelay.trustroots.org&url=https%3A%2F%2Fteam.trustroots.org%2Fnostranslation&perms=sign_event%3A27235&secret=fixture"

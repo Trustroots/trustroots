@@ -17,6 +17,15 @@ class MobileApiMessageMemberLabelTest {
         assertEquals("", message.sender.displayName)
     }
 
+    @Test fun preservesInteriorNewlinesWhenTheServerProvidesPlainText() {
+        val json = JSONObject(
+            """{"_id":"message-one","content":"<p>First</p><p>Second</p>","userFrom":{"_id":"member-one"}}""",
+        )
+        assertNull(parseMessage(json).plainText)
+        json.put("plainText", "First\n\nSecond")
+        assertEquals("First\n\nSecond", parseMessage(json).plainText)
+    }
+
     @Test fun leavesUnknownMemberLabelResolutionToTheUi() {
         val message = parseMessage(
             JSONObject(
