@@ -11,6 +11,7 @@ struct MemberProfileView: View {
     @State private var contacts: [TrustrootsContact] = []
     @State private var experiences: [MemberExperience] = []
     @State private var accommodationOffer: AccommodationOffer?
+    @State private var selectedContact: String?
     @State private var showAllContacts = false
     @State private var showAllExperiences = false
     @State private var errorMessage: String?
@@ -193,27 +194,12 @@ struct MemberProfileView: View {
                             }
 
                             if !contacts.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("Contacts")
-                                        .font(.headline)
-                                    ForEach(showAllContacts ? contacts : Array(contacts.prefix(6))) { contact in
-                                        if let contactUsername = contact.user.username {
-                                            NavigationLink {
-                                                MemberProfileView(session: session, username: contactUsername)
-                                            } label: {
-                                                profileContactRow(contact)
-                                            }
-                                        } else {
-                                            profileContactRow(contact)
-                                        }
-                                    }
-                                    if contacts.count > 6 {
-                                        profileSectionToggle(
-                                            isExpanded: $showAllContacts,
-                                            hiddenCount: contacts.count - 6,
-                                            noun: "contacts"
-                                        )
-                                    }
+                                ProfileContactsSection(
+                                    contacts: contacts,
+                                    serverURLString: session.serverURLString,
+                                    expanded: $showAllContacts
+                                ) { username in
+                                    if selectedContact == nil { selectedContact = username }
                                 }
                             }
 
@@ -255,6 +241,9 @@ struct MemberProfileView: View {
                 } else {
                     await loadProfile()
                 }
+            }
+            .navigationDestination(item: $selectedContact) { username in
+                MemberProfileView(session: session, username: username)
             }
             .toolbar(.hidden, for: .navigationBar)
             .onReceive(NotificationCenter.default.publisher(for: .trustrootsReturnToMap)) { _ in
@@ -452,16 +441,6 @@ struct MemberProfileView: View {
         NotificationCenter.default.post(name: .trustrootsOpenMapLocation, object: location)
     }
 
-    private func profileContactRow(_ contact: TrustrootsContact) -> some View {
-        MemberIdentityView(
-            member: contact.user,
-            serverURLString: session.serverURLString,
-            avatarSize: 34,
-            primaryFont: .subheadline.weight(.medium),
-            secondaryFont: .caption
-        )
-    }
-
     private func profileSectionToggle(
         isExpanded: Binding<Bool>,
         hiddenCount: Int,
@@ -485,6 +464,60 @@ struct MemberProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ProfileContactsSection: View {
+    let contacts: [TrustrootsContact]
+    let serverURLString: String
+    @Binding var expanded: Bool
+    let onOpen: (String) -> Void
+
+    var body: some View {
+        let identity = Identity(serverURLString: serverURLString, contacts: contacts.map(Contact.init), expanded: expanded)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileContactsViewController(
+                contacts: identity.contacts.map(\.presentation),
+                expanded: identity.expanded,
+                onOpen: onOpen,
+                onToggle: { expanded.toggle() },
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: { contact in
+                    makeSharedMemberAvatarController(
+                        memberID: contact.memberId,
+                        name: contact.name,
+                        serverURLString: serverURLString
+                    )
+                }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let serverURLString: String
+        let contacts: [Contact]
+        let expanded: Bool
+    }
+
+    private struct Contact: Hashable {
+        let id: String
+        let memberID: String?
+        let username: String?
+        let name: String
+        let handle: String?
+
+        init(_ contact: TrustrootsContact) {
+            let identity = MemberIdentityText(member: contact.user)
+            id = contact.id
+            memberID = contact.user.id
+            username = contact.user.username
+            name = identity.primary
+            handle = identity.secondary
+        }
+
+        var presentation: MemberContact {
+            MemberContact(id: id, memberId: memberID, username: username, name: name, handle: handle, pending: false)
+        }
     }
 }
 

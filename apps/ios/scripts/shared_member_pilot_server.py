@@ -152,11 +152,20 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "volunteering": True,
             }])
         elif route == f'/api/mobile/v0/contacts/{MEMBER["_id"]}':
-            self._json(200, [{
+            contacts = [{
                 "_id": "contact-pilot-one",
                 "confirmed": False,
                 "user": PARTNER,
-            }])
+            }]
+            contacts.extend({
+                "_id": f"contact-pilot-{number}",
+                "confirmed": True,
+                "user": {
+                    "_id": f"member-pilot-contact-{number}",
+                    "displayName": f"Fixture Contact {number}",
+                },
+            } for number in range(2, 8))
+            self._json(200, contacts)
         elif route == "/api/mobile/v0/connections":
             self._json(200, {
                 "recent": [dict(PARTNER, activity="today")],

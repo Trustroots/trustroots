@@ -49,6 +49,30 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
         profile.tap()
         XCTAssertTrue(app.buttons["Edit profile"].waitForExistence(timeout: 10), app.debugDescription)
+        let moreContacts = app.buttons["More contacts (1)"]
+        XCTAssertTrue(moreContacts.waitForExistence(timeout: 15), app.debugDescription)
+        let seventhContact = app.descendants(matching: .any)["profile-contact-contact-pilot-7"]
+        XCTAssertFalse(seventhContact.exists)
+        revealProfileElement(moreContacts, in: app)
+        moreContacts.tap()
+        XCTAssertTrue(seventhContact.waitForExistence(timeout: 10), app.debugDescription)
+
+        let profileContact = app.descendants(matching: .any)["profile-contact-contact-pilot-one"]
+        revealProfileElement(profileContact, in: app)
+        let contactScreenshot = XCTAttachment(screenshot: profileContact.screenshot())
+        contactScreenshot.name = "regular-ios-profile-contact"
+        contactScreenshot.lifetime = .keepAlways
+        add(contactScreenshot)
+        profileContact.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
+
+        let fewerContacts = app.buttons["Show fewer"]
+        XCTAssertTrue(fewerContacts.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(fewerContacts, in: app)
+        fewerContacts.tap()
+        XCTAssertTrue(moreContacts.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(seventhContact.exists)
         app.buttons["Menu"].tap()
         let faq = app.descendants(matching: .any)["faq-menu-entry"]
         XCTAssertTrue(faq.waitForExistence(timeout: 10), app.debugDescription)
