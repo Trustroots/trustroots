@@ -657,10 +657,23 @@ jobs:
           name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
           path: site
       - name: Wait for site artifact
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_TOKEN: ${{ github.token }}
           ARTIFACT_NAME: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
-        run: bash scripts/ci/wait-for-pages-artifact.sh
+        with:
+          script: |
+            const { DefaultArtifactClient } = require('@actions/artifact');
+            const { setTimeout: delay } = require('node:timers/promises');
+            const client = new DefaultArtifactClient();
+            const name = process.env.ARTIFACT_NAME;
+            // Use the same artifact lookup as deploy-pages. The REST API can
+            // report the upload before the runner's artifact service sees it.
+            for (let attempt = 0; attempt < 12; attempt += 1) {
+              if (attempt > 0) await delay(5_000);
+              const { artifacts } = await client.listArtifacts();
+              if (artifacts.filter(artifact => artifact.name === name).length === 1) return;
+            }
+            core.setFailed(`Pages artifact ${name} did not become available.`);
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
