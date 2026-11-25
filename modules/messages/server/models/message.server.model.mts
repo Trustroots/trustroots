@@ -84,6 +84,7 @@ const MessageSchema = new Schema<MessageRecord>({
 
 MessageSchema.index({ read: 1, created: 1, notificationSent: 1 });
 MessageSchema.index({ created: -1, userFrom: 1 });
+MessageSchema.index({ userFrom: 1, created: -1 });
 MessageSchema.index(
   { locationCorrectionKey: 1 },
   { unique: true, sparse: true },

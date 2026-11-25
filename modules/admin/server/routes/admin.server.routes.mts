@@ -154,6 +154,10 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .post(support.retry);
   app
+    .route('/api/admin/support/:requestId/repeated-messages')
+    .all(...privileged)
+    .get(support.reportRepeatedMessages);
+  app
     .route('/api/admin/support/:requestId/:kind')
     .all(adminPolicy.isAllowed)
     .get(support.investigation);
@@ -161,6 +165,10 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/support-message-reviews/:reviewId')
     .all(adminPolicy.isAllowed)
     .get(support.messageThrottleReview);
+  app
+    .route('/api/admin/support-message-reviews/:reviewId/repeated-messages')
+    .all(...privileged)
+    .get(support.throttleRepeatedMessages);
   app
     .route('/api/admin/support-members')
     .all(adminPolicy.isAllowed)

@@ -25,6 +25,7 @@ interface SupportRequestRecord {
   message?: string;
   username?: string;
   email?: string;
+  sent?: Date;
   status?: string;
   resolvedAt?: Date | null;
 }
@@ -373,6 +374,207 @@ describe('Support team access and investigation', () => {
       .get(reviewEndpoint(new mongoose.Types.ObjectId()))
       .expect(404, { message: 'Message review not found.' });
     await agent.get(path).query({ page: 1_000_000 }).expect(400);
+  });
+  it('finds exact repeated messages across distinct recipients within a resolved report window', async () => {
+    const windowEnd = new Date('2026-02-01T12:00:00.000Z');
+    const windowStart = new Date('2026-01-02T12:00:00.000Z');
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $set: { sent: windowEnd, status: 'solved' } },
+    );
+    const userFrom = users[1]._id;
+    const recipients = [users[2]._id, users[3]._id, users[4]._id];
+    const content = 'Fictional greeting';
+    await Message.insertMany([
+      ...recipients.map((userTo, index) => ({
+        userFrom,
+        userTo,
+        content,
+        created: index === 0 ? windowStart : windowEnd,
+        shadowHidden: index === 0,
+      })),
+      { userFrom, userTo: recipients[0], content, created: windowEnd },
+      ...[
+        ['Different Case', 'different case', 'different case'],
+        ['Punctuation!', 'Punctuation.', 'Punctuation.'],
+        ['Inner  space', 'Inner space', 'Inner space'],
+      ].flatMap(variants =>
+        recipients.map((userTo, index) => ({
+          userFrom,
+          userTo,
+          content: variants[index],
+          created: windowEnd,
+        })),
+      ),
+      ...Array.from({ length: 4 }, () => ({
+        userFrom,
+        userTo: recipients[0],
+        content: 'One recipient',
+        created: windowEnd,
+      })),
+      ...recipients.map((userTo, index) => ({
+        userFrom,
+        userTo,
+        content: 'Crosses the window',
+        created: [
+          new Date(+windowStart - 1),
+          windowEnd,
+          new Date(+windowEnd + 1),
+        ][index],
+      })),
+      ...recipients.map(userTo => ({
+        userFrom: users[0]._id,
+        userTo,
+        content: 'Another sender',
+        created: windowEnd,
+      })),
+    ]);
+    const path = `${endpoint(report._id)}/repeated-messages`;
+    await request(app).get(path).expect(403);
+    const result = await agent
+      .get(path)
+      .query({
+        sender: users[0]._id.toString(),
+        windowEnd: '2030-01-01',
+        category: 'Fictional extra query data',
+      })
+      .expect(200)
+      .expect('Cache-Control', 'no-store');
+    result.body.should.eql({
+      windowStart: windowStart.toISOString(),
+      windowEnd: windowEnd.toISOString(),
+      page: 1,
+      hasMore: false,
+      items: [
+        {
+          content,
+          recipientCount: 3,
+          sendCount: 4,
+          firstSent: windowStart.toISOString(),
+          lastSent: windowEnd.toISOString(),
+        },
+      ],
+    });
+    const log = await AuditLog.findOne({
+      user: users[0]._id,
+      route: '/api/admin/support/:requestId/repeated-messages',
+      'params.requestId': report._id.toString(),
+    }).orFail();
+    log.query!.should.eql({ page: 1 });
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects(new Error('Audit unavailable'));
+    const failed = await agent.get(path).expect(500);
+    Object.hasOwn(failed.body, 'items').should.equal(false);
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $unset: { sent: 1 } },
+    );
+    await agent.get(path).expect(400);
+    await SupportRequest.updateOne(
+      { _id: report._id },
+      { $unset: { reportedUser: 1 } },
+    );
+    await agent.get(path).expect(403);
+  });
+
+  it('requires password confirmation before Support or administrators can read repeated messages', async () => {
+    const review = await MessageThrottleReview.create({
+      sender: users[1]._id,
+      windowStart: new Date('2026-01-01T12:00:00.000Z'),
+      windowEnd: new Date('2026-01-01T13:00:00.000Z'),
+    });
+    const paths = [
+      `${endpoint(report._id)}/repeated-messages`,
+      `${reviewEndpoint(review._id)}/repeated-messages`,
+    ];
+    const routes = [
+      '/api/admin/support/:requestId/repeated-messages',
+      '/api/admin/support-message-reviews/:reviewId/repeated-messages',
+    ];
+
+    for (const index of [0, 3]) {
+      const { username, password } = raw[index];
+      const session = request.agent(app);
+      await session
+        .post('/api/auth/signin')
+        .send({ username, password })
+        .expect(200);
+
+      for (const path of paths) {
+        const { body } = await session
+          .get(path)
+          .expect(403)
+          .expect('Cache-Control', 'no-store');
+        body.code.should.equal('ADMIN_ELEVATION_REQUIRED');
+        Object.hasOwn(body, 'items').should.equal(false);
+      }
+      const audits = AuditLog.countDocuments({
+        user: users[index]._id,
+        route: { $in: routes },
+      });
+      (await audits.exec()).should.equal(0);
+
+      await utils.elevateAdminAccess(session, password);
+      for (const path of paths) {
+        const { body } = await session.get(path).expect(200);
+        body.items.should.eql([]);
+      }
+      (await audits.clone().exec()).should.equal(2);
+    }
+
+    const member = request.agent(app);
+    await utils.signIn(raw[2], member);
+    for (const path of paths) {
+      const { body } = await member.get(path).expect(403);
+      Object.hasOwn(body, 'code').should.equal(false);
+      Object.hasOwn(body, 'items').should.equal(false);
+    }
+  });
+
+  it('paginates repeat groups after counting all messages in the alert window', async () => {
+    const sender = users[1]._id;
+    const windowStart = new Date('2026-01-01T12:00:00.000Z');
+    const windowEnd = new Date('2026-01-01T13:00:00.000Z');
+    const review = await MessageThrottleReview.create({
+      sender,
+      windowStart,
+      windowEnd,
+    });
+    const recipients = [users[2]._id, users[3]._id, users[4]._id];
+    await Message.insertMany([
+      ...Array.from({ length: 51 }, (_, index) => {
+        const content = `Fictional repeat ${String(index).padStart(2, '0')}`;
+        return recipients.map(userTo => ({
+          userFrom: sender,
+          userTo,
+          content,
+          created: windowStart,
+        }));
+      }).flat(),
+      ...recipients.map(userTo => ({
+        userFrom: sender,
+        userTo,
+        content: 'Outside the alert',
+        created: new Date(+windowEnd + 1),
+      })),
+    ]);
+    const path = `${reviewEndpoint(review._id)}/repeated-messages`;
+    await request(app).get(path).expect(403);
+    const first = await agent.get(path).expect(200);
+    first.body.items.length.should.equal(50);
+    first.body.hasMore.should.equal(true);
+    const second = await agent.get(path).query({ page: 2 }).expect(200);
+    second.body.items.should.eql([
+      {
+        content: 'Fictional repeat 50',
+        recipientCount: 3,
+        sendCount: 3,
+        firstSent: windowStart.toISOString(),
+        lastSent: windowStart.toISOString(),
+      },
+    ]);
+    second.body.hasMore.should.equal(false);
   });
   it('triages requests, records access and keeps resolved investigations available', async () => {
     await Message.create([

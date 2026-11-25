@@ -220,7 +220,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                 {user && (
                   <p>
                     {t(
-                      'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. This access continues after the report is resolved.',
+                      'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. They can also see identical messages the reported member sent to three or more different people in the 30 days before the report. This access continues after the report is resolved.',
                     )}
                   </p>
                 )}

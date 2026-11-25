@@ -140,6 +140,8 @@ const MessageThrottleReview = mongoose.model<MessageThrottleReviewRecord>(
 const Experience = mongoose.model<InvestigationRecord>('Experience');
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 const PAGE_SIZE = 50;
+const REPORT_REVIEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const MIN_REPEAT_RECIPIENTS = 3;
 const LIST_FIELDS =
   '_id category user reportedUser sent email username reportMember status resolvedAt resolvedBy subject lastActivityAt zendeskTicketId';
 const REQUEST_FIELDS = `${LIST_FIELDS} message statusChangedAt statusRevision initialAttachments oversized truncated`;
@@ -544,9 +546,7 @@ export const retry = handler(async (req, res) => {
   return res.json(safe);
 });
 
-/** @esmNamed */
-export const investigation = handler(async (req, res) => {
-  const page = pageNumber(req.query);
+async function verifiedReport(req: SupportRequest) {
   const report = await requestById(req);
   if (
     report.category !== 'reportMember' ||
@@ -558,6 +558,13 @@ export const investigation = handler(async (req, res) => {
       status: 403,
     });
   }
+  return { ...report, user: report.user, reportedUser: report.reportedUser };
+}
+
+/** @esmNamed */
+export const investigation = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const report = await verifiedReport(req);
   const { kind } = req.params;
   if (!isOneOf(['messages', 'experiences'] as const, kind)) {
     throw invalid('Invalid investigation type.');
@@ -588,9 +595,7 @@ export const investigation = handler(async (req, res) => {
   });
 });
 
-/** @esmNamed */
-export const messageThrottleReview = handler(async (req, res) => {
-  const page = pageNumber(req.query);
+async function throttleReviewById(req: SupportRequest) {
   const reviewId = new mongoose.Types.ObjectId(objectId(req.params.reviewId));
   const review = await MessageThrottleReview.findById(reviewId).lean();
   if (!review) {
@@ -598,6 +603,26 @@ export const messageThrottleReview = handler(async (req, res) => {
       status: 404,
     });
   }
+  return review;
+}
+
+async function auditMessageReview(
+  req: SupportRequest,
+  page: number,
+  params: SupportParams,
+): Promise<void> {
+  await new AuditLog({
+    user: req.user._id,
+    route: req.route.path,
+    params,
+    query: { page },
+  }).save();
+}
+
+/** @esmNamed */
+export const messageThrottleReview = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const review = await throttleReviewById(req);
   const { sender, windowStart, windowEnd } = review;
   const messages = await Message.find({
     userFrom: sender,
@@ -609,12 +634,7 @@ export const messageThrottleReview = handler(async (req, res) => {
     .limit(PAGE_SIZE + 1)
     .populate('userTo', 'username')
     .lean();
-  await new AuditLog({
-    user: req.user._id,
-    route: req.route.path,
-    params: { reviewId: review._id.toString() },
-    query: { page },
-  }).save();
+  await auditMessageReview(req, page, { reviewId: review._id.toString() });
   return res.set('Cache-Control', 'no-store').json({
     windowStart,
     windowEnd,
@@ -622,6 +642,92 @@ export const messageThrottleReview = handler(async (req, res) => {
     page,
     hasMore: messages.length > PAGE_SIZE,
   });
+});
+
+async function sendRepeatedMessages(
+  req: SupportRequest,
+  res: SupportResponse,
+  page: number,
+  sender: Types.ObjectId,
+  windowStart: Date,
+  windowEnd: Date,
+) {
+  const items = await Message.aggregate([
+    {
+      $match: {
+        userFrom: sender,
+        created: { $gte: windowStart, $lte: windowEnd },
+        userTo: { $type: 'objectId' },
+        content: { $type: 'string', $ne: '' },
+      },
+    },
+    {
+      $group: {
+        _id: { content: '$content', recipient: '$userTo' },
+        sendCount: { $sum: 1 },
+        firstSent: { $min: '$created' },
+        lastSent: { $max: '$created' },
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.content',
+        sendCount: { $sum: '$sendCount' },
+        recipientCount: { $sum: 1 },
+        firstSent: { $min: '$firstSent' },
+        lastSent: { $max: '$lastSent' },
+      },
+    },
+    { $match: { recipientCount: { $gte: MIN_REPEAT_RECIPIENTS } } },
+    { $sort: { recipientCount: -1, sendCount: -1, lastSent: -1, _id: 1 } },
+    { $skip: (page - 1) * PAGE_SIZE },
+    { $limit: PAGE_SIZE + 1 },
+    {
+      $project: {
+        _id: 0,
+        content: '$_id',
+        sendCount: 1,
+        recipientCount: 1,
+        firstSent: 1,
+        lastSent: 1,
+      },
+    },
+  ])
+    .collation({ locale: 'simple' })
+    .option({ maxTimeMS: 5_000 });
+  await auditMessageReview(req, page, req.params);
+  return res.set('Cache-Control', 'no-store').json({
+    windowStart,
+    windowEnd,
+    items: items.slice(0, PAGE_SIZE),
+    page,
+    hasMore: items.length > PAGE_SIZE,
+  });
+}
+
+/** @esmNamed */
+export const reportRepeatedMessages = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const report = await verifiedReport(req);
+  if (!report.sent || !Number.isFinite(report.sent.getTime())) {
+    throw invalid('This report has no valid submission time.');
+  }
+  const windowStart = new Date(report.sent.getTime() - REPORT_REVIEW_WINDOW_MS);
+  return sendRepeatedMessages(
+    req,
+    res,
+    page,
+    report.reportedUser,
+    windowStart,
+    report.sent,
+  );
+});
+
+/** @esmNamed */
+export const throttleRepeatedMessages = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const { sender, windowStart, windowEnd } = await throttleReviewById(req);
+  return sendRepeatedMessages(req, res, page, sender, windowStart, windowEnd);
 });
 
 function escapeRegex(value: string): string {
@@ -797,6 +903,8 @@ const api = {
   retry,
   investigation,
   messageThrottleReview,
+  reportRepeatedMessages,
+  throttleRepeatedMessages,
   searchMembers,
   member,
 };

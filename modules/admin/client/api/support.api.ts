@@ -95,6 +95,16 @@ export interface MessageThrottleReview extends Page<{
   windowStart: string;
   windowEnd: string;
 }
+export interface RepeatedMessageReview extends Page<{
+  content: string;
+  sendCount: number;
+  recipientCount: number;
+  firstSent: string;
+  lastSent: string;
+}> {
+  windowStart: string;
+  windowEnd: string;
+}
 export async function load<T>(path: string): Promise<T> {
   const { data } = await http.get<T>(path);
   return data;
