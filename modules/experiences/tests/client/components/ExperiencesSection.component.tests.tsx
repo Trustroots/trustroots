@@ -89,6 +89,32 @@ describe('<ExperiencesSection />', () => {
     expect(screen.queryByTestId('experience-item')).not.toBeInTheDocument();
   });
 
+  it('only makes public tags interactive in a mixed section', () => {
+    const pending = { ...experiences[1], public: false };
+    const tagFilters = {
+      interaction: 'met',
+      recommendation: '',
+      toggle: vi.fn(),
+    } as const;
+
+    render(
+      <ExperiencesSection
+        experiences={[experiences[0], pending]}
+        onReceiverProfile
+        tagFilters={tagFilters}
+      />,
+    );
+
+    expect(mockExperience).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ tagFilters }),
+    );
+    expect(mockExperience).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ tagFilters: undefined }),
+    );
+  });
+
   it('passes onReceiverProfile true through to each experience', () => {
     render(
       <ExperiencesSection experiences={experiences} onReceiverProfile={true} />,

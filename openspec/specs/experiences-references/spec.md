@@ -90,14 +90,16 @@ prevent a duplicate experience from being created.
 ### Requirement: Experiences awaiting a reply on the owner's profile
 
 The web Experiences page SHALL group received Experiences with no reciprocal
-Experience for the signed-in profile owner.
+Experience for the signed-in profile owner. If their reciprocal Experience was
+removed, the received Experience SHALL remain in its ordinary list without a
+reply prompt. The removed content SHALL stay hidden.
 
 #### Scenario: An owner has pending and public Experiences awaiting a reply
 
 - **WHEN** an owner opens their Experiences page
 - **THEN** the page shows a single section of received Experiences awaiting a reply
 - **AND** pending cards appear first, ordered by the earliest publication deadline, with the existing countdown and reply action
-- **AND** public cards follow, ordered newest first, with their existing reply action
+- **AND** public cards follow, ordered newest first by default, with their existing reply action
 - **AND** public totals include those cards
 - **AND** each Experience card appears once
 
@@ -130,10 +132,11 @@ and recommendation and ordering by date.
 #### Scenario: A member narrows a public list
 
 - **WHEN** a visitor selects interaction or recommendation filters
-- **THEN** the list shows primary Experiences matching every selected filter and retains their attached replies
+- **THEN** the list shows primary public Experiences matching every selected filter, including those awaiting a reply, and retains their attached replies
 - **AND** a missing interaction or recommendation is excluded from matching an affirmative category
-- **AND** the visitor can set newest or oldest first
-- **AND** the public summary and owner's reply section are unaffected
+- **AND** the visitor can set newest or oldest first within each group of public cards
+- **AND** the result count covers both groups of public cards
+- **AND** the public summary and pending Experiences are unaffected
 
 #### Scenario: A member uses a public Experience tag as a filter
 
@@ -242,7 +245,7 @@ until the ordinary automatic publication deadline.
 
 #### Scenario: A queued reminder is no longer applicable
 
-- **WHEN** the Experience is public, removed, expired or already has a reciprocal Experience at delivery
+- **WHEN** the Experience is public, removed, expired or already has a reciprocal Experience at delivery, including one that was removed
 - **THEN** the worker skips the email
 - **AND** it also skips unavailable or restricted members and blocked pairs
 

@@ -14,6 +14,7 @@ import express from './../../../../config/lib/express.mts';
 interface ExperienceListItem {
   userFrom: { _id: string; avatarVersion?: string };
   userTo: { _id: string };
+  replyBlocked?: true;
   response: {
     created: string;
     interactions: { met: boolean; guest: boolean; host: boolean };
@@ -246,6 +247,72 @@ describe('Read experiences by userTo Id', () => {
       );
       should(experience).not.be.undefined();
       should(experience.userFrom.avatarVersion).eql(version);
+    });
+    it('only tells the recipient when a removed reciprocal Experience blocks another reply', async () => {
+      const experiences = mongoose.connection.collection('experiences');
+      const removedAt = new Date();
+      await experiences.updateOne(
+        { userFrom: users[0]._id, userTo: users[1]._id },
+        { $set: { removedAt } },
+      );
+      await experiences.insertMany([
+        { userFrom: users[2]._id, userTo: users[1]._id, removedAt },
+        { userFrom: users[2]._id, userTo: users[4]._id, removedAt },
+        {
+          userFrom: users[2]._id,
+          userTo: users[0]._id,
+          created: removedAt,
+          public: true,
+          interactions: { met: true, host: false, guest: false },
+          recommend: 'yes',
+        },
+      ]);
+
+      const distinct = sinon.spy(mongoose.model('Experience'), 'distinct');
+      const profile = `/api/experiences?userTo=${users[0]._id}`;
+      const { body: ownerRows } = await agent.get(profile).expect(200);
+      const ownerRow = ownerRows.find(
+        (ref: ExperienceListItem) => ref.userFrom._id === users[1].id,
+      );
+      expect(ownerRow).toMatchObject({ response: null, replyBlocked: true });
+      expect(
+        ownerRows.find(
+          (ref: ExperienceListItem) => ref.userFrom._id === users[4].id,
+        ),
+      ).not.toHaveProperty('replyBlocked');
+      expect(
+        ownerRows.find(
+          (ref: ExperienceListItem) => ref.userFrom._id === users[2].id,
+        )?.response,
+      ).toBeTruthy();
+      expect(distinct.firstCall.args).toEqual([
+        'userTo',
+        {
+          userFrom: users[0]._id,
+          userTo: {
+            $in: expect.arrayContaining([
+              users[1]._id,
+              users[4]._id,
+              users[5]._id,
+            ]),
+          },
+          removedAt: { $exists: true },
+        },
+      ]);
+      expect(distinct.firstCall.args[1]).toHaveProperty(
+        ['userTo', '$in', 'length'],
+        3,
+      );
+
+      const visitor = request.agent(app);
+      await utils.signIn(_users[2], visitor);
+      const { body: visitorRows } = await visitor.get(profile).expect(200);
+      const visitorRow = visitorRows.find(
+        (ref: ExperienceListItem) => ref.userFrom._id === users[1].id,
+      );
+      expect(visitorRow).toMatchObject({ response: null });
+      expect(visitorRow).not.toHaveProperty('replyBlocked');
+      expect(distinct.callCount).toBe(1);
     });
     it('[param userTo] userTo is self, respond with all public and pending experiences to userTo', async () => {
       const { body } = await agent

@@ -160,13 +160,7 @@ describe('day-11 Experience reply reminders', () => {
     'sends the sharing link to the current recipient without feedback (HTTPS %s)',
     async https => {
       sinon.stub(config, 'https').value(https);
-      const { id, author, recipient, authorUsername, recipientEmail } =
-        await experienceAt(11);
-      await experiences.insertOne({
-        userFrom: recipient,
-        userTo: author,
-        removedAt: now,
-      });
+      const { id, authorUsername, recipientEmail } = await experienceAt(11);
       await deliver(String(id));
       expect(sendMail).toHaveBeenCalledTimes(1);
       const [email] = sendMail.mock.calls[0];
@@ -181,6 +175,17 @@ describe('day-11 Experience reply reminders', () => {
       expect(email.text).not.toContain('Sensitive feedback');
     },
   );
+
+  it('skips delivery when a removed reciprocal Experience prevents another reply', async () => {
+    const { id, author, recipient } = await experienceAt(12);
+    await experiences.insertOne({
+      userFrom: recipient,
+      userTo: author,
+      removedAt: now,
+    });
+    await deliver(String(id));
+    expect(sendMail).not.toHaveBeenCalled();
+  });
 
   it('does not substitute another record when the queued Experience is missing', async () => {
     await experienceAt(12);

@@ -105,52 +105,65 @@ export default function ListExperiences({
   }
 
   const needsReply = (experience: Experience) =>
-    onReceiverProfile && !experience.response;
-  const awaitingReply = [...pendingExperiences, ...publicExperiences].filter(
-    needsReply,
-  );
+    onReceiverProfile && !experience.response && !experience.replyBlocked;
+  const pendingAwaitingReply = pendingExperiences.filter(needsReply);
   const otherPending = pendingExperiences.filter(
-    experience => !needsReply(experience),
-  );
-  const otherPublic = publicExperiences.filter(
     experience => !needsReply(experience),
   );
 
   return (
     <>
-      {awaitingReply.length > 0 && (
-        <section aria-labelledby="experiences-awaiting-reply-heading">
-          <h3 id="experiences-awaiting-reply-heading">
-            {t('Experiences awaiting your reply')}
-          </h3>
-          <ExperiencesSection experiences={awaitingReply} onReceiverProfile />
-        </section>
-      )}
-      {otherPending.length > 0 && (
-        <>
-          <div className="tw:grid-row">
-            <div className="tw:grid-col-12 tw:sm:grid-col-6">
-              <h4 className="text-muted">
-                {t('Experiences pending publishing') as string}
-              </h4>
-            </div>
-          </div>
-          <ExperiencesSection
-            experiences={otherPending}
-            onReceiverProfile={onReceiverProfile}
-          />
-        </>
-      )}
       {hasPublicExperiences && (
         <ExperienceCounts experiences={publicExperiences} />
       )}
-      {otherPublic.length > 0 && (
-        <PublicExperiencesList
-          key={profile._id}
-          experiences={otherPublic}
-          onReceiverProfile={onReceiverProfile}
-        />
-      )}
+      <PublicExperiencesList key={profile._id} experiences={publicExperiences}>
+        {(filtered, tagFilters) => {
+          const awaitingReply = [
+            ...pendingAwaitingReply,
+            ...filtered.filter(needsReply),
+          ];
+          const otherPublic = filtered.filter(
+            experience => !needsReply(experience),
+          );
+
+          return (
+            <>
+              {awaitingReply.length > 0 && (
+                <section aria-labelledby="experiences-awaiting-reply-heading">
+                  <h3 id="experiences-awaiting-reply-heading">
+                    {t('Experiences awaiting your reply')}
+                  </h3>
+                  <ExperiencesSection
+                    experiences={awaitingReply}
+                    onReceiverProfile
+                    tagFilters={tagFilters}
+                  />
+                </section>
+              )}
+              {otherPending.length > 0 && (
+                <>
+                  <div className="tw:grid-row">
+                    <div className="tw:grid-col-12 tw:sm:grid-col-6">
+                      <h4 className="text-muted">
+                        {t('Experiences pending publishing') as string}
+                      </h4>
+                    </div>
+                  </div>
+                  <ExperiencesSection
+                    experiences={otherPending}
+                    onReceiverProfile={onReceiverProfile}
+                  />
+                </>
+              )}
+              <ExperiencesSection
+                experiences={otherPublic}
+                onReceiverProfile={onReceiverProfile}
+                tagFilters={tagFilters}
+              />
+            </>
+          );
+        }}
+      </PublicExperiencesList>
     </>
   );
 }

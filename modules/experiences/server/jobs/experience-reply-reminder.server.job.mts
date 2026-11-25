@@ -89,12 +89,12 @@ export async function sendExperienceReplyReminder(job: Job<ReminderData>) {
   if (!experience) return;
 
   const { userFrom, userTo } = experience;
-  const replied = await experiences.exists({
+  // A removed reply still prevents the recipient from sharing another one.
+  const hasReciprocalExperience = await experiences.exists({
     userFrom: userTo,
     userTo: userFrom,
-    removedAt: { $exists: false },
   });
-  if (replied) return;
+  if (hasReciprocalExperience) return;
 
   const members = await mongoose
     .model<ReminderMember>('User')

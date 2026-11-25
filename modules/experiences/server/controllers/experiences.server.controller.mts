@@ -720,13 +720,35 @@ service.readMany = async function readMany(req, res, next) {
     const pairedUpExperiences = pendingAuthored
       ? experiences.map(experience => [experience, null] as const)
       : pairUpExperiences(experiences, userToId);
-    const experiencesWithResponses = pairedUpExperiences.map(
+    const possibleReplyAuthors = pairedUpExperiences.flatMap(
       ([experience, response]) =>
-        prepareSendingToClient<Types.ObjectId, Date, ExperienceUserRecord>(
+        !response && selfId.equals(experience.userTo._id)
+          ? [experience.userFrom._id]
+          : [],
+    );
+    // A removed reply still occupies the reciprocal slot. Only the recipient
+    // needs to know that replying is unavailable.
+    const removedReplyRecipients = new Set<string>();
+    if (possibleReplyAuthors.length) {
+      const recipients = await Experience.distinct('userTo', {
+        userFrom: selfId,
+        userTo: { $in: possibleReplyAuthors },
+        removedAt: { $exists: true },
+      });
+      for (const recipient of recipients)
+        removedReplyRecipients.add(String(recipient));
+    }
+    const experiencesWithResponses = pairedUpExperiences.map(
+      ([experience, response]) => ({
+        ...prepareSendingToClient<Types.ObjectId, Date, ExperienceUserRecord>(
           experience,
           response,
           selfId,
         ),
+        ...(removedReplyRecipients.has(String(experience.userFrom._id))
+          ? { replyBlocked: true as const }
+          : {}),
+      }),
     );
 
     throw new ResponseError({

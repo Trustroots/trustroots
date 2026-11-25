@@ -19,8 +19,9 @@ import uuid
 SERVICES = ('webapp', 'worker')
 
 
-def run(args, timeout=60, capture=True):
+def run(args, timeout=60, capture=True, input_text=None):
     result = subprocess.run(args, timeout=timeout, check=True, text=True,
+                            input=input_text,
                             stdout=subprocess.PIPE if capture else None,
                             stderr=subprocess.PIPE if capture else None)
     return result.stdout.strip() if capture else ''
@@ -224,15 +225,43 @@ def complete_event(args, path, event):
         # Docker and filesystem errors may contain private configuration.
         print('WARNING: Success receipt incomplete for event ' + event['eventId'] +
               '; use record-success to recheck and recover it. No rollback was requested.')
+        return
+    if completed['origin'] in ('https://trustroots.org', 'https://www.trustroots.org'):
+        try:
+            notify_event(args, completed)
+        except RuntimeError as error:
+            print('WARNING: ' + str(error) + ' No rollback was requested.')
 
 
-def recover_event(args, username, password):
+def read_event(args):
     path = args.compose.parent / '.trustroots-deployment-events' / (args.event_id + '.json')
     event = json.loads(path.read_text())
     if event.get('eventId') != args.event_id or event.get('schemaVersion') != 1 or \
             event.get('origin') != args.url or event.get('status') not in ('pending', 'succeeded'):
         raise RuntimeError('Invalid deployment event or origin mismatch')
     validate_images(event['images'])
+    return path, event
+
+
+def notify_event(args, event):
+    if event['status'] != 'succeeded':
+        raise RuntimeError('Deployment notifications require a successful receipt')
+    try:
+        output = run(compose(args) + ['exec', '-T', 'worker', 'node',
+                    'bin/queue-deployment-notifications.mts'],
+                    input_text=json.dumps(event), timeout=120)
+        count = re.search(r'^Deployment notification destinations: ([0-9]+)\Z', output, re.M)
+        if count is None:
+            raise RuntimeError('Invalid notification count')
+    except Exception:
+        raise RuntimeError('Deployment notification handoff incomplete for event ' +
+                           event['eventId'] + '; use notify-success to resume.') from None
+    print('Deployment notification queueing complete for event ' +
+          event['eventId'] + ': ' + count[1] + ' destinations.')
+
+
+def recover_event(args, username, password):
+    path, event = read_event(args)
     if event['status'] == 'succeeded':
         print('Deployment success already recorded: ' + args.event_id)
         return
@@ -251,28 +280,35 @@ def fail_event(path, event):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['preflight', 'deploy', 'rollback', 'record-success'])
-    parser.add_argument('--event-id', help='Existing pending UUID, required for record-success')
+    parser.add_argument('action', choices=['preflight', 'deploy', 'rollback', 'record-success', 'notify-success'])
+    parser.add_argument('--event-id', help='Receipt UUID for record-success or notify-success')
     parser.add_argument('--compose', type=Path, required=True)
-    parser.add_argument('--media-mount', type=Path, required=True)
+    parser.add_argument('--media-mount', type=Path, help='Required media filesystem for deployment and readiness checks')
     parser.add_argument('--url', required=True, help='Canonical public HTTPS origin')
     args = parser.parse_args()
-    if args.action == 'record-success':
+    if args.action in ('record-success', 'notify-success'):
         try:
             if str(uuid.UUID(args.event_id)) != args.event_id:
                 raise ValueError()
         except (ValueError, TypeError, AttributeError):
-            parser.error('record-success requires a canonical UUID --event-id')
+            parser.error(args.action + ' requires a canonical UUID --event-id')
     elif args.event_id is not None:
-        parser.error('--event-id is only valid with record-success')
+        parser.error('--event-id is only valid with record-success or notify-success')
     args.compose = args.compose.resolve()
-    args.media_mount = args.media_mount.resolve()
+    if args.action != 'notify-success':
+        if args.media_mount is None:
+            parser.error('--media-mount is required for ' + args.action)
+        args.media_mount = args.media_mount.resolve()
     parsed = urllib.parse.urlsplit(args.url)
     if parsed.scheme != 'https' or not parsed.netloc or parsed.path or parsed.query or parsed.fragment or parsed.username:
         parser.error('--url must be a plain HTTPS origin, without a trailing slash')
     state = args.compose.parent / '.trustroots-previous-images.json'
     with open(args.compose.parent / '.trustroots-deploy.lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if args.action == 'notify-success':
+            _, event = read_event(args)
+            notify_event(args, event)
+            return
         preflight(args, runtime=args.action != 'rollback')
         if args.action == 'preflight':
             print('Deployment prerequisites passed.')
