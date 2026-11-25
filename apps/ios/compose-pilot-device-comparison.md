@@ -20,6 +20,9 @@ Relaunch Compose through Xcode so it receives the launch argument each time.
 Connect the iPhone by USB for the Airplane Mode cases so Xcode can still
 relaunch the app with Wi-Fi turned off.
 
+A separate Debug build can open directly into Compose from the Home Screen by
+setting the Boolean `TrustrootsSharedMemberPilot` to `true` in its Info.plist.
+
 | Area                      | On-device procedure                                                                                                                                                                                                  | Record for SwiftUI and Compose                                                                                                           |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Session and navigation    | Sign in, open your profile, open the inbox and a conversation, and navigate back. Background and reopen the app, then force quit and relaunch. In Compose, return to the dashboard and choose **Exit shared pilot**. | Session retention, extra sign-in prompts, Back behaviour and the destination after exiting.                                              |

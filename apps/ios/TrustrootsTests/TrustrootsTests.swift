@@ -153,6 +153,45 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(configuration?.baseURL.port, 13001)
     }
 
+    func testBuildDefaultsToLiveTrustrootsOutsideDebugSimulator() {
+#if DEBUG && targetEnvironment(simulator)
+        XCTAssertEqual(TrustrootsAPIConfiguration.buildDefaultURLString, "http://127.0.0.1:13001")
+#else
+        XCTAssertEqual(TrustrootsAPIConfiguration.buildDefaultURLString, "https://www.trustroots.org")
+#endif
+    }
+
+    @MainActor
+    func testRetiredPreviewSessionDoesNotCarryCredentialsToDefaultServer() throws {
+        let defaults = UserDefaults.standard
+        let serverKey = "trustroots.apiServerURL"
+        let memberKey = "trustroots.signedInMember"
+        let previousServer = defaults.object(forKey: serverKey)
+        let previousMember = defaults.object(forKey: memberKey)
+        let previousScope = defaults.object(forKey: OfflineResponseCache.scopeDefaultsKey)
+        defer {
+            defaults.set(previousServer, forKey: serverKey)
+            defaults.set(previousMember, forKey: memberKey)
+            defaults.set(previousScope, forKey: OfflineResponseCache.scopeDefaultsKey)
+        }
+        defaults.set("https://pr2777.test.trustroots.org", forKey: serverKey)
+        let member = SignedInMember(username: "mira", displayName: "Mira Example", isPublic: true, email: nil, newsletter: nil)
+        defaults.set(try JSONEncoder().encode(member), forKey: memberKey)
+        let credentials = InMemoryMobileCredentialStore()
+        XCTAssertTrue(credentials.save(MobileCredentials(accessToken: "example-access", refreshToken: "example-refresh")))
+
+        let session = MemberSessionStore(
+            credentialStore: credentials,
+            nostrIdentity: NostrIdentityManager(keyStore: InMemoryNostrKeyStorage(), clearPermissions: {})
+        )
+
+        XCTAssertEqual(session.serverURLString, TrustrootsAPIConfiguration.buildDefaultURLString)
+        XCTAssertNil(session.member)
+        XCTAssertNil(credentials.load())
+        XCTAssertNil(defaults.object(forKey: serverKey))
+        XCTAssertNil(defaults.object(forKey: memberKey))
+    }
+
     func testAPIConfigurationRejectsMissingOrUnsupportedURLs() {
         XCTAssertNil(TrustrootsAPIConfiguration(baseURLString: "localhost:3001"))
         XCTAssertNil(TrustrootsAPIConfiguration(baseURLString: "ftp://127.0.0.1:3001"))

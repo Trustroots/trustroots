@@ -5,16 +5,11 @@ import SwiftUI
 
 struct TrustrootsAPIConfiguration: Equatable {
     static let localDefaultURLString = "http://127.0.0.1:13001"
-    static let catTestURLString = "https://pr2777.test.trustroots.org"
     static let productionURLString = "https://www.trustroots.org"
 
     static var buildDefaultURLString: String {
-#if DEBUG
-#if targetEnvironment(simulator)
+#if DEBUG && targetEnvironment(simulator)
         localDefaultURLString
-#else
-        catTestURLString
-#endif
 #else
         productionURLString
 #endif

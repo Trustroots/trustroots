@@ -98,13 +98,14 @@ internal fun PilotButton(
     label: String,
     enabled: Boolean = true,
     primary: Boolean = false,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val palette = pilotPalette
     val shape = RoundedCornerShape(12.dp)
     val emphasis = if (enabled) 1f else 0.5f
     Box(
-        Modifier
+        modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
             .clip(shape)
             .background(if (primary) palette.accent.copy(alpha = emphasis) else palette.surface)

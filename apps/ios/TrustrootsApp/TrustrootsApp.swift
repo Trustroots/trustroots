@@ -85,6 +85,7 @@ struct TrustrootsApp: App {
     private static var sharedMemberPilotLaunchArgumentEnabled: Bool {
 #if DEBUG
         ProcessInfo.processInfo.arguments.contains("--shared-member-pilot")
+            || (Bundle.main.object(forInfoDictionaryKey: "TrustrootsSharedMemberPilot") as? Bool == true)
 #else
         false
 #endif

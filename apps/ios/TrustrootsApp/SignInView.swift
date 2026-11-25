@@ -131,8 +131,8 @@ struct SignInView: View {
                             Picker("API server", selection: $session.serverURLString) {
                                 Text("Local API")
                                     .tag(TrustrootsAPIConfiguration.localDefaultURLString)
-                                Text("PR 2777")
-                                    .tag(TrustrootsAPIConfiguration.catTestURLString)
+                                Text("Live Trustroots")
+                                    .tag(TrustrootsAPIConfiguration.productionURLString)
                             }
                             .pickerStyle(.segmented)
                             .disabled(session.isSigningIn)

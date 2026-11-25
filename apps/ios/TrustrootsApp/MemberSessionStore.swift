@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class MemberSessionStore: ObservableObject {
     private static let persistedMemberKey = "trustroots.signedInMember"
+    private static let persistedServerKey = "trustroots.apiServerURL"
 
     @Published private(set) var member: SignedInMember?
     @Published private(set) var isSigningIn = false
@@ -26,17 +27,25 @@ final class MemberSessionStore: ObservableObject {
         self.nostrIdentity = nostrIdentity ?? .shared
         self.api = api
         self.credentialStore = credentialStore
-        let persistedServerURL = UserDefaults.standard.string(forKey: "trustroots.apiServerURL")
+        let defaults = UserDefaults.standard
+        let persistedServerURL = defaults.string(forKey: Self.persistedServerKey)
         let retiredDevelopmentServers = [
             "http://127.0.0.1:3001",
             "https://cat.trustroots.org",
+            "https://pr2777.test.trustroots.org",
         ]
+        let usesRetiredServer = serverURLString == nil
+            && persistedServerURL.map(retiredDevelopmentServers.contains) == true
         self.serverURLString = serverURLString
-            ?? (persistedServerURL.map(retiredDevelopmentServers.contains) == true
-                ? TrustrootsAPIConfiguration.buildDefaultURLString
-                : persistedServerURL ?? TrustrootsAPIConfiguration.buildDefaultURLString)
-        let storedCredentials = credentialStore.load()
-        self.member = storedCredentials == nil ? nil : Self.loadPersistedMember()
+            ?? (usesRetiredServer ? nil : persistedServerURL)
+            ?? TrustrootsAPIConfiguration.buildDefaultURLString
+        if usesRetiredServer {
+            // Credentials issued by a preview server must stay off the replacement server.
+            credentialStore.delete()
+            defaults.removeObject(forKey: Self.persistedMemberKey)
+            defaults.removeObject(forKey: Self.persistedServerKey)
+        }
+        self.member = credentialStore.load() == nil ? nil : Self.loadPersistedMember()
         updateCacheScope()
     }
 
@@ -62,7 +71,7 @@ final class MemberSessionStore: ObservableObject {
                 throw TrustrootsAPIError.serverMessage("Secure credential storage is unavailable.")
             }
             member = mobileSession.member
-            UserDefaults.standard.set(serverURLString, forKey: "trustroots.apiServerURL")
+            UserDefaults.standard.set(serverURLString, forKey: Self.persistedServerKey)
             if let encodedMember = try? JSONEncoder().encode(mobileSession.member) {
                 UserDefaults.standard.set(encodedMember, forKey: Self.persistedMemberKey)
             }

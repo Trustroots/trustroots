@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.ui.common.rememberBuildDate
-import org.trustroots.android.ui.icons.TrustrootsLogo
+import org.trustroots.shared.ui.icons.TrustrootsLogo
 
 @Composable
 internal fun StartupScreen(firstName: String?) {
