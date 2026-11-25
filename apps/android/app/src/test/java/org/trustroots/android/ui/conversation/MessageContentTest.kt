@@ -84,6 +84,35 @@ class MessageContentTest {
         assertEquals("https://preview.example/safety", (link.item as LinkAnnotation.Url).url)
     }
 
+    @Test fun serverTextIsUsedForBlankHtmlAndMessagesWithoutLinks() {
+        val serverText = "First\n\nSecond"
+
+        assertEquals(serverText, messageContent("<p><br></p>", backend, serverText).text)
+        assertEquals(serverText, messageContent("<p>First</p><p>Second</p>", backend, serverText).text)
+    }
+
+    @Test fun differentServerTextKeepsTheHtmlLinkLabel() {
+        val message = messageContent("<a href=\"/safety\">Safety</a>", backend, "Different")
+
+        assertEquals("Safety", message.text)
+        val link = message.getLinkAnnotations(0, message.length).single()
+        assertEquals("Safety", message.text.substring(link.start, link.end))
+        assertEquals("https://preview.example/safety", (link.item as LinkAnnotation.Url).url)
+    }
+
+    @Test fun linksWithOnlyWhitespaceHaveNoLabelInServerText() {
+        val html = "Before<a href=\"/safety\">&nbsp;</a>after <a href=\"/faq\">FAQ</a>!"
+        val legacy = messageContent(html, backend)
+        assertEquals(2, legacy.getLinkAnnotations(0, legacy.length).size)
+
+        val message = messageContent(html, backend, "Before\nafter FAQ!")
+
+        assertEquals("Before\nafter FAQ!", message.text)
+        val link = message.getLinkAnnotations(0, message.length).single()
+        assertEquals("FAQ", message.text.substring(link.start, link.end))
+        assertEquals("https://preview.example/faq", (link.item as LinkAnnotation.Url).url)
+    }
+
     @Test fun explicitDefaultHttpPortMatchesTheBackend() {
         val message = messageContent(
             "<a href=\"http://preview.example:80/safety\">Safety</a>",

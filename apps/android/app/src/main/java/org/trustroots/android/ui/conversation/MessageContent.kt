@@ -40,9 +40,10 @@ internal fun messageContent(content: String, backendURL: String, plainText: Stri
         append(if (useServerText) serverText else parsed.substring(start, end))
         for ((destination, linkStart, linkEnd) in links) {
             if (useServerText) {
-                val first = parsedCharacters.indexOfFirst { it >= linkStart }
-                val last = parsedCharacters.indexOfLast { it < linkEnd }
-                if (first < 0 || last < first) continue
+                val coveredCharacters = linkStart until linkEnd
+                val first = parsedCharacters.indexOfFirst { it in coveredCharacters }
+                if (first < 0) continue
+                val last = parsedCharacters.indexOfLast { it in coveredCharacters }
                 addLink(LinkAnnotation.Url(destination, linkStyle), plainCharacters[first], plainCharacters[last] + 1)
             } else {
                 addLink(LinkAnnotation.Url(destination, linkStyle), linkStart - start, linkEnd - start)
