@@ -304,7 +304,7 @@ class HostMapMarkerJourneyTest {
         assertEquals(0, closedNotesConnections.get())
 
         compose.onNodeWithContentDescription("Search mode").performClick()
-        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("searchModeOption-1").performClick()
         compose.onNodeWithText("Find a member").assertIsDisplayed()
         assertEquals(1, closedNotesConnections.get())
     }

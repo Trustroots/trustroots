@@ -81,7 +81,7 @@ class SearchModeBackNavigationJourneyTest {
             }
             compose.onNodeWithTag("memberSearchField").assertDoesNotExist()
             compose.onNodeWithContentDescription("Search mode").performClick()
-            compose.onNodeWithText("Members").performClick()
+            compose.onNodeWithTag("searchModeOption-1").performClick()
             compose.onNodeWithTag("memberSearchField").assert(
                 SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")),
             )
@@ -116,7 +116,7 @@ class SearchModeBackNavigationJourneyTest {
             compose.onNodeWithTag("memberSearchField").performTextReplacement("quiet heron")
             hideTestKeyboard()
             compose.onNodeWithContentDescription("Search mode").performClick()
-            compose.onNodeWithText("Members").performClick()
+            compose.onNodeWithTag("searchModeOption-1").performClick()
 
             compose.onNodeWithTag("memberSearchField").assertTextContains("quiet heron")
             org.junit.Assert.assertFalse(rootBack.get())
@@ -159,7 +159,7 @@ class SearchModeBackNavigationJourneyTest {
                     .fetchSemanticsNodes().isNotEmpty()
             }
             compose.onNodeWithContentDescription("Search mode").performClick()
-            compose.onNodeWithText("Members").performClick()
+            compose.onNodeWithTag("searchModeOption-1").performClick()
             compose.onNodeWithText("Find a member").assertIsDisplayed()
 
             compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }

@@ -947,7 +947,7 @@ class Navigation3MemberShellJourneyTest {
 
     private fun selectMembersMode() {
         compose.onNodeWithContentDescription("Search mode").performClick()
-        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("searchModeOption-1").performClick()
         compose.onNodeWithTag("memberSearchField").assertIsDisplayed()
     }
 
