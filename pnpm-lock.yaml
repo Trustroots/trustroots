@@ -570,9 +570,6 @@ importers:
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
-      '@trustroots/support':
-        specifier: workspace:*
-        version: link:../support
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users

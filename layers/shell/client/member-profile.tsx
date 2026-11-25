@@ -1,12 +1,15 @@
 import React from 'react';
 import { profileContacts } from '@/modules/contacts/client/profile-contacts';
-import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
+import { createProfileExperiences } from '@/modules/experiences/client/profile-experiences';
 import Offers from '@/modules/offers/client/components/Offers.component';
+import { reportMember } from '@/modules/support/client/api/support.api';
 import { memberCircles } from '@/modules/tribes/client/member-circles';
 import { profileQuery } from '@/modules/users/client/api/profile-queries';
 import ProfilePage, {
   type ProfilePageProps,
 } from '@/modules/users/client/components/ProfilePage.component';
+
+const profileExperiences = createProfileExperiences(reportMember);
 
 export function memberProfileQuery(
   username: string,

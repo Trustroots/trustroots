@@ -9,7 +9,6 @@ import { match } from 'ts-pattern';
 import '@/config/client/i18n';
 import { createValidator } from '@/modules/core/client/utils/validation';
 import { readApiError } from '@/modules/users/client/utils/api-error';
-import * as supportApi from '@/modules/support/client/api/support.api';
 import * as experiencesApi from '../api/experiences.api';
 import DuplicateInfo from './create-experience/DuplicateInfo';
 import ExperienceWithSelfInfo from './create-experience/ExperienceWithSelfInfo';
@@ -29,29 +28,29 @@ import type {
 } from '../../shared/experience';
 import { Alert } from '@trustroots/ui/Alert';
 
-export default function CreateExperience({
-  userFrom,
-  userTo,
-}: {
+export interface CreateExperienceProps {
+  reportMember: (
+    member: { username: string },
+    message: string,
+  ) => Promise<void>;
   userFrom: ExperienceUser;
   userTo: ExperienceUser & { displayName: string };
-}) {
+}
+
+export default function CreateExperience(props: CreateExperienceProps) {
   return (
     <ExperienceForm
-      key={`${userFrom._id}:${userTo._id}`}
-      userFrom={userFrom}
-      userTo={userTo}
+      key={`${props.userFrom._id}:${props.userTo._id}`}
+      {...props}
     />
   );
 }
 
 function ExperienceForm({
+  reportMember,
   userFrom,
   userTo,
-}: {
-  userFrom: ExperienceUser;
-  userTo: ExperienceUser & { displayName: string };
-}) {
+}: CreateExperienceProps) {
   const { t } = useTranslation('experiences') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
@@ -173,7 +172,7 @@ function ExperienceForm({
     setIsReporting(true);
     setReportError(false);
     try {
-      await supportApi.reportMember(userTo, reportMessage);
+      await reportMember(userTo, reportMessage);
       setIsReported(true);
     } catch {
       setReportError(true);

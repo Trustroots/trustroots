@@ -10,16 +10,17 @@ import {
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
-import * as supportApi from '@/modules/support/client/api/support.api';
 
-import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
+import CreateExperience, {
+  type CreateExperienceProps,
+} from '@/modules/experiences/client/components/CreateExperience.component';
 import type {
   ExperienceMine,
   ExperienceUser,
 } from '@/modules/experiences/shared/experience';
 
 const mockedExperiencesApi = vi.mocked(experiencesApi);
-const mockedSupportApi = vi.mocked(supportApi);
+const reportMember = vi.fn<CreateExperienceProps['reportMember']>();
 type ExperienceMineFixture = Omit<Partial<ExperienceMine>, 'response'> & {
   response?:
     | ExperienceMine['response']
@@ -28,10 +29,13 @@ type ExperienceMineFixture = Omit<Partial<ExperienceMine>, 'response'> & {
 };
 
 vi.mock('@/modules/experiences/client/api/experiences.api');
-vi.mock('@/modules/support/client/api/support.api');
 
 const render = (component: React.ReactNode) =>
   renderComponent(<AppProviders>{component}</AppProviders>);
+
+function ExperienceFixture(props: Omit<CreateExperienceProps, 'reportMember'>) {
+  return <CreateExperience {...props} reportMember={reportMember} />;
+}
 
 function mockReadMineOnce(result: ExperienceMineFixture | [] | null) {
   // Some retry/error cases deliberately keep incomplete legacy API payloads.
@@ -63,6 +67,7 @@ function mockCreateOnce(isPublic: boolean | null) {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
+  reportMember.mockReset();
   localStorage.clear();
   delete window.settings;
 });
@@ -71,7 +76,7 @@ async function waitForLoader(): Promise<void> {
   await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
 }
 
-describe('<CreateExperience />', () => {
+describe('<ExperienceFixture />', () => {
   let userFrom: ExperienceUser;
   let userTo: ExperienceUser & { displayName: string };
 
@@ -92,7 +97,7 @@ describe('<CreateExperience />', () => {
     };
     mockReadMineOnce([]);
     const { queryByRole } = render(
-      <CreateExperience userFrom={me} userTo={me} />,
+      <ExperienceFixture userFrom={me} userTo={me} />,
     );
     expect(queryByRole('alert')).toHaveTextContent(
       "Sorry, you can't share experience only with yourself.",
@@ -106,7 +111,7 @@ describe('<CreateExperience />', () => {
 
   it('check whether the experience exists at the beginning', async () => {
     mockReadMineOnce([]);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     await waitFor(() =>
       expect(mockedExperiencesApi.readMine).toHaveBeenCalledWith({
         userWith: userTo._id,
@@ -121,7 +126,7 @@ describe('<CreateExperience />', () => {
       response: null,
     });
     const { queryByRole } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
     expect(queryByRole('heading')).toHaveTextContent(
@@ -139,7 +144,7 @@ describe('<CreateExperience />', () => {
       response: 'mocked response',
     });
     const { queryByRole } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
     expect(queryByRole('heading')).toHaveTextContent(
@@ -153,7 +158,7 @@ describe('<CreateExperience />', () => {
   it('can leave an experience (experience form is available)', async () => {
     mockReadMineOnce(null);
     const { queryByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
     for (const label of ['Met in person', 'I hosted them', 'They hosted me']) {
@@ -166,7 +171,7 @@ describe('<CreateExperience />', () => {
     mockCreateOnce(false);
 
     const { getByText, getAllByText, getByLabelText, queryByLabelText } =
-      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+      render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -222,7 +227,7 @@ describe('<CreateExperience />', () => {
     mockCreateOnce(null);
 
     const { getByText, getAllByText, getByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
 
     await waitForLoader();
@@ -246,7 +251,7 @@ describe('<CreateExperience />', () => {
     mockCreateOnce(false);
 
     const { getByText, getAllByText, getByLabelText, queryByLabelText } =
-      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+      render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -285,10 +290,7 @@ describe('<CreateExperience />', () => {
     });
 
     await waitFor(() =>
-      expect(mockedSupportApi.reportMember).toHaveBeenCalledWith(
-        userTo,
-        'they were mean to me',
-      ),
+      expect(reportMember).toHaveBeenCalledWith(userTo, 'they were mean to me'),
     );
 
     const successMessage = await waitFor(() =>
@@ -304,7 +306,7 @@ describe('<CreateExperience />', () => {
     mockReadMineOnce(null);
 
     const { getAllByText, getByLabelText, queryByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
 
     await waitForLoader();
@@ -327,7 +329,7 @@ describe('<CreateExperience />', () => {
     mockReadMineOnce(null);
 
     const { getAllByText, getByLabelText, queryByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+      <ExperienceFixture userFrom={userFrom} userTo={userTo} />,
     );
 
     await waitForLoader();
@@ -351,7 +353,7 @@ describe('<CreateExperience />', () => {
     mockCreateOnce(true);
 
     const { getAllByText, getByLabelText, queryByLabelText, findByText } =
-      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+      render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -386,7 +388,7 @@ describe('<CreateExperience />', () => {
     mockedExperiencesApi.readMine
       .mockRejectedValueOnce(new Error('Connection failed'))
       .mockResolvedValueOnce(null);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'We could not load the experience form. Please try again.',
@@ -401,7 +403,7 @@ describe('<CreateExperience />', () => {
     report = false,
   }: { report?: boolean } = {}): Promise<void> {
     mockReadMineOnce(null);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     await waitForLoader();
     fireEvent.click(screen.getByLabelText('Met in person'));
     fireEvent.click(screen.getAllByText('Next')[0]);
@@ -541,12 +543,12 @@ describe('<CreateExperience />', () => {
     await fillExperience({ report: true });
     fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByRole('alert');
-    expect(mockedSupportApi.reportMember).not.toHaveBeenCalled();
+    expect(reportMember).not.toHaveBeenCalled();
   });
 
   it('can retry a failed private report without saving the experience again', async () => {
     mockCreateOnce(false);
-    mockedSupportApi.reportMember
+    reportMember
       .mockRejectedValueOnce(new Error('Connection failed'))
       .mockRejectedValueOnce(new Error('Connection failed again'))
       .mockResolvedValueOnce(undefined);
@@ -565,9 +567,7 @@ describe('<CreateExperience />', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Retry private report' }),
     );
-    await waitFor(() =>
-      expect(mockedSupportApi.reportMember).toHaveBeenCalledTimes(2),
-    );
+    await waitFor(() => expect(reportMember).toHaveBeenCalledTimes(2));
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Retry private report' }),
@@ -584,8 +584,8 @@ describe('<CreateExperience />', () => {
       screen.queryByText(/Your experience was saved, but/),
     ).not.toBeInTheDocument();
     expect(mockedExperiencesApi.create).toHaveBeenCalledTimes(1);
-    expect(mockedSupportApi.reportMember).toHaveBeenCalledTimes(3);
-    expect(mockedSupportApi.reportMember).toHaveBeenLastCalledWith(
+    expect(reportMember).toHaveBeenCalledTimes(3);
+    expect(reportMember).toHaveBeenLastCalledWith(
       userTo,
       'A fictional private report.',
     );
@@ -603,7 +603,7 @@ describe('<CreateExperience />', () => {
     expect(JSON.stringify(stored)).not.toContain('A fictional private report.');
     cleanup();
     mockReadMineOnce(null);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     expect(screen.getByLabelText('Met in person')).toBeChecked();
     fireEvent.click(screen.getAllByText('Next')[0]);
@@ -618,7 +618,7 @@ describe('<CreateExperience />', () => {
     expect(
       localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
     ).toBeNull();
-    expect(mockedSupportApi.reportMember).not.toHaveBeenCalled();
+    expect(reportMember).not.toHaveBeenCalled();
   });
 
   function storeDraft() {
@@ -638,7 +638,7 @@ describe('<CreateExperience />', () => {
   it('discards a saved draft and starts with empty choices', async () => {
     storeDraft();
     mockReadMineOnce(null);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Discard draft'));
     expect(screen.getByLabelText('Met in person')).not.toBeChecked();
     expect(
@@ -653,7 +653,7 @@ describe('<CreateExperience />', () => {
       public: true,
     });
     mockCreateOnce(true);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     fireEvent.click(screen.getAllByText('Next')[0]);
     fireEvent.click(screen.getAllByText('Save experience')[0]);
@@ -716,7 +716,7 @@ describe('<CreateExperience />', () => {
 
   it('shows confirmation while the private report is still sending', async () => {
     let resolveReport!: () => void;
-    mockedSupportApi.reportMember.mockImplementationOnce(
+    reportMember.mockImplementationOnce(
       () =>
         new Promise<void>(resolve => {
           resolveReport = resolve;
@@ -751,7 +751,7 @@ describe('<CreateExperience />', () => {
     storeDraft();
     window.settings = { limits: { maximumExperienceFeedbackPublicLength: 5 } };
     mockReadMineOnce(null);
-    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<ExperienceFixture userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     fireEvent.click(screen.getAllByText('Next')[0]);
     fireEvent.click(screen.getAllByText('Next')[0]);
