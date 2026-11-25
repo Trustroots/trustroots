@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 import UIKit
 
 struct TrustrootsRootView: View {
@@ -348,86 +349,47 @@ private struct TrustrootsBottomNavigation: View {
     }
 }
 
-private struct MoreView: View {
+private struct MoreView: UIViewControllerRepresentable {
     let openBrowser: (TrustrootsBrowserRoute) -> Void
     let selectDestination: (TrustrootsDestination) -> Void
 
-    var body: some View {
-        NavigationStack {
-            List {
-                Button("My profile") {
-                    selectDestination(.profile)
-                }
-                Button("Circles") {
-                    selectDestination(.circles)
-                }
-                .accessibilityIdentifier("circles-menu-entry")
-                Button("Contacts") {
-                    selectDestination(.contacts)
-                }
-                Button {
-                    selectDestination(.memberSearch)
-                } label: {
-                    Label("Find members", systemImage: "person.crop.circle.badge.magnifyingglass")
-                }
-                Button("Account") {
-                    selectDestination(.account)
-                }
-                .accessibilityIdentifier("account-menu-entry")
-
-                Section("Help") {
-                    Button("Frequently asked questions") {
-                        openBrowser(.website(path: "/faq", title: "Frequently asked questions"))
-                    }
-                    Button("Contact and support") {
-                        selectDestination(.support)
-                    }
-                }
-
-                Section("Trustroots") {
-                    Button("About") {
-                        openBrowser(.website(path: "/about", title: "About Trustroots"))
-                    }
-                    Button("Privacy") {
-                        openBrowser(.website(path: "/privacy", title: "Privacy"))
-                    }
-                    Button("Rules") {
-                        openBrowser(.website(path: "/rules", title: "Rules"))
-                    }
-                    Button("Statistics") {
-                        openBrowser(.website(path: "/statistics", title: "Trustroots statistics"))
-                    }
-                }
-
-                Section {
-                    VStack(spacing: 8) {
-                        Image("TrustrootsLogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 70)
-                        Text("Travellers’ community")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                        Text("Sharing, hosting and getting people together.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                        Divider()
-                            .overlay(TrustrootsPalette.green.opacity(0.22))
-                        Text("iOS build: \(TrustrootsBuildInfo.formatted())")
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .listRowBackground(TrustrootsPalette.paleGreen)
-                }
-
-            }
-            .navigationBarTitleDisplayMode(.inline)
-        }
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MemberMenuViewController(
+            buildInfo: "iOS build: \(TrustrootsBuildInfo.formatted())",
+            onSelect: open
+        )
     }
 
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    private func open(_ action: MemberMenuAction) {
+        switch action {
+        case .profile:
+            selectDestination(.profile)
+        case .circles:
+            selectDestination(.circles)
+        case .contacts:
+            selectDestination(.contacts)
+        case .findmembers:
+            selectDestination(.memberSearch)
+        case .account:
+            selectDestination(.account)
+        case .support:
+            selectDestination(.support)
+        case .faq:
+            openBrowser(.website(path: "/faq", title: "Frequently asked questions"))
+        case .about:
+            openBrowser(.website(path: "/about", title: "About Trustroots"))
+        case .privacy:
+            openBrowser(.website(path: "/privacy", title: "Privacy"))
+        case .rules:
+            openBrowser(.website(path: "/rules", title: "Rules"))
+        case .statistics:
+            openBrowser(.website(path: "/statistics", title: "Trustroots statistics"))
+        default:
+            break
+        }
+    }
 }
 
 #Preview {
