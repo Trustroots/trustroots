@@ -155,7 +155,7 @@ const registerRoutes = (app: RouteApp): void => {
     .post(support.retry);
   app
     .route('/api/admin/support/:requestId/repeated-messages')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(support.reportRepeatedMessages);
   app
     .route('/api/admin/support/:requestId/:kind')
@@ -167,7 +167,7 @@ const registerRoutes = (app: RouteApp): void => {
     .get(support.messageThrottleReview);
   app
     .route('/api/admin/support-message-reviews/:reviewId/repeated-messages')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(support.throttleRepeatedMessages);
   app
     .route('/api/admin/support-members')

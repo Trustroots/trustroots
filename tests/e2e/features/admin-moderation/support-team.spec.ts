@@ -8,6 +8,7 @@ import {
   SEEDED_ADMIN,
   createIsolatedContext,
   registerViaApi,
+  signIn,
   signInViaApi,
 } from '../../support/helpers.mts';
 import { withE2eDb } from '../../support/db.mts';
@@ -119,7 +120,8 @@ test('support can open the alert link and read only outgoing messages in its win
       ).toBe(403);
       return pathname;
     });
-    await signInViaApi(page, context.request, support);
+    await context.clearCookies();
+    await signIn(page, support);
     await page.goto(reviewPath);
     await expect(
       page.getByRole('heading', { name: 'Review outgoing messages' }),
@@ -134,6 +136,11 @@ test('support can open the alert link and read only outgoing messages in its win
       await expect(page.getByText(content)).toHaveCount(0);
     }
     await page.getByRole('button', { name: 'Repeated messages' }).click();
+    const confirmation = page.getByRole('dialog', {
+      name: 'Confirm admin access',
+    });
+    await confirmation.getByLabel('Current password').fill(support.password);
+    await confirmation.getByRole('button', { name: 'Continue' }).click();
     const repeated = page.getByRole('region', { name: 'Repeated messages' });
     await expect(repeated.getByText('Fictional recent greeting')).toHaveCount(
       1,

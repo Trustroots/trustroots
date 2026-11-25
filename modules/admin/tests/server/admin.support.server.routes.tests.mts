@@ -478,6 +478,60 @@ describe('Support team access and investigation', () => {
     await agent.get(path).expect(403);
   });
 
+  it('requires password confirmation before Support or administrators can read repeated messages', async () => {
+    const review = await MessageThrottleReview.create({
+      sender: users[1]._id,
+      windowStart: new Date('2026-01-01T12:00:00.000Z'),
+      windowEnd: new Date('2026-01-01T13:00:00.000Z'),
+    });
+    const paths = [
+      `${endpoint(report._id)}/repeated-messages`,
+      `${reviewEndpoint(review._id)}/repeated-messages`,
+    ];
+    const routes = [
+      '/api/admin/support/:requestId/repeated-messages',
+      '/api/admin/support-message-reviews/:reviewId/repeated-messages',
+    ];
+
+    for (const index of [0, 3]) {
+      const { username, password } = raw[index];
+      const session = request.agent(app);
+      await session
+        .post('/api/auth/signin')
+        .send({ username, password })
+        .expect(200);
+
+      for (const path of paths) {
+        const { body } = await session
+          .get(path)
+          .expect(403)
+          .expect('Cache-Control', 'no-store');
+        body.code.should.equal('ADMIN_ELEVATION_REQUIRED');
+        Object.hasOwn(body, 'items').should.equal(false);
+      }
+      const audits = AuditLog.countDocuments({
+        user: users[index]._id,
+        route: { $in: routes },
+      });
+      (await audits.exec()).should.equal(0);
+
+      await utils.elevateAdminAccess(session, password);
+      for (const path of paths) {
+        const { body } = await session.get(path).expect(200);
+        body.items.should.eql([]);
+      }
+      (await audits.clone().exec()).should.equal(2);
+    }
+
+    const member = request.agent(app);
+    await utils.signIn(raw[2], member);
+    for (const path of paths) {
+      const { body } = await member.get(path).expect(403);
+      Object.hasOwn(body, 'code').should.equal(false);
+      Object.hasOwn(body, 'items').should.equal(false);
+    }
+  });
+
   it('paginates repeat groups after counting all messages in the alert window', async () => {
     const sender = users[1]._id;
     const windowStart = new Date('2026-01-01T12:00:00.000Z');
