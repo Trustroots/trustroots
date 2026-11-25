@@ -1,5 +1,7 @@
 import type { Express, Request, RequestHandler } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import mongoose, { type Types } from 'mongoose';
+import type { TribeRecord } from '../models/tribe.server.model.mts';
 import {
   chatTopics,
   MAX_CHAT_LENGTH,
@@ -15,7 +17,7 @@ interface ChatRequest extends Request {
     _id: { toString(): string };
     username: string;
     roles: string[];
-    nostrNpub?: string;
+    member?: { tribe: Types.ObjectId }[];
   };
 }
 
@@ -46,15 +48,28 @@ const getChat: RequestHandler = async (req, res) => {
   }
 };
 
+const requireChatMembership: RequestHandler = async (
+  req: ChatRequest,
+  res,
+  next,
+) => {
+  const slug = String(req.params.room);
+  if (slug === 'volunteering') return next();
+  const tribeIds = req.user!.member?.map(({ tribe }) => tribe) ?? [];
+  try {
+    const tribe = await mongoose.model<TribeRecord>('Tribe').exists({
+      slug,
+      _id: { $in: tribeIds },
+    });
+    if (!tribe) return sendError(res, 403, 'Join this circle to access chat.');
+    next();
+  } catch {
+    sendError(res, 503, 'Circle chat is temporarily unavailable.');
+  }
+};
+
 const postChat: RequestHandler = async (req: ChatRequest, res) => {
   const user = req.user!;
-  if (user.nostrNpub)
-    return sendError(
-      res,
-      403,
-      'Use the signer linked to your Trustroots account.',
-    );
-
   const room = req.params.room as ChatRoom;
   const { content: rawContent, channel } = (req.body ?? {}) as {
     content?: unknown;
@@ -95,7 +110,7 @@ export function registerCircleChat(app: Express) {
   });
   app
     .route('/api/tribes/chat/:room')
-    .all(requireChatAccount)
+    .all(requireChatAccount, requireChatMembership)
     .get(getChat)
     .post(postLimit, postChat);
 }

@@ -1,65 +1,49 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
-  finalizeEvent,
-  generateSecretKey,
-  getPublicKey,
-  nip19,
-} from 'nostr-tools';
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import '@/config/client/i18n';
 import http from '@/modules/core/client/api/http-client';
 import TopicChat from '@/modules/tribes/client/components/TopicChat';
-import { withCircleChatRelay } from '@/modules/tribes/shared/circle-chat-relay';
 import {
   CHAT_ATTRIBUTION_TAG,
   chatTemplate,
 } from '@/modules/tribes/shared/circle-chat';
-import useCircleSigner from '@/modules/tribes/client/hooks/useCircleSigner';
 
 vi.mock('@/modules/core/client/api/http-client', () => ({
   default: { get: vi.fn(), post: vi.fn() },
 }));
-vi.mock('@/modules/tribes/client/hooks/useCircleSigner', () => ({
-  default: vi.fn(),
-}));
-vi.mock('@/modules/tribes/shared/circle-chat-relay', () => ({
-  withCircleChatRelay: vi.fn(),
-}));
-
 const member = { _id: 'member-1', username: 'fictional-member' };
 const serviceKey = generateSecretKey();
 const memberKey = generateSecretKey();
 const servicePubkey = getPublicKey(serviceKey);
-const sign = vi.fn(async template => finalizeEvent(template, memberKey));
-const connect = vi.fn();
 
 function openChat(props: React.ComponentProps<typeof TopicChat>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <TopicChat {...props} />
     </QueryClientProvider>,
   );
+  return { ...result, client };
 }
 
 beforeEach(() => {
   vi.resetAllMocks();
-  sign.mockImplementation(async template => finalizeEvent(template, memberKey));
   vi.mocked(http.get).mockImplementation(async url => ({
     data:
       url === '/api/nostr/author-visibility'
         ? { usernames: {} }
         : { messages: [], servicePubkey },
   }));
-  vi.mocked(useCircleSigner).mockReturnValue({
-    signer: undefined,
-    connecting: false,
-    error: '',
-    connect,
-  });
 });
 
 it('lets visitors sign in without requesting chat history', () => {
@@ -73,6 +57,41 @@ it('lets visitors sign in without requesting chat history', () => {
   expect(http.get).not.toHaveBeenCalled();
 });
 
+it('loads history and displays the composer only while the account is a member', async () => {
+  const message = finalizeEvent(
+    chatTemplate('hackers', 'Fictional older message'),
+    memberKey,
+  );
+  vi.mocked(http.get).mockResolvedValueOnce({
+    data: { messages: [message], servicePubkey },
+  });
+  const { client, rerender } = openChat({ roomName: 'hackers', user: member });
+  expect(http.get).not.toHaveBeenCalled();
+  expect(screen.queryByText(message.content)).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/join this circle using the join button/i),
+  ).toBeVisible();
+  expect(screen.queryByLabelText('Message')).not.toBeInTheDocument();
+
+  rerender(
+    <QueryClientProvider client={client}>
+      <TopicChat roomName="hackers" user={member} isCircleMember />
+    </QueryClientProvider>,
+  );
+  expect(screen.getByLabelText('Message')).toBeEnabled();
+  expect(await screen.findByText(message.content)).toBeVisible();
+  expect(
+    screen.queryByText(/join this circle using the join button/i),
+  ).not.toBeInTheDocument();
+  rerender(
+    <QueryClientProvider client={client}>
+      <TopicChat roomName="hackers" user={member} />
+    </QueryClientProvider>,
+  );
+  expect(screen.queryByText(message.content)).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Message')).not.toBeInTheDocument();
+});
+
 it('posts as a keyless member and recognises attribution only from the Trustroots key', async () => {
   const spoof = chatTemplate('hitchhikers', 'Fictional spoof');
   spoof.tags.push([CHAT_ATTRIBUTION_TAG, 'other-member']);
@@ -84,7 +103,7 @@ it('posts as a keyless member and recognises attribution only from the Trustroot
   vi.mocked(http.post).mockResolvedValueOnce({
     data: finalizeEvent(post, serviceKey),
   });
-  openChat({ roomName: 'hitchhikers', user: member });
+  openChat({ roomName: 'hitchhikers', user: member, isCircleMember: true });
   expect(await screen.findByText('Fictional spoof')).toBeVisible();
   expect(
     screen.queryByText('other-member via Trustroots'),
@@ -100,40 +119,98 @@ it('posts as a keyless member and recognises attribution only from the Trustroot
     content: 'Fictional chat',
     channel: undefined,
   });
-  expect(withCircleChatRelay).not.toHaveBeenCalled();
 });
 
-it('uses the matching member signer when linked', async () => {
+it('offers to reload chat after an initial request fails', async () => {
+  const previousMessage = finalizeEvent(
+    chatTemplate('volunteering', 'Fictional older message'),
+    memberKey,
+  );
+  vi.mocked(http.get)
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValueOnce({
+      data: { messages: [previousMessage], servicePubkey },
+    });
+  openChat({ roomName: 'volunteering', user: member });
+  const retry = await screen.findByRole('button', {
+    name: 'Retry loading messages',
+  });
+  expect(screen.getByLabelText('Message')).toBeEnabled();
+  fireEvent.click(retry);
+  expect(await screen.findByText(previousMessage.content)).toBeVisible();
+  expect(retry).not.toBeInTheDocument();
+});
+
+it('retains the conversation when a background refresh fails', async () => {
+  const previousMessage = finalizeEvent(
+    chatTemplate('hackers', 'Fictional older message'),
+    memberKey,
+  );
+  vi.mocked(http.get).mockResolvedValueOnce({
+    data: { messages: [previousMessage], servicePubkey },
+  });
+  const { client } = openChat({
+    roomName: 'hackers',
+    user: member,
+    isCircleMember: true,
+  });
+  expect(await screen.findByText(previousMessage.content)).toBeVisible();
   vi.mocked(http.get).mockRejectedValueOnce(new Error('offline'));
-  vi.mocked(useCircleSigner).mockReturnValue({
-    signer: { publicKey: getPublicKey(memberKey), sign },
-    connecting: false,
-    error: '',
-    connect,
-  });
-  const publish = vi.fn(async () => 'ok');
-  vi.mocked(withCircleChatRelay).mockImplementation(async (_sign, run) =>
-    run({ publish } as never),
+  await act(() =>
+    client.refetchQueries({ queryKey: ['circle-chat', 'hackers', member._id] }),
   );
-  openChat({
-    roomName: 'volunteering',
-    user: { ...member, nostrNpub: nip19.npubEncode(getPublicKey(memberKey)) },
-  });
   expect(
-    await screen.findByText('Circle chat is temporarily unavailable.'),
+    await screen.findByRole('button', { name: 'Retry loading messages' }),
   ).toBeVisible();
-  fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: 'Fictional chat' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-  expect(await screen.findByText('Fictional chat')).toBeVisible();
-  expect(publish).toHaveBeenCalledWith(
-    expect.objectContaining({
-      pubkey: getPublicKey(memberKey),
-      tags: [['t', 'trustroots-volunteering']],
-    }),
+  let finish!: () => void;
+  vi.mocked(http.get).mockImplementationOnce(
+    () =>
+      new Promise(resolve => {
+        finish = () =>
+          resolve({ data: { messages: [previousMessage], servicePubkey } });
+      }),
   );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Retry loading messages' }),
+  );
+  expect(
+    await screen.findByRole('button', { name: 'Loading messages…' }),
+  ).toBeDisabled();
+  expect(screen.getByText(previousMessage.content)).toBeVisible();
+  await act(async () => finish());
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Loading messages…' }),
+    ).not.toBeInTheDocument(),
+  );
+});
+
+it('guards against empty and duplicate submissions while a post is pending', async () => {
+  const posted = finalizeEvent(
+    chatTemplate('hackers', 'Fictional post'),
+    serviceKey,
+  );
+  let finish!: () => void;
+  vi.mocked(http.post).mockImplementationOnce(
+    () =>
+      new Promise(resolve => {
+        finish = () => resolve({ data: posted });
+      }),
+  );
+  openChat({ roomName: 'hackers', user: member, isCircleMember: true });
+  expect(await screen.findByText('No messages yet.')).toBeVisible();
+  const input = screen.getByLabelText('Message');
+  const form = input.closest('form')!;
+  fireEvent.submit(form);
   expect(http.post).not.toHaveBeenCalled();
+  fireEvent.change(input, { target: { value: posted.content } });
+  fireEvent.submit(form);
+  fireEvent.submit(form);
+  expect(http.post).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Sending…' })).toBeDisabled();
+  await act(async () => finish());
+  expect(await screen.findByText(posted.content)).toBeVisible();
+  expect(input).toHaveValue('');
 });
 
 it('recognises a server-signed post when chat history is unavailable', async () => {
@@ -144,9 +221,9 @@ it('recognises a server-signed post when chat history is unavailable', async () 
     data: finalizeEvent(post, serviceKey),
   });
 
-  openChat({ roomName: 'hackers', user: member });
+  openChat({ roomName: 'hackers', user: member, isCircleMember: true });
   expect(
-    await screen.findByText('Circle chat is temporarily unavailable.'),
+    await screen.findByText('Could not load chat messages.'),
   ).toHaveAttribute('role', 'status');
   fireEvent.change(screen.getByLabelText('Message'), {
     target: { value: 'Fictional chat' },
@@ -159,7 +236,7 @@ it('recognises a server-signed post when chat history is unavailable', async () 
 
 it('keeps the draft when a server send fails', async () => {
   vi.mocked(http.post).mockRejectedValueOnce(new Error('offline'));
-  openChat({ roomName: 'hackers', user: member });
+  openChat({ roomName: 'hackers', user: member, isCircleMember: true });
   const composer = screen.getByLabelText('Message');
   fireEvent.change(composer, { target: { value: 'Fictional draft' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -168,16 +245,4 @@ it('keeps the draft when a server send fails', async () => {
   );
   expect(composer).toHaveValue('Fictional draft');
   await waitFor(() => expect(composer).toBeEnabled());
-});
-
-it('prompts a linked member without a connected signer', () => {
-  openChat({
-    roomName: 'hackers',
-    user: { ...member, nostrNpub: nip19.npubEncode(getPublicKey(memberKey)) },
-  });
-  expect(screen.getByLabelText('Message')).toBeDisabled();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Connect Nostr identity' }),
-  );
-  expect(connect).toHaveBeenCalledOnce();
 });

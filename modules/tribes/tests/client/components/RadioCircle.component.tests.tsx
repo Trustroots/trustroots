@@ -2,7 +2,6 @@ import type { Mock, MockInstance } from 'vitest';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import http from '@/modules/core/client/api/http-client';
-import { withCircleChatRelay } from '@/modules/tribes/shared/circle-chat-relay';
 import {
   act,
   fireEvent,
@@ -22,13 +21,14 @@ import {
 } from 'nostr-tools';
 import RadioCircle from '@/modules/tribes/client/components/RadioCircle';
 import {
-  connectRadioSigner,
   FAVOURITES_KEY,
+  LISTENER_TTL,
+  type Station,
   fetchRadioAuthorUsernames,
   RadioRoom,
-  roomTemplate,
   stations,
 } from '@/modules/tribes/client/services/radio.client.service';
+import { chatTemplate } from '@/modules/tribes/shared/circle-chat';
 import type { UserProfile } from '@/modules/users/client/types';
 
 vi.mock('@tanstack/react-router', async () =>
@@ -58,16 +58,12 @@ vi.mock('@/modules/tribes/client/services/radio.client.service', async () => {
         ),
       },
     ],
-    connectRadioSigner: vi.fn(),
     fetchRadioAuthorUsernames: vi.fn(),
     RadioRoom: vi.fn(),
   };
 });
 vi.mock('@/modules/core/client/api/http-client', () => ({
-  default: { get: vi.fn() },
-}));
-vi.mock('@/modules/tribes/shared/circle-chat-relay', () => ({
-  withCircleChatRelay: vi.fn(),
+  default: { get: vi.fn(), post: vi.fn() },
 }));
 const secret = generateSecretKey();
 const user: UserProfile = {
@@ -78,20 +74,39 @@ const user: UserProfile = {
 };
 const event = (template: EventTemplate) => finalizeEvent(template, secret);
 const station = stations[0];
+function listeningTemplate(station: Station, content: string): EventTemplate {
+  return {
+    kind: 1,
+    created_at: Math.floor(Date.now() / 1000),
+    content,
+    tags: [
+      ['t', 'radiostr'],
+      ['t', 'nowplaying'],
+      ['radiostr_station', station.id],
+    ],
+  };
+}
+
+function radioChatTemplate(
+  station: Station | undefined,
+  content: string,
+  timestamp?: number,
+) {
+  const template = chatTemplate('radio', content, station?.id);
+  if (timestamp !== undefined) template.created_at = timestamp;
+  return template;
+}
+
 let receive: (event: Event) => void;
 let relayFailure: () => void;
 let room: {
   open: Mock;
   close: Mock;
-  publish: Mock;
-  setSigner: Mock;
-  loadFavourites: Mock;
 };
 let play: MockInstance;
 let pause: MockInstance;
 let load: MockInstance;
 let queryClient: QueryClient;
-const chatPublish = vi.fn();
 const queryKey = ['circle-chat', 'radio', user._id];
 
 function render(element: React.ReactElement) {
@@ -115,10 +130,6 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   vi.mocked(http.get).mockResolvedValue({ data: { messages: [] } });
-  chatPublish.mockReset().mockResolvedValue('ok');
-  vi.mocked(withCircleChatRelay).mockImplementation(async (_sign, run) =>
-    run({ publish: chatPublish } as never),
-  );
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValue({});
   localStorage.clear();
   window.history.replaceState(null, '', '/circles/radio');
@@ -134,22 +145,14 @@ beforeEach(() => {
   room = {
     open: vi.fn(async () => {}),
     close: vi.fn(),
-    publish: vi.fn(async () => {}),
-    setSigner: vi.fn(),
-    loadFavourites: vi.fn(),
   };
   vi.mocked(RadioRoom).mockImplementation(function (onEvent, onError) {
     receive = onEvent;
     relayFailure = onError;
     return room as unknown as RadioRoom;
   });
-  vi.mocked(connectRadioSigner).mockResolvedValue({
-    publicKey: event(roomTemplate('chat', station, '')).pubkey,
-    sign: async template => event(template),
-  });
 });
 afterEach(() => {
-  delete window.nostr;
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
@@ -205,20 +208,13 @@ it('keeps initials visible when station artwork fails to load', () => {
   expect(artworkLink).toBeInTheDocument();
 });
 
-async function connect() {
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Connect Nostr identity' }),
-  );
-  await screen.findByText(/Connected as fictional-member@trustroots.org/);
-}
-
 it('shows public playback and shared count, hiding chat and listener identities', () => {
   render(<RadioCircle />);
   expect(room.open).toHaveBeenCalledWith();
   expect(
     screen.queryByRole('region', { name: 'Radio chat' }),
   ).not.toBeInTheDocument();
-  const listening = event(roomTemplate('listening', station, 'Music'));
+  const listening = event(listeningTemplate(station, 'Music'));
   emit(listening, listening);
   expect(screen.getByText('One shared listener')).toBeInTheDocument();
   expect(
@@ -227,12 +223,12 @@ it('shows public playback and shared count, hiding chat and listener identities'
     ),
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole('link', { name: 'Log in to see listeners and chat.' }),
+    screen.getByRole('link', { name: 'Log in to see listeners.' }),
   ).toHaveAttribute('href', '/signin?redirect=/circles/radio');
 });
 
 it('counts local playback before a shared event and deduplicates a linked key', async () => {
-  const listening = event(roomTemplate('listening', station, 'Music'));
+  const listening = event(listeningTemplate(station, 'Music'));
   render(
     <RadioCircle
       user={{ ...user, nostrNpub: nip19.npubEncode(listening.pubkey) }}
@@ -249,22 +245,6 @@ it('counts local playback before a shared event and deduplicates a linked key', 
   ).not.toBeInTheDocument();
 });
 
-it('automatically connects once when a linked signer is injected late', async () => {
-  vi.useFakeTimers();
-  const pubkey = event(roomTemplate('chat', station, '')).pubkey;
-  render(
-    <RadioCircle user={{ ...user, nostrNpub: nip19.npubEncode(pubkey) }} />,
-  );
-  expect(connectRadioSigner).not.toHaveBeenCalled();
-  window.nostr = {
-    getPublicKey: async () => pubkey,
-    signEvent: async template => template,
-  };
-  await act(async () => vi.advanceTimersByTime(250));
-  expect(screen.getByText(/Connected as fictional-member/)).toBeVisible();
-  await act(async () => vi.advanceTimersByTime(5000));
-  expect(connectRadioSigner).toHaveBeenCalledTimes(1);
-});
 it('plays, pauses, persists local favourites, follows station hashes and cleans up', async () => {
   const { container, unmount } = render(<RadioCircle />);
   const button = row().getByRole('button', { name: `Play ${station.title}` });
@@ -336,20 +316,20 @@ it('keeps playback available when relays fail and restores room status on events
   render(<RadioCircle />);
   act(() => relayFailure());
   expect(screen.getByRole('status')).toHaveTextContent('unavailable');
-  emit(event(roomTemplate('listening', station, 'Music')));
+  emit(event(listeningTemplate(station, 'Music')));
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
 });
 it('allows logged-in members to read chat and listeners without a signer', async () => {
-  render(<RadioCircle user={{ ...user, nostrNpub: undefined }} />);
+  render(
+    <RadioCircle user={{ ...user, nostrNpub: undefined }} isCircleMember />,
+  );
   expect(room.open).toHaveBeenCalledWith();
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
-  const listening = event(roomTemplate('listening', station, 'Music'));
+  const listening = event(listeningTemplate(station, 'Music'));
   const message = event(
-    roomTemplate(
-      'chat',
+    radioChatTemplate(
       station,
       '<script>fictional message</script>',
-      true,
       1785751500,
     ),
   );
@@ -390,12 +370,12 @@ it('allows logged-in members to read chat and listeners without a signer', async
   expect(listenerIdentity).toHaveAttribute('title', npub);
 });
 it('resolves a known listener identity without any chat from that key', async () => {
-  const listening = event(roomTemplate('listening', station, 'Music'));
+  const listening = event(listeningTemplate(station, 'Music'));
   const npub = nip19.npubEncode(listening.pubkey);
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [listening.pubkey]: user.username,
   });
-  render(<RadioCircle user={user} />);
+  render(<RadioCircle user={user} isCircleMember />);
   emit(listening);
 
   const listeningNow = screen.getByRole('region', { name: 'Listening now' });
@@ -410,8 +390,8 @@ it('resolves a known listener identity without any chat from that key', async ()
   expect(document.querySelector('.radio-chat-log')).toBeEmptyDOMElement();
 });
 it('keeps chat readable as plain npubs if the author lookup fails', async () => {
-  render(<RadioCircle user={user} />);
-  const message = event(roomTemplate('chat', station, 'Fictional message'));
+  render(<RadioCircle user={user} isCircleMember />);
+  const message = event(radioChatTemplate(station, 'Fictional message'));
   const npub = nip19.npubEncode(message.pubkey);
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [message.pubkey]: user.username,
@@ -428,7 +408,7 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
   privateChat(
     message,
     finalizeEvent(
-      roomTemplate('chat', station, 'Another message'),
+      radioChatTemplate(station, 'Another message'),
       generateSecretKey(),
     ),
   );
@@ -443,11 +423,9 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
 
 it('uses a full plain npub for an unknown chat author and radio listener', async () => {
   vi.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({});
-  render(<RadioCircle user={user} />);
-  const listening = event(roomTemplate('listening', station, 'Music'));
-  const message = event(
-    roomTemplate('chat', station, 'Unknown author message'),
-  );
+  render(<RadioCircle user={user} isCircleMember />);
+  const listening = event(listeningTemplate(station, 'Music'));
+  const message = event(radioChatTemplate(station, 'Unknown author message'));
   emit(listening);
   privateChat(message);
   await screen.findByText(message.content);
@@ -488,7 +466,7 @@ it.each([false, true])(
         }),
     );
     const { unmount } = render(<RadioCircle user={user} />);
-    emit(event(roomTemplate('listening', station, 'Pending author')));
+    emit(event(listeningTemplate(station, 'Pending author')));
     await waitFor(() => expect(lookup).toHaveBeenCalled());
     const [, signal] = lookup.mock.calls[0];
     unmount();
@@ -496,97 +474,6 @@ it.each([false, true])(
     await act(async () => finish());
   },
 );
-
-it('connects a matching signer, restores remote favourites and publishes messages and stars', async () => {
-  render(<RadioCircle user={user} />);
-  await connect();
-  await waitFor(() => expect(room.loadFavourites).toHaveBeenCalled());
-  emit(event(roomTemplate('favourite', station, 'Favourite')));
-  expect(screen.getByRole('region', { name: 'Favourites' })).toHaveTextContent(
-    station.title,
-  );
-  fireEvent.click(
-    row().getByRole('button', { name: `Unstar ${station.title}` }),
-  );
-  expect(room.publish).toHaveBeenCalledWith(
-    expect.objectContaining({
-      tags: expect.arrayContaining([['radiostr_action', 'unstar']]),
-    }),
-  );
-  fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: ' Hello room ' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-  await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
-  expect(chatPublish).toHaveBeenCalledWith(
-    expect.objectContaining({ content: 'Hello room' }),
-  );
-});
-it('keeps drafts and local favourites when relay publication fails', async () => {
-  render(<RadioCircle user={user} />);
-  await connect();
-  room.publish.mockRejectedValue(new Error('offline'));
-  chatPublish.mockRejectedValue(new Error('offline'));
-  fireEvent.click(row().getByRole('button', { name: `Star ${station.title}` }));
-  await screen.findByText(
-    'Favourite saved on this device, but could not be shared.',
-  );
-  fireEvent.change(screen.getByLabelText('Message'), {
-    target: { value: 'Keep my draft' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-  await screen.findByText('Message could not be sent. Try again.');
-  expect(screen.getByLabelText('Message')).toHaveValue('Keep my draft');
-});
-
-it('retains local favourite actions when old history arrives or sharing fails', async () => {
-  render(<RadioCircle user={user} />);
-  await connect();
-  emit(event(roomTemplate('favourite', station, 'Unstarred', false)));
-  room.publish.mockRejectedValue(new Error('offline'));
-  fireEvent.click(row().getByRole('button', { name: `Star ${station.title}` }));
-  await screen.findByRole('alert');
-  emit(event(roomTemplate('chat', undefined, 'Room update')));
-  expect(
-    row().getByRole('button', { name: `Unstar ${station.title}` }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  emit(
-    event(
-      roomTemplate(
-        'favourite',
-        station,
-        'Remote star',
-        true,
-        Math.floor(Date.now() / 1000) + 1,
-      ),
-    ),
-  );
-  fireEvent.click(
-    row().getByRole('button', { name: `Unstar ${station.title}` }),
-  );
-  await act(async () => {});
-  emit(
-    event(roomTemplate('favourite', station, 'Old star', true)),
-    event(roomTemplate('chat', undefined, 'Another update')),
-  );
-  expect(
-    row().getByRole('button', { name: `Star ${station.title}` }),
-  ).toHaveAttribute('aria-pressed', 'false');
-  emit(
-    event(
-      roomTemplate(
-        'favourite',
-        station,
-        'Remote unstar',
-        false,
-        Math.floor(Date.now() / 1000) + 2,
-      ),
-    ),
-  );
-  expect(
-    row().getByRole('button', { name: `Star ${station.title}` }),
-  ).toHaveAttribute('aria-pressed', 'false');
-});
 
 it('preserves the circle URL when the document has a root base URL', async () => {
   const base = document.createElement('base');
@@ -605,56 +492,19 @@ it('preserves the circle URL when the document has a root base URL', async () =>
     base.remove();
   }
 });
-it.each([new Error('Fictional mismatch'), 'failure'])(
-  'explains signer connection failures',
-  async cause => {
-    vi.mocked(connectRadioSigner).mockRejectedValue(cause);
-    render(<RadioCircle user={user} />);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Connect Nostr identity' }),
-    );
-    await screen.findByRole('alert');
-    expect(screen.getByLabelText('Message')).toBeDisabled();
-  },
-);
-it('shares after ten seconds, heartbeats while playing and expires stale listeners', async () => {
+it('expires stale shared listeners while the radio is open', async () => {
   vi.useFakeTimers();
   render(<RadioCircle user={user} />);
-  await connect();
-  fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
-  await act(async () => {});
-  expect(room.publish).not.toHaveBeenCalled();
-  await act(async () => {
-    vi.advanceTimersByTime(10000);
-  });
-  expect(room.publish).toHaveBeenCalledTimes(1);
-  expect(room.publish).toHaveBeenCalledWith(
-    expect.objectContaining({
-      tags: expect.arrayContaining([['t', 'nowplaying']]),
-    }),
-  );
-  await act(async () => {
-    vi.advanceTimersByTime(300000);
-  });
-  expect(room.publish).toHaveBeenCalledTimes(2);
-  emit(event(roomTemplate('listening', station, 'Music')));
-  room.publish.mockRejectedValue(new Error('offline'));
-  await act(async () => {
-    vi.advanceTimersByTime(300000);
-  });
-  expect(screen.getByRole('alert')).toHaveTextContent('Could not share');
-  fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
-  await act(async () => {
-    vi.advanceTimersByTime(800000);
-  });
-  expect(room.publish).toHaveBeenCalledTimes(3);
+  emit(event(listeningTemplate(station, 'Music')));
+  expect(screen.getByText('One shared listener')).toBeVisible();
+  await act(async () => vi.advanceTimersByTime((LISTENER_TTL + 15) * 1000));
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
 });
 
 it('switches to a station from chat and keeps playing on repeated activation', async () => {
-  render(<RadioCircle user={user} />);
+  render(<RadioCircle user={user} isCircleMember />);
   const next = stations[1];
-  privateChat(event(roomTemplate('chat', next, 'A station recommendation')));
+  privateChat(event(radioChatTemplate(next, 'A station recommendation')));
   const hashtag = await screen.findByRole('link', { name: `#${next.id}` });
 
   fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
@@ -673,21 +523,19 @@ it('switches to a station from chat and keeps playing on repeated activation', a
 });
 
 it('sorts chat, omits unknown station links', async () => {
-  render(<RadioCircle user={user} />);
+  render(<RadioCircle user={user} isCircleMember />);
   const now = Math.floor(Date.now() / 1000);
   privateChat(
-    event(roomTemplate('chat', undefined, 'First', true, now - 1)),
-    event(roomTemplate('chat', station, 'Second', true, now)),
+    event(radioChatTemplate(undefined, 'First', now - 1)),
+    event(radioChatTemplate(station, 'Second', now)),
     {
-      ...event(
-        roomTemplate('chat', undefined, 'Without expiry', true, now - 2),
-      ),
+      ...event(radioChatTemplate(undefined, 'Without expiry', now - 2)),
       tags: [['t', 'radiostr']],
     },
   );
   emit(
     event({
-      ...roomTemplate('listening', station, 'Unknown station'),
+      ...listeningTemplate(station, 'Unknown station'),
       tags: [
         ['t', 'radiostr'],
         ['t', 'nowplaying'],
@@ -711,34 +559,8 @@ it('sorts chat, omits unknown station links', async () => {
     expect.stringContaining('Second'),
   ]);
   fireEvent.submit(screen.getByLabelText('Message').closest('form')!);
-  expect(room.publish).not.toHaveBeenCalled();
+  expect(http.post).not.toHaveBeenCalled();
 });
-
-it.each([false, true])(
-  'ignores connection completion after unmount (rejected: %o)',
-  async reject => {
-    let finish!: () => void;
-    vi.mocked(connectRadioSigner).mockImplementationOnce(
-      () =>
-        new Promise((resolve, fail) => {
-          finish = () =>
-            reject
-              ? fail(new Error('offline'))
-              : resolve({
-                  publicKey: 'key',
-                  sign: async template => event(template),
-                });
-        }),
-    );
-    const { unmount } = render(<RadioCircle user={user} />);
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Connect Nostr identity' }),
-    );
-    unmount();
-    await act(async () => finish());
-    expect(room.setSigner).not.toHaveBeenCalled();
-  },
-);
 
 it('ignores playback rejection after unmount', async () => {
   let fail!: () => void;
@@ -754,68 +576,11 @@ it('ignores playback rejection after unmount', async () => {
   await act(async () => fail());
 });
 
-it.each([false, true])(
-  'cleans up pending chat and favourite publications (rejected: %o)',
-  async reject => {
-    const { unmount } = render(<RadioCircle user={user} />);
-    await connect();
-    const finishes: Array<() => void> = [];
-    function pending() {
-      return new Promise<void>((resolve, fail) =>
-        finishes.push(() => (reject ? fail(new Error('offline')) : resolve())),
-      );
-    }
-    room.publish.mockImplementation(pending);
-    chatPublish.mockImplementation(pending);
-    // Programmatic submits must obey the same guards as the disabled button.
-    const input = screen.getByLabelText('Message');
-    const form = input.closest('form')!;
-    fireEvent.change(input, { target: { value: 'Pending' } });
-    fireEvent.submit(form);
-    fireEvent.submit(form);
-    await waitFor(() => expect(chatPublish).toHaveBeenCalledTimes(1));
-    fireEvent.click(
-      row().getByRole('button', { name: `Star ${station.title}` }),
-    );
-    unmount();
-    await act(async () => finishes.forEach(finish => finish()));
-  },
-);
-
-it.each([false, true])(
-  'does not schedule another heartbeat after unmount (rejected: %o)',
-  async reject => {
-    vi.useFakeTimers();
-    const { unmount } = render(<RadioCircle user={user} />);
-    await connect();
-    let finish!: () => void;
-    room.publish.mockImplementation(
-      () =>
-        new Promise<void>((resolve, fail) => {
-          finish = () => (reject ? fail(new Error('offline')) : resolve());
-        }),
-    );
-    fireEvent.click(
-      row().getByRole('button', { name: `Play ${station.title}` }),
-    );
-    await act(async () => {});
-    await act(async () => {
-      vi.advanceTimersByTime(10000);
-    });
-    unmount();
-    await act(async () => finish());
-    await act(async () => {
-      vi.advanceTimersByTime(5 * 60 * 1000);
-    });
-    expect(room.publish).toHaveBeenCalledTimes(1);
-  },
-);
-
 it.each(['invalid', nip19.noteEncode('ab'.repeat(32))])(
   'counts local playback alongside shared activity with a non-npub key (%s)',
   async nostrNpub => {
     render(<RadioCircle user={{ ...user, nostrNpub }} />);
-    emit(event(roomTemplate('listening', station, 'Music')));
+    emit(event(listeningTemplate(station, 'Music')));
     fireEvent.click(
       row().getByRole('button', { name: `Play ${station.title}` }),
     );

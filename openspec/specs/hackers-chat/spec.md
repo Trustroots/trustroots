@@ -9,14 +9,11 @@ Give signed-in members a dedicated Nostr room on the Hackers circle.
 ### Requirement: Member-only Hackers Nostr chat
 
 The Hackers circle SHALL provide chat using kind-1 events tagged
-`trustroots-circle-hackers` on the authenticated Trustroots relay. Eligible signed-in
-Trustroots members SHALL be able to read and post. Visitors SHALL see a sign-in link
+`trustroots-circle-hackers` on the authenticated Trustroots relay. Only eligible signed-in
+members of the Hackers circle SHALL be able to read and post. Visitors SHALL see a sign-in link
 and the application SHALL NOT subscribe to chat or look up author identities
-for them. Members with a linked npub SHALL use a matching Trustroots NIP-05
-identity for signing. Trustroots SHALL sign for members without a linked npub
-as specified by mixed circle chat. The page SHALL detect a complete NIP-07 extension for up to five
-seconds, connect a matching identity automatically and offer manual retry. Chat
-SHALL show an author's eligible public Trustroots NIP-05 label linked to the
+for them. Trustroots SHALL sign web posts as specified by mixed circle chat.
+Chat SHALL show an author's eligible public Trustroots NIP-05 label linked to the
 author's profile, with the full npub in the link's native `title` attribute.
 When no eligible public Trustroots NIP-05 identity is available, chat SHALL
 show the full npub as plain text without a profile link. Chat SHALL show UTC
@@ -31,8 +28,8 @@ timestamps and explain who can access the relay messages.
 #### Scenario: A signed-in member opens Hackers
 
 - **WHEN** a signed-in member opens the Hackers circle
-- **THEN** they can read the Hackers room with or without a signer
-- **AND** members can post with a matching signer or via Trustroots
+- **THEN** after joining the circle they can read the Hackers room
+- **AND** Trustroots signs messages they post from the web room after joining the circle
 - **AND** the Radio room ignores those messages
 
 #### Scenario: A chat author has an eligible public identity

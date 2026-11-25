@@ -2,21 +2,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useId, useState } from 'react';
 import type { Event } from 'nostr-tools';
 import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 import { useTranslation } from 'react-i18next';
 import http from '@/modules/core/client/api/http-client';
 import type { UserProfile } from '@/modules/users/client/types';
-import {
-  MAX_CHAT_LENGTH,
-  chatTemplate,
-  type ChatRoom,
-} from '../../shared/circle-chat';
-import { withCircleChatRelay } from '../../shared/circle-chat-relay';
-import useCircleSigner from '../hooks/useCircleSigner';
+import { MAX_CHAT_LENGTH, type ChatRoom } from '../../shared/circle-chat';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
 import CircleChatLog from './CircleChatLog';
 import './radio-circle.less';
 
-type Member = Pick<UserProfile, '_id' | 'username' | 'nostrNpub'>;
+type Member = Pick<UserProfile, '_id'>;
 
 const rooms = {
   hackers: { title: 'Hackers chat', path: '/circles/hackers' },
@@ -25,51 +20,50 @@ const rooms = {
   hitchhikers: { title: 'Hitchhikers chat', path: '/circles/hitchhikers' },
 } as const;
 
-interface TopicChatProps {
-  roomName: ChatRoom;
-  user?: Member;
-}
-
 interface ChatSnapshot {
   messages: Event[];
   servicePubkey: string;
 }
 
-export default function TopicChat({ roomName, user }: TopicChatProps) {
-  const signing = useCircleSigner(user);
-  return <CircleRoomChat roomName={roomName} user={user} signing={signing} />;
-}
-
-export function CircleRoomChat({
+export default function TopicChat({
   roomName,
   user,
-  signing,
+  isCircleMember = false,
   channel,
   stationLink,
-}: TopicChatProps & {
-  signing: ReturnType<typeof useCircleSigner>;
+}: {
+  roomName: ChatRoom;
+  user?: Member;
+  isCircleMember?: boolean;
   channel?: string;
   stationLink?: (event: Event) => React.ReactNode;
 }) {
   const { t } = useTranslation('circles');
   const { title, path } = rooms[roomName];
-  const { signer, connecting, error: signerError, connect } = signing;
+  const canUseChat = Boolean(
+    user && (roomName === 'volunteering' || isCircleMember),
+  );
   const messageId = useId();
+  const descriptionId = useId();
   const [message, setMessage] = useState('');
   const [sendError, setSendError] = useState(false);
   const [sending, setSending] = useState(false);
   const url = `/api/tribes/chat/${roomName}`;
   const queryClient = useQueryClient();
-  const queryKey = ['circle-chat', roomName, user?._id];
+  const queryKey = [
+    'circle-chat',
+    roomName,
+    canUseChat ? user?._id : undefined,
+  ];
   const chat = useQuery({
     queryKey,
-    enabled: Boolean(user),
+    enabled: canUseChat,
     queryFn: async ({ signal }) =>
       (await http.get<ChatSnapshot>(url, { signal })).data,
     refetchInterval: 10_000,
     retry: false,
   });
-  const messages = [...(chat.data?.messages ?? [])].sort(
+  const messages = (canUseChat ? [...(chat.data?.messages ?? [])] : []).sort(
     (first, second) =>
       first.created_at - second.created_at || first.id.localeCompare(second.id),
   );
@@ -78,25 +72,21 @@ export function CircleRoomChat({
       .filter(event => event.pubkey !== chat.data?.servicePubkey)
       .map(({ pubkey }) => pubkey),
   );
-  const canSend = Boolean(user && (!user.nostrNpub || signer));
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
     const content = message.trim();
-    if (!canSend || !content || sending) return;
+    if (!canUseChat || !content || sending) return;
     setSending(true);
     setSendError(false);
     try {
-      let posted: Event;
-      if (signer) {
-        posted = await signer.sign(chatTemplate(roomName, content, channel));
-        await withCircleChatRelay(signer.sign, relay => relay.publish(posted));
-      } else {
-        ({ data: posted } = await http.post<Event>(url, { content, channel }));
-      }
+      const { data: posted } = await http.post<Event>(url, {
+        content,
+        channel,
+      });
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData<ChatSnapshot>(queryKey, snapshot => ({
-        servicePubkey: snapshot?.servicePubkey ?? (signer ? '' : posted.pubkey),
+        servicePubkey: posted.pubkey,
         messages: [
           ...(snapshot?.messages.filter(item => item.id !== posted.id) ?? []),
           posted,
@@ -116,46 +106,25 @@ export function CircleRoomChat({
       className={roomName === 'radio' ? 'radio-social-panel' : 'topic-chat'}
     >
       <h3>{t(title)}</h3>
-      {user ? (
+      {canUseChat ? (
         <>
-          <p>
-            {t(
-              'Messages are visible to people with access to the Trustroots relay.',
-            )}
-          </p>
-          {signer && (
-            <p role="status">
-              {t('Connected as {{identity}}.', {
-                identity: `${user.username}@trustroots.org`,
-              })}
-              {roomName === 'radio' && (
-                <> {t('Listening activity is shared automatically.')}</>
-              )}
-            </p>
-          )}
-          {user.nostrNpub && !signer && (
-            <>
+          {chat.isPending && <p role="status">{t('Loading messages…')}</p>}
+          {chat.isError && (
+            <div className="radio-chat-recovery">
+              <p role="status">{t('Could not load chat messages.')}</p>
               <Button
                 type="button"
-                disabled={connecting}
-                onClick={() => void connect()}
+                disabled={chat.isFetching}
+                onClick={() => void chat.refetch()}
               >
-                {connecting ? t('Connecting…') : t('Connect Nostr identity')}
-              </Button>{' '}
-              <a href="/profile/edit/networks">{t('Edit linked Nostr key')}</a>
-            </>
+                {chat.isFetching
+                  ? t('Loading messages…')
+                  : t('Retry loading messages')}
+              </Button>
+            </div>
           )}
-          {!user.nostrNpub && (
-            <p>
-              {t('Trustroots signs your posts and includes your username.')}
-            </p>
-          )}
-          {signerError && <p role="alert">{t(signerError)}</p>}
-          {sendError && (
-            <p role="alert">{t('Message could not be sent. Try again.')}</p>
-          )}
-          {chat.isError && (
-            <p role="status">{t('Circle chat is temporarily unavailable.')}</p>
+          {chat.isSuccess && messages.length === 0 && (
+            <p role="status">{t('No messages yet.')}</p>
           )}
           <CircleChatLog
             messages={messages}
@@ -163,24 +132,44 @@ export function CircleRoomChat({
             servicePubkey={chat.data?.servicePubkey}
             stationLink={stationLink}
           />
-          <form onSubmit={send} className="radio-chat-form">
+          <form
+            onSubmit={send}
+            className="radio-chat-form"
+            aria-describedby={descriptionId}
+          >
             <label htmlFor={messageId}>{t('Message')}</label>
-            <input
+            <Input
               id={messageId}
               maxLength={MAX_CHAT_LENGTH}
+              placeholder={t('Write a message…')}
               value={message}
               onChange={event => setMessage(event.target.value)}
-              disabled={!canSend || sending}
+              disabled={sending}
             />
             <Button
               intent="primary"
               type="submit"
-              disabled={!canSend || !message.trim() || sending}
+              disabled={!message.trim() || sending}
             >
-              {t('Send')}
+              {sending ? t('Sending…') : t('Send')}
             </Button>
           </form>
+          {sendError && (
+            <p role="alert">{t('Message could not be sent. Try again.')}</p>
+          )}
+          <p id={descriptionId} className="radio-chat-description">
+            {t('Trustroots signs your posts and includes your username.')}{' '}
+            {t(
+              'Messages are visible to people with access to the Trustroots relay.',
+            )}
+          </p>
         </>
+      ) : user ? (
+        <p>
+          {t(
+            'Join this circle using the Join button at the top of the page to read or post in chat.',
+          )}
+        </p>
       ) : (
         <p>
           <a

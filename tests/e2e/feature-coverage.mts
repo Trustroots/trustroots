@@ -562,7 +562,7 @@ const features = [
       'Visitors can submit a volunteer enquiry from the volunteering page.',
       'Members can submit a volunteer enquiry from the volunteering page.',
       'Visitors see a sign-in link, and members can read volunteering chat without a signer.',
-      'A matching signer posts to the volunteering topic.',
+      'Trustroots signs a linked member’s post on the volunteering topic.',
     ],
     relatedSpecs: [
       spec(
@@ -2153,7 +2153,7 @@ const features = [
     area: AREA.searchOffersCircles,
     status: STATUS.active,
     description:
-      'The Radio circle provides public playback and authenticated shared listening.',
+      'The Radio circle provides public playback, shared listener counts and member chat.',
     roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
@@ -2163,9 +2163,9 @@ const features = [
     requiredScenarios: [
       'Visitors can listen, save favourites and see shared listener counts.',
       'Chat and listener identities require login.',
-      'A matching verified signer can publish chat, favourites and listening activity.',
+      'A linked member can post with their Trustroots account.',
       'Playback survives relay failures and stops when leaving the circle.',
-      'A matching NIP-07 extension connects automatically.',
+      'Playback and local favourites work without browser-extension calls or public relay writes.',
       'Local playback contributes to the listener count immediately.',
     ],
     relatedSpecs: [
@@ -2175,11 +2175,11 @@ const features = [
       ),
       spec(
         'features/public-core/radio-circle.spec.ts',
-        'logged-in members can read radio chat but need a matching signer to publish',
+        'logged-in members can read and post in Radio without a Nostr key',
       ),
       spec(
         'features/public-core/radio-circle.spec.ts',
-        'a matching Trustroots Nostr signer can chat, share favourites and announce listening',
+        'a linked member can chat, listen and save favourites without the extension',
       ),
       spec(
         'features/public-core/radio-circle.spec.ts',
@@ -2192,7 +2192,7 @@ const features = [
     area: AREA.searchOffersCircles,
     status: STATUS.active,
     description:
-      'Signed-in members can read a separate Hackers chat and post with a verified Nostr signer.',
+      'Hackers circle members can read and post in a dedicated chat.',
     roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
@@ -2200,8 +2200,8 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Visitors see a sign-in link, and members can read without a signer.',
-      'A verified signer posts to Hackers without publishing to Radio.',
+      'Visitors see a sign-in link, and signed-in accounts must join to read chat.',
+      'Trustroots signs a linked member’s post on the Hackers topic.',
     ],
     relatedSpecs: [
       spec(

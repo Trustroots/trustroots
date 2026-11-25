@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import express from 'express';
+import mongoose, { Types } from 'mongoose';
+import type { TribeRecord } from '../../server/models/tribe.server.model.mts';
 import request from 'supertest';
 import {
   finalizeEvent,
@@ -10,13 +12,25 @@ import {
   type Event,
 } from 'nostr-tools';
 import { useWebSocketImplementation } from 'nostr-tools/relay';
-import { vi } from 'vitest';
+import { it, vi } from 'vitest';
 import { registerCircleChat } from '../../server/controllers/circle-chat.server.controller.mts';
 import { readCircleChat } from '../../server/services/circle-chat.server.mts';
 
+const chatCircles = ['hackers', 'hitchhikers', 'radio'].map(slug => ({
+  slug,
+  label: slug,
+  _id: new Types.ObjectId(),
+}));
+const circleMemberships = chatCircles.map(circle => ({ tribe: circle._id }));
+const Tribe = mongoose.model<TribeRecord>('Tribe');
+
 let nextAccountId = 0;
 
-function chatApp(account?: { nostrNpub?: string; roles?: string[] }) {
+function chatApp(account?: {
+  nostrNpub?: string;
+  roles?: string[];
+  member?: { tribe: Types.ObjectId }[];
+}) {
   const app = express();
   const accountId = `fictional-account-${++nextAccountId}`;
   app.use(express.json());
@@ -27,6 +41,7 @@ function chatApp(account?: { nostrNpub?: string; roles?: string[] }) {
           _id: req.get('X-Test-Account-Id') ?? accountId,
           username: 'fictional-member',
           roles: ['user'],
+          member: circleMemberships,
           ...account,
         },
       });
@@ -94,6 +109,16 @@ afterEach(() => {
 describe('Circle chat API', () => {
   const path = '/api/tribes/chat/hitchhikers';
 
+  before(async () => {
+    await Tribe.collection.insertMany(chatCircles);
+  });
+
+  after(async () => {
+    await Tribe.collection.deleteMany({
+      _id: { $in: chatCircles.map(circle => circle._id) },
+    });
+  });
+
   beforeEach(() => {
     vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', undefined);
     vi.stubEnv('TRUSTROOTS_NOSTR_EXPORT_NSEC', undefined);
@@ -123,13 +148,73 @@ describe('Circle chat API', () => {
       .expect(404, { message: 'Chat room not found.' });
   });
 
-  it('requires linked members to use their own signers', async () => {
-    const nostrNpub = nip19.npubEncode(getPublicKey(generateSecretKey()));
-    await chatApp({ nostrNpub })
+  it('requires membership of the matching circle to read or post', async () => {
+    vi.stubEnv(
+      'TRUSTROOTS_NOSTR_SERVICE_NSEC',
+      nip19.nsecEncode(generateSecretKey()),
+    );
+    const { published } = fakeRelay([]);
+    const member = [{ tribe: chatCircles[0]!._id }];
+    const app = chatApp({ member });
+    for (const slug of ['radio', 'hitchhikers']) {
+      const url = `/api/tribes/chat/${slug}`;
+      await app
+        .get(url)
+        .expect(403, { message: 'Join this circle to access chat.' });
+      await app
+        .post(url)
+        .send({ content: 'Fictional post', member: circleMemberships })
+        .expect(403, { message: 'Join this circle to access chat.' });
+    }
+    await chatApp({ member: undefined })
       .post(path)
-      .send({ content: 'Fictional chat' })
-      .expect(403, {
-        message: 'Use the signer linked to your Trustroots account.',
+      .send({ content: 'No memberships' })
+      .expect(403);
+    assert.equal(published.length, 0);
+    await app.get('/api/tribes/chat/hackers').expect(200);
+    await app
+      .post('/api/tribes/chat/hackers')
+      .send({ content: 'Joined circle' })
+      .expect(201);
+    member.length = 0;
+    await app.get('/api/tribes/chat/hackers').expect(403);
+    await app
+      .post('/api/tribes/chat/hackers')
+      .send({ content: 'Left circle' })
+      .expect(403);
+    assert.deepEqual(
+      published.map(event => event.content),
+      ['Joined circle'],
+    );
+  });
+
+  it('allows an eligible signed-in account without circle membership to post in Volunteering', async () => {
+    vi.stubEnv(
+      'TRUSTROOTS_NOSTR_SERVICE_NSEC',
+      nip19.nsecEncode(generateSecretKey()),
+    );
+    const { published } = fakeRelay([]);
+    const app = chatApp({ member: undefined });
+    await app.get('/api/tribes/chat/volunteering').expect(200);
+    await app
+      .post('/api/tribes/chat/volunteering')
+      .send({ content: 'Fictional volunteer question' })
+      .expect(201);
+    assert.deepEqual(published[0]?.tags, [
+      ['t', 'trustroots-volunteering'],
+      ['trustroots_username', 'fictional-member'],
+    ]);
+  });
+
+  it('rejects a post when circle membership cannot be checked', async () => {
+    vi.spyOn(Tribe.collection, 'findOne').mockRejectedValueOnce(
+      new Error('offline'),
+    );
+    await chatApp({})
+      .post(path)
+      .send({ content: 'Fictional post' })
+      .expect(503, {
+        message: 'Circle chat is temporarily unavailable.',
       });
   });
 
@@ -174,75 +259,87 @@ describe('Circle chat API', () => {
     await app.get(path).expect(503);
   });
 
-  it('authenticates with the service key, publishes session attribution and reads the same room', async () => {
-    const serviceKey = generateSecretKey();
-    const servicePubkey = getPublicKey(serviceKey);
-    const memberKey = generateSecretKey();
-    const now = Math.floor(Date.now() / 1000);
-    const makeEvent = (content: string, tags: string[][], created_at = now) =>
-      finalizeEvent({ kind: 1, content, tags, created_at }, memberKey);
-    const topic = ['t', 'radiostr'];
-    const memberMessage = makeEvent('Message from a fictional signer', [topic]);
-    const events = [
-      memberMessage,
-      makeEvent('Different room', [['t', 'other']]),
-      makeEvent('Listening activity', [topic, ['t', 'nowplaying']]),
-      makeEvent('Expired message', [topic, ['expiration', '1']]),
-      makeEvent('Future message', [topic], now + 360),
-      makeEvent('Invalid timestamp', [topic], -1),
-    ];
-    const { authenticated, published, connections } = fakeRelay(events);
-    vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(serviceKey));
-    const app = chatApp({});
-    const radioPath = '/api/tribes/chat/radio';
-    const longestMessage = 'Fictional '.repeat(49) + 'chat post.';
-    const sent = await app
-      .post(radioPath)
-      .send({
-        content: `  ${longestMessage}  `,
-        channel: 'groovesalad',
-        username: 'spoofed-member',
-      })
-      .expect(201);
-    assert.equal(sent.body.pubkey, servicePubkey);
-    assert.equal(sent.body.content, longestMessage);
-    assert.ok(
-      sent.body.tags.some(
-        (tag: string[]) =>
-          tag[0] === 'trustroots_username' && tag[1] === 'fictional-member',
-      ),
-    );
-    assert.ok(
-      sent.body.tags.some(
-        (tag: string[]) => tag[0] === 'channel' && tag[1] === 'groovesalad',
-      ),
-    );
-    assert.ok(verifyEvent(sent.body));
-    assert.deepEqual(
-      published.map(event => event.id),
-      [sent.body.id],
-    );
-
-    const history = await app.get(radioPath).expect(200);
-    assert.equal(history.body.servicePubkey, servicePubkey);
-    assert.deepEqual(
-      history.body.messages.map((event: Event) => event.id),
-      [memberMessage.id, sent.body.id],
-    );
-    assert.deepEqual(connections, Array(2).fill('wss://nip42.trustroots.org/'));
-    assert.equal(authenticated.length, 2);
-    for (const event of authenticated) {
-      assert.equal(event.kind, 22242);
-      assert.equal(event.pubkey, servicePubkey);
+  const linkedNpub = nip19.npubEncode(getPublicKey(generateSecretKey()));
+  it.each([
+    { account: 'without a linked key', nostrNpub: undefined },
+    { account: 'with a linked key', nostrNpub: linkedNpub },
+  ])(
+    'authenticates and publishes as the service for a member $account',
+    async ({ nostrNpub }) => {
+      const serviceKey = generateSecretKey();
+      const servicePubkey = getPublicKey(serviceKey);
+      const memberKey = generateSecretKey();
+      const now = Math.floor(Date.now() / 1000);
+      const makeEvent = (content: string, tags: string[][], created_at = now) =>
+        finalizeEvent({ kind: 1, content, tags, created_at }, memberKey);
+      const topic = ['t', 'radiostr'];
+      const memberMessage = makeEvent('Message from a fictional signer', [
+        topic,
+      ]);
+      const events = [
+        memberMessage,
+        makeEvent('Different room', [['t', 'other']]),
+        makeEvent('Listening activity', [topic, ['t', 'nowplaying']]),
+        makeEvent('Expired message', [topic, ['expiration', '1']]),
+        makeEvent('Future message', [topic], now + 360),
+        makeEvent('Invalid timestamp', [topic], -1),
+      ];
+      const { authenticated, published, connections } = fakeRelay(events);
+      vi.stubEnv('TRUSTROOTS_NOSTR_SERVICE_NSEC', nip19.nsecEncode(serviceKey));
+      const app = chatApp({ nostrNpub });
+      const radioPath = '/api/tribes/chat/radio';
+      const longestMessage = 'Fictional '.repeat(49) + 'chat post.';
+      const sent = await app
+        .post(radioPath)
+        .send({
+          content: `  ${longestMessage}  `,
+          channel: 'groovesalad',
+          username: 'spoofed-member',
+        })
+        .expect(201);
+      assert.equal(sent.body.pubkey, servicePubkey);
+      assert.equal(sent.body.content, longestMessage);
       assert.ok(
-        event.tags.some(
-          ([name, value]) =>
-            name === 'challenge' && value === 'fictional-relay-challenge',
+        sent.body.tags.some(
+          (tag: string[]) =>
+            tag[0] === 'trustroots_username' && tag[1] === 'fictional-member',
         ),
       );
-      assert.ok(verifyEvent(event));
-    }
-  });
+      assert.ok(
+        sent.body.tags.some(
+          (tag: string[]) => tag[0] === 'channel' && tag[1] === 'groovesalad',
+        ),
+      );
+      assert.ok(verifyEvent(sent.body));
+      assert.deepEqual(
+        published.map(event => event.id),
+        [sent.body.id],
+      );
+
+      const history = await app.get(radioPath).expect(200);
+      assert.equal(history.body.servicePubkey, servicePubkey);
+      assert.deepEqual(
+        history.body.messages.map((event: Event) => event.id),
+        [memberMessage.id, sent.body.id],
+      );
+      assert.deepEqual(
+        connections,
+        Array(2).fill('wss://nip42.trustroots.org/'),
+      );
+      assert.equal(authenticated.length, 2);
+      for (const event of authenticated) {
+        assert.equal(event.kind, 22242);
+        assert.equal(event.pubkey, servicePubkey);
+        assert.ok(
+          event.tags.some(
+            ([name, value]) =>
+              name === 'challenge' && value === 'fictional-relay-challenge',
+          ),
+        );
+        assert.ok(verifyEvent(event));
+      }
+    },
+  );
 
   it('checks history timestamp boundaries, expiration and Radio activity', async () => {
     const secret = generateSecretKey();

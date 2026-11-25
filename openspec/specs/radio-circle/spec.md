@@ -21,51 +21,40 @@ and SHALL NOT prevent choosing another station.
 
 ### Requirement: Authenticated social interface
 
-Chat and listener identities SHALL be shown only to logged-in Trustroots
-members. The interface SHALL NOT request chat history, fetch listener profiles,
-or look up author identities for visitors.
+Only eligible signed-in members of the Radio circle SHALL have access to chat.
+Listener identities SHALL be shown only to signed-in Trustroots members. The
+interface SHALL NOT fetch listener profiles or look up author identities for
+visitors.
 
 #### Scenario: A member reads the room
 
-- **WHEN** a logged-in member opens the circle without a signer
-- **THEN** they can read chat and see listeners
-- **AND** they can publish chat via Trustroots if their account has no linked npub
+- **WHEN** an eligible Trustroots member opens Radio
+- **THEN** they can see listeners
+- **AND** after joining Radio they can read and post in chat via Trustroots
 
 #### Scenario: A visitor opens the room
 
 - **WHEN** a visitor opens Radio
 - **THEN** the interface does not request personalised author identity data
 
-### Requirement: Matching verified signing identity
-
-Member-signed publication SHALL require a Nostr signer matching both the logged-in member's linked npub and the member's Trustroots NIP-05 lookup. The Radio circle SHALL detect a complete NIP-07 provider on entry and for up to five seconds and attempt connection once for a member with a linked npub. Manual retry SHALL remain available. The application SHALL verify signed event contents and keep the shared export signing key on the server.
-
-#### Scenario: A mismatched signer connects
-
-- **WHEN** the extension key differs from the member's linked key or NIP-05 lookup
-- **THEN** publishing is disabled and the mismatch is explained
-
-#### Scenario: A matching extension is available
-
-- **WHEN** a logged-in member with a linked npub opens Radio with a matching NIP-07 extension
-- **THEN** Radio connects the signer automatically
-- **AND** uses the signer for chat, favourites and listening activity
-
 ### Requirement: Radiostr compatibility
 
-Chat, favourites and listening events SHALL use the existing kind-1 Radiostr tags,
-station IDs and thirty-day expiration. Chat SHALL use the authenticated Trustroots
-relay. Favourites and listening events SHALL use the existing public
-Trustroots/Nomadwiki relays. Listener counts SHALL deduplicate public keys and expire activity after twelve minutes.
-Verified connected members SHALL share activity after ten seconds of playback,
-then every five minutes while playing. Favourites SHALL reconcile local state
-with that signer's relay events, preserving remote unstar actions.
+Radio SHALL read listening activity from the existing public Trustroots and
+Nomadwiki relays. Listener counts SHALL deduplicate public keys and expire
+activity after twelve minutes. Radio SHALL store favourites on the current
+device. Radio chat SHALL use the existing kind-1 Radiostr tags, station IDs and
+thirty-day expiry on the authenticated Trustroots relay.
 
 #### Scenario: Both interfaces are in use
 
 - **WHEN** Radiostr publishes listening activity to a supported public relay
 - **THEN** the circle processes it using the same station identity
 - **AND** duplicate relay deliveries do not duplicate listeners
+
+#### Scenario: A member tunes in or saves a favourite
+
+- **WHEN** a member listens or saves a favourite in Trustroots Radio
+- **THEN** Radio does not request extension access or publish a listening or favourite event
 
 ### Requirement: Chat message details
 

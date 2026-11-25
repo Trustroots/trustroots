@@ -10,8 +10,7 @@ Give members a dedicated place to ask questions and discuss volunteering.
 
 The volunteering page SHALL show signed-in members kind-1 Nostr events tagged
 `trustroots-volunteering` on the authenticated Trustroots relay. Members SHALL
-be able to post with a matching verified signer or via Trustroots as specified
-by mixed circle chat. `/volunteers` SHALL redirect to `/volunteering`.
+be able to post via Trustroots as specified by mixed circle chat. `/volunteers` SHALL redirect to `/volunteering`.
 
 #### Scenario: A visitor opens the volunteering page
 
@@ -24,4 +23,4 @@ by mixed circle chat. `/volunteers` SHALL redirect to `/volunteering`.
 
 - **WHEN** a signed-in member opens `/volunteering`
 - **THEN** the member can read volunteering messages without connecting a signer
-- **AND** they can publish to the topic using the signing path for their account
+- **AND** Trustroots signs messages they publish to the topic
