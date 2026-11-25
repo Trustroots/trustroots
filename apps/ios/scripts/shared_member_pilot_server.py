@@ -80,6 +80,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
     thread_read = False
     send_attempts = 0
+    support_attempts = 0
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
@@ -245,6 +246,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
                 fixture.thread_read = False
                 fixture.send_attempts = 0
+                fixture.support_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
@@ -293,6 +295,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
             }
             type(self).nostr_challenge = (npub, event)
             self._json(200, {"event": event})
+        elif self.path == "/api/mobile/v0/support":
+            if body != {"message": "A fixture support request."}:
+                self._json(422, {"message": "Expected the fixture support message."})
+                return
+            with fixture.session_lock:
+                fixture.support_attempts += 1
+                attempt = fixture.support_attempts
+            if attempt == 1:
+                self._json(503, {"message": "Temporary fixture support delivery failure."})
+            else:
+                self._json(201, {})
         elif self.path == "/api/mobile/v0/messages-read":
             message_ids = body.get("messageIds")
             if not isinstance(message_ids, list):
