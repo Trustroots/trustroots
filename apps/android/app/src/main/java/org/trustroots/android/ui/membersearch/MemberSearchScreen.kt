@@ -80,11 +80,12 @@ internal fun MemberSearchScreen(
     val state by model.state.collectAsState()
     var showingFilters by remember { mutableStateOf(false) }
     var circles by remember(api, session.credentialKey) { mutableStateOf<List<TrustrootsCircle>?>(null) }
-    LaunchedEffect(showingFilters, api, session.credentialKey) {
-        if (showingFilters && circles == null) circles = api.circles(session).getOrNull()
-    }
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    fun dismissKeyboard() {
+        keyboard?.hide()
+        focusManager.clearFocus()
+    }
     val scrollState = remember { ScrollState(state.resultScrollOffset) }
     LaunchedEffect(scrollState, model) {
         snapshotFlow { scrollState.value }
@@ -120,8 +121,7 @@ internal fun MemberSearchScreen(
                 searchLabel = stringResource(R.string.search_members),
                 leadingIcon = searchModeMenu,
                 onSearch = {
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    dismissKeyboard()
                     model.onEvent(MemberSearchEvent.Submit)
                 },
                 searchEnabled = state.query.trim().length >= 3 && !state.isLoading,
@@ -135,15 +135,13 @@ internal fun MemberSearchScreen(
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
             if (onSwitchToMap != null) {
                 TextButton(onClick = {
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    dismissKeyboard()
                     onSwitchToMap()
                 }) { Text(stringResource(R.string.screen_switch_to_map_search)) }
             }
             TextButton(
                 onClick = {
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    dismissKeyboard()
                     showingFilters = true
                 },
                 enabled = !state.isLoading,
@@ -248,9 +246,12 @@ internal fun MemberSearchScreen(
         }
     }
     if (showingFilters) {
+        LaunchedEffect(api, session.credentialKey) {
+            if (circles == null) circles = api.circles(session).getOrNull()
+        }
         MemberFiltersDialog(
             initial = state.filters,
-            circles = circles,
+            circles = circles.orEmpty(),
             onDismiss = { showingFilters = false },
             onApply = {
                 showingFilters = false
@@ -263,7 +264,7 @@ internal fun MemberSearchScreen(
 @Composable
 private fun MemberFiltersDialog(
     initial: MemberSearchFilters,
-    circles: List<TrustrootsCircle>?,
+    circles: List<TrustrootsCircle>,
     onDismiss: () -> Unit,
     onApply: (MemberSearchFilters) -> Unit,
 ) {
@@ -294,9 +295,9 @@ private fun MemberFiltersDialog(
                     LabelledCheckbox(stringResource(R.string.screen_filter_connections_only), filter.connectionsOnly, { filter = filter.copy(connectionsOnly = it) })
                     LabelledCheckbox(stringResource(R.string.screen_member_filter_online_recently), filter.onlineRecently, { filter = filter.copy(onlineRecently = it) })
                     Text(stringResource(R.string.screen_destination_circles), style = MaterialTheme.typography.titleSmall)
-                    if (circles.isNullOrEmpty()) Text(stringResource(R.string.screen_circles_empty_title))
+                    if (circles.isEmpty()) Text(stringResource(R.string.screen_circles_empty_title))
                 }
-                items(circles.orEmpty(), key = { it.id }) { circle ->
+                items(circles, key = { it.id }) { circle ->
                     LabelledCheckbox(circle.label, circle.id in filter.circleIDs, { checked ->
                         val selected = if (checked) filter.circleIDs + circle.id else filter.circleIDs - circle.id
                         filter = filter.copy(circleIDs = selected)

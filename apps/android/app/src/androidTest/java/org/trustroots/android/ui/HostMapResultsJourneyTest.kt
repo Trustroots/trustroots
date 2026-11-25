@@ -195,6 +195,9 @@ class HostMapResultsJourneyTest {
                 "/api/offers/offer-two" -> LocalTransportFixture.Response(
                     """{"_id":"offer-two","status":"maybe","meetingStatus":"yes","user":{"username":"amber-owl","displayName":"Amber Owl"}}""",
                 )
+                "/api/offers/offer-meet" -> LocalTransportFixture.Response(
+                    """{"_id":"offer-meet","status":"no","meetingStatus":"maybe","description":"<p>Walk by the fictional harbour.</p>","user":{"username":"gentle-hare","displayName":"Gentle Hare"}}""",
+                )
                 else -> null
             }
         }
@@ -228,6 +231,7 @@ class HostMapResultsJourneyTest {
                 MapOffer("offer-one", 0.0, 0.0, type = "meet"),
                 MapOffer("offer-two", 0.0, 0.0, status = "yes"),
                 MapOffer("offer-three", 0.0, 0.0, status = "yes"),
+                MapOffer("offer-meet", 0.0, 0.0, type = "meet", status = "no"),
             )
         }
         waitForText("Available to meet")
@@ -239,6 +243,10 @@ class HostMapResultsJourneyTest {
         compose.onNodeWithTag("hostMapResults").performScrollToNode(androidx.compose.ui.test.hasText("Not hosting currently"))
         compose.onNodeWithText("Not hosting currently").assertIsDisplayed()
         compose.onNodeWithText("A fictional room that is no longer available.").assertDoesNotExist()
+        compose.onNodeWithTag("hostMapResults").performScrollToNode(hasTestTag("map-result-offer-meet"))
+        waitForText("Might meet")
+        compose.onNodeWithText("Might meet").assertIsDisplayed()
+        compose.onNodeWithText("Walk by the fictional harbour.").assertIsDisplayed()
     }
 
     @Test fun replacingTheSessionDiscardsAnInFlightOfferFromThePreviousMember() {

@@ -127,6 +127,28 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun changingFiltersAfterFailureRetriesTheCurrentQuery() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        val foundMember = member("quiet-fox", "Quiet Fox")
+        repository.searchHandler = { call ->
+            if (call == 1) Result.failure(IOException("A temporary failure."))
+            else Result.success(listOf(foundMember))
+        }
+        val model = MemberSearchViewModel(repository, scope)
+        model.onEvent(MemberSearchEvent.QueryChanged("quiet"))
+        model.onEvent(MemberSearchEvent.Submit)
+        assertEquals(MemberSearchFailureKind.SEARCH, model.state.value.failure?.kind)
+
+        val filters = MemberSearchFilters(hosts = true)
+        model.onEvent(MemberSearchEvent.FiltersChanged(filters))
+
+        assertEquals(listOf("quiet", "quiet"), repository.queries)
+        assertEquals(listOf(MemberSearchFilters(), filters), repository.filters)
+        assertEquals(listOf(foundMember), model.state.value.results)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test
     fun repositoryExceptionBecomesRetryableFailureAndNextSubmissionSucceeds() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
         repository.searchHandler = { call ->

@@ -99,6 +99,15 @@ class HostMapDeviceLocationJourneyTest {
         compose.onNodeWithTag("mapResultsToggle").performClick()
         val filters = model.state.value.filters
         assertEquals(true, filters.volunteering && filters.connectionsOnly)
+
+        val searchesBeforeClearing = searches.size
+        compose.onNodeWithText("My connections only").performScrollTo().performClick()
+        compose.waitUntil(10_000) {
+            searches.drop(searchesBeforeClearing).any { (_, nextFilters) ->
+                nextFilters.volunteering && !nextFilters.connectionsOnly
+            }
+        }
+        assertEquals(false, model.state.value.filters.connectionsOnly)
     }
 
     @Test fun deniedPermissionKeepsMapAndAllowsPlaceSearch() {

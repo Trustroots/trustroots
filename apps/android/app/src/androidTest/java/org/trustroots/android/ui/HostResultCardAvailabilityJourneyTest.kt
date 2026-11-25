@@ -49,4 +49,31 @@ class HostResultCardAvailabilityJourneyTest {
         compose.onNodeWithContentDescription("Close host result").performClick()
         assertTrue(closed.get())
     }
+
+    @Test fun meetResultShowsTheMembersExplicitAvailability() {
+        val opened = AtomicBoolean(false)
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                HostResultCard(
+                    offer = HostOffer(
+                        "offer-meet", "no", null, null,
+                        MessageMember(null, "gentle-hare", "Gentle Hare"),
+                        meetingStatus = "yes",
+                    ),
+                    profile = null,
+                    sharedCircleIDs = emptySet(),
+                    isMeet = true,
+                    api = MobileApiClient("http://127.0.0.1:1"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onClose = {},
+                    onOpenProfile = { opened.set(it == "gentle-hare") },
+                )
+            }
+        }
+
+        compose.onNodeWithText("Happy to meet").assertIsDisplayed()
+        compose.onNodeWithText("Available to meet").assertDoesNotExist()
+        compose.onNodeWithTag("hostResultCard").performClick()
+        assertTrue(opened.get())
+    }
 }

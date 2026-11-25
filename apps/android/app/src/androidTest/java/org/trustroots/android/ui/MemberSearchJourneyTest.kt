@@ -225,6 +225,55 @@ class MemberSearchJourneyTest {
         responder.join(1_000)
     }
 
+    @Test fun reopeningMemberFiltersRetriesFailedCircleLoadAndReusesItsSuccess() {
+        val requestedCircles = AtomicInteger()
+        LocalTransportFixture { request ->
+            if (request.path != "/api/tribes?limit=150") {
+                LocalTransportFixture.Response("[]", 404)
+            } else if (requestedCircles.incrementAndGet() == 1) {
+                LocalTransportFixture.Response("{}", 503)
+            } else {
+                LocalTransportFixture.Response("""[{"_id":"circle-one","slug":"quiet-circle","label":"Quiet Circle"}]""")
+            }
+        }.use { fixture ->
+            val api = MobileApiClient(fixture.baseURL)
+            val session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron"))
+            val mapVisits = AtomicInteger()
+            compose.setContent {
+                CompositionLocalProvider(LocalSoftwareKeyboardController provides null) {
+                    NativeTestAppFrame(Destination.Search) {
+                        MemberSearchScreen(
+                            api = api,
+                            session = session,
+                            onSessionInvalidated = {},
+                            onSwitchToMap = { mapVisits.incrementAndGet() },
+                        )
+                    }
+                }
+            }
+
+            compose.onNodeWithText("Switch to map search").performClick()
+            assertEquals(1, mapVisits.get())
+            compose.onNodeWithText("Member filters").performClick()
+            compose.waitUntil(10_000) { requestedCircles.get() == 1 }
+            compose.onNodeWithText("No circles available").assertIsDisplayed()
+            compose.onNodeWithText("Cancel").performClick()
+
+            compose.onNodeWithText("Member filters").performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Quiet Circle").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("memberFilters").performScrollToNode(hasText("Quiet Circle"))
+            compose.onNodeWithText("Quiet Circle").assertIsDisplayed()
+            compose.onNodeWithText("Cancel").performClick()
+
+            compose.onNodeWithText("Member filters").performClick()
+            compose.onNodeWithTag("memberFilters").performScrollToNode(hasText("Quiet Circle"))
+            compose.onNodeWithText("Quiet Circle").assertIsDisplayed()
+            assertEquals(2, requestedCircles.get())
+        }
+    }
+
     private fun revealProfileTabsIfClipped() {
         val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
         val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
