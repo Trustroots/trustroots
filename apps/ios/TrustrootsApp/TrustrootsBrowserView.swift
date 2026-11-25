@@ -30,15 +30,6 @@ enum TrustrootsBrowserRoute: Identifiable {
         }
     }
 
-    var isHome: Bool {
-        guard case .website(let path, _) = self else { return false }
-        if let absoluteURL = URL(string: path), absoluteURL.scheme != nil {
-            return absoluteURL.host == "www.trustroots.org" &&
-                (absoluteURL.path.isEmpty || absoluteURL.path == "/")
-        }
-        return path == "/"
-    }
-
     var url: URL {
         switch self {
         case .join:
@@ -58,30 +49,27 @@ enum TrustrootsBrowserRoute: Identifiable {
 
 struct TrustrootsBrowserView: View {
     let route: TrustrootsBrowserRoute
-    var showsNavigationBar = true
     let onClose: () -> Void
     @State private var externalURL: URL?
     @State private var nip07PermissionPrompt: NIP07PermissionPrompt?
 
     var body: some View {
         VStack(spacing: 0) {
-            if showsNavigationBar {
-                HStack {
-                    Button(action: onClose) {
-                        Label("Back", systemImage: "chevron.backward")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    Spacer()
-                    Text(route.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                    Spacer()
-                    Color.clear.frame(width: 58, height: 1)
+            HStack {
+                Button(action: onClose) {
+                    Label("Back", systemImage: "chevron.backward")
+                        .font(.subheadline.weight(.semibold))
                 }
-                .padding(.horizontal)
-                .frame(height: 48)
-                .background(.bar)
+                Spacer()
+                Text(route.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                Spacer()
+                Color.clear.frame(width: 58, height: 1)
             }
+            .padding(.horizontal)
+            .frame(height: 48)
+            .background(.bar)
 
             TrustrootsWebView(
                 url: route.url,

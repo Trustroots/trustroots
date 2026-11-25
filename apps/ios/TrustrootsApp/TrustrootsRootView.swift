@@ -3,128 +3,84 @@ import UIKit
 
 struct TrustrootsRootView: View {
     @ObservedObject var session: MemberSessionStore
-    let sharedHome: Bool
-    @State private var destination: TrustrootsDestination
+    @State private var destination: TrustrootsDestination = .home
     @State private var browserRoute: TrustrootsBrowserRoute?
     @State private var messagesNavigationID = UUID()
     @State private var searchLocation: String?
     @State private var isKeyboardVisible = false
-    @State private var isShowingCircleDetail = false
-    @State private var isShowingProfileDetail = false
     @StateObject private var offlineAvailability = OfflineAvailability.shared
 
-    init(session: MemberSessionStore, sharedHome: Bool = false) {
-        self.session = session
-        self.sharedHome = sharedHome
-        _destination = State(initialValue: sharedHome ? .home : .profile)
-    }
-
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 0) {
-                if !isImmersiveDetail {
-                    TrustrootsPalette.green.frame(height: 50)
-                }
+        VStack(spacing: 0) {
+            OfflineSavedDataBanner(availability: offlineAvailability)
 
-                OfflineSavedDataBanner(availability: offlineAvailability)
-
-                Group {
-                    if let browserRoute {
-                        TrustrootsBrowserView(route: browserRoute, showsNavigationBar: false) {
-                            self.browserRoute = nil
-                        }
-                    } else {
-                        switch destination {
-                        case .home:
-                            SharedHomeTab(session: session)
-                        case .circles:
-                            CirclesView(session: session)
-                        case .profile:
-                            MemberProfileView(session: session, editProfile: {
-                                destination = .editProfile
-                            }, openCircles: {
-                                destination = .circles
-                            })
-                        case .editProfile:
-                            EditProfileView(
-                                session: session,
-                                onSaved: { destination = .profile },
-                                onCancel: { destination = .profile }
-                            )
-                        case .contacts:
-                            ContactsView(session: session)
-                        case .memberSearch:
-                            MemberSearchView(session: session)
-                        case .support:
-                            ContactSupportView(session: session) {
-                                browserRoute = .website(path: "/faq", title: "Frequently asked questions")
-                            }
-                        case .account:
-                            AccountView(
-                                session: session,
-                                openPasswordRecovery: { browserRoute = .passwordRecovery }
-                            )
-                        case .search:
-                            OfferMapView(session: session, searchLocation: searchLocation)
-                        case .messages:
-                            MessageInboxView(session: session)
-                                .id(messagesNavigationID)
-                        case .menu:
-                            MoreView(
-                                showsCircles: sharedHome,
-                                openBrowser: { browserRoute = $0 },
-                                selectDestination: { destination = $0 }
-                            )
-                        }
+            Group {
+                if let browserRoute {
+                    TrustrootsBrowserView(route: browserRoute) {
+                        self.browserRoute = nil
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if !isKeyboardVisible {
-                    TrustrootsBottomNavigation(
-                        destination: $destination,
-                        firstTab: sharedHome ? .home : .circles
-                    ) { selectedDestination in
-                        if destination == .search, selectedDestination == .search {
-                            NotificationCenter.default.post(name: .trustrootsReturnToMap, object: nil)
+                } else {
+                    switch destination {
+                    case .home:
+                        SharedHomeTab(session: session)
+                    case .circles:
+                        CirclesView(session: session)
+                    case .profile:
+                        MemberProfileView(session: session, editProfile: {
+                            destination = .editProfile
+                        }, openCircles: {
+                            destination = .circles
+                        })
+                    case .editProfile:
+                        EditProfileView(
+                            session: session,
+                            onSaved: { destination = .profile },
+                            onCancel: { destination = .profile }
+                        )
+                    case .contacts:
+                        ContactsView(session: session)
+                    case .memberSearch:
+                        MemberSearchView(session: session)
+                    case .support:
+                        ContactSupportView(session: session) {
+                            browserRoute = .website(path: "/faq", title: "Frequently asked questions")
                         }
-                        browserRoute = nil
-                        destination = selectedDestination
-                        if selectedDestination == .messages {
-                            messagesNavigationID = UUID()
-                        }
+                    case .account:
+                        AccountView(
+                            session: session,
+                            openPasswordRecovery: { browserRoute = .passwordRecovery }
+                        )
+                    case .search:
+                        OfferMapView(session: session, searchLocation: searchLocation)
+                    case .messages:
+                        MessageInboxView(session: session)
+                            .id(messagesNavigationID)
+                    case .menu:
+                        MoreView(
+                            openBrowser: { browserRoute = $0 },
+                            selectDestination: { destination = $0 }
+                        )
                     }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            TrustrootsBrandHeader(
-                isOverArtwork: isImmersiveDetail,
-                goBack: browserRoute == nil || browserRoute?.isHome == true ? nil : {
-                    browserRoute = nil
-                },
-                openHome: {
-                    if sharedHome {
-                        browserRoute = nil
-                        destination = .home
-                    } else {
-                        browserRoute = .website(path: "/", title: "Trustroots")
+            if !isKeyboardVisible {
+                TrustrootsBottomNavigation(destination: $destination) { selectedDestination in
+                    if destination == .search, selectedDestination == .search {
+                        NotificationCenter.default.post(name: .trustrootsReturnToMap, object: nil)
                     }
-                },
-                openProfile: {
                     browserRoute = nil
-                    destination = .profile
-                },
-                openAccount: {
-                    browserRoute = nil
-                    destination = .account
+                    destination = selectedDestination
+                    if selectedDestination == .messages {
+                        messagesNavigationID = UUID()
+                    }
                 }
-            )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(edges: .top)
         .background(Color(.systemBackground))
-        .statusBar(hidden: true)
         .tint(TrustrootsPalette.darkGreen)
         .onReceive(NotificationCenter.default.publisher(for: .trustrootsOpenMapLocation)) { notification in
             guard let location = notification.object as? String else { return }
@@ -150,14 +106,6 @@ struct TrustrootsRootView: View {
                 isKeyboardVisible = false
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .trustrootsCircleDetailVisibility)) { notification in
-            guard let isVisible = notification.object as? Bool else { return }
-            isShowingCircleDetail = isVisible
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .trustrootsProfileDetailVisibility)) { notification in
-            guard let isVisible = notification.object as? Bool else { return }
-            isShowingProfileDetail = isVisible
-        }
         .task(id: analyticsPage?.path) {
             guard let analyticsPage else { return }
             await UmamiAnalytics.trackPage(analyticsPage)
@@ -170,90 +118,12 @@ struct TrustrootsRootView: View {
         }
     }
 
-    private var isImmersiveDetail: Bool {
-        isShowingCircleDetail || isShowingProfileDetail
-    }
-
     private var analyticsPage: NativeAnalyticsPage? {
         guard browserRoute == nil else { return nil }
         return NativeAnalyticsPage(
             path: destination.analyticsPath,
             title: destination.label
         )
-    }
-}
-
-private struct TrustrootsBrandHeader: View {
-    private static let islandHalfWidth: CGFloat = 63
-    private static let islandCentreY: CGFloat = 29
-    private static let islandSpacing: CGFloat = 7
-
-    let isOverArtwork: Bool
-    let goBack: (() -> Void)?
-    let openHome: () -> Void
-    let openProfile: () -> Void
-    let openAccount: () -> Void
-
-    var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 4) {
-                if let goBack {
-                    headerButton("chevron.backward", label: "Back", action: goBack)
-                }
-                Button(action: openHome) {
-                    Image("TrustrootsLogo")
-                        .resizable()
-                        .renderingMode(.template)
-                        .scaledToFit()
-                        .foregroundStyle(.white)
-                        .frame(width: 42, height: 42)
-                        .shadow(color: isOverArtwork ? .black.opacity(0.7) : .clear, radius: 2, y: 1)
-                }
-                .accessibilityLabel("Trustroots home")
-            }
-            .position(
-                x: proxy.size.width / 2
-                    - Self.islandHalfWidth
-                    - Self.islandSpacing
-                    - (goBack == nil ? 21 : 42),
-                y: Self.islandCentreY
-            )
-
-            HStack(spacing: 4) {
-                headerButton("person.crop.circle.fill", label: "Profile", action: openProfile)
-                headerButton("gearshape.fill", label: "Account", action: openAccount)
-            }
-            .position(
-                x: proxy.size.width / 2
-                    + Self.islandHalfWidth
-                    + Self.islandSpacing
-                    + 38,
-                y: Self.islandCentreY
-            )
-        }
-        .frame(height: 52)
-        .background(isOverArtwork ? Color.clear : TrustrootsPalette.green)
-        .shadow(color: isOverArtwork ? .black.opacity(0.45) : .clear, radius: 3, y: 1)
-    }
-
-    private func headerButton(
-        _ systemImage: String,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 38)
-                .background(buttonBackground)
-                .clipShape(Circle())
-        }
-        .accessibilityLabel(label)
-    }
-
-    private var buttonBackground: Color {
-        isOverArtwork ? .black.opacity(0.28) : .clear
     }
 }
 
@@ -308,8 +178,6 @@ extension Notification.Name {
     static let trustrootsOpenMapLocation = Notification.Name("trustroots.openMapLocation")
     static let trustrootsOpenWebsite = Notification.Name("trustroots.openWebsite")
     static let trustrootsOpenOwnProfile = Notification.Name("trustroots.openOwnProfile")
-    static let trustrootsCircleDetailVisibility = Notification.Name("trustroots.circleDetailVisibility")
-    static let trustrootsProfileDetailVisibility = Notification.Name("trustroots.profileDetailVisibility")
     static let trustrootsReturnToMap = Notification.Name("trustroots.returnToMap")
 }
 
@@ -436,22 +304,26 @@ private enum UmamiAnalytics {
 
 private struct TrustrootsBottomNavigation: View {
     @Binding var destination: TrustrootsDestination
-    let firstTab: TrustrootsDestination
+    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 9
     let selectDestination: (TrustrootsDestination) -> Void
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach([firstTab, .search, .messages, .menu], id: \.label) { item in
+            ForEach([TrustrootsDestination.home, .search, .messages, .menu], id: \.label) { item in
                 Button {
                     selectDestination(item)
                 } label: {
-                    VStack(spacing: 3) {
+                    VStack(spacing: 2) {
                         Image(systemName: item.systemImage)
                             .font(.title3.weight(.semibold))
+                            .frame(height: 22, alignment: .center)
                         Text(item.label)
-                            .font(.caption2.weight(.semibold))
+                            .font(.system(size: labelSize, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .padding(.top, 3)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .top)
                     .foregroundStyle(.white)
                     .background {
                         if item == destination {
@@ -471,13 +343,12 @@ private struct TrustrootsBottomNavigation: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.top, 6)
+        .padding(.top, 3)
         .background(Color(red: 0.08, green: 0.71, blue: 0.60).ignoresSafeArea(edges: .bottom))
     }
 }
 
 private struct MoreView: View {
-    let showsCircles: Bool
     let openBrowser: (TrustrootsBrowserRoute) -> Void
     let selectDestination: (TrustrootsDestination) -> Void
 
@@ -487,11 +358,10 @@ private struct MoreView: View {
                 Button("My profile") {
                     selectDestination(.profile)
                 }
-                if showsCircles {
-                    Button("Circles") {
-                        selectDestination(.circles)
-                    }
+                Button("Circles") {
+                    selectDestination(.circles)
                 }
+                .accessibilityIdentifier("circles-menu-entry")
                 Button("Contacts") {
                     selectDestination(.contacts)
                 }

@@ -312,13 +312,12 @@ iOS dashboard build and runtime verification must pass on macOS before rollout.
 
 ## Shared Home in the regular app shells
 
-The shared dashboard can now run as the first tab in the existing Android and
-SwiftUI member shells. It uses their existing secure sessions, native Search
+The shared dashboard is the first tab in the regular SwiftUI member shell and
+is available in the Android debug preview. It uses their existing secure sessions, native Search
 and Messages, and opens a regular member profile when a connection is chosen.
 Circles remains available from Android Profile and iOS Menu.
 
 - Android debug: `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_HOME true`.
-- iOS debug: `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-home`.
 
 On Android, the fixture journey covers signing in with a saved session, the
 Home map and feed, profile restoration across activity recreation, Back,

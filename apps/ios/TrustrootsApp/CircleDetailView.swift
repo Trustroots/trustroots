@@ -98,14 +98,7 @@ struct CircleDetailView: View {
                 .padding(.bottom, 16)
             }
         }
-        .ignoresSafeArea(edges: .top)
         .toolbar(.hidden, for: .navigationBar)
-        .onAppear {
-            NotificationCenter.default.post(name: .trustrootsCircleDetailVisibility, object: true)
-        }
-        .onDisappear {
-            NotificationCenter.default.post(name: .trustrootsCircleDetailVisibility, object: false)
-        }
         .task { await loadMembers() }
     }
 

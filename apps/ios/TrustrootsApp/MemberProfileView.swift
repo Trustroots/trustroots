@@ -281,14 +281,7 @@ struct MemberProfileView: View {
                     await loadProfile()
                 }
             }
-            .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear {
-                NotificationCenter.default.post(name: .trustrootsProfileDetailVisibility, object: true)
-            }
-            .onDisappear {
-                NotificationCenter.default.post(name: .trustrootsProfileDetailVisibility, object: false)
-            }
             .onReceive(NotificationCenter.default.publisher(for: .trustrootsReturnToMap)) { _ in
                 dismiss()
             }

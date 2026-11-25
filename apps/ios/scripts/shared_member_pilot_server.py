@@ -8,7 +8,7 @@ import secrets
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Lock
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 
@@ -32,6 +32,11 @@ INCOMING_MESSAGE = {
     "content": "Hello from the test fixture.",
     "userFrom": PARTNER,
 }
+EARLIER_MESSAGE = {
+    "_id": "message-pilot-earlier",
+    "content": "I left the lantern by the door.",
+    "userFrom": PARTNER,
+}
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
@@ -40,15 +45,23 @@ class FixtureHandler(BaseHTTPRequestHandler):
     refresh_token = None
     refresh_count = 0
     drop_profile_response = False
-    messages = [INCOMING_MESSAGE]
+    messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
+    thread_read = False
     send_attempts = 0
     linked_npub = None
     nostr_challenge = None
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
-        route = urlsplit(self.path).path
+        request = urlsplit(self.path)
+        route = request.path
         if route == "/health":
             self._json(200, {"status": "ready"})
+            return
+        if route == "/fixture/inbox-read-state":
+            fixture = type(self)
+            with fixture.session_lock:
+                thread_read = fixture.thread_read
+            self._json(200, {"read": thread_read})
             return
         if route == "/api/nostr/featured-notes":
             self._json(200, [{
@@ -92,22 +105,31 @@ class FixtureHandler(BaseHTTPRequestHandler):
         elif route == "/api/mobile/v0/circles":
             self._json(200, [])
         elif route == "/api/mobile/v0/messages":
+            fixture = type(self)
+            with fixture.session_lock:
+                excerpt = fixture.messages[0]["content"]
+                thread_read = fixture.thread_read
             self._json(200, [{
                 "_id": "thread-pilot-1",
-                "message": {"excerpt": self.messages[0]["content"]},
-                "read": False,
+                "message": {"excerpt": excerpt},
+                "read": thread_read,
                 "updated": "2026-11-15T10:00:00Z",
                 "userFrom": PARTNER,
                 "userTo": MEMBER,
             }])
         elif route == f'/api/mobile/v0/messages/{PARTNER["_id"]}':
+            fixture = type(self)
             # Lose the conversation connection after the first rejected reply.
             # The pilot must read its saved copy until the member retries.
             if self.send_attempts == 1:
                 self.log_message("Dropping the conversation connection for the draft recovery test.")
                 self.close_connection = True
                 return
-            self._json(200, self.messages)
+            with fixture.session_lock:
+                if parse_qs(request.query).get("markRead") != ["false"]:
+                    fixture.thread_read = True
+                messages = list(fixture.messages)
+            self._json(200, messages)
         else:
             self._json(404, {"message": "Fixture route not found."})
 
@@ -131,7 +153,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 self._json(401, {"message": "Check the fixture username and password."})
                 return
             with fixture.session_lock:
-                fixture.messages = [INCOMING_MESSAGE]
+                fixture.messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
+                fixture.thread_read = False
                 fixture.send_attempts = 0
                 fixture.refresh_count = 0
                 session = fixture._rotate_credentials()
@@ -175,6 +198,15 @@ class FixtureHandler(BaseHTTPRequestHandler):
             }
             type(self).nostr_challenge = (npub, event)
             self._json(200, {"event": event})
+        elif self.path == "/api/mobile/v0/messages-read":
+            message_ids = body.get("messageIds")
+            if not isinstance(message_ids, list):
+                self._json(400, {"message": "Expected fixture message identifiers."})
+                return
+            with fixture.session_lock:
+                if INCOMING_MESSAGE["_id"] in message_ids:
+                    fixture.thread_read = True
+            self._json(200, {})
         elif self.path == "/api/mobile/v0/messages":
             content = body.get("content")
             if body.get("userTo") != PARTNER["_id"] or not isinstance(content, str) or not content.strip():

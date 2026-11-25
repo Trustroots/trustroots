@@ -4,6 +4,7 @@ struct SignInView: View {
     @ObservedObject var session: MemberSessionStore
     @State private var browserRoute: TrustrootsBrowserRoute?
     @State private var apiStatus: MobileAPIStatus?
+    @ScaledMetric(relativeTo: .caption2) private var buildInfoSize: CGFloat = 8
 
     private let api = TrustrootsAPI()
 
@@ -26,18 +27,15 @@ struct SignInView: View {
                 .disabled(session.isSigningIn)
 #endif
 
-                Text("API: \(serverHost)")
-                    .font(.caption.monospaced())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .textSelection(.enabled)
-                if let apiStatus {
-                    Text("API build: \(apiStatus.buildVersion)")
-                        .font(.caption2.monospaced())
+                VStack(spacing: 2) {
+                    if let apiStatus {
+                        Text("API build: \(apiStatus.buildVersion)")
+                    }
+                    Text("iOS build: \(TrustrootsBuildInfo.formatted())")
+                        .accessibilityLabel("iOS build time: \(TrustrootsBuildInfo.formatted())")
+                        .accessibilityIdentifier("sign-in-ios-build")
                 }
-                Text("iOS build: \(TrustrootsBuildInfo.formatted())")
-                    .font(.caption2.monospaced())
-                    .accessibilityLabel("iOS build time: \(TrustrootsBuildInfo.formatted())")
+                .font(.system(size: buildInfoSize, design: .monospaced))
             }
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -54,10 +52,5 @@ struct SignInView: View {
             let status = try? await api.status(serverURLString: session.serverURLString)
             if !Task.isCancelled { apiStatus = status }
         }
-    }
-
-    private var serverHost: String {
-        let server = session.serverURLString
-        return TrustrootsAPIConfiguration(baseURLString: server)?.baseURL.host ?? server
     }
 }
