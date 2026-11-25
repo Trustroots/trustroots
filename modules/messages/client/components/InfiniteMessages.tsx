@@ -25,8 +25,7 @@ import React, {
   type ReactNode,
   type Ref,
 } from 'react';
-import last from 'lodash/last';
-import debounce from 'lodash/debounce';
+import useDebouncedCallback from '@/modules/core/client/hooks/use-debounced-callback';
 
 const debounceWait = 20;
 
@@ -49,7 +48,7 @@ export default function InfiniteMessages({
   const [scrollFromBottom, setScrollFromBottom] = useState<number | null>(null);
   const [lastChildKey, setLastChildKey] = useState(
     () =>
-      (last(React.Children.toArray(children)) as React.ReactElement | undefined)
+      (React.Children.toArray(children).pop() as React.ReactElement | undefined)
         ?.key,
   );
 
@@ -65,17 +64,17 @@ export default function InfiniteMessages({
   // this is not really precise as it doesn't take into account the changing
   // height of the messages, but it at least keeps us at the bottom if we were there.
   // to do it better we could keep track of the key of the child item we have in view).
+  const onResize = useDebouncedCallback(() => {
+    if (!ref.current) return;
+    // preserve scroll position
+    const { scrollHeight, offsetHeight } = ref.current;
+    ref.current.scrollTop =
+      scrollHeight - offsetHeight - (scrollFromBottom as number);
+  }, debounceWait);
   useEffect(() => {
-    const onResize = debounce(() => {
-      if (!ref.current) return;
-      // preserve scroll position
-      const { scrollHeight, offsetHeight } = ref.current;
-      ref.current.scrollTop =
-        scrollHeight - offsetHeight - (scrollFromBottom as number);
-    }, debounceWait);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [scrollFromBottom]);
+  }, [onResize]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -95,7 +94,7 @@ export default function InfiniteMessages({
       const newScrollHeight = ref.current.scrollHeight;
 
       const key = (
-        last(React.Children.toArray(children)) as React.ReactElement | undefined
+        React.Children.toArray(children).pop() as React.ReactElement | undefined
       )?.key;
       if (key !== lastChildKey) {
         // last child is different
@@ -111,7 +110,7 @@ export default function InfiniteMessages({
   });
 
   // trigger fetching more messages when we scroll to the top
-  function onScroll() {
+  const debouncedScroll = useDebouncedCallback(() => {
     if (!ref.current) return;
 
     const { scrollHeight, scrollTop, offsetHeight } = ref.current;
@@ -119,10 +118,10 @@ export default function InfiniteMessages({
       onFetchMore();
     }
     setScrollFromBottom(scrollHeight - scrollTop - offsetHeight);
-  }
+  }, debounceWait);
 
   return (
-    <Component ref={ref} onScroll={debounce(() => onScroll(), debounceWait)}>
+    <Component ref={ref} onScroll={debouncedScroll}>
       {children}
     </Component>
   );

@@ -1,57 +1,34 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 import OfferLocation from '@/modules/offers/client/components/OfferLocation.component';
-import type Map from '@/modules/core/client/components/Map';
-import type OfferLocationOverlay from '@/modules/offers/client/components/OfferLocationOverlay';
+import type { MapProps } from '@/modules/core/client/components/Map/types';
 
-type MockMapProps = React.ComponentProps<typeof Map>;
-const mockMap = vi.fn<(...args: [MockMapProps]) => void>();
-vi.mock('@/modules/core/client/components/Map', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
-  function MockMap(props: MockMapProps) {
-    return (
-      <div data-testid="map">
-        {mockMap(props)}
-        {props.children}
-      </div>
-    );
-  }
-
-  return { default: MockMap };
-});
-
-const mockOfferLocationOverlay =
-  vi.fn<
-    (...args: [React.ComponentProps<typeof OfferLocationOverlay>]) => void
-  >();
-vi.mock('@/modules/offers/client/components/OfferLocationOverlay', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
-  return {
-    default: vi.fn(
-      (props: React.ComponentProps<typeof OfferLocationOverlay>) => {
-        mockOfferLocationOverlay(props);
-        return <div data-testid="offer-overlay" />;
-      },
-    ),
-  };
-});
+const mockMap = vi.fn<(props: MapProps) => void>();
+vi.mock('@/modules/core/client/components/Map/index', () => ({
+  default: (props: MapProps) => {
+    mockMap(props);
+    return <div data-testid="map" style={props.style} />;
+  },
+}));
 
 describe('<OfferLocation />', () => {
   beforeEach(() => {
     mockMap.mockClear();
-    mockOfferLocationOverlay.mockClear();
   });
 
   it('renders nothing for invalid location data', () => {
     const { container } = render(
-      Reflect.apply(OfferLocation, undefined, [{ location: null }]),
+      <OfferLocation
+        {...malformedFixture({ location: [] as number[] }, { location: null })}
+      />,
     );
 
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders map and overlay for valid location data', () => {
+  it('shows the approximate offer area in the offer colour', () => {
     render(
       <OfferLocation
         location={[50.12, 19.89]}
@@ -60,30 +37,25 @@ describe('<OfferLocation />', () => {
       />,
     );
 
-    expect(screen.getByTestId('map')).toBeInTheDocument();
-    expect(screen.getByTestId('offer-overlay')).toBeInTheDocument();
+    expect(screen.getByTestId('map')).toHaveStyle({ height: '320px' });
     expect(mockMap).toHaveBeenCalledWith(
       expect.objectContaining({
-        height: 320,
-        preferRaster: true,
+        view: { latitude: 50.12, longitude: 19.89, zoom: 11 },
         scrollZoom: false,
-        fallbackMarker: expect.objectContaining({ location: [50.12, 19.89] }),
-      }),
-    );
-    expect(mockOfferLocationOverlay).toHaveBeenCalledWith(
-      expect.objectContaining({
-        location: [50.12, 19.89],
-        offerStatus: 'yes',
-        offerType: 'host',
+        area: { latitude: 50.12, longitude: 19.89, colour: '#5cb85c' },
       }),
     );
   });
 
+  it('keeps the same view across renders for the same location', () => {
+    const { rerender } = render(<OfferLocation location={[51, 4]} />);
+    rerender(<OfferLocation location={[51, 4]} offerType="meet" />);
+    expect(mockMap.mock.calls[0][0].view).toBe(mockMap.mock.calls[1][0].view);
+  });
+
   it('supports a compact map height', () => {
     render(<OfferLocation location={[51, 4]} height={220} />);
-    expect(mockMap).toHaveBeenCalledWith(
-      expect.objectContaining({ height: 220 }),
-    );
+    expect(screen.getByTestId('map')).toHaveStyle({ height: '220px' });
   });
 
   it('omits maps for incomplete locations', () => {

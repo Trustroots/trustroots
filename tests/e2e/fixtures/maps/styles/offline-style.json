@@ -1,6 +1,7 @@
 {
   "version": 8,
   "name": "E2E Offline Map",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "e2e-graticule": {
       "type": "geojson",

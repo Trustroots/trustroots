@@ -1,4 +1,5 @@
 import fs from 'fs';
+import type { IncomingMessage } from 'node:http';
 import mongoose from 'mongoose';
 import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
@@ -30,7 +31,7 @@ const avatarVersionPattern = /^[a-f0-9]{32}$/;
  * Middleware to validate+process avatar upload field
  */
 const avatarUploadField = (
-  req: AvatarRequest,
+  req: AvatarRequest & IncomingMessage,
   res: AvatarResponse,
   next: AvatarNext,
 ) => {
@@ -59,7 +60,7 @@ const avatarUploadField = (
  * Upload user avatar
  *
  * Handles results from avatarUploadField and `uploadFile` service.
- * Multer has placed uploaded the file in temp folder and path is now available
+ * The `uploadFile` service has placed the uploaded file in a temp folder and path is now available
  * via `req.file.path`
  */
 const removeTemporaryUpload = async (sourcePath: string): Promise<void> => {

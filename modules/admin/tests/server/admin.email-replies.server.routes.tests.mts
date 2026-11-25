@@ -3,7 +3,6 @@ import sinon from 'sinon';
 import assert from 'node:assert/strict';
 import express from 'express';
 import config from '../../../../config/config.mts';
-import adminPolicy from '../../server/policies/admin.server.policy.mts';
 import { default as registerEmailReplyRoutes } from '../../server/routes/admin.email-replies.server.routes.mts';
 const settings = {
   TRUSTROOTS_EMAIL_REPLIES_JMAP_SESSION_URL:
@@ -19,8 +18,6 @@ describe('admin email reply preview', () => {
   const keys = Object.keys(settings);
   const previous = keys.map(key => process.env[key]);
   const originalHttps = config.https;
-
-  adminPolicy.invokeRolesPolicies();
 
   beforeEach(() => {
     Object.assign(process.env, settings);

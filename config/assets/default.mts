@@ -6,7 +6,6 @@ interface AssetConfig {
     models: string;
     routes: string[];
     config: string;
-    policies: string;
     views: string;
   };
 }
@@ -26,7 +25,6 @@ const service = {
       'modules/core/server/routes/**/*.{cjs,mts}',
     ],
     config: 'modules/*/server/config/*.mts',
-    policies: 'modules/*/server/policies/*.mts',
     views: 'modules/*/server/views/*.html',
   },
 } satisfies AssetConfig;

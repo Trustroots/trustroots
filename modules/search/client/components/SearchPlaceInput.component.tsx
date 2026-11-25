@@ -2,7 +2,7 @@ import { Input } from '@trustroots/ui/Input';
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useAnalytics } from '@trustroots/analytics/client';
-import useDebouncedCallback from '../hooks/use-debounced-callback';
+import useDebouncedCallback from '@/modules/core/client/hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
 import {

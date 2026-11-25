@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 import mongoose from 'mongoose';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import emailService from './../../../../core/server/services/email.server.service.mts';
 import userFinishSignupJobHandler from './../../../server/jobs/user-finish-signup.server.job.mts';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
@@ -37,7 +37,7 @@ describe('Job: user finish signup unit tests', () => {
       username: 'finishsignupunit',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
-      created: moment().subtract(moment.duration({ hours: 4 })),
+      created: sub(new Date(), { hours: 4 }),
     });
     unConfirmedUser
       .save()

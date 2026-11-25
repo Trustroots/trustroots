@@ -1,15 +1,14 @@
-import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
-import moment from 'moment';
+import { milliseconds, sub, type Duration } from 'date-fns';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 interface Reminder {
   order: number;
-  timing: moment.DurationInputArg1;
+  timing: Duration;
 }
 interface ReminderMessage {
   [key: string]: unknown;
@@ -73,16 +72,13 @@ const Message = mongoose.model<MessageRecord>('Message');
 const User = mongoose.model<ReminderUser>('User');
 function run(_job: unknown, agendaDone: Done): void {
   // read timing of notifications from config
-  // we expect an array of momentjs objects
+  // we expect an array of duration objects
   // i.e. [{ minutes: 10 }, { hours: 24 }]
   const remindersConfig = config.limits.unreadMessageReminders;
 
   // sort the config from the earliest to the latest
-  const sortedConfig = _.sortBy(
-    remindersConfig as moment.DurationInputArg1[],
-    function (timeSinceMessage: moment.DurationInputArg1) {
-      return moment.duration(timeSinceMessage).asMilliseconds();
-    },
+  const sortedConfig = [...(remindersConfig as Duration[])].sort(
+    (a, b) => milliseconds(a) - milliseconds(b),
   );
 
   /*
@@ -97,14 +93,12 @@ function run(_job: unknown, agendaDone: Done): void {
    * hopefully there is not much harm in sending just one reminder in total
    * this case shouldn't happen too often
    */
-  const remappedConfig = _.reverse(
-    sortedConfig.map(
-      (value: moment.DurationInputArg1, index: number): Reminder => ({
-        order: index,
-        timing: value,
-      }),
-    ),
-  );
+  const remappedConfig = sortedConfig
+    .map((value: Duration, index: number): Reminder => ({
+      order: index,
+      timing: value,
+    }))
+    .reverse();
 
   // for every config, send the appropriate notifications
   async function sendAll(): Promise<void> {
@@ -118,7 +112,7 @@ function run(_job: unknown, agendaDone: Done): void {
  * Send the reminders about unread messages to various services
  * @param {Object} reminder - configuration for nth reminder
  * @param {Object} reminder.timing - How much time must pass (since the last unread message) to send the nth reminder.
- * A time object as momentjs would expect it, i.e. { 'minutes': 10 }
+ * A duration object, i.e. { 'minutes': 10 }
  * @param {number} reminder.order - Order of the reminder. The reminder is nth.
  * We start counting from 0. i.e. 3rd reminder has reminder.order: 2
  */
@@ -127,10 +121,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   const reminderOrder = reminder.order;
   // Wait until the newest pending message in each conversation has aged
   // past the delay so a burst of messages produces one reminder.
-  // Has to be a JS Date object, not a Moment object
-  const createdTimeAgo = moment()
-    .subtract(moment.duration(timePassed))
-    .toDate();
+  const createdTimeAgo = sub(new Date(), timePassed);
   const pending = { read: false, notificationCount: { $lte: reminderOrder } };
 
   // Find all the unread messages which fit the reminder config requirements
@@ -215,11 +206,8 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   ]);
   // we pick only notifications which already have count > 0
   // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
-  const furtherNotifications = _.filter(
-    notifications,
-    function (notification: Notification) {
-      return notification.notificationCount > 0;
-    },
+  const furtherNotifications = notifications.filter(
+    (notification: Notification) => notification.notificationCount > 0,
   );
 
   for (const notification of furtherNotifications) {
@@ -234,7 +222,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // we just wrap it to function for clearer organisation
     const isTooLate = (function () {
       const tooLate = config.limits.unreadMessageRemindersTooLate;
-      const tooOld = moment().subtract(moment.duration(tooLate)).toDate();
+      const tooOld = sub(new Date(), tooLate);
       return notification.latestCreated < tooOld;
     })();
     if (isThreadReplied || isTooLate) {
@@ -249,12 +237,11 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
   });
 
   // Make sure we don't have huge list of dublicate user ids
-  // @link https://lodash.com/docs#uniq
-  userIds = _.uniq(userIds);
+  userIds = [...new Set(userIds)];
 
   // Fetch email + displayName for all users involved
   // Remember to add these values also userNotFound object (see below)
-  const collectedUsers: Record<string, ReminderUser> = {};
+  const collectedUsers = new Map<string, ReminderUser>();
   if (userIds.length > 0) {
     const users = await User.find(
       {
@@ -272,23 +259,20 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
       ].join(' '),
     ).exec();
     users.forEach(function (user) {
-      // @link https://lodash.com/docs/#set
-      // _.set(object, path, value)
-      _.set(collectedUsers, user._id.toString(), user);
+      collectedUsers.set(user._id.toString(), user);
     });
   }
   const immediateNotifications = notifications.filter(notification => {
-    const frequency =
-      collectedUsers[String(notification._id.userTo)]?.messageEmailFrequency;
+    const frequency = collectedUsers.get(
+      String(notification._id.userTo),
+    )?.messageEmailFrequency;
     return !frequency || frequency === 'immediate';
   });
   async function notify(notification: Notification): Promise<void> {
-    const userTo: ReminderUser | undefined = _.get(
-      collectedUsers,
+    const userTo: ReminderUser | undefined = collectedUsers.get(
       notification._id.userTo.toString(),
     );
-    const userFrom: ReminderUser | undefined = _.get(
-      collectedUsers,
+    const userFrom: ReminderUser | undefined = collectedUsers.get(
       notification._id.userFrom.toString(),
     );
 

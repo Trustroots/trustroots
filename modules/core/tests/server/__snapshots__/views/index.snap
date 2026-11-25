@@ -3,7 +3,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
 <title>Trustroots</title>
 <meta name="fragment" content="!"/>
-<link rel="dns-prefetch" href="//api.tiles.mapbox.com"/>
+<link rel="dns-prefetch" href="//tiles.openfreemap.org"/>
 <link rel="dns-prefetch" href="//gravatar.com"/>
 <meta name="description" content="Travellers &amp; &quot;hosts&quot;"/>
 <meta name="application-name" content="Trustroots"/>

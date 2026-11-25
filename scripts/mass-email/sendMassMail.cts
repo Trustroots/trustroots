@@ -18,7 +18,6 @@ type StoreConstructor = new (options: {
   filename: string;
   autoload: boolean;
 }) => MailStore;
-const _ = require('lodash') as typeof import('lodash');
 const shortid = require('shortid') as { generate(): string };
 
 // nedb is a local disk backed mongo alternative for simple local scripts
@@ -65,12 +64,14 @@ const userToRecipient = function (user: MailRecord): Recipient {
   return {
     address: {
       // Sparkpost wants the email like `address.email`
-      email: _.get(user, 'email'),
-      name: _.get(user, 'displayName'),
+      email: user.email,
+      name: user.displayName,
     },
     // Build the `substitution_data` property from all the properties which are
     // not the email address in `user`
-    substitution_data: _.omit(user, 'email'),
+    substitution_data: Object.fromEntries(
+      Object.entries(user).filter(([key]) => key !== 'email'),
+    ),
   };
 };
 
@@ -98,10 +99,10 @@ const sendOneGroup = async function (i: number): Promise<void> {
   }
 
   // Build the recipients object
-  const recipients = _.map(users, userToRecipient);
+  const recipients = users.map(userToRecipient);
 
   // Build the transmission object
-  const transmission = _.extend({}, baseTransmission, { recipients });
+  const transmission = { ...baseTransmission, recipients };
 
   // Send the request to sparkpost
   await new Promise<void>((resolve, reject) =>

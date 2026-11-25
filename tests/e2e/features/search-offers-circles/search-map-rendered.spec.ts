@@ -14,9 +14,7 @@ import { installNostrRelayStub } from '../../support/nostr.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 import {
   blockUnexpectedMapNetwork,
-  disableWebGL,
-  prepareRasterSearchMap,
-  routeRasterMapTiles,
+  prepareRasterMap,
   seedMapState,
   stubNostrAuthorVisibility,
   useMapProviderHar,
@@ -35,7 +33,6 @@ type CentrePinOptions = {
 };
 
 type WheelMode = 0 | 1 | 2;
-type WheelSelector = '.mapboxgl-canvas' | '.leaflet-container';
 
 declare global {
   interface Window {
@@ -54,6 +51,7 @@ declare global {
 }
 
 const berlin = SEEDED_MEMBERS[0];
+const mapCanvas = '.search-map-container .maplibregl-canvas';
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
 
@@ -161,11 +159,11 @@ async function expectCentreHostPinPreservesZoom(
     await page.waitForTimeout(300);
   }
 
-  const canvas = page.locator('.mapboxgl-canvas');
+  const canvas = page.locator('.maplibregl-canvas');
   const originalCanvas = assertCanvasSurvives
     ? await canvas.elementHandle()
     : null;
-  const surface = page.locator('.search-map-container .mapboxgl-canvas');
+  const surface = page.locator(mapCanvas);
   const box = await surface.boundingBox();
   expectPresent(box, 'map overlay should have a layout box');
 
@@ -189,20 +187,16 @@ async function expectCentreHostPinPreservesZoom(
 
 async function wheelOverMap(
   page: Page,
-  selector: WheelSelector,
   delta: number,
   deltaMode: WheelMode,
+  raster: boolean,
 ): Promise<void> {
-  const canvas = page.locator(selector);
-  await expect(canvas).toBeVisible();
-  // Mapbox receives input directly through its canvas. Hover
-  // waits for that surface to settle after navigation and viewport changes.
   const surface = page.locator(
-    selector === '.mapboxgl-canvas'
-      ? '.search-map-container .mapboxgl-canvas'
-      : selector,
+    raster ? '.search-map .leaflet-container' : mapCanvas,
   );
-  if (selector === '.mapboxgl-canvas') {
+  await expect(surface).toBeVisible();
+  if (!raster) {
+    const canvas = page.locator('.maplibregl-canvas');
     // A visible container can resize before its WebGL canvas does.
     // Sending input in that interval can put it outside the rendered map.
     await expect
@@ -243,44 +237,75 @@ async function wheelOverMap(
 
 async function expectWheelZoom(
   page: Page,
-  selector: WheelSelector,
   deltaMode: WheelMode,
+  raster: boolean,
 ): Promise<void> {
   const delta = [240, 3, 1][deltaMode];
   const readZoom = () => readMapZoom(page);
   await expect.poll(readZoom).not.toBeNull();
   const initialZoom = await readZoom();
   expectPresent(initialZoom, 'map zoom should be available');
-  await wheelOverMap(page, selector, -delta, deltaMode);
+  await wheelOverMap(page, -delta, deltaMode, raster);
   // A tiny numerical change can be imperceptible to someone using the map.
   await expect.poll(readZoom).toBeGreaterThan(initialZoom + 0.5);
   const zoomedIn = await readZoom();
   expectPresent(zoomedIn, 'map zoom should be available after zooming in');
-  await wheelOverMap(page, selector, delta, deltaMode);
+  await wheelOverMap(page, delta, deltaMode, raster);
   await expect.poll(readZoom).toBeLessThan(zoomedIn - 0.5);
 }
 
 async function expectWheelZoomAfterNavigation(
   page: Page,
-  selector: WheelSelector,
   deltaMode: WheelMode,
   afterNavigation: boolean,
+  raster = false,
 ): Promise<void> {
-  await expectWheelZoom(page, selector, deltaMode);
+  await expectWheelZoom(page, deltaMode, raster);
   if (!afterNavigation) return;
   await page.getByRole('link', { name: 'Circles', exact: true }).click();
   await expect(page).toHaveURL(/\/circles$/);
   await page.locator('a[href="/search"]').first().click();
-  if (selector === '.mapboxgl-canvas') {
-    await waitForSearchMap(page);
-  }
-  await expectWheelZoom(page, selector, deltaMode);
+  if (!raster) await waitForSearchMap(page);
+  await expectWheelZoom(page, deltaMode, raster);
 }
+
+/** Click the rendered map at a coordinate, using MapLibre's 512px world. */
+async function clickMapAt(
+  page: Page,
+  latitude: number,
+  longitude: number,
+  offsetX = 0,
+): Promise<void> {
+  const surface = page.locator(mapCanvas);
+  const box = await surface.boundingBox();
+  expectPresent(box, 'map canvas should have a layout box');
+  const map = page.locator('.search-map');
+  const [centreLatitude, centreLongitude, zoom] = await Promise.all(
+    ['data-map-latitude', 'data-map-longitude', 'data-map-zoom'].map(
+      async name => Number(await map.getAttribute(name)),
+    ),
+  );
+  const worldSize = 512 * 2 ** zoom;
+  const project = (lat: number, lng: number) => [
+    ((lng + 180) / 360) * worldSize,
+    ((1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) /
+      2) *
+      worldSize,
+  ];
+  const [centreX, centreY] = project(centreLatitude, centreLongitude);
+  const [x, y] = project(latitude, longitude);
+  await surface.click({
+    position: {
+      x: box.width / 2 + x - centreX + offsetX,
+      y: box.height / 2 + y - centreY,
+    },
+  });
+}
+
 async function showCommunityNotesSidebar(
   page: Page,
   events: VerifiedEvent[],
 ): Promise<void> {
-  await prepareRasterSearchMap(page, page);
   await stubNostrAuthorVisibility(
     page,
     events.map(event => event.pubkey),
@@ -288,73 +313,19 @@ async function showCommunityNotesSidebar(
   await installNostrRelayStub(page, { events });
 
   await page.goto('/search');
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          () =>
-            document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]')
-              .length > 0,
-          null,
-        ),
-      { timeout: 30000 },
-    )
-    .toBeTruthy();
-  await page
-    .locator('.leaflet-interactive[fill="#1565C0"]')
-    .first()
-    .dispatchEvent('click');
-}
-
-async function waitForRasterTileNear(
-  page: Page,
-  {
-    latitude,
-    longitude,
-    tolerance = 4,
-  }: { latitude: number; longitude: number; tolerance?: number },
-): Promise<void> {
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          ({ expectedLatitude, expectedLongitude, coordinateTolerance }) =>
-            [
-              ...document.querySelectorAll<HTMLImageElement>('.leaflet-tile'),
-            ].some(tile => {
-              const path = new URL(tile.src).pathname;
-              const match = path.match(
-                /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
-              );
-              if (!match) return false;
-
-              const [, rawZoom, rawX, rawY] = match;
-              const zoom = Number(rawZoom);
-              const x = Number(rawX) + 0.5;
-              const y = Number(rawY) + 0.5;
-              const scale = 2 ** zoom;
-              const tileLongitude = (x / scale) * 360 - 180;
-              const tileLatitude =
-                (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
-                Math.PI;
-
-              return (
-                zoom >= 8 &&
-                Math.abs(tileLatitude - expectedLatitude) <
-                  coordinateTolerance &&
-                Math.abs(tileLongitude - expectedLongitude) <
-                  coordinateTolerance
-              );
-            }),
-          {
-            coordinateTolerance: tolerance,
-            expectedLatitude: latitude,
-            expectedLongitude: longitude,
-          },
-        ),
-      { timeout: 30000 },
-    )
-    .toBeTruthy();
+  await waitForSearchMap(page);
+  const plusCode = events[0].tags.find(tag => tag[0] === 'l')![1];
+  const area = new OpenLocationCode().decode(plusCode);
+  // A note cluster covers the seeded Berlin host pin, which wins clicks on
+  // overlapping points, so click the cluster's far side from the host.
+  const offsetX = events.length > 1 ? -15 : 0;
+  // Notes arrive from the relay after the map loads; retry until one opens.
+  await expect(async () => {
+    await clickMapAt(page, area.latitudeCenter, area.longitudeCenter, offsetX);
+    await expect(page.locator('.community-notes-sidebar')).toBeVisible({
+      timeout: 1000,
+    });
+  }).toPass({ timeout: 30000 });
 }
 
 test.describe('rendered search map feature coverage', () => {
@@ -435,11 +406,11 @@ test.describe('rendered search map feature coverage', () => {
     test.describe(`${browser.name} search compatibility`, () => {
       test.use({ userAgent: browser.userAgent });
 
-      test('Mapbox search works when WebGL2 is available', async ({
+      test('MapLibre search works when WebGL2 is available', async ({
         page,
       }, testInfo) => {
         annotateFeature(testInfo, 'search.map', [
-          'Chromium receives Mapbox GL when WebGL2 is available.',
+          'Chromium receives MapLibre GL when WebGL2 is available.',
           'Offer pins, zoom controls and place search remain usable.',
         ]);
         await page.goto('/search');
@@ -451,7 +422,7 @@ test.describe('rendered search map feature coverage', () => {
         const map = page.locator('.search-map');
         await expect(map).toBeVisible();
         await waitForSearchMap(page);
-        await expect(page.getByTestId('leaflet-search-map')).toHaveCount(0);
+        await expect(map.locator('.leaflet-container')).toHaveCount(0);
         const initialZoom = await readMapZoom(page);
         expectPresent(initialZoom);
         await page
@@ -505,32 +476,14 @@ test.describe('rendered search map feature coverage', () => {
       'Route fixture offers populate the rendered map source.',
     ]);
 
+    const style = page.waitForResponse(
+      'https://tiles.openfreemap.org/styles/liberty',
+    );
     await page.goto('/search');
     await waitForSearchMap(page);
 
-    const mapState = await page.evaluate(() => {
-      /* global document, window */
-      const canvas = document.querySelector('.mapboxgl-canvas');
-      const persistedStyle = JSON.parse(
-        window.localStorage.getItem('search-map-style') ?? 'null',
-      );
-      if (
-        typeof persistedStyle !== 'object' ||
-        persistedStyle === null ||
-        !('name' in persistedStyle) ||
-        typeof persistedStyle.name !== 'string'
-      ) {
-        return { hasCanvas: Boolean(canvas), persistedStyleName: null };
-      }
-      return {
-        hasCanvas: Boolean(canvas),
-        persistedStyleName: persistedStyle.name,
-      };
-    });
-
-    expect(mapState).toEqual({
-      hasCanvas: true,
-      persistedStyleName: 'E2E Offline Map',
+    expect(await (await style).json()).toMatchObject({
+      name: 'E2E Offline Map',
     });
   });
 
@@ -538,26 +491,14 @@ test.describe('rendered search map feature coverage', () => {
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Zoom controls operate on the current Mapbox renderer.',
+      'Zoom controls operate on the current MapLibre renderer.',
     ]);
     await page.goto('/search');
     await waitForSearchMap(page);
     const map = page.locator('.search-map');
-    const scale = map.locator('.mapboxgl-ctrl-scale');
-    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+    const scale = map.locator('.maplibregl-ctrl-scale');
+    await expect(scale).toHaveText(/^\d+\s(km|m)$/);
     await captureSection(map, 'map-distance-scale-desktop');
-    // The style picker must not cover the bar.
-    await expect
-      .poll(async () => {
-        const scaleBox = await scale.boundingBox();
-        const styleBox = await map
-          .getByRole('button', { name: 'Change map style' })
-          .boundingBox();
-        return Boolean(
-          scaleBox && styleBox && scaleBox.y + scaleBox.height <= styleBox.y,
-        );
-      })
-      .toBe(true);
     const initialScale = await scale.innerText();
     const initialZoom = await readMapZoom(page);
     expectPresent(initialZoom, 'initial map zoom should be stored');
@@ -574,25 +515,23 @@ test.describe('rendered search map feature coverage', () => {
     await captureSection(map, 'map-distance-scale-mobile');
   });
 
-  test('search map uses raster tiles when only WebGL1 is available', async ({
-    context,
+  test('search map falls back to Leaflet when only WebGL1 is available', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'A browser with WebGL1 but no WebGL2 receives the interactive raster map.',
+      'A browser without WebGL2 gets a Leaflet map with raster tiles.',
+      'Its zoom control and distance scale work.',
     ]);
-    await disableWebGL(page, true);
-    await routeRasterMapTiles(context, { includeMapbox: true });
+    await prepareRasterMap(page, true);
     await page.goto('/search');
-    await expect(
-      page.locator('[data-testid="leaflet-search-map"]'),
-    ).toBeVisible();
-    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
-    expect(
-      await page.evaluate(() =>
-        Boolean(document.createElement('canvas').getContext('webgl')),
-      ),
-    ).toBe(true);
+    const map = page.locator('.search-map');
+    await expect(map.locator('.leaflet-container')).toBeVisible();
+    await expect(page.locator('.maplibregl-canvas')).toHaveCount(0);
+    await expect(map.locator('.leaflet-control-scale-line')).toBeVisible();
+    const initialZoom = await readMapZoom(page);
+    expectPresent(initialZoom);
+    await map.getByRole('button', { name: 'Zoom in' }).click();
+    await expect.poll(() => readMapZoom(page)).toBe(initialZoom + 1);
   });
 
   test('map fills the pane after the browser viewport grows', async ({
@@ -615,7 +554,7 @@ test.describe('rendered search map feature coverage', () => {
           const pane = await page
             .locator('.search-map-container')
             .boundingBox();
-          const canvas = await page.locator('.mapboxgl-canvas').boundingBox();
+          const canvas = await page.locator('.maplibregl-canvas').boundingBox();
           return (
             !!pane && !!canvas && Math.abs(pane.height - canvas.height) < 1
           );
@@ -703,14 +642,7 @@ test.describe('rendered search map feature coverage', () => {
         test.use({ mapZoom: zoom });
         test(`mouse wheel zooms the rendered search map in and out${suffix}`, async ({
           page,
-          browserName,
         }, testInfo) => {
-          // Mapbox GL needs WebGL; Firefox CI falls back to Leaflet and has no
-          // .mapboxgl-canvas. Wheel zoom on that path is covered separately.
-          test.skip(
-            browserName === 'firefox',
-            'Mapbox GL is unavailable in Firefox CI; use the raster fallback wheel test.',
-          );
           annotateFeature(testInfo, 'search.map', [
             'Mouse-wheel input zooms the rendered map in and out.',
             ...(zoom === 6 && deltaMode === 0
@@ -733,189 +665,85 @@ test.describe('rendered search map feature coverage', () => {
           }
           await expectWheelZoomAfterNavigation(
             page,
-            '.mapboxgl-canvas',
             deltaMode,
             zoom === 6 && deltaMode === 0,
           );
         });
 
-        test(`mouse wheel zooms the raster fallback map in and out${suffix}`, async ({
-          context,
+        test(`mouse wheel zooms the Leaflet map in and out${suffix}`, async ({
           page,
         }, testInfo) => {
           annotateFeature(testInfo, 'search.map', [
-            'Mouse-wheel input zooms the raster fallback map in and out.',
-            ...(zoom === 6 && deltaMode === 0
-              ? ['Mouse-wheel input works after returning to Search.']
-              : []),
-            ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
-            ...(deltaMode === 1
-              ? ['Line-based wheel events zoom the raster fallback map.']
-              : []),
-            ...(deltaMode === 2
-              ? [
-                  'Page-based wheel events visibly zoom the raster fallback map.',
-                ]
-              : []),
+            'Mouse-wheel input zooms the Leaflet map without WebGL2.',
           ]);
-          await prepareRasterSearchMap(page, context);
+          await prepareRasterMap(page);
           await page.goto('/search');
-          await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+          await expect(page.locator('.maplibregl-canvas')).toHaveCount(0);
           await expectWheelZoomAfterNavigation(
             page,
-            '.leaflet-container',
             deltaMode,
             zoom === 6 && deltaMode === 0,
+            true,
           );
         });
       });
     }
   }
 
-  test('search map uses OpenStreetMap without a Mapbox key', async ({
+  test('search map renders without a Mapbox key', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Tokenless installations render OpenStreetMap tiles even with WebGL available.',
-      'A previously saved Mapbox style does not prevent the fallback from loading.',
+      'Installations without a Mapbox key still render the map.',
     ]);
-    await routeRasterMapTiles(page);
     await page.goto('/circles');
-    expect(
-      await page.evaluate(() =>
-        Boolean(document.createElement('canvas').getContext('webgl2')),
-      ),
-    ).toBe(true);
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {});
-      window.localStorage.setItem(
-        'search-map-style',
-        JSON.stringify('mapbox://styles/mapbox/streets-v11'),
-      );
     });
     await page.locator('a[href="/search"]').first().click();
-    await expect(
-      page.locator('[data-testid="leaflet-search-map"]'),
-    ).toBeVisible();
-    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
-    const tile = page.locator('.leaflet-tile').first();
-    await expect(tile).toHaveAttribute(
-      'src',
-      /^https:\/\/[abc]\.tile\.openstreetmap\.org\//,
-    );
-    await expect(tile).toHaveJSProperty('naturalWidth', 1);
-    const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
-    await expect(hostMarker).toBeVisible();
-    await hostMarker.dispatchEvent('click');
-    await expect(page).toHaveURL(/offer=665100000000000000000001/);
-    await expect(
-      page.locator('.search-sidebar-container.is-offer-open'),
-    ).toBeVisible();
+    await expectCentreHostPinPreservesZoom(page);
   });
 
-  test('the raster distance scale is visible and updates on zoom', async ({
-    context,
+  test('search map opens offers from Leaflet pins without WebGL', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'The map shows a live metric scale on desktop and mobile.',
+      'A browser without WebGL shows offer pins on a Leaflet map.',
+      'Clicking a pin opens the offer.',
     ]);
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
+    await prepareRasterMap(page);
     await page.goto('/search');
 
-    const map = page.getByTestId('leaflet-search-map');
-    const scale = map.locator('.leaflet-control-scale-line');
-    await expect(scale).toBeInViewport();
-    await expect(scale).toHaveText(/^\d+ (km|m)$/);
-    const beforeZoom = await scale.innerText();
-    await map.locator('.leaflet-control-zoom-in').click({ timeout: 5000 });
-    await expect(scale).not.toHaveText(beforeZoom);
-    await expect(scale).toHaveText(/^\d+ (km|m)$/);
-
-    await page.setViewportSize({ width: 390, height: 844 });
+    const container = page.locator('.search-map-container');
+    const surface = container.locator('.leaflet-container');
+    await expect(surface).toBeVisible();
+    await expect(
+      surface.locator('path.leaflet-interactive').first(),
+    ).toBeVisible();
+    await captureSection(container, 'leaflet-map');
+    const box = await surface.boundingBox();
+    expectPresent(box, 'Leaflet map should have a layout box');
+    // The fixture host is at the seeded map centre.
+    await surface.click({ position: { x: box.width / 2, y: box.height / 2 } });
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await page.setViewportSize({ width: 375, height: 667 });
     await page
       .getByRole('button', { name: 'Back to map', exact: true })
       .click();
-    await expect(scale).toBeInViewport();
-    await expect(scale).toHaveText(/^\d+ (km|m)$/);
+    await expect(surface).toBeVisible();
+    await captureSection(container, 'leaflet-map-mobile');
   });
 
-  test('search map uses the raster fallback when WebGL is unavailable', async ({
-    context,
+  test('search map recentres after selecting a city on mobile', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'A browser without WebGL receives a visible Leaflet raster map.',
-      'Fallback-map offer markers continue to open the results sidebar.',
+      'Later camera commands recenter the map after a place search.',
     ]);
-
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
-
-    await page.goto('/search');
-
-    await expect(
-      page.locator('[data-testid="leaflet-search-map"]'),
-    ).toBeVisible();
-    const zoomControl = page.locator(
-      '.leaflet-top.leaflet-right .leaflet-control-zoom',
-    );
-    await expect(zoomControl).toBeVisible();
-    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
-    await expect(page.locator('.leaflet-tile').first()).toHaveJSProperty(
-      'naturalWidth',
-      1,
-    );
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () => document.querySelectorAll('.leaflet-interactive').length > 0,
-            null,
-          ),
-        { timeout: 30000 },
-      )
-      .toBeTruthy();
-
-    // The two seeded offers overlap at this zoom. Click the host marker and
-    // verify that the fallback requests its offer details.
-    const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
-    await expect(hostMarker).toBeVisible();
-    const originalMap = await page
-      .locator('[data-testid="leaflet-search-map"]')
-      .elementHandle();
-
-    const offerRequest = page.waitForRequest(
-      '**/api/offers/665100000000000000000001**',
-    );
-    // Dispatch in the page so Leaflet cannot move the SVG marker between
-    // Playwright measuring its coordinates and sending the click.
-    await hostMarker.dispatchEvent('click');
-    expect((await offerRequest).url()).toContain(
-      '/api/offers/665100000000000000000001',
-    );
-    await expect(page).toHaveURL(/offer=665100000000000000000001/);
-    await expect(
-      page.locator('.search-sidebar-container.is-offer-open'),
-    ).toBeVisible();
-    expect(await originalMap.evaluate(element => element.isConnected)).toBe(
-      true,
-    );
-  });
-
-  test('raster fallback stays visible after selecting a city', async ({
-    context,
-    page,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'search.map', [
-      'Later camera commands recenter the raster map after a place search.',
-      'Selecting a place keeps the WebGL fallback map visible.',
-      'The raster renderer fits the selected city after mobile layout changes.',
-    ]);
-
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
 
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/search');
+    await waitForSearchMap(page);
 
     await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
@@ -926,38 +754,15 @@ test.describe('rendered search map feature coverage', () => {
       .click();
     await page.getByRole('button', { name: 'Back to map' }).click();
 
-    const map = page.locator('[data-testid="leaflet-search-map"]');
-    await expect(map).toBeVisible();
+    const map = page.locator('.search-map');
     await expect
-      .poll(
-        () =>
-          page.evaluate(() => {
-            const mapElement = document.querySelector<HTMLElement>(
-              '.leaflet-search-map',
-            );
-            if (!mapElement) {
-              return false;
-            }
-            return (
-              mapElement.clientWidth > 0 &&
-              mapElement.clientHeight > 0 &&
-              [
-                ...mapElement.querySelectorAll<HTMLImageElement>(
-                  '.leaflet-tile',
-                ),
-              ].some(tile => tile.complete && tile.naturalWidth > 0)
-            );
-          }, null),
-        { timeout: 30000 },
-      )
-      .toBeTruthy();
-
-    // A visible tile alone would also pass when Leaflet stayed at its broad
-    // initial view. Require a city-level tile whose centre is around Berlin.
-    await waitForRasterTileNear(page, {
-      latitude: 52.52,
-      longitude: 13.405,
-    });
+      .poll(async () => Number(await map.getAttribute('data-map-latitude')))
+      .toBeCloseTo(52.52, 1);
+    await expect
+      .poll(async () => Number(await map.getAttribute('data-map-longitude')))
+      .toBeCloseTo(13.405, 1);
+    await expect.poll(() => readMapZoom(page)).toBeGreaterThan(8);
+    await expect(page.locator('.maplibregl-canvas')).toBeVisible();
   });
 
   test('clicking a pin cluster zooms the map in to expand it', async ({
@@ -971,42 +776,26 @@ test.describe('rendered search map feature coverage', () => {
 
     // Several offers sit on top of the seeded map centre so they render as one
     // cluster in the middle of the map canvas.
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
     await useMapRouteFixtures(context, { offers: 'clustered-offers.json' });
     await page.goto('/search');
-    await expect(
-      page.locator('[data-testid="leaflet-search-map"]'),
-    ).toBeVisible();
+    await waitForSearchMap(page);
 
-    const readZoom = () =>
-      page.evaluate(() => {
-        const raw = window.localStorage.getItem('search-map-location');
-        return raw ? JSON.parse(raw).zoom : null;
-      });
-
-    const initialZoom = await readZoom();
+    const initialZoom = await readMapZoom(page);
+    expectPresent(initialZoom);
     expect(initialZoom).toBeLessThanOrEqual(7);
 
-    const clusterMarker = page.locator('.leaflet-search-cluster', {
-      hasText: '5',
-    });
-    await expect(clusterMarker).toBeVisible();
-    await clusterMarker.dispatchEvent('click');
-
-    await expect
-      .poll(
-        () =>
-          page.evaluate(previousZoom => {
-            const raw = window.localStorage.getItem('search-map-location');
-            if (!raw) return false;
-            const { zoom } = JSON.parse(raw);
-            return typeof zoom === 'number' && zoom > previousZoom + 0.5;
-          }, initialZoom),
-        { timeout: 20000 },
-      )
-      .toBeTruthy();
-
-    expect(await readZoom()).toBeGreaterThan(initialZoom);
+    const surface = page.locator(mapCanvas);
+    // The cluster appears once the offers request completes; retry the click.
+    await expect(async () => {
+      const box = await surface.boundingBox();
+      expectPresent(box);
+      await surface.click({
+        position: { x: box.width / 2, y: box.height / 2 },
+      });
+      await expect
+        .poll(() => readMapZoom(page), { timeout: 2000 })
+        .toBeGreaterThan(initialZoom + 0.5);
+    }).toPass({ timeout: 20000 });
   });
 
   test('Community Notes search filter is enabled by default and persists changes', async ({
@@ -1564,17 +1353,15 @@ test.describe('rendered search map feature coverage', () => {
     });
   });
 
-  test('device location centres the raster search map at zoom 13', async ({
+  test('device location centres the search map at zoom 13 from an open offer', async ({
     page,
-    context,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Device location centres the raster search map at zoom 13.',
+      'Activating device location centres the map at zoom 13 and clears the selected offer.',
     ]);
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
     await mockDeviceLocation(page, -23.55, -46.63);
     await page.goto('/search?offer=665100000000000000000001');
-    await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
+    await waitForSearchMap(page);
     await page
       .getByRole('button', { name: 'Use my location', exact: true })
       .click();
@@ -1587,27 +1374,26 @@ test.describe('rendered search map feature coverage', () => {
         }),
       )
       .toMatchObject({ latitude: -23.55, longitude: -46.63, zoom: 13 });
+    await expect(page).not.toHaveURL(/offer=/);
   });
 
   test('mobile search offers a retryable device location action and manual fallback', async ({
     page,
-    context,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
       'Mobile search exposes device location after opening place search.',
       'Denied device location gives accessible feedback and leaves manual search available.',
     ]);
     await page.setViewportSize({ width: 390, height: 844 });
-    await prepareRasterSearchMap(page, context, { includeMapbox: true });
     await mockDeviceLocationFailure(page);
     await page.route('**/api/map-default-location', route =>
       route.fulfill({ json: { location: null } }),
     );
     await page.goto('/search');
-    await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
+    await waitForSearchMap(page);
     await page.getByRole('button', { name: 'Search places' }).click();
 
-    const map = page.getByTestId('leaflet-search-map');
+    const map = page.locator('.search-map');
     const originalMapState = {
       latitude: await map.getAttribute('data-map-latitude'),
       longitude: await map.getAttribute('data-map-longitude'),
@@ -1738,13 +1524,11 @@ test.describe('rendered search map feature coverage', () => {
     await expect.poll(() => readMapZoom(page)).toBeGreaterThan(7);
     const searchedZoom = await readMapZoom(page);
     expectPresent(searchedZoom);
-    await page
-      .locator('.search-map-container .mapboxgl-canvas')
-      .dispatchEvent('wheel', {
-        ctrlKey: true,
-        deltaY: 100,
-        deltaMode: 0,
-      });
+    await page.locator(mapCanvas).dispatchEvent('wheel', {
+      ctrlKey: true,
+      deltaY: 100,
+      deltaMode: 0,
+    });
     await expect.poll(() => readMapZoom(page)).toBeCloseTo(searchedZoom - 1, 5);
     await expect
       .poll(() =>

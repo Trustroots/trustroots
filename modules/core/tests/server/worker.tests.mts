@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { MongoClient } from 'mongodb';
 import sinon from 'sinon';
 import 'should';
@@ -105,7 +104,7 @@ describe('Worker tests', function () {
   });
 
   it('registers and schedules Experience reply reminders', function () {
-    const jobNames = _.map(definedJobs, 'name');
+    const jobNames = definedJobs.map(job => job.name);
     jobNames.should.containEql('queue experience reply reminders');
     jobNames.should.containEql('send experience reply reminder');
     scheduledJobs.should.containEql({
@@ -132,16 +131,6 @@ describe('Worker tests', function () {
     schedule.notCalled.should.equal(true);
   });
 
-  it('defines [send email] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('send email');
-  });
-
-  it('defines [check unread messages] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('check unread messages');
-  });
-
   it('schedules unread-message digests', function () {
     scheduledJobs.should.containEql({
       name: 'queue unread message digests',
@@ -149,40 +138,20 @@ describe('Worker tests', function () {
     });
   });
 
-  it('defines [daily statistics] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('daily statistics');
-  });
-
-  it('defines [send signup reminders] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('send signup reminders');
-  });
-
-  it('defines [reactivate hosts] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('reactivate hosts');
-  });
-
-  it('defines [welcome sequence first] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('welcome sequence first');
-  });
-
-  it('defines [welcome sequence second] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('welcome sequence second');
-  });
-
-  it('defines [welcome sequence third] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('welcome sequence third');
-  });
-
-  it('defines [publish expired experiences] job', function () {
-    const jobNames = _.map(definedJobs, 'name');
-    jobNames.should.containEql('publish expired experiences');
-  });
+  for (const name of [
+    'send email',
+    'check unread messages',
+    'daily statistics',
+    'send signup reminders',
+    'reactivate hosts',
+    'welcome sequence first',
+    'welcome sequence second',
+    'welcome sequence third',
+    'publish expired experiences',
+  ])
+    it(`defines [${name}] job`, function () {
+      definedJobs.map(job => job.name).should.containEql(name);
+    });
 
   it('defines right number of repeating jobs', function () {
     scheduledJobs.length.should.equal(11);
@@ -242,7 +211,7 @@ describe('Worker tests', function () {
   });
 
   it('only schedules defined jobs', function () {
-    const jobNames = _.map(definedJobs, 'name');
+    const jobNames = definedJobs.map(job => job.name);
     scheduledJobs.forEach(function (job) {
       job.name.should.be.oneOf(jobNames);
     });

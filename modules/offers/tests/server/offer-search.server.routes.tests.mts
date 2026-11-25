@@ -10,10 +10,9 @@ import type {
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
 import type { OfferServerRecord } from '../../server/models/offer.server.types.mts';
-import _ from 'lodash';
 import should from 'should';
 import request from 'supertest';
-import moment from 'moment';
+import { addDays, sub, subDays, subMonths, subYears } from 'date-fns';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import config from '../../../../config/config.mts';
 import express from './../../../../config/lib/express.mts';
@@ -198,7 +197,7 @@ describe('Offer search tests', function () {
     offerMeet = new Offer({
       type: 'meet',
       description: '<p>Dinner party!</p>',
-      validUntil: moment().add(30, 'day').toDate(),
+      validUntil: addDays(new Date(), 30),
       updated: new Date(),
       location: [52.49898120929888, 13.41832995414744],
     });
@@ -288,11 +287,8 @@ describe('Offer search tests', function () {
       {
         $set: {
           displayName: 'Aster Host',
-          seen: moment().subtract(2, 'months').toDate(),
-          birthdate: moment()
-            .subtract(30, 'years')
-            .subtract(1, 'month')
-            .toDate(),
+          seen: subMonths(new Date(), 2),
+          birthdate: sub(new Date(), { years: 30, months: 1 }),
         },
       },
     );
@@ -356,11 +352,11 @@ describe('Offer search tests', function () {
 
     await User.updateOne(
       { _id: user2Id },
-      { $set: { seen: moment().subtract(1, 'year').toDate() } },
+      { $set: { seen: subYears(new Date(), 1) } },
     );
     await User.updateOne(
       { _id: user3Id },
-      { $set: { seen: moment().subtract(3, 'years').toDate() } },
+      { $set: { seen: subYears(new Date(), 3) } },
     );
     const { body: older } = await requestResult(agent.get(cityUrl).expect(200));
     older.offers
@@ -417,8 +413,8 @@ describe('Offer search tests', function () {
       await User.updateOne({ _id: user2Id }, { $set: { seen: user2Seen } });
       await User.updateOne({ _id: user3Id }, { $set: { seen: user3Seen } });
     };
-    const recent = moment().subtract(1, 'day').toDate();
-    const old = moment().subtract(1, 'year').toDate();
+    const recent = subDays(new Date(), 1);
+    const old = subYears(new Date(), 1);
 
     // Names ignore case and fall back to the username when the display name is
     // empty or missing.
@@ -992,15 +988,13 @@ describe('Offer search tests', function () {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
                 // Set assertions
-                offersGetRes.body.features.should.have.lengthOf(3);
-                // Count different offer types
-                // This produces `{'host': 2, 'meet': 1}`
-                const count = _.countBy(
-                  offersGetRes.body.features,
-                  offer => offer.properties.type,
-                );
-                count.host.should.equal(2);
-                count.meet.should.equal(1);
+                offersGetRes.body.features
+                  .map(
+                    (offer: { properties: { type: string } }) =>
+                      offer.properties.type,
+                  )
+                  .sort()
+                  .should.eql(['host', 'host', 'meet']);
                 // Call the assertion callback
                 return done();
               });
@@ -1010,7 +1004,7 @@ describe('Offer search tests', function () {
   });
   it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
     // Set date to past
-    offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
+    offerMeet.validUntil = sub(new Date(), { minutes: 1 });
     offerMeet
       .save()
       .then(() => {
@@ -1124,15 +1118,13 @@ describe('Offer search tests', function () {
                   // Handle offer get error
                   if (offersGetErr) return done(offersGetErr);
                   // Set assertions
-                  offersGetRes.body.features.should.have.lengthOf(3);
-                  // Count different offer types
-                  // This produces `{'host': 2, 'meet': 1}`
-                  const count = _.countBy(
-                    offersGetRes.body.features,
-                    offer => offer.properties.type,
-                  );
-                  count.host.should.equal(2);
-                  count.meet.should.equal(1);
+                  offersGetRes.body.features
+                    .map(
+                      (offer: { properties: { type: string } }) =>
+                        offer.properties.type,
+                    )
+                    .sort()
+                    .should.eql(['host', 'host', 'meet']);
                   // Call the assertion callback
                   return done();
                 });
@@ -1392,11 +1384,9 @@ describe('Offer search tests', function () {
   });
   describe('Search offers by "seen" filter', function () {
     it('should be able to get list of offers from an area filtered by last seen', function (done) {
-      user2.seen = moment()
-        .subtract({
-          months: 2,
-        })
-        .toDate();
+      user2.seen = sub(new Date(), {
+        months: 2,
+      });
       user2
         .save()
         .then(() => {

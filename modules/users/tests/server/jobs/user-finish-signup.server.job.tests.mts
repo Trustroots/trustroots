@@ -1,9 +1,8 @@
 import importedDependency0 from './../../../server/jobs/user-finish-signup.server.job.mts';
-import _ from 'lodash';
 import should from 'should';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
 import config from './../../../../../config/config.mts';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import mongoose, { type HydratedDocument } from 'mongoose';
 /**
  * Module dependencies.
@@ -14,11 +13,11 @@ interface SignupReminderUser extends Omit<
   UserRecord,
   'created' | 'emailTokenIssuedAt' | 'emailTokenExpires'
 > {
-  created?: moment.Moment;
+  created?: Date;
   publicReminderCount?: number;
-  publicReminderSent?: moment.Moment;
-  emailTokenIssuedAt?: moment.Moment;
-  emailTokenExpires?: moment.Moment;
+  publicReminderSent?: Date;
+  emailTokenIssuedAt?: Date;
+  emailTokenExpires?: Date;
 }
 type SignupReminderDocument = HydratedDocument<SignupReminderUser>;
 interface SignupReminderMail {
@@ -90,7 +89,7 @@ describe('Job: user finish signup', function () {
       username: 'userunconfirmed',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
-      created: moment().subtract(moment.duration({ hours: 4 })),
+      created: sub(new Date(), { hours: 4 }),
     };
 
     unConfirmedUser = new User(_unConfirmedUser);
@@ -110,7 +109,7 @@ describe('Job: user finish signup', function () {
       username: 'userconfirmed',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
-      created: moment().subtract(moment.duration({ hours: 4 })),
+      created: sub(new Date(), { hours: 4 }),
     };
 
     confirmedUser = new User(_confirmedUser);
@@ -120,9 +119,7 @@ describe('Job: user finish signup', function () {
   });
 
   it('Do not remind unconfirmed users <4 hours after their signup', function (done) {
-    unConfirmedUser.created = moment().subtract(
-      moment.duration({ hours: 3, minutes: 58 }),
-    );
+    unConfirmedUser.created = sub(new Date(), { hours: 3, minutes: 58 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
 
@@ -167,9 +164,7 @@ describe('Job: user finish signup', function () {
 
   it('Remind unconfirmed users 2nd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 1;
-    unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2, hours: 1 }),
-    );
+    unConfirmedUser.publicReminderSent = sub(new Date(), { days: 2, hours: 1 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
       userFinishSignupJobHandler(
@@ -204,9 +199,7 @@ describe('Job: user finish signup', function () {
 
   it('Remind unconfirmed users 3rd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 2;
-    unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2, hours: 1 }),
-    );
+    unConfirmedUser.publicReminderSent = sub(new Date(), { days: 2, hours: 1 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
       userFinishSignupJobHandler(
@@ -240,7 +233,7 @@ describe('Job: user finish signup', function () {
   });
 
   it('Reminder emails should tell how long ago user signed up.', function (done) {
-    unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
+    unConfirmedUser.created = sub(new Date(), { days: 8 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
       userFinishSignupJobHandler(
@@ -290,9 +283,7 @@ describe('Job: user finish signup', function () {
 
   it('Do not remind unconfirmed users >2 hours after their signup again before another >2 days has passed', function (done) {
     unConfirmedUser.publicReminderCount = 1;
-    unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2, hours: 1 }),
-    );
+    unConfirmedUser.publicReminderSent = sub(new Date(), { days: 2, hours: 1 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
 
@@ -329,9 +320,7 @@ describe('Job: user finish signup', function () {
 
   it('Do not remind unconfirmed users 4rd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 3;
-    unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2 }),
-    );
+    unConfirmedUser.publicReminderSent = sub(new Date(), { days: 2 });
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
       userFinishSignupJobHandler(
@@ -361,10 +350,10 @@ describe('Job: user finish signup', function () {
         emailTemporary: 'l' + i + _unConfirmedUser.emailTemporary,
         email: 'l' + i + _unConfirmedUser.email,
       };
-      const _unConfirmedUserLooped = _.merge(
-        _.clone(_unConfirmedUser),
-        loopVars,
-      );
+      const _unConfirmedUserLooped = {
+        ..._unConfirmedUser,
+        ...loopVars,
+      };
       _users.push(_unConfirmedUserLooped);
     }
 
@@ -387,7 +376,7 @@ describe('Job: user finish signup', function () {
   ['suspended', 'shadowban'].forEach(function (role) {
     it(`Do not remind users with "${role}" role`, function (done) {
       unConfirmedUser.roles = [role];
-      unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
+      unConfirmedUser.created = sub(new Date(), { days: 8 });
       saveWithCallback(
         unConfirmedUser,
         function (err: Error | null | undefined) {

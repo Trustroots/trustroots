@@ -94,7 +94,7 @@ describe('Admin newsletter controller audiences', () => {
       `--${boundary}--`,
       '',
     ].join('\r\n');
-    const req = Object.assign(Readable.from([body]), {
+    const req = Object.assign(Readable.from([Buffer.from(body)]), {
       method: 'POST',
       headers: {
         'content-type': `multipart/form-data; boundary=${boundary}`,

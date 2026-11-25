@@ -1,7 +1,7 @@
 import errorService from '../../../core/server/services/error.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mts';
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
-import moment from 'moment';
+import { subMonths } from 'date-fns';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
 import { findDiscoveryOfferLocations } from '../../../users/server/services/discovery-offers.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
@@ -455,7 +455,7 @@ service.listMembers = async function (req, res, next) {
     const recommenderIDs = recommenders.map(member => member._id);
     const active = await User.find({
       ...visibleMemberMatch(req, [...contactIDs, ...recommenderIDs]),
-      seen: { $gte: moment(now).subtract(1, 'month').toDate() },
+      seen: { $gte: subMonths(now, 1) },
     })
       .select(discoverySelect)
       .sort({ seen: -1, _id: 1 })

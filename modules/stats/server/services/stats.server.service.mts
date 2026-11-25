@@ -21,7 +21,6 @@
  * (`count()`, `value()`, `stat()`). Usage is documented below.
  */
 
-import _ from 'lodash';
 import influxService from './influx.server.service.mts';
 
 /**
@@ -123,37 +122,27 @@ function value(
  */
 function validateStat(stat: StatObject) {
   // We must have a value called namespace and it must be a string
-  if (!_.isString(stat.namespace)) {
+  if (typeof stat.namespace !== 'string') {
     // error
     throw new Error('The stat.namespace should be a string');
   }
 
   // We must have at least one of `counts` or `values`, or both
-  // @TODO check that they are plain objects or undefined with _.isPlainObject()
   // counts or values have to contain at least 1 property (this also covers both being missing)
   const isCountsAndValuesEmpty =
-    _.keys(stat.counts).length + _.keys(stat.values).length === 0;
+    Object.keys(stat.counts ?? {}).length +
+      Object.keys(stat.values ?? {}).length ===
+    0;
   if (isCountsAndValuesEmpty) {
     // error
     throw new Error('The stat should contain counts or values');
   }
 
   // Every key in `counts`, `values`, `meta`, and `tags` must be unique
-  // We fetch all the keys and then compare length of their union with
-  // the sum of their lengths. If the lengths are equal, all keys are unique.
+  // We fetch all the keys and compare their number with the number of distinct keys.
   function areKeysUnique(...objects: unknown[]) {
-    // keys is an array of arrays of keys of all objects passed as arguments
-    // to the function
-    // Stryker disable next-line ArrayDeclaration: _.union ignores non-array arguments, so a stray string element never changes the union
-    const keys: string[][] = [];
-    let keyLength = 0;
-    for (const object of objects) {
-      const currentKeys = _.keys(object);
-      keys.push(currentKeys);
-      keyLength += currentKeys.length;
-    }
-    const unionKeys = _.union(...keys);
-    return keyLength === unionKeys.length;
+    const keys = objects.flatMap(object => Object.keys(object ?? {}));
+    return keys.length === new Set(keys).size;
   }
   if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
     throw new Error(
@@ -162,14 +151,17 @@ function validateStat(stat: StatObject) {
   }
 
   // Every value in 'counts' and 'values' should be a number
-  const vals = _.concat(_.values(stat.counts), _.values(stat.values));
-  const areNumbers = _.every(vals, _.isNumber);
+  const vals = [
+    ...Object.values(stat.counts ?? {}),
+    ...Object.values(stat.values ?? {}),
+  ];
+  const areNumbers = vals.every(val => typeof val === 'number');
   if (!areNumbers) {
     throw new Error('Each of counts and values should be a number');
   }
 
   // time, if provided, should be of type Date
-  if (_.has(stat, 'time') && !_.isDate(stat.time)) {
+  if (Object.hasOwn(stat, 'time') && !(stat.time instanceof Date)) {
     throw new Error('Time must be a Date object or not provided');
   }
 }
@@ -253,9 +245,11 @@ function stat(point: StatObject, callback: StatCallback = function () {}) {
   }
   if (outstandingWrites < 32) {
     outstandingWrites += 1;
-    const release = _.once(function () {
-      outstandingWrites -= 1;
-    });
+    let pending = 1;
+    const release = () => {
+      outstandingWrites -= pending;
+      pending = 0;
+    };
     try {
       influxService.stat(point, release);
     } catch {

@@ -1,14 +1,7 @@
 // External dependencies
-import useDebouncedCallback from '../hooks/use-debounced-callback';
-import React, { useEffect, useRef, useState } from 'react';
-import ReactMapGL, { Layer, Source, type MapRef } from 'react-map-gl/mapbox';
+import useDebouncedCallback from '@/modules/core/client/hooks/use-debounced-callback';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Event as NostrEvent } from 'nostr-tools';
-import type {
-  GeoJSONSource,
-  Map as MapboxMap,
-  MapboxGeoJSONFeature,
-  StyleSpecification,
-} from 'mapbox-gl';
 import {
   countNarrowingFilters,
   type SearchFilters,
@@ -17,12 +10,19 @@ import type { SearchResultOffer } from './SearchSidebarResults.component';
 import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer';
 
 // Internal dependencies
-import useMapRenderer from '@/modules/core/client/components/Map/use-map-renderer';
+import Map from '@/modules/core/client/components/Map/index';
+import type {
+  MapBounds,
+  MapCluster,
+  MapHandle,
+  MapPoint,
+} from '@/modules/core/client/components/Map/types';
 import {
-  MAP_STYLE_DEFAULT,
-  MAP_STYLE_OSM,
-} from '@/modules/core/client/components/Map/constants';
-import { CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS } from './constants';
+  CLUSTER_MAX_ZOOM,
+  MIN_ZOOM,
+  SOURCE_COMMUNITY_NOTES,
+  SOURCE_OFFERS,
+} from './constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import useMapDefaultLocation, {
   type MapDefaultLocation,
@@ -30,43 +30,19 @@ import useMapDefaultLocation, {
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
 import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
-import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
-import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import { useAnalytics } from '@trustroots/analytics/client';
-import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
-import usePageWheel from '@/modules/core/client/components/Map/use-page-wheel';
 import SearchMapNoContent from './SearchMapNoContent';
-import LeafletSearchMap from './LeafletSearchMap';
 import { ensureValidLat, ensureValidLng } from '../utils';
-import {
-  clusterCountLayerMapbox,
-  clusterCountLayerOSM,
-  clusterLayer,
-  unclusteredPointLayer,
-} from './layers';
+import { featureId } from '../utils/feature-id';
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
-import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import {
   getNostrEventAuthorPubkey,
   nostrService,
 } from '../services/nostr.client.service';
-import {
-  SOURCE_COMMUNITY_NOTES,
-  communityNotesLayer,
-  communityNotesClusterLayer,
-  communityNotesClusterCountLayer,
-  communityNotesClusterCountLayerOSM,
-} from './community-notes-layers';
 import { OpenLocationCode } from 'open-location-code';
-import 'mapbox-gl/dist/mapbox-gl.css';
 
 declare const process: { env: { NODE_ENV?: string } };
-
-interface MapBounds {
-  northEast: { lat: number; lng: number };
-  southWest: { lat: number; lng: number };
-}
 
 interface MapLocation {
   lat: number;
@@ -108,16 +84,6 @@ interface MapViewport {
   zoom: number;
 }
 
-type MapFeature = MapboxGeoJSONFeature & {
-  id: string | number;
-  properties: Record<string, unknown>;
-  geometry: { type: 'Point'; coordinates: [number, number] };
-};
-
-interface MapMouseEvent {
-  features?: MapFeature[];
-}
-
 interface OfferFeatureProperties {
   id: string;
   content: string;
@@ -137,7 +103,7 @@ type CommunityNoteFeature = NostrEvent & {
 
 interface GeoJSONPointFeature {
   type: 'Feature';
-  id: string;
+  id: number;
   geometry: { type: 'Point'; coordinates: [number, number] };
   properties: OfferFeatureProperties;
 }
@@ -147,29 +113,13 @@ interface FeatureCollection {
   features: GeoJSONPointFeature[];
 }
 
-interface MapState {
-  zoom?: number;
-  bounds?: {
-    northEast: { lat: number; lng: number };
-    southWest: { lat: number; lng: number };
-  };
-  latitude: number;
-  longitude: number;
-}
-
-interface SearchMapLayerProps {
-  id: string;
-  type: string;
-  source: string;
-  filter?: unknown[];
-  minzoom?: number;
-  paint?: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-}
-
 const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
-const MISSING_MAP_LAYER_ERROR =
-  /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
+const OFFER_COLOURS: Record<string, string> = {
+  'meet-yes': '#11b4da',
+  'host-yes': '#58ba58',
+  'host-maybe': '#f2ae43',
+};
+const COMMUNITY_NOTE_COLOUR = '#1565C0';
 
 type MapCorner = { lat: number; lng: number };
 
@@ -180,18 +130,6 @@ function isLongitudeVisible(longitude: number, west: number, east: number) {
 
   const relativeLongitude = (((longitude - west) % 360) + 360) % 360;
   return relativeLongitude <= span;
-}
-
-function normalizeBoundsCorners(mapBounds: {
-  getNorthEast?: () => MapCorner;
-  getSouthWest?: () => MapCorner;
-  northEast?: MapCorner;
-  southWest?: MapCorner;
-}): { northEast?: MapCorner; southWest?: MapCorner } {
-  return {
-    northEast: mapBounds.getNorthEast?.() ?? mapBounds.northEast,
-    southWest: mapBounds.getSouthWest?.() ?? mapBounds.southWest,
-  };
 }
 
 function isCoordinateInViewport(
@@ -209,36 +147,6 @@ function isCoordinateInViewport(
 
 const olc = new OpenLocationCode();
 const ignoreVisibleCallback = () => {};
-const TypedLayer = Layer as unknown as React.ComponentType<SearchMapLayerProps>;
-const TypedSource = Source as unknown as React.ComponentType<
-  React.ComponentProps<typeof Source> & {
-    clusterMinPoints?: number;
-    ref?: React.Ref<unknown>;
-  }
->;
-const TypedReactMapGL = ReactMapGL as unknown as React.ComponentType<
-  React.ComponentProps<typeof ReactMapGL> & { location?: [number, number] }
->;
-
-function handleMapError(event: unknown) {
-  const error =
-    event && typeof event === 'object' && 'error' in event
-      ? event.error
-      : undefined;
-  const errorMessage = error instanceof Error ? error.message : '';
-
-  // A pointer event can race with style teardown after React has removed the
-  // interactive layers. Mapbox already returns no features for this query, so
-  // do not report the expected lifecycle race as an application error.
-  if (MISSING_MAP_LAYER_ERROR.test(errorMessage)) {
-    return;
-  }
-
-  // Keep Mapbox's default behaviour for every other map error.
-  // eslint-disable-next-line no-console
-  console.error(error || event);
-}
-
 function getPlusCodeFromRawEvent(event: NostrEvent): string | null {
   const tag = event.tags.find(
     t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
@@ -297,7 +205,7 @@ function nostrEventsToGeoJSON(
     return [
       {
         type: 'Feature' as const,
-        id: event.id,
+        id: featureId(event.id),
         geometry: {
           type: 'Point' as const,
           coordinates: [area.longitudeCenter, area.latitudeCenter] as [
@@ -376,7 +284,11 @@ export default function SearchMap({
     longitude: persistentMapLocation.longitude ?? DEFAULT_LOCATION.lng,
     zoom: persistentMapLocation.zoom ?? DEFAULT_LOCATION.zoom,
   }));
-  const viewportRef = useRef<MapViewport>(viewport);
+  // The camera the map moves to; `viewport` follows what the map shows.
+  const [targetView, setTargetView] = useState(viewport);
+  const boundsRef = useRef<MapBounds | null>(null);
+  const mapRef = useRef<MapHandle>(null);
+  const [loaded, setLoaded] = useState(false);
   const hasAppliedApproximateLocation = useRef(false);
   useEffect(() => {
     if (
@@ -386,23 +298,11 @@ export default function SearchMap({
       !hasAppliedApproximateLocation.current
     ) {
       hasAppliedApproximateLocation.current = true;
+      setTargetView(approximateLocation);
       setViewport(approximateLocation);
     }
   }, [approximateLocation, hasDestination, hasSavedLocation]);
-  // Place searches, offer links and cluster clicks also update the viewport
-  // directly. Pinch input must start from that displayed camera, not just the
-  // last viewport reported by a map interaction.
-  viewportRef.current = viewport;
-  const gestureSurfaceRef = useRef<HTMLDivElement | null>(null);
-  const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
-  // Mapbox GL v3 requires a token even for a third-party raster style.
-  // Tokenless installations use Leaflet with OpenStreetMap tiles.
-  const { mapboxToken, useWebGL } = useMapRenderer();
-  usePageWheel(gestureSurfaceRef, useWebGL);
-  const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
-  const [map, setMap] = useState<MapboxMap | undefined>();
-  const [hoveredOffer, setHoveredOffer] = useState<MapFeature | false>(false);
-  const [selectedOffer, setSelectedOffer] = useState<MapFeature | false>(false);
+  const [selectedOffer, setSelectedOffer] = useState<MapPoint | false>(false);
   const offerSelectionGeneration = useRef(0);
   const [offers, setOffers] = useState<OfferSearchFeatureCollection>({
     features: [],
@@ -415,9 +315,6 @@ export default function SearchMap({
     type: 'FeatureCollection',
     features: [],
   });
-  const [leafletMapState, setLeafletMapState] = useState<
-    MapState | undefined
-  >();
   const communityNotesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -429,104 +326,28 @@ export default function SearchMap({
   const communityNotesEnabled =
     Boolean(parsedFilters.communityNotes) &&
     parsedFilters.connectionsOnly !== true;
-  // A Mapbox style can be persisted in localStorage from a session that had a
-  // token configured. Without a token, mapbox-gl can't load it and the map
-  // renders blank, so fall back to the tokenless OSM style.
-  const isMapboxStyle =
-    typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
-  const effectiveMapStyle =
-    !mapboxToken && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
-  const isOsmStyle =
-    typeof effectiveMapStyle !== 'string' &&
-    effectiveMapStyle?.name === MAP_STYLE_OSM.name;
-  // The style switcher only applies while rendering the Mapbox map.
-  const showMapStyles = useWebGL;
-  const mapRef = useRef<MapRef>(null);
-
-  // Get the Mapbox object for direct map manipulation
-  const getMapRef = () => map || mapRef?.current?.getMap();
-
-  /**
-   * Zoom visible map to bounding box
-   *
-   * @param  {object} bounds Bounding box coordinates with shape:
-   *   northEast.lat;
-   *   northEast.lng;
-   *   southWest.lat;
-   *   southWest.lng;
-   */
-  const zoomToBounds = ({ northEast, southWest }: MapBounds) => {
-    const camera = getMapRef()?.cameraForBounds(
-      [
-        // [minLng, minLat],
-        // [maxLng, maxLat],
-        [southWest.lng, southWest.lat],
-        [northEast.lng, northEast.lat],
-      ],
-      {
-        padding: 40,
-      },
-    );
-
-    if (!camera?.center) return;
-    // cameraForBounds returns its calculated centre as a Mapbox LngLat.
-    const { lng: longitude, lat: latitude } = camera.center as {
-      lng: number;
-      lat: number;
-    };
-    setViewport({
-      ...viewport,
-      longitude,
-      latitude,
-      zoom: camera.zoom ?? viewport.zoom,
-    });
-    stopDefaultLocation();
-    debouncedSetPersistentMapLocation({
-      latitude,
-      longitude,
-      zoom: camera.zoom ?? viewport.zoom,
-    });
-  };
 
   /**
    * Hook on map interactions to update features
    */
-  const updateOffers = (leafletState?: MapState) => {
+  const updateOffers = () => {
     // Don't fetch if viewing the whole world
-    const zoom = leafletState?.zoom || viewport.zoom;
-    if (zoom <= MIN_ZOOM) {
+    const zoom = viewport.zoom;
+    if (zoom <= MIN_ZOOM || !boundsRef.current) {
       return;
     }
 
-    const map = getMapRef();
-
-    const mapBounds = leafletState?.bounds || map?.getBounds();
-    if (!mapBounds) {
-      return;
-    }
-
-    // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const { northEast, southWest } = normalizeBoundsCorners(mapBounds);
-    if (!northEast || !southWest) {
-      return;
-    }
-
+    const { northEast, southWest } = boundsRef.current;
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
     // Latitudes must be between -90 and 90
     // Longitudes must be between -180 and 180
-    const northEastLat = ensureValidLat(northEast.lat + boundsBuffer);
-    const northEastLng = ensureValidLng(northEast.lng + boundsBuffer);
-    const southWestLat = ensureValidLat(southWest.lat - boundsBuffer);
-    const southWestLng = ensureValidLng(southWest.lng - boundsBuffer);
-
-    // @TODO: no need to fetch if in same area as in previous fetch — thus store in state?
     fetchOffers(
       {
-        northEastLat,
-        northEastLng,
-        southWestLat,
-        southWestLng,
+        northEastLat: ensureValidLat(northEast.lat + boundsBuffer),
+        northEastLng: ensureValidLng(northEast.lng + boundsBuffer),
+        southWestLat: ensureValidLat(southWest.lat - boundsBuffer),
+        southWestLng: ensureValidLng(southWest.lng - boundsBuffer),
       },
       zoom,
     );
@@ -536,7 +357,6 @@ export default function SearchMap({
    * Refresh persistent map state when viewport changes
    */
   const onViewPortChange = (viewport: MapViewport, userInitiated = true) => {
-    viewportRef.current = viewport;
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
@@ -545,41 +365,6 @@ export default function SearchMap({
       debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
     }
   };
-  viewportChangeRef.current = onViewPortChange;
-
-  useEffect(() => {
-    const surface = gestureSurfaceRef.current;
-
-    if (!useWebGL || !surface) {
-      return undefined;
-    }
-
-    const handlePinchWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) {
-        return;
-      }
-
-      // Firefox sends desktop trackpad pinches as Ctrl+wheel. Capture them
-      // before the map's wheel handler and the browser's page zoom handler.
-      event.preventDefault();
-      event.stopPropagation();
-
-      const current = viewportRef.current;
-      const deltaY = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
-      const zoom = Math.max(0, Math.min(20, current.zoom - deltaY * 0.01));
-
-      if (zoom !== current.zoom) {
-        viewportChangeRef.current?.({ ...current, zoom });
-      }
-    };
-
-    surface.addEventListener('wheel', handlePinchWheel, {
-      capture: true,
-      passive: false,
-    });
-
-    return () => surface.removeEventListener('wheel', handlePinchWheel, true);
-  }, [useWebGL]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -592,148 +377,25 @@ export default function SearchMap({
     { maxWait: 3500 },
   );
 
-  const onLeafletMapChange = (mapState: MapState, explicitPlaceFit = false) => {
-    setLeafletMapState(mapState);
-    onViewPortChange(
-      mapState as MapViewport,
-      interactionPending.current || explicitPlaceFit,
-    );
-    interactionPending.current = false;
-    debouncedUpdateOffers(mapState);
-  };
-
-  /**
-   * Update state for a feature on the map
-   */
-  const updateFeatureState = (
-    feature: MapFeature,
-    newState: Record<string, boolean>,
-  ) => {
-    const map = getMapRef();
-    const { source, id } = feature;
-    if (!map || !source) return;
-    const previousState = map.getFeatureState({
-      source,
-      id,
-    });
-
-    map.setFeatureState(
-      { source, id },
-      {
-        ...previousState,
-        // New state merges into previous state, overriding only defined keys
-        ...newState,
-      },
-    );
-  };
-
-  /**
-   * Reset hover state for previouslyly hovered feature
-   */
-  const clearPreviouslyHoveredState = () => {
-    if (hoveredOffer) {
-      setHoveredOffer(false);
-      updateFeatureState(hoveredOffer, { hover: false });
-    }
-  };
-
-  /**
-   * Reset selected state for previouslyly selected feature
-   */
   const clearPreviouslySelectedState = () => {
     if (selectedOffer) {
-      updateFeatureState(selectedOffer, { selected: false });
+      mapRef.current?.setPointState(SOURCE_OFFERS, selectedOffer.id, {
+        selected: false,
+      });
       setSelectedOffer(false);
     }
   };
 
-  /**
-   * Set selected state for a feature
-   */
-  const setSelectedState = (offer: MapFeature) => {
-    // Clear out previously selected offers
-    if (selectedOffer) {
-      updateFeatureState(selectedOffer, { selected: false });
-    }
-
-    // Mark newly selected offer
-    updateFeatureState(offer, { selected: true, viewed: true });
+  const setSelectedState = (offer: MapPoint) => {
+    clearPreviouslySelectedState();
+    mapRef.current?.setPointState(SOURCE_OFFERS, offer.id, {
+      selected: true,
+      viewed: true,
+    });
     setSelectedOffer(offer);
   };
 
-  /**
-   * Handle feature hover states on map
-   */
-  const onHover = (event: MapMouseEvent) => {
-    if (!event?.features?.length) {
-      return;
-    }
-
-    const feature = event.features[0];
-
-    // Stop here if:
-    // - feature on other than points layer, or
-    // - feature doesn't have ID for some reason, or
-    // - we're just hovering previously hovered feature
-    if (
-      (feature.layer?.id !== unclusteredPointLayer.id &&
-        feature.layer?.id !== communityNotesLayer.id) ||
-      !feature.id ||
-      (hoveredOffer && feature.id === hoveredOffer.id)
-    ) {
-      return;
-    }
-
-    clearPreviouslyHoveredState();
-    setHoveredOffer(feature);
-    updateFeatureState(feature, { hover: true });
-  };
-
-  /**
-   * Zoom to cluster of features
-   */
-  const zoomToCluster = (cluster: MapFeature) => {
-    const clusterId = cluster?.properties?.cluster_id;
-
-    if (typeof clusterId !== 'number') {
-      return;
-    }
-
-    const newLocation = {
-      latitude: cluster.geometry.coordinates[1],
-      longitude: cluster.geometry.coordinates[0],
-    };
-
-    const source = getMapRef()?.getSource<GeoJSONSource>(SOURCE_OFFERS);
-
-    if (!source) {
-      // At least center the group if the source isn't ready yet.
-      setViewport({
-        ...viewport,
-        ...newLocation,
-      });
-
-      return;
-    }
-
-    source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-      if (err || zoom == null) {
-        return;
-      }
-
-      // Transition map to show offers in the cluster
-      getMapRef()?.flyTo({
-        center: [newLocation.longitude, newLocation.latitude],
-        zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
-        speed: 3,
-      });
-    });
-  };
-
-  /**
-   * React on any clicks on map or layers defined on `interactiveLayerIds` prop
-   */
-  function openCommunityNote(feature: Pick<MapFeature, 'properties'>) {
+  function openCommunityNote(feature: Pick<MapPoint, 'properties'>) {
     const clickedPlusCode = getPlusCodeFromEvent(
       feature.properties as unknown as OfferFeatureProperties,
     );
@@ -759,129 +421,72 @@ export default function SearchMap({
     }
   }
 
-  const zoomToCommunityNotesCluster = (cluster: MapFeature) => {
-    if (!cluster?.geometry?.coordinates) {
-      return;
-    }
-
-    getMapRef()?.flyTo({
-      center: cluster.geometry.coordinates,
+  const zoomToCommunityNotesCluster = ({ latitude, longitude }: MapCluster) =>
+    mapRef.current?.flyTo({
+      latitude,
+      longitude,
       zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
-      speed: 3,
     });
-  };
 
-  const openCommunityNotesCluster = (cluster: MapFeature) => {
-    const clusterId = cluster?.properties?.cluster_id;
-    if (typeof clusterId !== 'number') {
-      zoomToCommunityNotesCluster(cluster);
-      return;
-    }
-
-    const source = getMapRef()?.getSource<GeoJSONSource>(
-      SOURCE_COMMUNITY_NOTES,
-    );
-    if (!source) {
-      zoomToCommunityNotesCluster(cluster);
-      return;
-    }
-
-    source.getClusterLeaves(
-      clusterId,
-      Number(cluster.properties.point_count) || 0,
-      0,
-      (error, sourceLeaves) => {
-        if (error) {
-          zoomToCommunityNotesCluster(cluster);
-          return;
-        }
-
-        const leaves = sourceLeaves as MapFeature[];
-        const plusCode = getPlusCodeFromEvent(
-          leaves[0].properties as unknown as OfferFeatureProperties,
-        );
-        const sharesPlusCode = leaves.every(
-          (leaf: MapFeature) =>
-            getPlusCodeFromEvent(
-              leaf.properties as unknown as OfferFeatureProperties,
-            ) === plusCode,
-        );
-
-        if (!sharesPlusCode) {
-          zoomToCommunityNotesCluster(cluster);
-          return;
-        }
-
-        if (onCommunityNoteOpen) {
-          onCommunityNoteOpen({
-            notes: leaves.map(leaf =>
-              reconstructEvent(
-                leaf.properties as unknown as OfferFeatureProperties,
-              ),
-            ),
-            plusCode,
-          });
-        }
-      },
-    );
-  };
-
-  const onClickMap = (event: MapMouseEvent) => {
-    const { features } = event;
+  const onClusterClick = (layerId: string, cluster: MapCluster) => {
     clearPreviouslySelectedState();
-
-    if (!features?.length) {
-      // Close open offers when clicking on map canvas
-      // Delegated to the search shell.
-      onOfferClose();
+    if (layerId === SOURCE_OFFERS) {
+      // Transition map to show offers in the cluster
+      cluster.expansionZoom().then(
+        zoom =>
+          mapRef.current?.flyTo({
+            latitude: cluster.latitude,
+            longitude: cluster.longitude,
+            zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
+          }),
+        () => {},
+      );
       return;
     }
-
-    // A point from any source should win over an overlapping cluster. The
-    // returned features follow rendered layer order, so this keeps the
-    // topmost individual offer or note while avoiding an unexpected cluster
-    // expansion when another source's cluster covers the same location.
-    const clickedFeature =
-      features.find(
-        feature =>
-          feature.layer?.id === unclusteredPointLayer.id ||
-          feature.layer?.id === communityNotesLayer.id,
-      ) || features[0];
-    const layerId = clickedFeature?.layer?.id;
-
-    // Community notes click — open thread in sidebar
-    if (layerId === communityNotesLayer.id) {
-      openCommunityNote(clickedFeature);
-      return;
-    }
-
-    // Community notes cluster click — zoom in
-    if (layerId === communityNotesClusterLayer.id) {
-      openCommunityNotesCluster(clickedFeature);
-      return;
-    }
-
-    switch (layerId) {
-      // Hosting or meeting offer
-      case unclusteredPointLayer.id:
-        if (clickedFeature?.id) {
-          setSelectedState(clickedFeature);
-          openOfferById(clickedFeature.id);
+    // Notes sharing one plus code open as a thread; others zoom in.
+    cluster.leaves().then(
+      leaves => {
+        const plusCode = getPlusCodeFromEvent(
+          leaves[0].properties as OfferFeatureProperties,
+        );
+        if (
+          !leaves.every(
+            leaf =>
+              getPlusCodeFromEvent(
+                leaf.properties as OfferFeatureProperties,
+              ) === plusCode,
+          )
+        ) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
         }
-        break;
-      // Clusters
-      case clusterLayer.id:
-        zoomToCluster(clickedFeature);
-        break;
+        onCommunityNoteOpen?.({
+          notes: leaves.map(leaf =>
+            reconstructEvent(leaf.properties as OfferFeatureProperties),
+          ),
+          plusCode,
+        });
+      },
+      () => zoomToCommunityNotesCluster(cluster),
+    );
+  };
+
+  const onPointClick = (layerId: string, point: MapPoint) => {
+    clearPreviouslySelectedState();
+    if (layerId === SOURCE_COMMUNITY_NOTES) {
+      openCommunityNote(point);
+    } else if (point.properties.id) {
+      setSelectedState(point);
+      openOfferById(String(point.properties.id));
     }
   };
 
   /**
    * Fetch offer data and open it in the search sidebar.
    */
-  async function openOfferById(offerId: string | number) {
+  async function openOfferById(offerId: string) {
     const generation = ++offerSelectionGeneration.current;
-    const offer = await getOffer(String(offerId));
+    const offer = await getOffer(offerId);
 
     if (offer && generation === offerSelectionGeneration.current) {
       // Delegated to the search shell.
@@ -934,14 +539,9 @@ export default function SearchMap({
   // available while panning. The Results pane lists only pins and
   // author-visible community notes inside the actual map viewport.
   useEffect(() => {
-    const mapBounds = useWebGL
-      ? getMapRef()?.getBounds()
-      : leafletMapState?.bounds;
-    const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
-    const northEast = corners?.northEast;
-    const southWest = corners?.southWest;
-    const zoom = leafletMapState?.zoom ?? viewport.zoom;
-    const hasViewport = Boolean(northEast && southWest) && zoom > MIN_ZOOM;
+    const { northEast, southWest } = boundsRef.current ?? {};
+    const hasViewport =
+      Boolean(northEast && southWest) && viewport.zoom > MIN_ZOOM;
 
     if (!hasViewport) {
       onVisibleOffersChange([]);
@@ -971,7 +571,7 @@ export default function SearchMap({
       return;
     }
 
-    const threads = new Map<
+    const threads = new globalThis.Map<
       string,
       { notes: NostrEvent[]; plusCode: string }
     >();
@@ -996,41 +596,36 @@ export default function SearchMap({
   }, [
     communityNotes,
     communityNotesEnabled,
-    leafletMapState,
-    map,
+    loaded,
     offers,
     onVisibleCommunityNoteThreadsChange,
     onVisibleMapCountsChange,
     onVisibleOffersChange,
     viewport,
-    useWebGL,
   ]);
-
-  // Load and store Mapbox object for quick reference on render
-  useEffect(() => {
-    if (useWebGL) {
-      setMap(getMapRef());
-    }
-  }, []);
 
   // Apply externally changed bounds object
   // Changed by the search sidebar
   useEffect(() => {
-    if (useWebGL && bounds?.northEast && bounds?.southWest) {
-      zoomToBounds(bounds as MapBounds);
+    if (loaded && bounds?.northEast && bounds?.southWest) {
+      // Persist the fitted view like a member's own move.
+      interactionPending.current = true;
+      mapRef.current?.fitBounds(bounds as MapBounds, {
+        padding: 40,
+        animate: false,
+      });
     }
-  }, [bounds, useWebGL, map]);
+  }, [bounds, loaded]);
 
   // Apply externally changed filters object
   // Changed by the search sidebar
   useEffect(() => {
     offerSelectionGeneration.current += 1;
     clearPreviouslySelectedState();
-    clearPreviouslyHoveredState();
 
     // Update map offers
     setOffers({ features: [], type: 'FeatureCollection' });
-    updateOffers(useWebGL ? undefined : leafletMapState);
+    updateOffers();
   }, [filters]);
 
   // Subscribe/unsubscribe to community notes based on toggle
@@ -1135,76 +730,64 @@ export default function SearchMap({
         offerSelectionGeneration.current += 1;
         clearPreviouslySelectedState();
       }
-      onViewPortChange({
-        ...viewport,
+      const next = {
         latitude: location.lat,
         longitude: location.lng,
         zoom: location.zoom ?? DEFAULT_LOCATION.zoom,
-      });
+      };
+      setTargetView(next);
+      onViewPortChange(next);
     }
-  }, [location, map]);
+  }, [location]);
 
-  if (!useWebGL) {
-    const leafletOffers = {
-      features: offers.features.map(feature => ({
-        type: 'Feature' as const,
-        geometry: feature.geometry,
-        properties: {
-          id: feature.properties.id,
-          offer: feature.properties.offer,
-        },
-      })),
-    };
-    return (
-      <div style={{ position: 'relative', height: '100%' }}>
-        <LeafletSearchMap
-          bounds={
-            bounds?.northEast && bounds?.southWest
-              ? (bounds as MapBounds)
-              : null
-          }
-          communityNotes={communityNotes}
-          offers={leafletOffers}
-          onCommunityNoteClick={openCommunityNote}
-          onMapChange={onLeafletMapChange}
-          onInteraction={onInteraction}
-          onMapClick={onOfferClose}
-          onOfferClick={openOfferById}
-          viewport={viewport}
-        />
-        <DeviceLocationButton
-          onApproximateLocation={onApproximateLocation}
-          onLocation={location => onDeviceLocation?.(location)}
-          onRequest={() => {
-            stopDefaultLocation();
-            onDeviceLocationRequest?.();
-          }}
-        />
-        {approximateLocation && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 4,
-              left: 4,
-              maxWidth: '65%',
-              zIndex: 1000,
-            }}
-          >
-            <MapDefaultAttribution />
-          </div>
-        )}
-      </div>
-    );
-  }
+  const layers = useMemo(
+    () => [
+      {
+        id: SOURCE_OFFERS,
+        minZoom: MIN_ZOOM,
+        clusterMaxZoom: CLUSTER_MAX_ZOOM,
+        clusterMinPoints: 3,
+        clusterColour: 'rgba(18, 181, 145, 0.7)',
+        clusterTextColour: '#111',
+        points: offers.features.map(({ geometry, properties }) => ({
+          id: featureId(properties.id),
+          longitude: geometry.coordinates[0],
+          latitude: geometry.coordinates[1],
+          colour: OFFER_COLOURS[String(properties.offer)] ?? '#ccc',
+          properties: { ...properties },
+        })),
+      },
+      ...(communityNotesEnabled
+        ? [
+            {
+              id: SOURCE_COMMUNITY_NOTES,
+              minZoom: MIN_ZOOM,
+              clusterMaxZoom: 14,
+              clusterColour: 'rgba(25, 118, 210, 0.7)',
+              clusterTextColour: '#fff',
+              points: communityNotes.features.map(
+                ({ id, geometry, properties }) => ({
+                  id,
+                  longitude: geometry.coordinates[0],
+                  latitude: geometry.coordinates[1],
+                  colour: COMMUNITY_NOTE_COLOUR,
+                  properties,
+                }),
+              ),
+            },
+          ]
+        : []),
+    ],
+    [communityNotes, communityNotesEnabled, offers],
+  );
 
   return (
     <div
-      className="search-map tw:map-scale"
+      className="search-map"
       data-map-zoom={viewport.zoom}
       data-map-latitude={viewport.latitude}
       data-map-longitude={viewport.longitude}
       style={{ position: 'relative' }}
-      ref={gestureSurfaceRef}
       onPointerDownCapture={onInteraction}
       onClickCapture={onInteraction}
       onTouchStartCapture={onInteraction}
@@ -1219,96 +802,34 @@ export default function SearchMap({
           onDeviceLocationRequest?.();
         }}
       />
-      <TypedReactMapGL
-        reuseMaps
-        dragRotate={false}
-        /*
-         * Pointer event callbacks will only query the features under the pointer
-         * of `interactiveLayerIds` layers.
-         *
-         * https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#interactivelayerids
-         */
-        interactiveLayerIds={[
-          clusterLayer.id,
-          unclusteredPointLayer.id,
-          ...(communityNotesEnabled
-            ? [communityNotesLayer.id, communityNotesClusterLayer.id]
-            : []),
-        ]}
-        mapboxAccessToken={mapboxToken}
-        mapStyle={effectiveMapStyle as string | StyleSpecification}
-        onClick={event => onClickMap(event as unknown as MapMouseEvent)}
-        onError={event => handleMapError(event)}
-        onMouseMove={event => onHover(event as unknown as MapMouseEvent)}
+      <Map
+        ref={mapRef}
+        view={targetView}
+        style={{ width: '100%', height: '100%' }}
+        layers={layers}
+        onPointClick={onPointClick}
+        onClusterClick={onClusterClick}
+        onClick={() => {
+          clearPreviouslySelectedState();
+          // Close open offers when clicking on map canvas
+          onOfferClose();
+        }}
+        onLoad={(view, mapBounds) => {
+          boundsRef.current = mapBounds;
+          setLoaded(true);
+          updateOffers();
+        }}
+        onMove={(view, mapBounds) => {
+          boundsRef.current = mapBounds;
+          onViewPortChange(view, interactionPending.current);
+        }}
         onMoveEnd={() => {
           interactionPending.current = false;
           debouncedUpdateOffers();
         }}
-        onMouseLeave={clearPreviouslyHoveredState}
-        onMove={event =>
-          onViewPortChange(event.viewState, interactionPending.current)
-        }
-        onLoad={() => {
-          const loadedMap = mapRef.current!.getMap();
-          loadedMap.touchZoomRotate.disableRotation();
-          loadedMap.scrollZoom.setWheelZoomRate(1 / 100);
-          setMap(loadedMap);
-          updateOffers();
-        }}
-        ref={mapRef}
-        {...viewport}
-        /* Keep viewport pixel dimensions from overriding responsive sizing. */
-        style={{ width: '100%', height: '100%' }}
       >
         {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
-        <MapScaleControl showMapStyles={showMapStyles} />
-        <MapNavigationControl />
-        {showMapStyles && (
-          <MapStyleControl
-            mapStyle={effectiveMapStyle}
-            setMapstyle={setMapstyle}
-          />
-        )}
-        <TypedSource
-          buffer={512}
-          cluster
-          clusterMaxZoom={CLUSTER_MAX_ZOOM}
-          clusterMinPoints={3}
-          clusterRadius={50}
-          data={offers as GeoJSON.FeatureCollection}
-          id={SOURCE_OFFERS}
-          promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
-          type="geojson"
-        >
-          <TypedLayer {...clusterLayer} />
-          {/* OSM and Mapbox use different fonts for cluster numbers */}
-          {isOsmStyle ? (
-            <TypedLayer {...clusterCountLayerOSM} />
-          ) : (
-            <TypedLayer {...clusterCountLayerMapbox} />
-          )}
-          <TypedLayer {...unclusteredPointLayer} />
-        </TypedSource>
-        {communityNotesEnabled && (
-          <TypedSource
-            id={SOURCE_COMMUNITY_NOTES}
-            type="geojson"
-            data={communityNotes as GeoJSON.FeatureCollection}
-            cluster
-            clusterMaxZoom={14}
-            clusterRadius={50}
-            promoteId="id"
-          >
-            <TypedLayer {...communityNotesClusterLayer} />
-            {isOsmStyle ? (
-              <TypedLayer {...communityNotesClusterCountLayerOSM} />
-            ) : (
-              <TypedLayer {...communityNotesClusterCountLayer} />
-            )}
-            <TypedLayer {...communityNotesLayer} />
-          </TypedSource>
-        )}
-      </TypedReactMapGL>
+      </Map>
       {approximateLocation && (
         <div
           style={{

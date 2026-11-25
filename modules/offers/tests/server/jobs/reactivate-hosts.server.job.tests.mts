@@ -12,7 +12,7 @@ import type {
 import should from 'should';
 import * as testutils from '../../../../../testutils/server/server.testutil.mts';
 import config from './../../../../../config/config.mts';
-import moment from 'moment';
+import { sub } from 'date-fns';
 import mongoose from 'mongoose';
 import reactivateHostsJobHandler from '../../../server/jobs/reactivate-hosts.server.job.mts';
 const User = mongoose.model<UserRecord, UserModel>('User');
@@ -61,9 +61,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       description: '<p>I can host! :)</p>',
       noOfferDescription: '<p>I cannot host... :(</p>',
       maxGuests: 1,
-      updated: moment()
-        .subtract(moment.duration(config.limits.timeToReactivateHosts))
-        .toDate(),
+      updated: sub(new Date(), config.limits.timeToReactivateHosts),
       location: [52.498981209298776, 13.418329954147339],
       locationFuzzy: [52.50155039101136, 13.42255019882177],
     };

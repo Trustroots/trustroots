@@ -33,8 +33,8 @@ export default function Credits() {
               <a href="https://www.openstreetmap.org/copyright">
                 OpenStreetMap contributors
               </a>{' '}
-              and may use maps from{' '}
-              <a href="https://www.mapbox.com/about/maps/">Mapbox</a>.
+              and map tiles from{' '}
+              <a href="https://openfreemap.org/">OpenFreeMap</a>.
             </p>
             <h3>Photography</h3>
             <p>

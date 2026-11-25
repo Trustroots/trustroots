@@ -5,7 +5,7 @@ import MapNavigationControl from '@/modules/core/client/components/Map/MapNaviga
 
 const mockMap = { zoomIn: vi.fn(), zoomOut: vi.fn() };
 let mockCurrentMap: typeof mockMap | undefined = mockMap;
-vi.mock('react-map-gl/mapbox', () => ({
+vi.mock('@vis.gl/react-maplibre', () => ({
   useMap: () => ({ current: mockCurrentMap }),
 }));
 vi.mock('react-i18next', () => ({

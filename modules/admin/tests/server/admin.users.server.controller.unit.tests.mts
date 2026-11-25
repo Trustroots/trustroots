@@ -256,7 +256,7 @@ describe('Admin users controller unit tests', () => {
   describe('searchUsers', () => {
     it('rejects missing queries', () => {
       const res = mockResponse();
-      adminUsers.searchUsers({ body: {} }, res);
+      adminUsers.searchUsers({}, res);
 
       res.statusCode.should.equal(400);
       responseField(res, 'message').should.equal(
@@ -442,7 +442,7 @@ describe('Admin users controller unit tests', () => {
   describe('listUsersByRole', () => {
     it('rejects missing roles', async () => {
       const res = mockResponse();
-      adminUsers.listUsersByRole({ body: {} }, res);
+      adminUsers.listUsersByRole({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       responseField(res, 'message').should.equal('Invalid role.');
@@ -512,7 +512,7 @@ describe('Admin users controller unit tests', () => {
   describe('listUsersByLastIpHash', () => {
     it('rejects missing and invalid IP addresses', () => {
       const missingResponse = mockResponse();
-      adminUsers.listUsersByLastIpHash({ body: {} }, missingResponse);
+      adminUsers.listUsersByLastIpHash({}, missingResponse);
       missingResponse.statusCode.should.equal(400);
       responseField(missingResponse, 'message').should.equal(
         'Invalid IP identifier.',
@@ -593,13 +593,15 @@ describe('Admin users controller unit tests', () => {
 
   describe('getUser', () => {
     it('returns 400 for an invalid id', async () => {
-      const res = mockResponse();
-      await adminUsers.getUser({ body: { id: 'bad-id' } }, res);
+      for (const req of [{}, { body: { id: 'bad-id' } }]) {
+        const res = mockResponse();
+        await adminUsers.getUser(req, res);
 
-      res.statusCode.should.equal(400);
-      responseField(res, 'message').should.equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
+        res.statusCode.should.equal(400);
+        responseField(res, 'message').should.equal(
+          errorService.getErrorMessageByKey('invalid-id'),
+        );
+      }
     });
 
     it('returns 404 for missing users', async () => {
@@ -898,6 +900,13 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('changeRole', () => {
+    it('rejects a role change without a request body', async () => {
+      const res = mockResponse();
+      await adminUsers.changeRole({}, res);
+      res.statusCode.should.equal(400);
+      responseField(res, 'message').should.equal('Invalid role.');
+    });
+
     it('adds and removes welcome-team idempotently while preserving other roles and notes', async () => {
       const [admin, target] = await saveMembers(2);
       target.roles = ['user', 'volunteer'];
@@ -946,8 +955,12 @@ describe('Admin users controller unit tests', () => {
         body,
       )}`, async () => {
         const res = mockResponse();
-        await adminUsers.changeRole({ body }, res);
+        await adminUsers.changeRole(
+          { body: { ...body, id: String(new mongoose.Types.ObjectId()) } },
+          res,
+        );
         res.statusCode.should.equal(400);
+        responseField(res, 'message').should.equal('Invalid role.');
       });
     }
 
@@ -1351,19 +1364,20 @@ describe('Admin users controller unit tests', () => {
         .should.equal(users[0]._id.toString());
     });
 
-    it('continues when the username is missing', async () => {
-      const req: {
-        body: Record<string, never>;
-        userIdFromUsername?: import('mongoose').Types.ObjectId;
-      } = { body: {} };
-      let nextCalled = false;
+    it('continues when the body or username is missing', async () => {
+      await saveMembers(1);
+      for (const body of [undefined, {}]) {
+        const req: {
+          body?: Record<string, never>;
+          userIdFromUsername?: import('mongoose').Types.ObjectId;
+        } = { body };
+        const next = sinon.spy();
 
-      await adminUsers.usernameToUserId(req, {}, () => {
-        nextCalled = true;
-      });
+        await adminUsers.usernameToUserId(req, {}, next);
 
-      nextCalled.should.equal(true);
-      should.not.exist(req.userIdFromUsername);
+        next.calledOnce.should.equal(true);
+        should.not.exist(req.userIdFromUsername);
+      }
     });
 
     it('continues when the username does not match a user', async () => {

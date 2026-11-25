@@ -213,6 +213,7 @@ export type AnalyticsEvents = {
   search_offer_previewed: undefined;
   search_offer_not_found: undefined;
   search_community_note_opened: undefined;
+  map_raster_fallback: undefined;
 
   // Reaching out
   contact_request_sent: { source: OutreachSource };
@@ -302,6 +303,8 @@ export const ANALYTICS_EVENTS: {
   search_offer_not_found: 'An offer link on the search map points nowhere.',
   search_community_note_opened:
     'A community note is opened, from the map or the search sidebar.',
+  map_raster_fallback:
+    'A map is drawn with Leaflet raster tiles because the browser has no WebGL2.',
   contact_request_sent:
     'A contact request is sent; says where reaching out started.',
   message_thread_opened:

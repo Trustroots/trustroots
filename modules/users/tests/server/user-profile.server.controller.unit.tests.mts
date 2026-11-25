@@ -2191,10 +2191,12 @@ describe('Profile controller unit tests', () => {
           },
         }),
       );
-      Object.keys(sanitized.additionalProvidersData).should.deepEqual([
-        'facebook',
-        'github',
-      ]);
+      JSON.parse(
+        JSON.stringify(sanitized.additionalProvidersData),
+      ).should.deepEqual({
+        facebook: {},
+        github: { login: 'fictional-github-login' },
+      });
     });
 
     it('omits private and unrecognised document fields after sanitisation', () => {
@@ -2323,6 +2325,16 @@ describe('Profile controller unit tests', () => {
         github: { login: 'fictional-github-login' },
         twitter: { screen_name: 'fictional-twitter-member' },
       });
+    });
+
+    it('accepts cleared legacy provider data', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.additionalProvidersData = null as never;
+
+      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
+
+      should.not.exist(sanitized.additionalProvidersData);
     });
 
     it('hides external contact details from shadowbanned viewers', async () => {
