@@ -1,4 +1,5 @@
 import { validLanguageLevels } from '../../shared/language-levels.ts';
+import { signupExperienceLevels } from '../../shared/signup-experience.ts';
 import textService from '../../../core/server/services/text.server.service.mts';
 import { readFileSync } from 'node:fs';
 import authenticationService from '../services/authentication.server.service.mts';
@@ -534,6 +535,16 @@ const UserSchema = new Schema<
     type: String,
     default: '',
     set: setPlainTextFieldAndLimit(500),
+  },
+  hostingExperience: {
+    type: String,
+    enum: signupExperienceLevels,
+    select: false,
+  },
+  stayingExperience: {
+    type: String,
+    enum: signupExperienceLevels,
+    select: false,
   },
 });
 

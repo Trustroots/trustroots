@@ -9,6 +9,7 @@ import log from '@trustroots/logger';
 import passport from 'passport';
 import crypto from 'crypto';
 import { connectionSearchKey } from '../../shared/network-connections.ts';
+import { signupExperienceLevels } from '../../shared/signup-experience.ts';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
@@ -136,7 +137,6 @@ function isNameSpam(input: string): boolean {
  * Signup
  */
 service.signup = function (req, res) {
-  let validatedSignupBody: SignupRequiredFields | undefined;
   let signupUser: UserDocument | undefined;
   async function createAccount() {
     if (!hasSignupRequiredFields(req.body)) {
@@ -144,18 +144,20 @@ service.signup = function (req, res) {
       err.userFacing = true;
       throw err;
     }
-    validatedSignupBody = req.body;
+    const body = req.body;
 
     if (
       ['locale', 'acquisitionStory'].some(
-        field =>
-          // Stryker disable next-line OptionalChaining: validatedSignupBody was just set to the checked, non-null body
-          validatedSignupBody?.[field] !== undefined &&
-          typeof validatedSignupBody[field] !== 'string',
+        field => body[field] !== undefined && typeof body[field] !== 'string',
       ) ||
-      // Stryker disable next-line OptionalChaining: validatedSignupBody was just set to the checked, non-null body
-      (validatedSignupBody?.newsletter !== undefined &&
-        typeof validatedSignupBody.newsletter !== 'boolean')
+      (body.newsletter !== undefined && typeof body.newsletter !== 'boolean') ||
+      ['hostingExperience', 'stayingExperience'].some(field => {
+        const answer = body[field];
+        return (
+          answer !== undefined &&
+          !signupExperienceLevels.some(level => level === answer)
+        );
+      })
     ) {
       const err: AccountError = new Error(
         'Please provide valid signup preferences.',
@@ -173,7 +175,6 @@ service.signup = function (req, res) {
     }
 
     {
-      const body = validatedSignupBody!;
       const { firstName, lastName, username } = body;
       if (isNameSpam(firstName) || (lastName && isNameSpam(lastName))) {
         // Stryker disable next-line StringLiteral: the response uses the generic message and the logger keeps only the error name
@@ -195,7 +196,6 @@ service.signup = function (req, res) {
         err ? reject(err) : resolve(buffer),
       );
     });
-    const body = validatedSignupBody!;
     const user = new User(
       pick(body, [
         'firstName',
@@ -206,6 +206,8 @@ service.signup = function (req, res) {
         'newsletter',
         'locale',
         'acquisitionStory',
+        'hostingExperience',
+        'stayingExperience',
       ]),
     );
 

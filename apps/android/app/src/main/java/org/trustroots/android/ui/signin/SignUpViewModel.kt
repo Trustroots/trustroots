@@ -12,6 +12,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.SignUpDetails
+import org.trustroots.android.api.SignUpExperience
 
 internal class SignUpViewModel : ViewModel() {
     var firstName by mutableStateOf("")
@@ -22,6 +23,8 @@ internal class SignUpViewModel : ViewModel() {
     var ageConfirmed by mutableStateOf(false)
     var newsletter by mutableStateOf(false)
     var acquisitionStory by mutableStateOf("")
+    var hostingExperience by mutableStateOf<SignUpExperience?>(null)
+    var stayingExperience by mutableStateOf<SignUpExperience?>(null)
     var isBusy by mutableStateOf(false)
         private set
     var accountCreated by mutableStateOf(false)
@@ -50,6 +53,7 @@ internal class SignUpViewModel : ViewModel() {
                         SignUpDetails(
                             firstName.trim(), lastName.trim(), username.trim(), email.trim(),
                             password, ageConfirmed, newsletter, acquisitionStory.trim(), locale,
+                            hostingExperience, stayingExperience,
                         ),
                     )
                     ensureActive()

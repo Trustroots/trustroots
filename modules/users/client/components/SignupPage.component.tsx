@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import { Input } from '@trustroots/ui/Input';
+import { Select } from '@trustroots/ui/Select';
 import { AuthPasswordInput } from './AuthPasswordInput';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,10 @@ import type {
 import type { UserProfile } from '../types';
 import type { AuthenticatedUser } from '../api/auth.api';
 import { readApiError } from '../utils/api-error';
+import {
+  signupExperienceLevels,
+  type SignupExperience,
+} from '../../shared/signup-experience';
 
 import {
   SIGNUP_USERNAME_REGEX as USERNAME_PATTERN,
@@ -127,6 +132,14 @@ export default function SignupPage() {
     password: '',
     username: '',
   });
+  const [hostingExperience, setHostingExperience] = useState('');
+  const [stayingExperience, setStayingExperience] = useState('');
+  const experienceLabels: Record<SignupExperience, string> = {
+    none: t('No experience yet'),
+    once: t('Once'),
+    few: t('A few times'),
+    many: t('Many times'),
+  };
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailTaken, setIsEmailTaken] = useState(false);
@@ -306,7 +319,15 @@ export default function SignupPage() {
     let signedUp = false;
 
     try {
-      const newUser = await authApi.signup(credentials);
+      const newUser = await authApi.signup({
+        ...credentials,
+        hostingExperience: signupExperienceLevels.find(
+          level => level === hostingExperience,
+        ),
+        stayingExperience: signupExperienceLevels.find(
+          level => level === stayingExperience,
+        ),
+      });
       signedUp = true;
       track('signup_completed', { referred_circle: tribe?._id ? 'yes' : 'no' });
       let authenticatedUser = newUser;
@@ -641,6 +662,54 @@ export default function SignupPage() {
                     />
                   </div>
                 </div>
+                <fieldset aria-label={t('Hospitality exchange experience')}>
+                  {[
+                    {
+                      id: 'hostingExperience',
+                      question: t(
+                        'How much experience do you have hosting people you haven’t met before?',
+                      ),
+                      value: hostingExperience,
+                      setValue: setHostingExperience,
+                    },
+                    {
+                      id: 'stayingExperience',
+                      question: t(
+                        'How much experience do you have staying with people you haven’t met before?',
+                      ),
+                      value: stayingExperience,
+                      setValue: setStayingExperience,
+                    },
+                  ].map(({ id, question, value, setValue }) => (
+                    <div className="form-group" key={id}>
+                      <label
+                        className="tw:sm:grid-col-4 control-label"
+                        htmlFor={id}
+                      >
+                        {question}
+                      </label>
+                      <div className="tw:sm:grid-col-8">
+                        <Select
+                          id={id}
+                          name={id}
+                          fieldSize="lg"
+                          className="tw:appearance-auto"
+                          value={value}
+                          onChange={event => setValue(event.target.value)}
+                        >
+                          <option value="">
+                            {t('Select an answer (optional)')}
+                          </option>
+                          {signupExperienceLevels.map(level => (
+                            <option key={level} value={level}>
+                              {experienceLabels[level]}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </fieldset>
                 <div className="text-center signup-next">
                   <br />
                   <Button

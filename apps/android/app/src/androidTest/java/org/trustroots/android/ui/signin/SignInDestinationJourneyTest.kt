@@ -417,6 +417,10 @@ class SignInDestinationJourneyTest {
         compose.onNodeWithText("Create account").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("I am 18 years old or older").performScrollTo().performClick()
         compose.onNodeWithText("Subscribe to community news").performScrollTo().performClick()
+        compose.onNodeWithTag("signup-hosting-experience").performScrollTo().performClick()
+        compose.onNodeWithText("No experience yet").performClick()
+        compose.onNodeWithTag("signup-staying-experience").performScrollTo().performClick()
+        compose.onNodeWithText("A few times").performClick()
 
         for (useToolbar in listOf(false, true)) {
             compose.onNodeWithText("Read the rules").performScrollTo().performClick()
@@ -476,6 +480,8 @@ class SignInDestinationJourneyTest {
         assertEquals("quiet@example.test", signup.getString("email"))
         assertTrue(signup.getBoolean("ageConfirmed"))
         assertTrue(signup.getBoolean("newsletter"))
+        assertEquals("none", signup.getString("hostingExperience"))
+        assertEquals("few", signup.getString("stayingExperience"))
         assertEquals(2, signInAttempts.get())
 
         compose.onNodeWithText("Edit profile").performScrollTo().performClick()
