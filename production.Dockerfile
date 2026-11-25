@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm install --frozen-lockfile
 
 # Copy code into the container
-COPY tsconfig.json vite.config.mts server.js server.mjs worker.mjs worker.mts ./
+COPY tsconfig.json vite.config.mts server.js worker.mjs ./
 COPY bin bin
 COPY config config
 COPY layers layers
