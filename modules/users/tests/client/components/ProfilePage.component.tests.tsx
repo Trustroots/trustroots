@@ -1,3 +1,4 @@
+import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
 import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
 import { readOutreachSource } from '@trustroots/analytics/client';
@@ -69,9 +70,18 @@ function ProfileOffers() {
 }
 
 function ProfilePage(
-  props: Omit<React.ComponentProps<typeof MemberProfilePage>, 'ProfileOffers'>,
+  props: Omit<
+    React.ComponentProps<typeof MemberProfilePage>,
+    'ProfileOffers' | 'experiences'
+  >,
 ) {
-  return <MemberProfilePage {...props} ProfileOffers={ProfileOffers} />;
+  return (
+    <MemberProfilePage
+      {...props}
+      ProfileOffers={ProfileOffers}
+      experiences={profileExperiences}
+    />
+  );
 }
 vi.mock(
   '@/modules/contacts/client/components/ContactsCommon.component',

@@ -3,7 +3,7 @@ import { rememberOutreachSource } from '@trustroots/analytics/client';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
-import type { ExperienceAction } from '@/modules/experiences/client/components/ListExperiences.component';
+import type { ExperienceAction } from '../profile-experiences';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 
 interface TopNavigationSmallProps {

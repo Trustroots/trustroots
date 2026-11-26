@@ -26,7 +26,11 @@ const notFound = Object.assign(new Error('Not found'), {
 
 function load(canLoadReply: boolean) {
   return new QueryClient().fetchQuery(
-    profileQuery('walker', { canLoadReply, viewerId: 'viewer-1' }),
+    profileQuery(
+      'walker',
+      { canLoadReply, viewerId: 'viewer-1' },
+      readReplyRecipient,
+    ),
   );
 }
 
@@ -37,13 +41,59 @@ describe('profileQuery', () => {
 
   it('keys the profile by member and viewer', () => {
     expect(
-      profileQuery('walker', { canLoadReply: true, viewerId: 'viewer-1' })
-        .queryKey,
+      profileQuery(
+        'walker',
+        { canLoadReply: true, viewerId: 'viewer-1' },
+        readReplyRecipient,
+      ).queryKey,
     ).toEqual([
       'profile',
       'walker',
       { canLoadReply: true, viewerId: 'viewer-1' },
     ]);
+  });
+
+  it('shares the in-flight loader request with the profile and isolates other viewers', async () => {
+    const queryClient = new QueryClient();
+    fetchProfile.mockRejectedValueOnce(notFound);
+    readReplyRecipient.mockResolvedValueOnce(recipient);
+
+    const navigation = queryClient.prefetchQuery(
+      profileQuery(
+        'walker',
+        { canLoadReply: true, viewerId: 'viewer-1' },
+        readReplyRecipient,
+      ),
+    );
+    const page = queryClient.fetchQuery(
+      profileQuery(
+        'walker',
+        { canLoadReply: true, viewerId: 'viewer-1' },
+        readReplyRecipient,
+      ),
+    );
+
+    await navigation;
+    expect(await page).toEqual({
+      profile: recipient,
+      experienceOnly: true,
+      ownExperience,
+    });
+    expect(fetchProfile).toHaveBeenCalledTimes(1);
+    expect(readReplyRecipient).toHaveBeenCalledExactlyOnceWith('walker');
+
+    fetchProfile.mockResolvedValueOnce(profile);
+    await expect(
+      queryClient.fetchQuery(
+        profileQuery(
+          'walker',
+          { canLoadReply: true, viewerId: 'viewer-2' },
+          readReplyRecipient,
+        ),
+      ),
+    ).resolves.toMatchObject({ profile, experienceOnly: false });
+    expect(fetchProfile).toHaveBeenCalledTimes(2);
+    expect(readReplyRecipient).toHaveBeenCalledTimes(1);
   });
 
   it('loads the member profile', async () => {

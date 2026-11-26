@@ -5,9 +5,12 @@ import type {
   UserMessaging,
   WrittenMessage,
 } from '../services/user-messaging.server.contract.mts';
-import type { UserAccountServices } from '../services/user-account.server.contract.mts';
+import type {
+  UserAccountServices,
+  WrittenExperience,
+} from '../services/user-account.server.contract.mts';
 import type { NextFunction, Response } from 'express';
-import mongoose, { type Types } from 'mongoose';
+import type { Types } from 'mongoose';
 import type {
   ProfileRequest,
   ProfileResponse,
@@ -21,17 +24,6 @@ type ExportId = string | Types.ObjectId;
 
 interface ExportRecord {
   [field: string]: unknown;
-}
-
-interface ExportExperienceRecord extends ExportRecord {
-  _id?: unknown;
-  created?: unknown;
-  public?: unknown;
-  interactions?: unknown;
-  recommend?: unknown;
-  feedbackPublic?: unknown;
-  removedAt?: unknown;
-  userTo?: unknown;
 }
 
 type ExportRequest = ProfileRequest &
@@ -89,7 +81,10 @@ interface UserExportService {
   download(
     services: Pick<
       UserAccountServices,
-      'readReplyStats' | 'readWrittenMessages' | 'readOwnedOffers'
+      | 'readReplyStats'
+      | 'readWrittenMessages'
+      | 'readWrittenExperiences'
+      | 'readOwnedOffers'
     >,
     req: ExportRequest,
     res: Response,
@@ -101,7 +96,10 @@ interface UserExportService {
     readWrittenMessages: UserMessaging['readWrittenMessages'],
     userId: ExportId,
   ): Promise<ExportRecord[]>;
-  writtenExperiences(userId: ExportId): Promise<ExportRecord[]>;
+  writtenExperiences(
+    readWrittenExperiences: UserAccountServices['readWrittenExperiences'],
+    userId: ExportId,
+  ): Promise<ExportRecord[]>;
 }
 
 const service = {} as UserExportService;
@@ -186,9 +184,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function selectWrittenExperience(
-  experience: ExportExperienceRecord,
-): ExportRecord {
+function selectWrittenExperience(experience: WrittenExperience): ExportRecord {
   const interactions = isRecord(experience.interactions)
     ? experience.interactions
     : {};
@@ -220,12 +216,11 @@ async function writtenMessages(
   return messages.map(selectWrittenMessage);
 }
 
-async function writtenExperiences(userId: ExportId): Promise<ExportRecord[]> {
-  const Experience = mongoose.model<ExportExperienceRecord>('Experience');
-  const experiences = await Experience.find({ userFrom: userId })
-    .sort({ created: 1 })
-    .populate('userTo', 'username displayName')
-    .lean();
+async function writtenExperiences(
+  readWrittenExperiences: UserAccountServices['readWrittenExperiences'],
+  userId: ExportId,
+): Promise<ExportRecord[]> {
+  const experiences = await readWrittenExperiences(userId);
   return experiences.map(selectWrittenExperience);
 }
 
@@ -288,7 +283,7 @@ service.download = async function (
     const profile = req.profile || {};
     const [messages, experiences, hostingOffers] = await Promise.all([
       service.writtenMessages(services.readWrittenMessages, req.user._id),
-      service.writtenExperiences(req.user._id),
+      service.writtenExperiences(services.readWrittenExperiences, req.user._id),
       services.readOwnedOffers(req.user._id),
     ]);
     const exportedAt = new Date();

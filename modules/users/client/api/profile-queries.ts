@@ -1,7 +1,7 @@
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
-import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
+import type { ReadReplyRecipient } from '../profile-experiences';
 import { fetch as fetchProfile } from './users.api';
 
 type ProfileQuery = {
@@ -14,7 +14,11 @@ type ProfileQuery = {
  * experience recipient. The route loader starts it and the page reads it,
  * so switching profile tabs reuses it while it is fresh.
  */
-export function profileQuery(username: string, options: ProfileQuery) {
+export function profileQuery<AuthoredExperience>(
+  username: string,
+  options: ProfileQuery,
+  readReplyRecipient: ReadReplyRecipient<AuthoredExperience>,
+) {
   return queryOptions({
     queryKey: ['profile', username, options],
     queryFn: async () => {

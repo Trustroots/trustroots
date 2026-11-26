@@ -42,13 +42,10 @@ import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
-import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
-import ListExperiences, {
-  type ExperienceAction,
-} from '@/modules/experiences/client/components/ListExperiences.component';
-import { readMine } from '@/modules/experiences/client/api/experiences.api';
-import PendingAuthoredExperiences from '@/modules/experiences/client/components/PendingAuthoredExperiences';
-import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
+import type {
+  ExperienceAction,
+  ProfileExperiences,
+} from '../profile-experiences';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
@@ -279,18 +276,23 @@ function ProfileDesktopActions({
   );
 }
 
-export default function ProfilePage({
-  ProfileOffers,
-  circles,
-  embedded = false,
-  profileUsername,
-  user: authUser,
-}: {
-  ProfileOffers: ProfileOffersComponent;
-  circles: ProfileCircles;
+export interface ProfilePageProps {
   embedded?: boolean;
   profileUsername?: string;
   user: UserProfile;
+}
+
+export default function ProfilePage<AuthoredExperience>({
+  ProfileOffers,
+  circles,
+  embedded = false,
+  experiences,
+  profileUsername,
+  user: authUser,
+}: ProfilePageProps & {
+  ProfileOffers: ProfileOffersComponent;
+  circles: ProfileCircles;
+  experiences: ProfileExperiences<AuthoredExperience>;
 }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -322,7 +324,11 @@ export default function ProfilePage({
   const isCreatingExperience = tab === 'experiences-new';
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(
-    profileQuery(username, { canLoadReply, viewerId: authUser?._id }),
+    profileQuery(
+      username,
+      { canLoadReply, viewerId: authUser?._id },
+      experiences.readReplyRecipient,
+    ),
   );
   const wasCreatingExperience = useRef(isCreatingExperience);
   useEffect(() => {
@@ -358,13 +364,8 @@ export default function ProfilePage({
       viewedMemberId,
     ],
     enabled: canCheckSharedExperience,
-    queryFn: async () => {
-      const experience = await readMine({ userWith: viewedMemberId });
-      if (!experience) return null;
-      const author = experience.userFrom;
-      const authorId = typeof author === 'string' ? author : author._id;
-      return authorId === authUser._id ? experience._id : null;
-    },
+    queryFn: () =>
+      experiences.readAuthoredExperienceId(viewedMemberId, authUser._id),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: false,
@@ -551,8 +552,8 @@ export default function ProfilePage({
       case 'experiences':
         return referencesEnabled ? (
           <>
-            {isSelf && <PendingAuthoredExperiences userId={profile._id} />}
-            <ListExperiences
+            {isSelf && <experiences.PendingAuthored userId={profile._id} />}
+            <experiences.List
               authenticatedUser={authUser}
               profile={profile}
               experienceAction={experienceAction}
@@ -561,7 +562,7 @@ export default function ProfilePage({
         ) : null;
       case 'experiences-new':
         return referencesEnabled ? (
-          <CreateExperience userFrom={authUser} userTo={profile} />
+          <experiences.Create userFrom={authUser} userTo={profile} />
         ) : null;
       case 'about':
       default:
@@ -583,6 +584,7 @@ export default function ProfilePage({
     circles,
     contacts,
     experienceAction,
+    experiences,
     isSelf,
     profile,
     profileMinimumLength,
@@ -603,16 +605,12 @@ export default function ProfilePage({
         <MemberIdentity user={profile} size={64} heading />
         <ReportMemberButton username={profile.username} />
         {isCreatingExperience ? (
-          <CreateExperience userFrom={authUser} userTo={profile} />
+          <experiences.Create userFrom={authUser} userTo={profile} />
         ) : ownExperience ? (
-          <Experience
-            experience={{
-              ...ownExperience,
-              userFrom: { _id: authUser._id, username: authUser.username },
-              userTo: profile,
-              response: null,
-            }}
-            onReceiverProfile={false}
+          <experiences.Authored
+            experience={ownExperience}
+            author={authUser}
+            recipient={profile}
           />
         ) : (
           <p>
@@ -793,6 +791,7 @@ export default function ProfilePage({
                           activePathName={activePathName}
                           contactsCount={contacts.length || 0}
                           initialPathName={activePathName}
+                          getExperiencesCount={experiences.getCount}
                           isExperiencesEnabled={referencesEnabled}
                           isOWnProfile={isSelf}
                           userId={profile._id}

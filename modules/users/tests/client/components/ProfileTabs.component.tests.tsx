@@ -7,7 +7,7 @@ import { getCount } from '@/modules/experiences/client/api/experiences.api';
 
 vi.mock('@/modules/experiences/client/api/experiences.api');
 
-describe('<ProfileTabs />', () => {
+describe('<ProfileTabs getExperiencesCount={getCount} />', () => {
   beforeEach(() => {
     vi.mocked(getCount).mockResolvedValue({ count: 2, hasPending: true });
   });
@@ -19,6 +19,7 @@ describe('<ProfileTabs />', () => {
   it('renders profile tabs with contact and experience counts', async () => {
     render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={3}
         initialPathName="profile.about"
         isExperiencesEnabled
@@ -50,6 +51,7 @@ describe('<ProfileTabs />', () => {
   it('updates the active tab when the route prop changes', () => {
     const { rerender } = render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={1}
         initialPathName="profile.about"
         isExperiencesEnabled={false}
@@ -61,6 +63,7 @@ describe('<ProfileTabs />', () => {
 
     rerender(
       <ProfileTabs
+        getExperiencesCount={getCount}
         activePathName="profile.contacts"
         contactsCount={1}
         initialPathName="profile.about"
@@ -80,6 +83,7 @@ describe('<ProfileTabs />', () => {
   it('hides private tabs for other members when counts are unavailable', () => {
     render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={0}
         initialPathName="profile.about"
         isExperiencesEnabled={false}
@@ -102,6 +106,7 @@ describe('<ProfileTabs />', () => {
 
     render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={2}
         initialPathName="profile.about"
         isExperiencesEnabled
@@ -130,6 +135,7 @@ describe('<ProfileTabs />', () => {
 
     render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={2}
         initialPathName="profile.about"
         isExperiencesEnabled
@@ -149,6 +155,7 @@ describe('<ProfileTabs />', () => {
   it('shows private tabs for own profile even without counts', async () => {
     render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={0}
         initialPathName="profile.about"
         isExperiencesEnabled
@@ -174,6 +181,7 @@ describe('<ProfileTabs />', () => {
   it('handles route updates that activate the experiences tab', async () => {
     const { rerender } = render(
       <ProfileTabs
+        getExperiencesCount={getCount}
         contactsCount={1}
         initialPathName="profile.about"
         isExperiencesEnabled
@@ -185,6 +193,7 @@ describe('<ProfileTabs />', () => {
 
     rerender(
       <ProfileTabs
+        getExperiencesCount={getCount}
         activePathName="profile.experiences.list"
         contactsCount={1}
         initialPathName="profile.about"

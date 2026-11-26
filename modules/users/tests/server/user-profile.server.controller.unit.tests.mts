@@ -2523,10 +2523,15 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('search middleware', () => {
+    const searchMembers = profileController.search.bind(
+      null,
+      userAccountServices.findSearchConnectionIds,
+    );
+
     it('calls next when no search query is provided', async () => {
       let nextCalled = false;
       await new Promise<void>(resolve => {
-        profileController.search({ query: {} }, {}, () => {
+        searchMembers({ query: {} }, {}, () => {
           nextCalled = true;
           resolve();
         });
@@ -2536,7 +2541,7 @@ describe('Profile controller unit tests', () => {
 
     it('rejects a search string that is too short', async () => {
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           { query: { search: 'ab' }, user: { blocked: [] } },
           res,
           next,
@@ -2547,7 +2552,7 @@ describe('Profile controller unit tests', () => {
 
     const searchOutcome = (search: string, skip: number) =>
       runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search },
             user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
@@ -2598,7 +2603,7 @@ describe('Profile controller unit tests', () => {
       await targetDoc.save();
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'UniqueSearchable' },
             user: { _id: viewer._id, blocked: [] },
@@ -2625,7 +2630,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: {
@@ -2656,7 +2661,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: viewer._id, blocked: [] },
@@ -2679,7 +2684,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: viewer._id, id: viewer._id },
@@ -2698,7 +2703,7 @@ describe('Profile controller unit tests', () => {
       stubSearch(() => {}, [], new Error('search failed'));
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
@@ -2723,7 +2728,7 @@ describe('Profile controller unit tests', () => {
       await blockerDoc.save();
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'BlockerSearch' },
             user: { _id: viewer._id, id: viewer._id, blocked: [] },
