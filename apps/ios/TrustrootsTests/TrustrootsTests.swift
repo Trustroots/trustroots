@@ -918,6 +918,25 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNil(OpenLocationCodeDecoder.coordinate(for: "not-a-plus-code"))
     }
 
+    func testSelectedCommunityNoteKeepsLongTextAndNativeAttribution() {
+        let text = (1...8).map { "Update \($0) from the café near the station." }.joined(separator: "\n")
+        let note = CommunityNote(
+            id: "synthetic-note",
+            content: text,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            latitude: 37.422,
+            longitude: -122.084
+        )
+
+        let presentation = CommunityNotePresentation(note: note)
+
+        XCTAssertEqual(presentation.text, text)
+        XCTAssertEqual(
+            presentation.attribution,
+            "via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))"
+        )
+    }
+
     func testMobileBearerRequestRefreshesOnceAndRetriesWithTheRotatedToken() async throws {
         let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(

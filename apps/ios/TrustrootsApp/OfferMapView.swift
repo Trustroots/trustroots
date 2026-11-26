@@ -620,14 +620,7 @@ private struct MapOfferStatusController: UIViewControllerRepresentable {
         let measuredHeight = $height
         return MapOfferStatusViewControllerKt.MapOfferStatusViewController(
             state: state,
-            onHeight: { points in
-                let next = max(1, CGFloat(points.doubleValue))
-                Task { @MainActor in
-                    if measuredHeight.wrappedValue != next {
-                        measuredHeight.wrappedValue = next
-                    }
-                }
-            }
+            onHeight: { applyMapContentHeight($0.doubleValue, to: measuredHeight) }
         )
     }
 
@@ -669,21 +662,33 @@ private struct MapOfferActionController: UIViewControllerRepresentable {
             action: action,
             surfaceArgb: mapColourArgb(TrustrootsPalette.paleGreen.opacity(0.96), for: colorScheme),
             onTap: { [weak coordinator] in coordinator?.onTap?() },
-            createIcon: {
-                let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
-                let image = UIImage(systemName: symbolName, withConfiguration: configuration)
-                let view = UIImageView(image: image?.withRenderingMode(.alwaysTemplate))
-                view.contentMode = .scaleAspectFit
-                view.tintColor = UIColor(TrustrootsPalette.darkGreen)
-                view.isAccessibilityElement = false
-                view.isUserInteractionEnabled = false
-                return view
-            }
+            createIcon: { makeMapSymbol(symbolName, tint: UIColor(TrustrootsPalette.darkGreen)) }
         )
     }
 
     func updateUIViewController(_ controller: UIViewController, context: Context) {
         context.coordinator.onTap = onTap
+    }
+}
+
+@MainActor
+private func makeMapSymbol(_ name: String, tint: UIColor) -> UIImageView {
+    let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+    let image = UIImage(systemName: name, withConfiguration: configuration)
+    let view = UIImageView(image: image?.withRenderingMode(.alwaysTemplate))
+    view.contentMode = .scaleAspectFit
+    view.tintColor = tint
+    view.isAccessibilityElement = false
+    view.isUserInteractionEnabled = false
+    return view
+}
+
+private func applyMapContentHeight(_ points: Double, to height: Binding<CGFloat>) {
+    let next = max(1, CGFloat(points))
+    Task { @MainActor in
+        if height.wrappedValue != next {
+            height.wrappedValue = next
+        }
     }
 }
 
@@ -701,35 +706,70 @@ private func mapColourArgb(_ colour: Color, for colorScheme: ColorScheme) -> Int
     }
 }
 
+struct CommunityNotePresentation {
+    let text: String
+    let attribution: String
+
+    init(note: CommunityNote) {
+        text = note.content
+        attribution = "via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))"
+    }
+}
+
 private struct CommunityNoteCard: View {
     let note: CommunityNote
     let dismiss: () -> Void
+    @State private var height: CGFloat = 1
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "bubble.left.and.text.bubble.right.fill")
-                .foregroundStyle(.white)
-                .padding(9)
-                .background(TrustrootsPalette.communityNote)
-                .clipShape(Circle())
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Community Note")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(TrustrootsPalette.communityNote)
-                Text(note.content)
-                    .font(.subheadline)
-                    .lineLimit(4)
-                Text("via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button(action: dismiss) { Image(systemName: "xmark") }
-                .accessibilityLabel("Dismiss Community Note")
-        }
-        .padding(11)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        ComposeCommunityNoteCard(
+            presentation: CommunityNotePresentation(note: note),
+            onDismiss: dismiss,
+            height: $height
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
+    }
+}
+
+@MainActor
+private struct ComposeCommunityNoteCard: UIViewControllerRepresentable {
+    let presentation: CommunityNotePresentation
+    let onDismiss: () -> Void
+    @Binding var height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        let state = CommunityNoteCardState()
+        var onDismiss: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return CommunityNoteCardViewControllerKt.CommunityNoteCardViewController(
+            state: coordinator.state,
+            onDismiss: { [weak coordinator] in coordinator?.onDismiss?() },
+            onHeight: { applyMapContentHeight($0.doubleValue, to: measuredHeight) },
+            createIcon: { makeMapSymbol("bubble.left.and.text.bubble.right.fill", tint: .white) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onDismiss = onDismiss
+        coordinator.state.update(content: CommunityNoteCardContent(
+            text: presentation.text,
+            attribution: presentation.attribution,
+            markerArgb: mapColourArgb(TrustrootsPalette.communityNote, for: colorScheme)
+        ))
     }
 }
 

@@ -3,6 +3,7 @@ package org.trustroots.shared.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -15,18 +16,26 @@ fun MapOfferStatusViewController(
     state: MapOfferStatusState,
     onHeight: (Double) -> Unit,
 ) = ComposeUIViewController(configure = { opaque = false }) {
-    val density = LocalDensity.current
     state.content?.let { content ->
-        Box(
-            Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true),
-            contentAlignment = Alignment.TopEnd,
-        ) {
-            MapOfferStatus(
-                content,
-                modifier = Modifier.onSizeChanged {
-                    onHeight(with(density) { it.height.toDp().value.toDouble() })
-                },
-            )
+        MeasuredMapContent(onHeight, alignment = Alignment.TopEnd) { modifier ->
+            MapOfferStatus(content, modifier)
         }
+    }
+}
+
+@Composable
+internal fun MeasuredMapContent(
+    onHeight: (Double) -> Unit,
+    alignment: Alignment = Alignment.TopStart,
+    content: @Composable (Modifier) -> Unit,
+) {
+    val density = LocalDensity.current
+    Box(
+        Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true),
+        contentAlignment = alignment,
+    ) {
+        content(Modifier.onSizeChanged {
+            onHeight(with(density) { it.height.toDp().value.toDouble() })
+        })
     }
 }
