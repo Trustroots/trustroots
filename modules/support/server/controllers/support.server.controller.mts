@@ -237,7 +237,7 @@ export const supportRequest: SupportService['supportRequest'] = async function (
   // Send email
   emailService.sendSupportRequest(
     replyTo,
-    supportRequestData,
+    { ...supportRequestData, categoryLabel: SUPPORT_CATEGORIES[category] },
     function (emailServiceErr?: Error | null) {
       if (emailServiceErr) {
         log('error', 'Failed sending support request via email. #49ghsd', {

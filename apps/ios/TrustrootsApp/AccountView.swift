@@ -14,8 +14,9 @@ struct AccountView: View {
     @State private var isSavingAccount = false
     @State private var isChangingPassword = false
     @State private var emailSectionHeight: CGFloat = 1
-    @State private var emailSectionOrigin: CGPoint = .zero
     @State private var passwordActionsHeight: CGFloat = 1
+    @State private var emailSectionPosition = AccountSectionPosition()
+    @State private var passwordActionsPosition = AccountSectionPosition()
     @State private var accountConfirmation: String?
     @State private var accountError: String?
     @State private var confirmation: String?
@@ -81,7 +82,7 @@ struct AccountView: View {
             email: $email,
             newsletter: $newsletter,
             height: $emailSectionHeight,
-            origin: emailSectionOrigin,
+            position: emailSectionPosition,
             canCorrectSignupEmail: !requiresEmailConfirmation,
             pendingEmail: pendingEmail,
             canCancelEmailChange: canCancelEmailChange,
@@ -95,7 +96,7 @@ struct AccountView: View {
         .frame(maxWidth: .infinity)
         .frame(height: emailSectionHeight)
         .clipped()
-        .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { emailSectionOrigin = $0 }
+        .trackAccountSectionPosition(emailSectionPosition)
     }
 
     private var passwordSection: some View {
@@ -108,6 +109,7 @@ struct AccountView: View {
 
             ComposePasswordActions(
                 height: $passwordActionsHeight,
+                position: passwordActionsPosition,
                 canSubmit: hasPasswordInputs,
                 isChanging: isChangingPassword,
                 confirmation: confirmation,
@@ -118,6 +120,7 @@ struct AccountView: View {
             .frame(maxWidth: .infinity)
             .frame(height: passwordActionsHeight)
             .clipped()
+            .trackAccountSectionPosition(passwordActionsPosition)
         }
         .textFieldStyle(.roundedBorder)
         .padding(16)
@@ -363,6 +366,7 @@ private struct ComposeAccountOverviewSection: View {
     let section: MemberAccountOverviewSection
     let onAction: () -> Void
     @State private var height: CGFloat = 1
+    @State private var position = AccountSectionPosition()
 
     init(section: MemberAccountOverviewSection, onAction: @escaping () -> Void = {}) {
         self.section = section
@@ -370,14 +374,16 @@ private struct ComposeAccountOverviewSection: View {
     }
 
     var body: some View {
-        Controller(section: section, onAction: onAction, height: $height)
+        Controller(section: section, position: position, onAction: onAction, height: $height)
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .clipped()
+            .trackAccountSectionPosition(position)
     }
 
     private struct Controller: UIViewControllerRepresentable {
         let section: MemberAccountOverviewSection
+        let position: AccountSectionPosition
         let onAction: () -> Void
         @Binding var height: CGFloat
 
@@ -393,6 +399,7 @@ private struct ComposeAccountOverviewSection: View {
             let measuredHeight = $height
             return MemberAccountOverviewViewControllerKt.MemberAccountOverviewViewController(
                 section: section,
+                position: position,
                 onAction: { [weak coordinator] in coordinator?.onAction() },
                 onHeight: { value in
                     let next = max(1, CGFloat(value.doubleValue))
@@ -414,6 +421,7 @@ private struct ComposeAccountOverviewSection: View {
 @MainActor
 private struct ComposePasswordActions: UIViewControllerRepresentable {
     @Binding var height: CGFloat
+    let position: AccountSectionPosition
     let canSubmit: Bool
     let isChanging: Bool
     let confirmation: String?
@@ -435,6 +443,7 @@ private struct ComposePasswordActions: UIViewControllerRepresentable {
         let measuredHeight = $height
         return MemberAccountPasswordActionsViewControllerKt.MemberAccountPasswordActionsViewController(
             state: coordinator.state,
+            position: position,
             onChangePassword: { [weak coordinator] in coordinator?.onChangePassword?() },
             onRecoverPassword: { [weak coordinator] in coordinator?.onRecoverPassword?() },
             onHeight: { value in
@@ -469,7 +478,7 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
     @Binding var email: String
     @Binding var newsletter: Bool
     @Binding var height: CGFloat
-    let origin: CGPoint
+    let position: AccountSectionPosition
     let canCorrectSignupEmail: Bool
     let pendingEmail: String?
     let canCancelEmailChange: Bool
@@ -497,6 +506,7 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
         let measuredHeight = $height
         return MemberAccountPreferencesViewControllerKt.MemberAccountPreferencesViewController(
             state: coordinator.state,
+            position: position,
             onEmail: { [weak coordinator] in coordinator?.onEmail?($0) },
             onNewsletter: { [weak coordinator] in coordinator?.onNewsletter?($0.boolValue) },
             onSave: { [weak coordinator] in coordinator?.onSave?() },
@@ -525,7 +535,6 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
         coordinator.onSave = onSave
         coordinator.onChangeEmail = onChangeEmail
         coordinator.onCancelEmailChange = onCancelEmailChange
-        coordinator.state.updateOrigin(x: Double(origin.x), y: Double(origin.y))
         coordinator.state.update(
             email: email,
             newsletter: newsletter,
@@ -536,5 +545,13 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
             confirmation: confirmation,
             error: error
         )
+    }
+}
+
+extension View {
+    func trackAccountSectionPosition(_ position: AccountSectionPosition) -> some View {
+        onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { origin in
+            position.updateOrigin(x: Double(origin.x), y: Double(origin.y))
+        }
     }
 }

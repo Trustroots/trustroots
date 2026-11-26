@@ -188,19 +188,22 @@ private struct NostrKeyStatusSection: View {
 
     let status: Status
     @State private var height: CGFloat = 1
+    @State private var position = AccountSectionPosition()
 
     var body: some View {
-        NostrKeyStatusController(status: status, height: $height)
+        NostrKeyStatusController(status: status, position: position, height: $height)
             .id(status)
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .clipped()
+            .trackAccountSectionPosition(position)
     }
 }
 
 @MainActor
 private struct NostrKeyStatusController: UIViewControllerRepresentable {
     let status: NostrKeyStatusSection.Status
+    let position: AccountSectionPosition
     @Binding var height: CGFloat
 
     func makeUIViewController(context: Context) -> UIViewController {
@@ -218,11 +221,13 @@ private struct NostrKeyStatusController: UIViewControllerRepresentable {
             return MemberNostrKeyStatusViewControllerKt.MemberNostrProfileKeyStatusViewController(
                 profileLoaded: loaded,
                 hasLinkedKey: linked,
+                position: position,
                 onHeight: { resize(to: $0.doubleValue) }
             )
         case .local(let hasKey):
             return MemberNostrKeyStatusViewControllerKt.MemberNostrLocalKeyStatusViewController(
                 hasLocalKey: hasKey,
+                position: position,
                 onHeight: { resize(to: $0.doubleValue) }
             )
         }

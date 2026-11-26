@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -22,18 +23,28 @@ import androidx.compose.ui.window.ComposeUIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UITextContentTypeEmailAddress
 
-private val AccountPreferencesOrigin = SemanticsPropertyKey<Offset>("AccountPreferencesOrigin")
+class AccountSectionPosition {
+    private val position = mutableStateOf(Offset.Zero)
+    internal val origin: Offset get() = position.value
+
+    fun updateOrigin(x: Double, y: Double) {
+        position.value = Offset(x.toFloat(), y.toFloat())
+    }
+}
+
+private val AccountSectionOrigin = SemanticsPropertyKey<Offset>("AccountSectionOrigin")
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 fun MemberAccountPreferencesViewController(
     state: MemberAccountPreferencesState,
+    position: AccountSectionPosition,
     onEmail: (String) -> Unit,
     onNewsletter: (Boolean) -> Unit,
     onSave: () -> Unit,
     onChangeEmail: () -> Unit,
     onCancelEmailChange: () -> Unit,
     onHeight: (Double) -> Unit,
-) = AccountSectionViewController("account-preferences", onHeight) { modifier ->
+) = AccountSectionViewController("account-preferences", position, onHeight) { modifier ->
     MemberAccountPreferences(
         state,
         emailKeyboard = KeyboardOptions(
@@ -48,14 +59,14 @@ fun MemberAccountPreferencesViewController(
         onSave = onSave,
         onChangeEmail = onChangeEmail,
         onCancelEmailChange = onCancelEmailChange,
-        // The native scroll view moves this host without changing its Compose layout.
-        modifier = modifier.semantics { this[AccountPreferencesOrigin] = state.origin },
+        modifier = modifier,
     )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun AccountSectionViewController(
     accessibilityTag: String,
+    position: AccountSectionPosition,
     onHeight: (Double) -> Unit,
     opaque: Boolean = true,
     content: @Composable (Modifier) -> Unit,
@@ -64,6 +75,8 @@ internal fun AccountSectionViewController(
     Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
         content(
             Modifier.fillMaxWidth().testTag(accessibilityTag)
+                // The enclosing SwiftUI scroll view moves this host without relaying layout to Compose.
+                .semantics { this[AccountSectionOrigin] = position.origin }
                 .onSizeChanged { onHeight(with(density) { it.height.toDp().value.toDouble() }) },
         )
     }

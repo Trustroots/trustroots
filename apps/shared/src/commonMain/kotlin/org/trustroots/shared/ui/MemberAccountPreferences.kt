@@ -20,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -32,12 +31,6 @@ import androidx.compose.ui.unit.dp
 class MemberAccountPreferencesState {
     internal var content by mutableStateOf(MemberAccountPreferencesContent())
         private set
-    internal var origin by mutableStateOf(Offset.Zero)
-        private set
-
-    fun updateOrigin(x: Double, y: Double) {
-        origin = Offset(x.toFloat(), y.toFloat())
-    }
 
     fun update(
         email: String,

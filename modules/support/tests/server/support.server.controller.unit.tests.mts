@@ -9,6 +9,7 @@ import '../../server/models/support.server.model.mts';
 import agenda from '../../../../config/lib/agenda.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import controller from '../../server/controllers/support.server.controller.mts';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 
 const User = mongoose.model('User');
 const SupportRequest = mongoose.model('SupportRequest');
@@ -136,6 +137,7 @@ describe('Support controller', () => {
     assert.equal(email.callCount, 1);
     const [replyTo, data] = email.firstCall.args;
     assert.deepEqual(replyTo, { address: 'guest@example.com' });
+    assert.equal(data.categoryLabel, 'Other');
     assert.partialDeepStrictEqual(data, {
       authenticated: 'no',
       displayName: '-',
@@ -257,7 +259,7 @@ describe('Support controller', () => {
     'reportBug',
     'volunteering',
     'other',
-  ]) {
+  ] as const) {
     it(`stores and emails the ${category} category`, async () => {
       await submit({
         category,
@@ -266,6 +268,7 @@ describe('Support controller', () => {
         reportMember: 'example-member',
       });
       const data = email.firstCall.args[1];
+      assert.equal(data.categoryLabel, SUPPORT_CATEGORIES[category]);
       const reportMember =
         category === 'reportMember' ? 'example-member' : undefined;
       assert.equal(saved[0].category, category);

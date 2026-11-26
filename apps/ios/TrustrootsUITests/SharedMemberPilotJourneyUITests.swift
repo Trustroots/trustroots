@@ -990,7 +990,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         openNostrAccount(app)
 
         let account = app.scrollViews["account-scroll-view"]
-        XCTAssertTrue(account.staticTexts["Account"].waitForExistence(timeout: 10), app.debugDescription)
+        let heading = account.descendants(matching: .any)["account-overview-heading"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), app.debugDescription)
         tapAccountButton(app.buttons["Nostranslation signing"], in: app)
         let signing = app.navigationBars["Nostranslation signing"]
         XCTAssertTrue(signing.waitForExistence(timeout: 10), app.debugDescription)
@@ -1205,16 +1206,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(account.isHittable, app.debugDescription)
         account.tap()
-        let keySection = app.staticTexts["Local public key (npub)"]
-        if !keySection.waitForExistence(timeout: 3), account.isHittable {
+        let accountScreen = app.scrollViews["account-scroll-view"]
+        if !accountScreen.waitForExistence(timeout: 3), account.isHittable {
             account.tap()
         }
-        XCTAssertTrue(keySection.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(accountScreen.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
         guard app.buttons["Menu"].waitForExistence(timeout: 2) else { return }
-        if !app.staticTexts["Local public key (npub)"].exists {
+        if !app.scrollViews["account-scroll-view"].exists {
             openNostrAccount(app)
         }
         tapAccountButton(app.buttons["Sign out"], in: app)
