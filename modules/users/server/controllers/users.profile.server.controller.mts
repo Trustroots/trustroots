@@ -9,7 +9,6 @@ import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.s
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
-import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mts';
 import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mts';
 import { pick } from '../lib/pick.server.mts';
 import path from 'path';
@@ -21,7 +20,7 @@ import emailServiceModule from './../../../core/server/services/email.server.ser
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from '@trustroots/logger';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
-import messageStatService from './../../../messages/server/services/message-stat.server.service.mts';
+import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
 import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -105,13 +104,6 @@ function hasTribeId(
 const getContactHandler = () =>
   getContactHandlerModule as unknown as {
     removeAllByUserId(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
-const getMessageHandler = () =>
-  getMessageHandlerModule as unknown as {
-    markAllMessagesToUserNotified(
       userId: mongoose.Types.ObjectId,
       callback: (error?: Error | null) => void,
     ): void;
@@ -557,7 +549,7 @@ service.cancelProfileRemoval = async function (req, res) {
 /**
  * Remove profile DELETE from email token
  */
-service.removeProfile = function (req, res) {
+service.removeProfile = function (clearMessageNotifications, req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -583,7 +575,7 @@ service.removeProfile = function (req, res) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
     }
-    await deleteUserAccount(user);
+    await deleteUserAccount(user, clearMessageNotifications);
     report('removed', 'Your profile has been removed.');
   }
   remove().catch(() => report('failed', 'Removing your profile failed.', true));
@@ -592,6 +584,7 @@ service.removeProfile = function (req, res) {
 /** Shared cleanup for self-service removal and confirmed admin deletion. */
 export async function deleteUserAccount(
   user: UserServerDocument,
+  clearMessageNotifications: UserMessaging['clearMessageNotifications'],
   adminDeletion = false,
 ): Promise<{ cleanupIncomplete: boolean }> {
   const deleted = await User.findOneAndDelete({
@@ -648,7 +641,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
+        clearMessageNotifications(user._id, err =>
           err ? reject(err) : resolve(),
         );
       }),
@@ -806,7 +799,7 @@ service.userMiniByID = function (req, res, next, userId) {
 /**
  * Profile middleware
  */
-service.userByUsername = function (req, res, next, username) {
+service.userByUsername = function (readReplyStats, req, res, next, username) {
   // Require user
   if (!req.user) {
     return errorService.sendForbidden(res);
@@ -872,19 +865,12 @@ service.userByUsername = function (req, res, next, username) {
     }
     req.profile = service.sanitizeProfile(profile, authenticatedUser);
     await new Promise<void>(resolve => {
-      messageStatService.readFormattedMessageStatsOfUser(
-        profile._id,
-        Date.now(),
-        (err, stats) => {
-          // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
-          if (!err)
-            Object.assign(
-              req.profile!,
-              pick(stats!, ['replyRate', 'replyTime']),
-            );
-          resolve();
-        },
-      );
+      readReplyStats(profile._id, Date.now(), (err, stats) => {
+        // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
+        if (!err)
+          Object.assign(req.profile!, pick(stats!, ['replyRate', 'replyTime']));
+        resolve();
+      });
     });
     next();
   }
