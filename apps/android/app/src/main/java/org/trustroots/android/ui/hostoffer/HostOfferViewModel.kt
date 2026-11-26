@@ -214,7 +214,7 @@ internal class HostOfferViewModel(
     private var sessionInvalidationEmitted = false
     private var backendURL: String? = initialApi?.backendURL
     private var username: String? = initialSession?.let { it.member.username }
-    private var cookieHeader: String? = initialSession?.cookieHeader
+    private var credentialKey: String? = initialSession?.credentialKey
 
     init {
         initialApi?.let(repository::updateApi)
@@ -225,7 +225,7 @@ internal class HostOfferViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         val backendChanged = backendURL != api.backendURL
         val accountChanged = username != session.member.username
-        val credentialsChanged = cookieHeader != session.credentialKey
+        val credentialsChanged = credentialKey != session.credentialKey
         val environmentChanged = backendChanged || accountChanged || credentialsChanged
         repository.updateApi(api)
         repository.updateSession(session)
@@ -233,7 +233,7 @@ internal class HostOfferViewModel(
 
         backendURL = api.backendURL
         username = session.member.username
-        cookieHeader = session.credentialKey
+        credentialKey = session.credentialKey
         sessionInvalidationEmitted = false
 
         if (backendChanged || accountChanged) {
