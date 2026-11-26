@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { promisify } from 'node:util';
-import sendEmailJob from '../../../../core/server/jobs/send-email.server.job.mts';
+import createSendEmailJob from '../../../../core/server/jobs/send-email.server.job.mts';
+import { canDeliverNotificationEmail } from '../../../server/services/notification-email.server.service.mts';
+import { deliverSignupReminder } from '../../../server/services/signup-reminder.server.service.mts';
 import type { RenderedEmail } from '../../../../core/server/services/email.server.service.mts';
 import { emailConfirmationTokenQuery } from '../../../server/services/email-confirmation.server.service.mts';
 import runSignupReminders from '../../../server/jobs/user-finish-signup.server.job.mts';
@@ -80,7 +82,12 @@ describe('Job: user finish signup', function () {
     async function runAndDeliver() {
       await promisify(runSignupReminders)(job);
       for (const { data } of jobs.slice(delivered)) {
-        await promisify(sendEmailJob)({
+        await promisify(
+          createSendEmailJob({
+            canDeliverNotificationEmail,
+            deliverSignupReminder,
+          }),
+        )({
           attrs: {
             _id: new mongoose.Types.ObjectId(),
             data,

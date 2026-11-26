@@ -4,7 +4,7 @@ import { subDays, sub } from 'date-fns';
 import mongoose, { type Types } from 'mongoose';
 
 import config from '../../../../config/config.mts';
-import sendEmailJob from '../../../core/server/jobs/send-email.server.job.mts';
+import type { SendEmailJob } from '../../../core/server/jobs/send-email.server.job.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
 import type { ExperienceRecord } from '../models/experiences.server.model.mts';
@@ -24,8 +24,6 @@ interface ReminderMember {
   roles?: string[];
   blocked?: Types.ObjectId[];
 }
-
-const sendEmail = promisify(sendEmailJob);
 
 function pendingInReplyWindow(now: Date) {
   return {
@@ -72,7 +70,10 @@ export async function queueExperienceReplyReminders(
   }
 }
 
-export async function sendExperienceReplyReminder(job: Job<ReminderData>) {
+export async function sendExperienceReplyReminder(
+  sendEmail: SendEmailJob,
+  job: Job<ReminderData>,
+) {
   if (!config.featureFlags.reference || !job.attrs.data) return;
 
   const experiences = mongoose.model<ExperienceRecord>('Experience');
@@ -129,5 +130,5 @@ export async function sendExperienceReplyReminder(job: Job<ReminderData>) {
     }),
   );
   if (!email) throw new Error('Experience reminder email did not render.');
-  await sendEmail({ attrs: { ...job.attrs, data: email } });
+  await promisify(sendEmail)({ attrs: { ...job.attrs, data: email } });
 }
