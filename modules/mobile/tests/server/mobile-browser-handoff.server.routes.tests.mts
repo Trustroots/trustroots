@@ -6,6 +6,7 @@ import sinon from 'sinon';
 import config from '../../../../config/config.mts';
 import express from '../../../../config/lib/express.mts';
 import { clearDatabase } from '../../../../testutils/server/data.server.testutil.mts';
+import handoffController from '../../server/controllers/mobile-browser-handoff.server.controller.cjs';
 import {
   encryptSecret,
   hashRecoveryCode,
@@ -109,6 +110,7 @@ describe('Mobile browser sign-in handoff', () => {
     const consent = await browser.get(flow.confirmation).expect(200);
     assert.equal(consent.headers['cache-control'], 'no-store');
     assert.equal(consent.headers['referrer-policy'], 'same-origin');
+    assert.match(consent.text, /<h1>Confirm app sign-in<\/h1>/);
     const platformName = platform === 'ios' ? 'iOS' : 'Android';
     assert.ok(
       consent.text.includes(
@@ -141,6 +143,7 @@ describe('Mobile browser sign-in handoff', () => {
     assert.match(response.text, />Open the Trustroots app<\/a>/);
     const href = response.text.match(/href="([^"]+)"/)?.[1];
     assert.ok(href);
+    assert.match(href, /\?code=[a-zA-Z0-9_-]{43}&amp;state=/);
     const target = new URL(href.replace('&amp;', '&'));
     assert.equal(
       `${target.protocol}//${target.host}${target.pathname}`,
@@ -264,11 +267,15 @@ describe('Mobile browser sign-in handoff', () => {
       .send({ csrf: flow.csrf })
       .expect(403);
     assert.equal(await Session.countDocuments(), 0);
+    const findPending = sinon.spy(Handoff, 'findOne');
     await flow.browser
       .post('/auth/mobile/confirm/invalid')
       .type('form')
       .send({ csrf: flow.csrf })
       .expect(400);
+    await flow.browser.get('/auth/mobile/confirm/invalid').expect(400);
+    sinon.assert.notCalled(findPending);
+    findPending.restore();
     const claim = sinon.stub(Handoff, 'findOneAndUpdate').resolves(null);
     await flow.browser
       .post(flow.confirmation)
@@ -359,6 +366,48 @@ describe('Mobile browser sign-in handoff', () => {
     );
   });
 
+  it('denies unsafe browser identities within the confirmation handlers', async () => {
+    const flow = await start();
+    const requestId = flow.confirmation.split('/').at(-1);
+    const csrf = randomBytes(32).toString('hex');
+    const session = {
+      browserSigninAt: Date.now() + 1,
+      mobileHandoffCsrf: csrf,
+    };
+    for (const browserUser of [
+      undefined,
+      { roles: ['suspended'], mfaEnabled: false },
+      { roles: ['user'], mfaEnabled: true, $locals: { mfaVerified: false } },
+    ]) {
+      const browserRequest = {
+        user: browserUser,
+        session,
+        params: { requestId },
+        body: { csrf },
+      };
+      const response = {
+        redirect: sinon.spy(),
+        send: sinon.spy(),
+        set: sinon.stub().returnsThis(),
+        status: sinon.stub().returnsThis(),
+        type: sinon.stub().returnsThis(),
+      };
+      await handoffController.confirmation(browserRequest, response);
+      sinon.assert.calledOnceWithExactly(
+        response.redirect,
+        303,
+        sinon.match.string,
+      );
+      sinon.assert.notCalled(response.send);
+      await handoffController.issue(browserRequest, response);
+      sinon.assert.calledOnceWithExactly(response.status, 400);
+    }
+    assert.equal(
+      await Handoff.countDocuments({ codeHash: { $exists: true } }),
+      0,
+    );
+  });
+
   it('rejects invalid inputs, expired requests and credential changes', async () => {
     const { query } = transaction();
     await request(app)
@@ -373,7 +422,6 @@ describe('Mobile browser sign-in handoff', () => {
       .get('/auth/mobile/start')
       .query({ ...query, state: 'short' })
       .expect(400);
-    await request(app).get('/auth/mobile/confirm/invalid').expect(400);
     const missingInput = await request(app)
       .post(exchangePath)
       .set('X-Trustroots-Request', '1')
@@ -393,7 +441,8 @@ describe('Mobile browser sign-in handoff', () => {
     for (const invalid of [
       { ...input, code: 'bad' },
       { ...input, codeVerifier: 'bad' },
-      { ...input, code: ['bad'] },
+      { ...input, code: [input.code] },
+      { ...input, codeVerifier: [input.codeVerifier] },
       { ...input, platform: 'other' },
     ]) {
       await request(app)
@@ -447,7 +496,10 @@ describe('Mobile browser sign-in handoff', () => {
       );
       const consent = await browser.get(flow.confirmation).expect(200);
       assert.ok(!consent.text.includes(username));
-      assert.doesNotMatch(consent.text, /<strong>/);
+      assert.match(
+        consent.text,
+        /<p>Continue with your signed-in Trustroots account on iOS\.<\/p>/,
+      );
     }
   });
 
@@ -455,6 +507,10 @@ describe('Mobile browser sign-in handoff', () => {
     const { query } = transaction('android');
     await request(app).get('/auth/mobile/start').query(query).expect(400);
     sinon.stub(config, 'domain').value('www.trustroots.org');
+    await request(app)
+      .get('/auth/mobile/start')
+      .query({ ...query, platform: 'other' })
+      .expect(400);
     const flow = await authorize('android');
     const response = await flow.browser
       .post(flow.confirmation)
