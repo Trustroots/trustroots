@@ -13,11 +13,6 @@
     "test:server": "node ../../scripts/test-module.cts server users"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "@trustroots/admin": "workspace:*",
-=======
-    "@trustroots/contacts": "workspace:*",
->>>>>>> a5bcad2426 (Move the admin member link out of the Admin module)
     "@trustroots/core": "workspace:*",
     "@trustroots/stats": "workspace:*"
   }
