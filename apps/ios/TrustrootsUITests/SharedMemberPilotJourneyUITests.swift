@@ -609,7 +609,11 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func signInToRegularApp(_ app: XCUIApplication) {
         signIn(app)
-        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
+        let menu = app.buttons["Menu"]
+        if !menu.waitForExistence(timeout: 15), app.staticTexts["Signing in…"].exists {
+            _ = menu.waitForExistence(timeout: 15)
+        }
+        XCTAssertTrue(menu.exists, app.debugDescription)
         let passwordPrompt = app.sheets["Save Password?"]
         if passwordPrompt.waitForExistence(timeout: 5) {
             let dismiss = passwordPrompt.buttons["Not Now"]
