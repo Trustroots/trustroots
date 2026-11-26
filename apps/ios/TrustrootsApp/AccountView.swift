@@ -28,8 +28,7 @@ struct AccountView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text("Account")
-                    .font(.largeTitle.bold())
+                ComposeAccountOverviewSection(section: .heading)
 
                 if isLoading && profile == nil {
                     ProgressView("Loading account…")
@@ -40,10 +39,14 @@ struct AccountView: View {
                         profileLoaded: profile != nil,
                         updateProfileLink: updateNostrProfile
                     )
-                    Button("Nostranslation signing") { showNostranslationSigning = true }
+                    ComposeAccountOverviewSection(section: .signing) {
+                        showNostranslationSigning = true
+                    }
                     emailSection
                     passwordSection
-                    signOutSection
+                    ComposeAccountOverviewSection(section: .signout) {
+                        Task { await session.signOut() }
+                    }
                 }
             }
             .padding(16)
@@ -105,18 +108,6 @@ struct AccountView: View {
 
     private var hasPasswordInputs: Bool {
         !currentPassword.isEmpty && !newPassword.isEmpty && !verifyPassword.isEmpty
-    }
-
-    private var signOutSection: some View {
-        Button(role: .destructive) {
-            Task { await session.signOut() }
-        } label: {
-            Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-        }
-        .buttonStyle(.bordered)
     }
 
     private func loadAccount() async {
@@ -219,6 +210,63 @@ struct AccountView: View {
             confirmation = "Your password has been changed."
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+@MainActor
+private struct ComposeAccountOverviewSection: View {
+    let section: MemberAccountOverviewSection
+    let onAction: () -> Void
+    @State private var height: CGFloat = 1
+    @State private var position = AccountSectionPosition()
+
+    init(section: MemberAccountOverviewSection, onAction: @escaping () -> Void = {}) {
+        self.section = section
+        self.onAction = onAction
+    }
+
+    var body: some View {
+        Controller(section: section, position: position, onAction: onAction, height: $height)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+            .trackAccountSectionPosition(position)
+    }
+
+    private struct Controller: UIViewControllerRepresentable {
+        let section: MemberAccountOverviewSection
+        let position: AccountSectionPosition
+        let onAction: () -> Void
+        @Binding var height: CGFloat
+
+        final class Coordinator {
+            var onAction: () -> Void = {}
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator() }
+
+        func makeUIViewController(context: Context) -> UIViewController {
+            let coordinator = context.coordinator
+            coordinator.onAction = onAction
+            let measuredHeight = $height
+            return MemberAccountOverviewViewControllerKt.MemberAccountOverviewViewController(
+                section: section,
+                position: position,
+                onAction: { [weak coordinator] in coordinator?.onAction() },
+                onHeight: { value in
+                    let next = max(1, CGFloat(value.doubleValue))
+                    Task { @MainActor in
+                        if measuredHeight.wrappedValue != next {
+                            measuredHeight.wrappedValue = next
+                        }
+                    }
+                }
+            )
+        }
+
+        func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+            context.coordinator.onAction = onAction
         }
     }
 }
