@@ -2,6 +2,31 @@ import Foundation
 import XCTest
 
 final class SharedMemberPilotJourneyUITests: XCTestCase {
+    func testRegularSignInOffersBrowserForAnMFAAccount() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        signOutOfNativeAccountIfNeeded(app)
+
+        let username = app.descendants(matching: .any)["pilot-username"]
+        let password = app.descendants(matching: .any)["pilot-password"]
+        let browser = app.buttons["sign-in-browser"]
+        XCTAssertTrue(username.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(browser.exists)
+        signIn(app, username: username, password: password, account: "pilot-mfa-member")
+
+        XCTAssertTrue(browser.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(browser.isHittable, app.debugDescription)
+        XCTAssertTrue(element(
+            labelled: "Sign in on the Trustroots website to complete two-factor authentication.",
+            in: app
+        ).waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.buttons["Sign in"].exists)
+        XCTAssertFalse(app.buttons["Menu"].exists)
+    }
+
     func testRegularLaunchUsesSharedSignInAndRestoresSession() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
@@ -1260,8 +1285,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         }
     }
 
-    private func signIn(_ app: XCUIApplication, username: XCUIElement, password: XCUIElement) {
-        enterText("pilot-member", into: username, in: app)
+    private func signIn(
+        _ app: XCUIApplication,
+        username: XCUIElement,
+        password: XCUIElement,
+        account: String = "pilot-member"
+    ) {
+        enterText(account, into: username, in: app)
         enterText("example-password", into: password, in: app, secure: true)
         let submit = app.buttons["Sign in"]
         let credentialsEntered = XCTNSPredicateExpectation(

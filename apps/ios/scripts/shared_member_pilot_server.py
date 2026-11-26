@@ -350,6 +350,12 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"status": "ready"})
             return
         if self.path == "/api/mobile/v0/auth/signin":
+            if body.get("username") == "pilot-mfa-member" and body.get("password") == "example-password":
+                self._json(403, {
+                    "code": "web_sign_in_required",
+                    "message": "Sign in on the Trustroots website to complete two-factor authentication.",
+                })
+                return
             if body.get("username") != MEMBER["username"] or body.get("password") != "example-password":
                 self._json(401, {"message": "Check the fixture username and password."})
                 return
