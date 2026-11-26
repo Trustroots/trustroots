@@ -373,6 +373,10 @@ describe('Targeted request limit middleware', function () {
     );
     assert.equal(getRequestIdentity({}, 'mfaChallenge'), undefined);
     assert.equal(
+      getRequestIdentity({ session: {} }, 'mfaChallenge'),
+      undefined,
+    );
+    assert.equal(
       getRequestIdentity(
         { session: { mfaChallenge: { userId: 123 } } },
         'mfaChallenge',
