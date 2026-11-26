@@ -520,13 +520,15 @@ private struct ProfileTextSection: View {
     let text: String
     let tag: String
     @State private var height: CGFloat = 1
+    @State private var origin: CGPoint = .zero
 
     var body: some View {
-        ProfileTextController(title: title, text: text, tag: tag, height: $height)
+        ProfileTextController(title: title, text: text, tag: tag, origin: origin, height: $height)
             .id(text)
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .clipped()
+            .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { origin = $0 }
     }
 }
 
@@ -535,11 +537,18 @@ private struct ProfileTextController: UIViewControllerRepresentable {
     let title: String?
     let text: String
     let tag: String
+    let origin: CGPoint
     @Binding var height: CGFloat
+
+    final class Coordinator {
+        var host: ProfileSectionHost?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIViewController(context: Context) -> UIViewController {
         let measuredHeight = $height
-        return MainViewControllerKt.MemberProfileTextViewController(
+        let host = MainViewControllerKt.MemberProfileTextViewController(
             title: title,
             text: text,
             accessibilityTag: tag,
@@ -552,9 +561,14 @@ private struct ProfileTextController: UIViewControllerRepresentable {
                 }
             }
         )
+        context.coordinator.host = host
+        host.updateOrigin(x: Double(origin.x), y: Double(origin.y))
+        return host.viewController
     }
 
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        context.coordinator.host?.updateOrigin(x: Double(origin.x), y: Double(origin.y))
+    }
 }
 
 private struct ReportMemberView: View {
