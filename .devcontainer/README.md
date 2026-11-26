@@ -85,6 +85,7 @@ pnpm run test:coverage:server
 pnpm run coverage:check --scope=client
 pnpm run coverage:check --scope=server
 pnpm run test:e2e
+pnpm run coverage:report
 ```
 
 `pnpm run test:e2e` builds the Vite client first. For two workers:
