@@ -67,7 +67,7 @@ struct TrustrootsRootView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !isKeyboardVisible {
-                TrustrootsBottomNavigation(destination: $destination) { selectedDestination in
+                TrustrootsBottomNavigation(destination: destination) { selectedDestination in
                     if destination == .search, selectedDestination == .search {
                         NotificationCenter.default.post(name: .trustrootsReturnToMap, object: nil)
                     }
@@ -187,7 +187,7 @@ struct TrustrootsWebsiteLink {
     let title: String
 }
 
-private enum TrustrootsDestination: CaseIterable {
+private enum TrustrootsDestination: String, CaseIterable {
     case home
     case circles
     case profile
@@ -216,19 +216,13 @@ private enum TrustrootsDestination: CaseIterable {
         }
     }
 
-    var systemImage: String {
+    var navigationSymbol: String? {
         switch self {
         case .home: return "house.fill"
-        case .circles: return "person.2.fill"
-        case .profile: return "person.2.fill"
-        case .editProfile: return "pencil"
-        case .contacts: return "person.2.fill"
-        case .memberSearch: return "person.crop.circle.badge.magnifyingglass"
-        case .support: return "questionmark.circle"
-        case .account: return "person.crop.circle"
         case .search: return "magnifyingglass"
         case .messages: return "bubble.left.and.bubble.right.fill"
         case .menu: return "line.3.horizontal"
+        default: return nil
         }
     }
 
@@ -304,48 +298,76 @@ private enum UmamiAnalytics {
 }
 
 private struct TrustrootsBottomNavigation: View {
-    @Binding var destination: TrustrootsDestination
-    @ScaledMetric(relativeTo: .caption2) private var labelSize: CGFloat = 9
+    let destination: TrustrootsDestination
     let selectDestination: (TrustrootsDestination) -> Void
+    @State private var height: CGFloat = 47
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach([TrustrootsDestination.home, .search, .messages, .menu], id: \.label) { item in
-                Button {
-                    selectDestination(item)
-                } label: {
-                    VStack(spacing: 2) {
-                        Image(systemName: item.systemImage)
-                            .font(.title3.weight(.semibold))
-                            .frame(height: 22, alignment: .center)
-                        Text(item.label)
-                            .font(.system(size: labelSize, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                    .padding(.top, 3)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .top)
-                    .foregroundStyle(.white)
-                    .background {
-                        if item == destination {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.black.opacity(0.24), .black.opacity(0.10)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                        }
-                    }
-                }
-                .accessibilityLabel(item.label)
-                .accessibilityAddTraits(item == destination ? .isSelected : [])
-            }
-        }
-        .padding(.horizontal, 6)
-        .padding(.top, 3)
+        MemberBottomNavigationController(
+            destination: destination,
+            selectDestination: selectDestination,
+            height: $height
+        )
+        .frame(height: height)
         .background(Color(red: 0.08, green: 0.71, blue: 0.60).ignoresSafeArea(edges: .bottom))
+    }
+}
+
+@MainActor
+private struct MemberBottomNavigationController: UIViewControllerRepresentable {
+    let destination: TrustrootsDestination
+    let selectDestination: (TrustrootsDestination) -> Void
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        let state = MemberBottomNavigationState()
+        var onSelect: ((TrustrootsDestination) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return MemberBottomNavigationControllerKt.MemberBottomNavigationViewController(
+            state: coordinator.state,
+            onSelect: { [weak coordinator] key in
+                if let selected = TrustrootsDestination(rawValue: key) {
+                    coordinator?.onSelect?(selected)
+                }
+            },
+            makeIcon: Self.makeIcon,
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.state.update(selectedKey: destination.rawValue)
+        coordinator.onSelect = selectDestination
+    }
+
+    private static func makeIcon(_ key: String) -> UIView {
+        let configuration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        let symbol = TrustrootsDestination(rawValue: key)?.navigationSymbol
+        let image = symbol.flatMap {
+            UIImage(systemName: $0, withConfiguration: configuration)
+        }
+        let icon = UIImageView(image: image?.withRenderingMode(.alwaysTemplate))
+        icon.tintColor = .white
+        icon.contentMode = .scaleAspectFit
+        icon.isAccessibilityElement = false
+        icon.isUserInteractionEnabled = false
+        return icon
     }
 }
 
