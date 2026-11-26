@@ -21,6 +21,10 @@ const credentials = {
 const recoveryCode = '1A2B3C4D5E6F7A8B';
 const fixtureTotpSecret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const exchangePath = '/api/mobile/v0/auth/browser/exchange';
+const unavailableExchange = {
+  code: 'authentication_required',
+  message: 'Start sign-in again from the Trustroots app.',
+};
 
 function fixtureTotp() {
   const counter = Buffer.alloc(8);
@@ -82,6 +86,17 @@ describe('Mobile browser sign-in handoff', () => {
     assert.equal(signin.searchParams.get('continue'), 'true');
     const confirmation = signin.searchParams.get('returnTo');
     assert.ok(confirmation);
+    assert.match(confirmation, /^\/auth\/mobile\/confirm\/[a-f0-9]{64}$/);
+    const handoff = await Handoff.findById(confirmation.split('/').at(-1));
+    assert.ok(handoff);
+    assert.equal(handoff.platform, platform);
+    assert.equal(handoff.codeChallenge, flow.query.code_challenge);
+    assert.equal(handoff.state, flow.state);
+    assert.equal(
+      handoff.expiresAt.getTime() - handoff.createdAt.getTime(),
+      300_000,
+    );
+    assert.equal(handoff.codeHash, undefined);
     return { ...flow, confirmation };
   }
 
@@ -91,9 +106,25 @@ describe('Mobile browser sign-in handoff', () => {
     await browser.post('/api/auth/signin').send(credentials).expect(200);
     const current = await browser.get('/api/auth/session').expect(200);
     assert.equal(current.body.userId, user._id.toString());
-    const { text } = await browser.get(flow.confirmation).expect(200);
-    assert.match(text, /Fictional|phonefixture/);
-    const csrf = text.match(/name="csrf" value="([a-f0-9]{64})"/)?.[1];
+    const consent = await browser.get(flow.confirmation).expect(200);
+    assert.equal(consent.headers['cache-control'], 'no-store');
+    assert.equal(consent.headers['referrer-policy'], 'same-origin');
+    const platformName = platform === 'ios' ? 'iOS' : 'Android';
+    assert.ok(
+      consent.text.includes(
+        `Continue with your signed-in Trustroots account <strong>${credentials.username}</strong> on ${platformName}.`,
+      ),
+    );
+    assert.match(
+      consent.text,
+      /Only confirm if you started sign-in in the Trustroots app\./,
+    );
+    assert.ok(
+      consent.text.includes(
+        `<form method="post" action="${flow.confirmation}">`,
+      ),
+    );
+    const csrf = consent.text.match(/name="csrf" value="([a-f0-9]{64})"/)?.[1];
     assert.ok(csrf);
     return { ...flow, browser, csrf };
   }
@@ -104,6 +135,10 @@ describe('Mobile browser sign-in handoff', () => {
       .type('form')
       .send({ csrf: flow.csrf })
       .expect(200);
+    assert.equal(response.headers['cache-control'], 'no-store');
+    assert.equal(response.headers['referrer-policy'], 'no-referrer');
+    assert.match(response.text, /<h1>Return to Trustroots<\/h1>/);
+    assert.match(response.text, />Open the Trustroots app<\/a>/);
     const href = response.text.match(/href="([^"]+)"/)?.[1];
     assert.ok(href);
     const target = new URL(href.replace('&amp;', '&'));
@@ -200,10 +235,22 @@ describe('Mobile browser sign-in handoff', () => {
   it('requires explicit same-session POST confirmation and issues only once', async () => {
     await User.updateOne({ _id: user._id }, { $set: { authVersion: null } });
     const flow = await authorize();
+    const missingProof = await flow.browser
+      .post(flow.confirmation)
+      .type('text')
+      .send('confirmation')
+      .expect(403);
+    assert.equal(missingProof.headers['cache-control'], 'no-store');
+    assert.equal(missingProof.headers['referrer-policy'], 'no-referrer');
+    assert.equal(
+      missingProof.text,
+      'App sign-in confirmation expired. Start again from the app.',
+    );
+    const otherProof = randomBytes(32).toString('hex');
     await flow.browser
       .post(flow.confirmation)
       .type('form')
-      .send({})
+      .send({ csrf: otherProof })
       .expect(403);
     await request(app)
       .post(flow.confirmation)
@@ -230,7 +277,17 @@ describe('Mobile browser sign-in handoff', () => {
       .expect(400);
     claim.restore();
     const input = await issue(flow);
-    await flow.browser.get(flow.confirmation).expect(400);
+    const invalidConfirmation = await flow.browser
+      .get(flow.confirmation)
+      .expect(400);
+    assert.match(
+      invalidConfirmation.text,
+      /<h1>Could not continue sign-in<\/h1>/,
+    );
+    assert.match(
+      invalidConfirmation.text,
+      /Start again from the Trustroots app\./,
+    );
     await flow.browser
       .post(flow.confirmation)
       .type('form')
@@ -262,6 +319,46 @@ describe('Mobile browser sign-in handoff', () => {
     await browser.get(flow.confirmation).expect(200);
   });
 
+  it('requires both an authenticated browser and sign-in strictly after the request', async () => {
+    const flow = await start();
+    await request(app).get(flow.confirmation).expect(303);
+    const browser = request.agent(app);
+    await browser.post('/api/auth/signin').send(credentials).expect(200);
+    const stored = await mongoose.connection
+      .collection(config.sessionCollection)
+      .findOne({ session: { $regex: `"id":"${user._id.toString()}"` } });
+    assert.ok(stored);
+    const { browserSigninAt } = JSON.parse(stored.session) as {
+      browserSigninAt: number;
+    };
+    assert.ok(Number.isInteger(browserSigninAt));
+    const changed = await Handoff.collection.updateOne(
+      { codeChallenge: flow.query.code_challenge },
+      { $set: { createdAt: new Date(browserSigninAt) } },
+    );
+    assert.equal(changed.matchedCount, 1);
+    await browser.get(flow.confirmation).expect(303);
+  });
+
+  it('requires the signed-in browser to have verified the currently enrolled factor', async () => {
+    const flow = await authorize();
+    await User.updateOne({ _id: user._id }, { $set: { mfaEnabled: true } });
+    await flow.browser
+      .get(flow.confirmation)
+      .expect(302)
+      .expect('Location', '/signin');
+    await flow.browser
+      .post(flow.confirmation)
+      .type('form')
+      .send({ csrf: flow.csrf })
+      .expect(302)
+      .expect('Location', '/signin');
+    assert.equal(
+      await Handoff.countDocuments({ codeHash: { $exists: true } }),
+      0,
+    );
+  });
+
   it('rejects invalid inputs, expired requests and credential changes', async () => {
     const { query } = transaction();
     await request(app)
@@ -277,21 +374,35 @@ describe('Mobile browser sign-in handoff', () => {
       .query({ ...query, state: 'short' })
       .expect(400);
     await request(app).get('/auth/mobile/confirm/invalid').expect(400);
-    await request(app)
+    const missingInput = await request(app)
       .post(exchangePath)
       .set('X-Trustroots-Request', '1')
+      .type('text')
+      .send('sign-in')
       .expect(401);
-    await request(app).post(exchangePath).send({}).expect(401);
+    assert.equal(missingInput.headers['cache-control'], 'no-store');
+    assert.equal(missingInput.headers['referrer-policy'], 'no-referrer');
+    assert.deepEqual(missingInput.body, unavailableExchange);
+    await request(app)
+      .post(exchangePath)
+      .send({})
+      .expect(401, unavailableExchange);
     const flow = await authorize();
     const input = await issue(flow);
-    await request(app)
-      .post(exchangePath)
-      .send({ ...input, code: 'bad' })
-      .expect(401);
-    await request(app)
-      .post(exchangePath)
-      .send({ ...input, codeVerifier: 'bad' })
-      .expect(401);
+    const consume = sinon.spy(Handoff, 'findOneAndDelete');
+    for (const invalid of [
+      { ...input, code: 'bad' },
+      { ...input, codeVerifier: 'bad' },
+      { ...input, code: ['bad'] },
+      { ...input, platform: 'other' },
+    ]) {
+      await request(app)
+        .post(exchangePath)
+        .send(invalid)
+        .expect(401, unavailableExchange);
+    }
+    sinon.assert.notCalled(consume);
+    consume.restore();
     await User.updateOne({ _id: user._id }, { $inc: { authVersion: 1 } });
     await request(app).post(exchangePath).send(input).expect(401);
     const expired = await authorize();
@@ -326,21 +437,18 @@ describe('Mobile browser sign-in handoff', () => {
   });
 
   it('does not render a legacy username as browser markup', async () => {
-    await User.collection.updateOne(
-      { _id: user._id },
-      { $set: { username: '<legacy>' } },
-    );
     const flow = await start();
     const browser = request.agent(app);
-    await browser
-      .post('/api/auth/signin')
-      .send({
-        username: 'phonefixture@example.test',
-        password: credentials.password,
-      })
-      .expect(200);
-    const consent = await browser.get(flow.confirmation).expect(200);
-    assert.doesNotMatch(consent.text, /<legacy>/);
+    await browser.post('/api/auth/signin').send(credentials).expect(200);
+    for (const username of ['<em>legacy', 'legacy</em>']) {
+      await User.collection.updateOne(
+        { _id: user._id },
+        { $set: { username } },
+      );
+      const consent = await browser.get(flow.confirmation).expect(200);
+      assert.ok(!consent.text.includes(username));
+      assert.doesNotMatch(consent.text, /<strong>/);
+    }
   });
 
   it('uses only the configured Android App Link and shows an explicit return link', async () => {
@@ -368,6 +476,7 @@ describe('Mobile browser sign-in handoff', () => {
       .expect(200);
     assert.equal(fallback.headers['cache-control'], 'no-store');
     assert.equal(fallback.headers['referrer-policy'], 'no-referrer');
+    assert.match(fallback.text, /<h1>Open Trustroots on Android<\/h1>/);
     assert.match(fallback.text, /open supported links in Android Settings/);
     assert.ok(body.code);
     assert.ok(!fallback.text.includes(body.code));
@@ -375,9 +484,31 @@ describe('Mobile browser sign-in handoff', () => {
       .post(exchangePath)
       .send({ ...body, platform: 'ios' })
       .expect(401);
+    sinon.restore();
+    await request(app)
+      .post(exchangePath)
+      .send({ ...body, platform: 'android' })
+      .expect(401, unavailableExchange);
+    sinon.stub(config, 'domain').value('www.trustroots.org');
     await request(app)
       .post(exchangePath)
       .send({ ...body, platform: 'android' })
       .expect(200);
+  });
+
+  it('stops browser approval if Android links are no longer configured', async () => {
+    const domain = sinon.stub(config, 'domain').value('www.trustroots.org');
+    const flow = await authorize('android');
+    domain.restore();
+    await flow.browser.get(flow.confirmation).expect(400);
+    await flow.browser
+      .post(flow.confirmation)
+      .type('form')
+      .send({ csrf: flow.csrf })
+      .expect(400);
+    assert.equal(
+      await Handoff.countDocuments({ codeHash: { $exists: true } }),
+      0,
+    );
   });
 });
