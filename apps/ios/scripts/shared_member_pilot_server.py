@@ -29,6 +29,13 @@ PROFILE_EDITOR_UPDATE = {
     "locationFrom": "",
     "languages": [],
 }
+MEMBER_EMAIL = "pilot-member@example.test"
+REQUESTED_EMAIL = "pilot-member@example.testx"
+PASSWORD_UPDATE = {
+    "currentPassword": "example-password",
+    "newPassword": "fixture-password-2",
+    "verifyPassword": "fixture-password-2",
+}
 PROFILE_CIRCLE = {
     "_id": "fixture-train-circle",
     "slug": "night-train-travellers",
@@ -110,6 +117,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
     hosting_offer = None
     memberships = {CIRCLES[1]["_id"]}
     profile_changes = {}
+    newsletter = False
+    pending_email = None
+    password_attempts = 0
     partner_blocked = False
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
@@ -155,10 +165,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if not self._authorised():
             return
         if route == "/api/mobile/v0/me":
+            fixture = type(self)
+            with fixture.session_lock:
+                newsletter = fixture.newsletter
             self._json(200, {"member": {
                 **MEMBER,
-                "email": "pilot-member@example.test",
-                "newsletter": False,
+                "email": MEMBER_EMAIL,
+                "newsletter": newsletter,
             }})
         elif route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
             fixture = type(self)
@@ -167,10 +180,19 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 refresh_count = fixture.refresh_count
                 linked_npub = fixture.linked_npub
                 profile_changes = fixture.profile_changes
+                newsletter = fixture.newsletter
+                pending_email = fixture.pending_email
             if drop_profile_response:
                 self.close_connection = True
                 return
-            profile = {**MEMBER, **profile_changes, "nostrNpub": linked_npub}
+            profile = {
+                **MEMBER,
+                **profile_changes,
+                "email": MEMBER_EMAIL,
+                "newsletter": newsletter,
+                "emailTemporary": pending_email,
+                "nostrNpub": linked_npub,
+            }
             if refresh_count:
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
             self._json(200, {"profile": profile})
@@ -336,6 +358,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
                 fixture.profile_changes = {}
+                fixture.newsletter = False
+                fixture.pending_email = None
+                fixture.password_attempts = 0
                 fixture.partner_blocked = False
                 session = fixture._rotate_credentials()
             self._json(200, session)
@@ -361,6 +386,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.access_token = None
                 fixture.refresh_token = None
             self._json(200, {})
+        elif self.path == "/api/mobile/v0/account/password":
+            if body != PASSWORD_UPDATE:
+                self._json(422, {"message": "Expected the fixture password update."})
+                return
+            with fixture.session_lock:
+                fixture.password_attempts += 1
+                attempt = fixture.password_attempts
+            if attempt == 1:
+                self._json(503, {"message": "Temporary fixture password update failure."})
+            else:
+                self._json(200, {})
         elif self.path == CIRCLE_ROUTE + CIRCLES[0]["_id"]:
             with fixture.session_lock:
                 fixture.memberships.add(CIRCLES[0]["_id"])
@@ -475,6 +511,23 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, {"drop": drop})
             return
         if not self._authorised():
+            return
+        if self.path == "/api/mobile/v0/account":
+            if self._body() != {"email": REQUESTED_EMAIL, "newsletter": True}:
+                self._json(422, {"message": "Expected the fixture account preferences."})
+                return
+            fixture = type(self)
+            with fixture.session_lock:
+                fixture.newsletter = True
+                fixture.pending_email = REQUESTED_EMAIL
+                linked_npub = fixture.linked_npub
+            self._json(200, {
+                **MEMBER,
+                "email": MEMBER_EMAIL,
+                "emailTemporary": REQUESTED_EMAIL,
+                "newsletter": True,
+                "nostrNpub": linked_npub,
+            })
             return
         if self.path == f'/api/mobile/v0/blocked-users/{PARTNER["username"]}':
             self._set_partner_blocked(True)

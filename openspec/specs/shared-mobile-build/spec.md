@@ -477,6 +477,74 @@ The regular iOS Nostranslation signing sheet SHALL present its pending translati
 - **WHEN** the displayed review has been removed or replaced before the native decision is handled
 - **THEN** the stale action leaves the current review available for its own explicit decision
 
+### Requirement: Regular iOS Account uses shared email and newsletter preferences
+
+The regular iOS Account screen SHALL show the email and newsletter controls,
+pending email confirmation and save feedback in shared Compose. It SHALL use
+the existing iOS account session and authenticated update. Password, sign-out
+and Nostr actions SHALL remain available in the Account screen.
+
+#### Scenario: Save account preferences from Compose
+
+- **GIVEN** a signed-in member has opened Account
+- **WHEN** they change their email or newsletter preference and save
+- **THEN** the app submits those preferences using its existing authenticated update
+- **AND** the form shows success or the returned error and any pending email confirmation
+
+### Requirement: Regular iOS Account uses shared password actions
+
+The regular iOS Account screen SHALL use Compose for the Change password
+and recovery actions and their feedback. It SHALL preserve Swift secure fields,
+the existing authenticated password update and the bounded recovery browser route.
+The action SHALL be available when all three password fields contain values
+and no password change is in progress.
+
+#### Scenario: Change a password from Account
+
+- **GIVEN** a signed-in member has completed the native password fields
+- **WHEN** they use the Compose Change password action
+- **THEN** the app submits the request with the existing iOS password client
+- **AND** it shows a returned error or clears the fields and confirms success
+
+#### Scenario: Open password recovery from Account
+
+- **GIVEN** a member is viewing the password section
+- **WHEN** they choose to recover their password
+- **THEN** the app opens the existing iOS recovery route
+
+### Requirement: Regular iOS Account uses shared Nostr public-key status
+
+The regular iOS Account Nostr section SHALL use shared Compose for the Nostr
+introduction, profile-key availability and local-key status. It SHALL supply
+only availability flags to the shared presentation. The iOS host SHALL keep
+selectable key values, account scoping, key operations and their existing
+confirmations.
+
+#### Scenario: View the account's Nostr key status
+
+- **GIVEN** a signed-in member has opened Account
+- **WHEN** their profile or local key availability changes
+- **THEN** the shared status reflects that account's state and the native controls display the applicable key values and actions
+
+### Requirement: Shared iOS Account overview presentation
+
+The regular iOS member Account screen SHALL render its heading, Nostranslation signing entry point and sign-out action with shared Compose. The iOS host SHALL own account loading, signing navigation and session sign-out.
+
+#### Scenario: Viewing Account while the profile loads
+
+- **WHEN** an authenticated member opens Account while their profile is loading
+- **THEN** the shared Account heading remains visible while iOS presents the loading indicator
+- **AND** the actions appear when the initial loading stage completes
+
+#### Scenario: Opening signing from Account
+
+- **WHEN** a member selects Nostranslation signing
+- **THEN** iOS presents the existing Nostranslation signing sheet
+
+#### Scenario: Signing out from Account
+
+- **WHEN** a member selects Sign out
+- **THEN** iOS runs the existing session sign-out flow
 ### Requirement: Regular iOS profile uses shared biography and language sections
 
 The regular iOS profile SHALL use Compose to display a member's biography

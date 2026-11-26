@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct AccountView: View {
     @ObservedObject var session: MemberSessionStore
@@ -12,6 +13,12 @@ struct AccountView: View {
     @State private var isLoading = false
     @State private var isSavingAccount = false
     @State private var isChangingPassword = false
+    @State private var emailSectionHeight: CGFloat = 1
+    @State private var passwordActionsHeight: CGFloat = 1
+    @State private var emailSectionPosition = AccountSectionPosition()
+    @State private var passwordActionsPosition = AccountSectionPosition()
+    @State private var accountConfirmation: String?
+    @State private var accountError: String?
     @State private var confirmation: String?
     @State private var errorMessage: String?
     @State private var showNostranslationSigning = false
@@ -21,8 +28,7 @@ struct AccountView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text("Account")
-                    .font(.largeTitle.bold())
+                ComposeAccountOverviewSection(section: .heading)
 
                 if isLoading && profile == nil {
                     ProgressView("Loading account…")
@@ -33,10 +39,14 @@ struct AccountView: View {
                         profileLoaded: profile != nil,
                         updateProfileLink: updateNostrProfile
                     )
-                    Button("Nostranslation signing") { showNostranslationSigning = true }
+                    ComposeAccountOverviewSection(section: .signing) {
+                        showNostranslationSigning = true
+                    }
                     emailSection
                     passwordSection
-                    signOutSection
+                    ComposeAccountOverviewSection(section: .signout) {
+                        Task { await session.signOut() }
+                    }
                 }
             }
             .padding(16)
@@ -50,50 +60,21 @@ struct AccountView: View {
     }
 
     private var emailSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Email")
-                .font(.headline)
-            HStack(spacing: 10) {
-                TextField("Email address", text: $email)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .textContentType(.emailAddress)
-                    .padding(12)
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(TrustrootsPalette.green.opacity(0.45), lineWidth: 1)
-                    }
-
-                Button {
-                    Task { await saveAccount() }
-                } label: {
-                    if isSavingAccount {
-                        ProgressView()
-                            .frame(width: 22, height: 22)
-                    } else {
-                        Image(systemName: "checkmark")
-                            .font(.headline.weight(.bold))
-                            .frame(width: 22, height: 22)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(TrustrootsPalette.green)
-                .accessibilityLabel("Save")
-                .disabled(isSavingAccount || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            Toggle("Community newsletter", isOn: $newsletter)
-                .tint(TrustrootsPalette.green)
-            if let pendingEmail = profile?.emailTemporary {
-                Text("Email confirmation is pending for \(pendingEmail).")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(16)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        ComposeAccountPreferences(
+            email: $email,
+            newsletter: $newsletter,
+            height: $emailSectionHeight,
+            position: emailSectionPosition,
+            pendingEmail: profile?.emailTemporary,
+            isSaving: isSavingAccount,
+            confirmation: accountConfirmation,
+            error: accountError,
+            onSave: { Task { await saveAccount() } }
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: emailSectionHeight)
+        .clipped()
+        .trackAccountSectionPosition(emailSectionPosition)
     }
 
     private var passwordSection: some View {
@@ -104,53 +85,29 @@ struct AccountView: View {
             SecureField("New password", text: $newPassword)
             SecureField("Repeat new password", text: $verifyPassword)
 
-            Button(isChangingPassword ? "Changing password…" : "Change password") {
-                Task { await changePassword() }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(TrustrootsPalette.green)
-            .disabled(isChangingPassword || currentPassword.isEmpty || newPassword.isEmpty || verifyPassword.isEmpty)
-
-            Button("Forgot your password?") {
-                openPasswordRecovery()
-            }
-            .font(.subheadline.weight(.semibold))
+            ComposePasswordActions(
+                height: $passwordActionsHeight,
+                position: passwordActionsPosition,
+                canSubmit: hasPasswordInputs,
+                isChanging: isChangingPassword,
+                confirmation: confirmation,
+                error: errorMessage,
+                onChangePassword: { Task { await changePassword() } },
+                onRecoverPassword: openPasswordRecovery
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: passwordActionsHeight)
+            .clipped()
+            .trackAccountSectionPosition(passwordActionsPosition)
         }
         .textFieldStyle(.roundedBorder)
         .padding(16)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(alignment: .bottomLeading) {
-            if let confirmation {
-                Text(confirmation)
-                    .font(.footnote)
-                    .foregroundStyle(TrustrootsPalette.green)
-                    .padding(.top, 8)
-                    .offset(y: 30)
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(.top, 8)
-                    .offset(y: 30)
-            }
-        }
-        .padding(.bottom, confirmation == nil && errorMessage == nil ? 0 : 24)
     }
 
-    private var signOutSection: some View {
-        Button(role: .destructive) {
-            Task { await session.signOut() }
-        } label: {
-            Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-        }
-        .buttonStyle(.bordered)
+    private var hasPasswordInputs: Bool {
+        !currentPassword.isEmpty && !newPassword.isEmpty && !verifyPassword.isEmpty
     }
 
     private func loadAccount() async {
@@ -182,7 +139,7 @@ struct AccountView: View {
                 session.updateAccountDetails(email: account.email, newsletter: account.newsletter)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            accountError = error.localizedDescription
         }
     }
 
@@ -212,29 +169,30 @@ struct AccountView: View {
     }
 
     private func saveAccount() async {
-        guard !isSavingAccount else { return }
+        let submittedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !isSavingAccount, !submittedEmail.isEmpty else { return }
         isSavingAccount = true
-        errorMessage = nil
-        confirmation = nil
+        accountError = nil
+        accountConfirmation = nil
         defer { isSavingAccount = false }
         do {
             let updated = try await api.updateAccount(
                 serverURLString: session.serverURLString,
-                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                email: submittedEmail,
                 newsletter: newsletter
             )
             profile = updated
             email = updated.email ?? email
             newsletter = updated.newsletter ?? newsletter
             session.updateAccountDetails(email: email, newsletter: newsletter)
-            confirmation = "Account settings saved."
+            accountConfirmation = "Account settings saved."
         } catch {
-            errorMessage = error.localizedDescription
+            accountError = error.localizedDescription
         }
     }
 
     private func changePassword() async {
-        guard !isChangingPassword else { return }
+        guard hasPasswordInputs, !isChangingPassword else { return }
         isChangingPassword = true
         errorMessage = nil
         confirmation = nil
@@ -252,6 +210,189 @@ struct AccountView: View {
             confirmation = "Your password has been changed."
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+@MainActor
+private struct ComposeAccountOverviewSection: View {
+    let section: MemberAccountOverviewSection
+    let onAction: () -> Void
+    @State private var height: CGFloat = 1
+    @State private var position = AccountSectionPosition()
+
+    init(section: MemberAccountOverviewSection, onAction: @escaping () -> Void = {}) {
+        self.section = section
+        self.onAction = onAction
+    }
+
+    var body: some View {
+        Controller(section: section, position: position, onAction: onAction, height: $height)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+            .trackAccountSectionPosition(position)
+    }
+
+    private struct Controller: UIViewControllerRepresentable {
+        let section: MemberAccountOverviewSection
+        let position: AccountSectionPosition
+        let onAction: () -> Void
+        @Binding var height: CGFloat
+
+        final class Coordinator {
+            var onAction: () -> Void = {}
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator() }
+
+        func makeUIViewController(context: Context) -> UIViewController {
+            let coordinator = context.coordinator
+            coordinator.onAction = onAction
+            let measuredHeight = $height
+            return MemberAccountOverviewViewControllerKt.MemberAccountOverviewViewController(
+                section: section,
+                position: position,
+                onAction: { [weak coordinator] in coordinator?.onAction() },
+                onHeight: { value in
+                    let next = max(1, CGFloat(value.doubleValue))
+                    Task { @MainActor in
+                        if measuredHeight.wrappedValue != next {
+                            measuredHeight.wrappedValue = next
+                        }
+                    }
+                }
+            )
+        }
+
+        func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+            context.coordinator.onAction = onAction
+        }
+    }
+}
+
+@MainActor
+private struct ComposePasswordActions: UIViewControllerRepresentable {
+    @Binding var height: CGFloat
+    let position: AccountSectionPosition
+    let canSubmit: Bool
+    let isChanging: Bool
+    let confirmation: String?
+    let error: String?
+    let onChangePassword: () -> Void
+    let onRecoverPassword: () -> Void
+
+    final class Coordinator {
+        let state = MemberAccountPasswordActionsState()
+        var onChangePassword: (() -> Void)?
+        var onRecoverPassword: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return MemberAccountPasswordActionsViewControllerKt.MemberAccountPasswordActionsViewController(
+            state: coordinator.state,
+            position: position,
+            onChangePassword: { [weak coordinator] in coordinator?.onChangePassword?() },
+            onRecoverPassword: { [weak coordinator] in coordinator?.onRecoverPassword?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onChangePassword = onChangePassword
+        coordinator.onRecoverPassword = onRecoverPassword
+        coordinator.state.update(
+            canSubmit: canSubmit,
+            isChanging: isChanging,
+            confirmation: confirmation,
+            error: error
+        )
+    }
+}
+
+@MainActor
+private struct ComposeAccountPreferences: UIViewControllerRepresentable {
+    @Binding var email: String
+    @Binding var newsletter: Bool
+    @Binding var height: CGFloat
+    let position: AccountSectionPosition
+    let pendingEmail: String?
+    let isSaving: Bool
+    let confirmation: String?
+    let error: String?
+    let onSave: () -> Void
+
+    final class Coordinator {
+        let state = MemberAccountPreferencesState()
+        var onEmail: ((String) -> Void)?
+        var onNewsletter: ((Bool) -> Void)?
+        var onSave: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return MemberAccountPreferencesViewControllerKt.MemberAccountPreferencesViewController(
+            state: coordinator.state,
+            position: position,
+            onEmail: { [weak coordinator] in coordinator?.onEmail?($0) },
+            onNewsletter: { [weak coordinator] in coordinator?.onNewsletter?($0.boolValue) },
+            onSave: { [weak coordinator] in coordinator?.onSave?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        let emailBinding = $email
+        let newsletterBinding = $newsletter
+        coordinator.onEmail = { emailBinding.wrappedValue = $0 }
+        coordinator.onNewsletter = { newsletterBinding.wrappedValue = $0 }
+        coordinator.onSave = onSave
+        coordinator.state.update(
+            email: email,
+            newsletter: newsletter,
+            pendingEmail: pendingEmail,
+            isSaving: isSaving,
+            confirmation: confirmation,
+            error: error
+        )
+    }
+}
+
+extension View {
+    func trackAccountSectionPosition(_ position: AccountSectionPosition) -> some View {
+        onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { origin in
+            position.updateOrigin(x: Double(origin.x), y: Double(origin.y))
         }
     }
 }

@@ -955,6 +955,121 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
     }
 
+    func testRegularAccountOpensNativeSigningAndSignsOutFromCompose() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let account = app.scrollViews["account-scroll-view"]
+        let heading = account.descendants(matching: .any)["account-overview-heading"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(app.buttons["Nostranslation signing"], in: app)
+        let signing = app.navigationBars["Nostranslation signing"]
+        XCTAssertTrue(signing.waitForExistence(timeout: 10), app.debugDescription)
+        signing.buttons["Done"].tap()
+        XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
+
+        tapAccountButton(app.buttons["Sign out"], in: app)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
+    func testRegularAccountSavesComposeEmailAndNewsletterPreferences() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let field = app.descendants(matching: .any)["account-email"]
+        let newsletter = app.descendants(matching: .any)["account-newsletter"]
+        let save = app.descendants(matching: .any)["account-save-preferences"]
+        XCTAssertTrue(newsletter.waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(newsletter, in: app)
+
+        XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(field.value as? String, "pilot-member@example.test")
+        reveal(field, in: app)
+        let fieldEnd = field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        fieldEnd.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 2) { fieldEnd.tap() }
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+        app.typeText("x")
+        let edited = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "pilot-member@example.testx"),
+            object: field
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [edited], timeout: 10), .completed, app.debugDescription)
+
+        let done = keyboard.buttons.matching(NSPredicate(format: "label ==[c] %@", "Done")).firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        done.tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed, app.debugDescription)
+
+        tapAccountButton(save, in: app)
+        let confirmation = element(labelled: "Account settings saved.", in: app)
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 10), app.debugDescription)
+        let pending = element(labelled: "Email confirmation is pending for pilot-member@example.testx.", in: app)
+        XCTAssertTrue(pending.exists, app.debugDescription)
+
+        let section = app.descendants(matching: .any)["account-preferences"]
+        XCTAssertTrue(section.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: section.screenshot())
+        screenshot.name = "regular-ios-account-preferences-saved"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    func testRegularAccountPasswordActionsUseNativeRecoveryAndSecureInput() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let recovery = app.descendants(matching: .any)["account-password-recovery"]
+        tapAccountButton(recovery, in: app)
+        XCTAssertTrue(app.staticTexts["Reset password"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Back"].tap()
+
+        let submit = app.descendants(matching: .any)["account-change-password"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+        enterText("example-password", into: app.secureTextFields["Current password"], in: app, secure: true)
+        enterText("fixture-password-2", into: app.secureTextFields["New password"], in: app, secure: true)
+        enterText("fixture-password-2", into: app.secureTextFields["Repeat new password"], in: app, secure: true)
+
+        tapAccountButton(submit, in: app)
+        let failure = element(labelled: "Temporary fixture password update failure.", in: app)
+        XCTAssertTrue(failure.waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(submit, in: app)
+        let success = element(labelled: "Your password has been changed.", in: app)
+        XCTAssertTrue(success.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+
+        let actions = app.descendants(matching: .any)["account-password-actions"]
+        XCTAssertTrue(actions.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: actions.screenshot())
+        screenshot.name = "regular-ios-password-actions-saved"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testNostrLocalKeySurvivesSignOutAndRemovalKeepsProfileSeparate() throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
@@ -976,13 +1091,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             tapAccountButton(app.buttons["Remove local key"], in: app)
             app.alerts.buttons["Remove"].tap()
         }
+        let localStatus = app.descendants(matching: .any)["nostr-local-key-status"]
+        let profileStatus = app.descendants(matching: .any)["nostr-profile-key-status"]
+        let noLocalKey = app.staticTexts["No local key for this account."]
+        let noLinkedKey = app.staticTexts["No linked public key."]
+        XCTAssertTrue(localStatus.exists, app.debugDescription)
+        XCTAssertTrue(profileStatus.exists, app.debugDescription)
+        XCTAssertTrue(noLocalKey.waitForExistence(timeout: 10), app.debugDescription)
+
         let generate = app.buttons["Generate new key"]
         tapAccountButton(generate, in: app)
         let localKey = app.staticTexts["nostr-local-public-key"]
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         let publicKey = localKey.label
         XCTAssertTrue(publicKey.hasPrefix("npub1"))
-        XCTAssertTrue(app.staticTexts["No linked public key."].exists)
+        XCTAssertFalse(noLocalKey.exists)
+        XCTAssertTrue(noLinkedKey.exists)
 
         tapAccountButton(app.buttons["Nostranslation signing"], in: app)
         let signing = app.navigationBars["Nostranslation signing"]
@@ -1000,6 +1124,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         tapAccountButton(link, in: app)
         let unlink = app.buttons["Unlink profile key"]
         XCTAssertTrue(unlink.waitForExistence(timeout: 10))
+        XCTAssertFalse(noLinkedKey.exists)
         attachNostrSection(app, name: "Local Nostr key and linked profile key")
 
         let signOut = app.buttons["Sign out"]
@@ -1021,12 +1146,20 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.alerts.buttons["Remove"].tap()
         XCTAssertTrue(generate.waitForExistence(timeout: 10))
         XCTAssertFalse(localKey.exists)
+        XCTAssertTrue(noLocalKey.exists)
+        XCTAssertFalse(noLinkedKey.exists)
         XCTAssertTrue(unlink.exists)
         attachNostrSection(app, name: "Local key removed without changing profile")
         tapAccountButton(unlink, in: app)
         XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
         app.alerts.buttons["Unlink"].tap()
-        XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
+        XCTAssertTrue(noLinkedKey.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !profileStatus.isHittable { app.swipeDown() }
+        XCTAssertTrue(profileStatus.isHittable, app.debugDescription)
+        let statusScreenshot = XCTAttachment(screenshot: profileStatus.screenshot())
+        statusScreenshot.name = "regular-ios-nostr-profile-key-status"
+        statusScreenshot.lifetime = .keepAlways
+        add(statusScreenshot)
         tapAccountButton(signOut, in: app)
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }
@@ -1039,16 +1172,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(account.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(account.isHittable, app.debugDescription)
         account.tap()
-        let keySection = app.staticTexts["Local public key (npub)"]
-        if !keySection.waitForExistence(timeout: 3), account.isHittable {
+        let accountScreen = app.scrollViews["account-scroll-view"]
+        if !accountScreen.waitForExistence(timeout: 3), account.isHittable {
             account.tap()
         }
-        XCTAssertTrue(keySection.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(accountScreen.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func signOutOfNativeAccountIfNeeded(_ app: XCUIApplication) {
         guard app.buttons["Menu"].waitForExistence(timeout: 2) else { return }
-        if !app.staticTexts["Local public key (npub)"].exists {
+        if !app.scrollViews["account-scroll-view"].exists {
             openNostrAccount(app)
         }
         tapAccountButton(app.buttons["Sign out"], in: app)
@@ -1064,8 +1197,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         for _ in 0..<5 {
             if button.isHittable { break }
             let belowCenter = button.frame.midY >= account.frame.midY
-            let start = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.7 : 0.3))
-            let end = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.3 : 0.7))
+            // Use the native container's gutter outside the embedded Compose sections.
+            let gutter = 8 / account.frame.width
+            let start = account.coordinate(withNormalizedOffset: CGVector(dx: gutter, dy: belowCenter ? 0.7 : 0.3))
+            let end = account.coordinate(withNormalizedOffset: CGVector(dx: gutter, dy: belowCenter ? 0.3 : 0.7))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
         XCTAssertTrue(button.isHittable, app.debugDescription)
