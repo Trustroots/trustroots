@@ -1,15 +1,7 @@
 import mongoose from 'mongoose';
 import type { UserServerRecord } from '../models/user.server.types.mts';
 
-export const sendSignupReminderJob = 'deliver signup reminder';
-
-export interface SignupReminder {
-  userId: string;
-  emailToken: string;
-  previousToken?: string | null;
-  previousIssuedAt?: Date | null;
-  previousExpires?: Date | null;
-}
+import type { SignupReminder } from '../../../core/server/services/signup-reminder-mail.server.contract.mts';
 
 // Reminders are two days apart. Allow another day for the worker to run
 // before the previous reminder link expires.

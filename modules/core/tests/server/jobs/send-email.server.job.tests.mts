@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 import * as testutils from './../../../../../testutils/server/server.testutil.mts';
 import assert from 'node:assert/strict';
 import 'should';
-import sendEmailJob from './../../../server/jobs/send-email.server.job.mts';
+import createSendEmailJob from './../../../server/jobs/send-email.server.job.mts';
+import { canDeliverNotificationEmail } from '../../../../users/server/services/notification-email.server.service.mts';
+import { deliverSignupReminder } from '../../../../users/server/services/signup-reminder.server.service.mts';
 import runtimeConfig from './../../../../../config/config.mts';
 
 type EmailData = {
@@ -35,7 +37,10 @@ describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
   before(function () {
-    sendEmailJobHandler = sendEmailJob as unknown as SendEmailJobHandler;
+    sendEmailJobHandler = createSendEmailJob({
+      canDeliverNotificationEmail,
+      deliverSignupReminder,
+    }) as unknown as SendEmailJobHandler;
   });
 
   it('reports send failures', function (done) {

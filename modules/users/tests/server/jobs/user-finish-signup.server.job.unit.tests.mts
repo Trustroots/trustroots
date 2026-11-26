@@ -8,7 +8,9 @@ import 'should';
 import assert from 'node:assert/strict';
 import { promisify } from 'node:util';
 import config from '../../../../../config/config.mts';
-import sendEmailJob from '../../../../core/server/jobs/send-email.server.job.mts';
+import createSendEmailJob from '../../../../core/server/jobs/send-email.server.job.mts';
+import { canDeliverNotificationEmail } from '../../../server/services/notification-email.server.service.mts';
+import { deliverSignupReminder } from '../../../server/services/signup-reminder.server.service.mts';
 import type { RenderedEmail } from '../../../../core/server/services/email.server.service.mts';
 import type { UserServerRecord } from '../../../server/models/user.server.types.mts';
 
@@ -25,7 +27,12 @@ describe('Job: user finish signup unit tests', () => {
   const deliver = async () => {
     const data = jobs[0]?.data;
     assert.ok(data);
-    await promisify(sendEmailJob)({
+    await promisify(
+      createSendEmailJob({
+        canDeliverNotificationEmail,
+        deliverSignupReminder,
+      }),
+    )({
       attrs: { ...attrs(), data },
     });
   };

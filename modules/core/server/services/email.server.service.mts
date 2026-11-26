@@ -7,7 +7,7 @@ import { emailToken } from './action-token.server.service.mts';
 import {
   sendSignupReminderJob,
   type SignupReminder,
-} from '../../../users/server/services/signup-reminder.server.service.mts';
+} from './signup-reminder-mail.server.contract.mts';
 import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';

@@ -5,6 +5,9 @@ import sinon from 'sinon';
 import { expect, it, vi } from 'vitest';
 
 import config from '../../../../config/config.mts';
+import createSendEmailJob from '../../../core/server/jobs/send-email.server.job.mts';
+import { canDeliverNotificationEmail } from '../../../users/server/services/notification-email.server.service.mts';
+import { deliverSignupReminder } from '../../../users/server/services/signup-reminder.server.service.mts';
 import emailService, {
   type RenderedEmail,
 } from '../../../core/server/services/email.server.service.mts';
@@ -71,6 +74,7 @@ function deliver(experienceId?: string) {
     },
   };
   return sendExperienceReplyReminder(
+    createSendEmailJob({ canDeliverNotificationEmail, deliverSignupReminder }),
     job as unknown as Job<{ experienceId: string }>,
   );
 }
