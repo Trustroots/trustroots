@@ -81,7 +81,6 @@
     ],
     "users": [
       "admin",
-      "contacts",
       "core",
       "search",
       "stats",

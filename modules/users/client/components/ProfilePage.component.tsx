@@ -39,21 +39,18 @@ import {
 } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
-import ContactList from '@/modules/contacts/client/components/ContactList.component';
-import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
-import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import type {
   ExperienceAction,
   ProfileExperiences,
 } from '../profile-experiences';
-import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/core/client/components/ReportMember.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import type {
-  ContactList as ContactListData,
-  ContactListEntry,
-  ContactRecord,
-} from '@/modules/contacts/client/types';
+  ProfileContactList,
+  ProfileContactEntry,
+  ProfileContact,
+  ProfileContacts,
+} from '../profile-contacts';
 import type { UserProfile } from '../types';
 import type { ProfileCircles } from '../member-circles';
 
@@ -66,11 +63,11 @@ interface ResolvedUserProfile extends UserProfile {
   $resolved?: boolean;
 }
 
-type ContactState = ContactRecord & { $resolved: boolean };
+type ContactState = ProfileContact & { $resolved: boolean };
 
 function resolvedContactList(
-  contacts: ContactListEntry[] | undefined,
-): ContactListData {
+  contacts: ProfileContactEntry[] | undefined,
+): ProfileContactList {
   const entries = contacts ?? [];
   return Object.assign([...entries], {
     $resolved: true,
@@ -78,14 +75,21 @@ function resolvedContactList(
   });
 }
 
-async function loadContactList(profileId: string) {
-  return contactsApi.list(profileId).then(
+async function loadContactList(
+  list: ProfileContacts['list'],
+  profileId: string,
+) {
+  return list(profileId).then(
     contacts => ({ contacts: resolvedContactList(contacts), failed: false }),
     () => ({ contacts: resolvedContactList([]), failed: true }),
   );
 }
 
-function normalizeContact(contact: ContactRecord | null): ContactState {
+const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
+  username: string;
+}>;
+
+function normalizeContact(contact: ProfileContact | null): ContactState {
   if (!contact) {
     return { $resolved: true };
   }
@@ -105,6 +109,7 @@ function normalizeContact(contact: ContactRecord | null): ContactState {
 
 function ProfileAboutTab({
   ProfileOffers,
+  ContactsCommon,
   authUser,
   circles,
   contacts,
@@ -113,9 +118,10 @@ function ProfileAboutTab({
   profileMinimumLength,
 }: {
   ProfileOffers: ProfileOffersComponent;
+  ContactsCommon: ProfileContacts['Common'];
   authUser: UserProfile;
   circles: ProfileCircles;
-  contacts: ContactListData;
+  contacts: ProfileContactList;
   isSelf: boolean;
   profile: ResolvedUserProfile;
   profileMinimumLength: number;
@@ -281,6 +287,7 @@ export interface ProfilePageProps {
 export default function ProfilePage<AuthoredExperience>({
   ProfileOffers,
   circles,
+  contactFeatures,
   embedded = false,
   experiences,
   profileUsername,
@@ -288,6 +295,7 @@ export default function ProfilePage<AuthoredExperience>({
 }: ProfilePageProps & {
   ProfileOffers: ProfileOffersComponent;
   circles: ProfileCircles;
+  contactFeatures: ProfileContacts;
   experiences: ProfileExperiences<AuthoredExperience>;
 }) {
   const { t } = useTranslation('users') as {
@@ -308,7 +316,7 @@ export default function ProfilePage<AuthoredExperience>({
     useSettings();
 
   const [contact, setContact] = useState<ContactState>({ $resolved: false });
-  const [contacts, setContacts] = useState<ContactListData>(
+  const [contacts, setContacts] = useState<ProfileContactList>(
     Object.assign([], { $resolved: false }),
   );
   const [contactsLoadFailed, setContactsLoadFailed] = useState(false);
@@ -402,7 +410,7 @@ export default function ProfilePage<AuthoredExperience>({
   const isLoading =
     isPending || Boolean(profile?._id && !experienceOnly && !contact.$resolved);
 
-  const removeContact = useCallback((removedContact: ContactRecord) => {
+  const removeContact = useCallback((removedContact: ProfileContact) => {
     setContacts(previousContacts => {
       const nextContacts = [...previousContacts];
       const index = nextContacts.findIndex(
@@ -432,7 +440,7 @@ export default function ProfilePage<AuthoredExperience>({
     const requestVersion = ++contactsRequestVersion.current;
     setContactsLoadFailed(false);
     setContacts(Object.assign([], { $resolved: false }));
-    const result = await loadContactList(profileId);
+    const result = await loadContactList(contactFeatures.list, profileId);
     if (requestVersion !== contactsRequestVersion.current) return;
     setContacts(result.contacts);
     setContactsLoadFailed(result.failed);
@@ -470,8 +478,8 @@ export default function ProfilePage<AuthoredExperience>({
     void Promise.all([
       viewingOwnProfile || !authUser?._id
         ? Promise.resolve(null)
-        : contactsApi.getByUserId(profileId).catch(() => null),
-      loadContactList(profileId),
+        : contactFeatures.getByUserId(profileId).catch(() => null),
+      loadContactList(contactFeatures.list, profileId),
     ]).then(([loadedContact, loadedContactsResult]) => {
       if (!isMounted) {
         return;
@@ -485,7 +493,7 @@ export default function ProfilePage<AuthoredExperience>({
       isMounted = false;
       contactsRequestVersion.current++;
     };
-  }, [profile?._id, experienceOnly, authUser?._id]);
+  }, [profile?._id, experienceOnly, authUser?._id, contactFeatures]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {
@@ -510,7 +518,7 @@ export default function ProfilePage<AuthoredExperience>({
             />
             {!isSelf && (
               <div className="profile-flags">
-                <ReportMember username={profile.username} />
+                <ReportMemberButton username={profile.username} />
                 <br />
                 <br />
                 <BlockMember
@@ -525,7 +533,7 @@ export default function ProfilePage<AuthoredExperience>({
         return <ProfileOffers authUser={authUser} profile={profile} />;
       case 'contacts':
         return (
-          <ContactList
+          <contactFeatures.List
             appUser={authUser}
             contacts={contacts}
             onContactRemoved={removeContact}
@@ -564,6 +572,7 @@ export default function ProfilePage<AuthoredExperience>({
       default:
         return (
           <ProfileAboutTab
+            ContactsCommon={contactFeatures.Common}
             ProfileOffers={ProfileOffers}
             circles={circles}
             authUser={authUser}
@@ -578,6 +587,7 @@ export default function ProfilePage<AuthoredExperience>({
     ProfileOffers,
     authUser,
     circles,
+    contactFeatures,
     contacts,
     experienceAction,
     experiences,
@@ -599,7 +609,7 @@ export default function ProfilePage<AuthoredExperience>({
     return (
       <section className="tw:page-container container-spacer">
         <MemberIdentity user={profile} size={64} heading />
-        <ReportMember username={profile.username} />
+        <ReportMemberButton username={profile.username} />
         {isCreatingExperience ? (
           <experiences.Create userFrom={authUser} userTo={profile} />
         ) : ownExperience ? (
@@ -623,6 +633,7 @@ export default function ProfilePage<AuthoredExperience>({
     <>
       {!embedded && (
         <TopNavigationSmall
+          RemoveContact={contactFeatures.Remove}
           isAdmin={authUser.roles?.includes('admin') || false}
           contact={contact}
           isResolved={contact.$resolved}
@@ -726,7 +737,7 @@ export default function ProfilePage<AuthoredExperience>({
                     />
                     {!isSelf && (
                       <div className="profile-flags">
-                        <ReportMember username={profile.username} />
+                        <ReportMemberButton username={profile.username} />
                         <br />
                         <br />
                         <BlockMember
@@ -805,8 +816,8 @@ export default function ProfilePage<AuthoredExperience>({
       </section>
 
       {contact._id && (
-        <RemoveContactContainer
-          contact={contact as ContactRecord & { _id: string }}
+        <contactFeatures.Remove
+          contact={contact as ProfileContact & { _id: string }}
           onCancel={() => setShowRemoveModal(false)}
           onSuccess={() => {
             setShowRemoveModal(false);

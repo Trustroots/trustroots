@@ -1,4 +1,5 @@
 import type { Types } from 'mongoose';
+import type { LoadExportContacts } from './user-contacts.server.contract.mts';
 import type { UserMessaging } from './user-messaging.server.contract.mts';
 
 export interface CircleCountRecord {
@@ -15,6 +16,11 @@ export type UpdateCircleCount = (
 
 export interface UserAccountServices extends UserMessaging {
   updateCircleCount: UpdateCircleCount;
+  loadExportContacts: LoadExportContacts;
+  removeAllContacts(
+    userId: Types.ObjectId,
+    callback: (error?: Error | null) => void,
+  ): void;
   removeOwnedOffers(
     userId: Types.ObjectId,
     callback: (error: Error | null) => void,
@@ -41,5 +47,8 @@ export interface WrittenExperience {
 
 export type UserAccountCleanup = Pick<
   UserAccountServices,
-  'clearMessageNotifications' | 'removeOwnedOffers' | 'updateCircleCount'
+  | 'clearMessageNotifications'
+  | 'removeOwnedOffers'
+  | 'removeAllContacts'
+  | 'updateCircleCount'
 >;

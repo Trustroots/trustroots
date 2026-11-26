@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@/config/client/i18n';
 import TopNavigationSmall from '@/modules/users/client/components/TopNavigationSmall.component';
 import { readOutreachSource } from '@trustroots/analytics/client';
-import type RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
+import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserSummary } from '@/modules/users/client/types';
 
@@ -44,6 +44,7 @@ vi.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
 function renderNavigation(props: Partial<TopNavigationProps> = {}) {
   return render(
     <TopNavigationSmall
+      RemoveContact={RemoveContact}
       contact={{}}
       isResolved
       onContactRemoved={vi.fn<(...args: [contact: ContactRecord]) => void>()}
@@ -59,7 +60,7 @@ function renderNavigation(props: Partial<TopNavigationProps> = {}) {
   );
 }
 
-describe('<TopNavigationSmall />', () => {
+describe('<TopNavigationSmall RemoveContact={RemoveContact} />', () => {
   it('adds an Admin link for administrators on another member and their own profile', () => {
     const { rerender } = renderNavigation({ isAdmin: true });
     expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
@@ -68,6 +69,7 @@ describe('<TopNavigationSmall />', () => {
     );
     rerender(
       <TopNavigationSmall
+        RemoveContact={RemoveContact}
         isAdmin
         userId="me"
         selfId="me"
