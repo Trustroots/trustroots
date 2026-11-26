@@ -553,7 +553,11 @@ describe('API route registrations', () => {
 
   it('registers users routes behind the users policy', async () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
-    const limits = controller(['mfaManage', 'passwordChange'], 'limits');
+    const limits = controller(
+      ['mfaManage', 'passwordChange', 'emailChange'],
+      'limits',
+    );
+    const emailChange = controller(['stage', 'cancel'], 'emailChange');
     const avatar = controller(
       [
         'avatarUploadField',
@@ -568,12 +572,13 @@ describe('API route registrations', () => {
       './../../../users/server/routes/users.server.routes.mts',
       {
         '../controllers/users.avatar.server.controller': avatar,
+        '../controllers/users.email-change.server.controller.mts': emailChange,
         '../../../core/server/middleware/targeted-request-limit.server.middleware.mts':
           limits,
         '../policies/users.server.policy': policy,
       },
     );
-    assert.strictEqual(routes.length, 25);
+    assert.strictEqual(routes.length, 26);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
     assert.deepStrictEqual(unsubscribeRoute.all, []);
@@ -599,6 +604,12 @@ describe('API route registrations', () => {
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],
     );
+    const emailChangeRoute = routeByPath(routes, '/api/users/email-change');
+    assert.deepStrictEqual(emailChangeRoute.post, [
+      limits.emailChange,
+      emailChange.stage,
+    ]);
+    assert.deepStrictEqual(emailChangeRoute.delete, [emailChange.cancel]);
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/me/safety-visit').put,
       [userProfile.recordSafetyPageVisit],

@@ -229,6 +229,8 @@ export function selectProfileResponse<Id, Timestamp>(
     lastName: profile.lastName,
     email: profile.email,
     emailTemporary: profile.emailTemporary,
+    emailConfirmed: profile.emailConfirmed,
+    mfaEnabled: profile.mfaEnabled,
     newsletter: profile.newsletter,
     messageEmailFrequency: profile.messageEmailFrequency,
     hostingReminderEmails: profile.hostingReminderEmails,

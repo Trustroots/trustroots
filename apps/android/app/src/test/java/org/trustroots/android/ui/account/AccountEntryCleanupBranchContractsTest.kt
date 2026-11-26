@@ -167,6 +167,9 @@ private class CleanupBranchRepository : AccountRepository {
             ),
         )
 
+    override suspend fun requestEmailChange(email: String, password: String, code: String) =
+        error("Unexpected email change request")
+    override suspend fun cancelEmailChange(email: String) = error("Unexpected email change cancellation")
     override suspend fun changePassword(current: String, new: String, verify: String) = passwordHandler()
     override suspend fun signOut() = Result.success(Unit)
 }

@@ -5,6 +5,7 @@ import {
   getProfileRemovalStatus,
   recordSafetyPageVisit,
   changePassword,
+  changeEmail,
   nostrChallenge,
   fetch,
   fetchMini,
@@ -131,15 +132,33 @@ describe('users api', () => {
   });
 
   it('cancels only the displayed pending email change', async () => {
-    axiosMock.post.mockResolvedValueOnce(
-      response({ currentEmail: 'current@example.org' }),
+    axiosMock.delete.mockResolvedValueOnce(
+      response({ email: 'current@example.org', emailTemporary: null }),
     );
     await expect(cancelEmailChange('pending@example.org')).resolves.toEqual({
-      currentEmail: 'current@example.org',
+      email: 'current@example.org',
+      emailTemporary: null,
+    });
+    expect(axiosMock.delete).toHaveBeenCalledWith('/api/users/email-change', {
+      data: { newEmail: 'pending@example.org' },
+    });
+  });
+
+  it('stages a confirmed-account email change using only the dedicated route', async () => {
+    const credentials = {
+      email: 'pending@example.org',
+      currentPassword: 'example-password',
+      mfaCode: '123456',
+    };
+    axiosMock.post.mockResolvedValueOnce(
+      response({ emailTemporary: credentials.email }),
+    );
+    await expect(changeEmail(credentials)).resolves.toEqual({
+      emailTemporary: credentials.email,
     });
     expect(axiosMock.post).toHaveBeenCalledWith(
-      '/api/auth/cancel-email-change',
-      { newEmail: 'pending@example.org' },
+      '/api/users/email-change',
+      credentials,
     );
   });
 

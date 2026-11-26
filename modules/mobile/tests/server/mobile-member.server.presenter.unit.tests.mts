@@ -9,6 +9,7 @@ describe('Mobile member presenter', function () {
       username: 'mobile_member',
       displayName: 'Mobile Member',
       public: true,
+      mfaEnabled: true,
       email: 'mobile.member@example.org',
       newsletter: true,
       password: 'must-not-leak',
@@ -20,6 +21,8 @@ describe('Mobile member presenter', function () {
       username: 'mobile_member',
       displayName: 'Mobile Member',
       public: true,
+      emailConfirmed: true,
+      mfaEnabled: true,
       email: 'mobile.member@example.org',
       newsletter: true,
     });
@@ -39,6 +42,8 @@ describe('Mobile member presenter', function () {
         username: 'mobile_member',
         displayName: 'mobile_member',
         public: false,
+        emailConfirmed: false,
+        mfaEnabled: false,
         email: 'mobile.member@example.org',
         newsletter: false,
       });
@@ -79,6 +84,8 @@ describe('Mobile member presenter', function () {
         {
           _id: 'profile-id',
           roles: ['user'],
+          public: true,
+          mfaEnabled: true,
         },
       )
       .should.deepEqual({
@@ -99,6 +106,8 @@ describe('Mobile member presenter', function () {
         email: 'mobile.member@example.org',
         emailTemporary: 'new.mobile.member@example.org',
         newsletter: true,
+        emailConfirmed: true,
+        mfaEnabled: true,
         member: [{ tribe: { id: 'circle-id', label: 'Example Circle' } }],
       });
   });

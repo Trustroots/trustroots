@@ -1,5 +1,6 @@
 import assert from 'assert/strict';
 import { Types } from 'mongoose';
+import type { OfferPayload } from '../../shared/offer.js';
 import {
   prepareNewOfferInput,
   prepareOfferMutationResponse,
@@ -10,6 +11,20 @@ import {
 const { ObjectId } = Types;
 
 describe('Offer API payload construction', () => {
+  it('preserves both values of the hosting acknowledgement preference', () => {
+    for (const enabled of [true, false]) {
+      const preference = { requireHostingDescriptionAcknowledgement: enabled };
+      assert.deepEqual(prepareOfferUpdateInput(preference), preference);
+      const offer: OfferPayload<string, never> = {
+        _id: 'host-offer',
+        type: 'host',
+        user: 'fictional-host',
+        location: [12, 34],
+        ...preference,
+      };
+      assert.deepEqual(prepareOfferPayload(offer), offer);
+    }
+  });
   it('projects only the public offer fields', () => {
     const offer = {
       _id: new ObjectId('111111111111111111111111'),

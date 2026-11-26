@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -224,14 +225,23 @@ internal fun AccountSettingsScreen(
                 CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             } else {
                 Text(emailLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp))
-                TextField(
-                    value = state.email,
-                    onValueChange = { viewModel.onEvent(AccountEvent.EmailChanged(it)) },
-                    label = { Text(stringResource(R.string.form_email_address)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                )
+                val emailConfirmed = state.details?.emailConfirmed == true
+                if (emailConfirmed) {
+                    Text(state.email, modifier = Modifier.padding(top = 4.dp))
+                    TextButton(
+                        onClick = { viewModel.onEvent(AccountEvent.OpenEmailChange) },
+                        enabled = !state.isBusy,
+                    ) { Text(stringResource(R.string.screen_change_email)) }
+                } else {
+                    TextField(
+                        value = state.email,
+                        onValueChange = { viewModel.onEvent(AccountEvent.EmailChanged(it)) },
+                        label = { Text(stringResource(R.string.form_email_address)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    )
+                }
                 LabelledCheckbox(
                     label = newsletterLabel,
                     checked = state.newsletter,
@@ -243,12 +253,24 @@ internal fun AccountSettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
                     )
+                    if (emailConfirmed) {
+                        TextButton(
+                            onClick = { viewModel.onEvent(AccountEvent.CancelPendingEmailChange) },
+                            enabled = !state.isBusy,
+                        ) { Text(stringResource(R.string.screen_cancel_email_change)) }
+                    }
                 }
                 Button(
                     onClick = { viewModel.onEvent(AccountEvent.SaveAccount) },
-                    enabled = !state.isSavingAccount && state.email.isNotBlank(),
+                    enabled = !state.isSavingAccount && !state.isChangingEmail && state.email.isNotBlank(),
                     modifier = Modifier.padding(top = 8.dp),
-                ) { Text(if (state.isSavingAccount) savingLabel else saveEmailSettings) }
+                ) {
+                    Text(when {
+                        state.isSavingAccount -> savingLabel
+                        emailConfirmed -> stringResource(R.string.screen_save_newsletter_preference)
+                        else -> saveEmailSettings
+                    })
+                }
                 HorizontalDivider(Modifier.padding(vertical = 20.dp))
                 Text(changePasswordLabel, style = MaterialTheme.typography.titleMedium)
                 TextField(
@@ -277,7 +299,7 @@ internal fun AccountSettingsScreen(
                 )
                 Button(
                     onClick = { viewModel.onEvent(AccountEvent.ChangePassword) },
-                    enabled = !state.isChangingPassword && state.currentPassword.isNotBlank() &&
+                    enabled = !state.isChangingPassword && !state.isChangingEmail && state.currentPassword.isNotBlank() &&
                         state.newPassword.isNotBlank() && state.newPassword == state.verifyPassword,
                     modifier = Modifier.padding(top = 8.dp),
                 ) { Text(if (state.isChangingPassword) changingLabel else changePasswordLabel) }
@@ -322,6 +344,66 @@ internal fun AccountSettingsScreen(
             }
         }
     }
+    AccountEmailChangeDialog(state = state, onEvent = viewModel::onEvent)
+}
+
+@Composable
+private fun AccountEmailChangeDialog(state: AccountSettingsUiState, onEvent: (AccountEvent) -> Unit) {
+    val draft = state.emailChange ?: return
+    val mfaEnabled = state.details?.mfaEnabled == true
+    val busy = state.isChangingEmail
+    val close = { onEvent(AccountEvent.CloseEmailChange) }
+    AlertDialog(
+        onDismissRequest = close,
+        title = { Text(stringResource(R.string.screen_change_email)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                TextField(
+                    value = draft.email,
+                    onValueChange = { onEvent(AccountEvent.EmailChangeAddressChanged(it)) },
+                    label = { Text(stringResource(R.string.screen_new_email_address)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    enabled = !busy,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                )
+                TextField(
+                    value = draft.password,
+                    onValueChange = { onEvent(AccountEvent.EmailChangePasswordChanged(it)) },
+                    label = { Text(stringResource(R.string.form_current_password)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    visualTransformation = PasswordVisualTransformation(),
+                    enabled = !busy,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("emailChangePassword"),
+                )
+                if (mfaEnabled) {
+                    TextField(
+                        value = draft.code,
+                        onValueChange = { onEvent(AccountEvent.EmailChangeCodeChanged(it)) },
+                        label = { Text(stringResource(R.string.screen_email_change_authenticator_code)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = PasswordVisualTransformation(),
+                        enabled = !busy,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                state.failure?.let {
+                    Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onEvent(AccountEvent.SubmitEmailChange) },
+                enabled = !busy && draft.canSubmit(mfaEnabled),
+            ) { Text(stringResource(if (busy) R.string.saving else R.string.screen_send_email_confirmation)) }
+        },
+        dismissButton = {
+            TextButton(onClick = close, enabled = !busy) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

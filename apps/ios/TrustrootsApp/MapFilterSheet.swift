@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct MapFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,69 +12,19 @@ struct MapFilterSheet: View {
     @Binding var languages: Set<String>
     @Binding var volunteering: Bool
     @Binding var connectionsOnly: Bool
+    @State private var showingLanguages = false
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Show") {
-                    Toggle("Hosts", isOn: $showingHosts)
-                        .tint(TrustrootsPalette.green)
-                        .onChange(of: showingHosts) { _, enabled in
-                            if !enabled { volunteering = false }
-                        }
-                    Toggle("Meet", isOn: $showingMeet)
-                        .tint(TrustrootsPalette.green)
-                    Toggle("Offers volunteering", isOn: $volunteering)
-                        .tint(TrustrootsPalette.green)
-                        .onChange(of: volunteering) { _, enabled in
-                            if enabled { showingHosts = true }
-                        }
-                    Toggle("Community Notes via Nostroots", isOn: Binding(
-                        get: { showingCommunityNotes && !connectionsOnly },
-                        set: { showingCommunityNotes = $0 }
-                    ))
-                        .tint(TrustrootsPalette.green)
-                        .disabled(connectionsOnly)
-                }
-
-                Section("Members") {
-                    Toggle("My connections only", isOn: $connectionsOnly)
-                        .tint(TrustrootsPalette.green)
-                    Picker("Last active", selection: $activityMonths) {
-                        Text("Past month").tag(Optional(1))
-                        Text("Past 6 months").tag(Optional(6))
-                        Text("Any time").tag(nil as Int?)
-                    }
-                    NavigationLink {
-                        SearchLanguagePicker(languages: $languages)
-                    } label: {
-                        LabeledContent("Spoken languages", value: languages.isEmpty ? "Any" : String(languages.count))
-                    }
-                }
-
-                Section("Circles") {
-                    if circles.isEmpty {
-                        Text("Loading circles…")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(circles) { circle in
-                            Toggle(
-                                "\(circle.label) · \(circle.count) members",
-                                isOn: Binding(
-                                    get: { selectedCircleIDs.contains(circle.id) },
-                                    set: { isSelected in
-                                        if isSelected {
-                                            selectedCircleIDs.insert(circle.id)
-                                        } else {
-                                            selectedCircleIDs.remove(circle.id)
-                                        }
-                                    }
-                                )
-                            )
-                            .tint(TrustrootsPalette.green)
-                        }
-                    }
-                }
+            ComposeOfferSearchFilters(
+                selection: selection,
+                onToggle: toggle,
+                onActivity: selectActivity,
+                onLanguages: { showingLanguages = true },
+                onCircle: toggleCircle
+            )
+            .navigationDestination(isPresented: $showingLanguages) {
+                SearchLanguagePicker(languages: $languages)
             }
             .navigationTitle("Search filters")
             .toolbar {
@@ -95,6 +46,112 @@ struct MapFilterSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    private var selection: OfferSearchFilterSelection {
+        let activity: OfferSearchActivity
+        switch activityMonths {
+        case 1: activity = .pastmonth
+        case 6: activity = .pastsixmonths
+        default: activity = .anytime
+        }
+        return OfferSearchFilterSelection(
+            hosts: showingHosts,
+            meet: showingMeet,
+            volunteering: volunteering,
+            communityNotes: showingCommunityNotes,
+            connectionsOnly: connectionsOnly,
+            activity: activity,
+            languageCount: Int32(languages.count),
+            circles: circles.map { circle in
+                OfferSearchCircle(
+                    id: circle.id,
+                    label: "\(circle.label) · \(circle.count) members",
+                    selected: selectedCircleIDs.contains(circle.id)
+                )
+            }
+        )
+    }
+
+    private func toggle(_ filter: OfferSearchToggle) {
+        switch filter {
+        case .hosts:
+            showingHosts.toggle()
+            if !showingHosts { volunteering = false }
+        case .meet:
+            showingMeet.toggle()
+        case .volunteering:
+            volunteering.toggle()
+            if volunteering { showingHosts = true }
+        case .communitynotes:
+            if !connectionsOnly { showingCommunityNotes.toggle() }
+        case .connectionsonly:
+            connectionsOnly.toggle()
+        default:
+            break
+        }
+    }
+
+    private func selectActivity(_ activity: OfferSearchActivity) {
+        switch activity {
+        case .pastmonth: activityMonths = 1
+        case .pastsixmonths: activityMonths = 6
+        case .anytime: activityMonths = nil
+        default: break
+        }
+    }
+
+    private func toggleCircle(_ id: String) {
+        if selectedCircleIDs.contains(id) {
+            selectedCircleIDs.remove(id)
+        } else {
+            selectedCircleIDs.insert(id)
+        }
+    }
+}
+
+@MainActor
+private struct ComposeOfferSearchFilters: UIViewControllerRepresentable {
+    let selection: OfferSearchFilterSelection
+    let onToggle: (OfferSearchToggle) -> Void
+    let onActivity: (OfferSearchActivity) -> Void
+    let onLanguages: () -> Void
+    let onCircle: (String) -> Void
+
+    final class Coordinator {
+        let state = OfferSearchFiltersState()
+        var onToggle: ((OfferSearchToggle) -> Void)?
+        var onActivity: ((OfferSearchActivity) -> Void)?
+        var onLanguages: (() -> Void)?
+        var onCircle: ((String) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.OfferSearchFiltersViewController(
+            state: coordinator.state,
+            onToggle: { [weak coordinator] in coordinator?.onToggle?($0) },
+            onActivity: { [weak coordinator] in coordinator?.onActivity?($0) },
+            onLanguages: { [weak coordinator] in coordinator?.onLanguages?() },
+            onCircle: { [weak coordinator] in coordinator?.onCircle?($0) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onToggle = onToggle
+        coordinator.onActivity = onActivity
+        coordinator.onLanguages = onLanguages
+        coordinator.onCircle = onCircle
+        coordinator.state.update(selection: selection)
     }
 }
 

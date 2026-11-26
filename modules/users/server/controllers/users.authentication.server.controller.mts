@@ -3,6 +3,7 @@ import { pick } from '../lib/pick.server.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
 import userProfile from './users.profile.server.controller.mts';
+import { cancelPendingEmail } from './users.email-change.server.controller.mts';
 import authenticationService from '../services/authentication.server.service.mts';
 import { matchSignupReviewRules } from '../services/signup-review-rules.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
@@ -678,22 +679,25 @@ service.cancelEmailChange = function (req, res) {
     res.status(400).send({ message: 'A pending email address is required.' });
     return;
   }
-  const query: QueryFilter<UserServerRecord> = token
-    ? emailConfirmationTokenQuery(String(token), new Date())
-    : { _id: req.user!._id, emailTemporary: String(req.body!.newEmail) };
-  User.findOneAndUpdate(
-    { ...query, public: true },
-    {
-      $unset: {
-        emailTemporary: 1,
-        emailToken: 1,
-        emailTokenIssuedAt: 1,
-        emailTokenExpires: 1,
-      },
-    },
-    // Stryker disable next-line ObjectLiteral,BooleanLiteral: only email is read back, and the update never changes it
-    { new: true },
-  ).then(
+  const cancellation = token
+    ? User.findOneAndUpdate(
+        {
+          ...emailConfirmationTokenQuery(String(token), new Date()),
+          public: true,
+        },
+        {
+          $unset: {
+            emailTemporary: 1,
+            emailToken: 1,
+            emailTokenIssuedAt: 1,
+            emailTokenExpires: 1,
+          },
+        },
+        // Stryker disable next-line ObjectLiteral,BooleanLiteral: only email is read back, and the update never changes it
+        { new: true },
+      )
+    : cancelPendingEmail(req.user!, String(req.body!.newEmail));
+  cancellation.then(
     user => {
       if (!user) {
         return res.status(409).send({
@@ -788,6 +792,8 @@ service.confirmEmail = function (req, res) {
         ? connectionSearchKey('email', oldEmail)
         : null;
     const newEmailKey = connectionSearchKey('email', newEmail);
+    const changedEmail = Boolean(oldEmailKey && oldEmailKey !== newEmailKey);
+    const changedConfirmedEmail = user.public === true && changedEmail;
     const authVersion = user.authVersion || 0;
     const authVersionQuery =
       authVersion === 0
@@ -806,7 +812,7 @@ service.confirmEmail = function (req, res) {
             $and: [tokenQuery, authVersionQuery],
           },
           {
-            ...(oldEmailKey && oldEmailKey !== newEmailKey
+            ...(changedEmail
               ? {
                   $push: {
                     connectionHistory: {
@@ -822,9 +828,12 @@ service.confirmEmail = function (req, res) {
                       $each: [oldEmailKey, newEmailKey],
                     },
                   },
-                  $inc: { connectionHistoryRevision: 1 },
                 }
               : {}),
+            $inc: {
+              ...(changedEmail && { connectionHistoryRevision: 1 }),
+              ...(changedConfirmedEmail && { authVersion: 1 }),
+            },
             $unset: {
               emailTemporary: 1,
               emailToken: 1,
@@ -867,7 +876,7 @@ service.confirmEmail = function (req, res) {
         .send({ message: 'Email confirm token is invalid or has expired.' });
       return;
     }
-    if (user.public && oldEmailKey && oldEmailKey !== newEmailKey) {
+    if (changedConfirmedEmail) {
       await recordActivity({
         userId: modifiedUser._id,
         eventType: 'email_changed',

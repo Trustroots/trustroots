@@ -36,3 +36,7 @@ allowance. Configure these policies under `targetedRequestLimits.signup` and
 Session-management mutations use a separate `manageSessions` policy in
 `targetedRequestLimits` so password-protected session changes do not consume
 the confirmation-email resend allowance.
+
+Credential-confirmed email changes use `targetedRequestLimits.emailChange`.
+The web and mobile endpoints share a per-member allowance of six attempts
+every 15 minutes. Cancelling a pending change does not consume this allowance.

@@ -214,6 +214,7 @@ const service = {
     forgotPassword: { windowMs: 60 * 60 * 1000, ipLimit: 30, identityLimit: 5 },
     resetPassword: { windowMs: 60 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
     passwordChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 3 },
+    emailChange: { windowMs: 15 * 60 * 1000, ipLimit: 0, identityLimit: 6 },
     resendConfirmation: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 30,

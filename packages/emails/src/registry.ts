@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import confirmContact from './templates/confirm-contact.tsx';
+import emailChangeNotification from './templates/email-change-notification.tsx';
 import emailConfirmation from './templates/email-confirmation.tsx';
 import experienceNotificationFirst from './templates/experience-notification-first.tsx';
 import experienceNotificationSecond from './templates/experience-notification-second.tsx';
@@ -25,6 +26,7 @@ type Props = never;
 
 export const htmlEmails: Record<string, ComponentType<Props>> = {
   'confirm-contact': confirmContact,
+  'email-change-notification': emailChangeNotification,
   'email-confirmation': emailConfirmation,
   'experience-notification-first': experienceNotificationFirst,
   'experience-notification-second': experienceNotificationSecond,

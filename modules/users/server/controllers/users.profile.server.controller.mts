@@ -184,6 +184,16 @@ service.update = function (req, res) {
   }
   let usernameChange: UsernameHistoryRecord | undefined;
   const requestedEmail = req.body.email as string | undefined;
+  if (
+    authenticatedUser.public === true &&
+    requestedEmail &&
+    requestedEmail.toLowerCase() !== authenticatedUser.email?.toLowerCase()
+  ) {
+    return res.status(400).send({
+      message:
+        'Confirm your credentials in Account settings to change your email address.',
+    });
+  }
 
   if (Object.prototype.hasOwnProperty.call(req.body, 'username')) {
     if (typeof req.body.username !== 'string') {
@@ -302,7 +312,10 @@ service.update = function (req, res) {
   }
 
   async function updateProfile(): Promise<void> {
-    if (requestedEmail && requestedEmail !== authenticatedUser.email) {
+    if (
+      requestedEmail &&
+      requestedEmail.toLowerCase() !== authenticatedUser.email?.toLowerCase()
+    ) {
       // Stryker disable MethodExpression,ArrowFunction: Mongoose lowercases email and emailTemporary filters itself (lowercase: true), and a failed lookup resolving to undefined instead of null still finds no other member
       const emailUser = await User.findOne(
         {
@@ -352,7 +365,8 @@ service.update = function (req, res) {
     }
     let token: string | false = false;
     const email =
-      requestedEmail && requestedEmail !== authenticatedUser.email
+      requestedEmail &&
+      requestedEmail.toLowerCase() !== authenticatedUser.email?.toLowerCase()
         ? requestedEmail
         : false;
     if (email) {
@@ -406,6 +420,7 @@ service.update = function (req, res) {
     user.set('updated', Date.now());
     // Stryker disable next-line LogicalOperator: token is set exactly when email is truthy, so either operand decides alike
     if (token && email) {
+      user.$where = { ...user.$where, public: { $ne: true } };
       setEmailConfirmationToken(user, token);
       user.emailTemporary = email;
     }
@@ -422,13 +437,14 @@ service.update = function (req, res) {
         return;
       }
       if (
-        usernameChange &&
+        (usernameChange || token) &&
         (error instanceof mongoose.Error.DocumentNotFoundError ||
           error instanceof mongoose.Error.VersionError)
       ) {
         res.status(409).send({
-          message:
-            'Your username changed in another request. Please try again.',
+          message: token
+            ? 'Your account changed in another request. Please try again.'
+            : 'Your username changed in another request. Please try again.',
         });
         return;
       }
@@ -1011,6 +1027,9 @@ function sanitizeProfile(
   if (isOwnProfile) {
     // Is user allowed to update their username?
     profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
+    profile.emailConfirmed = profileDocument.public === true;
+    profile.mfaEnabled =
+      (authenticatedUser?.mfaEnabled ?? profileDocument.mfaEnabled) === true;
   } else {
     // Remove data we don't need from other member's profile
     delete profile.updated;

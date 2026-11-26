@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -21,6 +22,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.json.JSONObject
 import org.junit.After
@@ -50,6 +52,68 @@ class AccountChangesJourneyTest {
         server.accept()
     } catch (error: SocketException) {
         if (server.isClosed) null else throw error
+    }
+
+    @Test fun confirmedEmailChangeRequiresMfaAndSupportsCancellation() {
+        val account = """{"username":"steady-heron","email":"old@example.test","emailConfirmed":true,"mfaEnabled":true}"""
+        val path = "/api/mobile/v0/account/email-change"
+        LocalTransportFixture { request ->
+            when {
+                request.path == "/api/mobile/v0/profiles/steady-heron" ->
+                    LocalTransportFixture.Response("""{"profile":$account}""")
+                request.path == path && request.method == "POST" ->
+                    if (JSONObject(request.body).getString("mfaCode") == "fictional-recovery") {
+                        LocalTransportFixture.Response(JSONObject(account).put("emailTemporary", "new@example.test").toString())
+                    } else {
+                        LocalTransportFixture.Response("""{"message":"Check your password and code."}""", status = 400)
+                    }
+                request.path == path && request.method == "DELETE" -> LocalTransportFixture.Response(account)
+                else -> LocalTransportFixture.Response("{}")
+            }
+        }.use { local ->
+            val invalidated = AtomicBoolean(false)
+            compose.setContent {
+                NativeTestAppFrame(Destination.Menu) {
+                    AccountSettingsScreen(
+                        api = MobileApiClient(local.baseURL),
+                        session = MemberSession("", MobileMember("steady-heron", "Steady Heron"), "example-access"),
+                        onSessionInvalidated = { invalidated.set(true) },
+                        onBack = {},
+                        onResetPassword = {},
+                        onSignedOut = {},
+                    )
+                }
+            }
+
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Change email").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Change email").performScrollTo().performClick()
+            compose.onNodeWithText("New email address").performTextReplacement("new@example.test")
+            compose.onNodeWithTag("emailChangePassword").performTextReplacement("fictional-password")
+            val submit = compose.onNodeWithText("Send confirmation email")
+            val code = compose.onNodeWithText("Authenticator or recovery code")
+            submit.assertIsNotEnabled()
+            code.performTextReplacement("wrong-code")
+            submit.performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Check your password and code.").fetchSemanticsNodes().isNotEmpty()
+            }
+            assertFalse(invalidated.get())
+            code.performTextReplacement("fictional-recovery")
+            submit.performClick()
+
+            val pending = "Email confirmation is pending for new@example.test."
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(pending).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("old@example.test").assertIsDisplayed()
+            compose.onNodeWithText("Cancel pending email change").performScrollTo().performClick()
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(pending).fetchSemanticsNodes().isEmpty() }
+
+            val mutations = local.requests.filter { it.path == path }
+            assertEquals(listOf("POST", "POST", "DELETE"), mutations.map { it.method })
+            assertTrue(mutations.all { it.authorization == "Bearer example-access" })
+            assertEquals("new@example.test", JSONObject(mutations.last().body).getString("newEmail"))
+        }
     }
 
     @Test fun savesEmailAndRequiresMatchingPasswordConfirmation() {

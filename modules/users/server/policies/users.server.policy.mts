@@ -15,6 +15,7 @@ type UsersRequest = PolicyRequest & {
 const read = ['get'];
 const authoriseRoute = createRouteAuthorisation({
   '/api/users': { user: ['get', 'put', 'delete'] },
+  '/api/users/email-change': { user: ['post', 'delete'] },
   '/api/users/me/safety-visit': { user: ['put'] },
   '/api/users/export': { user: read },
   '/api/users/activity': { user: read },

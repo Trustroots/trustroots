@@ -15,6 +15,10 @@ import { challenge } from '../controllers/users.nostr.server.controller.mts';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
 import userMfa from './../controllers/users.mfa.server.controller.mjs';
 import userActivity from './../controllers/users.activity.server.controller.mts';
+import {
+  cancel,
+  stage,
+} from '../controllers/users.email-change.server.controller.mts';
 
 function setActivityResponseHeaders(
   _req: unknown,
@@ -56,6 +60,12 @@ export default function (app: RouteApplication) {
     .get(userProfile.search)
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
+
+  app
+    .route('/api/users/email-change')
+    .all(usersPolicy.isAllowed)
+    .post(targetedRequestLimit.emailChange, stage)
+    .delete(cancel);
 
   app
     .route('/api/users/me/safety-visit')

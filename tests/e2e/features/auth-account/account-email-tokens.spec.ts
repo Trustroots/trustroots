@@ -96,7 +96,7 @@ test.describe.serial('auth email and token feature coverage', () => {
     expect(confirm.status()).toBe(400);
   });
 
-  test('email change can be cancelled from account settings', async ({
+  test('email change can be staged with current credentials and cancelled from account settings', async ({
     page,
     request,
   }, testInfo) => {
@@ -104,16 +104,27 @@ test.describe.serial('auth email and token feature coverage', () => {
       'Valid confirmation token can be validated.',
     ]);
     const member = createUser();
+    const newEmail = createUser().email;
     await registerViaApi(request, member);
-    const token = await findActionToken(member.username, 'emailToken');
     await updateUserByUsername(member.username, {
-      $set: { public: true, emailTemporary: 'cancelled@example.org' },
+      $set: { public: true },
     });
     await signInViaApi(page, request, member);
     await page.goto('/profile/edit/account');
+    await page.getByLabel('Email Address').fill(newEmail);
+    await page
+      .getByLabel('Current password for email change')
+      .fill(member.password);
+    await page
+      .getByRole('button', { name: 'Change email', exact: true })
+      .click();
     await expect(
-      page.getByText('Pending email change: cancelled@example.org'),
+      page.getByText(`Pending email change: ${newEmail}`),
     ).toBeVisible();
+    const pending = (await findUserByUsername(member.username))!;
+    expect(pending.email).toBe(member.email);
+    expect(pending.emailTemporary).toBe(newEmail);
+    const token = await findActionToken(member.username, 'emailToken');
     await page.getByRole('button', { name: 'Cancel email change' }).click();
     await expect(
       page.getByText(

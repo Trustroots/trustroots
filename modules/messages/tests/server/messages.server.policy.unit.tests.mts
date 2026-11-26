@@ -14,6 +14,8 @@ describe('Messages policy unit tests', () => {
       'user GET /api/messages/:messageUserId',
       'user POST /api/messages-preview',
       'admin POST /api/messages-preview',
+      'user GET /api/messages-hosting',
+      'admin GET /api/messages-hosting',
       'user POST /api/messages-read',
       'user GET /api/messages-count',
       'user GET /api/messages-sync',

@@ -12,6 +12,7 @@ import {
   cancelProfileRemoval,
   getProfileRemovalStatus,
   changePassword,
+  changeEmail,
   cancelEmailChange,
   removeProfile,
   resendEmailConfirmation,
@@ -50,6 +51,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [emailMessage, setEmailMessage] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [emailMfaCode, setEmailMfaCode] = useState('');
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [subscriptionMessage, setSubscriptionMessage] = useState('');
   const [isSavingSubscriptions, setIsSavingSubscriptions] = useState(false);
   const [isCancellingEmail, setIsCancellingEmail] = useState(false);
@@ -66,6 +70,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [verifyPassword, setVerifyPassword] = useState('');
   const removalRef = useRef<HTMLDivElement>(null);
   const hash = useLocation({ select: location => location.hash });
+  const emailConfirmed = draftUser.emailConfirmed ?? draftUser.public;
   const hasPendingEmail = Boolean(
     draftUser.emailTemporary &&
     (!draftUser.public || draftUser.emailTemporary !== user.email),
@@ -130,10 +135,18 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
 
   async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isChangingEmail || isCancellingEmail) return;
+    setIsChangingEmail(true);
     setEmailMessage('');
 
     try {
-      const savedUser = await update({ email: draftUser.email });
+      const savedUser = emailConfirmed
+        ? await changeEmail({
+            email: draftUser.email ?? '',
+            currentPassword: emailPassword,
+            ...(emailMfaCode.trim() && { mfaCode: emailMfaCode.trim() }),
+          })
+        : await update({ email: draftUser.email });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       track('profile_section_saved', { section: 'account' });
@@ -150,6 +163,10 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       });
       const { message } = readApiError(error);
       setEmailMessage(message || t('Something went wrong.'));
+    } finally {
+      setEmailPassword('');
+      setEmailMfaCode('');
+      setIsChangingEmail(false);
     }
   }
 
@@ -186,17 +203,15 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     setIsCancellingEmail(true);
     setEmailMessage('');
     try {
-      const { currentEmail } = await cancelEmailChange(
-        draftUser.emailTemporary!,
-      );
+      const savedUser = await cancelEmailChange(draftUser.emailTemporary!);
       setDraftUser(previous => ({
         ...previous,
-        email: currentEmail,
+        ...savedUser,
         emailTemporary: undefined,
       }));
       setUser(current => ({
         ...current,
-        email: currentEmail,
+        ...savedUser,
         emailTemporary: undefined,
       }));
       setEmailMessage(
@@ -320,6 +335,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                     type="email"
                     id="email"
                     value={draftUser.email || ''}
+                    disabled={isChangingEmail || isCancellingEmail}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setDraftUser(previous => ({
                         ...previous,
@@ -337,12 +353,44 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   )}
                 </div>
               </div>
+              {emailConfirmed && (
+                <div className="form-group">
+                  <label htmlFor="emailChangePassword">
+                    {t('Current password for email change')}
+                  </label>
+                  <Input
+                    type="password"
+                    id="emailChangePassword"
+                    autoComplete="current-password"
+                    required
+                    disabled={isChangingEmail || isCancellingEmail}
+                    value={emailPassword}
+                    onChange={event => setEmailPassword(event.target.value)}
+                  />
+                  {draftUser.mfaEnabled && (
+                    <>
+                      <label htmlFor="emailChangeMfaCode">
+                        {t('Authenticator or recovery code')}
+                      </label>
+                      <Input
+                        type="text"
+                        id="emailChangeMfaCode"
+                        autoComplete="one-time-code"
+                        required
+                        disabled={isChangingEmail || isCancellingEmail}
+                        value={emailMfaCode}
+                        onChange={event => setEmailMfaCode(event.target.value)}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
               <div className="form-group">
                 <div className="tw:sm:grid-push-3 tw:sm:grid-col-9">
                   <Button
                     type="submit"
                     intent="primary"
-                    disabled={isCancellingEmail}
+                    disabled={isChangingEmail || isCancellingEmail}
                   >
                     {t('Change email')}
                   </Button>
@@ -351,15 +399,15 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                       type="button"
 
                       onClick={handleResendConfirmation}
-                      disabled={isCancellingEmail}
+                      disabled={isChangingEmail || isCancellingEmail}
                     >
                       {t('Resend confirmation')}
                     </Button>
                   )}
-                  {draftUser.public && hasPendingEmail && (
+                  {emailConfirmed && hasPendingEmail && (
                     <Button
                       type="button"
-                      disabled={isCancellingEmail}
+                      disabled={isChangingEmail || isCancellingEmail}
                       onClick={handleCancelEmailChange}
                     >
                       {isCancellingEmail

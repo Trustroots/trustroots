@@ -91,6 +91,8 @@ export interface OwnProfile<
   lastName?: string;
   email?: string;
   emailTemporary?: string;
+  emailConfirmed?: boolean;
+  mfaEnabled?: boolean;
   newsletter?: boolean;
   messageEmailFrequency?: MessageEmailFrequency;
   hostingReminderEmails?: boolean;

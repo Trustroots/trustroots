@@ -67,6 +67,7 @@ function loadMiddleware(
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       passwordChange: { windowMs: 900_000, ipLimit: 0, identityLimit: 3 },
+      emailChange: { windowMs: 900_000, ipLimit: 0, identityLimit: 6 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       manageSessions: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },

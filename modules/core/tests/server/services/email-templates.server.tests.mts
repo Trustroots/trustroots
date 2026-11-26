@@ -11,7 +11,8 @@ import emailService, {
  * changes show up in review. Run with `-u` to accept an intended change.
  */
 
-type Rendered = { text: string; html?: string };
+type Rendered =
+  import('../../../server/services/email.server.service.mts').RenderedEmail;
 type Send = (callback: (error?: unknown) => void) => void;
 
 const snapshots = './__snapshots__/emails/';
@@ -120,6 +121,12 @@ const emails: Record<string, Send> = {
     emailService.sendResetPasswordConfirm(ada, done),
   'email-confirmation': done =>
     emailService.sendChangeEmailConfirmation(ada, done),
+  'email-change-notification': done =>
+    emailService.sendEmailChangeNotification(
+      ada,
+      new Date('2026-11-26T06:00:00Z'),
+      done,
+    ),
   signup: done => emailService.sendSignupEmailConfirmation(ada, done),
   'flagged-signup-alert': done =>
     emailService.sendFlaggedSignupAlert(ada, ['scam', 'crypto <x>'], done),
@@ -269,6 +276,21 @@ describe('Email templates', function () {
         );
     });
   }
+
+  it('addresses the change notice to the current address without the pending address or token', async () => {
+    await new Promise<void>((resolve, reject) =>
+      emails['email-change-notification'](error =>
+        error ? reject(error) : resolve(),
+      ),
+    );
+    const [email] = sent;
+    expect(email.to.address).toBe(ada.email);
+    const rendered = email.text + email.html;
+    expect(rendered).not.toContain(ada.emailTemporary);
+    expect(rendered).not.toContain(ada.emailToken);
+    expect(rendered).not.toContain('/confirm-email/');
+    expect(rendered).toContain('2026-11-26 06:00 UTC');
+  });
 
   it('renders the layout around the content', async function () {
     await new Promise(resolve => emails['messages-unread-many'](resolve));

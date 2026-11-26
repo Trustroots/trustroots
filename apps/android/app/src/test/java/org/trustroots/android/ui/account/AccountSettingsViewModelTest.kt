@@ -1062,6 +1062,36 @@ class AccountSettingsViewModelTest {
         }
     }
 
+    @Test fun emailChangeWithMfaKeepsTheCurrentAddressAndCanCancelThePendingAddress() {
+        val details = AccountDetails(
+            "quiet-fox", "Quiet Fox", "member@example.test",
+            emailConfirmed = true, mfaEnabled = true,
+        )
+        val repository = FakeRepository().apply { detailsResult = Result.success(details) }
+        val viewModel = model(repository)
+
+        viewModel.onEvent(AccountEvent.OpenEmailChange)
+        viewModel.onEvent(AccountEvent.EmailChangeAddressChanged("new@example.test"))
+        viewModel.onEvent(AccountEvent.EmailChangePasswordChanged("fictional-password"))
+        viewModel.onEvent(AccountEvent.SubmitEmailChange)
+        assertNull(repository.emailChange)
+
+        viewModel.onEvent(AccountEvent.EmailChangeCodeChanged("fictional-recovery"))
+        viewModel.onEvent(AccountEvent.SubmitEmailChange)
+        assertEquals(
+            Triple("new@example.test", "fictional-password", "fictional-recovery"),
+            repository.emailChange,
+        )
+        assertEquals("member@example.test", viewModel.state.value.email)
+        assertEquals("new@example.test", viewModel.state.value.details?.emailTemporary)
+        assertNull(viewModel.state.value.emailChange)
+        assertEquals(0, repository.updateCalls)
+
+        viewModel.onEvent(AccountEvent.CancelPendingEmailChange)
+        assertEquals("new@example.test", repository.cancelledEmailChange)
+        assertNull(viewModel.state.value.details?.emailTemporary)
+    }
+
     @Test fun retainsInitialLoadWhenTheBearerSessionHasNotChanged() {
         val pending = CompletableDeferred<Result<AccountDetails>>()
         val repository = FakeRepository().apply { detailsHandler = { pending.await() } }
@@ -1106,6 +1136,8 @@ class AccountSettingsViewModelTest {
         var currentCookie: String? = null
         var updatedEmail: String? = null
         var updatedNewsletter: Boolean? = null
+        var emailChange: Triple<String, String, String>? = null
+        var cancelledEmailChange: String? = null
         var passwordCurrent: String? = null
         var passwordNew: String? = null
         var passwordVerify: String? = null
@@ -1145,6 +1177,16 @@ class AccountSettingsViewModelTest {
             passwordVerify = verify
             passwordHandler?.let { return it(current, new, verify) }
             return passwordResult
+        }
+
+        override suspend fun requestEmailChange(email: String, password: String, code: String): Result<AccountDetails> {
+            emailChange = Triple(email, password, code)
+            return detailsResult.map { it.copy(emailTemporary = email) }
+        }
+
+        override suspend fun cancelEmailChange(email: String): Result<AccountDetails> {
+            cancelledEmailChange = email
+            return detailsResult.map { it.copy(emailTemporary = null) }
         }
 
         override suspend fun signOut(): Result<Unit> {

@@ -163,6 +163,12 @@
     <string name="screen_email_confirmation_pending">Email confirmation is pending for %1$s.</string>
     <string name="screen_account_saved">Account saved.</string>
     <string name="screen_save_email_settings">Save email settings</string>
+    <string name="screen_save_newsletter_preference">Save newsletter preference</string>
+    <string name="screen_change_email">Change email</string>
+    <string name="screen_new_email_address">New email address</string>
+    <string name="screen_email_change_authenticator_code">Authenticator or recovery code</string>
+    <string name="screen_send_email_confirmation">Send confirmation email</string>
+    <string name="screen_cancel_email_change">Cancel pending email change</string>
     <string name="screen_change_password">Change password</string>
     <string name="screen_password_changed">Password changed.</string>
     <string name="screen_forgot_your_password">Forgot your password?</string>

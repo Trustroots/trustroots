@@ -28,6 +28,7 @@ const support =
   require('../../../support/server/controllers/support.server.controller.mts').default;
 const userPassword =
   require('../../../users/server/controllers/users.password.server.controller.mts').default;
+const emailChange = require('../../../users/server/controllers/users.email-change.server.controller.mts');
 const resourcePolicy = require('../middleware/mobile-resource-policy.server.middleware.cjs');
 const offersPolicy =
   require('../../../offers/server/policies/offers.server.policy.mts').default;
@@ -372,6 +373,14 @@ module.exports = function (app) {
       resourcePolicy(messagesPolicy.isAllowed, '/api/messages'),
       messages.send,
     );
+  app
+    .route('/api/mobile/v0/messages-hosting')
+    .get(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(messagesPolicy.isAllowed, '/api/messages-hosting'),
+      messages.hostingContext,
+    );
   app.route('/api/mobile/v0/messages/:memberId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,
@@ -419,6 +428,15 @@ module.exports = function (app) {
     resourcePolicy(usersPolicy.isAllowed, '/api/users/nostr/challenge'),
     nostrChallenge,
   );
+  app
+    .route('/api/mobile/v0/account/email-change')
+    .all(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/email-change'),
+    )
+    .post(targetedRequestLimit.emailChange, emailChange.stage)
+    .delete(emailChange.cancel);
   app
     .route('/api/mobile/v0/account/password')
     .post(

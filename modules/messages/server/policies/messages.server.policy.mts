@@ -10,6 +10,7 @@ const authoriseRoute = createRouteAuthorisation({
   '/api/messages': { user: ['get', 'post'] },
   '/api/messages/:messageUserId': { user: ['get'] },
   '/api/messages-preview': { admin: ['post'], user: ['post'] },
+  '/api/messages-hosting': { admin: ['get'], user: ['get'] },
   '/api/messages-read': { user: ['post'] },
   '/api/messages-count': { user: ['get'] },
   '/api/messages-sync': { user: ['get'] },

@@ -23,6 +23,8 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.HostingDetails
+import org.trustroots.android.api.HostingContext
 import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
@@ -30,10 +32,91 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.UiFailure
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class MessageConversationViewModelTest {
+    @Test
+    fun repositoryDefaultHostingContextFailsClosed() = withScope { _ ->
+        val repository = object : MessageConversationRepository by FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ) {
+            override suspend fun hostingContext(memberID: String) =
+                super<MessageConversationRepository>.hostingContext(memberID)
+        }
+
+        val result = kotlinx.coroutines.runBlocking { repository.hostingContext("member-owl") }
+        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
+    }
+
+    @Test
+    fun quickReplyVisibilityShortCircuitsForUnloadedFailedOrOutgoingThreads() {
+        assertFalse(
+            MessageConversationUiState(messages = listOf(incoming), currentUsername = "steady-heron")
+                .showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(incoming),
+                messagesLoaded = true,
+                loadFailed = true,
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(incoming),
+                messagesLoaded = true,
+                failure = UiFailure(fallback = UiFailureFallback.LOAD_CONVERSATION),
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                messages = listOf(sent, incoming),
+                messagesLoaded = true,
+                currentUsername = "steady-heron",
+            ).showQuickReply,
+        )
+    }
+
+    @Test
+    fun hostingComposerReadinessRejectsEachIncompleteRequirement() {
+        assertFalse(MessageConversationUiState(hostingContextLoaded = false).hostingComposerReady)
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingContextLoading = true)
+                .hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingContextError = true)
+                .hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(
+                hostingContextLoaded = true,
+                hostingAckRequired = true,
+                hostingDescriptionAcknowledged = false,
+            ).hostingComposerReady,
+        )
+        assertFalse(
+            MessageConversationUiState(hostingContextLoaded = true, hostingGuests = "0")
+                .hostingComposerReady,
+        )
+        assertTrue(
+            MessageConversationUiState(
+                hostingContextLoaded = true,
+                hostingAckRequired = true,
+                hostingDescriptionAcknowledged = true,
+                hostingGuests = "2",
+                hostingArrival = "2027-05-01",
+                hostingDeparture = "2027-05-04",
+            ).hostingComposerReady,
+        )
+    }
+
     @Test
     fun factoryRejectsAnUnrelatedViewModelType() {
         val repository = FakeConversationRepository(
@@ -401,6 +484,191 @@ class MessageConversationViewModelTest {
         model.onEvent(MessageConversationEvent.QuickReply(localizedPayload))
 
         assertEquals(localizedPayload, repository.sentContent)
+        assertNull(repository.sentHostingDetails)
+        assertFalse(repository.sentHostingDescriptionAcknowledged)
+    }
+
+    @Test
+    fun hostingModeLoadsContextAndSendsValidatedVisitDetails() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.success(HostingContext("A fictional hosting description.", true))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals("A fictional hosting description.", model.state.value.hostingDescription)
+        model.onEvent(MessageConversationEvent.HostingAcknowledgementChanged(true))
+        model.onEvent(MessageConversationEvent.HostingGuestsChanged("2"))
+        model.onEvent(MessageConversationEvent.HostingArrivalChanged("2027-05-01"))
+        model.onEvent(MessageConversationEvent.HostingDepartureChanged("2027-05-04"))
+        model.onEvent(MessageConversationEvent.Send("A fictional visit request."))
+
+        assertEquals(1, repository.sendCalls)
+        assertEquals(HostingDetails(2, "2027-05-01", "2027-05-04"), repository.sentHostingDetails)
+        assertTrue(repository.sentHostingDescriptionAcknowledged)
+        assertFalse(model.state.value.hostingMode)
+    }
+
+    @Test
+    fun quickReplyWhileHostingModeIsOrdinaryAndDoesNotRequireHostingContext() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.success(HostingContext("A fictional hosting description.", true))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        model.onEvent(MessageConversationEvent.QuickReply("A fictional ordinary reply."))
+
+        assertEquals("A fictional ordinary reply.", repository.sentContent)
+        assertNull(repository.sentHostingDetails)
+        assertFalse(repository.sentHostingDescriptionAcknowledged)
+    }
+
+    @Test
+    fun staleHostingAcknowledgementReloadsDescriptionAndKeepsDraftAndVisitDates() = withScope { scope ->
+        var contextCalls = 0
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                contextCalls++
+                Result.success(HostingContext("Updated fictional requirements.", true))
+            }
+            hostingSendHandler = { _, _ ->
+                Result.failure(
+                    MobileApiException(
+                        400,
+                        "Please acknowledge.",
+                        code = "hosting-description-acknowledgement-required",
+                    ),
+                )
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        model.onEvent(MessageConversationEvent.HostingAcknowledgementChanged(true))
+        model.onEvent(MessageConversationEvent.HostingGuestsChanged("3"))
+        model.onEvent(MessageConversationEvent.HostingArrivalChanged("2027-06-01"))
+        model.onEvent(MessageConversationEvent.HostingDepartureChanged("2027-06-04"))
+        model.onEvent(MessageConversationEvent.DraftChanged("Keep the fictional message"))
+        model.onEvent(MessageConversationEvent.Send("Keep the fictional message"))
+
+        assertEquals(2, contextCalls)
+        assertEquals("Updated fictional requirements.", model.state.value.hostingDescription)
+        assertTrue(model.state.value.hostingAcknowledgementStale)
+        assertFalse(model.state.value.hostingDescriptionAcknowledged)
+        assertEquals("Keep the fictional message", model.state.value.draft)
+        assertEquals("3", model.state.value.hostingGuests)
+        assertEquals("2027-06-01", model.state.value.hostingArrival)
+        assertEquals("2027-06-04", model.state.value.hostingDeparture)
+    }
+
+    @Test
+    fun hostingContextLoadWaitsForMemberAndReusesAlreadyLoadedContext() = withScope { scope ->
+        val memberLookup = CompletableDeferred<Result<ConversationRecipient>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            memberHandler = { memberLookup.await() }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(0, repository.hostingContextLookups)
+
+        memberLookup.complete(Result.success(member))
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(1, repository.hostingContextLookups)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(false))
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals(1, repository.hostingContextLookups)
+    }
+
+    @Test
+    fun hostingContextRetryIsIgnoredWhileAnotherLoadIsPending() = withScope { scope ->
+        val contextResult = CompletableDeferred<Result<HostingContext>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = { contextResult.await() }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertTrue(model.state.value.hostingContextLoading)
+        model.onEvent(MessageConversationEvent.RetryHostingContext)
+        assertEquals(1, repository.hostingContextLookups)
+
+        contextResult.complete(Result.success(HostingContext("A fictional description.", false)))
+        assertTrue(model.state.value.hostingContextLoaded)
+        assertFalse(model.state.value.hostingContextLoading)
+    }
+
+    @Test
+    fun hostingContextAuthenticationFailureInvalidatesTheSession() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.failure(MobileApiException(401, "A fictional session expired."))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+
+        assertTrue(model.state.value.pendingSessionInvalidation != null)
+        assertFalse(model.state.value.hostingContextError)
+        assertFalse(model.state.value.hostingContextLoading)
+    }
+
+    @Test
+    fun invalidHostingDetailsPreventSendingAndBlankDatesRemainOptional() = withScope { scope ->
+        val invalidRepository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val invalidModel = MessageConversationViewModel("member-owl", invalidRepository, session(), scope)
+        invalidModel.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        invalidModel.onEvent(MessageConversationEvent.HostingGuestsChanged("0"))
+        invalidModel.onEvent(MessageConversationEvent.Send("A fictional visit request."))
+        assertEquals(0, invalidRepository.sendCalls)
+
+        val optionalDateRepository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val optionalDateModel = MessageConversationViewModel(
+            "member-owl",
+            optionalDateRepository,
+            session(),
+            scope,
+        )
+        optionalDateModel.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        optionalDateModel.onEvent(MessageConversationEvent.Send("A fictional open-ended visit."))
+        assertEquals(1, optionalDateRepository.sendCalls)
+        assertEquals(HostingDetails(1, null, null), optionalDateRepository.sentHostingDetails)
     }
 
     @Test
@@ -583,6 +851,7 @@ class MessageConversationViewModelTest {
     fun lateSendFromPreviousCredentialsCannotClearTheRetainedDraftOrReplaceMessages() = withScope { scope ->
         val lateSend = CompletableDeferred<Result<DirectMessage>>()
         var sendCalls = 0
+        var hostingContextLookups = 0
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
         )
@@ -712,9 +981,18 @@ class MessageConversationViewModelTest {
         var clearedDraftKey: Pair<String, String>? = null
         var sentContent: String? = null
         var sendCalls = 0
+        var hostingContextLookups = 0
+        var sentHostingDetails: HostingDetails? = null
+        var sentHostingDescriptionAcknowledged = false
         var memberHandler: suspend (String) -> Result<ConversationRecipient> = { memberResult }
         var messagesHandler: suspend (String) -> Result<List<DirectMessage>> = { messagesResult }
+        var hostingContextHandler: suspend (String) -> Result<HostingContext> = {
+            Result.success(HostingContext("A fictional description.", false))
+        }
         var sendHandler: suspend (String, String) -> Result<DirectMessage> = { _, _ -> sendResult }
+        var hostingSendHandler: suspend (String, String) -> Result<DirectMessage> = { id, content ->
+            sendHandler(id, content)
+        }
 
         override fun updateApi(api: MobileApiClient): Boolean {
             val changed = currentApi?.backendURL?.let { it != api.backendURL } ?: false
@@ -732,10 +1010,23 @@ class MessageConversationViewModelTest {
             return messagesHandler(memberID)
         }
 
-        override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
+        override suspend fun hostingContext(memberID: String): Result<HostingContext> {
+            hostingContextLookups++
+            return hostingContextHandler(memberID)
+        }
+
+        override suspend fun send(
+            memberID: String,
+            content: String,
+            hostingDetails: HostingDetails?,
+            hostingDescriptionAcknowledged: Boolean,
+        ): Result<DirectMessage> {
+            sentHostingDetails = hostingDetails
+            sentHostingDescriptionAcknowledged = hostingDescriptionAcknowledged
             sentContent = content
             sendCalls++
-            return sendHandler(memberID, content)
+            return if (hostingDetails == null) sendHandler(memberID, content)
+            else hostingSendHandler(memberID, content)
         }
 
         override fun loadDraft(selfUsername: String, otherKey: String): String {
@@ -781,7 +1072,12 @@ class MessageConversationViewModelTest {
     private companion object {
         val member = ConversationRecipient("member-owl", "steady-owl", "Steady Owl")
         val incomingSender = MessageMember(member.id, member.username, member.displayName)
-        val incoming = DirectMessage("incoming-message", "A fictional incoming note", incomingSender)
+        val incoming = DirectMessage(
+            "incoming-message",
+            "A fictional incoming note",
+            incomingSender,
+            hostingDetails = HostingDetails(1),
+        )
         val sent = DirectMessage("sent-message", "A fictional sent note", MessageMember("self", "steady-heron", "Steady Heron"))
     }
 }

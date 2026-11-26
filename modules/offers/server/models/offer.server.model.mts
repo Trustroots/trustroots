@@ -177,6 +177,10 @@ const OfferSchema = new Schema<OfferServerRecord>({
     type: Boolean,
     default: false,
   },
+  requireHostingDescriptionAcknowledgement: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Geospatial index (lat,lon)

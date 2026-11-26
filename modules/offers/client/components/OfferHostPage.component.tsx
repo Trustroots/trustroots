@@ -37,6 +37,7 @@ interface HostOffer {
   meetingStatus: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles: boolean;
   volunteering: boolean;
+  requireHostingDescriptionAcknowledgement: boolean;
 }
 
 interface HostPageProps {
@@ -57,6 +58,7 @@ function defaultHostOffer(): HostOffer {
     meetingStatus: 'not-set',
     showOnlyInMyCircles: false,
     volunteering: false,
+    requireHostingDescriptionAcknowledgement: false,
   };
 }
 
@@ -161,6 +163,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
         maxGuests: draft.maxGuests,
         meetingStatus: draft.meetingStatus,
         volunteering: draft.volunteering,
+        requireHostingDescriptionAcknowledgement:
+          draft.requireHostingDescriptionAcknowledgement,
         showOnlyInMyCircles: draft.showOnlyInMyCircles,
         location: coordinates,
       };
@@ -447,6 +451,32 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   rows={8}
                   value={offer.description || ''}
                 />
+                <div className="tw:mt-3">
+                  <label className="tw:flex tw:items-start tw:gap-2 tw:py-1.5 tw:text-start tw:max-sm:min-h-11 tw:max-sm:px-1.5">
+                    <input
+                      className="tw:mt-[0.15em] tw:size-4 tw:flex-none tw:accent-brand-primary"
+                      aria-describedby="hostingAcknowledgementHelp"
+                      checked={offer.requireHostingDescriptionAcknowledgement}
+                      onChange={({ target: { checked } }) =>
+                        setOffer(current => ({
+                          ...current,
+                          requireHostingDescriptionAcknowledgement: checked,
+                        }))
+                      }
+                      type="checkbox"
+                    />
+                    <span>
+                      Require guests to acknowledge my hosting description
+                      before sending their first hosting message in a
+                      conversation.
+                    </span>
+                  </label>
+                  <p className="help-block" id="hostingAcknowledgementHelp">
+                    Ordinary messages do not require acknowledgement. An
+                    acknowledgement does not prove someone has read or
+                    understood your requirements.
+                  </p>
+                </div>
                 <fieldset className="offer-circle-settings">
                   <legend>
                     <h4>Available only in my circles?</h4>

@@ -1014,7 +1014,7 @@ describe('User profile CRUD tests', function () {
       })
       .catch(done);
   });
-  it('should not be able to update profile details with existing email', function (done) {
+  it('rejects requesting an email already held by another member', function (done) {
     const _user2 = _user;
     _user2.username = 'user2username';
     _user2.email = 'user2_email@example.org';
@@ -1040,12 +1040,11 @@ describe('User profile CRUD tests', function () {
               return done(signinErr);
             }
             const userUpdate = {
-              firstName: 'user_update_first',
-              lastName: 'user_update_last',
               email: user.email,
+              currentPassword: credentials2.password,
             };
             agent
-              .put('/api/users')
+              .post('/api/users/email-change')
               .send(userUpdate)
               .expect(403)
               .end(function (userInfoErr, userInfoRes) {

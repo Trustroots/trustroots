@@ -38,6 +38,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.HostingDetails
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
@@ -191,6 +192,7 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
                         id = "fictional-incoming-message",
                         content = "Can you host?",
                         sender = MessageMember("fictional-member-id", "quiet-fox", "Quiet Fox"),
+                        hostingDetails = HostingDetails(guests = 1),
                     ),
                 ),
             ),
@@ -251,7 +253,12 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
             return history.await()
         }
 
-        override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
+        override suspend fun send(
+            memberID: String,
+            content: String,
+            hostingDetails: HostingDetails?,
+            hostingDescriptionAcknowledged: Boolean,
+        ): Result<DirectMessage> {
             sendCalls.incrementAndGet()
             sendStarted.complete(Unit)
             return sendResult.await()

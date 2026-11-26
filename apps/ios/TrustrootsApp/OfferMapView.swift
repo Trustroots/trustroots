@@ -1,19 +1,22 @@
 import MapKit
 import SwiftUI
+import TrustrootsShared
+import UIKit
+
+private enum SearchMode: String, Hashable {
+    case map
+    case results
+    case members
+}
 
 struct OfferMapView: View {
-    private enum SearchMode: Hashable {
-        case map
-        case results
-        case members
-    }
-
     @ObservedObject var session: MemberSessionStore
     let searchLocation: String?
     @State private var position = MapCameraPosition.region(.initialTrustrootsRegion)
     @State private var visibleRegion = MKCoordinateRegion.initialTrustrootsRegion
     @State private var offers: [MapOffer] = []
     @State private var isLoading = false
+    @State private var mapStatusHeight: CGFloat = 1
     @State private var errorMessage: String?
     @State private var selectedHost: (offer: HostOffer, mapType: String)?
     @State private var isLoadingHost = false
@@ -24,8 +27,9 @@ struct OfferMapView: View {
     @State private var connectionsOnly = false
     @State private var selectedLanguages: Set<String> = []
     @State private var searchMode = SearchMode.map
-    @State private var placeQuery = ""
-    @State private var placeSearchFailed = false
+    @State private var searchDisplayHeight: CGFloat = 50
+    @State private var placeSearch = OfferPlaceSearchState()
+    @State private var placeSearchHeight: CGFloat = 124
     @State private var showingCommunityNotes = true
     @State private var activityMonths: Int? = 6
     @State private var circles: [TrustrootsCircle] = []
@@ -48,14 +52,10 @@ struct OfferMapView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Search display", selection: $searchMode) {
-                    Text("Map").tag(SearchMode.map)
-                    Text("Results").tag(SearchMode.results)
-                    Text("Members").tag(SearchMode.members)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                SearchDisplayController(selection: $searchMode, height: $searchDisplayHeight)
+                    .frame(height: searchDisplayHeight)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
 
                 ZStack {
                     switch searchMode {
@@ -186,73 +186,34 @@ struct OfferMapView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            VStack(alignment: .trailing, spacing: 8) {
-                if isLoading || !offers.isEmpty {
-                    HStack(spacing: 6) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Circle()
-                                .fill(resultCountColor)
-                                .frame(width: 9, height: 9)
-                        }
-                        Text(isLoading ? "Searching this area…" : resultCountLabel)
-                            .font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-                }
-                if !isLoading && !offers.isEmpty {
-                    MapOfferLegend(
-                        showingHosts: showingHosts,
-                        showingMeet: showingMeet,
-                        showingCommunityNotes: showsNotes
-                    )
-                }
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background(.red.opacity(0.9))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
+            if isLoading || !offers.isEmpty || errorMessage != nil {
+                MapOfferStatusController(
+                    isLoading: isLoading,
+                    countLabel: offers.isEmpty ? nil : resultCountLabel,
+                    legend: mapLegend,
+                    error: errorMessage,
+                    height: $mapStatusHeight
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: mapStatusHeight)
+                .clipped()
+                .padding(.leading, 54)
+                .padding(.trailing, 12)
+                .padding(.top, 5)
+                .allowsHitTesting(false)
             }
-            .padding(.top, 5)
-            .padding(.trailing, 12)
         }
         .overlay(alignment: .topLeading) {
             VStack(spacing: 8) {
-                Button {
+                MapOfferActionController(action: .filters, symbol: "slider.horizontal.3") {
                     showingFilters = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(9)
-                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                 }
-                .accessibilityLabel("Search filters")
+                .frame(width: 44, height: 44)
 
-                Button {
+                MapOfferActionController(action: .currentlocation, symbol: "location.fill") {
                     currentLocation.useCurrentLocation()
-                } label: {
-                    Image(systemName: "location.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(9)
-                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                 }
-                .accessibilityLabel("Use current location")
+                .frame(width: 44, height: 44)
             }
             .padding(.leading, 5)
             .padding(.top, 3)
@@ -262,18 +223,13 @@ struct OfferMapView: View {
     private var resultsView: some View {
         List {
             Section {
-                TextField("Search for a place", text: $placeQuery)
-                    .submitLabel(.search)
-                    .onSubmit {
-                        let query = placeQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !query.isEmpty {
-                            Task { await focus(on: query) }
-                        }
-                    }
-                if placeSearchFailed {
-                    Text("Could not find that place.").foregroundStyle(.red)
-                }
-                Button("Search filters") { showingFilters = true }
+                OfferPlaceSearchController(
+                    state: placeSearch,
+                    onSearch: { query in Task { await focus(on: query) } },
+                    onFilters: { showingFilters = true },
+                    height: $placeSearchHeight
+                )
+                .frame(height: placeSearchHeight)
             }
             Section("Offers in this area") {
                 if isLoading {
@@ -339,8 +295,16 @@ struct OfferMapView: View {
         "\(offers.count) offers in this area"
     }
 
-    private var resultCountColor: Color {
-        TrustrootsPalette.hostYes
+    private var mapLegend: [MapLegendSwatch] {
+        guard !isLoading, !offers.isEmpty else { return [] }
+        var legend: [MapLegendSwatch] = []
+        if showingHosts {
+            legend.append(MapLegendSwatch(label: "Hosting", colour: TrustrootsPalette.hostYes))
+            legend.append(MapLegendSwatch(label: "Maybe", colour: TrustrootsPalette.hostMaybe))
+        }
+        if showingMeet { legend.append(MapLegendSwatch(label: "Meet", colour: .orange)) }
+        if showsNotes { legend.append(MapLegendSwatch(label: "Notes", colour: TrustrootsPalette.communityNote)) }
+        return legend
     }
 
     private func loadCircles() async {
@@ -350,11 +314,11 @@ struct OfferMapView: View {
     private func focus(on location: String) async {
         placeSearchGeneration += 1
         let generation = placeSearchGeneration
-        placeSearchFailed = false
+        placeSearch.updateFailure(failed: false)
         let placemark = try? await CLGeocoder().geocodeAddressString(location).first
         guard !Task.isCancelled, generation == placeSearchGeneration else { return }
         guard let coordinate = placemark?.location?.coordinate else {
-            placeSearchFailed = showingResults
+            placeSearch.updateFailure(failed: showingResults)
             return
         }
         selectedHost = nil
@@ -390,6 +354,87 @@ struct OfferMapView: View {
         } else if let offer = cluster.offers.first {
             await loadHost(for: offer)
         }
+    }
+}
+
+@MainActor
+private struct SearchDisplayController: UIViewControllerRepresentable {
+    @Binding var selection: SearchMode
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        let state = OfferSearchDisplayState()
+        var onSelect: ((String) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return OfferSearchDisplayControllerKt.OfferSearchDisplayViewController(
+            state: coordinator.state,
+            onSelect: { [weak coordinator] key in coordinator?.onSelect?(key) },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.state.update(selectedKey: selection.rawValue)
+        coordinator.onSelect = { key in
+            if let mode = SearchMode(rawValue: key) { selection = mode }
+        }
+    }
+}
+
+@MainActor
+private struct OfferPlaceSearchController: UIViewControllerRepresentable {
+    let state: OfferPlaceSearchState
+    let onSearch: (String) -> Void
+    let onFilters: () -> Void
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        var onSearch: ((String) -> Void)?
+        var onFilters: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return OfferPlaceSearchControllerKt.OfferPlaceSearchViewController(
+            state: state,
+            onSearch: { [weak coordinator] query in coordinator?.onSearch?(query) },
+            onFilters: { [weak coordinator] in coordinator?.onFilters?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onSearch = onSearch
+        coordinator.onFilters = onFilters
     }
 }
 
@@ -549,61 +594,182 @@ private struct HostMapDot: View {
     }
 }
 
-private struct MapOfferLegend: View {
-    let showingHosts: Bool
-    let showingMeet: Bool
-    let showingCommunityNotes: Bool
+private struct MapLegendSwatch {
+    let label: String
+    let colour: Color
+}
 
-    var body: some View {
-        HStack(spacing: 9) {
-            if showingHosts {
-                LegendItem(color: TrustrootsPalette.hostYes, label: "Hosting")
-                LegendItem(color: TrustrootsPalette.hostMaybe, label: "Maybe")
-            }
-            if showingMeet {
-                LegendItem(color: .orange, label: "Meet")
-            }
-            if showingCommunityNotes {
-                LegendItem(color: TrustrootsPalette.communityNote, label: "Notes")
-            }
+@MainActor
+private struct MapOfferStatusController: UIViewControllerRepresentable {
+    let isLoading: Bool
+    let countLabel: String?
+    let legend: [MapLegendSwatch]
+    let error: String?
+    @Binding var height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        let state = MapOfferStatusState()
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let state = context.coordinator.state
+        update(state)
+        let measuredHeight = $height
+        return MapOfferStatusViewControllerKt.MapOfferStatusViewController(
+            state: state,
+            onHeight: { applyMapContentHeight($0.doubleValue, to: measuredHeight) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator.state)
+    }
+
+    private func update(_ state: MapOfferStatusState) {
+        state.update(content: MapOfferStatusContent(
+            isLoading: isLoading,
+            countLabel: countLabel,
+            countMarkerArgb: mapColourArgb(TrustrootsPalette.hostYes, for: colorScheme),
+            legend: legend.map {
+                MapOfferLegendMarker(label: $0.label, argb: mapColourArgb($0.colour, for: colorScheme))
+            },
+            error: error
+        ))
+    }
+}
+
+@MainActor
+private struct MapOfferActionController: UIViewControllerRepresentable {
+    let action: OfferMapAction
+    let symbol: String
+    let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        var onTap: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        coordinator.onTap = onTap
+        let symbolName = symbol
+        return OfferMapActionViewControllerKt.OfferMapActionViewController(
+            action: action,
+            surfaceArgb: mapColourArgb(TrustrootsPalette.paleGreen.opacity(0.96), for: colorScheme),
+            onTap: { [weak coordinator] in coordinator?.onTap?() },
+            createIcon: { makeMapSymbol(symbolName, tint: UIColor(TrustrootsPalette.darkGreen)) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        context.coordinator.onTap = onTap
+    }
+}
+
+@MainActor
+private func makeMapSymbol(_ name: String, tint: UIColor) -> UIImageView {
+    let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+    let image = UIImage(systemName: name, withConfiguration: configuration)
+    let view = UIImageView(image: image?.withRenderingMode(.alwaysTemplate))
+    view.contentMode = .scaleAspectFit
+    view.tintColor = tint
+    view.isAccessibilityElement = false
+    view.isUserInteractionEnabled = false
+    return view
+}
+
+private func applyMapContentHeight(_ points: Double, to height: Binding<CGFloat>) {
+    let next = max(1, CGFloat(points))
+    Task { @MainActor in
+        if height.wrappedValue != next {
+            height.wrappedValue = next
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(.regularMaterial)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.1), radius: 3, y: 1)
+    }
+}
+
+private func mapColourArgb(_ colour: Color, for colorScheme: ColorScheme) -> Int64 {
+    let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+    let resolved = UIColor(colour).resolvedColor(with: traits)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return 0xFF808080 }
+    return [alpha, red, green, blue].reduce(Int64(0)) { result, component in
+        let byte = Int64((min(1, max(0, component)) * 255).rounded())
+        return (result << 8) | byte
+    }
+}
+
+struct CommunityNotePresentation {
+    let text: String
+    let attribution: String
+
+    init(note: CommunityNote) {
+        text = note.content
+        attribution = "via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))"
     }
 }
 
 private struct CommunityNoteCard: View {
     let note: CommunityNote
     let dismiss: () -> Void
+    @State private var height: CGFloat = 1
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "bubble.left.and.text.bubble.right.fill")
-                .foregroundStyle(.white)
-                .padding(9)
-                .background(TrustrootsPalette.communityNote)
-                .clipShape(Circle())
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Community Note")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(TrustrootsPalette.communityNote)
-                Text(note.content)
-                    .font(.subheadline)
-                    .lineLimit(4)
-                Text("via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button(action: dismiss) { Image(systemName: "xmark") }
-                .accessibilityLabel("Dismiss Community Note")
-        }
-        .padding(11)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        ComposeCommunityNoteCard(
+            presentation: CommunityNotePresentation(note: note),
+            onDismiss: dismiss,
+            height: $height
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
+    }
+}
+
+@MainActor
+private struct ComposeCommunityNoteCard: UIViewControllerRepresentable {
+    let presentation: CommunityNotePresentation
+    let onDismiss: () -> Void
+    @Binding var height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        let state = CommunityNoteCardState()
+        var onDismiss: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return CommunityNoteCardViewControllerKt.CommunityNoteCardViewController(
+            state: coordinator.state,
+            onDismiss: { [weak coordinator] in coordinator?.onDismiss?() },
+            onHeight: { applyMapContentHeight($0.doubleValue, to: measuredHeight) },
+            createIcon: { makeMapSymbol("bubble.left.and.text.bubble.right.fill", tint: .white) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onDismiss = onDismiss
+        coordinator.state.update(content: CommunityNoteCardContent(
+            text: presentation.text,
+            attribution: presentation.attribution,
+            markerArgb: mapColourArgb(TrustrootsPalette.communityNote, for: colorScheme)
+        ))
     }
 }
 
@@ -638,22 +804,6 @@ private struct CommunityNoteCluster: Identifiable {
                 longitudeDelta: max(region.span.longitudeDelta / 2, 0.08)
             )
         )
-    }
-}
-
-private struct LegendItem: View {
-    let color: Color
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 

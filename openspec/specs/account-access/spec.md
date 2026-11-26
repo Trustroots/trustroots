@@ -1030,7 +1030,7 @@ Account settings SHALL offer resending only for an unverified signup or a pendin
 
 ### Requirement: Cancel pending email changes
 
-Members SHALL be able to cancel an existing account's pending email change from account settings or a valid confirmation link. Cancellation SHALL atomically clear the matching pending email, token and expiry metadata while preserving the current email. Cancelled links SHALL no longer confirm an address. Signup activation SHALL not offer cancellation. Cancellation SHALL require either the valid unexpired token or an authenticated account matching the pending address, and SHALL reject stale requests without cancelling a newer change. Token cancellation SHALL not sign the visitor in.
+Members SHALL be able to cancel an existing account's pending email change from account settings or a valid confirmation link. Cancellation SHALL atomically clear the matching pending email, token and expiry metadata while preserving the current email. Cancelled links SHALL no longer confirm an address. Signup activation SHALL not offer cancellation. Cancellation SHALL require either the valid unexpired token or an authenticated account matching its pending address, token and authentication version when the request was authenticated. It SHALL reject stale requests without cancelling a newer change. Token cancellation SHALL not sign the visitor in.
 
 #### Scenario: Cancel from account settings
 
@@ -1047,6 +1047,29 @@ Members SHALL be able to cancel an existing account's pending email change from 
 
 - **WHEN** an old link or account settings request tries to cancel a superseded or confirmed change
 - **THEN** the request fails without changing the current or newer pending address
+
+### Requirement: Credential-confirmed account email changes
+
+The web, Android and iOS account settings SHALL require the current password to stage a different email address for a confirmed account. An enrolled member SHALL also provide an unused authenticator or recovery code. The server SHALL bind the write to the authenticated account and its current credential version. Unconfirmed members SHALL still be able to correct their signup email.
+
+#### Scenario: Request a change from account settings
+
+- **WHEN** a member supplies a different available address and valid current credentials
+- **THEN** the current address stays active and the proposed address becomes pending
+- **AND** the system queues the notification to the current address before publishing the pending token or queuing confirmation to the proposed address
+- **AND** the notification omits the proposed address and confirmation credential
+
+#### Scenario: An email cannot be queued
+
+- **WHEN** the security notification or confirmation email cannot be queued
+- **THEN** the system reports the failure and invalidates that pending request
+- **AND** a concurrent newer pending request is preserved
+
+#### Scenario: Confirm the current change
+
+- **WHEN** the current pending address is confirmed with its valid token
+- **THEN** the system atomically changes the address and increments the account credential version to invalidate older sessions
+- **AND** it carries forward MFA verification only for an already verified session of the same account
 
 ### Requirement: Member data export allowance
 

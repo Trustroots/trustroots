@@ -9,6 +9,7 @@ export type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'passwordChange'
+  | 'emailChange'
   | 'mfaVerify'
   | 'mfaManage'
   | 'resendConfirmation'
@@ -174,6 +175,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
     passwordChange: createLimiter('passwordChange', 'member', deps),
+    emailChange: createLimiter('emailChange', 'member', deps),
     mfaVerify: createLimiter('mfaVerify', 'mfaChallenge', deps),
     mfaManage: createLimiter('mfaManage', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),

@@ -94,6 +94,7 @@ const service = {
   sendResetPassword,
   sendResetPasswordConfirm,
   sendChangeEmailConfirmation,
+  sendEmailChangeNotification,
   sendSignupEmailConfirmation,
   sendFlaggedSignupAlert,
   sendSupportRequest,
@@ -395,6 +396,22 @@ function sendChangeEmailConfirmation(user: MailUser, callback: MailCallback) {
     sparkpostCampaign: campaign,
   });
   service.renderEmailAndSend('email-confirmation', params, callback);
+}
+function sendEmailChangeNotification(
+  user: MailUser,
+  issuedAt: Date,
+  callback: MailCallback,
+) {
+  const requestedAt =
+    issuedAt.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  const params = service.addEmailBaseTemplateParams({
+    subject: 'An email change was requested',
+    email: user.email,
+    name: user.displayName,
+    requestedAt,
+    sparkpostCampaign: 'email-change-notification',
+  });
+  service.renderEmailAndSend('email-change-notification', params, callback);
 }
 function sendSignupEmailConfirmation(user: MailUser, callback: MailCallback) {
   const urlConfirm =

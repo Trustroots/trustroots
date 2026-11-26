@@ -35,6 +35,8 @@ internal interface AccountRepository {
     fun updateSession(session: MemberSession): Boolean = false
     suspend fun details(): Result<AccountDetails>
     suspend fun update(email: String, newsletter: Boolean): Result<AccountDetails>
+    suspend fun requestEmailChange(email: String, password: String, code: String): Result<AccountDetails>
+    suspend fun cancelEmailChange(email: String): Result<AccountDetails>
     suspend fun changePassword(current: String, new: String, verify: String): Result<Unit>
     suspend fun signOut(): Result<Unit>
 }
@@ -61,6 +63,9 @@ internal class MobileApiAccountRepository(
 
     override suspend fun details() = api.accountDetails(session)
     override suspend fun update(email: String, newsletter: Boolean) = api.updateAccount(session, email, newsletter)
+    override suspend fun requestEmailChange(email: String, password: String, code: String) =
+        api.requestEmailChange(session, email, password, code)
+    override suspend fun cancelEmailChange(email: String) = api.cancelEmailChange(session, email)
     override suspend fun changePassword(current: String, new: String, verify: String) =
         api.changePassword(session, current, new, verify)
     override suspend fun signOut() = api.signOut(session)
@@ -145,6 +150,15 @@ internal sealed interface AccountEffect {
     data class SessionInvalidated(override val id: Long) : AccountEffect
 }
 
+internal data class EmailChangeDraft(
+    val email: String = "",
+    val password: String = "",
+    val code: String = "",
+) {
+    fun canSubmit(mfaEnabled: Boolean): Boolean =
+        email.isNotBlank() && password.isNotBlank() && (!mfaEnabled || code.isNotBlank())
+}
+
 internal data class AccountSettingsUiState(
     val details: AccountDetails? = null,
     val email: String = "",
@@ -154,6 +168,8 @@ internal data class AccountSettingsUiState(
     val verifyPassword: String = "",
     val isLoading: Boolean = false,
     val isSavingAccount: Boolean = false,
+    val emailChange: EmailChangeDraft? = null,
+    val isChangingEmail: Boolean = false,
     val isChangingPassword: Boolean = false,
     val isSigningOut: Boolean = false,
     val notice: AccountNotice? = null,
@@ -166,8 +182,9 @@ internal data class AccountSettingsUiState(
     val pendingEffect: AccountEffect? = null,
 ) {
     val isDirty: Boolean get() = details?.let { email != it.email || newsletter != it.newsletter } == true ||
-        currentPassword.isNotEmpty() || newPassword.isNotEmpty() || verifyPassword.isNotEmpty()
-    val isBusy: Boolean get() = isSavingAccount || isChangingPassword || isSigningOut
+        currentPassword.isNotEmpty() || newPassword.isNotEmpty() || verifyPassword.isNotEmpty() ||
+        emailChange?.let { it.email.isNotEmpty() || it.password.isNotEmpty() || it.code.isNotEmpty() } == true
+    val isBusy: Boolean get() = isSavingAccount || isChangingEmail || isChangingPassword || isSigningOut
 }
 
 internal sealed interface AccountEvent {
@@ -178,6 +195,13 @@ internal sealed interface AccountEvent {
     data class VerifyPasswordChanged(val value: String) : AccountEvent
     data object RetryLoad : AccountEvent
     data object SaveAccount : AccountEvent
+    data object OpenEmailChange : AccountEvent
+    data object CloseEmailChange : AccountEvent
+    data class EmailChangeAddressChanged(val value: String) : AccountEvent
+    data class EmailChangePasswordChanged(val value: String) : AccountEvent
+    data class EmailChangeCodeChanged(val value: String) : AccountEvent
+    data object SubmitEmailChange : AccountEvent
+    data object CancelPendingEmailChange : AccountEvent
     data object ChangePassword : AccountEvent
     data class ToggleMessageAlerts(val notificationPermissionGranted: Boolean) : AccountEvent
     data class NotificationPermissionResult(val target: AccountPermissionTarget, val granted: Boolean) : AccountEvent
@@ -268,6 +292,8 @@ internal class AccountSettingsViewModel(
                 current.copy(
                     isLoading = false,
                     isSavingAccount = false,
+                    emailChange = null,
+                    isChangingEmail = false,
                     isChangingPassword = false,
                     isSigningOut = false,
                     isCheckingUpdates = false,
@@ -318,6 +344,19 @@ internal class AccountSettingsViewModel(
             is AccountEvent.VerifyPasswordChanged -> mutableState.update { it.copy(verifyPassword = event.value) }
             AccountEvent.RetryLoad -> load()
             AccountEvent.SaveAccount -> saveAccount()
+            AccountEvent.OpenEmailChange -> mutableState.update {
+                if (it.details?.emailConfirmed == true && !it.isBusy) {
+                    it.copy(emailChange = EmailChangeDraft(), failure = null)
+                } else it
+            }
+            AccountEvent.CloseEmailChange -> mutableState.update {
+                if (it.isChangingEmail) it else it.copy(emailChange = null, failure = null)
+            }
+            is AccountEvent.EmailChangeAddressChanged -> updateEmailChangeDraft { copy(email = event.value) }
+            is AccountEvent.EmailChangePasswordChanged -> updateEmailChangeDraft { copy(password = event.value) }
+            is AccountEvent.EmailChangeCodeChanged -> updateEmailChangeDraft { copy(code = event.value) }
+            AccountEvent.SubmitEmailChange -> submitEmailChange()
+            AccountEvent.CancelPendingEmailChange -> cancelPendingEmailChange()
             AccountEvent.ChangePassword -> changePassword()
             is AccountEvent.ToggleMessageAlerts -> toggleMessageAlerts(event.notificationPermissionGranted)
             is AccountEvent.NotificationPermissionResult -> notificationPermissionResult(event)
@@ -343,7 +382,7 @@ internal class AccountSettingsViewModel(
         refreshPlatformSettings: Boolean = false,
     ) {
         val current = mutableState.value
-        if (sessionInvalidated || (resetState == null && current.isLoading)) return
+        if (sessionInvalidated || (resetState == null && (current.isLoading || current.isChangingEmail))) return
         accountRequest.launch {
             if (refreshPlatformSettings) {
                 refreshPlatformState(username)
@@ -371,7 +410,7 @@ internal class AccountSettingsViewModel(
 
     private fun saveAccount() {
         val current = mutableState.value
-        if (sessionInvalidated || current.isSavingAccount || current.email.isBlank()) return
+        if (sessionInvalidated || current.isSavingAccount || current.isChangingEmail || current.email.isBlank()) return
         accountRequest.launch {
             mutableState.update { it.copy(isSavingAccount = true, failure = null, notice = null) }
             requestResult { repository.update(current.email, current.newsletter) }.fold(
@@ -387,9 +426,52 @@ internal class AccountSettingsViewModel(
         }
     }
 
+    private fun updateEmailChangeDraft(update: EmailChangeDraft.() -> EmailChangeDraft) {
+        mutableState.update { current ->
+            val draft = current.emailChange
+            if (draft == null || current.isChangingEmail) current
+            else current.copy(emailChange = draft.update())
+        }
+    }
+
+    private fun submitEmailChange() {
+        val current = mutableState.value
+        val draft = current.emailChange ?: return
+        val details = current.details ?: return
+        if (details.emailConfirmed != true || !draft.canSubmit(details.mfaEnabled)) return
+        changeEmail { repository.requestEmailChange(draft.email, draft.password, draft.code) }
+    }
+
+    private fun cancelPendingEmailChange() {
+        val details = mutableState.value.details ?: return
+        val pending = details.emailTemporary ?: return
+        if (details.emailConfirmed != true) return
+        changeEmail { repository.cancelEmailChange(pending) }
+    }
+
+    private fun changeEmail(request: suspend () -> Result<AccountDetails>) {
+        val current = mutableState.value
+        if (sessionInvalidated || current.isBusy || current.isLoading) return
+        accountRequest.launch {
+            mutableState.update { it.copy(isChangingEmail = true, failure = null, notice = null) }
+            requestResult(request).fold(
+                onSuccess = { details ->
+                    mutableState.update {
+                        it.copy(details = details, email = details.email, emailChange = null, isChangingEmail = false)
+                    }
+                },
+                onFailure = { error ->
+                    mutableState.update { it.copy(isChangingEmail = false) }
+                    currentCoroutineContext().ensureActive()
+                    finishFailure(error, UiFailureFallback.ACCOUNT_SAVE)
+                },
+            )
+        }
+    }
+
     private fun changePassword() {
         val current = mutableState.value
-        if (sessionInvalidated || current.isChangingPassword || current.currentPassword.isBlank() ||
+        if (sessionInvalidated || current.isChangingEmail || current.isChangingPassword || current.currentPassword.isBlank() ||
             current.newPassword.isBlank() || current.newPassword != current.verifyPassword
         ) return
         passwordRequest.launch {

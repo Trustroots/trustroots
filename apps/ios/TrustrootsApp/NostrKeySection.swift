@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 import UIKit
 
 struct NostrKeySection: View {
@@ -19,20 +20,9 @@ struct NostrKeySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Nostr key").font(.headline)
-            Text("Your local key belongs to this Trustroots server and account. Your private key stays on this device.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Text("Profile-linked public key").font(.subheadline.weight(.semibold))
-            if profileLoaded {
-                if let linkedNpub, !linkedNpub.isEmpty {
-                    keyText(linkedNpub)
-                } else {
-                    Text("No linked public key.").foregroundStyle(.secondary)
-                }
-            } else {
-                Text("Profile key unavailable. Connect to load your profile.").foregroundStyle(.secondary)
+            NostrKeyStatusSection(status: .profile(loaded: profileLoaded, linked: linkedNpub?.isEmpty == false))
+            if profileLoaded, let linkedNpub, !linkedNpub.isEmpty {
+                keyText(linkedNpub)
             }
             if profileLoaded {
                 if let npub = identity.npub, npub != linkedNpub {
@@ -56,7 +46,7 @@ struct NostrKeySection: View {
                 if isUpdatingProfile { ProgressView("Updating profile key…") }
             }
 
-            Text("Local public key (npub)").font(.subheadline.weight(.semibold))
+            NostrKeyStatusSection(status: .local(hasKey: identity.npub != nil))
             if let npub = identity.npub {
                 keyText(npub).accessibilityIdentifier("nostr-local-public-key")
                 Button("Copy public key") { UIPasteboard.general.string = npub }
@@ -74,7 +64,6 @@ struct NostrKeySection: View {
                 Button("Remove local key", role: .destructive) { showingRemovalConfirmation = true }
                     .disabled(isUpdatingProfile)
             } else {
-                Text("No local key for this account.").foregroundStyle(.secondary)
                 if let legacyNpub = identity.legacyNpub {
                     Text("Unclaimed key from this installation").font(.subheadline.weight(.semibold))
                     keyText(legacyNpub)
@@ -189,4 +178,55 @@ struct NostrKeySection: View {
         do { try action(); errorMessage = nil }
         catch { errorMessage = error.localizedDescription }
     }
+}
+
+private struct NostrKeyStatusSection: View {
+    enum Status: Hashable {
+        case profile(loaded: Bool, linked: Bool)
+        case local(hasKey: Bool)
+    }
+
+    let status: Status
+    @State private var height: CGFloat = 1
+
+    var body: some View {
+        NostrKeyStatusController(status: status, height: $height)
+            .id(status)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+    }
+}
+
+@MainActor
+private struct NostrKeyStatusController: UIViewControllerRepresentable {
+    let status: NostrKeyStatusSection.Status
+    @Binding var height: CGFloat
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let measuredHeight = $height
+        func resize(to points: Double) {
+            let next = max(1, CGFloat(points))
+            Task { @MainActor in
+                if measuredHeight.wrappedValue != next {
+                    measuredHeight.wrappedValue = next
+                }
+            }
+        }
+        switch status {
+        case .profile(let loaded, let linked):
+            return MemberNostrKeyStatusViewControllerKt.MemberNostrProfileKeyStatusViewController(
+                profileLoaded: loaded,
+                hasLinkedKey: linked,
+                onHeight: { resize(to: $0.doubleValue) }
+            )
+        case .local(let hasKey):
+            return MemberNostrKeyStatusViewControllerKt.MemberNostrLocalKeyStatusViewController(
+                hasLocalKey: hasKey,
+                onHeight: { resize(to: $0.doubleValue) }
+            )
+        }
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }

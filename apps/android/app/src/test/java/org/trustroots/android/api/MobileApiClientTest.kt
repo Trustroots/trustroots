@@ -161,6 +161,66 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun fetchesHostingContextWithBearerCredentials() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val (result, request) = withApiResponse(
+            200,
+            """{"description":"A quiet room","acknowledgementRequired":true}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).hostingContext(session, "member-one") }
+        }
+        assertEquals(HostingContext("A quiet room", true), result.getOrThrow())
+        assertEquals("GET /api/mobile/v0/messages-hosting?userTo=member-one HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Authorization: Bearer example-access", ignoreCase = true) })
+    }
+
+    @Test
+    fun sendsAndDecodesOptionalHostingDetails() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val details = HostingDetails(2, "2027-04-01", "2027-04-04")
+        val (result, request) = withApiResponse(
+            200,
+            """{"_id":"message-one","content":"Hello","userFrom":{"username":"quiet-fox"},"hostingDetails":{"guests":2,"arrival":"2027-04-01","departure":"2027-04-04"}}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).sendMessage(session, "member-one", "Hello", details, true) }
+        }
+        val body = JSONObject(request.body)
+        assertEquals("POST /api/mobile/v0/messages HTTP/1.1", request.line)
+        assertTrue(body.getBoolean("hostingDescriptionAcknowledged"))
+        val sentDetails = body.getJSONObject("hostingDetails")
+        assertEquals(details.guests, sentDetails.getInt("guests"))
+        assertEquals(details.arrival, sentDetails.getString("arrival"))
+        assertEquals(details.departure, sentDetails.getString("departure"))
+        assertEquals(details, result.getOrThrow().hostingDetails)
+    }
+
+    @Test
+    fun retainsTheServerCodeWhenHostingAcknowledgementIsRequired() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val (result, request) = withApiResponse(
+            400,
+            """{"error":"hosting-description-acknowledgement-required","message":"Please acknowledge."}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).sendMessage(session, "member-one", "Hello", HostingDetails(1)) }
+        }
+        val failure = result.exceptionOrNull() as MobileApiException
+        assertEquals("hosting-description-acknowledgement-required", failure.code)
+        assertEquals("Please acknowledge.", failure.serverMessage)
+        val body = JSONObject(request.body)
+        assertFalse(body.has("hostingDescriptionAcknowledged"))
+        assertEquals(1, body.getJSONObject("hostingDetails").length())
+    }
+
+    @Test
+    fun rejectsInvalidHostingDetailsBeforeSending() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val result = runBlocking {
+            MobileApiClient("https://example.invalid").sendMessage(session, "member-one", "Hello", HostingDetails(0))
+        }
+        assertEquals("Enter a guest count from 1 to 100.", result.exceptionOrNull()?.message)
+    }
+
+    @Test
     fun parsesMemberSearchAndProfileFields() {
         val members = parseMembers(JSONArray("""[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","locationLiving":"Leeds","languages":["en"],"member":[{"tribe":{"_id":"circle-one","slug":"travellers","label":"Travellers","image":true,"count":12}}]}]"""))
         assertEquals("member-one", members.single().id)
@@ -364,6 +424,41 @@ class MobileApiClientTest {
         assertEquals("quiet@example.test", details.email)
         assertEquals("pending@example.test", details.emailTemporary)
         assertTrue(details.newsletter)
+    }
+
+    @Test
+    fun requestsAndCancelsAnEmailChangeThroughTheBearerAccountRoute() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val confirmed = """{"username":"quiet-fox","email":"quiet@example.test","emailConfirmed":true,"mfaEnabled":true}"""
+        val (requested, request) = withApiResponse(
+            status = 200,
+            responseBody = JSONObject(confirmed).put("emailTemporary", "pending@example.test").toString(),
+        ) { baseURL ->
+            runBlocking {
+                MobileApiClient(baseURL).requestEmailChange(session, "pending@example.test", "test password", "code-value")
+            }
+        }
+        val (cancelled, cancellation) = withApiResponse(
+            status = 200,
+            responseBody = confirmed,
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).cancelEmailChange(session, "pending@example.test") }
+        }
+
+        val details = requested.getOrThrow()
+        assertEquals(true, details.emailConfirmed)
+        assertTrue(details.mfaEnabled)
+        assertEquals("quiet@example.test", details.email)
+        assertEquals("pending@example.test", details.emailTemporary)
+        assertEquals("POST /api/mobile/v0/account/email-change HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Authorization: Bearer example-access", ignoreCase = true) })
+        val payload = JSONObject(request.body)
+        assertEquals("pending@example.test", payload.getString("email"))
+        assertEquals("test password", payload.getString("currentPassword"))
+        assertEquals("code-value", payload.getString("mfaCode"))
+        assertNull(cancelled.getOrThrow().emailTemporary)
+        assertEquals("DELETE /api/mobile/v0/account/email-change HTTP/1.1", cancellation.line)
+        assertEquals("pending@example.test", JSONObject(cancellation.body).getString("newEmail"))
     }
 
     @Test

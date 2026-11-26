@@ -34,6 +34,22 @@ export interface ChangePasswordInput {
   verifyPassword: string;
 }
 
+export interface ChangeEmailInput {
+  email: string;
+  currentPassword: string;
+  mfaCode?: string;
+}
+
+export async function changeEmail(
+  input: ChangeEmailInput,
+): Promise<OwnProfile> {
+  const { data } = await axios.post<OwnProfile>(
+    '/api/users/email-change',
+    input,
+  );
+  return data;
+}
+
 export async function update(data: UserUpdate): Promise<OwnProfile> {
   const { data: user } = await axios.put<OwnProfile>('/api/users', data);
   return user;
@@ -84,9 +100,11 @@ export async function resendEmailConfirmation(): Promise<void> {
 
 export async function cancelEmailChange(
   newEmail: string,
-): Promise<{ currentEmail: string }> {
-  const { data } = await axios.post('/api/auth/cancel-email-change', {
-    newEmail,
+): Promise<Omit<OwnProfile, 'emailTemporary'> & { emailTemporary: null }> {
+  const { data } = await axios.delete<
+    Omit<OwnProfile, 'emailTemporary'> & { emailTemporary: null }
+  >('/api/users/email-change', {
+    data: { newEmail },
   });
   return data;
 }

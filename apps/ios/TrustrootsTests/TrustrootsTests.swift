@@ -99,6 +99,54 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(APIServerDiagnostic.unexpectedResponse.state, .unexpectedResponse)
     }
 
+    func testHostingDetailsValidationRequiresRealCompleteDateRange() {
+        XCTAssertNil(HostingDetailsValidation.error(guests: 1, arrival: "", departure: ""))
+        XCTAssertNil(HostingDetailsValidation.error(guests: 3, arrival: "2027-02-28", departure: "2027-03-01"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-02-30", departure: "2027-03-01"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-02-28", departure: ""))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-03-01", departure: "2027-02-28"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 101, arrival: "", departure: ""))
+    }
+
+    func testHostingReplyOnlyShowsForUnansweredIncomingHostingMessage() {
+        let me = MiniMember(id: "member-me", username: "me", displayName: "Me")
+        let them = MiniMember(id: "member-them", username: "them", displayName: "Them")
+        let hostingMessage = DirectMessage(
+            id: "hosting-1",
+            content: "Are you available?",
+            userFrom: them,
+            created: nil,
+            hostingDetails: HostingMessageDetails(guests: 2, arrival: nil, departure: nil)
+        )
+        let ordinaryMessage = DirectMessage(
+            id: "ordinary-1",
+            content: "Hi",
+            userFrom: them,
+            created: nil,
+            hostingDetails: nil
+        )
+        let outgoingMessage = DirectMessage(
+            id: "outgoing-1",
+            content: "Thanks",
+            userFrom: me,
+            created: nil,
+            hostingDetails: nil
+        )
+
+        XCTAssertTrue(HostingReplyPolicy.shouldShow(messages: [hostingMessage, ordinaryMessage], username: "me"))
+        XCTAssertTrue(HostingReplyPolicy.shouldShow(messages: [hostingMessage, outgoingMessage], username: "me"))
+        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [outgoingMessage, hostingMessage], username: "me"))
+        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [ordinaryMessage], username: "me"))
+    }
+
+    func testDirectMessageWithoutHostingMetadataDecodesAsOrdinaryMessage() throws {
+        let message = try JSONDecoder().decode(
+            DirectMessage.self,
+            from: Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"}}"#.utf8)
+        )
+        XCTAssertNil(message.hostingDetails)
+    }
+
     func testBuildDateUsesStableYearMonthDayAndTimeFormat() {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let formatted = TrustrootsBuildInfo.formatted(date)
@@ -918,6 +966,25 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNil(OpenLocationCodeDecoder.coordinate(for: "not-a-plus-code"))
     }
 
+    func testSelectedCommunityNoteKeepsLongTextAndNativeAttribution() {
+        let text = (1...8).map { "Update \($0) from the café near the station." }.joined(separator: "\n")
+        let note = CommunityNote(
+            id: "synthetic-note",
+            content: text,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            latitude: 37.422,
+            longitude: -122.084
+        )
+
+        let presentation = CommunityNotePresentation(note: note)
+
+        XCTAssertEqual(presentation.text, text)
+        XCTAssertEqual(
+            presentation.attribution,
+            "via Nostroots · \(note.createdAt.formatted(date: .abbreviated, time: .omitted))"
+        )
+    }
+
     func testMobileBearerRequestRefreshesOnceAndRetriesWithTheRotatedToken() async throws {
         let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
@@ -995,6 +1062,14 @@ final class TrustrootsTests: XCTestCase {
             ("/account", "PUT", { api in
                 _ = try await api.updateAccount(serverURLString: server, email: "traveller@example.test", newsletter: false)
             }),
+            ("/account/email-change", "POST", { api in
+                _ = try await api.changeAccountEmail(
+                    serverURLString: server, email: "new@example.test", currentPassword: "example", mfaCode: "ABCDEF-123456"
+                )
+            }),
+            ("/account/email-change", "DELETE", { api in
+                _ = try await api.cancelAccountEmailChange(serverURLString: server, newEmail: "new@example.test")
+            }),
             ("/account/password", "POST", { api in
                 try await api.changePassword(serverURLString: server, currentPassword: "old-password", newPassword: "new-password", verifyPassword: "new-password")
             }),
@@ -1047,6 +1122,61 @@ final class TrustrootsTests: XCTestCase {
             XCTAssertEqual(bodies.first!, bodies.last!, path)
             XCTAssertEqual(requests.last?.value(forHTTPHeaderField: "Authorization"), "Bearer rotated-access", path)
         }
+    }
+
+    func testDedicatedAccountEmailMutationsPreserveTheCurrentAddressAndBindCancellation() async throws {
+        let server = "https://api.example.test"
+        let credentials = MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
+        let store = InMemoryMobileCredentialStore()
+        store.save(credentials)
+        let api = makeMobileAPI(store: store)
+        var requests: [URLRequest] = []
+        var bodies: [Data?] = []
+        MobileAPIURLProtocol.handler = { request in
+            requests.append(request)
+            bodies.append(Self.body(of: request))
+            switch requests.count {
+            case 1, 2:
+                return self.mobileResponse(request, status: 200, body: #"{"username":"traveller","email":"current@example.test","emailTemporary":"new@example.test","emailConfirmed":true,"mfaEnabled":true}"#)
+            case 3:
+                return self.mobileResponse(request, status: 409, body: #"{"message":"The pending email change has changed."}"#)
+            default:
+                return self.mobileResponse(request, status: 200, body: #"{"username":"traveller","email":"current@example.test","emailConfirmed":true,"mfaEnabled":true}"#)
+            }
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let pending = try await api.changeAccountEmail(
+            serverURLString: server, email: " new@example.test ", currentPassword: " p a s s ", mfaCode: " ABCDEF-123456 "
+        )
+        XCTAssertEqual(pending.email, "current@example.test")
+        XCTAssertEqual(pending.emailTemporary, "new@example.test")
+        XCTAssertEqual(pending.emailConfirmed, true)
+        XCTAssertEqual(pending.mfaEnabled, true)
+        _ = try await api.updateAccount(serverURLString: server, newsletter: true)
+        do {
+            _ = try await api.cancelAccountEmailChange(serverURLString: server, newEmail: "stale@example.test")
+            XCTFail("Expected stale cancellation to be rejected")
+        } catch {
+            XCTAssertEqual(error as? TrustrootsAPIError, .serverMessage("The pending email change has changed."))
+        }
+        let cancelled = try await api.cancelAccountEmailChange(serverURLString: server, newEmail: "new@example.test")
+        XCTAssertNil(cancelled.emailTemporary)
+        XCTAssertEqual(cancelled.email, pending.email)
+        XCTAssertEqual(store.load(), credentials)
+
+        XCTAssertEqual(requests.map(\.httpMethod), ["POST", "PUT", "DELETE", "DELETE"])
+        XCTAssertEqual(requests.map { $0.url?.path }, [
+            "/api/mobile/v0/account/email-change", "/api/mobile/v0/account",
+            "/api/mobile/v0/account/email-change", "/api/mobile/v0/account/email-change",
+        ])
+        XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "Bearer valid-access" })
+        XCTAssertEqual(try JSONDecoder().decode([String: String].self, from: XCTUnwrap(bodies[0])), [
+            "email": "new@example.test", "currentPassword": " p a s s ", "mfaCode": "ABCDEF-123456",
+        ])
+        XCTAssertEqual(try JSONDecoder().decode([String: Bool].self, from: XCTUnwrap(bodies[1])), ["newsletter": true])
+        XCTAssertEqual(try JSONDecoder().decode([String: String].self, from: XCTUnwrap(bodies[2])), ["newEmail": "stale@example.test"])
+        XCTAssertEqual(try JSONDecoder().decode([String: String].self, from: XCTUnwrap(bodies[3])), ["newEmail": "new@example.test"])
     }
 
     func testMutationDoesNotRetryAgainWhenRotatedAccessIsRejected() async throws {
@@ -1494,6 +1624,109 @@ final class TrustrootsTests: XCTestCase {
             "/api/mobile/v0/offers/fictional-offer",
         ])
         XCTAssertTrue(requests.allSatisfy { $0.value(forHTTPHeaderField: "Authorization") == "Bearer fictional-access" })
+    }
+
+    func testSendMessageEncodesHostingAcknowledgementAsBoolean() async throws {
+        var recordedRequest: URLRequest?
+        MobileAPIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"},"hostingDetails":{"guests":2,"arrival":"2027-04-01","departure":"2027-04-04"}}"#.utf8))
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let api = makeMobileAPI(store: InMemoryMobileCredentialStore())
+        let message = try await api.sendMessage(
+            serverURLString: "https://api.example.test",
+            memberID: "member-1",
+            content: "Hello",
+            hostingDescriptionAcknowledged: true,
+            hostingDetails: HostingMessageDetails(guests: 2, arrival: "2027-04-01", departure: "2027-04-04")
+        )
+
+        let request = try XCTUnwrap(recordedRequest)
+        let body = try XCTUnwrap(Self.body(of: request))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertEqual(object["hostingDescriptionAcknowledged"] as? Bool, true)
+        let hostingDetails = try XCTUnwrap(object["hostingDetails"] as? [String: Any])
+        XCTAssertEqual(hostingDetails["guests"] as? Int, 2)
+        XCTAssertEqual(hostingDetails["arrival"] as? String, "2027-04-01")
+        XCTAssertEqual(hostingDetails["departure"] as? String, "2027-04-04")
+        XCTAssertEqual(message.hostingDetails, HostingMessageDetails(guests: 2, arrival: "2027-04-01", departure: "2027-04-04"))
+    }
+
+    func testHostingContextUsesMessagesHostingEndpoint() async throws {
+        var recordedRequest: URLRequest?
+        MobileAPIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"description":"A quiet room","acknowledgementRequired":true}"#.utf8))
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let api = makeMobileAPI(store: InMemoryMobileCredentialStore())
+        let context = try await api.hostingContext(
+            serverURLString: "https://api.example.test",
+            userID: "member-1"
+        )
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/messages-hosting")
+        XCTAssertEqual(recordedRequest?.url?.query, "userTo=member-1")
+        XCTAssertEqual(context, HostingContext(description: "A quiet room", acknowledgementRequired: true))
+    }
+
+    func testSendMessageOmitsOptionalHostingAcknowledgementByDefault() async throws {
+        var recordedRequest: URLRequest?
+        MobileAPIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"}}"#.utf8))
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let api = makeMobileAPI(store: InMemoryMobileCredentialStore())
+        _ = try await api.sendMessage(
+            serverURLString: "https://api.example.test",
+            memberID: "member-1",
+            content: "Hello"
+        )
+
+        let request = try XCTUnwrap(recordedRequest)
+        let body = try XCTUnwrap(Self.body(of: request))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertNil(object["hostingDescriptionAcknowledged"])
+        XCTAssertNil(object["hostingDetails"])
+    }
+
+    func testSendMessageRecognizesHostingAcknowledgementError() async throws {
+        MobileAPIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil
+            )!
+            return (
+                response,
+                Data(#"{"error":"hosting-description-acknowledgement-required","message":"Please acknowledge."}"#.utf8)
+            )
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let api = makeMobileAPI(store: InMemoryMobileCredentialStore())
+        do {
+            _ = try await api.sendMessage(
+                serverURLString: "https://api.example.test",
+                memberID: "member-1",
+                content: "Hello"
+            )
+            XCTFail("Expected acknowledgement-required error")
+        } catch {
+            XCTAssertEqual(error as? TrustrootsAPIError, .hostingDescriptionAcknowledgementRequired)
+        }
     }
 
     private var rotatedSessionJSON: String {

@@ -1,4 +1,5 @@
 import SwiftUI
+import TrustrootsShared
 
 struct MemberProfileView: View {
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +11,9 @@ struct MemberProfileView: View {
     @State private var contacts: [TrustrootsContact] = []
     @State private var experiences: [MemberExperience] = []
     @State private var accommodationOffer: AccommodationOffer?
+    @State private var selectedProfileUsername: String?
+    @State private var selectedCircle: ProfileCircle?
+    @State private var isConversationOpen = false
     @State private var showAllContacts = false
     @State private var showAllExperiences = false
     @State private var errorMessage: String?
@@ -72,29 +76,7 @@ struct MemberProfileView: View {
                                     .accessibilityLabel("Back")
                                     .accessibilityIdentifier("profile-header-back")
                                 }
-
-                                MemberIdentityView(
-                                    member: MiniMember(
-                                        id: profile.id,
-                                        username: profile.username,
-                                        displayName: profile.displayName
-                                    ),
-                                    serverURLString: session.serverURLString,
-                                    avatarSize: 84,
-                                    primaryFont: .title.bold(),
-                                    secondaryFont: .subheadline,
-                                    foreground: .white,
-                                    secondaryForeground: .white.opacity(0.86)
-                                )
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("profile-header-identity")
-                                if let tagline = profile.tagline, !tagline.isEmpty {
-                                    Text(tagline.plainText)
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(.white)
-                                        .lineLimit(2)
-                                        .padding(.leading, 94)
-                                }
+                                ProfileHeaderSection(profile: profile, serverURLString: session.serverURLString)
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, username == nil ? 76 : 52)
@@ -115,165 +97,71 @@ struct MemberProfileView: View {
                             .padding(.horizontal, -20)
                             .padding(.top, -20)
 
-                            if let editProfile {
-                                Button(action: editProfile) {
-                                    Label("Edit profile", systemImage: "pencil")
-                                        .font(.subheadline.weight(.semibold))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 11)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(TrustrootsPalette.green)
-
-                                Button("Hosting and meetings") {
-                                    showHostingEditor = true
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("edit-hosting-offer")
+                            let messageLabel = !isOwnProfile(profile) && !isBlocked && profile.id != nil
+                                ? "Open or start a conversation with \(profile.displayName)" : nil
+                            if editProfile != nil || messageLabel != nil {
+                                ProfileActionsSection(
+                                    canEdit: editProfile != nil,
+                                    messageLabel: messageLabel,
+                                    onEdit: editProfile ?? {},
+                                    onHosting: { showHostingEditor = true },
+                                    onMessage: { isConversationOpen = true }
+                                )
                             }
 
-                            if !isOwnProfile(profile), !isBlocked, let memberID = profile.id {
-                                NavigationLink {
-                                    ConversationView(
-                                        otherMember: MiniMember(
-                                            id: memberID,
-                                            username: profile.username,
-                                            displayName: profile.displayName
-                                        ),
-                                        session: session
-                                    )
-                                } label: {
-                                    VStack(spacing: 3) {
-                                        Label("Message", systemImage: "bubble.left.and.bubble.right.fill")
-                                            .font(.subheadline.weight(.semibold))
-                                        Text("Open or start a conversation")
-                                            .font(.caption)
-                                            .opacity(0.85)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 9)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(TrustrootsPalette.green)
-                                .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
-                            }
-
-                            ProfileActivityView(
-                                seen: profile.seen,
-                                replyRate: profile.replyRate,
-                                replyTime: profile.replyTime
-                            )
-
-                            if profile.locationLiving != nil || profile.locationFrom != nil {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    if let living = profile.locationLiving, !living.isEmpty {
-                                        Button {
-                                            openOnSearchMap(living)
-                                        } label: {
-                                            Label("Lives in \(living)", systemImage: "house")
-                                        }
-                                    }
-                                    if let from = profile.locationFrom, !from.isEmpty {
-                                        Button {
-                                            openOnSearchMap(from)
-                                        } label: {
-                                            Label("From \(from)", systemImage: "mappin.and.ellipse")
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(16)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            }
+                            ProfileDetailsSection(profile: profile, onLocation: openOnSearchMap)
 
                             if let description = profile.description?.plainText, !description.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("About me")
-                                        .font(.headline)
-                                    Text(description)
-                                        .foregroundStyle(.secondary)
-                                }
+                                ProfileTextSection(title: "About me", text: description, tag: "profile-biography")
                             }
 
                             if let accommodationOffer {
-                                if let label = meetingAvailabilityLabel(accommodationOffer.meetingStatus) {
-                                    Label(label, systemImage: "person.2")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                                }
-                                HostingDetailsView(
-                                    status: accommodationOffer.status,
-                                    description: accommodationOffer.description,
-                                    noOfferDescription: accommodationOffer.noOfferDescription,
-                                    maxGuests: accommodationOffer.maxGuests,
-                                    volunteering: accommodationOffer.volunteering == true
+                                ProfileHostingSection(
+                                    offer: accommodationOffer,
+                                    meeting: meetingAvailabilityLabel(accommodationOffer.meetingStatus)
                                 )
                             }
 
                             if let languages = profile.languages, !languages.isEmpty {
-                                if languages.count >= 5 {
-                                    Text(languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "))
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Languages")
-                                            .font(.headline)
-                                        Text(languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
+                                ProfileTextSection(
+                                    title: languages.count < 5 ? "Languages" : nil,
+                                    text: languages.map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: " · "),
+                                    tag: "profile-languages"
+                                )
                             }
 
                             if let memberships = profile.member, !memberships.isEmpty {
-                                circlesSection(memberships.map(\.tribe))
+                                ProfileCirclesSection(circles: memberships.map(\.tribe)) { circle in
+                                    if selectedCircle == nil { selectedCircle = circle }
+                                }
                             }
 
                             if !contacts.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("Contacts")
-                                        .font(.headline)
-                                    ForEach(showAllContacts ? contacts : Array(contacts.prefix(6))) { contact in
-                                        if let contactUsername = contact.user.username {
-                                            NavigationLink {
-                                                MemberProfileView(session: session, username: contactUsername)
-                                            } label: {
-                                                profileContactRow(contact)
-                                            }
-                                        } else {
-                                            profileContactRow(contact)
-                                        }
-                                    }
-                                    if contacts.count > 6 {
-                                        profileSectionToggle(
-                                            isExpanded: $showAllContacts,
-                                            hiddenCount: contacts.count - 6,
-                                            noun: "contacts"
-                                        )
-                                    }
-                                }
+                                ProfileContactsSection(
+                                    contacts: contacts,
+                                    serverURLString: session.serverURLString,
+                                    expanded: $showAllContacts,
+                                    onOpen: openRelatedProfile
+                                )
                             }
 
                             if !experiences.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("Experiences")
-                                        .font(.headline)
-                                    ExperienceOverview(experiences: experiences)
-                                    ForEach(showAllExperiences ? experiences : Array(experiences.prefix(6))) { experience in
-                                        ExperienceRow(experience: experience, session: session)
-                                    }
-                                    if experiences.count > 6 {
-                                        profileSectionToggle(
-                                            isExpanded: $showAllExperiences,
-                                            hiddenCount: experiences.count - 6,
-                                            noun: "experiences"
-                                        )
-                                    }
-                                }
+                                ProfileExperiencesSection(
+                                    experiences: experiences,
+                                    serverURLString: session.serverURLString,
+                                    expanded: $showAllExperiences,
+                                    onOpen: openRelatedProfile
+                                )
                             }
 
                             if !isOwnProfile(profile) {
-                                memberSafetySection(profile)
+                                ProfileSafetySection(
+                                    blockedMessage: isBlocked ? "You have blocked \(profile.displayName)." : nil,
+                                    isUpdating: isUpdatingBlock,
+                                    error: safetyErrorMessage,
+                                    onReport: { showReportMember = true },
+                                    onToggleBlock: { showBlockConfirmation = true }
+                                )
                             }
                         }
                         .padding(20)
@@ -291,6 +179,24 @@ struct MemberProfileView: View {
                     NotificationCenter.default.post(name: .trustrootsOpenOwnProfile, object: nil)
                 } else {
                     await loadProfile()
+                }
+            }
+            .navigationDestination(item: $selectedProfileUsername) { username in
+                MemberProfileView(session: session, username: username)
+            }
+            .navigationDestination(item: $selectedCircle) { circle in
+                ProfileCircleDetailView(session: session, circle: circle)
+            }
+            .navigationDestination(isPresented: $isConversationOpen) {
+                if let profile, let memberID = profile.id {
+                    ConversationView(
+                        otherMember: MiniMember(
+                            id: memberID,
+                            username: profile.username,
+                            displayName: profile.displayName
+                        ),
+                        session: session
+                    )
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -392,56 +298,6 @@ struct MemberProfileView: View {
         }
     }
 
-    private func memberSafetySection(_ profile: MemberProfile) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Divider()
-
-            if isBlocked {
-                Text("You have blocked \(profile.displayName).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack(spacing: 18) {
-                Button {
-                    showReportMember = true
-                } label: {
-                    Label("Report member to support", systemImage: "flag")
-                }
-                .foregroundStyle(.secondary)
-
-                Button(role: isBlocked ? nil : .destructive) {
-                    showBlockConfirmation = true
-                } label: {
-                    if isUpdatingBlock {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Label(
-                            isBlocked ? "Unblock" : "Block",
-                            systemImage: isBlocked ? "hand.raised.slash" : "hand.raised"
-                        )
-                    }
-                }
-                .foregroundStyle(isBlocked ? Color.secondary : Color.red)
-                .disabled(isUpdatingBlock)
-
-                Spacer()
-            }
-            .font(.footnote)
-            .buttonStyle(.plain)
-            .frame(minHeight: 32)
-
-            if let safetyErrorMessage {
-                Text(safetyErrorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 2)
-    }
-
     private func updateBlock(blocked: Bool) async {
         guard !isUpdatingBlock, let profile else { return }
         isUpdatingBlock = true
@@ -460,68 +316,411 @@ struct MemberProfileView: View {
         }
     }
 
-    private func circlesSection(_ circles: [ProfileCircle]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            FlowLayout(spacing: 8) {
-                ForEach(circles) { circle in
-                    NavigationLink {
-                        ProfileCircleDetailView(session: session, circle: circle)
-                    } label: {
-                        Text(circle.label)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .background(TrustrootsPalette.green.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
     private func openOnSearchMap(_ location: String) {
         NotificationCenter.default.post(name: .trustrootsOpenMapLocation, object: location)
     }
 
-    private func profileContactRow(_ contact: TrustrootsContact) -> some View {
-        MemberIdentityView(
-            member: contact.user,
-            serverURLString: session.serverURLString,
-            avatarSize: 34,
-            primaryFont: .subheadline.weight(.medium),
-            secondaryFont: .caption
+    private func openRelatedProfile(_ username: String) {
+        if selectedProfileUsername == nil { selectedProfileUsername = username }
+    }
+}
+
+private struct ProfileHeaderSection: View {
+    let profile: MemberProfile
+    let serverURLString: String
+
+    var body: some View {
+        let member = MiniMember(id: profile.id, username: profile.username, displayName: profile.displayName)
+        let text = MemberIdentityText(member: member)
+        let header = Header(
+            id: member.id,
+            name: text.primary,
+            handle: text.secondary,
+            tagline: profile.tagline.map(\.plainText).flatMap { $0.isEmpty ? nil : $0 },
+            serverURLString: serverURLString
         )
+        MeasuredProfileSection(identity: header) { onHeight in
+            MainViewControllerKt.MemberProfileHeaderViewController(
+                name: header.name,
+                handle: header.handle,
+                tagline: header.tagline,
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: {
+                    makeSharedMemberAvatarController(
+                        memberID: header.id,
+                        name: text.name ?? text.handle ?? "",
+                        serverURLString: header.serverURLString,
+                        size: 84
+                    )
+                }
+            )
+        }
     }
 
-    private func profileSectionToggle(
-        isExpanded: Binding<Bool>,
-        hiddenCount: Int,
-        noun: String
-    ) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isExpanded.wrappedValue.toggle()
-            }
-        } label: {
-            HStack {
-                Text(isExpanded.wrappedValue ? "Show fewer" : "More \(noun) (\(hiddenCount))")
-                Spacer()
-                Image(systemName: isExpanded.wrappedValue ? "chevron.up" : "chevron.down")
-            }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    private struct Header: Hashable {
+        let id: String?
+        let name: String
+        let handle: String?
+        let tagline: String?
+        let serverURLString: String
+    }
+}
+
+private struct ProfileContactsSection: View {
+    let contacts: [TrustrootsContact]
+    let serverURLString: String
+    @Binding var expanded: Bool
+    let onOpen: (String) -> Void
+
+    var body: some View {
+        let identity = Identity(serverURLString: serverURLString, contacts: contacts.map(Contact.init), expanded: expanded)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileContactsViewController(
+                contacts: identity.contacts.map(\.presentation),
+                expanded: identity.expanded,
+                onOpen: onOpen,
+                onToggle: { expanded.toggle() },
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: { contact in
+                    makeSharedMemberAvatarController(
+                        memberID: contact.memberId,
+                        name: contact.name,
+                        serverURLString: serverURLString
+                    )
+                }
+            )
         }
-        .buttonStyle(.plain)
+    }
+
+    private struct Identity: Hashable {
+        let serverURLString: String
+        let contacts: [Contact]
+        let expanded: Bool
+    }
+
+    private struct Contact: Hashable {
+        let id: String
+        let memberID: String?
+        let username: String?
+        let name: String
+        let handle: String?
+
+        init(_ contact: TrustrootsContact) {
+            let identity = MemberIdentityText(member: contact.user)
+            id = contact.id
+            memberID = contact.user.id
+            username = contact.user.username
+            name = identity.primary
+            handle = identity.secondary
+        }
+
+        var presentation: MemberContact {
+            MemberContact(id: id, memberId: memberID, username: username, name: name, handle: handle, pending: false)
+        }
+    }
+}
+
+private struct ProfileExperiencesSection: View {
+    let experiences: [MemberExperience]
+    let serverURLString: String
+    @Binding var expanded: Bool
+    let onOpen: (String) -> Void
+
+    var body: some View {
+        let identity = Identity(serverURLString: serverURLString, experiences: experiences.map(Entry.init), expanded: expanded)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileExperiencesViewController(
+                experiences: identity.experiences.map(\.presentation),
+                expanded: identity.expanded,
+                onOpen: onOpen,
+                onToggle: { expanded.toggle() },
+                onHeight: { onHeight($0.doubleValue) },
+                createAvatar: { person in
+                    makeSharedMemberAvatarController(
+                        memberID: person.id,
+                        name: person.name,
+                        serverURLString: serverURLString
+                    )
+                }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let serverURLString: String
+        let experiences: [Entry]
+        let expanded: Bool
+    }
+
+    private struct Entry: Hashable {
+        let id: String
+        let feedback: Feedback
+        let response: Feedback?
+        let met: Bool
+        let hostedThem: Bool
+        let hostedByThem: Bool
+
+        init(_ experience: MemberExperience) {
+            id = experience.id
+            feedback = Feedback(member: experience.userFrom, text: experience.feedbackPublic, recommend: experience.recommend)
+            if let reply = experience.response, let text = reply.feedbackPublic, !text.plainText.isEmpty {
+                response = Feedback(member: experience.userTo, text: text, recommend: reply.recommend)
+            } else {
+                response = nil
+            }
+            met = experience.interactions?.met == true
+            hostedThem = experience.interactions?.guest == true
+            hostedByThem = experience.interactions?.host == true
+        }
+
+        var presentation: MemberProfileExperience {
+            MemberProfileExperience(
+                id: id,
+                feedback: feedback.presentation,
+                response: response?.presentation,
+                met: met,
+                hostedThem: hostedThem,
+                hostedByThem: hostedByThem
+            )
+        }
+    }
+
+    private struct Feedback: Hashable {
+        let id: String?
+        let username: String?
+        let name: String
+        let handle: String?
+        let text: String?
+        let recommend: String?
+
+        init(member: MiniMember, text: String?, recommend: String?) {
+            let identity = MemberIdentityText(member: member)
+            id = member.id
+            username = member.username
+            name = identity.primary
+            handle = identity.secondary
+            self.text = text?.plainText
+            self.recommend = recommend
+        }
+
+        var presentation: MemberProfileExperienceFeedback {
+            MemberProfileExperienceFeedback(
+                person: MemberProfileExperiencePerson(id: id, username: username, name: name, handle: handle),
+                text: text.flatMap { $0.isEmpty ? nil : $0 },
+                recommend: recommend
+            )
+        }
+    }
+}
+
+private struct ProfileActionsSection: View {
+    let canEdit: Bool
+    let messageLabel: String?
+    let onEdit: () -> Void
+    let onHosting: () -> Void
+    let onMessage: () -> Void
+
+    var body: some View {
+        MeasuredProfileSection(identity: Identity(canEdit: canEdit, messageLabel: messageLabel)) { onHeight in
+            MainViewControllerKt.MemberProfileActionsViewController(
+                canEdit: canEdit,
+                messageLabel: messageLabel,
+                onEdit: onEdit,
+                onHosting: onHosting,
+                onMessage: onMessage,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let canEdit: Bool
+        let messageLabel: String?
+    }
+}
+
+private struct ProfileSafetySection: View {
+    let blockedMessage: String?
+    let isUpdating: Bool
+    let error: String?
+    let onReport: () -> Void
+    let onToggleBlock: () -> Void
+
+    var body: some View {
+        let identity = Identity(blockedMessage: blockedMessage, isUpdating: isUpdating, error: error)
+        MeasuredProfileSection(identity: identity) { onHeight in
+            MainViewControllerKt.MemberProfileSafetyViewController(
+                blockedMessage: blockedMessage,
+                isUpdating: isUpdating,
+                error: error,
+                onReport: onReport,
+                onToggleBlock: onToggleBlock,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Identity: Hashable {
+        let blockedMessage: String?
+        let isUpdating: Bool
+        let error: String?
+    }
+}
+
+private struct ProfileCirclesSection: View {
+    let circles: [ProfileCircle]
+    let onOpen: (ProfileCircle) -> Void
+
+    var body: some View {
+        MeasuredProfileSection(identity: circles) { onHeight in
+            MainViewControllerKt.MemberProfileCirclesViewController(
+                circles: circles.map { MemberProfileCircle(id: $0.id, label: $0.label) },
+                onOpen: { id in
+                    if let circle = circles.first(where: { $0.id == id }) { onOpen(circle) }
+                },
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+}
+
+private struct ProfileHostingSection: View {
+    let offer: AccommodationOffer
+    let meeting: String?
+
+    var body: some View {
+        let hosts = offer.status == "yes" || offer.status == "maybe"
+        let description = (hosts ? offer.description : offer.noOfferDescription)?.plainText
+        let summary = Summary(
+            status: offer.status,
+            meeting: meeting,
+            description: description.flatMap { $0.isEmpty ? nil : $0 },
+            volunteering: offer.volunteering == true,
+            capacity: offer.maxGuests.map { $0 == 1 ? "Space for 1 guest" : "Space for up to \($0) guests" }
+        )
+        MeasuredProfileSection(identity: summary) { onHeight in
+            MainViewControllerKt.MemberProfileHostingViewController(
+                status: summary.status,
+                meeting: summary.meeting,
+                description: summary.description,
+                volunteering: summary.volunteering,
+                capacity: summary.capacity,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Summary: Hashable {
+        let status: String?
+        let meeting: String?
+        let description: String?
+        let volunteering: Bool
+        let capacity: String?
+    }
+}
+
+private struct ProfileTextSection: View {
+    let title: String?
+    let text: String
+    let tag: String
+
+    var body: some View {
+        MeasuredProfileSection(identity: text) { onHeight in
+            MainViewControllerKt.MemberProfileTextViewController(
+                title: title,
+                text: text,
+                accessibilityTag: tag,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+}
+
+private struct ProfileDetailsSection: View {
+    let profile: MemberProfile
+    let onLocation: (String) -> Void
+
+    var body: some View {
+        let details = Details(
+            lastLogin: profile.seen?.formatted(.relative(presentation: .named)) ?? "Long ago",
+            replyRate: Self.nonEmpty(profile.replyRate) ?? "Not available yet",
+            replyTime: Self.nonEmpty(profile.replyTime).map { "Within \($0)" },
+            living: profile.locationLiving.flatMap { $0.isEmpty ? nil : $0 },
+            origin: profile.locationFrom.flatMap { $0.isEmpty ? nil : $0 }
+        )
+        MeasuredProfileSection(identity: details) { onHeight in
+            MainViewControllerKt.MemberProfileDetailsViewController(
+                lastLogin: details.lastLogin,
+                replyRate: details.replyRate,
+                replyTime: details.replyTime,
+                living: details.living,
+                origin: details.origin,
+                onLocation: onLocation,
+                onHeight: { onHeight($0.doubleValue) }
+            )
+        }
+    }
+
+    private struct Details: Hashable {
+        let lastLogin: String
+        let replyRate: String
+        let replyTime: String?
+        let living: String?
+        let origin: String?
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+}
+
+private struct MeasuredProfileSection<ID: Hashable>: View {
+    let identity: ID
+    let makeController: (@escaping (Double) -> Void) -> ProfileSectionHost
+    @State private var height: CGFloat = 1
+    @State private var origin: CGPoint = .zero
+
+    var body: some View {
+        ProfileSectionController(makeController: makeController, origin: origin, height: $height)
+            .id(identity)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+            .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { origin = $0 }
+    }
+}
+
+@MainActor
+private struct ProfileSectionController: UIViewControllerRepresentable {
+    let makeController: (@escaping (Double) -> Void) -> ProfileSectionHost
+    let origin: CGPoint
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        var host: ProfileSectionHost?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let measuredHeight = $height
+        let host = makeController { value in
+            let next = max(1, CGFloat(value))
+            Task { @MainActor in
+                if measuredHeight.wrappedValue != next {
+                    measuredHeight.wrappedValue = next
+                }
+            }
+        }
+        context.coordinator.host = host
+        host.updateOrigin(x: Double(origin.x), y: Double(origin.y))
+        return host.viewController
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        context.coordinator.host?.updateOrigin(x: Double(origin.x), y: Double(origin.y))
     }
 }
 
@@ -542,15 +741,22 @@ private struct ReportMemberView: View {
         NavigationStack {
             Group {
                 if isSent {
-                    ContentUnavailableView(
-                        "Report sent",
-                        systemImage: "checkmark.circle.fill",
-                        description: Text("Thank you. The Trustroots support team will review your report.")
-                    )
+                    MeasuredProfileSection(identity: "report-member-confirmation") { onHeight in
+                        MainViewControllerKt.MemberReportConfirmationViewController(onHeight: { onHeight($0.doubleValue) })
+                    }
+                    .frame(maxWidth: 400)
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     Form {
-                        Section("Reported member") {
-                            LabeledContent("Member", value: "\(displayName) (@\(username))")
+                        Section {
+                            let identity = "\(displayName) (@\(username))"
+                            MeasuredProfileSection(identity: identity) { onHeight in
+                                MainViewControllerKt.MemberReportTargetViewController(
+                                    member: identity,
+                                    onHeight: { onHeight($0.doubleValue) }
+                                )
+                            }
                         }
 
                         Section {
@@ -558,37 +764,28 @@ private struct ReportMemberView: View {
                                 .frame(minHeight: 150)
                                 .focused($messageIsFocused)
                                 .accessibilityLabel("Describe your concern")
+                                .accessibilityIdentifier("report-member-details")
                         } header: {
                             Text("What happened?")
                         } footer: {
                             Text("This message goes to Trustroots support, not to the member. Please include enough detail for the support team to understand and investigate.")
                         }
 
-                        if let errorMessage {
-                            Section {
-                                Text(errorMessage)
-                                    .foregroundStyle(.red)
-                            }
-                        }
-
                         Section {
-                            Button {
-                                Task { await sendReport() }
-                            } label: {
-                                HStack {
-                                    Spacer()
-                                    if isSending {
-                                        ProgressView()
-                                    } else {
-                                        Label("Send report", systemImage: "flag.fill")
-                                    }
-                                    Spacer()
-                                }
-                            }
-                            .disabled(
-                                message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    || isSending
+                            let actions = ReportActions(
+                                canSubmit: !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                                isSending: isSending,
+                                error: errorMessage
                             )
+                            MeasuredProfileSection(identity: actions) { onHeight in
+                                MainViewControllerKt.MemberReportActionsViewController(
+                                    canSubmit: actions.canSubmit,
+                                    isSending: actions.isSending,
+                                    error: actions.error,
+                                    onSend: { Task { await sendReport() } },
+                                    onHeight: { onHeight($0.doubleValue) }
+                                )
+                            }
                         } footer: {
                             Text("If anyone is in immediate danger or a crime has occurred, contact local emergency services.")
                         }
@@ -615,6 +812,12 @@ private struct ReportMemberView: View {
         }
     }
 
+    private struct ReportActions: Hashable {
+        let canSubmit: Bool
+        let isSending: Bool
+        let error: String?
+    }
+
     private func sendReport() async {
         guard !isSending else { return }
         let trimmedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -635,122 +838,6 @@ private struct ReportMemberView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-}
-
-private struct ProfileActivityView: View {
-    let seen: Date?
-    let replyRate: String?
-    let replyTime: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Activity")
-                .font(.headline)
-
-            activityRow(
-                systemImage: "clock.arrow.circlepath",
-                title: "Last login",
-                value: seen?.formatted(.relative(presentation: .named)) ?? "Long ago"
-            )
-            activityRow(
-                systemImage: "arrowshape.turn.up.left.fill",
-                title: "Reply rate",
-                value: nonEmpty(replyRate) ?? "Not available yet"
-            )
-            if let replyTime = nonEmpty(replyTime) {
-                activityRow(
-                    systemImage: "timer",
-                    title: "Usually replies",
-                    value: "Within \(replyTime)"
-                )
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func activityRow(
-        systemImage: String,
-        title: String,
-        value: String
-    ) -> some View {
-        HStack(spacing: 11) {
-            Image(systemName: systemImage)
-                .foregroundStyle(TrustrootsPalette.darkGreen)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.subheadline.weight(.semibold))
-            }
-            Spacer()
-        }
-    }
-
-    private func nonEmpty(_ value: String?) -> String? {
-        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let trimmed, !trimmed.isEmpty else { return nil }
-        return trimmed
-    }
-}
-
-private struct ExperienceOverview: View {
-    let experiences: [MemberExperience]
-
-    private var total: Int { experiences.count }
-
-    private func percentage(_ matches: (MemberExperience) -> Bool) -> Int {
-        guard total > 0 else { return 0 }
-        return Int(Double(experiences.filter(matches).count) / Double(total) * 100)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(total == 1 ? "1 member shared an experience." : "\(total) members shared their experiences.")
-                .font(.subheadline.weight(.medium))
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 8),
-                    GridItem(.flexible(), spacing: 8),
-                ],
-                spacing: 8
-            ) {
-                statistic("Recommend", percentage { $0.recommend == "yes" }, "hand.thumbsup.fill")
-                statistic("Met", percentage { $0.interactions?.met == true }, "person.2.fill")
-                statistic("Hosted them", percentage { $0.interactions?.guest == true }, "house.fill")
-                statistic("Hosted by them", percentage { $0.interactions?.host == true }, "sofa.fill")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(TrustrootsPalette.paleGreen)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func statistic(_ label: String, _ value: Int, _ systemImage: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .foregroundStyle(TrustrootsPalette.darkGreen)
-                .frame(width: 20)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(value)%")
-                    .font(.headline.monospacedDigit())
-                Text(label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(9)
-        .background(Color(.systemBackground).opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -820,81 +907,6 @@ struct HostingDetailsView: View {
         .padding(compact ? 10 : 16)
         .background(statusColor.opacity(0.11))
         .clipShape(RoundedRectangle(cornerRadius: compact ? 12 : 16, style: .continuous))
-    }
-}
-
-private struct ExperienceRow: View {
-    let experience: MemberExperience
-    @ObservedObject var session: MemberSessionStore
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            experiencePersonRow(
-                member: experience.userFrom,
-                label: "Wrote about this member",
-                feedback: experience.feedbackPublic,
-                recommend: experience.recommend
-            )
-            if let response = experience.response,
-               let feedback = response.feedbackPublic?.plainText,
-               !feedback.isEmpty {
-                Divider()
-                experiencePersonRow(
-                    member: experience.userTo,
-                    label: "Their response",
-                    feedback: feedback,
-                    recommend: response.recommend
-                )
-            }
-        }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func experiencePersonRow(
-        member: MiniMember,
-        label: String,
-        feedback: String?,
-        recommend: String?
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            let identity = MemberIdentityView(
-                member: member,
-                serverURLString: session.serverURLString,
-                avatarSize: 38,
-                primaryFont: .subheadline.weight(.semibold),
-                secondaryFont: .caption
-            )
-            if let username = member.username {
-                NavigationLink {
-                    MemberProfileView(session: session, username: username)
-                } label: {
-                    identity
-                }
-                .buttonStyle(.plain)
-            } else {
-                identity
-            }
-            HStack {
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let recommend {
-                    Text(recommend == "yes" ? "Recommends" : recommend == "no" ? "Does not recommend" : "Experience")
-                        .font(.caption)
-                        .foregroundStyle(recommend == "yes" ? TrustrootsPalette.darkGreen : .secondary)
-                }
-            }
-            if let feedback = feedback?.plainText, !feedback.isEmpty {
-                Text(feedback)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(4)
-            }
-        }
     }
 }
 

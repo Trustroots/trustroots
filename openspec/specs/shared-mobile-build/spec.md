@@ -227,3 +227,475 @@ with a username SHALL open the existing iOS profile.
 - **GIVEN** a signed-in member opens Contacts
 - **WHEN** they select a contact with a username
 - **THEN** the existing iOS profile opens for that contact
+
+### Requirement: iOS offer search uses shared filter controls
+
+The regular iOS offer search SHALL render its offer type, activity, language and
+Circle filter controls in shared Compose. The iOS host SHALL continue to apply
+the filters to Map and Results and provide the existing language picker, Reset
+and Done actions.
+
+#### Scenario: Apply connected volunteering filters
+
+- **GIVEN** a member opens Search filters while viewing offers
+- **WHEN** they enable volunteering and connections-only and close the sheet
+- **THEN** hosting is enabled, Community Notes are suppressed and both Map and Results use the selected filters
+
+#### Scenario: Reset the offer filters
+
+- **GIVEN** a member changes the offer filters
+- **WHEN** they select Reset
+- **THEN** the defaults restore and the filter controls show those defaults
+
+### Requirement: Regular iOS Circle details use Compose
+
+The regular iOS Circle detail SHALL show the Circle summary and member
+discovery in Compose using the existing iOS artwork and member cache. It SHALL
+show loading, empty and unavailable states, offer retry when a request fails,
+and use the existing member profile and Wiki routes.
+
+#### Scenario: Discover members and return to Circles
+
+- **GIVEN** a signed-in member opens a Circle with discoverable members
+- **WHEN** they select a member profile and return to the detail
+- **THEN** the Circle details and discovered members are available again
+- **AND** returning to Circles preserves their existing list filter
+
+### Requirement: Regular iOS support uses the shared form
+
+The regular iOS support destination SHALL use shared Compose for its message
+form, delivery feedback and FAQ action. It SHALL use the existing authenticated
+iOS support client and bounded FAQ browser route.
+
+#### Scenario: Retry a support message after a failed send
+
+- **GIVEN** a signed-in member has written a support message
+- **WHEN** delivery fails
+- **THEN** the form displays the error and keeps the message available for retry
+- **AND** after a successful retry it clears the draft and confirms delivery
+
+#### Scenario: Open the FAQ from support
+
+- **GIVEN** a member is using the support form
+- **WHEN** they choose to browse frequently asked questions
+- **THEN** the app opens the existing FAQ browser route
+
+### Requirement: iOS offer map uses shared map actions
+
+The regular iOS offer map SHALL display accessible Search filters and Use
+current location buttons in Compose with 44-point hit targets. Search filters
+SHALL open the existing filter sheet. Use current location SHALL call the
+native location manager so its permission and error handling apply. The
+separate button hosts SHALL leave the surrounding map available for gestures.
+
+#### Scenario: Open filters from the map actions
+
+- **GIVEN** a member is viewing the regular iOS offer map
+- **WHEN** they select Search filters
+- **THEN** the existing filter sheet appears and closing it returns to the same map
+
+### Requirement: iOS selected Community Notes use a shared card
+
+The regular iOS map SHALL show the selected Community Note in shared Compose
+with its original text, a preview of up to four lines, the native-formatted
+source attribution and an accessible Dismiss action. The iOS host SHALL handle
+note selection and size the card to its content.
+
+#### Scenario: Read a selected Community Note
+
+- **GIVEN** a member selects a Community Note marker
+- **WHEN** the note card appears
+- **THEN** the shared card shows the note and its publication date
+- **AND** selecting Dismiss clears the existing map selection
+
+### Requirement: Regular iOS Search uses a shared display selector
+
+The regular iOS Search screen SHALL use shared Compose to select Map, Results,
+or Members. It SHALL expose the selected choice to accessibility services
+and preserve the existing iOS map, filters, host card navigation and member
+search state.
+
+#### Scenario: Switch across Search displays
+
+- **GIVEN** a signed-in member opens Search
+- **WHEN** they choose Results and then Members
+- **THEN** the corresponding offer and member search controls are available
+- **AND** returning to Map and then Members preserves the member query and results
+
+### Requirement: Regular iOS offer results use shared place-search controls
+
+The iOS Results display SHALL render place entry, lookup failure and the
+existing filter action in Compose. A nonblank submission SHALL use the native
+place lookup and update the existing search region when found.
+
+#### Scenario: Return to offer results with a place entered
+
+- **GIVEN** a signed-in member has entered a place on the Results display
+- **WHEN** they switch to Map and then return to Results
+- **THEN** the entered place remains available for submission
+- **AND** the Search filters action continues to open the existing filter sheet
+
+### Requirement: iOS offer map uses shared status and legend
+
+The regular iOS app SHALL show its map loading indicator, offer result count,
+applicable legend and search errors in shared Compose. The marker legend SHALL
+use the same colours as the native annotations and reflow within the viewport.
+The overlay SHALL leave map gestures available.
+
+#### Scenario: Show the applicable markers
+
+- **GIVEN** the iOS map has loaded offers
+- **WHEN** a member restricts the map to their connections
+- **THEN** the shared overlay shows the updated count and omits the Community Notes marker
+
+### Requirement: Regular iOS bottom navigation uses shared Compose
+
+The signed-in iOS shell SHALL use shared Compose for the Home, Search,
+Messages, and Menu actions and make the selected destination available
+to accessibility services. The iOS shell SHALL own destination routing,
+bottom safe-area handling, and navigation visibility while typing.
+
+#### Scenario: Select Search from Home
+
+- **GIVEN** a signed-in member is on Home
+- **WHEN** they choose Search in the bottom navigation
+- **THEN** the native Search destination opens and Search is marked selected
+- **AND** the bottom navigation hides while the member types and returns when the keyboard closes
+
+### Requirement: iOS saved-data notices use shared Compose
+
+The regular iOS app and shared member pilot SHALL render their saved-data
+notice with shared Compose. The notice SHALL expose the complete text to
+accessibility services. The iOS host SHALL continue to supply the locale-formatted
+saved timestamp and to clear the notice when live data becomes available.
+
+#### Scenario: Read a saved profile in the regular iOS app
+
+- **GIVEN** a signed-in member previously loaded their profile
+- **WHEN** they open the profile while its server connection is unavailable
+- **THEN** the app displays the saved profile and announces its saved timestamp
+- **AND** a successful live inbox request clears the notice
+
+### Requirement: Regular iOS conversations use shared Compose
+
+The regular iOS app SHALL display conversation history and multiline replies in Compose.
+It SHALL use the existing iOS session, message cache, read tracking and profile
+and Experience routes. It SHALL keep unsent drafts in protected storage scoped
+to the server, account and recipient. A failed send SHALL leave the draft
+available for explicit retry. A successful send SHALL clear that draft and
+show the new reply.
+
+#### Scenario: Retry a failed reply after relaunch
+
+- **GIVEN** a member opens a regular iOS conversation
+- **WHEN** they write a reply, delivery fails and they relaunch the app
+- **THEN** the conversation restores the unsent reply and its cached history when available
+- **AND** a successful manual retry displays the reply and clears the draft
+
+### Requirement: Regular iOS conversations use a shared Experience form
+
+The regular iOS conversation SHALL present Experience interaction choices,
+recommendation and optional public feedback in Compose. Sharing SHALL require at
+least one interaction. The native iOS host SHALL present and dismiss the sheet
+and submit through the existing authenticated Experience API. A failed request
+SHALL keep the entered choices and feedback available for manual retry.
+
+#### Scenario: Retry sharing an Experience in a conversation
+
+- **GIVEN** a signed-in member can share an Experience from a regular iOS conversation
+- **WHEN** they choose an interaction and recommendation and the request fails
+- **THEN** the form displays the error and preserves the form values
+- **AND** a successful manual retry dismisses the sheet and updates the conversation action
+
+### Requirement: Regular iOS Account uses shared email and newsletter preferences
+
+The regular iOS Account screen SHALL show the email and newsletter controls,
+pending email confirmation and save feedback in shared Compose. It SHALL use
+the existing iOS account session and authenticated update. Password, sign-out
+and Nostr actions SHALL remain available in the Account screen.
+
+#### Scenario: Save account preferences from Compose
+
+- **GIVEN** a signed-in member has opened Account
+- **WHEN** they change their email or newsletter preference and save
+- **THEN** the app submits those preferences using its existing authenticated update
+- **AND** the form shows success or the returned error and any pending email confirmation
+
+### Requirement: Regular iOS Account uses shared password actions
+
+The regular iOS Account screen SHALL use Compose for the Change password
+and recovery actions and their feedback. It SHALL preserve Swift secure fields,
+the existing authenticated password update and the bounded recovery browser route.
+The action SHALL be available when all three password fields contain values
+and no password change is in progress.
+
+#### Scenario: Change a password from Account
+
+- **GIVEN** a signed-in member has completed the native password fields
+- **WHEN** they use the Compose Change password action
+- **THEN** the app submits the request with the existing iOS password client
+- **AND** it shows a returned error or clears the fields and confirms success
+
+#### Scenario: Open password recovery from Account
+
+- **GIVEN** a member is viewing the password section
+- **WHEN** they choose to recover their password
+- **THEN** the app opens the existing iOS recovery route
+
+### Requirement: Regular iOS Account uses shared Nostr public-key status
+
+The regular iOS Account Nostr section SHALL use shared Compose for the Nostr
+introduction, profile-key availability and local-key status. It SHALL supply
+only availability flags to the shared presentation. The iOS host SHALL keep
+selectable key values, account scoping, key operations and their existing
+confirmations.
+
+#### Scenario: View the account's Nostr key status
+
+- **GIVEN** a signed-in member has opened Account
+- **WHEN** their profile or local key availability changes
+- **THEN** the shared status reflects that account's state and the native controls display the applicable key values and actions
+
+### Requirement: Shared iOS Account overview presentation
+
+The regular iOS member Account screen SHALL render its heading, Nostranslation signing entry point and sign-out action with shared Compose. The iOS host SHALL own account loading, signing navigation and session sign-out.
+
+#### Scenario: Viewing Account while the profile loads
+
+- **WHEN** an authenticated member opens Account while their profile is loading
+- **THEN** the shared Account heading remains visible while iOS presents the loading indicator
+- **AND** the actions appear when the initial loading stage completes
+
+#### Scenario: Opening signing from Account
+
+- **WHEN** a member selects Nostranslation signing
+- **THEN** iOS presents the existing Nostranslation signing sheet
+
+#### Scenario: Signing out from Account
+
+- **WHEN** a member selects Sign out
+- **THEN** iOS runs the existing session sign-out flow
+
+### Requirement: Regular iOS Nostranslation review alert controls use Compose
+
+The regular iOS signing sheet SHALL use shared Compose for the review alert
+action and status when the active account has a connected Nostranslation
+client. The iOS host SHALL handle notification permission, registration and
+account scoping through the existing alert manager.
+
+#### Scenario: Open the signing sheet without connected clients
+
+- **GIVEN** an active account has a local Nostr key and no connected clients
+- **WHEN** the member opens the Nostranslation signing sheet
+- **THEN** the review alert controls are unavailable until a client is connected
+
+### Requirement: Shared iOS Nostranslation connected client rows
+
+The regular iOS Nostranslation signing sheet SHALL use shared Compose to render each connected client's label and revoke control. Swift SHALL supply only the displayed public-key prefix and handle each callback using the existing account-scoped signer.
+
+#### Scenario: Viewing connected clients
+
+- **WHEN** the member has paired Nostranslation clients for their active account and key
+- **THEN** iOS shows the connected-client section with each client's public-key prefix and a corresponding accessible revoke control
+
+#### Scenario: Revoking a connected client
+
+- **WHEN** a member revokes a displayed client
+- **THEN** the iOS signer applies its existing account-scoped revocation operation to that client
+- **AND** the connected-client section reflects the resulting native client list
+
+#### Scenario: Opening signing with no connected clients
+
+- **WHEN** the member opens the signing sheet without any connected clients for their active account and key
+- **THEN** the connected-client section and its revoke controls are hidden
+
+### Requirement: Shared iOS Nostranslation pending review presentation
+
+The regular iOS Nostranslation signing sheet SHALL present its pending translation review's destination, expiry feedback and decision controls with shared Compose. The iOS host SHALL bind the controls to the displayed native review and use the existing signer to resolve it.
+
+#### Scenario: Approving a displayed review
+
+- **WHEN** a pending review appears in the iOS signing sheet
+- **THEN** Compose displays the destination and explicit approval and denial controls
+- **AND** selecting approval passes the displayed review to the existing native signer for authorisation
+
+#### Scenario: Viewing an expired review
+
+- **WHEN** the iOS timeline marks the displayed review expired
+- **THEN** Compose shows the expiry warning, disables approval and offers dismissal
+- **AND** the native signer continues to check the current time when resolving an approval
+
+#### Scenario: Acting on a replaced review
+
+- **WHEN** the displayed review has been removed or replaced before the native decision is handled
+- **THEN** the stale action leaves the current review available for its own explicit decision
+
+### Requirement: Regular iOS profile uses shared biography and language sections
+
+The regular iOS profile SHALL use Compose to display a member's biography
+and language names when present. The existing iOS profile scroll view SHALL
+accommodate the full text at the current width and text size. The language
+section SHALL use the existing language catalogue and preserve when its title
+is shown.
+
+#### Scenario: Read a member's biography and languages
+
+- **GIVEN** a member opens a regular iOS profile with a biography and spoken languages
+- **WHEN** they scroll through the profile
+- **THEN** they can read the full plain-text biography and the resolved language names
+
+### Requirement: Regular iOS profile uses shared activity and location sections
+
+The regular iOS profile SHALL display last login, reply rate and any available
+reply time in Compose. It SHALL show actions for the member's current location
+and place of origin when available, using the existing iOS search map route.
+
+#### Scenario: Read activity and open a location
+
+- **GIVEN** a member opens a profile with reply statistics and a current location
+- **WHEN** they read the activity section and select the location
+- **THEN** they can see the reply statistics and the app opens the Search map for that location
+
+### Requirement: Regular iOS profile uses shared contact rows
+
+The regular iOS profile SHALL render its contact list with the shared Compose
+row and the existing iOS avatar. It SHALL initially show up to six contacts
+and allow the member to show more and collapse the list. A contact with a
+username SHALL open the native member profile.
+
+#### Scenario: Browse contacts from My profile
+
+- **GIVEN** a member has more than six contacts
+- **WHEN** they expand the list and then select one of their contacts
+- **THEN** the full list is available and the contact's profile opens
+- **AND** returning allows the member to collapse the list
+
+### Requirement: Regular iOS profile uses shared Experiences presentation
+
+The regular iOS profile SHALL render public Experience statistics, feedback
+and available responses using Compose. It SHALL show up to six cards by default,
+allow expansion and collapse, and use the existing profile route for authors
+and respondents with usernames.
+
+#### Scenario: Read a member's published experiences
+
+- **GIVEN** a regular iOS profile has public Experience feedback and a public response
+- **WHEN** a member visits the Experiences section
+- **THEN** they see the summary and both published texts
+- **AND** selecting an author opens their native profile
+
+### Requirement: Regular iOS profile uses shared member actions
+
+The regular iOS profile SHALL render applicable edit, hosting, message,
+report and block controls in Compose. The iOS host SHALL own navigation,
+confirmation and authenticated block requests. A blocked member SHALL
+remain unavailable for messaging until unblocked.
+
+#### Scenario: Block and unblock a member
+
+- **GIVEN** a signed-in member opens another member's profile
+- **WHEN** they confirm Block
+- **THEN** the profile offers Unblock and hides its message action
+- **AND** confirming Unblock restores the message action
+
+### Requirement: Regular iOS profile uses shared Circle links
+
+The regular iOS profile SHALL display the member's joined Circle links in
+Compose and use the current width to wrap them. Selecting a Circle SHALL
+open the existing Circle detail route.
+
+#### Scenario: Open a Circle from a member profile
+
+- **GIVEN** a regular iOS profile has a joined Circle
+- **WHEN** the viewer opens the Circle from the profile
+- **THEN** the Circle detail opens and Back returns to the member profile
+
+### Requirement: Regular iOS profile uses shared hosting summary
+
+The regular iOS profile SHALL present the member's hosting status, available
+description and guest capacity in Compose. Meeting availability SHALL be shown
+independently of hosting, while volunteering and capacity SHALL follow the
+active hosting offer.
+
+#### Scenario: Show meeting availability without active hosting
+
+- **GIVEN** a regular iOS profile has a meeting status and no active offer
+- **WHEN** the viewer reads the hosting summary
+- **THEN** they see both the meeting availability and inactive hosting status
+
+### Requirement: Regular iOS profile uses a shared identity header
+
+The regular iOS profile SHALL display the member's identity and tagline in
+Compose. It SHALL use the existing iOS avatar source and preserve the background
+artwork. When present, Back SHALL occupy a separate row above the avatar.
+
+#### Scenario: Read a member profile opened from Search
+
+- **GIVEN** a member opens a profile from a Search host card
+- **WHEN** the profile loads
+- **THEN** the avatar, identity and tagline are visible below Back
+- **AND** Back returns to the host card
+
+### Requirement: Regular iOS member reporting uses shared action presentation
+
+The regular iOS report sheet SHALL use shared Compose for the target, send
+action, and error and success presentation. It SHALL preserve the native
+report editor, keyboard Done action, authenticated report request and sheet
+dismissal. A blank report SHALL be ineligible to send.
+
+#### Scenario: Retry a member report
+
+- **GIVEN** a signed-in member has written a report about another member
+- **WHEN** the support request fails
+- **THEN** the sheet shows the error and preserves the report text
+- **AND** after a successful retry it confirms delivery and allows the reporter to close the sheet
+
+#### Scenario: Cancel a member report
+
+- **GIVEN** a member has opened the report sheet and a send is not in progress
+- **WHEN** they choose Cancel
+- **THEN** the app dismisses the sheet and returns to the member profile
+
+### Requirement: Regular iOS hosting availability uses Compose
+
+The regular iOS hosting editor SHALL use shared Compose for hosting and
+meeting availability, maximum guests when hosting is possible, and visibility
+within the member's circles. It SHALL use the existing form validation,
+location capture and offer save flow.
+
+#### Scenario: Save availability from the iOS hosting editor
+
+- **GIVEN** a signed-in member opens an existing hosting offer
+- **WHEN** they change meeting availability or circle visibility and save
+- **THEN** the editor submits those changes on the existing offer with its saved coordinates
+- **AND** maximum guests remains between zero and 99 and is editable when hosting is available or tentative
+
+### Requirement: Regular iOS hosting details use Compose
+
+The regular iOS hosting editor SHALL use shared Compose for the hosting
+description, the explanation shown when unavailable and the volunteering
+setting. It SHALL save with the existing offer validation and location data.
+Existing rich text SHALL be retained for descriptions that the member leaves
+unchanged.
+
+#### Scenario: Edit a multiline host offer description
+
+- **GIVEN** a signed-in member opens an existing offer with saved descriptions and coordinates
+- **WHEN** they edit the reason they are unavailable across multiple lines and save
+- **THEN** the existing offer contains the edited text and its original coordinates
+- **AND** the unchanged hosting description retains its saved rich text
+
+### Requirement: Regular iOS profile editing uses the shared form
+
+The regular iOS profile editor SHALL use shared Compose for the name, tagline,
+locations, language selector, biography and save action. It SHALL use the
+existing authenticated iOS profile update, require a nonblank name and preserve
+the existing trimming and biography loading rules. Language selection SHALL
+use the existing iOS picker.
+
+#### Scenario: Edit and save profile text from Compose
+
+- **GIVEN** a signed-in member opens the profile editor
+- **WHEN** they update their tagline or biography and save
+- **THEN** the app submits the new text with the other loaded preferences through the existing iOS profile update
+- **AND** the app returns to the profile after a successful save

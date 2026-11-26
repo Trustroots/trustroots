@@ -22,4 +22,5 @@ export interface OfferServerRecord {
   meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   volunteering?: boolean;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }

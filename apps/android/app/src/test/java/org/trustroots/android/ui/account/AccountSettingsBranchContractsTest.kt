@@ -61,6 +61,10 @@ private class ImmediateAccountRepository : AccountRepository {
     override suspend fun update(email: String, newsletter: Boolean) =
         Result.success(AccountDetails("quiet-fox", "Quiet Fox", email, newsletter = newsletter))
 
+    override suspend fun requestEmailChange(email: String, password: String, code: String) =
+        error("Unexpected email change request")
+    override suspend fun cancelEmailChange(email: String) = error("Unexpected email change cancellation")
+
     override suspend fun changePassword(current: String, new: String, verify: String) = Result.success(Unit)
 
     override suspend fun signOut() = Result.success(Unit)

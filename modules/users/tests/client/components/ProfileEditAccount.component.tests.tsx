@@ -120,7 +120,8 @@ describe('ProfileEditAccount', () => {
   });
   it('cancels a pending change and removes the pending actions', async () => {
     vi.mocked(usersApi.cancelEmailChange).mockResolvedValue({
-      currentEmail: user.email!,
+      ...user,
+      emailTemporary: null,
     });
     renderPage({ public: true, emailTemporary: 'pending@example.org' });
     fireEvent.click(
@@ -139,6 +140,33 @@ describe('ProfileEditAccount', () => {
       screen.queryByRole('button', { name: 'Resend confirmation' }),
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText('Email Address')).toHaveValue(user.email);
+  });
+  it('prompts confirmed members for password and fresh MFA without using generic update', async () => {
+    const changeEmail = vi.mocked(usersApi.changeEmail);
+    changeEmail.mockResolvedValueOnce({
+      ...user,
+      emailConfirmed: true,
+      mfaEnabled: true,
+      emailTemporary: 'pending@example.org',
+    });
+    renderPage({ emailConfirmed: true, mfaEnabled: true, public: true });
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: 'pending@example.org' },
+    });
+    const password = screen.getByLabelText('Current password for email change');
+    const code = screen.getByLabelText('Authenticator or recovery code');
+    fireEvent.change(password, { target: { value: 'fixture-password' } });
+    fireEvent.change(code, { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
+    await screen.findByText('Pending email change: pending@example.org');
+    expect(changeEmail).toHaveBeenCalledWith({
+      email: 'pending@example.org',
+      currentPassword: 'fixture-password',
+      mfaCode: '123456',
+    });
+    expect(updateUser).not.toHaveBeenCalled();
+    expect(password).toHaveValue('');
+    expect(code).toHaveValue('');
   });
 
   it.each(['request failed', undefined])(

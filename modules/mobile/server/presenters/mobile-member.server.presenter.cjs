@@ -9,6 +9,8 @@ exports.currentMember = function (user) {
     username: user.username,
     displayName: user.displayName || user.username,
     public: Boolean(user.public),
+    emailConfirmed: user.public === true,
+    mfaEnabled: user.mfaEnabled === true,
     email: user.email,
     newsletter: Boolean(user.newsletter),
   };
@@ -65,6 +67,13 @@ exports.profile = function (profile, authenticatedUser) {
     presented.email = profile.email || null;
     presented.emailTemporary = profile.emailTemporary || null;
     presented.newsletter = Boolean(profile.newsletter);
+  }
+  if (
+    authenticatedUser &&
+    identifier(profile) === identifier(authenticatedUser)
+  ) {
+    presented.emailConfirmed = authenticatedUser.public === true;
+    presented.mfaEnabled = authenticatedUser.mfaEnabled === true;
   }
 
   return presented;
