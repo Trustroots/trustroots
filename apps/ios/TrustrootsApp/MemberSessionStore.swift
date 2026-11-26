@@ -7,10 +7,17 @@ final class MemberSessionStore: ObservableObject {
 
     @Published private(set) var member: SignedInMember?
     @Published private(set) var isSigningIn = false
+    @Published private(set) var requiresBrowserSignIn = false
+    @Published private(set) var browserSignInError: String?
     @Published var errorMessage: String?
     @Published var serverURLString: String {
         didSet {
-            if serverURLString != oldValue { nostrIdentity.pause() }
+            if serverURLString != oldValue {
+                nostrIdentity.pause()
+                if requiresBrowserSignIn { errorMessage = nil }
+                requiresBrowserSignIn = false
+                browserSignInError = nil
+            }
         }
     }
 
@@ -50,6 +57,7 @@ final class MemberSessionStore: ObservableObject {
     }
 
     func signIn(usernameOrEmail: String, password: String) async {
+        guard !isSigningIn else { return }
         guard !usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !password.isEmpty else {
             errorMessage = "Enter both your username or email address and password."
@@ -57,31 +65,75 @@ final class MemberSessionStore: ObservableObject {
         }
 
         nostrIdentity.pause()
+        let selectedServer = serverURLString
         isSigningIn = true
+        requiresBrowserSignIn = false
+        browserSignInError = nil
         errorMessage = nil
         defer { isSigningIn = false }
 
         do {
             let mobileSession = try await api.signIn(
-                serverURLString: serverURLString,
+                serverURLString: selectedServer,
                 usernameOrEmail: usernameOrEmail,
                 password: password
             )
-            guard credentialStore.save(mobileSession.credentials) else {
-                throw TrustrootsAPIError.serverMessage("Secure credential storage is unavailable.")
-            }
-            member = mobileSession.member
-            UserDefaults.standard.set(serverURLString, forKey: Self.persistedServerKey)
-            if let encodedMember = try? JSONEncoder().encode(mobileSession.member) {
-                UserDefaults.standard.set(encodedMember, forKey: Self.persistedMemberKey)
-            }
-            updateCacheScope()
+            try Task.checkCancellation()
+            guard serverURLString == selectedServer else { return }
+            try storeSession(mobileSession, server: selectedServer)
+        } catch is CancellationError {
+            return
         } catch {
+            guard serverURLString == selectedServer else { return }
+            if let apiError = error as? TrustrootsAPIError, case .webSignInRequired = apiError {
+                requiresBrowserSignIn = true
+            }
             errorMessage = error.localizedDescription
         }
     }
 
+    func signInUsingBrowser(open: @MainActor (URL) async throws -> URL) async {
+        guard requiresBrowserSignIn, member == nil, !isSigningIn else { return }
+        let selectedServer = serverURLString
+        isSigningIn = true
+        browserSignInError = nil
+        defer { isSigningIn = false }
+
+        do {
+            let attempt = try MobileBrowserSignIn(serverURLString: selectedServer)
+            let callback = try await open(attempt.startURL)
+            try Task.checkCancellation()
+            guard requiresBrowserSignIn, serverURLString == selectedServer, member == nil else { return }
+            let mobileSession = try await api.exchangeBrowserSignIn(attempt: attempt, callbackURL: callback)
+            try Task.checkCancellation()
+            guard requiresBrowserSignIn, serverURLString == selectedServer, member == nil else { return }
+            try storeSession(mobileSession, server: selectedServer)
+        } catch is CancellationError {
+            return
+        } catch {
+            guard requiresBrowserSignIn, serverURLString == selectedServer else { return }
+            browserSignInError = error.localizedDescription
+        }
+    }
+
+    private func storeSession(_ result: MobileSessionResponse, server: String) throws {
+        guard credentialStore.save(result.credentials) else {
+            throw TrustrootsAPIError.serverMessage("Secure credential storage is unavailable.")
+        }
+        requiresBrowserSignIn = false
+        browserSignInError = nil
+        errorMessage = nil
+        member = result.member
+        UserDefaults.standard.set(server, forKey: Self.persistedServerKey)
+        if let encodedMember = try? JSONEncoder().encode(result.member) {
+            UserDefaults.standard.set(encodedMember, forKey: Self.persistedMemberKey)
+        }
+        updateCacheScope()
+    }
+
     func signOut() async {
+        requiresBrowserSignIn = false
+        browserSignInError = nil
         nostrIdentity.pause()
         await api.signOut(serverURLString: serverURLString)
         credentialStore.delete()
@@ -94,6 +146,8 @@ final class MemberSessionStore: ObservableObject {
     }
 
     func invalidateSession() {
+        requiresBrowserSignIn = false
+        browserSignInError = nil
         nostrIdentity.pause()
         member = nil
         credentialStore.delete()
