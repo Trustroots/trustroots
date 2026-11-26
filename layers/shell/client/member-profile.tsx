@@ -1,4 +1,5 @@
 import React from 'react';
+import { profileContacts } from '@/modules/contacts/client/profile-contacts';
 import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import { memberCircles } from '@/modules/tribes/client/member-circles';
@@ -20,6 +21,7 @@ export default function MemberProfile(props: ProfilePageProps) {
       {...props}
       ProfileOffers={Offers}
       circles={memberCircles}
+      contactFeatures={profileContacts}
       experiences={profileExperiences}
     />
   );

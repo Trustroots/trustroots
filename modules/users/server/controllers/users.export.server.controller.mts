@@ -14,10 +14,12 @@ import type { Types } from 'mongoose';
 import type {
   ProfileRequest,
   ProfileResponse,
-  ProfileResponseBody,
 } from './users.profile.server.contracts.mts';
 import type { UserServerDocument } from '../models/user.server.types.mts';
-import contacts from '../../../contacts/server/controllers/contacts.server.controller.mts';
+import type {
+  ExportContactsRequest,
+  ExportContactsResponse,
+} from '../services/user-contacts.server.contract.mts';
 import profiles from './users.profile.server.controller.mts';
 
 type ExportId = string | Types.ObjectId;
@@ -27,7 +29,7 @@ interface ExportRecord {
 }
 
 type ExportRequest = ProfileRequest &
-  Parameters<typeof contacts.contactListByUser>[0] & {
+  ExportContactsRequest & {
     user: UserServerDocument;
   };
 
@@ -54,22 +56,9 @@ interface ExportProfileRecord {
   member?: ExportMembership[] | null;
 }
 
-type ContactMiddlewareResponse = Parameters<
-  typeof contacts.contactListByUser
->[1];
-type MiddlewareResponseBody =
-  | ProfileResponseBody
-  | Parameters<ContactMiddlewareResponse['send']>[0];
-
-interface MiddlewareResponse {
-  statusCode?: number;
-  status(code: number): MiddlewareResponse;
-  send(body: MiddlewareResponseBody): MiddlewareResponse;
-}
-
 type ExportMiddleware<
   Value extends ExportId,
-  Response extends ProfileResponse | ContactMiddlewareResponse,
+  Response extends ProfileResponse | ExportContactsResponse,
 > = (
   req: ExportRequest,
   res: Response,
@@ -85,6 +74,7 @@ interface UserExportService {
       | 'readWrittenMessages'
       | 'readWrittenExperiences'
       | 'readOwnedOffers'
+      | 'loadExportContacts'
     >,
     req: ExportRequest,
     res: Response,
@@ -226,31 +216,34 @@ async function writtenExperiences(
 
 function invokeMiddleware<
   Value extends ExportId,
-  Response extends ProfileResponse | ContactMiddlewareResponse,
+  Response extends ProfileResponse | ExportContactsResponse,
 >(
   middleware: ExportMiddleware<Value, Response>,
   req: ExportRequest,
   value: Value,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const response: MiddlewareResponse = {
-      statusCode: undefined,
-      status(code: number) {
-        this.statusCode = code;
-        return this;
-      },
-      send(body: MiddlewareResponseBody) {
-        const message =
-          body && typeof body === 'object' && 'message' in body
-            ? body.message
-            : undefined;
-        const error = Object.assign(
+    let statusCode: number | undefined;
+    function send(this: ExportContactsResponse, body: unknown) {
+      const message =
+        body && typeof body === 'object' && 'message' in body
+          ? body.message
+          : undefined;
+      reject(
+        Object.assign(
           new Error(message === undefined ? undefined : String(message)),
-          { statusCode: this.statusCode },
-        );
-        reject(error);
+          { statusCode },
+        ),
+      );
+      return this;
+    }
+    const response: ExportContactsResponse = {
+      status(code) {
+        statusCode = code;
         return this;
       },
+      send,
+      json: send,
     };
     middleware(
       req,
@@ -279,7 +272,7 @@ service.download = async function (
       req,
       req.user.username,
     );
-    await invokeMiddleware(contacts.contactListByUser, req, req.user._id);
+    await invokeMiddleware(services.loadExportContacts, req, req.user._id);
     const profile = req.profile || {};
     const [messages, experiences, hostingOffers] = await Promise.all([
       service.writtenMessages(services.readWrittenMessages, req.user._id),

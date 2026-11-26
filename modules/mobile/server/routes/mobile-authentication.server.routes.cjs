@@ -55,6 +55,7 @@ module.exports = function (
     readReplyStats,
     readDiscoveryOfferLocations,
     findSearchConnectionIds,
+    removePendingContacts,
   },
 ) {
   app.post(
@@ -185,7 +186,7 @@ module.exports = function (
       mobileAuthentication.loadProfile.bind(null, readReplyStats),
       resourcePolicy(usersPolicy.isAllowed, '/api/blocked-users/:username'),
     )
-    .put(userBlock.blockUser)
+    .put(userBlock.blockUser.bind(null, removePendingContacts))
     .delete(userBlock.unblockUser);
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
   app.get(

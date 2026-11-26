@@ -13,6 +13,7 @@ type SessionHashes = { accessTokenHash: string; refreshTokenHash: string };
 const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
+const Contact = mongoose.model('Contact');
 const Message = mongoose.model('Message');
 const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
@@ -609,10 +610,16 @@ describe('Mobile authentication API', function () {
       .get(`/api/mobile/v0/members/${other.id}/avatar?size=128`)
       .set(authenticated)
       .expect(302);
+    const pending = await Contact.create({
+      userFrom: other._id,
+      userTo: member._id,
+      confirmed: false,
+    });
     await request(app)
       .put(`/api/mobile/v0/blocked-users/${other.username}`)
       .set(authenticated)
       .expect(200);
+    should.not.exist(await Contact.findById(pending._id));
     const blocked = await request(app)
       .get('/api/mobile/v0/blocked-users')
       .set(authenticated)

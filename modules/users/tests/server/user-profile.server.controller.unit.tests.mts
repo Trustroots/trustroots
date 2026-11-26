@@ -300,8 +300,6 @@ describe('Profile controller unit tests', () => {
         await mockModule<{ default: typeof profileController }>(
           new URL(controllerPath, import.meta.url),
           {
-            './../../../contacts/server/controllers/contacts.server.controller.mts':
-              { removeAllByUserId: done('contacts') },
             [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
             '@trustroots/logger': (...args: unknown[]) => logs.push(args),
           },
@@ -314,6 +312,7 @@ describe('Profile controller unit tests', () => {
         accountCleanup: {
           ...userAccountServices,
           removeOwnedOffers: done('offers'),
+          removeAllContacts: done('contacts'),
         },
       };
     }

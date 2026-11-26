@@ -1,5 +1,8 @@
 import { findDiscoveryOfferLocations } from '../../../offers/server/services/discovery-offers.server.service.mts';
-import { userAccountServices } from '../../../../layers/server/user-account.mts';
+import {
+  removePendingContacts,
+  userAccountServices,
+} from '../../../../layers/server/user-account.mts';
 import assert from 'assert';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
@@ -642,6 +645,7 @@ describe('API route registrations', () => {
 
   it('registers blocked-user routes', async () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const blockUser = sinon.spy();
     const block = controller(
       ['blockUser', 'getBlockedUsers', 'unblockUser'],
       'userBlock',
@@ -650,17 +654,26 @@ describe('API route registrations', () => {
     const { routes } = await register(
       './../../../users/server/routes/users-block.server.routes.mts',
       {
-        '../controllers/users.block.server.controller': block,
+        '../controllers/users.block.server.controller': { ...block, blockUser },
         '../policies/users.server.policy': policy,
       },
+      removePendingContacts,
     );
 
     assertHandlers(routeByPath(routes, '/api/blocked-users').get, [
       block.getBlockedUsers,
     ]);
-    assertHandlers(routeByPath(routes, '/api/blocked-users/:username').put, [
-      block.blockUser,
-    ]);
+    const puts = routeByPath(routes, '/api/blocked-users/:username').put;
+    assert.equal(puts.length, 1);
+    const req = {};
+    const res = {};
+    puts[0]!(req, res);
+    sinon.assert.calledOnceWithExactly(
+      blockUser,
+      removePendingContacts,
+      req,
+      res,
+    );
     assertHandlers(routeByPath(routes, '/api/blocked-users/:username').delete, [
       block.unblockUser,
     ]);
