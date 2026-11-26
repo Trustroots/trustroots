@@ -855,9 +855,11 @@ service.confirmEmail = function (req, res) {
       return;
     }
     if (modifiedUser.mfaEnabled === true) {
+      const browserUser = req.user;
       if (
-        String(req.user?._id) !== String(modifiedUser._id) ||
-        req.user?.$locals?.mfaVerified !== true
+        !browserUser ||
+        String(browserUser._id) !== String(modifiedUser._id) ||
+        browserUser.$locals?.mfaVerified !== true
       ) {
         res.json({ ...result, mfaRequired: true });
         return;
