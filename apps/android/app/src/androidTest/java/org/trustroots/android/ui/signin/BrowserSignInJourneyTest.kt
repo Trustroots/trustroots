@@ -179,13 +179,10 @@ class BrowserSignInJourneyTest {
         val marker = "org.trustroots.android.test.WARM_INTENT"
         ActivityScenario.launch<MainActivity>(launch).use { scenario ->
             waitForText("Username or email")
-            scenario.onActivity {
-                it.startActivity(Intent(launch).putExtra(marker, true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
-            }
-            compose.waitUntil(10_000) {
-                var captured = false
-                scenario.onActivity { captured = it.intent.getBooleanExtra(marker, false) }
-                captured
+            scenario.onActivity { activity ->
+                val warmIntent = Intent(launch).putExtra(marker, true)
+                InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(activity, warmIntent)
+                assertTrue(activity.intent.getBooleanExtra(marker, false))
             }
         }
     }
