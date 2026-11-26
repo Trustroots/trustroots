@@ -83,7 +83,6 @@
       "contacts",
       "core",
       "experiences",
-      "messages",
       "offers",
       "search",
       "stats",
@@ -149,7 +148,6 @@
     ],
     "users": [
       "experiences",
-      "messages",
       "offers"
     ]
   }

@@ -80,16 +80,38 @@ export async function initModulesConfiguration(app: Express, db?: Connection) {
 }
 
 export async function initModulesServerRoutes(app: Express) {
-  const connectionRouteFiles = new Set([
-    resolve(offers.directory, 'routes/offers.server.routes.mts'),
-    resolve(mobile.directory, 'routes/mobile-authentication.server.routes.cjs'),
-  ]);
+  const offersRouteFile = resolve(
+    offers.directory,
+    'routes/offers.server.routes.mts',
+  );
+  const mobileRouteFile = resolve(
+    mobile.directory,
+    'routes/mobile-authentication.server.routes.cjs',
+  );
+  const usersRouteFile = resolve(
+    users.directory,
+    'routes/users.server.routes.mts',
+  );
+  const userMessagingAdapter = new URL('./user-messaging.mts', import.meta.url)
+    .href;
+
   for (const file of getModuleFiles('routes')) {
     const { default: register } = await import(pathToFileURL(file).href);
-    if (connectionRouteFiles.has(file)) {
+    if (file === offersRouteFile || file === mobileRouteFile) {
       const { findSearchConnectionIds } =
         await import('../../modules/experiences/server/services/search-connections.server.service.mts');
-      register(app, findSearchConnectionIds);
+      if (file === mobileRouteFile) {
+        const { userMessaging } = await import(userMessagingAdapter);
+        register(app, {
+          findOfferConnections: findSearchConnectionIds,
+          readReplyStats: userMessaging.readReplyStats,
+        });
+      } else {
+        register(app, findSearchConnectionIds);
+      }
+    } else if (file === usersRouteFile) {
+      const { userMessaging } = await import(userMessagingAdapter);
+      register(app, userMessaging);
     } else {
       register(app);
     }
