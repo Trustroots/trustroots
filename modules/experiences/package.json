@@ -15,7 +15,6 @@
   "dependencies": {
     "@trustroots/contacts": "workspace:*",
     "@trustroots/core": "workspace:*",
-    "@trustroots/support": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

@@ -1,4 +1,4 @@
-import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
+import { createProfileExperiences } from '@/modules/experiences/client/profile-experiences';
 import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
 import { profileContacts } from '@/modules/contacts/client/profile-contacts';
@@ -66,6 +66,8 @@ vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
     <div>About {profile.displayName}</div>
   ),
 }));
+const profileExperiences = createProfileExperiences(vi.fn(async () => {}));
+
 function ProfileOffers() {
   return <div>Offers panel</div>;
 }
