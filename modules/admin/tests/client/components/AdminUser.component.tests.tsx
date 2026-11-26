@@ -27,7 +27,6 @@ function AdminUser(
 }
 
 vi.mock('@trustroots/core/auth', async () =>
-
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 
