@@ -230,6 +230,7 @@ describe('Worker tests', function () {
         'send email',
         'send deployment notification email',
         'deliver signup reminder',
+        'recover interrupted email delivery',
         'send Android message notification',
         'send Android test notification',
         'queue unread message digests',

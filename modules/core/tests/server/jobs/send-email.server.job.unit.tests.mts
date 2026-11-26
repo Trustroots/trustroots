@@ -10,8 +10,10 @@ async function loadJob(
   mailMode = 'live',
   accepted = true,
   serverMessageId?: string,
+  deliverReminder: 'send' | 'skip' | Error = 'send',
 ) {
   const events: unknown[][] = [];
+  const reminders: unknown[] = [];
   const transport = {
     sent: [] as unknown[],
     closed: 0,
@@ -52,11 +54,13 @@ async function loadJob(
       if (allow instanceof Error) throw allow;
       return allow;
     },
-    async deliverSignupReminder(_reminder, _address, send) {
-      await send();
+    async deliverSignupReminder(reminder, email, send) {
+      reminders.push({ reminder, email });
+      if (deliverReminder instanceof Error) throw deliverReminder;
+      if (deliverReminder === 'send') await send();
     },
   });
-  return { job, events, transport };
+  return { job, events, transport, reminders };
 }
 
 const messageId = '<agenda-fictional-job-id@example.test>';
@@ -171,6 +175,40 @@ describe('job: send email (delivery and logging)', function () {
         { jobId: 'fictional-job-id', attempt: 1, mailMode: 'live' },
       ],
     ]);
+  });
+
+  it('delivers signup reminders through the signup reminder gate', async function () {
+    const reminder = {
+      userId: 'fictional-member',
+      emailToken: 'fictional-token',
+    };
+    for (const deliverReminder of ['send', 'skip'] as const) {
+      const { job, transport, reminders } = await loadJob(
+        null,
+        true,
+        'live',
+        true,
+        undefined,
+        deliverReminder,
+      );
+      const error = await new Promise<Error | null | undefined>(resolve =>
+        job(
+          {
+            attrs: {
+              _id: 'fictional-job-id',
+              data: { ...email, signupReminder: reminder },
+            },
+          } as never,
+          resolve,
+        ),
+      );
+      assert.equal(error, undefined);
+      assert.deepEqual(reminders, [{ reminder, email: 'member@example.test' }]);
+      assert.deepEqual(
+        transport.sent,
+        deliverReminder === 'send' ? [{ ...email, messageId }] : [],
+      );
+    }
   });
 
   it('checks optional mail before delivering it', async function () {
