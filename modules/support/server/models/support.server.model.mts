@@ -1,12 +1,11 @@
 import mongoose, { type Types } from 'mongoose';
-import supportCategories from '../../shared/categories.ts';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import { SUPPORT_STATUSES, type SupportStatus } from '../../shared/statuses.ts';
 
 /**
  * Module dependencies.
  */
 const Schema = mongoose.Schema;
-const { SUPPORT_CATEGORIES } = supportCategories;
 
 export interface SupportRequestRecord {
   category: keyof typeof SUPPORT_CATEGORIES;

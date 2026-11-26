@@ -243,7 +243,12 @@ describe('Service: email (sent content)', function () {
       name: 'sendSupportRequest',
       args: [
         { name: 'Ann', address: 'ann@example.test' },
-        { category: 'other', message: 'Hello', username: 'ann' },
+        {
+          category: 'other',
+          categoryLabel: 'Other',
+          message: 'Hello',
+          username: 'ann',
+        },
       ],
       to: { name: 'Trustroots Support', address: config.supportEmail },
       from: supportFrom,
