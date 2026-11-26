@@ -74,6 +74,53 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Sign in"].exists)
     }
 
+    func testRegularSupportOpensFAQAndKeepsMessageForRetry() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let support = app.descendants(matching: .any)["support-menu-entry"]
+        XCTAssertTrue(support.waitForExistence(timeout: 10), app.debugDescription)
+        support.tap()
+
+        let faq = app.descendants(matching: .any)["support-faq"]
+        XCTAssertTrue(faq.waitForExistence(timeout: 10), app.debugDescription)
+        reveal(faq, in: app)
+        faq.tap()
+        XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 10))
+        app.buttons["Back"].tap()
+
+        let field = app.descendants(matching: .any)["support-message"]
+        let send = app.descendants(matching: .any)["support-send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(send.isEnabled)
+        let draft = "A fixture support request."
+        enterText(draft, into: field, in: app)
+        reveal(send, in: app)
+        send.tap()
+
+        let error = element(labelled: "Temporary fixture support delivery failure.", in: app)
+        XCTAssertTrue(error.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(field.value as? String, draft)
+        let form = app.descendants(matching: .any)["member-support"]
+        XCTAssertTrue(form.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: form.screenshot())
+        screenshot.name = "regular-ios-support-retry"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        reveal(send, in: app)
+        send.tap()
+        XCTAssertTrue(element(labelled: "Message sent", in: app).waitForExistence(timeout: 10))
+        XCTAssertFalse(field.exists)
+    }
+
     func testRegularProfileShowsMeetingAvailabilityWhenNotHosting() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
