@@ -234,7 +234,11 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
         app.launch()
-        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        addTeardownBlock { [self] in
+            app.terminate()
+            app.launch()
+            signOutOfNativeAccountIfNeeded(app)
+        }
         signOutOfNativeAccountIfNeeded(app)
         signInToRegularApp(app)
 

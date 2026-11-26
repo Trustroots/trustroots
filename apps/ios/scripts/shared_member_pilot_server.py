@@ -42,21 +42,6 @@ PROFILE_CIRCLE = {
     "label": "Night Train Travellers",
     "description": "A fictional circle for overnight train travellers.",
 }
-PARTNER = {
-    "_id": "member-pilot-partner",
-    "username": "pilot-partner",
-    "displayName": "Robin Example",
-    "tagline": "A partner profile",
-    "description": "<p>I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers.</p>",
-    "languages": ["eng", "fra"],
-    "replyRate": "87%",
-    "replyTime": "2 days",
-    "locationLiving": "Example Harbour",
-    "member": [{"tribe": PROFILE_CIRCLE}],
-}
-REPORT_MESSAGE = "A fictional report for the support team."
-VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
-OTHER_OFFER_ID = "offer-pilot-other"
 CIRCLES = [
     {
         "_id": "circle-pilot-night",
@@ -73,6 +58,21 @@ CIRCLES = [
         "count": 18,
     },
 ]
+PARTNER = {
+    "_id": "member-pilot-partner",
+    "username": "pilot-partner",
+    "displayName": "Robin Example",
+    "tagline": "A partner profile",
+    "description": "<p>I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers.</p>",
+    "languages": ["eng", "fra"],
+    "replyRate": "87%",
+    "replyTime": "2 days",
+    "locationLiving": "Example Harbour",
+    "member": [{"tribe": PROFILE_CIRCLE}, {"tribe": CIRCLES[0]}],
+}
+REPORT_MESSAGE = "A fictional report for the support team."
+VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
+OTHER_OFFER_ID = "offer-pilot-other"
 CIRCLE_ROUTE = "/api/mobile/v0/memberships/"
 INCOMING_MESSAGE = {
     "_id": "message-pilot-incoming",
