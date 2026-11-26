@@ -134,6 +134,71 @@ test('concurrent handoffs keep one Agenda job per destination and receipt', asyn
   );
 });
 
+test('a duplicate-key race on progress insert rereads the saved snapshot', async () => {
+  const db = mongoose.connection.db!;
+  await db.collection('users').insertOne({
+    username: 'race-greeter',
+    email: 'race@example.test',
+    public: true,
+    roles: ['welcome-team'],
+  });
+  const events = db.collection('deploymentNotifications');
+  // Another concurrent writer already inserted the progress document.
+  await events.insertOne({
+    _id: receipt.eventId,
+    origin: receipt.origin,
+    action: receipt.action,
+    buildCommit: receipt.buildCommit,
+    readinessSucceededAt: receipt.readinessSucceededAt,
+    addresses: ['race@example.test'],
+    queuedCount: 0,
+  });
+  const findOne = vi.spyOn(events, 'findOne').mockResolvedValueOnce(null);
+  const findOneAndUpdate = vi
+    .spyOn(events, 'findOneAndUpdate')
+    .mockRejectedValueOnce(
+      Object.assign(new Error('E11000 duplicate key'), { code: 11000 }),
+    );
+  try {
+    assert.equal(await queueDeploymentNotifications(db, receipt, from), 1);
+    assert.equal(findOneAndUpdate.mock.calls.length, 1);
+    assert.ok(findOne.mock.calls.length >= 2);
+  } finally {
+    findOne.mockRestore();
+    findOneAndUpdate.mockRestore();
+  }
+  assert.equal(
+    await db.collection('agendaJobs').countDocuments({
+      deploymentEventId: receipt.eventId,
+    }),
+    1,
+  );
+});
+
+test('progress insert failures other than duplicate keys still reject', async () => {
+  const db = mongoose.connection.db!;
+  await db.collection('users').insertOne({
+    username: 'fail-greeter',
+    email: 'fail@example.test',
+    public: true,
+    roles: ['admin'],
+  });
+  const events = db.collection('deploymentNotifications');
+  const findOne = vi.spyOn(events, 'findOne').mockResolvedValueOnce(null);
+  const findOneAndUpdate = vi
+    .spyOn(events, 'findOneAndUpdate')
+    .mockRejectedValueOnce(new Error('write unavailable'));
+  try {
+    await assert.rejects(
+      queueDeploymentNotifications(db, receipt, from),
+      /write unavailable/,
+    );
+  } finally {
+    findOne.mockRestore();
+    findOneAndUpdate.mockRestore();
+  }
+});
+
 test('a resumed handoff keeps its snapshot and does not reschedule an inserted job', async () => {
   const db = mongoose.connection.db!;
   const users = db.collection('users');
