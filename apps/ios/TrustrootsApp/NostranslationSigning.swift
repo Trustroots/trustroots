@@ -358,15 +358,16 @@ struct NostranslationSigningSheet: View {
                 if !signer.clients.isEmpty {
                     Section("Connected clients") {
                         ForEach(signer.clients) { client in
-                            Text("Nostranslation client \(client.peer.prefix(12))")
-                            Button("Revoke client", role: .destructive) { perform { try signer.revoke(client) } }
+                            NostrConnectedClientRow(peerPrefix: String(client.peer.prefix(12))) {
+                                guard signer.clients.contains(client) else { return }
+                                perform { try signer.revoke(client) }
+                            }
                         }
                     }
                     Section("Review alerts") {
-                        Button(alerts.enabled ? "Disable review alerts" : "Enable review alerts") {
+                        NostrReviewAlertsSection(enabled: alerts.enabled, status: alerts.status) {
                             Task { await alerts.setEnabled(!alerts.enabled, server: serverURLString) }
                         }
-                        if let status = alerts.status { Text(status).foregroundStyle(.secondary) }
                     }
                 }
                 if openedFromAlert && signer.reviews.isEmpty {
@@ -420,6 +421,110 @@ struct NostranslationSigningSheet: View {
         signer.error = nil
         do { try action() }
         catch { signer.error = "This action could not be completed. Check your local Nostr key and try again." }
+    }
+}
+
+private struct NostrConnectedClientRow: View {
+    let peerPrefix: String
+    let onRevoke: () -> Void
+    @State private var height: CGFloat = 1
+
+    var body: some View {
+        Controller(peerPrefix: peerPrefix, onRevoke: onRevoke, height: $height)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+    }
+
+    @MainActor
+    private struct Controller: UIViewControllerRepresentable {
+        let peerPrefix: String
+        let onRevoke: () -> Void
+        @Binding var height: CGFloat
+
+        final class Coordinator {
+            var onRevoke: () -> Void = {}
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator() }
+
+        func makeUIViewController(context: Context) -> UIViewController {
+            let coordinator = context.coordinator
+            coordinator.onRevoke = onRevoke
+            let measuredHeight = $height
+            return NostrConnectedClientControllerKt.NostrConnectedClientViewController(
+                peerPrefix: peerPrefix,
+                onRevoke: { [weak coordinator] in coordinator?.onRevoke() },
+                onHeight: { value in
+                    let next = max(1, CGFloat(value.doubleValue))
+                    Task { @MainActor in
+                        if measuredHeight.wrappedValue != next {
+                            measuredHeight.wrappedValue = next
+                        }
+                    }
+                }
+            )
+        }
+
+        func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+            context.coordinator.onRevoke = onRevoke
+        }
+    }
+}
+
+private struct NostrReviewAlertsSection: View {
+    let enabled: Bool
+    let status: String?
+    let onToggle: () -> Void
+    @State private var height: CGFloat = 1
+
+    var body: some View {
+        NostrReviewAlertsController(enabled: enabled, status: status, onToggle: onToggle, height: $height)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipped()
+    }
+}
+
+@MainActor
+private struct NostrReviewAlertsController: UIViewControllerRepresentable {
+    let enabled: Bool
+    let status: String?
+    let onToggle: () -> Void
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        let state = NostrReviewAlertsState()
+        var onToggle: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return NostrReviewAlertsControllerKt.NostrReviewAlertsViewController(
+            state: coordinator.state,
+            onToggle: { [weak coordinator] in coordinator?.onToggle?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onToggle = onToggle
+        coordinator.state.update(enabled: enabled, status: status)
     }
 }
 
