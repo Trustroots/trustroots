@@ -83,6 +83,24 @@ class SecureMobileSessionStoreTest {
     }
 
     @Test
+    fun pendingBrowserSignInIsEncryptedBoundToTheBackendAndConsumedExactlyOnce() {
+        val attempt = BrowserSignInAttempt.create("https://www.trustroots.org", nowMillis = 10L)
+        store.saveBrowserSignIn(attempt)
+        assertTrue(preferences.all.values.filterIsInstance<String>().none {
+            it.contains(attempt.codeVerifier) || it.contains(attempt.state)
+        })
+        assertNull(store.takeBrowserSignIn("https://other.example.test", attempt.state, nowMillis = 100L))
+        val reloaded = SecureMobileSessionStore(context)
+        val consumed = requireNotNull(reloaded.takeBrowserSignIn(attempt.backendURL, attempt.state, nowMillis = 100L))
+        assertEquals(attempt.codeVerifier, consumed.codeVerifier)
+        assertNull(reloaded.takeBrowserSignIn(attempt.backendURL, attempt.state, nowMillis = 100L))
+
+        store.saveBrowserSignIn(attempt)
+        assertNull(store.takeBrowserSignIn(attempt.backendURL, attempt.state, nowMillis = attempt.expiresAtMillis))
+        assertTrue(preferences.all.isEmpty())
+    }
+
+    @Test
     fun restoresBearerSessionsByRefreshingAndPersistingTheRotation() = runBlocking {
         val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "old-access", "old-refresh")
         store.save(saved)

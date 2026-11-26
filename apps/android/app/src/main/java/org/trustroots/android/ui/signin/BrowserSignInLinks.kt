@@ -1,0 +1,33 @@
+package org.trustroots.android.ui.signin
+
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import org.trustroots.android.api.BrowserSignInCallback
+
+internal class BrowserSignInLinks : ViewModel() {
+    private val mutableCallback = MutableStateFlow<BrowserSignInCallback?>(null)
+    val callback = mutableCallback.asStateFlow()
+
+    fun capture(intent: Intent) {
+        if (intent.action != Intent.ACTION_VIEW) return
+        val callback = intent.dataString?.let(BrowserSignInCallback::parse) ?: return
+        intent.data = null
+        mutableCallback.value = callback
+    }
+
+    fun consume(callback: BrowserSignInCallback): Boolean = mutableCallback.compareAndSet(callback, null)
+}
+
+internal fun launchSystemBrowser(context: Context, url: String): Boolean {
+    return try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    }
+}

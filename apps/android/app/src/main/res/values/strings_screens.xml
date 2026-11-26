@@ -96,6 +96,9 @@
     <string name="screen_could_not_reach_trustroots">Could not reach Trustroots.</string>
     <string name="screen_sign_in_description">Sharing, hosting and getting people together.</string>
     <string name="screen_sign_in">Sign in</string>
+    <string name="screen_sign_in_browser">Continue in browser</string>
+    <string name="screen_sign_in_browser_unavailable">Browser sign-in is unavailable. In Android Settings, allow Trustroots to open supported links, or sign in on the Trustroots website.</string>
+    <string name="screen_sign_in_browser_retry">Could not finish browser sign-in. Start again in Trustroots and use the new sign-in link.</string>
     <string name="screen_join_trustroots">Join Trustroots</string>
     <string name="screen_reset_password">Reset password</string>
     <string name="screen_forgot_password">Forgot password?</string>
