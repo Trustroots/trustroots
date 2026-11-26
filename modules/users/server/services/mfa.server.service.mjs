@@ -322,6 +322,10 @@ function challengeIsValid(challenge) {
   );
 }
 
+function recordBrowserSignin(req) {
+  if (req.session) req.session.browserSigninAt = Date.now();
+}
+
 const service = {
   activateEnrollment,
   challengeIsValid,
@@ -332,6 +336,7 @@ const service = {
   createRecoveryCodes,
   hashRecoveryCode: recoveryHash,
   matchingCounter,
+  recordBrowserSignin,
   removeMfa,
   stageEnrollment,
   verifyAndConsume,

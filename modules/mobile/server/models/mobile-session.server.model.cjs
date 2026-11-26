@@ -14,6 +14,7 @@ const MobileSessionSchema = new Schema({
     default: 0,
     required: true,
   },
+  mfaVerified: { type: Boolean, default: false },
   accessTokenHash: {
     type: String,
     required: true,

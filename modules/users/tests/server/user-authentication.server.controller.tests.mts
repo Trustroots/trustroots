@@ -1266,8 +1266,11 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('rejects a missing or expired challenge', async () => {
       const res = deferredResponse();
-      await authController.verifyMfa({ session: {} }, res);
+      await authController.verifyMfa({}, res);
       res.statusCode.should.equal(401);
+      responseField(res, 'message').should.equal(
+        'Sign-in challenge has expired. Please sign in again.',
+      );
 
       const expiredResponse = deferredResponse();
       await authController.verifyMfa(
@@ -1275,6 +1278,9 @@ describe('Authentication controller OAuth unit tests', () => {
         expiredResponse,
       );
       expiredResponse.statusCode.should.equal(401);
+      responseField(expiredResponse, 'message').should.equal(
+        'Sign-in challenge has expired. Please sign in again.',
+      );
     });
 
     it('clears a challenge for a missing or suspended account', async () => {
@@ -1289,11 +1295,18 @@ describe('Authentication controller OAuth unit tests', () => {
         missingResponse,
       );
       missingResponse.statusCode.should.equal(401);
+      responseField(missingResponse, 'message').should.equal(
+        'Sign-in challenge is no longer valid.',
+      );
       should.not.exist(missingSession.mfaChallenge);
 
       const [saved] = await utils.saveUsers([
         { ...utils.generateUsers(1)[0], roles: ['user', 'suspended'] },
       ]);
+      await User.updateOne(
+        { _id: saved._id },
+        { $set: { mfaEnabled: true, authVersion: 2 } },
+      );
       const suspendedSession: MfaSession = {
         mfaChallenge: createChallenge(String(saved._id)),
         regenerate: callback => callback(),
@@ -1310,14 +1323,17 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('rejects an invalid authenticator code', async () => {
       const { challenge } = await createMfaChallenge();
-      const res = deferredResponse();
-
-      await authController.verifyMfa(
-        { session: { mfaChallenge: challenge }, body: { code: '000000' } },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
+      for (const body of [undefined, { code: '000000' }]) {
+        const res = deferredResponse();
+        await authController.verifyMfa(
+          { session: { mfaChallenge: challenge }, body },
+          res,
+        );
+        res.statusCode.should.equal(400);
+        responseField(res, 'message').should.equal(
+          'Authenticator or recovery code is invalid.',
+        );
+      }
     });
 
     it('reports a session update failure after consuming a valid code', async () => {
@@ -1335,6 +1351,7 @@ describe('Authentication controller OAuth unit tests', () => {
       );
 
       res.statusCode.should.equal(503);
+      responseField(res, 'message').should.equal('Could not complete sign-in.');
     });
 
     it('completes sign-in after a valid second factor', async () => {
@@ -1350,8 +1367,12 @@ describe('Authentication controller OAuth unit tests', () => {
         {
           session,
           body: { code },
-          login: (_authenticatedUser: unknown, callback: AuthCallback) =>
-            callback(),
+          login: (authenticatedUser: unknown, callback: AuthCallback) => {
+            should(authenticatedUser)
+              .have.property('$locals')
+              .which.has.property('mfaVerified', true);
+            callback();
+          },
         },
         res,
       );
@@ -1359,6 +1380,7 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       responseField(res, '_id').toString().should.equal(user._id.toString());
       should.not.exist(session.mfaChallenge);
+      should(session).have.property('browserSigninAt', 59000);
     });
 
     it('explains when the site cannot verify authenticator codes', async () => {
@@ -1389,6 +1411,9 @@ describe('Authentication controller OAuth unit tests', () => {
       );
 
       res.statusCode.should.equal(503);
+      responseField(res, 'message').should.equal(
+        'Authenticator verification is temporarily unavailable.',
+      );
     });
   });
 

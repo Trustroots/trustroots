@@ -88,6 +88,18 @@ describe('Users Passport session configuration', () => {
         mfaVerified: false,
       }),
     );
+    for (const [mfaEnabled, mfaVerified] of [
+      [true, false],
+      [false, true],
+    ] as const) {
+      serialize(
+        { id: 'member-id', mfaEnabled, $locals: { mfaVerified } },
+        (error, session) => {
+          should.not.exist(error);
+          should(session).have.property('mfaVerified', false);
+        },
+      );
+    }
     for (const session of [
       null,
       undefined,
@@ -130,6 +142,11 @@ describe('Users Passport session configuration', () => {
     should(restored).equal(currentUser);
     if (!restored) throw new Error('Expected the current session user');
     should(restored.$locals?.mfaVerified).equal(true);
+    await restore({ id: 'member-id', authVersion: 4 });
+    should(restored.$locals?.mfaVerified).equal(false);
+    currentUser.mfaEnabled = false;
+    await restore({ id: 'member-id', authVersion: 4, mfaVerified: true });
+    should(restored.$locals?.mfaVerified).equal(false);
     should(await restore({ id: 'deleted-id', authVersion: 0 })).equal(null);
     findOne
       .alwaysCalledWithMatch(sinon.match.object, '-salt -password')

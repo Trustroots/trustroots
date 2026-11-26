@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { expect, test, annotateFeature } from '../../support/fixtures.mts';
 import { createUser, registerViaApi } from '../../support/helpers.mts';
 import { updateUserByUsername } from '../../support/db.mts';
@@ -76,10 +77,21 @@ test('staff register, use and remove an optional device passkey', async ({
     await page.request.post('/api/auth/signout', {
       headers: { 'X-Trustroots-Request': '1' },
     });
-    await page.goto('/signin');
+    const codeVerifier = randomBytes(32).toString('base64url');
+    const state = randomBytes(32).toString('base64url');
+    const beginHandoff = new URLSearchParams({
+      platform: 'ios',
+      code_challenge: createHash('sha256')
+        .update(codeVerifier)
+        .digest('base64url'),
+      state,
+    });
+    await page.goto(`/auth/mobile/start?${beginHandoff}`);
     await page.getByLabel('Email or username').fill(user.username);
     await page.getByLabel('Password', { exact: true }).fill(user.password);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Sign in to continue', exact: true })
+      .click();
     await expect(
       page.getByRole('button', { name: 'Use a registered passkey' }),
     ).toBeVisible();
@@ -89,10 +101,44 @@ test('staff register, use and remove an optional device passkey', async ({
     await page
       .getByRole('button', { name: 'Use a registered passkey' })
       .click();
-    await expect(page).not.toHaveURL(/\/signin/);
+    await expect(page).toHaveURL(/\/auth\/mobile\/confirm\/[a-f0-9]{64}$/);
     expect(
       (await (await page.request.get('/api/auth/session')).json()).userId,
     ).toBeTruthy();
+    await expect(
+      page.getByText(
+        'Only confirm if you started sign-in in the Trustroots app.',
+      ),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Confirm app sign-in', exact: true })
+      .click();
+    const returnLink = page.getByRole('link', {
+      name: 'Open the Trustroots app',
+    });
+    await expect(returnLink).toBeVisible();
+    const callback = new URL((await returnLink.getAttribute('href')) || '');
+    expect(`${callback.protocol}//${callback.host}${callback.pathname}`).toBe(
+      'org.trustroots.mobile://auth/complete',
+    );
+    expect(callback.searchParams.get('state')).toBe(state);
+    const exchange = await page.request.post(
+      '/api/mobile/v0/auth/browser/exchange',
+      {
+        data: {
+          platform: 'ios',
+          code: callback.searchParams.get('code'),
+          codeVerifier,
+        },
+      },
+    );
+    expect(exchange.status()).toBe(200);
+    const nativeSession = await exchange.json();
+    expect(nativeSession.member.username).toBe(user.username);
+    const nativeProfile = await page.request.get('/api/mobile/v0/me', {
+      headers: { Authorization: `Bearer ${nativeSession.accessToken}` },
+    });
+    expect(nativeProfile.status()).toBe(200);
 
     await page.goto('/profile/edit/account');
     await settings.getByLabel('Current password').fill(user.password);
