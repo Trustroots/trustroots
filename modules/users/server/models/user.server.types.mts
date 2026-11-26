@@ -77,7 +77,7 @@ export interface UserServerRecord {
   avatarUploaded?: boolean;
   avatarVersion?: string;
   newsletter?: boolean;
-  messageEmailFrequency?: import('../../shared/email-preferences.js').MessageEmailFrequency;
+  messageEmailFrequency?: import('../../../core/shared/email-preferences.mts').MessageEmailFrequency;
   hostingReminderEmails?: boolean;
   dailyMessageDigestPeriod?: Date;
   weeklyMessageDigestPeriod?: Date;

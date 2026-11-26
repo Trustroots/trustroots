@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import { nip19, validateEvent, verifyEvent, type Event } from 'nostr-tools';
 import config from '../../../../config/config.mts';
-import { hashToken } from './action-token.server.service.mts';
+import { hashToken } from '../../../core/server/services/action-token.server.service.mts';
 import type {
   UserServerRecord,
   UserServerModel,

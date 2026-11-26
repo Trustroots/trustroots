@@ -10,7 +10,7 @@ import {
   readUpload,
   type UploadError,
 } from './../../../core/server/services/file-upload.service.mts';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 interface NewsletterUser {
   _id: Types.ObjectId;

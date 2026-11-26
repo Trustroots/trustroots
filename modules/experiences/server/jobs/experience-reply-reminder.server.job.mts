@@ -6,7 +6,7 @@ import mongoose, { type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import sendEmailJob from '../../../core/server/jobs/send-email.server.job.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import type { ExperienceRecord } from '../models/experiences.server.model.mts';
 
 export const queueExperienceReplyRemindersJob =

@@ -1,50 +1,14 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import mongoose, { type Types } from 'mongoose';
-import config from '../../../../config/config.mts';
+import { timingSafeEqual } from 'node:crypto';
+import mongoose from 'mongoose';
 import type { UserServerRecord } from '../models/user.server.types.mts';
-import type { MessageEmailFrequency } from '../../shared/email-preferences.ts';
-
-const unsubscribePath = '/email/unsubscribe';
-const tokenPattern = /^([a-f0-9]{24})\.(messages|hosting)\.([a-f0-9]{64})$/;
-type EmailCategory = 'messages' | 'hosting';
-
-export interface NotificationEmail {
-  userId: string;
-  category: EmailCategory;
-  frequency?: MessageEmailFrequency;
-}
+import {
+  tokenPattern,
+  unsubscribeSignature,
+  type NotificationEmail,
+} from '../../../core/server/services/notification-email-envelope.server.service.mts';
 
 function users() {
   return mongoose.model<UserServerRecord>('User');
-}
-
-function signature(userId: string, category: EmailCategory, email: string) {
-  return createHmac('sha256', config.sessionSecret)
-    .update(JSON.stringify(['email-unsubscribe', userId, category, email]))
-    .digest('hex');
-}
-
-export function notificationEmail(
-  user: { _id?: Types.ObjectId | string; email?: string },
-  category: EmailCategory,
-  frequency?: MessageEmailFrequency,
-) {
-  if (!user._id || !user.email) return {};
-  const userId = String(user._id);
-  const token = [
-    userId,
-    category,
-    signature(userId, category, user.email),
-  ].join('.');
-  return {
-    notificationEmail: { userId, category, frequency },
-    unsubscribeUrl:
-      (config.https ? 'https://' : 'http://') +
-      config.domain +
-      unsubscribePath +
-      '/' +
-      token,
-  };
 }
 
 export async function canDeliverNotificationEmail(
@@ -71,7 +35,7 @@ export async function confirmUnsubscribe(token: string) {
   const category = categoryValue === 'hosting' ? 'hosting' : 'messages';
   const user = await users().findById(userId, 'email').lean().exec();
   if (!user?.email) return false;
-  const expected = signature(userId, category, user.email);
+  const expected = unsubscribeSignature(userId, category, user.email);
   if (
     !timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expected, 'hex'))
   ) {
@@ -87,5 +51,3 @@ export async function confirmUnsubscribe(token: string) {
   );
   return result.matchedCount === 1;
 }
-
-export { unsubscribePath, tokenPattern };

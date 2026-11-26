@@ -14,7 +14,7 @@ import {
   messagePlainText,
   sanitiseMessageHtml,
 } from '../../../core/server/services/message-format.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mts';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';

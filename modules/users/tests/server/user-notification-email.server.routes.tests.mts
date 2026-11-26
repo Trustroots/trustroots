@@ -1,13 +1,11 @@
+import { notificationEmail } from '../../../core/server/services/notification-email-envelope.server.service.mts';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import config from '../../../../config/config.mts';
 import express from '../../../../config/lib/express.mts';
-import {
-  notificationEmail,
-  canDeliverNotificationEmail,
-} from '../../server/services/notification-email.server.service.mts';
+import { canDeliverNotificationEmail } from '../../server/services/notification-email.server.service.mts';
 
 type UserRecord =
   import('../../server/models/user.server.types.mts').UserServerRecord;

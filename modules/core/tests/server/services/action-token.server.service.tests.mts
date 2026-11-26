@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
-import * as actionToken from '../../server/services/action-token.server.service.mts';
+import * as actionToken from '../../../server/services/action-token.server.service.mts';
 import type {
   UserModel,
   UserRecord,
-} from '../../../../testutils/server/model-contracts.mts';
+} from '../../../../../testutils/server/model-contracts.mts';
 
 const { hashToken, matchToken, setToken, emailToken } = actionToken;
 const User = mongoose.model<UserRecord, UserModel>('User');
