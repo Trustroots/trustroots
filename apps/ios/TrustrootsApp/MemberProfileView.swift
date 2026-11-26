@@ -57,6 +57,22 @@ struct MemberProfileView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 22) {
                             VStack(alignment: .leading, spacing: 9) {
+                                if username != nil {
+                                    Button {
+                                        dismiss()
+                                    } label: {
+                                        Image(systemName: "chevron.backward")
+                                            .font(.title2.weight(.bold))
+                                            .foregroundStyle(.primary)
+                                            .frame(width: 46, height: 46)
+                                            .background(.ultraThickMaterial)
+                                            .clipShape(Circle())
+                                            .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                                    }
+                                    .accessibilityLabel("Back")
+                                    .accessibilityIdentifier("profile-header-back")
+                                }
+
                                 MemberIdentityView(
                                     member: MiniMember(
                                         id: profile.id,
@@ -71,6 +87,7 @@ struct MemberProfileView: View {
                                     secondaryForeground: .white.opacity(0.86)
                                 )
                                 .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("profile-header-identity")
                                 if let tagline = profile.tagline, !tagline.isEmpty {
                                     Text(tagline.plainText)
                                         .font(.subheadline.weight(.medium))
@@ -80,7 +97,7 @@ struct MemberProfileView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
-                            .padding(.top, 76)
+                            .padding(.top, username == nil ? 76 : 52)
                             .padding(.bottom, 20)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background {
@@ -97,24 +114,6 @@ struct MemberProfileView: View {
                             }
                             .padding(.horizontal, -20)
                             .padding(.top, -20)
-                            .overlay(alignment: .topLeading) {
-                                if username != nil {
-                                    Button {
-                                        dismiss()
-                                    } label: {
-                                        Image(systemName: "chevron.backward")
-                                            .font(.title2.weight(.bold))
-                                            .foregroundStyle(.primary)
-                                            .frame(width: 46, height: 46)
-                                            .background(.ultraThickMaterial)
-                                            .clipShape(Circle())
-                                            .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
-                                    }
-                                    .accessibilityLabel("Back")
-                                    .padding(.leading, 16)
-                                    .padding(.top, 52)
-                                }
-                            }
 
                             if let editProfile {
                                 Button(action: editProfile) {
