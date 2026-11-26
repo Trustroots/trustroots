@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { nip19, verifyEvent, type Event } from 'nostr-tools';
 import {
   FEATURED_ARTICLE_KIND,
@@ -8,7 +8,7 @@ import {
 import FeaturedNote, {
   type FeaturedNostrNoteRecord,
 } from '../models/featured-nostr-note.server.model.mts';
-import { findPublicNip05Usernames } from '../services/nostr-identity.server.service.mts';
+import type { FindPublicNip05Usernames } from '../services/nostr-identity.server.contract.mts';
 
 function isEventId(id: string) {
   return /^[0-9a-f]{64}$/.test(id);
@@ -62,6 +62,7 @@ function outranks(event: Event, note: FeaturedNostrNoteRecord) {
 }
 
 async function publicNotes(
+  findPublicNip05Usernames: FindPublicNip05Usernames,
   notes: FeaturedNostrNoteRecord[],
 ): Promise<FeaturedNostrNote[]> {
   if (!notes.length) return [];
@@ -87,14 +88,24 @@ async function publicNotes(
   }));
 }
 
-export const listFeaturedNotes: RequestHandler = async (_req, res) => {
+export async function listFeaturedNotes(
+  findPublicNip05Usernames: FindPublicNip05Usernames,
+  _req: Request,
+  res: Response,
+) {
   const notes = await FeaturedNote.find({ featuredAt: { $ne: null } })
     .sort({ featuredAt: -1, _id: 1 })
     .lean();
-  res.set('Cache-Control', 'no-store').json(await publicNotes(notes));
-};
+  res
+    .set('Cache-Control', 'no-store')
+    .json(await publicNotes(findPublicNip05Usernames, notes));
+}
 
-export const featureNote: RequestHandler = async (req, res) => {
+export async function featureNote(
+  findPublicNip05Usernames: FindPublicNip05Usernames,
+  req: Request,
+  res: Response,
+) {
   const event = req.body?.event as Event | undefined;
   if (
     (event?.kind !== 1 && event?.kind !== FEATURED_ARTICLE_KIND) ||
@@ -196,7 +207,7 @@ export const featureNote: RequestHandler = async (req, res) => {
       });
       return;
     }
-    const [featured] = await publicNotes([current]);
+    const [featured] = await publicNotes(findPublicNip05Usernames, [current]);
     res.json(featured);
     return;
   }
@@ -210,7 +221,9 @@ export const featureNote: RequestHandler = async (req, res) => {
   }).lean();
   if (existingArticle) {
     if (existingArticle.featuredAt) {
-      const [featured] = await publicNotes([existingArticle]);
+      const [featured] = await publicNotes(findPublicNip05Usernames, [
+        existingArticle,
+      ]);
       res.json(featured);
     } else {
       res.status(409).json({
@@ -255,14 +268,15 @@ export const featureNote: RequestHandler = async (req, res) => {
     note = restored;
   }
 
-  const [featured] = await publicNotes([note]);
+  const [featured] = await publicNotes(findPublicNip05Usernames, [note]);
   res.json(featured);
-};
+}
 
-export const reviseFeaturedNote: RequestHandler<{ id: string }> = async (
-  req,
-  res,
-) => {
+export async function reviseFeaturedNote(
+  findPublicNip05Usernames: FindPublicNip05Usernames,
+  req: Request<{ id: string }>,
+  res: Response,
+) {
   const { id } = req.params;
   const event = req.body?.event as Event | undefined;
   if (
@@ -303,7 +317,7 @@ export const reviseFeaturedNote: RequestHandler<{ id: string }> = async (
     return;
   }
   if (note.revisionId === event.id) {
-    const [featured] = await publicNotes([note]);
+    const [featured] = await publicNotes(findPublicNip05Usernames, [note]);
     res.json(featured);
     return;
   }
@@ -335,9 +349,9 @@ export const reviseFeaturedNote: RequestHandler<{ id: string }> = async (
       .json({ message: 'This update changed. Reload the page and try again.' });
     return;
   }
-  const [featured] = await publicNotes([updated]);
+  const [featured] = await publicNotes(findPublicNip05Usernames, [updated]);
   res.json(featured);
-};
+}
 
 export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
   req,

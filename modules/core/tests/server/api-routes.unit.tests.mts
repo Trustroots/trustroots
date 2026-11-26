@@ -4,6 +4,7 @@ import {
   userAccountServices,
 } from '../../../../layers/server/user-account.mts';
 import assert from 'assert';
+import { nostrIdentity } from '../../../../layers/server/nostr-identity.mts';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
 import { challenge } from './../../../users/server/controllers/users.nostr.server.controller.mts';
@@ -789,6 +790,7 @@ describe('API route registrations', () => {
         '../services/admin-elevation.server.service': elevation,
       },
       userAccountServices,
+      nostrIdentity.findPublicNip05Usernames,
     );
 
     assertHandlers(routeByPath(routes, '/api/admin/gravatar').get, [

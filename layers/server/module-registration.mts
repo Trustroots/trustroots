@@ -91,6 +91,10 @@ export async function initModulesServerRoutes(app: Express) {
     admin.directory,
     'routes/admin.server.routes.mts',
   );
+  const coreRouteFile = resolve(
+    core.directory,
+    'routes/core.server.routes.mts',
+  );
   const tribesRouteFile = resolve(
     tribes.directory,
     'routes/tribes.server.routes.mts',
@@ -115,6 +119,10 @@ export async function initModulesServerRoutes(app: Express) {
     .href;
   const userMessagingAdapter = new URL('./user-messaging.mts', import.meta.url)
     .href;
+  const memberBootstrapAdapter = new URL(
+    './member-bootstrap.mts',
+    import.meta.url,
+  ).href;
 
   for (const file of getModuleFiles('routes')) {
     const { default: register } = await import(pathToFileURL(file).href);
@@ -144,14 +152,27 @@ export async function initModulesServerRoutes(app: Express) {
       const { userAccountServices, removePendingContacts } = await import(
         userAccountAdapter
       );
-      register(
-        app,
-        file === userBlockRouteFile
-          ? removePendingContacts
-          : userAccountServices,
-      );
+      if (file === adminRouteFile) {
+        const { nostrIdentity } = await import('./nostr-identity.mts');
+        register(
+          app,
+          userAccountServices,
+          nostrIdentity.findPublicNip05Usernames,
+        );
+      } else {
+        register(
+          app,
+          file === userBlockRouteFile
+            ? removePendingContacts
+            : userAccountServices,
+        );
+      }
     } else if (file === tribesRouteFile) {
       register(app, await loadDiscoveryOfferLocations());
+    } else if (file === coreRouteFile) {
+      const { buildBootstrapUser } = await import(memberBootstrapAdapter);
+      const { nostrIdentity } = await import('./nostr-identity.mts');
+      register(app, { buildBootstrapUser, nostrIdentity });
     } else {
       register(app);
     }

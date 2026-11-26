@@ -30,6 +30,7 @@ import { Alert } from '@trustroots/ui/Alert';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
+  saveLocale: (locale: string) => Promise<unknown>;
 }
 
 const messageEmailLabels = {
@@ -39,7 +40,10 @@ const messageEmailLabels = {
   off: 'No emails about messages',
 } satisfies Record<(typeof messageEmailFrequencies)[number], string>;
 
-export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
+export default function ProfileEditAccount({
+  user,
+  saveLocale,
+}: ProfileEditAccountProps) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
@@ -434,7 +438,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               'This is the language of the interface you see across the site.',
             )}
           </p>
-          <LanguageSwitch saveToAPI={true} />
+          <LanguageSwitch saveLocale={saveLocale} />
         </div>
       </div>
 

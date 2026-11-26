@@ -1,14 +1,14 @@
 import type { DecodedResult } from 'nostr-tools/nip19';
 import type { Application } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
-import core from './../controllers/core.server.controller.mts';
+import core, {
+  type BuildBootstrapUser,
+} from './../controllers/core.server.controller.mts';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
-import authenticationService from './../../../users/server/services/authentication.server.service.mts';
 import * as nip19 from 'nostr-tools/nip19';
-import mongoose from 'mongoose';
 import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';
 import { listFeaturedNotes } from '../controllers/featured-nostr-notes.server.controller.mts';
-import { publicNip05MemberFilter } from '../services/nostr-identity.server.service.mts';
+import type { NostrIdentity } from '../services/nostr-identity.server.contract.mts';
 import { getClientIpAddress } from '../services/client-ip.server.service.mts';
 import {
   getNostrServiceSigner,
@@ -19,13 +19,10 @@ import {
  * Module dependencies.
  */
 
-type NostrUserRecord = {
-  username: string;
-  nostrNpub?: string;
-  public?: boolean;
-  email?: string;
-  roles: string[];
-};
+export interface CoreRouteServices {
+  nostrIdentity: NostrIdentity;
+  buildBootstrapUser: BuildBootstrapUser;
+}
 
 function createNostrLookupLimit() {
   return rateLimit({
@@ -39,7 +36,14 @@ function createNostrLookupLimit() {
   });
 }
 
-export default function (app: Application) {
+export default function (app: Application, services: CoreRouteServices) {
+  const { nostrIdentity } = services;
+  const renderIndex = core.renderIndex.bind(null, services.buildBootstrapUser);
+  const renderNotFound = core.renderNotFound.bind(
+    null,
+    services.buildBootstrapUser,
+  );
+
   const redirect = function (src: string, dst: string) {
     app.route(src).get(function (req, res) {
       res.redirect(301, dst);
@@ -78,7 +82,9 @@ export default function (app: Application) {
   app.route('/api/report-csp-violation').post(core.receiveCSPViolationReport);
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/map-default-location').get(getMapDefaultLocation);
-  app.route('/api/nostr/featured-notes').get(listFeaturedNotes);
+  app
+    .route('/api/nostr/featured-notes')
+    .get(listFeaturedNotes.bind(null, nostrIdentity.findPublicNip05Usernames));
   const authorVisibility = app.route('/api/nostr/author-visibility');
   authorVisibility.get((req, res, next) => {
     if (req.query.profiles === '1')
@@ -89,7 +95,6 @@ export default function (app: Application) {
     const includeProfiles =
       req.query.profiles === '1' &&
       Boolean((req as typeof req & { user?: unknown }).user);
-    const User = mongoose.model<NostrUserRecord>('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
     if (
@@ -113,28 +118,10 @@ export default function (app: Application) {
     for (const pubkey of normalizedPubkeys) {
       npubs.push(nip19.npubEncode(String(pubkey)));
     }
-    // Stryker disable next-line ObjectLiteral: the response filters the found users by the requested keys again, so the query only narrows the fetch
-    User.find({
-      nostrNpub: {
-        $in: npubs,
-      },
-    }).then(
-      (users: NostrUserRecord[]) => {
-        const linkedNpubs = new Set(users.map(user => user.nostrNpub));
-        const visibleUsers = new Map(
-          users
-            .filter(
-              user =>
-                user.public &&
-                user.email &&
-                !user.roles.some(role =>
-                  ['suspended', 'shadowban'].includes(role),
-                ),
-            )
-            .map(user => [user.nostrNpub, user.username]),
-        );
+    return nostrIdentity.readAuthorVisibility(npubs).then(
+      ({ linkedNpubs, visibleUsernames }) => {
         const visiblePubkeys = normalizedPubkeys.filter(pubkey =>
-          visibleUsers.has(nip19.npubEncode(pubkey)),
+          visibleUsernames.has(nip19.npubEncode(pubkey)),
         );
         return res.json({
           linkedPubkeys: normalizedPubkeys.filter(pubkey =>
@@ -145,7 +132,7 @@ export default function (app: Application) {
             usernames: Object.fromEntries(
               visiblePubkeys.map(pubkey => [
                 pubkey,
-                visibleUsers.get(nip19.npubEncode(pubkey)),
+                visibleUsernames.get(nip19.npubEncode(pubkey)),
               ]),
             ),
           }),
@@ -159,7 +146,7 @@ export default function (app: Application) {
   });
 
   // Return a 404 for all undefined api, module or lib routes
-  app.route(/^\/(?:api|modules|lib|developers)\//i).get(core.renderNotFound);
+  app.route(/^\/(?:api|modules|lib|developers)\//i).get(renderNotFound);
 
   // Protect direct page loads before the client-side route guard is ready.
   // Signed-in members continue to the generic circle route below.
@@ -172,7 +159,7 @@ export default function (app: Application) {
 
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
-  app.route('/circles/:tribe').get(core.renderIndex);
+  app.route('/circles/:tribe').get(renderIndex);
   const nip05 = app.route('/.well-known/nostr.json');
   nip05.get((_req, res, next) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -187,26 +174,17 @@ export default function (app: Application) {
         names: signer ? { [trustrootsNostrServiceName]: signer.publicKey } : {},
       });
     }
-    if (!authenticationService.isLegacyUsernameLookupValid(rawName)) {
+    if (!nostrIdentity.isLegacyUsernameLookupValid(rawName)) {
       return res.status(400).send({
         error: 'Valid username required.',
       });
     }
-    const User = mongoose.model<NostrUserRecord>('User');
     const name = String(rawName).toLowerCase();
-    User.findOne({
-      ...publicNip05MemberFilter,
-      username: name,
-    }).then(
-      (user: NostrUserRecord | null) => {
+    return nostrIdentity.readPublicNip05Npub(name).then(
+      nostrNpub => {
         const obj: { names: Record<string, string> } = {
           names: {},
         };
-        if (!user) {
-          res.json(obj);
-          return;
-        }
-        const nostrNpub = user.nostrNpub;
         try {
           // Stryker disable next-line ConditionalExpression: decoding a missing key throws, and the catch below also leaves the names empty
           if (nostrNpub) {
@@ -230,7 +208,7 @@ export default function (app: Application) {
   });
 
   // Define application route
-  app.route('/{*splat}').get(core.renderIndex);
+  app.route('/{*splat}').get(renderIndex);
 
   // Finish by binding the tribes middleware
   app.param('tribe', tribes.tribeBySlug);

@@ -77,6 +77,8 @@ const allowedRoles = (path: string) =>
     role => access(path, { roles: [role] }) === undefined,
   );
 
+const put = vi.hoisted(() => vi.fn(() => new Promise(() => {})));
+
 // Routes that are not mocked below fire API requests on mount. Keep them off
 // the network: real jsdom XHRs to localhost stay open after the tests finish
 // and make the Jest worker fail to exit gracefully.
@@ -87,7 +89,7 @@ vi.mock('@/modules/core/client/api/http-client', () => {
     default: {
       get: pending,
       post: pending,
-      put: pending,
+      put,
       patch: pending,
       delete: pending,
     },
@@ -353,8 +355,18 @@ vi.mock(
   '@/modules/users/client/components/ProfileEditAccount.component',
   () => ({
     __esModule: true,
-    default: ({ user }: UserRouteProps) => (
-      <main>Profile edit account {user?.username}</main>
+    default: ({
+      user,
+      saveLocale,
+    }: UserRouteProps & {
+      saveLocale: (locale: string) => Promise<unknown>;
+    }) => (
+      <main>
+        Profile edit account {user?.username}
+        <button type="button" onClick={() => void saveLocale('fr')}>
+          Save account language
+        </button>
+      </main>
     ),
   }),
 );
@@ -734,6 +746,15 @@ describe('React route ownership', () => {
     });
     expect(access('/contact-add/user-2', null)).toBe(signIn);
     expect(access('/profile/alice', null)).toBe(signIn);
+  });
+
+  it('saves the account language through the Users API', () => {
+    put.mockResolvedValueOnce({ data: { locale: 'fr' } });
+    const account = renderRoute(findRoute('/profile/edit/account'));
+    fireEvent.click(
+      account.getByRole('button', { name: 'Save account language' }),
+    );
+    expect(put).toHaveBeenCalledWith('/api/users', { locale: 'fr' });
   });
 
   it('does not claim legacy profile-edit paths', () => {

@@ -104,9 +104,6 @@
     "contacts": [
       "users"
     ],
-    "core": [
-      "users"
-    ],
     "experiences": [
       "contacts",
       "users"
