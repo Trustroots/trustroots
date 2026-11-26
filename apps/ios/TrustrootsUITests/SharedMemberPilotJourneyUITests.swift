@@ -677,7 +677,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         openProfile()
         XCTAssertFalse(banner.exists)
-        try await setDroppedProfileResponse(true, at: fixtureURL, dropReachability: true)
+        // Profile details load in parallel. Keep every member read offline until the inbox reload.
+        try await setDroppedProfileResponse(true, at: fixtureURL, dropMemberReads: true)
         openProfile()
         XCTAssertTrue(banner.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(banner.label.hasPrefix("Offline — saved "), banner.label)
@@ -833,12 +834,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     private func setDroppedProfileResponse(
         _ drop: Bool,
         at fixtureURL: URL,
-        dropReachability: Bool = false
+        dropMemberReads: Bool = false
     ) async throws {
         var request = URLRequest(url: fixtureURL.appendingPathComponent("fixture/profile-connection"), timeoutInterval: 5)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(["drop": drop, "dropReachability": dropReachability])
+        request.httpBody = try JSONEncoder().encode(["drop": drop, "dropMemberReads": dropMemberReads])
         let (_, response) = try await URLSession.shared.data(for: request)
         XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
