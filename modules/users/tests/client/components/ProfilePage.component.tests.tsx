@@ -10,7 +10,7 @@ import {
 
 import '@/config/client/i18n';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
-import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
+import MemberProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
@@ -63,10 +63,15 @@ vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
     <div>About {profile.displayName}</div>
   ),
 }));
-vi.mock('@/modules/offers/client/components/Offers.component', () => ({
-  __esModule: true,
-  default: () => <div>Offers panel</div>,
-}));
+function ProfileOffers() {
+  return <div>Offers panel</div>;
+}
+
+function ProfilePage(
+  props: Omit<React.ComponentProps<typeof MemberProfilePage>, 'ProfileOffers'>,
+) {
+  return <MemberProfilePage {...props} ProfileOffers={ProfileOffers} />;
+}
 vi.mock(
   '@/modules/contacts/client/components/ContactsCommon.component',
   () => ({

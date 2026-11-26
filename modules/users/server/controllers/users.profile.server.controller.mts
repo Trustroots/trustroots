@@ -9,7 +9,6 @@ import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.s
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
 import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
-import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mts';
 import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
@@ -20,7 +19,7 @@ import emailServiceModule from './../../../core/server/services/email.server.ser
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from '@trustroots/logger';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
-import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
+import type { UserAccountCleanup } from '../services/user-account.server.contract.mts';
 import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -103,13 +102,6 @@ function hasTribeId(
 
 const getContactHandler = () =>
   getContactHandlerModule as unknown as {
-    removeAllByUserId(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
-const getOfferHandler = () =>
-  getOfferHandlerModule as unknown as {
     removeAllByUserId(
       userId: mongoose.Types.ObjectId,
       callback: (error?: Error | null) => void,
@@ -549,7 +541,7 @@ service.cancelProfileRemoval = async function (req, res) {
 /**
  * Remove profile DELETE from email token
  */
-service.removeProfile = function (clearMessageNotifications, req, res) {
+service.removeProfile = function (accountCleanup, req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -575,7 +567,7 @@ service.removeProfile = function (clearMessageNotifications, req, res) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
     }
-    await deleteUserAccount(user, clearMessageNotifications);
+    await deleteUserAccount(user, accountCleanup);
     report('removed', 'Your profile has been removed.');
   }
   remove().catch(() => report('failed', 'Removing your profile failed.', true));
@@ -584,7 +576,7 @@ service.removeProfile = function (clearMessageNotifications, req, res) {
 /** Shared cleanup for self-service removal and confirmed admin deletion. */
 export async function deleteUserAccount(
   user: UserServerDocument,
-  clearMessageNotifications: UserMessaging['clearMessageNotifications'],
+  { clearMessageNotifications, removeOwnedOffers }: UserAccountCleanup,
   adminDeletion = false,
 ): Promise<{ cleanupIncomplete: boolean }> {
   const deleted = await User.findOneAndDelete({
@@ -621,7 +613,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getOfferHandler().removeAllByUserId(user._id, err => {
+        removeOwnedOffers(user._id, err => {
           if (err) reject(err);
           else resolve();
         });

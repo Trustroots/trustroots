@@ -40,7 +40,9 @@ import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
-import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
+import ProfilePage, {
+  type ProfileOffersComponent,
+} from '@/modules/users/client/components/ProfilePage.component';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
@@ -351,6 +353,7 @@ export function InfoTable({ rows }: InfoTableProps) {
 }
 
 interface AdminUserProps {
+  ProfileOffers: ProfileOffersComponent;
   username?: string;
   viewer?: AuthUser | null;
 }
@@ -364,7 +367,7 @@ export function useAdminUserReport({
   navigate,
   search,
   username,
-}: Omit<AdminUserRouteProps, 'viewer'>) {
+}: Omit<AdminUserRouteProps, 'ProfileOffers' | 'viewer'>) {
   const [state, setState] = useState<AdminUserState>({
     hasSearched: false,
     isSettingUserRole: false,
@@ -679,7 +682,11 @@ export function useAdminUserReport({
   };
 }
 
-export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
+export function AdminUserContent({
+  ProfileOffers,
+  viewer,
+  ...route
+}: AdminUserRouteProps) {
   const {
     state,
     updateState,
@@ -1509,6 +1516,7 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
               {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
             </h4>
             <ProfilePage
+              ProfileOffers={ProfileOffers}
               embedded
               profileUsername={user.profile.username}
               user={viewer as UserProfile}

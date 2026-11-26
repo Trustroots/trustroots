@@ -11,7 +11,7 @@ import {
 } from '@testing-library/react';
 
 import { useNavigate } from '@tanstack/react-router';
-import AdminUser, {
+import MemberAdmin, {
   useAdminUserReport,
   type MemberRecord as AdminUserRecord,
   InfoTable,
@@ -20,6 +20,12 @@ import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserRe
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
 vi.mock('@/modules/admin/client/api/support.api');
+function AdminUser(
+  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'ProfileOffers'>,
+) {
+  return <MemberAdmin {...props} ProfileOffers={() => null} />;
+}
+
 vi.mock('@/modules/core/client/react-app/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
