@@ -625,7 +625,29 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             }
             XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
             // The focused UIKit input is outside the Compose accessibility element.
+            let isSignInField = ["pilot-username", "pilot-password"].contains(field.identifier)
+            let letterKey = keyboard.keys.matching(NSPredicate(format: "label MATCHES[c] %@", "[a-z]")).firstMatch
+            if isSignInField {
+                // A cold simulator can expose the keyboard container before its keys are ready.
+                _ = letterKey.waitForExistence(timeout: 3)
+            }
             app.typeText(text)
+            if isSignInField, (field.value as? String ?? "").isEmpty {
+                let started = XCTNSPredicateExpectation(
+                    predicate: NSPredicate { object, _ in
+                        guard let field = object as? XCUIElement else { return false }
+                        return !(field.value as? String ?? "").isEmpty
+                    },
+                    object: field
+                )
+                if XCTWaiter.wait(for: [started], timeout: 3) == .timedOut {
+                    field.tap()
+                    _ = letterKey.waitForExistence(timeout: 3)
+                    if (field.value as? String ?? "").isEmpty {
+                        app.typeText(text)
+                    }
+                }
+            }
         } else {
             field.typeText(text)
         }
