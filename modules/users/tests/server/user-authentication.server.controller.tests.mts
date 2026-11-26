@@ -1176,6 +1176,7 @@ describe('Authentication controller OAuth unit tests', () => {
     });
 
     it('starts a short-lived challenge instead of creating an MFA session', async () => {
+      const { stats } = captureTelemetry();
       sinon.stub(MemberPasskey, 'exists').resolves(null);
       const controller = await loadSigninController(() => [
         null,
@@ -1201,6 +1202,7 @@ describe('Authentication controller OAuth unit tests', () => {
       responseField(res, 'passkeyAvailable').should.be.false();
       session.mfaChallenge?.userId.should.equal('fictional-user');
       session.mfaChallenge?.authVersion.should.equal(2);
+      stats.should.deepEqual([statOf('signin', { status: 'mfa-required' })]);
     });
 
     it('advertises passkeys only when the account already has one', async () => {
@@ -1319,6 +1321,23 @@ describe('Authentication controller OAuth unit tests', () => {
       );
       suspendedResponse.statusCode.should.equal(401);
       should.not.exist(suspendedSession.mfaChallenge);
+    });
+
+    it('clears a challenge after the account credentials change', async () => {
+      const { user, challenge, code } = await createMfaChallenge();
+      await User.updateOne({ _id: user._id }, { $inc: { authVersion: 1 } });
+      const session: MfaSession = {
+        mfaChallenge: challenge,
+        regenerate: callback => callback(),
+        save: callback => callback(),
+      };
+      const res = deferredResponse();
+      await authController.verifyMfa({ session, body: { code } }, res);
+      res.statusCode.should.equal(401);
+      responseField(res, 'message').should.equal(
+        'Sign-in challenge is no longer valid.',
+      );
+      should.not.exist(session.mfaChallenge);
     });
 
     it('rejects an invalid authenticator code', async () => {
@@ -1755,36 +1774,54 @@ describe('Authentication controller OAuth unit tests', () => {
       res.body!.should.deepEqual({ message: SNAP });
     });
 
-    it('does not create a session when confirming email for an MFA account', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      await User.updateOne(
-        { _id: saved._id },
-        {
-          $set: {
-            mfaEnabled: true,
-            mfaSecretEncrypted: 'encrypted-secret',
-            emailTemporary: 'new@example.test',
-            emailToken: 'mfa-confirm-token',
-            emailTokenIssuedAt: new Date(),
-            emailTokenExpires: new Date(Date.now() + 86400000),
+    for (const session of [
+      'anonymous',
+      'same member without MFA verification',
+      'different verified member',
+    ] as const) {
+      it(`does not create a session when confirming email for an MFA account from a ${session} session`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        await User.updateOne(
+          { _id: saved._id },
+          {
+            $set: {
+              mfaEnabled: true,
+              mfaSecretEncrypted: 'encrypted-secret',
+              emailTemporary: 'new@example.test',
+              emailToken: 'mfa-confirm-token',
+              emailTokenIssuedAt: new Date(),
+              emailTokenExpires: new Date(Date.now() + 86400000),
+            },
           },
-        },
-      );
-      const login = sinon.spy((_user: unknown, callback: AuthCallback) =>
-        callback(),
-      );
-      const res = deferredResponse();
+        );
+        const login = sinon.spy((_user: unknown, callback: AuthCallback) =>
+          callback(),
+        );
+        const res = deferredResponse();
+        const user =
+          session === 'anonymous'
+            ? undefined
+            : ({
+                _id:
+                  session === 'same member without MFA verification'
+                    ? saved._id
+                    : new mongoose.Types.ObjectId(),
+                ...(session === 'different verified member'
+                  ? { $locals: { mfaVerified: true } }
+                  : {}),
+              } as unknown as AuthenticationUserDocument);
 
-      authController.confirmEmail(
-        { params: { token: 'mfa-confirm-token' }, login },
-        res,
-      );
-      await res.waitForResponse();
+        authController.confirmEmail(
+          { params: { token: 'mfa-confirm-token' }, login, user },
+          res,
+        );
+        await res.waitForResponse();
 
-      res.statusCode.should.equal(200);
-      responseField(res, 'mfaRequired').should.be.true();
-      login.called.should.be.false();
-    });
+        res.statusCode.should.equal(200);
+        responseField(res, 'mfaRequired').should.be.true();
+        login.called.should.be.false();
+      });
+    }
 
     it('preserves an already MFA-verified session for a changed email', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -1822,6 +1859,9 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       should(responseBody(res).mfaRequired).equal(undefined);
       login.calledOnce.should.be.true();
+      should(login.firstCall.args[0])
+        .have.property('$locals')
+        .which.has.property('mfaVerified', true);
     });
 
     it('rejects an expired confirmation on both validation and consumption', async () => {
