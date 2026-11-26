@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
