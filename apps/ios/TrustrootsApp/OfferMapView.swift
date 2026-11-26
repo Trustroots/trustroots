@@ -205,31 +205,15 @@ struct OfferMapView: View {
         }
         .overlay(alignment: .topLeading) {
             VStack(spacing: 8) {
-                Button {
+                MapOfferActionController(action: .filters, symbol: "slider.horizontal.3") {
                     showingFilters = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(9)
-                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                 }
-                .accessibilityLabel("Search filters")
+                .frame(width: 44, height: 44)
 
-                Button {
+                MapOfferActionController(action: .currentlocation, symbol: "location.fill") {
                     currentLocation.useCurrentLocation()
-                } label: {
-                    Image(systemName: "location.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .padding(9)
-                        .background(TrustrootsPalette.paleGreen.opacity(0.96))
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                 }
-                .accessibilityLabel("Use current location")
+                .frame(width: 44, height: 44)
             }
             .padding(.leading, 5)
             .padding(.top, 3)
@@ -655,24 +639,65 @@ private struct MapOfferStatusController: UIViewControllerRepresentable {
         state.update(content: MapOfferStatusContent(
             isLoading: isLoading,
             countLabel: countLabel,
-            countMarkerArgb: argb(TrustrootsPalette.hostYes),
-            legend: legend.map { MapOfferLegendMarker(label: $0.label, argb: argb($0.colour)) },
+            countMarkerArgb: mapColourArgb(TrustrootsPalette.hostYes, for: colorScheme),
+            legend: legend.map {
+                MapOfferLegendMarker(label: $0.label, argb: mapColourArgb($0.colour, for: colorScheme))
+            },
             error: error
         ))
     }
+}
 
-    private func argb(_ colour: Color) -> Int64 {
-        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        let resolved = UIColor(colour).resolvedColor(with: traits)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return 0xFF808080 }
-        return [alpha, red, green, blue].reduce(Int64(0)) { result, component in
-            let byte = Int64((min(1, max(0, component)) * 255).rounded())
-            return (result << 8) | byte
-        }
+@MainActor
+private struct MapOfferActionController: UIViewControllerRepresentable {
+    let action: OfferMapAction
+    let symbol: String
+    let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        var onTap: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        coordinator.onTap = onTap
+        let symbolName = symbol
+        return OfferMapActionViewControllerKt.OfferMapActionViewController(
+            action: action,
+            surfaceArgb: mapColourArgb(TrustrootsPalette.paleGreen.opacity(0.96), for: colorScheme),
+            onTap: { [weak coordinator] in coordinator?.onTap?() },
+            createIcon: {
+                let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+                let image = UIImage(systemName: symbolName, withConfiguration: configuration)
+                let view = UIImageView(image: image?.withRenderingMode(.alwaysTemplate))
+                view.contentMode = .scaleAspectFit
+                view.tintColor = UIColor(TrustrootsPalette.darkGreen)
+                view.isAccessibilityElement = false
+                view.isUserInteractionEnabled = false
+                return view
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        context.coordinator.onTap = onTap
+    }
+}
+
+private func mapColourArgb(_ colour: Color, for colorScheme: ColorScheme) -> Int64 {
+    let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+    let resolved = UIColor(colour).resolvedColor(with: traits)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return 0xFF808080 }
+    return [alpha, red, green, blue].reduce(Int64(0)) { result, component in
+        let byte = Int64((min(1, max(0, component)) * 255).rounded())
+        return (result << 8) | byte
     }
 }
 
