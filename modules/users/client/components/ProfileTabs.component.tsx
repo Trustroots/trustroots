@@ -5,12 +5,13 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
-import { getCount as getExperiencesCount } from '@/modules/experiences/client/api/experiences.api';
+import type { ProfileExperiences } from '../profile-experiences';
 
 interface ProfileTabsProps {
   activePathName?: string;
   contactsCount: number;
   initialPathName: string;
+  getExperiencesCount: ProfileExperiences<unknown>['getCount'];
   isExperiencesEnabled: boolean;
   isOWnProfile: boolean;
   userId: string;
@@ -21,6 +22,7 @@ export default function ProfileTabs({
   activePathName,
   contactsCount,
   initialPathName,
+  getExperiencesCount,
   isExperiencesEnabled,
   isOWnProfile,
   userId,

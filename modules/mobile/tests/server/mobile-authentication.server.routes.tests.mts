@@ -582,6 +582,22 @@ describe('Mobile authentication API', function () {
         (result: { username: string }) => result.username === other.username,
       )
       .should.equal(true);
+    const connectedSearch =
+      '/api/mobile/v0/members?search=Search&connectionsOnly=true';
+    await request(app).get(connectedSearch).set(authenticated).expect(200, []);
+    const confirmedContact = await mongoose.model('Contact').create({
+      userFrom: member._id,
+      userTo: other._id,
+      confirmed: true,
+    });
+    const connected = await request(app)
+      .get(connectedSearch)
+      .set(authenticated)
+      .expect(200);
+    connected.body
+      .map((result: { username: string }) => result.username)
+      .should.deepEqual([other.username]);
+    await confirmedContact.deleteOne();
     const hosting = await request(app)
       .get(`/api/mobile/v0/offers-by/${other.id}?types=host`)
       .set(authenticated)

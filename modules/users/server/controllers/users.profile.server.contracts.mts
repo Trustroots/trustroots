@@ -8,6 +8,7 @@ import type { UserServerDocument } from '../models/user.server.types.mts';
 import type {
   UpdateCircleCount,
   UserAccountCleanup,
+  UserAccountServices,
 } from '../services/user-account.server.contract.mts';
 import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
 import type {
@@ -172,5 +173,10 @@ export interface UserProfileController {
   getUserMemberships(req: ProfileRequest, res: ProfileResponse): unknown;
   removePushRegistration(req: ProfileRequest, res: ProfileResponse): unknown;
   addPushRegistration(req: ProfileRequest, res: ProfileResponse): unknown;
-  search(req: ProfileRequest, res: ProfileResponse, next: ProfileNext): unknown;
+  search(
+    findSearchConnectionIds: UserAccountServices['findSearchConnectionIds'],
+    req: ProfileRequest,
+    res: ProfileResponse,
+    next: ProfileNext,
+  ): unknown;
 }

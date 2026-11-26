@@ -82,7 +82,6 @@
       "admin",
       "contacts",
       "core",
-      "experiences",
       "search",
       "stats",
       "support"
@@ -144,9 +143,6 @@
       "contacts",
       "experiences",
       "users"
-    ],
-    "users": [
-      "experiences"
     ]
   }
 }

@@ -54,7 +54,7 @@ export default function (app: RouteApplication, services: UserAccountServices) {
   app
     .route('/api/users')
     .all(usersPolicy.isAllowed)
-    .get(userProfile.search)
+    .get(userProfile.search.bind(null, services.findSearchConnectionIds))
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
 

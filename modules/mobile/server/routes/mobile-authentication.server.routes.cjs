@@ -50,7 +50,12 @@ const unifiedPush =
 
 module.exports = function (
   app,
-  { findOfferConnections, readReplyStats, readDiscoveryOfferLocations },
+  {
+    findOfferConnections,
+    readReplyStats,
+    readDiscoveryOfferLocations,
+    findSearchConnectionIds,
+  },
 ) {
   app.post(
     '/api/mobile/v0/nostranslation/alerts/challenge',
@@ -134,7 +139,7 @@ module.exports = function (
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users'),
-      userProfile.search,
+      userProfile.search.bind(null, findSearchConnectionIds),
     );
   app.route('/api/mobile/v0/members/:mobileAvatarId/avatar').get(
     mobileAuthentication.authenticate,
