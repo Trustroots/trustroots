@@ -283,6 +283,11 @@ function initSecurityHeaders(app: Express) {
 function initModulesClientRoutes(app: Express) {
   // Setting the app router and static folder
   app.use(denyAvatarStagingRequests);
+  app.get('/.well-known/assetlinks.json', (_req, res) => {
+    res.sendFile(path.resolve('./public/.well-known/assetlinks.json'), {
+      dotfiles: 'allow',
+    });
+  });
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
 }

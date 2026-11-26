@@ -297,12 +297,14 @@ service.reset = async function (req, res) {
  * Change Password
  */
 service.changePassword = function (req, res) {
-  if (!req.user) {
+  const requestUser = req.user;
+  if (!requestUser) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-  const userId = req.user.id;
+  const userId = requestUser.id;
+  const hasVerifiedMfa = requestUser.$locals?.mfaVerified === true;
   async function change(): Promise<UserServerDocument> {
     if (!req.body.newPassword)
       throw new Error('Please provide a new password.');
@@ -345,8 +347,7 @@ service.changePassword = function (req, res) {
     if (!updatedUser) throw new Error('Current password is incorrect.');
     if (!req.mobileSession) {
       if (updatedUser.mfaEnabled === true) {
-        updatedUser.$locals.mfaVerified =
-          req.user?.$locals?.mfaVerified === true;
+        updatedUser.$locals.mfaVerified = hasVerifiedMfa;
       }
       await new Promise<void>((resolve, reject) => {
         req.login(updatedUser, err => {

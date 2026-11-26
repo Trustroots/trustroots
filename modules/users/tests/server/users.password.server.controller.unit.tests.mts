@@ -1100,8 +1100,9 @@ describe('Password controller direct unit tests', () => {
       [false, true],
     ]) {
       it(`requires a fresh MFA sign-in after password recovery (email failure: ${emailFails}, logout failure: ${logoutFails})`, async () => {
+        const user = fakeUser({ mfaEnabled: true });
         const controller = await loadController({
-          user: fakeUser({ mfaEnabled: true }),
+          user,
           confirmEmailError: emailFails
             ? new Error('email unavailable')
             : undefined,
@@ -1119,6 +1120,16 @@ describe('Password controller direct unit tests', () => {
           logoutFails
             ? { message: 'Password reset failed.' }
             : { mfaRequired: true },
+        );
+        calls.confirmations.should.deepEqual(
+          logoutFails
+            ? []
+            : [{ displayName: user.displayName, email: user.email }],
+        );
+        calls.logs.should.deepEqual(
+          emailFails
+            ? [['error', 'Password reset confirmation email delivery failed.']]
+            : [],
         );
       });
     }
@@ -1225,17 +1236,18 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('changePassword', () => {
-    for (const verified of [true, false]) {
+    for (const verified of [true, false, undefined]) {
       it(`carries only the current MFA verification state across a password change (${verified})`, async () => {
         const controller = await loadController({
           user: fakeUser({ mfaEnabled: true, $locals: { mfaVerified: true } }),
         });
         const req = changeRequest();
-        req.user!.$locals = verified ? { mfaVerified: true } : {};
+        if (verified !== undefined)
+          req.user!.$locals = { mfaVerified: verified };
         const res = await run(controller, 'changePassword', {
           ...req,
           login(user, callback) {
-            should(user.$locals?.mfaVerified).equal(verified);
+            should(user.$locals?.mfaVerified).equal(verified === true);
             callback();
           },
         });
