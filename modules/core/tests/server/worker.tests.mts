@@ -1,8 +1,10 @@
+import type { Agenda } from 'agenda';
 import { MongoClient } from 'mongodb';
 import sinon from 'sinon';
 import 'should';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import workerModule from './../../../../config/lib/worker.mts';
+import experiences from '../../../experiences/server/worker-entry.mts';
 import mockModule from './../../../../testutils/server/mock-module.mts';
 
 describe('Worker tests', function () {
@@ -219,6 +221,44 @@ describe('Worker tests', function () {
     }
   });
 
+  it('keeps worker registrations in their original order', function () {
+    definedJobs
+      .map(job => job.name)
+      .should.deepEqual([
+        'prune agenda delivery jobs',
+        'capture agenda storage',
+        'send email',
+        'send deployment notification email',
+        'deliver signup reminder',
+        'send Android message notification',
+        'send Android test notification',
+        'queue unread message digests',
+        'check unread messages',
+        'daily statistics',
+        'send signup reminders',
+        'reactivate hosts',
+        'welcome sequence first',
+        'welcome sequence second',
+        'welcome sequence third',
+        'publish expired experiences',
+        'queue experience reply reminders',
+        'send experience reply reminder',
+        'send support message',
+        'poll support mailbox',
+        'recover support messages',
+      ]);
+  });
+
+  it('removes completed signup reminder deliveries', function () {
+    definedJobs
+      .find(job => job.name === 'deliver signup reminder')!
+      .options.should.deepEqual({
+        priority: 'high',
+        concurrency: 10,
+        removeOnComplete: true,
+      });
+  });
+
   it('only schedules defined jobs', function () {
     const jobNames = definedJobs.map(job => job.name);
     scheduledJobs.forEach(function (job) {
@@ -227,17 +267,19 @@ describe('Worker tests', function () {
   });
 
   it('refuses to start when a job module has no handler', async function () {
-    const { default: brokenWorker } = await mockModule<{
-      default: WorkerDouble;
-    }>(new URL('../../../../config/lib/worker.mts', import.meta.url), {
-      './../../modules/experiences/server/jobs/experiences-publish.server.job.mts':
-        {},
+    const { registerWorkerJobs } = await mockModule<
+      typeof import('../../../../layers/server/worker-jobs.mts')
+    >(new URL('../../../../layers/server/worker-jobs.mts', import.meta.url), {
+      '../../modules/experiences/server/worker-entry.mts': {
+        ...experiences,
+        publishExperiences: async () => ({}),
+      },
     });
-    await brokenWorker
-      .start(workerOptions)
-      .should.be.rejectedWith(
-        'Agenda job "publish expired experiences" has no handler',
-      );
+    await registerWorkerJobs(
+      agenda as unknown as Agenda,
+    ).should.be.rejectedWith(
+      'Agenda job "publish expired experiences" has no handler',
+    );
   });
 
   it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {

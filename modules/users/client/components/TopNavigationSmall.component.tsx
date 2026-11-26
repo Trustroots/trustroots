@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
-import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import { useTranslation } from 'react-i18next';
-import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
-import type { ExperienceAction } from '@/modules/experiences/client/components/ListExperiences.component';
-import type { ContactRecord } from '@/modules/contacts/client/types';
+import type { ExperienceAction } from '../profile-experiences';
+import type { ProfileContact, ProfileContacts } from '../profile-contacts';
 
 interface TopNavigationSmallProps {
+  RemoveContact: ProfileContacts['Remove'];
   isAdmin?: boolean;
   username: string;
-  contact?: ContactRecord | null;
+  contact?: ProfileContact | null;
   experienceAction?: ExperienceAction;
   isResolved: boolean;
   selfId: string;
   userId: string;
-  onContactRemoved: (contact: ContactRecord) => void;
+  onContactRemoved: (contact: ProfileContact) => void;
 }
 
 interface NavigationLink {
@@ -25,6 +25,7 @@ interface NavigationLink {
 }
 
 export default function TopNavigationSmall({
+  RemoveContact,
   isAdmin = false,
   username,
   contact,
@@ -115,7 +116,7 @@ export default function TopNavigationSmall({
     setShowRemoveModal(false);
 
     // Notify the parent about the removal.
-    onContactRemoved(contact as ContactRecord);
+    onContactRemoved(contact as ProfileContact);
   }
 
   return (
@@ -123,7 +124,7 @@ export default function TopNavigationSmall({
       {contact?._id && (
         <RemoveContact
           selfId={selfId}
-          contact={contact as ContactRecord & { _id: string }}
+          contact={contact as ProfileContact & { _id: string }}
           show={showRemoveModal}
           onSuccess={handleRemoveSuccess}
           onCancel={() => setShowRemoveModal(false)}

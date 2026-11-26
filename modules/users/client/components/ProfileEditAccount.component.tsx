@@ -1,5 +1,5 @@
 import { Input } from '@trustroots/ui/Input';
-import { messageEmailFrequencies } from '../../shared/email-preferences';
+import { messageEmailFrequencies } from '../../../core/shared/email-preferences.mts';
 import type { UpdateProfileRequest } from '../../shared/profile';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
@@ -444,7 +444,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               'This is the language of the interface you see across the site.',
             )}
           </p>
-          <LanguageSwitch saveToAPI={true} />
+          <LanguageSwitch onLanguageChange={code => update({ locale: code })} />
         </div>
       </div>
 

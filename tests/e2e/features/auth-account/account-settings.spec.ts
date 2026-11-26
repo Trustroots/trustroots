@@ -1,4 +1,5 @@
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import { readFile } from 'node:fs/promises';
 import crypto from 'node:crypto';
 
 import {
@@ -15,6 +16,7 @@ import {
   findUserByUsername,
   findActionToken,
   updateUserByUsername,
+  withE2eDb,
 } from '../../support/db.mts';
 
 function decodeBase32(value: string): Buffer {
@@ -269,10 +271,34 @@ test.describe.serial('account settings feature coverage', () => {
       'Account settings exposes a download link for the combined export.',
       'Account settings explains which data the download includes and leaves out.',
       'The combined export downloads with the documented filename.',
+      'Only messages written by the member are exported.',
     ]);
 
     const user = createUser();
+    const correspondent = createUser();
     await registerViaApi(request, user);
+    await registerViaApi(request, correspondent);
+    const author = await findUserByUsername(user.username);
+    const other = await findUserByUsername(correspondent.username);
+    if (!author || !other) throw new Error('Expected both test members');
+    await withE2eDb(db =>
+      db.collection('messages').insertMany([
+        {
+          userFrom: author._id,
+          userTo: other._id,
+          content: 'A message written by the downloading member.',
+          created: new Date(),
+          read: true,
+        },
+        {
+          userFrom: other._id,
+          userTo: author._id,
+          content: 'A message received from another member.',
+          created: new Date(),
+          read: false,
+        },
+      ]),
+    );
     await signInViaApi(page, request, user);
 
     await page.goto('/profile/edit/account');
@@ -292,6 +318,12 @@ test.describe.serial('account settings feature coverage', () => {
     expect(download.suggestedFilename()).toMatch(
       new RegExp(`^trustroots-data-${user.username}-\\d{8}-\\d{4}\\.json$`),
     );
+    const payload = JSON.parse(await readFile(await download.path(), 'utf8'));
+    expect(payload.messages).toHaveLength(1);
+    expect(payload.messages[0]).toMatchObject({
+      content: 'A message written by the downloading member.',
+      userTo: { _id: String(other._id), username: correspondent.username },
+    });
   });
 
   test('members can revoke another active session from account settings', async ({

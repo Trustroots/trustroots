@@ -1,14 +1,14 @@
 import {
   notificationEmail,
   type NotificationEmail,
-} from '../../../users/server/services/notification-email.server.service.mts';
+} from './notification-email-envelope.server.service.mts';
 import type { Types } from 'mongoose';
+import { emailToken } from './action-token.server.service.mts';
 import {
   sendSignupReminderJob,
   type SignupReminder,
-} from '../../../users/server/services/signup-reminder.server.service.mts';
-import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
-import { timeAgo } from '../../shared/time-ago.mts';
+} from './signup-reminder-mail.server.contract.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import { Autolinker as autolinker } from 'autolinker';
 import * as he from 'he';
 import { trustrootsLink } from '../../shared/trustroots-links.mts';
@@ -22,7 +22,8 @@ import { renderEmail as renderTemplate } from '@trustroots/emails';
 import agendaModule from './../../../../config/lib/agenda.mts';
 import config from './../../../../config/config.mts';
 import logModule from '@trustroots/logger';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from './user-roles.server.service.mts';
+
 type MailCallback<Result = import('agenda').Job> = (
   error?: Error | null,
   result?: Result,

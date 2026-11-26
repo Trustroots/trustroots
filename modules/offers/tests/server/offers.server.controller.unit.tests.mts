@@ -20,10 +20,12 @@ import winston from 'winston';
 
 import config from './../../../../config/config.mts';
 import offersController from './../../server/controllers/offers.server.controller.mts';
+import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import should from 'should';
 
+const list = offersController.createListHandler(findSearchConnectionIds);
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
@@ -663,22 +665,20 @@ describe('Offers controller unit tests', () => {
     };
 
     it('responds with 403 without a user', async () => {
-      const { res } = await runHandler(res =>
-        offersController.list({ query: {} }, res),
-      );
+      const { res } = await runHandler(res => list({ query: {} }, res));
       res.statusCode.should.equal(403);
     });
 
     it('rejects invalid coordinates', async () => {
       const { res } = await runHandler(res =>
-        offersController.list({ user: owner, query: {} }, res),
+        list({ user: owner, query: {} }, res),
       );
       res.statusCode.should.equal(400);
     });
 
     it('rejects unparseable filters', async () => {
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           { user: owner, query: { ...validCoords, filters: '{bad json' } },
           res,
         ),
@@ -689,10 +689,7 @@ describe('Offers controller unit tests', () => {
 
     it('rejects parseable filters that are not objects', async () => {
       const { res } = await runHandler(res =>
-        offersController.list(
-          { user: owner, query: { ...validCoords, filters: '123' } },
-          res,
-        ),
+        list({ user: owner, query: { ...validCoords, filters: '123' } }, res),
       );
 
       res.statusCode.should.equal(400);
@@ -701,10 +698,7 @@ describe('Offers controller unit tests', () => {
 
     it('accepts a JSON array as an empty filter object', async () => {
       const { res } = await runHandler(res =>
-        offersController.list(
-          { user: owner, query: { ...validCoords, filters: '[]' } },
-          res,
-        ),
+        list({ user: owner, query: { ...validCoords, filters: '[]' } }, res),
       );
 
       res.statusCode.should.equal(200);
@@ -713,7 +707,7 @@ describe('Offers controller unit tests', () => {
 
     it('rejects invalid tribe ids in filters', async () => {
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: owner,
             query: {
@@ -735,7 +729,7 @@ describe('Offers controller unit tests', () => {
       } as unknown as ReturnType<typeof aggregate>);
 
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: ownerDoc,
             query: {
@@ -752,7 +746,7 @@ describe('Offers controller unit tests', () => {
     it('returns a feature collection', async () => {
       const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: ownerDoc,
             query: {
@@ -774,7 +768,7 @@ describe('Offers controller unit tests', () => {
     it('ignores invalid language filters', async () => {
       const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: ownerDoc,
             query: {
@@ -793,7 +787,7 @@ describe('Offers controller unit tests', () => {
     it('accepts coordinates with leading whitespace', async () => {
       const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: ownerDoc,
             query: {
@@ -825,7 +819,7 @@ describe('Offers controller unit tests', () => {
       const aggregate = sinon.spy(Offer, 'aggregate');
       const search = async (blocked?: UserDocument['_id'][]) => {
         const { res } = await runHandler(res =>
-          offersController.list(
+          list(
             {
               user: { _id: owner._id, blocked },
               query: {
@@ -869,7 +863,7 @@ describe('Offers controller unit tests', () => {
       const aggregate = sinon.spy(Offer, 'aggregate');
       const search = async (blocked?: UserDocument['_id'][]) => {
         const { res } = await runHandler(res =>
-          offersController.list(
+          list(
             {
               user: { _id: owner._id, blocked },
               query: { ...validCoords, view: 'place-hosts', offset: 2 },
@@ -902,7 +896,7 @@ describe('Offers controller unit tests', () => {
       await createOffer(owner._id, { type: 'host' });
 
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: ownerDoc,
             query: {
@@ -937,7 +931,7 @@ describe('Offers controller unit tests', () => {
         ...(filters === undefined ? {} : { filters: JSON.stringify(filters) }),
       };
       const { res } = await runHandler(res =>
-        offersController.list({ user: viewer, query }, res),
+        list({ user: viewer, query }, res),
       );
       return {
         statusCode: res.statusCode,
@@ -1186,7 +1180,7 @@ describe('Offers controller unit tests', () => {
       });
 
       const { res } = await runHandler(res =>
-        offersController.list(
+        list(
           {
             user: viewerDoc,
             query: {

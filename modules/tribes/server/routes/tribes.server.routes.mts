@@ -3,7 +3,9 @@ import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
 import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
 import tribesPolicy from './../policies/tribes.server.policy.mts';
-import tribes from './../controllers/tribes.server.controller.mts';
+import tribes, {
+  type ReadDiscoveryOfferLocations,
+} from './../controllers/tribes.server.controller.mts';
 import { registerCircleChat } from '../controllers/circle-chat.server.controller.mts';
 
 type MiddlewareCallback = (...args: never[]) => unknown;
@@ -23,7 +25,10 @@ const disableDiscoveryCaching: RequestHandler = (_req, res, next) => {
 /**
  * Module dependencies.
  */
-function register(app: Express) {
+function register(
+  app: Express,
+  readDiscoveryOfferLocations: ReadDiscoveryOfferLocations,
+) {
   // Mount before the routes so the limit also applies before slug lookups.
   app.use(
     '/api/tribes',
@@ -50,11 +55,19 @@ function register(app: Express) {
   app
     .route('/api/tribes/discovery/connections')
     .all(routeHandler(tribesPolicy.isAllowed))
-    .get(disableDiscoveryCaching, routeHandler(tribes.listConnections));
+    .get(
+      disableDiscoveryCaching,
+      routeHandler(
+        tribes.listConnections.bind(null, readDiscoveryOfferLocations),
+      ),
+    );
   app
     .route('/api/tribes/:tribe/members')
     .all(routeHandler(tribesPolicy.isAllowed))
-    .get(disableDiscoveryCaching, routeHandler(tribes.listMembers));
+    .get(
+      disableDiscoveryCaching,
+      routeHandler(tribes.listMembers.bind(null, readDiscoveryOfferLocations)),
+    );
   app
     .route('/api/tribes/:tribe')
     .all(routeHandler(tribesPolicy.isAllowed))

@@ -19,6 +19,7 @@ export default mergeConfig(
           'modules/*/client/**/*.{ts,tsx}',
           'layers/shell/**/*.{ts,tsx}',
           'packages/analytics/client/**/*.{ts,tsx}',
+          'packages/relative-time/*.mts',
           'packages/ui/src/**/*.{ts,tsx}',
         ],
         exclude: [

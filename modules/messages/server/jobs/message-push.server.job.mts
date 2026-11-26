@@ -1,6 +1,6 @@
 import mongoose, { type Types } from 'mongoose';
 import unifiedPush from '../../../users/server/services/unified-push.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 export const messagePushJobName = 'send Android message notification';

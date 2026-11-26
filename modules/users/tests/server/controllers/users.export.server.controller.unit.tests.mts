@@ -1,12 +1,12 @@
+import { userAccountServices } from '../../../../../layers/server/user-account.mts';
 import sinon from 'sinon';
 import assert from 'node:assert/strict';
 import 'should';
-import path from 'node:path';
 import winston from 'winston';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
 import { vi } from 'vitest';
-import config from './../../../../../config/config.mts';
+import { loadModuleModels } from '../../../../../layers/server/module-registration.mts';
 import mongoose from 'mongoose';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
 import contactsService from './../../../../contacts/server/controllers/contacts.server.controller.mts';
@@ -14,9 +14,7 @@ import profilesService from './../../../server/controllers/users.profile.server.
 import controller from './../../../server/controllers/users.export.server.controller.mts';
 import * as verification from '../../../server/services/data-export-verification.server.service.mts';
 
-config.files.server.models.forEach(
-  async modelPath => (await import(path.resolve(modelPath))).default,
-);
+await loadModuleModels();
 
 type ExportRecord = Record<string, unknown>;
 interface ExportProfile {
@@ -89,11 +87,17 @@ function loadController({
   offers?: ExportRecord[];
   offersError?: Error;
 }): typeof controller {
-  sinon.stub(profilesService, 'userByUsername').callsFake(profile as never);
+  sinon
+    .stub(profilesService, 'userByUsername')
+    .callsFake((_readReplyStats, req, res, next, username) =>
+      profile(req as unknown as ExportRequest, res, next, username),
+    );
   sinon.stub(contactsService, 'contactListByUser').callsFake(contacts as never);
   sinon.stub(controller, 'writtenMessages').resolves(messages);
   sinon.stub(controller, 'writtenExperiences').resolves(experiences);
-  const offersStub = sinon.stub(controller, 'memberOffers').resolves(offers);
+  const offersStub = sinon
+    .stub(userAccountServices, 'readOwnedOffers')
+    .resolves(offers);
   if (offersError) offersStub.rejects(offersError);
   return controller;
 }
@@ -205,7 +209,12 @@ describe('Member data export controller', () => {
       const response = mockResponse();
       const next = sinon.stub();
 
-      await loaded.download({ user } as never, response as never, next);
+      await loaded.download(
+        userAccountServices,
+        { user } as never,
+        response as never,
+        next,
+      );
 
       assert.equal(responseBody(response).signature, null);
       assert.deepEqual(responseBody(response).contacts, [exportedContact]);
@@ -239,6 +248,7 @@ describe('Member data export controller', () => {
     });
     const response = mockResponse();
     await loaded.download(
+      userAccountServices,
       { user } as never,
       response as never,
       sinon.stub() as never,
@@ -307,6 +317,7 @@ describe('Member data export controller', () => {
     });
     const first = mockResponse();
     await loaded.download(
+      userAccountServices,
       { user } as never,
       first as never,
       sinon.stub() as never,
@@ -316,6 +327,7 @@ describe('Member data export controller', () => {
       list.reverse();
     const second = mockResponse();
     await loaded.download(
+      userAccountServices,
       { user } as never,
       second as never,
       sinon.stub() as never,
@@ -354,7 +366,12 @@ describe('Member data export controller', () => {
     });
     const response = mockResponse();
     const next = sinon.stub();
-    await loaded.download({ user } as never, response as never, next);
+    await loaded.download(
+      userAccountServices,
+      { user } as never,
+      response as never,
+      next,
+    );
     assert.equal(response.body, null);
     assert.ok(next.firstCall.args[0] instanceof TypeError);
   });
@@ -397,6 +414,7 @@ describe('Member data export controller', () => {
     const response = mockResponse();
 
     await controller.download(
+      userAccountServices,
       { user: { ...user } } as never,
       response as never,
       sinon.stub() as never,
@@ -478,6 +496,7 @@ describe('Member data export controller', () => {
     const response = mockResponse();
 
     await controller.download(
+      userAccountServices,
       { user: { ...user } } as never,
       response as never,
       sinon.stub() as never,
@@ -597,8 +616,14 @@ describe('Member data export controller', () => {
       .stub(experienceModel, 'find')
       .returns(experienceQuery.query);
 
-    const messages = await controller.writtenMessages(user._id);
-    const experiences = await controller.writtenExperiences(user._id);
+    const messages = await controller.writtenMessages(
+      userAccountServices.readWrittenMessages,
+      user._id,
+    );
+    const experiences = await controller.writtenExperiences(
+      userAccountServices.readWrittenExperiences,
+      user._id,
+    );
 
     assert.deepEqual(findMessages.getCall(0).args.at(0), {
       userFrom: user._id,
@@ -703,7 +728,7 @@ describe('Member data export controller', () => {
     ]);
     const find = sinon.stub(offerModel, 'find').returns(offerQuery.query);
 
-    const offers = await controller.memberOffers(user._id);
+    const offers = await userAccountServices.readOwnedOffers(user._id);
 
     find.calledOnce.should.be.true();
     find.firstCall.args.should.deepEqual([{ user: user._id }]);
@@ -741,6 +766,7 @@ describe('Member data export controller', () => {
     });
 
     await controller.download(
+      userAccountServices,
       { user: { ...user } } as never,
       mockResponse() as never,
       next,
@@ -759,6 +785,7 @@ describe('Member data export controller', () => {
     });
 
     await controller.download(
+      userAccountServices,
       { user: { ...user } } as never,
       mockResponse() as never,
       next,
@@ -777,6 +804,7 @@ describe('Member data export controller', () => {
     });
 
     await controller.download(
+      userAccountServices,
       { user: { ...user } } as never,
       mockResponse() as never,
       next,
@@ -799,6 +827,7 @@ describe('Member data export controller', () => {
       });
 
       await controller.download(
+        userAccountServices,
         { user: { ...user } } as never,
         mockResponse() as never,
         next,

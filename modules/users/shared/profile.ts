@@ -1,4 +1,4 @@
-import type { MessageEmailFrequency } from './email-preferences.ts';
+import type { MessageEmailFrequency } from '../../core/shared/email-preferences.mts';
 import type { LanguageLevels } from './language-levels.ts';
 
 /** A tribe membership included in a full member profile. */

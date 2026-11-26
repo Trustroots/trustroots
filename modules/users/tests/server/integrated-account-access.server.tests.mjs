@@ -12,7 +12,7 @@ const utils = require('../../../../testutils/server/data.server.testutil.mts');
 const mfa = require('../../server/services/mfa.server.service.mjs').default;
 const {
   hashToken,
-} = require('../../server/services/action-token.server.service.mts');
+} = require('../../../core/server/services/action-token.server.service.mts');
 const User = mongoose.model('User');
 const MemberSession = mongoose.model('MemberSession');
 

@@ -10,15 +10,10 @@ import { cn } from '@trustroots/ui/cn';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@trustroots/core/auth';
-import JoinButton from '@/modules/tribes/client/components/JoinButton';
-import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { getUsernameValidationError } from '@/modules/users/client/utils/auth';
-import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import type {
-  MembershipUpdate,
-  TribeSummary,
-} from '@/modules/tribes/client/api/tribes.api';
+import type { CircleMembershipUpdate, SignupCircles } from '../member-circles';
+import type { ProfileTribe } from '../../shared/profile';
 import type { UserProfile } from '../types';
 import type { AuthenticatedUser } from '../api/auth.api';
 import { readApiError } from '../utils/api-error';
@@ -48,13 +43,15 @@ function formatMemberCount(count: number) {
 }
 
 function SignupTribePanel({
+  circles: { getCircleBackgroundStyle, JoinButton },
   tribe,
   user,
   onMembershipUpdated,
 }: {
-  tribe: TribeSummary;
+  circles: Pick<SignupCircles, 'getCircleBackgroundStyle' | 'JoinButton'>;
+  tribe: ProfileTribe;
   user?: UserProfile;
-  onMembershipUpdated: (data: MembershipUpdate) => void;
+  onMembershipUpdated: (data: CircleMembershipUpdate) => void;
 }) {
   return (
     <div
@@ -112,7 +109,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
   return errors;
 }
 
-export default function SignupPage() {
+export default function SignupPage({ circles }: { circles: SignupCircles }) {
   const { track } = useAnalytics();
   const firstNameInput = useDesktopAutofocus<HTMLInputElement>();
   const { t } = useTranslation('users');
@@ -145,8 +142,8 @@ export default function SignupPage() {
   const [isEmailTaken, setIsEmailTaken] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [tribe, setTribe] = useState<TribeSummary | null>(null);
-  const [suggestedTribes, setSuggestedTribes] = useState<TribeSummary[]>([]);
+  const [tribe, setTribe] = useState<ProfileTribe | null>(null);
+  const [suggestedTribes, setSuggestedTribes] = useState<ProfileTribe[]>([]);
   const [suggestedTribesLimit, setSuggestedTribesLimit] = useState(4);
   const [usernameDirty, setUsernameDirty] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(true);
@@ -170,7 +167,7 @@ export default function SignupPage() {
     let isMounted = true;
 
     async function loadSuggestedTribes(withoutTribeId?: string | null) {
-      const tribes = await tribesApi.read({ limit: 40 });
+      const tribes = await circles.read({ limit: 40 });
       const shuffled = tribes
         .filter(
           suggestedTribe =>
@@ -186,7 +183,7 @@ export default function SignupPage() {
 
     async function activate() {
       if (tribeSlug) {
-        const referredTribe = await tribesApi.get(tribeSlug);
+        const referredTribe = await circles.get(tribeSlug);
 
         if (isMounted && referredTribe?._id) {
           setTribe(referredTribe);
@@ -204,7 +201,7 @@ export default function SignupPage() {
     return () => {
       isMounted = false;
     };
-  }, [tribeSlug]);
+  }, [circles, tribeSlug]);
 
   useEffect(() => {
     if (!usernameDirty || !credentials.username) {
@@ -288,7 +285,7 @@ export default function SignupPage() {
     }));
   }
 
-  function handleMembershipUpdated(data: MembershipUpdate) {
+  function handleMembershipUpdated(data: CircleMembershipUpdate) {
     if (data?.user) {
       setUser(data.user);
     }
@@ -333,7 +330,7 @@ export default function SignupPage() {
       let authenticatedUser = newUser;
 
       if (tribe?._id) {
-        const membership = await tribesApi.join(tribe._id);
+        const membership = await circles.join(tribe._id);
         authenticatedUser = membership.user || newUser;
         track('circle_joined', { source: 'signup' });
       }
@@ -736,6 +733,7 @@ export default function SignupPage() {
               <div className="tw:grid-offset-1 tw:grid-col-10 tw:sm:grid-offset-2 tw:sm:grid-col-8 tw:md:grid-offset-3 tw:md:grid-col-6 tw:lg:grid-offset-4 tw:lg:grid-col-4 signup-tribe-suggestions">
                 {tribe?._id && (
                   <SignupTribePanel
+                    circles={circles}
                     tribe={tribe}
                     user={user || undefined}
                     onMembershipUpdated={handleMembershipUpdated}
@@ -761,6 +759,7 @@ export default function SignupPage() {
                     {visibleSuggestedTribes.map(suggestedTribe => (
                       <li key={suggestedTribe._id}>
                         <SignupTribePanel
+                          circles={circles}
                           tribe={suggestedTribe}
                           user={user || undefined}
                           onMembershipUpdated={handleMembershipUpdated}

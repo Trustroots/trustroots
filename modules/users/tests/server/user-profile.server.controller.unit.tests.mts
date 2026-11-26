@@ -1,3 +1,5 @@
+import { userAccountServices } from '../../../../layers/server/user-account.mts';
+import { userMessaging } from '../../../../layers/server/user-messaging.mts';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
@@ -272,6 +274,7 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.removeProfile(
+          userAccountServices,
           { user: { _id: saved._id }, params: { token: 'valid-remove-token' } },
           res,
         ),
@@ -297,18 +300,21 @@ describe('Profile controller unit tests', () => {
         await mockModule<{ default: typeof profileController }>(
           new URL(controllerPath, import.meta.url),
           {
-            './../../../offers/server/controllers/offers.server.controller.mts':
-              {
-                removeAllByUserId: done('offers'),
-              },
-            './../../../contacts/server/controllers/contacts.server.controller.mts':
-              { removeAllByUserId: done('contacts') },
             [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
             '@trustroots/logger': (...args: unknown[]) => logs.push(args),
           },
         )
       ).default;
-      return { controller, logs, error };
+      return {
+        controller,
+        logs,
+        error,
+        accountCleanup: {
+          ...userAccountServices,
+          removeOwnedOffers: done('offers'),
+          removeAllContacts: done('contacts'),
+        },
+      };
     }
 
     for (const failing of [undefined, ...cleanupSteps]) {
@@ -322,10 +328,12 @@ describe('Profile controller unit tests', () => {
           },
         );
         await createPushRegistration(other._id);
-        const { controller, logs, error } = await loadRemoval(failing);
+        const { controller, logs, error, accountCleanup } =
+          await loadRemoval(failing);
 
         const { res } = await runHandler(res =>
           controller.removeProfile(
+            accountCleanup,
             { user: { _id: saved._id }, params: { token: 'remove-token' } },
             res,
           ),
@@ -378,6 +386,7 @@ describe('Profile controller unit tests', () => {
           (await findUser(saved._id)) as unknown as Parameters<
             typeof deleteUserAccount
           >[0],
+          userAccountServices,
           true,
         );
         if (suspended)
@@ -1133,7 +1142,7 @@ describe('Profile controller unit tests', () => {
   describe('removeProfile', () => {
     it('responds with 403 without a user', async () => {
       const { res } = await runHandler(res =>
-        profileController.removeProfile({}, res),
+        profileController.removeProfile(userAccountServices, {}, res),
       );
       res.statusCode.should.equal(403);
     });
@@ -1163,6 +1172,7 @@ describe('Profile controller unit tests', () => {
         const stats = await recordStats();
         const { res } = await runHandler(res =>
           profileController.removeProfile(
+            userAccountServices,
             { user: { _id: saved._id }, params: { token } },
             res,
           ),
@@ -1189,6 +1199,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
+          userAccountServices,
           {
             user: { _id: saved._id },
             params: { token: 'valid-remove-token' },
@@ -1210,25 +1221,18 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
-      const messageHandlerPath =
-        './../../../messages/server/controllers/messages.server.controller.mts';
-      const controller = await stubControllerDependencies(controllerPath, {
-        [messageHandlerPath]: {
-          markAllMessagesToUserNotified: (
-            _userId: unknown,
-            cb: (error: Error) => void,
-          ) => cb(new Error('messages failed')),
-        },
-      });
-
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
       userDoc.removeProfileToken = 'valid-remove-token';
       userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
       await userDoc.save();
 
+      const clearMessageNotifications = sinon
+        .stub()
+        .callsArgWith(1, new Error('messages failed'));
       const { res } = await runHandler(res =>
-        controller.removeProfile(
+        profileController.removeProfile(
+          { ...userAccountServices, clearMessageNotifications },
           {
             user: { _id: saved._id },
             params: { token: 'valid-remove-token' },
@@ -1237,6 +1241,7 @@ describe('Profile controller unit tests', () => {
         ),
       );
 
+      sinon.assert.calledOnce(clearMessageNotifications);
       res.statusCode.should.equal(400);
       responseString(res, 'message').should.equal(
         'Removing your profile failed.',
@@ -1258,6 +1263,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         controller.removeProfile(
+          userAccountServices,
           {
             user: { _id: saved._id },
             params: { token: 'fictional-remove-token' },
@@ -1281,18 +1287,17 @@ describe('Profile controller unit tests', () => {
         { tribe: new mongoose.Types.ObjectId(), since: new Date() },
       ];
       await userDoc.save();
-      const controller = await stubControllerDependencies(controllerPath, {
-        './../../../tribes/server/controllers/tribes.server.controller.mts': {
-          updateCount: (
-            _id: unknown,
-            _change: number,
-            _returnUpdated: boolean,
-            cb: (err: Error) => void,
-          ) => cb(new Error('Counter unavailable')),
-        },
-      });
       const { res } = await runHandler(res =>
-        controller.removeProfile(
+        profileController.removeProfile(
+          {
+            ...userAccountServices,
+            updateCircleCount: (
+              _id: unknown,
+              _change: number,
+              _returnUpdated: boolean,
+              callback: (error: Error) => void,
+            ) => callback(new Error('Counter unavailable')),
+          },
           { user: userDoc, params: { token: 'sample-remove-token' } },
           res,
         ),
@@ -1304,6 +1309,7 @@ describe('Profile controller unit tests', () => {
       sinon.stub(User, 'findOne').rejects(new Error('Lookup unavailable'));
       const { res } = await runHandler(res =>
         profileController.removeProfile(
+          userAccountServices,
           {
             user: { _id: new mongoose.Types.ObjectId() },
             params: { token: 'sample-token' },
@@ -1534,7 +1540,13 @@ describe('Profile controller unit tests', () => {
   describe('userByUsername', () => {
     it('responds with 403 without a user', async () => {
       const { res } = await runHandler((res, next) =>
-        profileController.userByUsername({}, res, next, 'someusername'),
+        profileController.userByUsername(
+          userMessaging.readReplyStats,
+          {},
+          res,
+          next,
+          'someusername',
+        ),
       );
       res.statusCode.should.equal(403);
     });
@@ -1542,7 +1554,13 @@ describe('Profile controller unit tests', () => {
     for (const username of ['ab', 42, '   ']) {
       it(`responds with 400 for the username ${JSON.stringify(username)}`, async () => {
         const { res } = await runHandler((res, next) =>
-          profileController.userByUsername({ user: {} }, res, next, username),
+          profileController.userByUsername(
+            userMessaging.readReplyStats,
+            { user: {} },
+            res,
+            next,
+            username,
+          ),
         );
         res.statusCode.should.equal(400);
         responseBody(res).should.deepEqual({
@@ -1555,6 +1573,7 @@ describe('Profile controller unit tests', () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler((res, next) =>
         profileController.userByUsername(
+          userMessaging.readReplyStats,
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
@@ -1574,6 +1593,7 @@ describe('Profile controller unit tests', () => {
         );
       const { res } = await runHandler((res, next) =>
         profileController.userByUsername(
+          userMessaging.readReplyStats,
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
@@ -1592,6 +1612,7 @@ describe('Profile controller unit tests', () => {
 
       const { nextCalled } = await runHandler((res, next) =>
         profileController.userByUsername(
+          userMessaging.readReplyStats,
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
@@ -1611,6 +1632,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler((res, next) =>
         profileController.userByUsername(
+          userMessaging.readReplyStats,
           {
             user: { _id: viewer._id, roles: ['user'], blocked: [] },
           },
@@ -1631,6 +1653,7 @@ describe('Profile controller unit tests', () => {
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
         controller.userByUsername(
+          userMessaging.readReplyStats,
           { user: { roles: ['user'] } },
           res,
           next,
@@ -1645,17 +1668,6 @@ describe('Profile controller unit tests', () => {
     });
 
     it('continues when reply statistics lookup fails', async () => {
-      const controller = await stubControllerDependencies(controllerPath, {
-        './../../../messages/server/services/message-stat.server.service.mts': {
-          readFormattedMessageStatsOfUser(
-            _userId: unknown,
-            _now: Date,
-            cb: (error: Error) => void,
-          ) {
-            cb(new Error('stats unavailable'));
-          },
-        },
-      });
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const [target] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
@@ -1663,7 +1675,9 @@ describe('Profile controller unit tests', () => {
       const targetDoc = await findUser(target._id);
 
       const { nextCalled } = await runHandler((res, next) =>
-        controller.userByUsername(
+        profileController.userByUsername(
+          (_userId: unknown, _now: number, callback: (error: Error) => void) =>
+            callback(new Error('stats unavailable')),
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
@@ -1677,6 +1691,7 @@ describe('Profile controller unit tests', () => {
     it('does not continue middleware after a missing profile response', async () => {
       const { res, nextCalled } = await runHandler((res, next) =>
         profileController.userByUsername(
+          userMessaging.readReplyStats,
           { user: { roles: ['user'] } },
           res,
           next,
@@ -1831,7 +1846,11 @@ describe('Profile controller unit tests', () => {
     for (const action of ['joinTribe', 'leaveTribe'] as const) {
       it(`${action} responds with 403 without a user`, async () => {
         const { res } = await runHandler(res =>
-          profileController[action]({ params: { tribeId: 'x' } }, res),
+          profileController[action](
+            userAccountServices.updateCircleCount,
+            { params: { tribeId: 'x' } },
+            res,
+          ),
         );
         res.statusCode.should.equal(403);
       });
@@ -1840,6 +1859,7 @@ describe('Profile controller unit tests', () => {
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
         const { res } = await runHandler(res =>
           profileController[action](
+            userAccountServices.updateCircleCount,
             {
               user: { _id: saved._id, member: [] },
               params: { tribeId: 'bad' },
@@ -1860,6 +1880,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -1880,6 +1901,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -1895,6 +1917,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: { _id: saved._id, member: [] },
             params: { tribeId: tribe._id.toString() },
@@ -1920,6 +1943,7 @@ describe('Profile controller unit tests', () => {
         const user = await findUser(saved._id);
         const { res } = await runHandler(res =>
           profileController[action](
+            userAccountServices.updateCircleCount,
             { user, params: { tribeId: changed._id.toString() } },
             res,
           ),
@@ -1943,6 +1967,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             // A legacy account without a membership list is not a member.
             user: { _id: saved._id },
@@ -1964,6 +1989,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -1994,6 +2020,7 @@ describe('Profile controller unit tests', () => {
 
         const { res } = await runHandler(res =>
           profileController.joinTribe(
+            userAccountServices.updateCircleCount,
             {
               user: userDoc,
               params: { tribeId: tribe._id.toString() },
@@ -2021,6 +2048,7 @@ describe('Profile controller unit tests', () => {
       const userDoc = await findUser(saved._id);
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: String(tribe._id) },
@@ -2049,6 +2077,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2083,6 +2112,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2114,6 +2144,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2500,10 +2531,15 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('search middleware', () => {
+    const searchMembers = profileController.search.bind(
+      null,
+      userAccountServices.findSearchConnectionIds,
+    );
+
     it('calls next when no search query is provided', async () => {
       let nextCalled = false;
       await new Promise<void>(resolve => {
-        profileController.search({ query: {} }, {}, () => {
+        searchMembers({ query: {} }, {}, () => {
           nextCalled = true;
           resolve();
         });
@@ -2513,7 +2549,7 @@ describe('Profile controller unit tests', () => {
 
     it('rejects a search string that is too short', async () => {
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           { query: { search: 'ab' }, user: { blocked: [] } },
           res,
           next,
@@ -2524,7 +2560,7 @@ describe('Profile controller unit tests', () => {
 
     const searchOutcome = (search: string, skip: number) =>
       runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search },
             user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
@@ -2575,7 +2611,7 @@ describe('Profile controller unit tests', () => {
       await targetDoc.save();
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'UniqueSearchable' },
             user: { _id: viewer._id, blocked: [] },
@@ -2602,7 +2638,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: {
@@ -2633,7 +2669,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: viewer._id, blocked: [] },
@@ -2656,7 +2692,7 @@ describe('Profile controller unit tests', () => {
       );
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: viewer._id, id: viewer._id },
@@ -2675,7 +2711,7 @@ describe('Profile controller unit tests', () => {
       stubSearch(() => {}, [], new Error('search failed'));
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'Findme' },
             user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
@@ -2700,7 +2736,7 @@ describe('Profile controller unit tests', () => {
       await blockerDoc.save();
 
       const { res } = await runHandler((res, next) =>
-        profileController.search(
+        searchMembers(
           {
             query: { search: 'BlockerSearch' },
             user: { _id: viewer._id, id: viewer._id, blocked: [] },

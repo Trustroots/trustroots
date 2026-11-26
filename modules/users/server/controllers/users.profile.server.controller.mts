@@ -1,21 +1,16 @@
-import { messageEmailFrequencies } from '../../shared/email-preferences.ts';
+import { messageEmailFrequencies } from '../../../core/shared/email-preferences.mts';
 import { validLanguageLevels } from '../../shared/language-levels.ts';
 import {
   hashToken,
   matchToken,
-} from '../services/action-token.server.service.mts';
+} from '../../../core/server/services/action-token.server.service.mts';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
-import { readFileSync } from 'node:fs';
-import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
-import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
-import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mts';
-import getOfferHandlerModule from './../../../offers/server/controllers/offers.server.controller.mts';
+import locales from '@trustroots/locales' with { type: 'json' };
 import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
-import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import {
   publicMemberTribePopulateOptions,
   publicTribeFields,
@@ -25,7 +20,11 @@ import emailServiceModule from './../../../core/server/services/email.server.ser
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from '@trustroots/logger';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
-import messageStatService from './../../../messages/server/services/message-stat.server.service.mts';
+import type {
+  CircleCountRecord,
+  UpdateCircleCount,
+  UserAccountCleanup,
+} from '../services/user-account.server.contract.mts';
 import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -40,6 +39,8 @@ import {
 import validator from 'validator';
 import type {
   ProfilePayload,
+  ProfileRequest,
+  ProfileResponse,
   SanitizedProfileRecord,
   SanitizedProfileRequest,
   UserProfileController,
@@ -64,13 +65,6 @@ import {
   isConnectionHistoryWriteConflict,
 } from '../services/connection-history.server.service.mts';
 
-const locales: Array<{ code: string }> = JSON.parse(
-  readFileSync(
-    new URL('../../../../config/shared/locales.json', import.meta.url),
-    // Stryker disable next-line StringLiteral: with no encoding readFileSync returns a Buffer, which JSON.parse reads as UTF-8 text anyway
-    'utf8',
-  ),
-);
 const service = {} as UserProfileController;
 const emailService = emailServiceModule as {
   sendChangeEmailConfirmation(
@@ -89,15 +83,12 @@ const emailService = emailServiceModule as {
 const fileRemovalService = fileRemovalServiceModule as {
   removeLocalPath(path: string): Promise<void>;
 };
-type TribeCountResult = NonNullable<
-  Parameters<Parameters<typeof tribesHandler.updateCount>[3]>[1]
->;
-type PopulatedTribeDocument = TribeCountResult & {
+type PopulatedTribeDocument = CircleCountRecord & {
   _id: mongoose.Types.ObjectId;
 };
 
 function hasTribeId(
-  tribe: TribeCountResult | null | undefined,
+  tribe: CircleCountRecord | null | undefined,
 ): tribe is PopulatedTribeDocument {
   return Boolean(tribe && tribe._id);
 }
@@ -106,27 +97,6 @@ function hasTribeId(
  * Module dependencies.
  */
 
-const getContactHandler = () =>
-  getContactHandlerModule as unknown as {
-    removeAllByUserId(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
-const getMessageHandler = () =>
-  getMessageHandlerModule as unknown as {
-    markAllMessagesToUserNotified(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
-const getOfferHandler = () =>
-  getOfferHandlerModule as unknown as {
-    removeAllByUserId(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
 // Fields to send publicly about any user profile
@@ -561,7 +531,7 @@ service.cancelProfileRemoval = async function (req, res) {
 /**
  * Remove profile DELETE from email token
  */
-service.removeProfile = function (req, res) {
+service.removeProfile = function (accountCleanup, req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -587,7 +557,7 @@ service.removeProfile = function (req, res) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
     }
-    await deleteUserAccount(user);
+    await deleteUserAccount(user, accountCleanup);
     report('removed', 'Your profile has been removed.');
   }
   remove().catch(() => report('failed', 'Removing your profile failed.', true));
@@ -596,6 +566,12 @@ service.removeProfile = function (req, res) {
 /** Shared cleanup for self-service removal and confirmed admin deletion. */
 export async function deleteUserAccount(
   user: UserServerDocument,
+  {
+    clearMessageNotifications,
+    removeOwnedOffers,
+    removeAllContacts,
+    updateCircleCount,
+  }: UserAccountCleanup,
   adminDeletion = false,
 ): Promise<{ cleanupIncomplete: boolean }> {
   const removeActivity = () =>
@@ -636,7 +612,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getOfferHandler().removeAllByUserId(user._id, err => {
+        removeOwnedOffers(user._id, err => {
           if (err) reject(err);
           else resolve();
         });
@@ -646,7 +622,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getContactHandler().removeAllByUserId(user._id, err => {
+        removeAllContacts(user._id, err => {
           if (err) reject(err);
           else resolve();
         });
@@ -656,7 +632,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
+        clearMessageNotifications(user._id, err =>
           err ? reject(err) : resolve(),
         );
       }),
@@ -667,7 +643,7 @@ export async function deleteUserAccount(
         () =>
           new Promise<void>((resolve, reject) => {
             // Stryker disable next-line BooleanLiteral: the callback ignores the returned tribe, so asking for the updated one changes nothing
-            tribesHandler.updateCount(membership.tribe, -1, false, err =>
+            updateCircleCount(membership.tribe, -1, false, err =>
               err ? reject(err) : resolve(),
             );
           }),
@@ -814,7 +790,7 @@ service.userMiniByID = function (req, res, next, userId) {
 /**
  * Profile middleware
  */
-service.userByUsername = function (req, res, next, username) {
+service.userByUsername = function (readReplyStats, req, res, next, username) {
   // Require user
   if (!req.user) {
     return errorService.sendForbidden(res);
@@ -871,19 +847,12 @@ service.userByUsername = function (req, res, next, username) {
     }
     req.profile = service.sanitizeProfile(profile, authenticatedUser);
     await new Promise<void>(resolve => {
-      messageStatService.readFormattedMessageStatsOfUser(
-        profile._id,
-        Date.now(),
-        (err, stats) => {
-          // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
-          if (!err)
-            Object.assign(
-              req.profile!,
-              pick(stats!, ['replyRate', 'replyTime']),
-            );
-          resolve();
-        },
-      );
+      readReplyStats(profile._id, Date.now(), (err, stats) => {
+        // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
+        if (!err)
+          Object.assign(req.profile!, pick(stats!, ['replyRate', 'replyTime']));
+        resolve();
+      });
     });
     next();
   }
@@ -1134,8 +1103,9 @@ function normaliseJoinReason(value: unknown): string | undefined | null {
 }
 
 function changeTribeMembership(
-  req: Parameters<UserProfileController['joinTribe']>[0],
-  res: Parameters<UserProfileController['joinTribe']>[1],
+  updateCircleCount: UpdateCircleCount,
+  req: ProfileRequest,
+  res: ProfileResponse,
   action: TribeMembershipAction,
 ) {
   const isJoining = action === 'join';
@@ -1166,18 +1136,13 @@ function changeTribeMembership(
     });
   }
   async function change(): Promise<void> {
-    const tribe = await new Promise<TribeCountResult | null | undefined>(
+    const tribe = await new Promise<CircleCountRecord | null | undefined>(
       resolve => {
-        tribesHandler.updateCount(
-          tribeId!,
-          isJoining ? 1 : -1,
-          true,
-          (_err, tribe) => {
-            // updateCount returns no tribe on failure; both a missing tribe and
-            // a failed lookup receive the existing bad-request response below.
-            resolve(tribe);
-          },
-        );
+        updateCircleCount(tribeId!, isJoining ? 1 : -1, true, (_err, tribe) => {
+          // updateCount returns no tribe on failure; both a missing tribe and
+          // a failed lookup receive the existing bad-request response below.
+          resolve(tribe);
+        });
       },
     );
     if (!hasTribeId(tribe)) {
@@ -1235,14 +1200,14 @@ function changeTribeMembership(
 }
 
 /** Join tribe. */
-service.joinTribe = function (req, res) {
-  return changeTribeMembership(req, res, 'join');
+service.joinTribe = function (updateCircleCount, req, res) {
+  return changeTribeMembership(updateCircleCount, req, res, 'join');
 };
 
 /** Leave tribe. */
-service.leaveTribe = function (req, res) {
+service.leaveTribe = function (updateCircleCount, req, res) {
   // Stryker disable next-line StringLiteral: only 'join' is compared, so any other action leaves
-  return changeTribeMembership(req, res, 'leave');
+  return changeTribeMembership(updateCircleCount, req, res, 'leave');
 };
 
 /**
@@ -1421,7 +1386,7 @@ function getMemberSearchOfferStages(
  * This middleware sends response with an array of found users
  * We assume that req.query.search exists
  */
-service.search = async function (req, res, next) {
+service.search = async function (findSearchConnectionIds, req, res, next) {
   // check that the search string is provided
   if (!Object.hasOwn(req.query!, 'search')) {
     return next();

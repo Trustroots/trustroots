@@ -6,7 +6,7 @@ import {
   type FindOptions,
 } from 'mongodb';
 import config from '../../../../config/config.mts';
-import { hashToken } from '../../server/services/action-token.server.service.mts';
+import { hashToken } from '../../../core/server/services/action-token.server.service.mts';
 import type { UserTokenRecord } from '../../../../bin/db-maintenance/hash-account-action-tokens.mts';
 
 let hashLegacyTokens: typeof import('../../../../bin/db-maintenance/hash-account-action-tokens.mts').hashLegacyTokens;

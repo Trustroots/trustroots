@@ -1,3 +1,5 @@
+import { userAccountServices } from '../../../../layers/server/user-account.mts';
+import { userMessaging } from '../../../../layers/server/user-messaging.mts';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import profileController from './../../server/controllers/users.profile.server.controller.mts';
@@ -91,6 +93,7 @@ describe('Profile controller mongoose error handling', () => {
 
     const { res } = await runHandler(res =>
       profileController.removeProfile(
+        userAccountServices,
         { user: { _id: saved._id }, params: { token: 'token' } } as never,
         res as never,
       ),
@@ -113,6 +116,7 @@ describe('Profile controller mongoose error handling', () => {
 
     const { res } = await runHandler(res =>
       profileController.removeProfile(
+        userAccountServices,
         {
           user: { _id: saved._id },
           params: { token: 'valid-remove-token' },
@@ -146,6 +150,7 @@ describe('Profile controller mongoose error handling', () => {
 
     const { res } = await runHandler((res, next) =>
       profileController.userByUsername(
+        userMessaging.readReplyStats,
         { user: { _id: saved._id, roles: [] } } as never,
         res as never,
         next,

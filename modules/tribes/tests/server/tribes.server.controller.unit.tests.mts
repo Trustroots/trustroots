@@ -1,3 +1,4 @@
+import { findDiscoveryOfferLocations } from '../../../offers/server/services/discovery-offers.server.service.mts';
 import assert from 'node:assert/strict';
 import type {
   ContactModel,
@@ -97,7 +98,7 @@ describe('Tribes controller unit tests', () => {
     const app = express();
     const route = sinon.spy(app, 'route');
     const param = sinon.spy(app, 'param');
-    register(app);
+    register(app, findDiscoveryOfferLocations);
 
     sinon.assert.calledWithExactly(route, '/api/tribes/discovery/connections');
     sinon.assert.calledWithExactly(route, '/api/tribes/:tribe/members');
@@ -546,6 +547,7 @@ describe('Tribes controller unit tests', () => {
       }>();
 
       await tribesController.listMembers(
+        findDiscoveryOfferLocations,
         {
           user: {
             _id: new mongoose.Types.ObjectId(),
@@ -571,6 +573,7 @@ describe('Tribes controller unit tests', () => {
       const next = sinon.stub();
 
       await tribesController.listMembers(
+        findDiscoveryOfferLocations,
         {
           user: { _id: new mongoose.Types.ObjectId() },
           tribe: { _id: new mongoose.Types.ObjectId() },
@@ -598,6 +601,7 @@ describe('Tribes controller unit tests', () => {
       const res = deferredResponse();
 
       await tribesController.listMembers(
+        findDiscoveryOfferLocations,
         {
           user: {
             _id: new mongoose.Types.ObjectId(),
@@ -628,6 +632,7 @@ describe('Tribes controller unit tests', () => {
       const res = deferredResponse();
 
       await tribesController.listMembers(
+        findDiscoveryOfferLocations,
         {
           user: { _id: userId, member: [{ tribe: tribeId }], blocked: [] },
           tribe: { _id: tribeId },
@@ -671,6 +676,7 @@ describe('Tribes controller unit tests', () => {
     }>();
     const next = sinon.stub();
     await tribesController.listConnections(
+      findDiscoveryOfferLocations,
       { user: { _id: self } },
       response,
       next,
@@ -712,6 +718,7 @@ describe('Tribes controller unit tests', () => {
     sinon.stub(Contact, 'distinct').throws(error);
     const next = sinon.stub();
     await tribesController.listConnections(
+      findDiscoveryOfferLocations,
       { user: { _id: new mongoose.Types.ObjectId() } },
       deferredResponse(),
       next,

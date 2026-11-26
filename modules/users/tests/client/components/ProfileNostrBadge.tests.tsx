@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 import type NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
 
@@ -26,7 +26,7 @@ const recentNotes = [
   note('note2', 'Free camping by the river', 1_700_000_001),
 ];
 
-vi.mock('@/modules/search/client/services/nostr.client.service', () => ({
+vi.mock('@/modules/core/client/services/nostr.client.service', () => ({
   __esModule: true,
   default: class NostrService {},
   nostrService: {

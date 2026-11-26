@@ -30,7 +30,7 @@ vi.mock('@/modules/core/client/hooks/use-debounced-callback', async () => {
   };
 });
 
-vi.mock('@/modules/search/client/api/location.api', () => ({
+vi.mock('@/modules/core/client/api/location.api', () => ({
   fetchLocationSuggestions: vi.fn().mockResolvedValue([]),
   locatePlace: vi.fn(),
 }));

@@ -2,8 +2,8 @@ import {
   showUnsubscribe,
   unsubscribe,
 } from '../controllers/users.notification-email.server.controller.mts';
-import { unsubscribePath } from '../services/notification-email.server.service.mts';
 import type { Response } from 'express';
+import { unsubscribePath } from '../../../core/server/services/notification-email-envelope.server.service.mts';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mts';
 import userAvatar from './../controllers/users.avatar.server.controller.mts';
@@ -13,6 +13,7 @@ import userExport from './../controllers/users.export.server.controller.mts';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mts';
 import { challenge } from '../controllers/users.nostr.server.controller.mts';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
+import type { UserAccountServices } from '../services/user-account.server.contract.mts';
 import userMfa from './../controllers/users.mfa.server.controller.mjs';
 import userActivity from './../controllers/users.activity.server.controller.mts';
 
@@ -43,7 +44,7 @@ interface RouteApplication {
   param(name: string, handler: RouteHandler): void;
 }
 
-export default function (app: RouteApplication) {
+export default function (app: RouteApplication, services: UserAccountServices) {
   app
     .route(unsubscribePath + '/:token')
     .get(showUnsubscribe)
@@ -53,7 +54,7 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users')
     .all(usersPolicy.isAllowed)
-    .get(userProfile.search)
+    .get(userProfile.search.bind(null, services.findSearchConnectionIds))
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
 
@@ -77,11 +78,14 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users/remove/:token')
     .all(usersPolicy.isAllowed)
-    .delete(userProfile.removeProfile);
+    .delete(userProfile.removeProfile.bind(null, services));
   app
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
-    .get(targetedRequestLimit.dataExport, userExport.download);
+    .get(
+      targetedRequestLimit.dataExport,
+      userExport.download.bind(null, services),
+    );
   app
     .route('/api/users/activity')
     .all(setActivityResponseHeaders, usersPolicy.isAllowed)
@@ -105,8 +109,8 @@ export default function (app: RouteApplication) {
   app
     .route('/api/users/memberships/:tribeId')
     .all(usersPolicy.isAllowed)
-    .post(userProfile.joinTribe)
-    .delete(userProfile.leaveTribe);
+    .post(userProfile.joinTribe.bind(null, services.updateCircleCount))
+    .delete(userProfile.leaveTribe.bind(null, services.updateCircleCount));
   app
     .route('/api/users/push/registrations')
     .all(usersPolicy.isAllowed)
@@ -162,6 +166,9 @@ export default function (app: RouteApplication) {
 
   // Finish by binding the user middleware
   app.param('userId', userProfile.userMiniByID);
-  app.param('username', userProfile.userByUsername);
+  app.param(
+    'username',
+    userProfile.userByUsername.bind(null, services.readReplyStats),
+  );
   app.param('avatarUserId', userAvatar.userForAvatarByUserId);
 }

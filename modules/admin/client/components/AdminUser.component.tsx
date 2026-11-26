@@ -1,7 +1,7 @@
 import MemberFlag from './MemberFlag.component';
 // External dependencies
 import { formatRoleLabel } from '../utils/role-label';
-import { getAdminUserHref } from '../utils/member-url';
+import { getAdminUserHref } from '@/modules/core/client/utils/admin-member-link';
 import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,
@@ -40,7 +40,7 @@ import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
-import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
+import type { ProfilePageProps } from '@/modules/users/client/components/ProfilePage.component';
 import type { AuthUser } from '@trustroots/core/auth';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
@@ -351,6 +351,7 @@ export function InfoTable({ rows }: InfoTableProps) {
 }
 
 interface AdminUserProps {
+  MemberProfile: React.ComponentType<ProfilePageProps>;
   username?: string;
   viewer?: AuthUser | null;
 }
@@ -364,7 +365,7 @@ export function useAdminUserReport({
   navigate,
   search,
   username,
-}: Omit<AdminUserRouteProps, 'viewer'>) {
+}: Omit<AdminUserRouteProps, 'MemberProfile' | 'viewer'>) {
   const [state, setState] = useState<AdminUserState>({
     hasSearched: false,
     isSettingUserRole: false,
@@ -679,7 +680,11 @@ export function useAdminUserReport({
   };
 }
 
-export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
+export function AdminUserContent({
+  MemberProfile,
+  viewer,
+  ...route
+}: AdminUserRouteProps) {
   const {
     state,
     updateState,
@@ -1508,7 +1513,7 @@ export function AdminUserContent({ viewer, ...route }: AdminUserRouteProps) {
             <h4 id="reported-member-profile-heading">
               {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
             </h4>
-            <ProfilePage
+            <MemberProfile
               embedded
               profileUsername={user.profile.username}
               user={viewer as UserProfile}

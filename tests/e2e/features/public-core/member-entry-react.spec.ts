@@ -94,7 +94,7 @@ test('member search supports deep links, empty results and profile navigation', 
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.goto('/search/members');
-  await search.fill('sample-no-matching-member-57291');
+  await search.fill('nonexistentmember57291');
   await page
     .getByRole('button', { name: 'Search members', exact: true })
     .click();

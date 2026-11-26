@@ -39,7 +39,7 @@ import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import {
   getNostrEventAuthorPubkey,
   nostrService,
-} from '../services/nostr.client.service';
+} from '@/modules/core/client/services/nostr.client.service';
 import { OpenLocationCode } from 'open-location-code';
 
 declare const process: { env: { NODE_ENV?: string } };

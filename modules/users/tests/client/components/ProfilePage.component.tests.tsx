@@ -1,4 +1,7 @@
+import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
+import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
+import { profileContacts } from '@/modules/contacts/client/profile-contacts';
 import { readOutreachSource } from '@trustroots/analytics/client';
 import {
   act,
@@ -10,7 +13,7 @@ import {
 
 import '@/config/client/i18n';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
-import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
+import MemberProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
@@ -63,10 +66,25 @@ vi.mock('@/modules/users/client/components/AboutMe.component', () => ({
     <div>About {profile.displayName}</div>
   ),
 }));
-vi.mock('@/modules/offers/client/components/Offers.component', () => ({
-  __esModule: true,
-  default: () => <div>Offers panel</div>,
-}));
+function ProfileOffers() {
+  return <div>Offers panel</div>;
+}
+
+function ProfilePage(
+  props: Omit<
+    React.ComponentProps<typeof MemberProfilePage>,
+    'ProfileOffers' | 'contactFeatures' | 'experiences'
+  >,
+) {
+  return (
+    <MemberProfilePage
+      {...props}
+      ProfileOffers={ProfileOffers}
+      contactFeatures={profileContacts}
+      experiences={profileExperiences}
+    />
+  );
+}
 vi.mock(
   '@/modules/contacts/client/components/ContactsCommon.component',
   () => ({
@@ -257,6 +275,7 @@ function renderPage(
       }}
     >
       <ProfilePage
+        circles={memberCircles}
         embedded={options.embedded}
         profileUsername={options.profileUsername}
         user={user}
@@ -720,7 +739,7 @@ describe('ProfilePage', () => {
           user: authUser,
         }}
       >
-        <ProfilePage user={authUser} />
+        <ProfilePage circles={memberCircles} user={authUser} />
       </AppProviders>,
     );
     expect(await screen.findByText('Experiences list')).toBeVisible();
@@ -737,7 +756,7 @@ describe('ProfilePage', () => {
           user: authUser,
         }}
       >
-        <ProfilePage user={authUser} />
+        <ProfilePage circles={memberCircles} user={authUser} />
       </AppProviders>,
     );
     expect(await screen.findByText('New experience form')).toBeVisible();

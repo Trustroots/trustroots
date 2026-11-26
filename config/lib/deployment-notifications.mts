@@ -69,11 +69,17 @@ export async function queueDeploymentNotifications(
     const addresses = [
       ...(await findDeploymentNotificationAddresses(db)),
     ].sort();
-    progress = (await events.findOneAndUpdate(
-      { _id },
-      { $setOnInsert: { ...metadata, addresses, queuedCount: 0 } },
-      { upsert: true, returnDocument: 'after', writeConcern },
-    ))!;
+    try {
+      progress = (await events.findOneAndUpdate(
+        { _id },
+        { $setOnInsert: { ...metadata, addresses, queuedCount: 0 } },
+        { upsert: true, returnDocument: 'after', writeConcern },
+      ))!;
+    } catch (error) {
+      // MongoDB 4.4 can raise E11000 when concurrent upserts race on _id.
+      if ((Object(error) as { code?: unknown }).code !== 11000) throw error;
+      progress = (await events.findOne({ _id }))!;
+    }
   }
   if (
     progress.origin !== receipt.origin ||

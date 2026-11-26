@@ -48,7 +48,16 @@ const userAvatar =
 const unifiedPush =
   require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
-module.exports = function (app) {
+module.exports = function (
+  app,
+  {
+    findOfferConnections,
+    readReplyStats,
+    readDiscoveryOfferLocations,
+    findSearchConnectionIds,
+    removePendingContacts,
+  },
+) {
   app.post(
     '/api/mobile/v0/nostranslation/alerts/challenge',
     mobileAuthentication.authenticate,
@@ -131,7 +140,7 @@ module.exports = function (app) {
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users'),
-      userProfile.search,
+      userProfile.search.bind(null, findSearchConnectionIds),
     );
   app.route('/api/mobile/v0/members/:mobileAvatarId/avatar').get(
     mobileAuthentication.authenticate,
@@ -174,10 +183,10 @@ module.exports = function (app) {
     .all(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
-      mobileAuthentication.loadProfile,
+      mobileAuthentication.loadProfile.bind(null, readReplyStats),
       resourcePolicy(usersPolicy.isAllowed, '/api/blocked-users/:username'),
     )
-    .put(userBlock.blockUser)
+    .put(userBlock.blockUser.bind(null, removePendingContacts))
     .delete(userBlock.unblockUser);
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
   app.get(
@@ -216,7 +225,7 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
-      mobileAuthentication.loadProfile,
+      mobileAuthentication.loadProfile.bind(null, readReplyStats),
       resourcePolicy(usersPolicy.isAllowed, '/api/users/:username'),
       mobileAuthentication.profile,
     );
@@ -231,7 +240,7 @@ module.exports = function (app) {
       mobileAuthentication.prepareResource,
       resourcePolicy(offersPolicy.isAllowed, '/api/offers'),
       getOfferSearchLimit(app),
-      offers.list,
+      offers.createListHandler(findOfferConnections),
     )
     .post(
       mobileAuthentication.authenticate,
@@ -259,7 +268,7 @@ module.exports = function (app) {
       res.set('Cache-Control', 'private, no-store');
       return next();
     },
-    tribes.listConnections,
+    tribes.listConnections.bind(null, readDiscoveryOfferLocations),
   );
   app
     .route('/api/mobile/v0/circles')
@@ -298,7 +307,7 @@ module.exports = function (app) {
     function (req, res, next) {
       return tribes.tribeBySlug(req, res, next, req.params.tribe);
     },
-    tribes.listMembers,
+    tribes.listMembers.bind(null, readDiscoveryOfferLocations),
   );
   app
     .route('/api/mobile/v0/memberships')
@@ -314,13 +323,13 @@ module.exports = function (app) {
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
-      userProfile.joinTribe,
+      (req, res) => userProfile.joinTribe(tribes.updateCount, req, res),
     )
     .delete(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
-      userProfile.leaveTribe,
+      (req, res) => userProfile.leaveTribe(tribes.updateCount, req, res),
     );
 
   app.route('/api/mobile/v0/contacts/:memberId').get(

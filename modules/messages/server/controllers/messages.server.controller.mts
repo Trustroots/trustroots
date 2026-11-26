@@ -14,7 +14,7 @@ import {
   messagePlainText,
   sanitiseMessageHtml,
 } from '../../../core/server/services/message-format.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mts';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
@@ -222,7 +222,10 @@ interface MessagesController {
   markRead(req: ControllerRequest, res: ControllerResponse): unknown;
   messagesCount(req: ControllerRequest, res: ControllerResponse): unknown;
   sync(req: ControllerRequest, res: ControllerResponse): unknown;
-  markAllMessagesToUserNotified(userId: string, callback: ErrorCallback): void;
+  markAllMessagesToUserNotified(
+    userId: string | Types.ObjectId,
+    callback: ErrorCallback,
+  ): void;
   preview(req: ControllerRequest, res: ControllerResponse): unknown;
   sanitizeMessages<Message extends { content: string }>(
     messages?: Message[] | null,

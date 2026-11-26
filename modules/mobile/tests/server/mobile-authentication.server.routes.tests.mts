@@ -13,7 +13,9 @@ type SessionHashes = { accessTokenHash: string; refreshTokenHash: string };
 const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
+const Contact = mongoose.model('Contact');
 const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 
 let app: Awaited<ReturnType<typeof express.init>>;
@@ -210,6 +212,24 @@ describe('Mobile authentication API', function () {
     member.languages = ['eng'];
     member.nostrNpub = 'npub1examplemobile';
     await member.save();
+    const senders = [1, 2, 3].map(index =>
+      utils.createTestUser({
+        username: `mobilesender${index}`,
+        email: `mobilesender${index}@example.org`,
+      }),
+    );
+    await User.collection.insertMany(senders.map(sender => sender.toObject()));
+    const replyTime = 2 * 60 * 60 * 1000;
+    const firstMessageCreated = new Date(Date.now() - 2 * replyTime);
+    await MessageStat.insertMany(
+      senders.map(sender => ({
+        firstMessageUserFrom: sender._id,
+        firstMessageUserTo: member._id,
+        firstMessageCreated,
+        firstReplyCreated: new Date(firstMessageCreated.getTime() + replyTime),
+        timeToFirstReply: replyTime,
+      })),
+    );
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
@@ -225,6 +245,8 @@ describe('Mobile authentication API', function () {
     response.body.profile.tagline.should.equal(member.tagline);
     response.body.profile.nostrNpub.should.equal(member.nostrNpub);
     response.body.profile.languages.should.deepEqual(['eng']);
+    response.body.profile.replyRate.should.equal('100%');
+    response.body.profile.replyTime.should.equal('2 hours');
     response.body.profile.member.should.deepEqual([]);
     should.not.exist(response.body.profile.password);
     should.not.exist(response.body.profile.roles);
@@ -232,24 +254,44 @@ describe('Mobile authentication API', function () {
   });
 
   it('uses bearer authentication for mobile circles and memberships', async function () {
+    const tribe = await mongoose
+      .model('Tribe')
+      .create({ label: 'Mobile Circle' });
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
       .expect(200);
+    const authenticated = {
+      Authorization: `Bearer ${signin.body.accessToken}`,
+      'X-Trustroots-Request': '1',
+    };
 
     const circles = await request(app)
       .get('/api/mobile/v0/circles?limit=1')
-      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .set(authenticated)
       .expect(200);
     circles.headers['cache-control'].should.equal('no-store');
     circles.body.should.be.an.Array();
 
     const memberships = await request(app)
       .get('/api/mobile/v0/memberships')
-      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .set(authenticated)
       .expect(200);
     memberships.headers['cache-control'].should.equal('no-store');
     memberships.body.should.deepEqual([]);
+
+    const membershipPath = `/api/mobile/v0/memberships/${tribe.id}`;
+    const joined = await request(app)
+      .post(membershipPath)
+      .set(authenticated)
+      .expect(200);
+    joined.body.tribe.count.should.equal(1);
+
+    const left = await request(app)
+      .delete(membershipPath)
+      .set(authenticated)
+      .expect(200);
+    left.body.tribe.count.should.equal(0);
   });
 
   it('does not allow cookie-free access to mobile offer resources', async function () {
@@ -541,6 +583,22 @@ describe('Mobile authentication API', function () {
         (result: { username: string }) => result.username === other.username,
       )
       .should.equal(true);
+    const connectedSearch =
+      '/api/mobile/v0/members?search=Search&connectionsOnly=true';
+    await request(app).get(connectedSearch).set(authenticated).expect(200, []);
+    const confirmedContact = await mongoose.model('Contact').create({
+      userFrom: member._id,
+      userTo: other._id,
+      confirmed: true,
+    });
+    const connected = await request(app)
+      .get(connectedSearch)
+      .set(authenticated)
+      .expect(200);
+    connected.body
+      .map((result: { username: string }) => result.username)
+      .should.deepEqual([other.username]);
+    await confirmedContact.deleteOne();
     const hosting = await request(app)
       .get(`/api/mobile/v0/offers-by/${other.id}?types=host`)
       .set(authenticated)
@@ -552,10 +610,16 @@ describe('Mobile authentication API', function () {
       .get(`/api/mobile/v0/members/${other.id}/avatar?size=128`)
       .set(authenticated)
       .expect(302);
+    const pending = await Contact.create({
+      userFrom: other._id,
+      userTo: member._id,
+      confirmed: false,
+    });
     await request(app)
       .put(`/api/mobile/v0/blocked-users/${other.username}`)
       .set(authenticated)
       .expect(200);
+    should.not.exist(await Contact.findById(pending._id));
     const blocked = await request(app)
       .get('/api/mobile/v0/blocked-users')
       .set(authenticated)

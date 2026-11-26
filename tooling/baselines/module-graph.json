@@ -3,16 +3,12 @@
     "admin": [
       "core",
       "messages",
-      "search",
       "support",
       "tribes",
       "users"
     ],
     "contacts": [
       "core",
-      "users"
-    ],
-    "core": [
       "users"
     ],
     "experiences": [
@@ -38,8 +34,6 @@
     ],
     "offers": [
       "core",
-      "experiences",
-      "search",
       "users"
     ],
     "pages": [
@@ -76,19 +70,11 @@
     ],
     "tribes": [
       "core",
-      "search",
       "users"
     ],
     "users": [
-      "admin",
-      "contacts",
       "core",
-      "experiences",
-      "messages",
-      "offers",
-      "search",
-      "stats",
-      "tribes"
+      "stats"
     ]
   },
   "models": {
@@ -104,9 +90,6 @@
       "users"
     ],
     "contacts": [
-      "users"
-    ],
-    "core": [
       "users"
     ],
     "experiences": [
@@ -147,11 +130,6 @@
       "contacts",
       "experiences",
       "users"
-    ],
-    "users": [
-      "experiences",
-      "messages",
-      "offers"
     ]
   }
 }

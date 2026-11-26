@@ -1,4 +1,5 @@
 import mongoose, { type Types } from 'mongoose';
+import type { UserAccountCleanup } from '../../../users/server/services/user-account.server.contract.mts';
 import { deleteUserAccount } from '../../../users/server/controllers/users.profile.server.controller.mts';
 import type {
   UserServerModel,
@@ -19,7 +20,11 @@ interface Response {
   send(body: unknown): unknown;
 }
 
-export async function deleteMember(req: Request, res: Response) {
+export async function deleteMember(
+  accountCleanup: UserAccountCleanup,
+  req: Request,
+  res: Response,
+) {
   if (!req.user?.roles.includes('admin'))
     return res.status(403).send({ message: 'Administrator access required.' });
   const { id, username, reason, keywords = [] } = req.body || {};
@@ -73,7 +78,11 @@ export async function deleteMember(req: Request, res: Response) {
       params: {},
       query: {},
     }).save();
-    const { cleanupIncomplete } = await deleteUserAccount(member, true);
+    const { cleanupIncomplete } = await deleteUserAccount(
+      member,
+      accountCleanup,
+      true,
+    );
     return res.send({ message: 'Member account deleted.', cleanupIncomplete });
   } catch {
     return res.status(500).send({

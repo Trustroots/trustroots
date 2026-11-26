@@ -2,7 +2,7 @@ import { recordActivity } from '../services/account-activity.server.service.mts'
 import {
   matchToken,
   setToken,
-} from '../services/action-token.server.service.mts';
+} from '../../../core/server/services/action-token.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
 import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.mts';
 import emailService from '../../../core/server/services/email.server.service.mts';

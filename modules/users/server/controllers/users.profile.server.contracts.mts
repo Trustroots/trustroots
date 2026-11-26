@@ -6,6 +6,12 @@ import type {
 } from '../../shared/profile.js';
 import type { UserServerDocument } from '../models/user.server.types.mts';
 import type {
+  UpdateCircleCount,
+  UserAccountCleanup,
+  UserAccountServices,
+} from '../services/user-account.server.contract.mts';
+import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
+import type {
   ProfileResponseDto,
   ServerProfileMembership,
   ServerPublicProfileResponse,
@@ -127,7 +133,11 @@ export interface UserProfileController {
   getProfileRemovalStatus(req: ProfileRequest, res: ProfileResponse): unknown;
   cancelProfileRemoval(req: ProfileRequest, res: ProfileResponse): unknown;
   initializeRemoveProfile(req: ProfileRequest, res: ProfileResponse): unknown;
-  removeProfile(req: ProfileRequest, res: ProfileResponse): unknown;
+  removeProfile(
+    accountCleanup: UserAccountCleanup,
+    req: ProfileRequest,
+    res: ProfileResponse,
+  ): unknown;
   getUser(req: SanitizedProfileRequest, res: ProfileResponse): unknown;
   getMiniUser(req: MiniProfileRequest, res: ProfileResponse): unknown;
   userMiniByID(
@@ -137,6 +147,7 @@ export interface UserProfileController {
     userId: string,
   ): unknown;
   userByUsername(
+    readReplyStats: UserMessaging['readReplyStats'],
     req: ProfileRequest,
     res: ProfileResponse,
     next: ProfileNext,
@@ -149,10 +160,23 @@ export interface UserProfileController {
   sanitizeOwnProfile(
     profile: UserServerDocument | null | undefined,
   ): ProfilePayload | undefined;
-  joinTribe(req: ProfileRequest, res: ProfileResponse): unknown;
-  leaveTribe(req: ProfileRequest, res: ProfileResponse): unknown;
+  joinTribe(
+    updateCircleCount: UpdateCircleCount,
+    req: ProfileRequest,
+    res: ProfileResponse,
+  ): unknown;
+  leaveTribe(
+    updateCircleCount: UpdateCircleCount,
+    req: ProfileRequest,
+    res: ProfileResponse,
+  ): unknown;
   getUserMemberships(req: ProfileRequest, res: ProfileResponse): unknown;
   removePushRegistration(req: ProfileRequest, res: ProfileResponse): unknown;
   addPushRegistration(req: ProfileRequest, res: ProfileResponse): unknown;
-  search(req: ProfileRequest, res: ProfileResponse, next: ProfileNext): unknown;
+  search(
+    findSearchConnectionIds: UserAccountServices['findSearchConnectionIds'],
+    req: ProfileRequest,
+    res: ProfileResponse,
+    next: ProfileNext,
+  ): unknown;
 }

@@ -2,15 +2,15 @@ import { differenceInYears, format as formatDate } from 'date-fns';
 import { initReactI18next } from 'react-i18next';
 import i18n, { type FormatFunction } from 'i18next';
 import { match } from 'ts-pattern';
-import { timeAgo } from '../../modules/core/shared/time-ago.mts';
+import { timeAgo } from '@trustroots/relative-time';
 import { languageCookie, localeBackend } from './i18n-resources';
 
 const isTest = process.env.NODE_ENV === 'test';
 
 /**
- * The locales currently supported by the app are specified in /config/shared/locales.json
+ * The locales currently supported by the app are specified in /packages/locales/locales.json
  * Add a language there if you want to support a new translation.
- * Read more at /config/shared/README.md
+ * Read more at /packages/locales/README.md
  */
 
 /**

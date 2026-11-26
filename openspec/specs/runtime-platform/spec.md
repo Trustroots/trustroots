@@ -206,7 +206,7 @@ Production implementations under `modules/*/server` SHALL use native ES modules.
 
 ### Requirement: Production process entry implementations use native ESM
 
-The server and background worker startup implementations SHALL use native ESM while retaining their existing synchronous `.js` launch paths.
+The server and background worker startup implementations SHALL use native ESM at their existing launch paths, `server.js` and `worker.mjs`.
 
 #### Scenario: Existing server command starts the application
 
@@ -215,7 +215,7 @@ The server and background worker startup implementations SHALL use native ESM wh
 
 #### Scenario: Existing worker command starts background jobs
 
-- **WHEN** deployment or local scripts run `node worker.js`
+- **WHEN** deployment or local scripts run `node worker.mjs`
 - **THEN** database connection, model loading, job unlock and worker start run in order with unchanged error handling
 
 ### Requirement: Focused native runtime utilities

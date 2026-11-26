@@ -4,21 +4,26 @@ import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { generateSecretKey, getPublicKey, nip19 } from 'nostr-tools';
 import request from 'supertest';
 import { vi } from 'vitest';
+import authenticationService from '../../../users/server/services/authentication.server.service.mts';
 import mockModule from './../../../../testutils/server/mock-module.mts';
+import type { CoreRouteDependencies } from '../../server/routes/core.server.routes.mts';
 
 type TribeRequest = Request & { tribe?: { slug: string }; user?: unknown };
 const TEST_LOOKUP_LIMIT = 2;
 
 /** Mount the core routes on a bare app, with controllers that name themselves. */
-async function app(signedIn = false) {
+async function app(
+  signedIn = false,
+  overrides: Partial<CoreRouteDependencies> = {},
+) {
   const { default: routes } = await mockModule<
     typeof import('../../server/routes/core.server.routes.mts')
   >(new URL('../../server/routes/core.server.routes.mts', import.meta.url), {
     './../controllers/core.server.controller.mts': {
-      renderIndex(req: TribeRequest, res: Response) {
+      renderIndex(_sanitize: unknown, req: TribeRequest, res: Response) {
         res.send(`index:${req.tribe?.slug ?? ''}`);
       },
-      renderNotFound(_req: Request, res: Response) {
+      renderNotFound(_sanitize: unknown, _req: Request, res: Response) {
         res.status(404).send('not-found');
       },
       receiveCSPViolationReport(_req: Request, res: Response) {
@@ -44,7 +49,15 @@ async function app(signedIn = false) {
     req.tribe = { slug };
     next();
   });
-  routes(server);
+  routes(server, {
+    sanitizeOwnProfile: user => user,
+    isLegacyUsernameLookupValid:
+      authenticationService.isLegacyUsernameLookupValid,
+    findNostrUsers: async () => [],
+    findNip05User: async () => null,
+    findPublicNip05Usernames: async () => new Map(),
+    ...overrides,
+  });
   return server;
 }
 
@@ -85,6 +98,59 @@ describe('Core route table', function () {
       .expect(400);
     assert.deepEqual(response.body, { error: 'Valid username required.' });
     assert.equal(response.headers['access-control-allow-origin'], '*');
+  });
+
+  it('uses the injected Nostr lookups and keeps visibility and cache policy', async function () {
+    const visibleKey = getPublicKey(generateSecretKey());
+    const privateKey = getPublicKey(generateSecretKey());
+    const visibleNpub = nip19.npubEncode(visibleKey);
+    let usernameLookup = '';
+    const server = await app(true, {
+      findNostrUsers: async npubs => {
+        assert.deepEqual(npubs, [visibleNpub, nip19.npubEncode(privateKey)]);
+        return [
+          {
+            username: 'fictionalpublic',
+            nostrNpub: visibleNpub,
+            public: true,
+            email: 'public@example.test',
+            roles: ['user'],
+          },
+          {
+            username: 'fictionalprivate',
+            nostrNpub: nip19.npubEncode(privateKey),
+            public: false,
+            email: 'private@example.test',
+            roles: ['user'],
+          },
+        ];
+      },
+      findNip05User: async username => {
+        usernameLookup = username;
+        return {
+          username,
+          nostrNpub: visibleNpub,
+          public: true,
+          email: 'public@example.test',
+          roles: ['user'],
+        };
+      },
+    });
+
+    await request(server)
+      .get(
+        `/api/nostr/author-visibility?profiles=1&pubkey=${visibleKey}&pubkey=${privateKey}`,
+      )
+      .expect('Cache-Control', 'private, no-store')
+      .expect(200, {
+        linkedPubkeys: [visibleKey, privateKey],
+        pubkeys: [visibleKey],
+        usernames: { [visibleKey]: 'fictionalpublic' },
+      });
+    await request(server)
+      .get('/.well-known/nostr.json?name=FictionalPublic')
+      .expect(200, { names: { fictionalpublic: visibleKey } });
+    assert.equal(usernameLookup, 'fictionalpublic');
   });
 
   it('serves the service identity without looking up a member', async function () {

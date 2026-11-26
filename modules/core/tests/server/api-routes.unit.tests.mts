@@ -1,3 +1,8 @@
+import { findDiscoveryOfferLocations } from '../../../offers/server/services/discovery-offers.server.service.mts';
+import {
+  removePendingContacts,
+  userAccountServices,
+} from '../../../../layers/server/user-account.mts';
 import assert from 'assert';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
@@ -33,7 +38,7 @@ interface Recorder {
   params: Array<{ name: string; middleware: NamedHandler }>;
   routes: RecordedRoute[];
 }
-type RouteRegistrar = (app: RecorderApp) => void;
+type RouteRegistrar = (app: RecorderApp, ...dependencies: unknown[]) => void;
 type DependencyReplacements = Record<string, NamedHandler> | NamedHandler;
 
 function handler(name: string): NamedHandler {
@@ -170,12 +175,13 @@ function assertPolicy(
 async function register(
   modulePath: string,
   stubs: Record<string, DependencyReplacements>,
+  ...dependencies: unknown[]
 ) {
   const { app, middlewarePaths, params, routes } = createAppRecorder();
   const { default: registerRoutes } = await proxyquire<{
     default: RouteRegistrar;
   }>(new URL(modulePath, import.meta.url), stubs);
-  registerRoutes(app);
+  registerRoutes(app, ...dependencies);
   return { middlewarePaths, params, routes };
 }
 
@@ -321,17 +327,24 @@ describe('API route registrations', () => {
       'offers',
     );
 
+    const findConnections = async () => [];
+    const createListHandler = sinon.stub().returns(offers.list);
     const { params, routes } = await register(
       './../../../offers/server/routes/offers.server.routes.mts',
       {
-        '../controllers/offers.server.controller': offers,
+        '../controllers/offers.server.controller': {
+          ...offers,
+          createListHandler,
+        },
         '../policies/offers.server.policy': policy,
         '../middleware/offer-search-limit.server.middleware': {
           getOfferSearchLimit: (() => searchLimit) as NamedHandler,
         },
       },
+      findConnections,
     );
 
+    sinon.assert.calledOnceWithExactly(createListHandler, findConnections);
     assertHandlers(routeByPath(routes, '/api/offers-by/:offerUserId').get, [
       offers.listOffersByUser,
     ]);
@@ -396,7 +409,13 @@ describe('API route registrations', () => {
   it('registers tribes and support routes', async () => {
     const tribesPolicy = { isAllowed: handler('tribesPolicy.isAllowed') };
     const tribes = controller(
-      ['getTribe', 'listTribes', 'tribeBySlug'],
+      [
+        'getTribe',
+        'listTribes',
+        'listMembers',
+        'listConnections',
+        'tribeBySlug',
+      ],
       'tribes',
     );
     const support = controller(['supportRequest'], 'support');
@@ -408,6 +427,7 @@ describe('API route registrations', () => {
         '../controllers/tribes.server.controller': tribes,
         '../policies/tribes.server.policy': tribesPolicy,
       },
+      findDiscoveryOfferLocations,
     );
     const { trustrootsNostrServiceName, trustrootsNostrServiceIdentifier } =
       await import('../../server/services/nostr-service-signer.server.mts');
@@ -572,6 +592,7 @@ describe('API route registrations', () => {
           limits,
         '../policies/users.server.policy': policy,
       },
+      userAccountServices,
     );
     assert.strictEqual(routes.length, 25);
 
@@ -624,6 +645,7 @@ describe('API route registrations', () => {
 
   it('registers blocked-user routes', async () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const blockUser = sinon.spy();
     const block = controller(
       ['blockUser', 'getBlockedUsers', 'unblockUser'],
       'userBlock',
@@ -632,17 +654,26 @@ describe('API route registrations', () => {
     const { routes } = await register(
       './../../../users/server/routes/users-block.server.routes.mts',
       {
-        '../controllers/users.block.server.controller': block,
+        '../controllers/users.block.server.controller': { ...block, blockUser },
         '../policies/users.server.policy': policy,
       },
+      removePendingContacts,
     );
 
     assertHandlers(routeByPath(routes, '/api/blocked-users').get, [
       block.getBlockedUsers,
     ]);
-    assertHandlers(routeByPath(routes, '/api/blocked-users/:username').put, [
-      block.blockUser,
-    ]);
+    const puts = routeByPath(routes, '/api/blocked-users/:username').put;
+    assert.equal(puts.length, 1);
+    const req = {};
+    const res = {};
+    puts[0]!(req, res);
+    sinon.assert.calledOnceWithExactly(
+      blockUser,
+      removePendingContacts,
+      req,
+      res,
+    );
     assertHandlers(routeByPath(routes, '/api/blocked-users/:username').delete, [
       block.unblockUser,
     ]);
@@ -779,6 +810,8 @@ describe('API route registrations', () => {
         '../policies/admin.server.policy': policy,
         '../services/admin-elevation.server.service': elevation,
       },
+      userAccountServices,
+      async () => new Map(),
     );
 
     assertHandlers(routeByPath(routes, '/api/admin/gravatar').get, [

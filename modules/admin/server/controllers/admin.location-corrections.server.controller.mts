@@ -4,7 +4,7 @@ import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mts';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mts';
 import messageStatService from '../../../messages/server/services/message-stat.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 
 type LocationMatch = 'exact' | 'nearby';

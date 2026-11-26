@@ -8,7 +8,7 @@ import {
   type ObjectId,
 } from 'mongodb';
 import config from '../../config/config.mts';
-import { hashToken } from '../../modules/users/server/services/action-token.server.service.mts';
+import { hashToken } from '../../modules/core/server/services/action-token.server.service.mts';
 
 export interface UserTokenRecord extends Document {
   _id?: ObjectId;

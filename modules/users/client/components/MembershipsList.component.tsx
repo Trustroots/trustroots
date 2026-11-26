@@ -2,10 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
-import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
+import type { ProfileCircles } from '../member-circles';
 import type { TribeMembership } from '../types';
 
-function TribeBadge({ membership }: { membership: TribeMembership }) {
+type CircleBackground = Pick<ProfileCircles, 'getCircleBackgroundStyle'>;
+
+function TribeBadge({
+  membership,
+  getCircleBackgroundStyle,
+}: CircleBackground & { membership: TribeMembership }) {
   const tribe = membership.tribe;
 
   return (
@@ -36,7 +41,8 @@ function TribeBadge({ membership }: { membership: TribeMembership }) {
 export default function MembershipsList({
   memberships = [],
   isOwnProfile,
-}: {
+  getCircleBackgroundStyle,
+}: CircleBackground & {
   memberships?: TribeMembership[];
   isOwnProfile: boolean;
 }) {
@@ -64,7 +70,11 @@ export default function MembershipsList({
         <ul className="profile-memberships-list panel-more-wrap">
           <div className="panel-more-excerpt">
             {visibleMemberships.map(membership => (
-              <TribeBadge key={membership.tribe._id} membership={membership} />
+              <TribeBadge
+                key={membership.tribe._id}
+                membership={membership}
+                getCircleBackgroundStyle={getCircleBackgroundStyle}
+              />
             ))}
           </div>
           {limit && sortedMemberships.length > limit && (
