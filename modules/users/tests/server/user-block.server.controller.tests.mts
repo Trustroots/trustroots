@@ -1,3 +1,5 @@
+import { removePendingContacts } from '../../../../layers/server/user-account.mts';
+import type { RemovePendingContacts } from '../../server/services/user-contacts.server.contract.mts';
 import importedDependency0 from './../../../core/server/services/error.server.service.mts';
 import mongoose from 'mongoose';
 import mockModule from './../../../../testutils/server/mock-module.mts';
@@ -19,7 +21,10 @@ interface BlockRequest {
 type Handler = (req: BlockRequest, res: MockResponse) => Promise<unknown>;
 interface BlockController {
   getBlockedUsers: Handler;
-  blockUser: Handler;
+  blockUser: (
+    removePending: RemovePendingContacts,
+    ...args: Parameters<Handler>
+  ) => Promise<unknown>;
   unblockUser: Handler;
 }
 
@@ -45,7 +50,11 @@ const failed = message(
   ).getErrorMessageByKey('default'),
 );
 
-async function call(handler: keyof BlockController, req: BlockRequest) {
+async function call(
+  handler: keyof BlockController,
+  req: BlockRequest,
+  removePending = removePendingContacts,
+) {
   const logged: unknown[][] = [];
   const controller = (
     await mockModule<{ default: BlockController }>(
@@ -70,7 +79,9 @@ async function call(handler: keyof BlockController, req: BlockRequest) {
       return res;
     },
   };
-  await controller[handler](req, res);
+  if (handler === 'blockUser')
+    await controller.blockUser(removePending, req, res);
+  else await controller[handler](req, res);
   return { response: [res.statusCode, res.body], logged };
 }
 
@@ -186,6 +197,24 @@ describe('User block controller unit tests', () => {
     response[0]!.should.equal(200);
     (await Contact.findById(confirmed._id))!.confirmed.should.be.true();
     (await Contact.findById(unrelated._id))!.confirmed.should.be.false();
+  });
+
+  it('reports a pending contact cleanup failure after recording the block', async () => {
+    const [user, target] = await utils.saveUsers(utils.generateUsers(2));
+    const failure = new Error('Pending contact cleanup failed');
+    const { response, logged } = await call(
+      'blockUser',
+      { user, profile: target },
+      async () => {
+        throw failure;
+      },
+    );
+
+    response.should.eql([400, failed]);
+    logged.at(-1)![1]!.should.equal(failure);
+    (await User.findById(user._id))!.blocked
+      .map(String)
+      .should.eql([String(target._id)]);
   });
 
   it('responds with 404 when the logged in user no longer exists', async () => {

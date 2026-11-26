@@ -7,7 +7,6 @@ import {
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';
-import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
 import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
@@ -105,13 +104,6 @@ function hasTribeId(
  * Module dependencies.
  */
 
-const getContactHandler = () =>
-  getContactHandlerModule as unknown as {
-    removeAllByUserId(
-      userId: mongoose.Types.ObjectId,
-      callback: (error?: Error | null) => void,
-    ): void;
-  };
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
 // Fields to send publicly about any user profile
@@ -584,6 +576,7 @@ export async function deleteUserAccount(
   {
     clearMessageNotifications,
     removeOwnedOffers,
+    removeAllContacts,
     updateCircleCount,
   }: UserAccountCleanup,
   adminDeletion = false,
@@ -632,7 +625,7 @@ export async function deleteUserAccount(
   await cleanup(
     () =>
       new Promise<void>((resolve, reject) => {
-        getContactHandler().removeAllByUserId(user._id, err => {
+        removeAllContacts(user._id, err => {
           if (err) reject(err);
           else resolve();
         });

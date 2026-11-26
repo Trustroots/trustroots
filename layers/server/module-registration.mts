@@ -107,6 +107,10 @@ export async function initModulesServerRoutes(app: Express) {
     users.directory,
     'routes/users.server.routes.mts',
   );
+  const userBlockRouteFile = resolve(
+    users.directory,
+    'routes/users-block.server.routes.mts',
+  );
   const userAccountAdapter = new URL('./user-account.mts', import.meta.url)
     .href;
   const userMessagingAdapter = new URL('./user-messaging.mts', import.meta.url)
@@ -119,19 +123,33 @@ export async function initModulesServerRoutes(app: Express) {
         await import('../../modules/experiences/server/services/search-connections.server.service.mts');
       if (file === mobileRouteFile) {
         const { userMessaging } = await import(userMessagingAdapter);
-        const { userAccountServices } = await import(userAccountAdapter);
+        const { userAccountServices, removePendingContacts } = await import(
+          userAccountAdapter
+        );
         register(app, {
           findOfferConnections: findSearchConnectionIds,
           readReplyStats: userMessaging.readReplyStats,
           readDiscoveryOfferLocations: await loadDiscoveryOfferLocations(),
           findSearchConnectionIds: userAccountServices.findSearchConnectionIds,
+          removePendingContacts,
         });
       } else {
         register(app, findSearchConnectionIds);
       }
-    } else if (file === usersRouteFile || file === adminRouteFile) {
-      const { userAccountServices } = await import(userAccountAdapter);
-      register(app, userAccountServices);
+    } else if (
+      file === usersRouteFile ||
+      file === adminRouteFile ||
+      file === userBlockRouteFile
+    ) {
+      const { userAccountServices, removePendingContacts } = await import(
+        userAccountAdapter
+      );
+      register(
+        app,
+        file === userBlockRouteFile
+          ? removePendingContacts
+          : userAccountServices,
+      );
     } else if (file === tribesRouteFile) {
       register(app, await loadDiscoveryOfferLocations());
     } else {
