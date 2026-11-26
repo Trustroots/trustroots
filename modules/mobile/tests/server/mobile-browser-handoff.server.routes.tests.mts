@@ -122,9 +122,8 @@ describe('Mobile browser sign-in handoff', () => {
     };
   }
 
-  it.each(['authenticator', 'recovery'] as const)(
-    'requires a fresh %s code, redeems once, and keeps the mobile session verified across refresh',
-    async factor => {
+  for (const factor of ['authenticator', 'recovery'] as const) {
+    it(`requires a fresh ${factor} code, redeems once, and keeps the mobile session verified across refresh`, async () => {
       await User.updateOne(
         { _id: user._id },
         {
@@ -195,8 +194,8 @@ describe('Mobile browser sign-in handoff', () => {
         .post('/api/mobile/v0/auth/refresh')
         .send({ refreshToken: refreshed.body.refreshToken })
         .expect(401);
-    },
-  );
+    });
+  }
 
   it('requires explicit same-session POST confirmation and issues only once', async () => {
     await User.updateOne({ _id: user._id }, { $set: { authVersion: null } });
