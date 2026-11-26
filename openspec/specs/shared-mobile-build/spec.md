@@ -476,6 +476,7 @@ The regular iOS Nostranslation signing sheet SHALL present its pending translati
 
 - **WHEN** the displayed review has been removed or replaced before the native decision is handled
 - **THEN** the stale action leaves the current review available for its own explicit decision
+
 ### Requirement: Regular iOS profile uses shared biography and language sections
 
 The regular iOS profile SHALL use Compose to display a member's biography
