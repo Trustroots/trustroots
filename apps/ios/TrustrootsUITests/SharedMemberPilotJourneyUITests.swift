@@ -1412,7 +1412,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         add(headerScreenshot)
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(display.buttons["Members"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
 
         app.buttons["Dismiss potential host"].tap()
         mapFilters.tap()
