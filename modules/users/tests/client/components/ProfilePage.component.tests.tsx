@@ -1,6 +1,7 @@
 import { profileExperiences } from '@/modules/experiences/client/profile-experiences';
 import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
+import { profileContacts } from '@/modules/contacts/client/profile-contacts';
 import { readOutreachSource } from '@trustroots/analytics/client';
 import {
   act,
@@ -72,13 +73,14 @@ function ProfileOffers() {
 function ProfilePage(
   props: Omit<
     React.ComponentProps<typeof MemberProfilePage>,
-    'ProfileOffers' | 'experiences'
+    'ProfileOffers' | 'contactFeatures' | 'experiences'
   >,
 ) {
   return (
     <MemberProfilePage
       {...props}
       ProfileOffers={ProfileOffers}
+      contactFeatures={profileContacts}
       experiences={profileExperiences}
     />
   );

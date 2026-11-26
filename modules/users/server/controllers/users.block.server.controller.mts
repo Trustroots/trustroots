@@ -1,7 +1,7 @@
 import errorService from './../../../core/server/services/error.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
 import log from '@trustroots/logger';
-import { removePendingBetweenUsers } from '../../../contacts/server/controllers/contacts.server.controller.mts';
+import type { RemovePendingContacts } from '../services/user-contacts.server.contract.mts';
 import type {
   UserServerDocument,
   UserServerModel,
@@ -21,7 +21,11 @@ interface BlockResponse {
 
 interface BlockController {
   getBlockedUsers(req: BlockRequest, res: BlockResponse): Promise<unknown>;
-  blockUser(req: BlockRequest, res: BlockResponse): Promise<unknown>;
+  blockUser(
+    removePendingContacts: RemovePendingContacts,
+    req: BlockRequest,
+    res: BlockResponse,
+  ): Promise<unknown>;
   unblockUser(req: BlockRequest, res: BlockResponse): Promise<unknown>;
 }
 
@@ -67,7 +71,7 @@ service.getBlockedUsers = async function (req, res) {
 /**
  * Add a new userId to the blocked list
  */
-service.blockUser = async function (req, res) {
+service.blockUser = async function (removePendingContacts, req, res) {
   /*
    * req.profile was instantiated by a prev middleware
    */
@@ -97,7 +101,7 @@ service.blockUser = async function (req, res) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
-    await removePendingBetweenUsers(req.user._id, idToBeBlocked);
+    await removePendingContacts(req.user._id, idToBeBlocked);
     res.send(`${req.profile.username} added to block list.`);
   } catch (err) {
     logCaughtError(err);

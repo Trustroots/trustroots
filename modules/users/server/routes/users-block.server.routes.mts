@@ -1,3 +1,4 @@
+import type { RemovePendingContacts } from '../services/user-contacts.server.contract.mts';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userBlock from './../controllers/users.block.server.controller.mts';
 
@@ -16,7 +17,10 @@ interface RouteApplication {
   route(path: string): RouteChain;
 }
 
-export default function (app: RouteApplication) {
+export default function (
+  app: RouteApplication,
+  removePendingContacts: RemovePendingContacts,
+) {
   // Setting up the users profile api
   app
     .route('/api/blocked-users')
@@ -25,6 +29,6 @@ export default function (app: RouteApplication) {
   app
     .route('/api/blocked-users/:username')
     .all(usersPolicy.isAllowed)
-    .put(userBlock.blockUser)
+    .put(userBlock.blockUser.bind(null, removePendingContacts))
     .delete(userBlock.unblockUser);
 }

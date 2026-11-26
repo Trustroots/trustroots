@@ -758,9 +758,6 @@ importers:
       '@trustroots/admin':
         specifier: workspace:*
         version: link:../admin
-      '@trustroots/contacts':
-        specifier: workspace:*
-        version: link:../contacts
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
