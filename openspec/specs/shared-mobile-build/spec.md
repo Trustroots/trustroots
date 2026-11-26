@@ -274,6 +274,20 @@ separate button hosts SHALL leave the surrounding map available for gestures.
 - **WHEN** they select Search filters
 - **THEN** the existing filter sheet appears and closing it returns to the same map
 
+### Requirement: iOS selected Community Notes use a shared card
+
+The regular iOS map SHALL show the selected Community Note in shared Compose
+with its original text, a preview of up to four lines, the native-formatted
+source attribution and an accessible Dismiss action. The iOS host SHALL handle
+note selection and size the card to its content.
+
+#### Scenario: Read a selected Community Note
+
+- **GIVEN** a member selects a Community Note marker
+- **WHEN** the note card appears
+- **THEN** the shared card shows the note and its publication date
+- **AND** selecting Dismiss clears the existing map selection
+
 ### Requirement: Regular iOS Search uses a shared display selector
 
 The regular iOS Search screen SHALL use shared Compose to select Map, Results,
