@@ -105,7 +105,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     refresh_token = None
     refresh_count = 0
     drop_profile_response = False
-    drop_reachability_response = False
+    drop_member_reads = False
     messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
     thread_read = False
     send_attempts = 0
@@ -129,11 +129,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if route == "/health":
             self._json(200, {"status": "ready"})
             return
-        if route == "/api/mobile/v0/me":
-            fixture = type(self)
-            with fixture.session_lock:
-                drop_reachability_response = fixture.drop_reachability_response
-            if drop_reachability_response:
+        if route.startswith("/api/mobile/v0/"):
+            with type(self).session_lock:
+                drop_member_reads = type(self).drop_member_reads
+            if drop_member_reads:
                 self.close_connection = True
                 return
         if route == "/fixture/inbox-read-state":
@@ -511,14 +510,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if self.path == "/fixture/profile-connection":
             body = self._body()
             drop = body.get("drop")
-            drop_reachability = body.get("dropReachability", False)
-            if not isinstance(drop, bool) or not isinstance(drop_reachability, bool):
+            drop_member_reads = body.get("dropMemberReads", False)
+            if not isinstance(drop, bool) or not isinstance(drop_member_reads, bool):
                 self._json(400, {"message": "Expected boolean connection flags."})
                 return
             fixture = type(self)
             with fixture.session_lock:
                 fixture.drop_profile_response = drop
-                fixture.drop_reachability_response = drop_reachability
+                fixture.drop_member_reads = drop_member_reads
             self._json(200, {"drop": drop})
             return
         if not self._authorised():
