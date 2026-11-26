@@ -579,9 +579,6 @@ importers:
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
-      '@trustroots/references-thread':
-        specifier: workspace:*
-        version: link:../references-thread
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats

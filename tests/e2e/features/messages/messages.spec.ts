@@ -47,6 +47,11 @@ test.describe('seeded message flows', () => {
     await expect(
       page.getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply),
     ).toBeVisible();
+    await expect(
+      page.getByText(
+        'Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?',
+      ),
+    ).toBeVisible();
   });
 
   test('inbox lists the seeded conversation with Portland Host', async ({
