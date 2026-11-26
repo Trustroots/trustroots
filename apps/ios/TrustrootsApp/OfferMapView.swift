@@ -26,8 +26,8 @@ struct OfferMapView: View {
     @State private var selectedLanguages: Set<String> = []
     @State private var searchMode = SearchMode.map
     @State private var searchDisplayHeight: CGFloat = 50
-    @State private var placeQuery = ""
-    @State private var placeSearchFailed = false
+    @State private var placeSearch = OfferPlaceSearchState()
+    @State private var placeSearchHeight: CGFloat = 124
     @State private var showingCommunityNotes = true
     @State private var activityMonths: Int? = 6
     @State private var circles: [TrustrootsCircle] = []
@@ -260,18 +260,13 @@ struct OfferMapView: View {
     private var resultsView: some View {
         List {
             Section {
-                TextField("Search for a place", text: $placeQuery)
-                    .submitLabel(.search)
-                    .onSubmit {
-                        let query = placeQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !query.isEmpty {
-                            Task { await focus(on: query) }
-                        }
-                    }
-                if placeSearchFailed {
-                    Text("Could not find that place.").foregroundStyle(.red)
-                }
-                Button("Search filters") { showingFilters = true }
+                OfferPlaceSearchController(
+                    state: placeSearch,
+                    onSearch: { query in Task { await focus(on: query) } },
+                    onFilters: { showingFilters = true },
+                    height: $placeSearchHeight
+                )
+                .frame(height: placeSearchHeight)
             }
             Section("Offers in this area") {
                 if isLoading {
@@ -348,11 +343,11 @@ struct OfferMapView: View {
     private func focus(on location: String) async {
         placeSearchGeneration += 1
         let generation = placeSearchGeneration
-        placeSearchFailed = false
+        placeSearch.updateFailure(failed: false)
         let placemark = try? await CLGeocoder().geocodeAddressString(location).first
         guard !Task.isCancelled, generation == placeSearchGeneration else { return }
         guard let coordinate = placemark?.location?.coordinate else {
-            placeSearchFailed = showingResults
+            placeSearch.updateFailure(failed: showingResults)
             return
         }
         selectedHost = nil
@@ -428,6 +423,47 @@ private struct SearchDisplayController: UIViewControllerRepresentable {
         coordinator.onSelect = { key in
             if let mode = SearchMode(rawValue: key) { selection = mode }
         }
+    }
+}
+
+@MainActor
+private struct OfferPlaceSearchController: UIViewControllerRepresentable {
+    let state: OfferPlaceSearchState
+    let onSearch: (String) -> Void
+    let onFilters: () -> Void
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        var onSearch: ((String) -> Void)?
+        var onFilters: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return OfferPlaceSearchControllerKt.OfferPlaceSearchViewController(
+            state: state,
+            onSearch: { [weak coordinator] query in coordinator?.onSearch?(query) },
+            onFilters: { [weak coordinator] in coordinator?.onFilters?() },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onSearch = onSearch
+        coordinator.onFilters = onFilters
     }
 }
 
