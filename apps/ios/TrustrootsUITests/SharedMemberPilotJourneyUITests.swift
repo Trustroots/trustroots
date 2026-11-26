@@ -437,6 +437,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let signing = app.navigationBars["Nostranslation signing"]
         XCTAssertTrue(signing.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.buttons["Review connection"].exists, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["Authorise a translation review"].exists)
+        XCTAssertFalse(app.buttons["Approve signature"].exists)
         XCTAssertFalse(app.staticTexts["Connected clients"].exists)
         XCTAssertFalse(app.buttons.matching(identifier: "nostranslation-connected-client-revoke").firstMatch.exists)
         XCTAssertFalse(app.descendants(matching: .any)["nostranslation-review-alerts"].exists)
