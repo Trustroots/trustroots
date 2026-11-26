@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -129,6 +130,7 @@ internal fun PilotInput(
     enabled: Boolean,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     onChange: (String) -> Unit,
 ) {
     val palette = pilotPalette
@@ -145,6 +147,7 @@ internal fun PilotInput(
             enabled = enabled,
             textStyle = TextStyle(color = palette.ink, fontSize = 16.sp, lineHeight = 22.sp),
             keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
             singleLine = singleLine,
             maxLines = if (singleLine) 1 else 4,
             visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Password) {

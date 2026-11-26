@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PlatformImeOptions
@@ -32,6 +33,7 @@ fun MemberAccountPreferencesViewController(
             emailKeyboard = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Done,
                 autoCorrectEnabled = false,
                 platformImeOptions = PlatformImeOptions { textContentType(UITextContentTypeEmailAddress) },
             ),

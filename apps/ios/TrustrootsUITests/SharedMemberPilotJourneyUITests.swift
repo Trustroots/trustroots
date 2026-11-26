@@ -436,6 +436,12 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         XCTAssertEqual(XCTWaiter.wait(for: [edited], timeout: 10), .completed, app.debugDescription)
 
+        let done = keyboard.buttons.matching(NSPredicate(format: "label ==[c] %@", "Done")).firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        done.tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed, app.debugDescription)
+
         tapAccountButton(save, in: app)
         let confirmation = element(labelled: "Account settings saved.", in: app)
         XCTAssertTrue(confirmation.waitForExistence(timeout: 10), app.debugDescription)
@@ -546,8 +552,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         for _ in 0..<5 {
             if button.isHittable { break }
             let belowCenter = button.frame.midY >= account.frame.midY
-            let start = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.7 : 0.3))
-            let end = account.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: belowCenter ? 0.3 : 0.7))
+            // Use the native container's gutter outside the embedded Compose sections.
+            let gutter = 8 / account.frame.width
+            let start = account.coordinate(withNormalizedOffset: CGVector(dx: gutter, dy: belowCenter ? 0.7 : 0.3))
+            let end = account.coordinate(withNormalizedOffset: CGVector(dx: gutter, dy: belowCenter ? 0.3 : 0.7))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
         XCTAssertTrue(button.isHittable, app.debugDescription)
