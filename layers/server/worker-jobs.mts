@@ -1,3 +1,4 @@
+import { sendSignupReminderJob } from '../../modules/core/server/services/signup-reminder-mail.server.contract.mts';
 import type { Agenda, Job } from 'agenda';
 import { pruneAgendaDeliveryJobs } from '../../config/lib/agenda-retention.mts';
 import config, { mailMode } from '../../config/config.mts';
@@ -43,11 +44,16 @@ function defineJob<Data>(
 }
 
 export async function registerWorkerJobs(agenda: Agenda) {
-  const { default: sendEmailJob } = await core.sendEmail();
+  const { default: createSendEmailJob } = await core.sendEmail();
+  const { canDeliverNotificationEmail } = await users.notificationEmail();
+  const { deliverSignupReminder } = await users.signupReminderDelivery();
+  const sendEmailJob = createSendEmailJob({
+    canDeliverNotificationEmail,
+    deliverSignupReminder,
+  });
   const { default: unreadMessagesJob } = await messages.unreadMessages();
   const { default: dailyStatisticsJob } = await statistics.dailyStatistics();
   const { default: signupRemindersJob } = await users.signupReminders();
-  const { sendSignupReminderJob } = await users.signupReminderDelivery();
   const { default: reactivateHostsJob } = await offers.reactivateHosts();
   const { default: welcomeSequenceFirstJob } =
     await users.welcomeSequenceFirst();
@@ -184,10 +190,14 @@ export async function registerWorkerJobs(agenda: Agenda) {
     async () => queueExperienceReplyReminders(agenda),
     { concurrency: 1, lockLifetime: 120000 },
   );
-  agenda.define(sendExperienceReplyReminderJob, sendExperienceReplyReminder, {
-    concurrency: 2,
-    lockLifetime: 60000,
-  });
+  agenda.define(
+    sendExperienceReplyReminderJob,
+    sendExperienceReplyReminder.bind(null, sendEmailJob),
+    {
+      concurrency: 2,
+      lockLifetime: 60000,
+    },
+  );
   defineJob(agenda, 'send support message', supportMessageJob, {
     priority: 'high',
     concurrency: 2,

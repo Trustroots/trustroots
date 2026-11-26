@@ -6,7 +6,7 @@ import type { Types } from 'mongoose';
 import {
   sendSignupReminderJob,
   type SignupReminder,
-} from '../../../users/server/services/signup-reminder.server.service.mts';
+} from './signup-reminder-mail.server.contract.mts';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mts';
 import { timeAgo } from '../../shared/time-ago.mts';
 import { Autolinker as autolinker } from 'autolinker';

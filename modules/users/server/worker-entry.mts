@@ -1,4 +1,6 @@
 export default {
+  notificationEmail: () =>
+    import('./services/notification-email.server.service.mts'),
   signupReminders: () => import('./jobs/user-finish-signup.server.job.mts'),
   signupReminderDelivery: () =>
     import('./services/signup-reminder.server.service.mts'),

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import mockModule from './../../../../../testutils/server/mock-module.mts';
 
-type SendEmailJob =
+type CreateSendEmailJob =
   typeof import('../../../server/jobs/send-email.server.job.mts').default;
 type SendCallback = (error?: Error | null) => void;
 
@@ -18,15 +18,11 @@ async function loadJob(sendError: Error | null, allow: boolean | Error = true) {
       transport.closed++;
     },
   };
-  const { default: job } = await mockModule<{ default: SendEmailJob }>(
+  const { default: createSendEmailJob } = await mockModule<{
+    default: CreateSendEmailJob;
+  }>(
     new URL('../../../server/jobs/send-email.server.job.mts', import.meta.url),
     {
-      '../../../users/server/services/notification-email.server.service.mts': {
-        async canDeliverNotificationEmail() {
-          if (allow instanceof Error) throw allow;
-          return allow;
-        },
-      },
       nodemailer: {
         createTransport(options: unknown) {
           assert.deepEqual(options, { fictional: 'transport' });
@@ -41,6 +37,15 @@ async function loadJob(sendError: Error | null, allow: boolean | Error = true) {
       },
     },
   );
+  const job = createSendEmailJob({
+    async canDeliverNotificationEmail() {
+      if (allow instanceof Error) throw allow;
+      return allow;
+    },
+    async deliverSignupReminder(_reminder, _address, send) {
+      await send();
+    },
+  });
   return { job, events, transport };
 }
 
