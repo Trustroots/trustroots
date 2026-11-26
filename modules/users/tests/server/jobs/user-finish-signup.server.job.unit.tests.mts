@@ -34,7 +34,7 @@ describe('Job: user finish signup unit tests', () => {
       }),
     )({
       attrs: { ...attrs(), data },
-    });
+    } as never);
   };
   let unConfirmedUser: HydratedDocument<UserServerRecord>;
   beforeEach(function (done) {
@@ -99,7 +99,7 @@ describe('Job: user finish signup unit tests', () => {
     });
 
     await run();
-    await assert.rejects(deliver(), /smtp failed/);
+    await assert.rejects(deliver(), /Mail processing failed/);
     assert.equal(emails.length, 0);
 
     const member = await User.findById(unConfirmedUser._id);
