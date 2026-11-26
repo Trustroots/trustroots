@@ -79,6 +79,8 @@ jobs:
       - name: Run shared Kotlin contract tests
         working-directory: apps/android
         run: ./gradlew :shared:iosSimulatorArm64Test --device '${{ steps.simulator.outputs.id }}'
+      - name: Test coverage reporting scripts
+        run: python3 apps/ios/scripts/test_coverage_summary.py
       - name: Run iOS tests
         working-directory: apps/ios
         env:
@@ -98,9 +100,37 @@ jobs:
             -project Trustroots.xcodeproj \
             -scheme TrustrootsTests \
             -destination 'id=${{ steps.simulator.outputs.id }}' \
+            -enableCodeCoverage YES \
             -resultBundlePath "$RUNNER_TEMP/TrustrootsTests.xcresult" \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             test
+      - name: Extract and publish coverage summary
+        if: always() && !cancelled()
+        run: |
+          set -euo pipefail
+          result_bundle="$RUNNER_TEMP/TrustrootsTests.xcresult"
+          if [ ! -d "$result_bundle" ]; then
+            echo "No result bundle at $result_bundle; skipping coverage extraction."
+            exit 0
+          fi
+          mkdir -p apps/ios/build/coverage
+          xcrun xccov view --report --json "$result_bundle" \
+            > apps/ios/build/coverage/xccov-report.json
+          python3 apps/ios/scripts/coverage-summary.py \
+            apps/ios/build/coverage/xccov-report.json \
+            --markdown apps/ios/build/coverage/coverage.md \
+            --json-out apps/ios/build/coverage/coverage-summary.json
+          cat apps/ios/build/coverage/coverage.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload iOS coverage artefacts
+        if: always() && !cancelled() && hashFiles('apps/ios/build/coverage/coverage-summary.json') != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ios-coverage
+          path: |
+            apps/ios/build/coverage/coverage-summary.json
+            apps/ios/build/coverage/coverage.md
+            apps/ios/build/coverage/xccov-report.json
+          if-no-files-found: error
       - name: Export Compose offline screenshot
         if: github.event_name == 'pull_request'
         run: |
@@ -123,3 +153,35 @@ jobs:
           path: ${{ runner.temp }}/TrustrootsTests.xcresult
           if-no-files-found: ignore
           retention-days: 7
+
+  ios-coverage:
+    name: iOS coverage
+    needs: ios
+    runs-on: ubuntu-latest
+    if: always() && needs.ios.result == 'success'
+    steps:
+      - name: Download iOS coverage summary
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: ios-coverage
+          path: ios-coverage
+      - name: Require and republish coverage summary
+        run: |
+          set -euo pipefail
+          test -s ios-coverage/coverage-summary.json
+          test -s ios-coverage/coverage.md
+          {
+            echo "## iOS coverage"
+            echo ""
+            cat ios-coverage/coverage.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          summary = json.loads(Path("ios-coverage/coverage-summary.json").read_text())
+          lines = summary["lines"]
+          covered, total = lines["covered"], lines["total"]
+          ratio = "—" if total <= 0 else f"{covered}/{total} ({covered / total:.1%})"
+          print(f"Application line coverage: {ratio}")
+          print(f"Targets reported: {len(summary.get('targets') or [])}")
+          PY
