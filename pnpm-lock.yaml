@@ -587,11 +587,7 @@ importers:
         specifier: workspace:*
         version: link:../users
 
-  modules/core:
-    dependencies:
-      '@trustroots/users':
-        specifier: workspace:*
-        version: link:../users
+  modules/core: {}
 
   modules/experiences:
     dependencies:
@@ -774,7 +770,6 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
-
 
   packages/analytics:
     dependencies:

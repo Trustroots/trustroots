@@ -444,7 +444,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               'This is the language of the interface you see across the site.',
             )}
           </p>
-          <LanguageSwitch saveToAPI={true} />
+          <LanguageSwitch onLanguageChange={code => update({ locale: code })} />
         </div>
       </div>
 

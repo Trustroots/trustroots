@@ -115,6 +115,11 @@ export async function initModulesServerRoutes(app: Express) {
     .href;
   const userMessagingAdapter = new URL('./user-messaging.mts', import.meta.url)
     .href;
+  const coreUserAdapter = new URL('./core-user.mts', import.meta.url).href;
+  const coreRouteFile = resolve(
+    core.directory,
+    'routes/core.server.routes.mts',
+  );
 
   for (const file of getModuleFiles('routes')) {
     const { default: register } = await import(pathToFileURL(file).href);
@@ -136,11 +141,7 @@ export async function initModulesServerRoutes(app: Express) {
       } else {
         register(app, findSearchConnectionIds);
       }
-    } else if (
-      file === usersRouteFile ||
-      file === adminRouteFile ||
-      file === userBlockRouteFile
-    ) {
+    } else if (file === usersRouteFile || file === userBlockRouteFile) {
       const { userAccountServices, removePendingContacts } = await import(
         userAccountAdapter
       );
@@ -152,6 +153,17 @@ export async function initModulesServerRoutes(app: Express) {
       );
     } else if (file === tribesRouteFile) {
       register(app, await loadDiscoveryOfferLocations());
+    } else if (file === coreRouteFile) {
+      const { coreUserServices } = await import(coreUserAdapter);
+      register(app, coreUserServices);
+    } else if (file === adminRouteFile) {
+      const { userAccountServices } = await import(userAccountAdapter);
+      const { coreUserServices } = await import(coreUserAdapter);
+      register(
+        app,
+        userAccountServices,
+        coreUserServices.findPublicNip05Usernames,
+      );
     } else {
       register(app);
     }

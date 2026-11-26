@@ -11,9 +11,6 @@
       "core",
       "users"
     ],
-    "core": [
-      "users"
-    ],
     "experiences": [
       "contacts",
       "core",
@@ -93,9 +90,6 @@
       "users"
     ],
     "contacts": [
-      "users"
-    ],
-    "core": [
       "users"
     ],
     "experiences": [

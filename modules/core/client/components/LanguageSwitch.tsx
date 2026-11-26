@@ -20,7 +20,6 @@ import {
   toAnalyticsLanguage,
   useAnalytics,
 } from '@trustroots/analytics/client';
-import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
 
 const languageChoiceClass =
@@ -34,15 +33,15 @@ const buttonLooks = {
 /**
  * LanguageSwitch component.
  * @param {String} buttonStyle - Button style: default, or inverse on the green header
- * @param {Boolean} [saveToAPI=false] - should we save selected language to API?
+ * @param onLanguageChange - optionally persist the selected language
  */
 type LanguageSwitchProps = {
   buttonStyle?: keyof typeof buttonLooks;
-  saveToAPI?: boolean;
+  onLanguageChange?: (code: string) => Promise<unknown>;
 };
 export default function LanguageSwitch({
   buttonStyle = 'default',
-  saveToAPI,
+  onLanguageChange,
 }: LanguageSwitchProps) {
   const { t } = useTranslation('core');
   const { track } = useAnalytics();
@@ -51,16 +50,16 @@ export default function LanguageSwitch({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentLanguageCode, setCurrentLanguageCode] = useState(i18n.language);
 
-  const onLanguageChange = async (code: string) => {
+  const handleLanguageChange = async (code: string) => {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
 
     // Save the user's choice to API. The interface has switched either way,
     // so a failed save only means the next visit starts in the old language.
     let saved = false;
-    if (saveToAPI) {
+    if (onLanguageChange) {
       try {
-        await usersApi.update({ locale: code });
+        await onLanguageChange(code);
         saved = true;
       } catch {
         // Reported as a failed API request; nothing to show here.
@@ -137,7 +136,7 @@ export default function LanguageSwitch({
                     dir={i18n.dir(code)}
                     lang={code}
                     onClick={() => {
-                      onLanguageChange(code);
+                      handleLanguageChange(code);
                       onModalHide();
                     }}
                   >

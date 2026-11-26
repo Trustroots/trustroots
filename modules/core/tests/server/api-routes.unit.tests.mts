@@ -811,6 +811,7 @@ describe('API route registrations', () => {
         '../services/admin-elevation.server.service': elevation,
       },
       userAccountServices,
+      async () => new Map(),
     );
 
     assertHandlers(routeByPath(routes, '/api/admin/gravatar').get, [

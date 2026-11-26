@@ -1,8 +1,6 @@
 import { vi } from 'vitest';
 import sinon from 'sinon';
-import mongoose from 'mongoose';
 import winston from 'winston';
-import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import languagesObject from './../../../../config/languages/languages.json' with { type: 'json' };
 import languagesArray from './../../../../config/languages/languages-array.json' with { type: 'json' };
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
@@ -10,16 +8,16 @@ import assert from 'node:assert/strict';
 import should from 'should';
 import coreController from './../../server/controllers/core.server.controller.mts';
 
-type UserServerModel =
-  import('../../../users/server/models/user.server.types.mts').UserServerModel;
-type UserServerRecord =
-  import('../../../users/server/models/user.server.types.mts').UserServerRecord;
-const User = mongoose.model<UserServerRecord, UserServerModel>('User');
-
-const sanitizeOwnProfile = (user: { username: string }) => ({
+const sanitizeOwnProfile = (user: { username?: string }) => ({
   sanitized: true,
   username: user.username,
 });
+
+const renderIndex = coreController.renderIndex.bind(null, sanitizeOwnProfile);
+const renderNotFound = coreController.renderNotFound.bind(
+  null,
+  sanitizeOwnProfile,
+);
 
 type MockResponse = {
   statusCode: number;
@@ -142,12 +140,6 @@ function mockResponse(acceptType?: string): MockResponse {
 }
 
 describe('Controller: core', function () {
-  beforeEach(function () {
-    sinon
-      .stub(userProfile, 'sanitizeOwnProfile')
-      .callsFake(sanitizeOwnProfile as never);
-  });
-
   afterEach(function () {
     sinon.restore();
     vi.unstubAllEnvs();
@@ -159,7 +151,7 @@ describe('Controller: core', function () {
 
     it('sends the Start shell with the rendered head and script nonces', async function () {
       const res = mockResponse();
-      await coreController.renderIndex({ path: '/' }, res, fail);
+      await renderIndex({ path: '/' }, res, fail);
       // A local client build replaces the empty test shell.
       assert.match(
         String(res.body),
@@ -173,25 +165,21 @@ describe('Controller: core', function () {
       const error = new Error('template failed');
       res.renderError = error;
       const next = sinon.spy();
-      await coreController.renderIndex({ path: '/' }, res, next);
+      await renderIndex({ path: '/' }, res, next);
       sinon.assert.calledOnceWithExactly(next, error);
       should(res.body).be.null();
     });
 
     it('renders anonymous visitors with only an empty user', async function () {
       const res = mockResponse();
-      await coreController.renderIndex(
-        { path: '/definitely-not-a-route' },
-        res,
-        fail,
-      );
+      await renderIndex({ path: '/definitely-not-a-route' }, res, fail);
       res.rendered.should.equal('index');
       assert.deepStrictEqual(renderVars(res), { user: null });
     });
 
     it('marks the signup page as an invite', async function () {
       const res = mockResponse();
-      await coreController.renderIndex({ path: '/signup' }, res, fail);
+      await renderIndex({ path: '/signup' }, res, fail);
       res.rendered.should.equal('index');
       should(renderVars(res).invite).be.true();
     });
@@ -199,22 +187,15 @@ describe('Controller: core', function () {
     it('renders the React index for redirecting, guarded and unknown paths', async function () {
       for (const path of ['/about', '/admin', '/definitely-not-a-route']) {
         const res = mockResponse();
-        await coreController.renderIndex({ path }, res, fail);
+        await renderIndex({ path }, res, fail);
         res.rendered.should.equal('index');
       }
     });
 
     it('exposes a sanitized user profile when signed in', async function () {
       const res = mockResponse();
-      const user = new User({
-        username: 'alice',
-        email: 'alice@example.com',
-        firstName: 'Alice',
-        lastName: 'Example',
-        provider: 'local',
-      });
-      user.set('roles', undefined);
-      await coreController.renderIndex({ path: '/', user }, res, fail);
+      const user = { username: 'alice' };
+      await renderIndex({ path: '/', user }, res, fail);
       should(renderVars(res).user).deepEqual({
         sanitized: true,
         username: 'alice',
@@ -223,15 +204,11 @@ describe('Controller: core', function () {
 
     it('exposes the current user roles without the flagged role', async function () {
       const res = mockResponse();
-      const user = new User({
+      const user = {
         username: 'alice',
-        email: 'alice@example.com',
-        firstName: 'Alice',
-        lastName: 'Example',
-        provider: 'local',
         roles: ['user', 'flagged', 'admin'],
-      });
-      await coreController.renderIndex({ path: '/', user }, res, fail);
+      };
+      await renderIndex({ path: '/', user }, res, fail);
       should(renderVars(res).user).deepEqual({
         sanitized: true,
         username: 'alice',
@@ -242,11 +219,7 @@ describe('Controller: core', function () {
     it('exposes the current tribe when browsing a tribe page', async function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
-      await coreController.renderIndex(
-        { path: '/tribes/test-tribe', tribe },
-        res,
-        fail,
-      );
+      await renderIndex({ path: '/tribes/test-tribe', tribe }, res, fail);
       should(renderVars(res).tribe).equal(tribe);
     });
   });
@@ -258,19 +231,25 @@ describe('Controller: core', function () {
 
     it('returns a JSON not-found message', function () {
       const res = mockResponse('application/json');
-      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
+      renderNotFound({ path: '/api/nope' }, res, fail);
       res.statusCode.should.equal(404);
       should(responseMessage(res)).equal('Not found.');
     });
 
-    it('sends the app with status 404 for text/html requests', async function () {
+    it('renders the sanitised member profile on an HTML 404', async function () {
       const res = mockResponse('text/html');
-      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
+      const user = { username: 'member', roles: ['user', 'flagged'] };
+      renderNotFound({ path: '/api/nope', user }, res, fail);
       await vi.waitFor(() =>
         assert.match(String(res.body), /^<!DOCTYPE html>/),
       );
       res.statusCode.should.equal(404);
       res.rendered.should.equal('index');
+      assert.deepEqual(renderVars(res).user, {
+        sanitized: true,
+        username: 'member',
+        roles: ['user'],
+      });
     });
 
     it('forwards shell loading errors from HTML requests to Express', async function () {
@@ -281,7 +260,7 @@ describe('Controller: core', function () {
       const res = mockResponse('text/html');
       const next = sinon.spy();
 
-      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+      renderNotFound({ path: '/api/nope' }, res, next);
 
       await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
       res.rendered.should.equal('');
@@ -294,7 +273,7 @@ describe('Controller: core', function () {
       sinon.stub(res, 'render').throws(error);
       const next = sinon.spy();
 
-      coreController.renderNotFound({ path: '/api/nope' }, res, next);
+      renderNotFound({ path: '/api/nope' }, res, next);
 
       await vi.waitFor(() => sinon.assert.calledOnceWithExactly(next, error));
       should(res.body).be.null();
@@ -302,7 +281,7 @@ describe('Controller: core', function () {
 
     it('sends a plain message for other content types', function () {
       const res = mockResponse();
-      coreController.renderNotFound({ path: '/api/nope' }, res, fail);
+      renderNotFound({ path: '/api/nope' }, res, fail);
       should(res.body).equal('Not found.');
     });
   });

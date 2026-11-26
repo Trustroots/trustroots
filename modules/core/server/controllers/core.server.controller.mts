@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import errorService from './../services/error.server.service.mts';
-import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import textService from './../services/text.server.service.mts';
 import {
   getStartShell,
@@ -8,7 +7,6 @@ import {
 } from './../services/start-shell.server.service.mts';
 import log from '@trustroots/logger';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
-import type { UserServerDocument } from '../../../users/server/models/user.server.types.mts';
 const languagesObject: Record<string, string> = JSON.parse(
   readFileSync(
     new URL('../../../../config/languages/languages.json', import.meta.url),
@@ -29,9 +27,12 @@ type BootstrapUser = {
   username?: string;
   _id?: unknown;
 };
+export type SanitizeOwnProfile = (
+  user: BootstrapUser,
+) => BootstrapUser | null | undefined;
 type IndexRequest = {
   path: string;
-  user?: UserServerDocument;
+  user?: BootstrapUser;
   tribe?: unknown;
 };
 type BootstrapVariables = {
@@ -64,6 +65,7 @@ const service = {
  * Render the main application page
  */
 async function renderIndex(
+  sanitizeOwnProfile: SanitizeOwnProfile,
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
@@ -74,7 +76,7 @@ async function renderIndex(
 
   // Expose user
   if (req.user) {
-    renderVars.user = userProfile.sanitizeOwnProfile(req.user);
+    renderVars.user = sanitizeOwnProfile(req.user);
 
     // `sanitizeProfile` strips `roles` so they never leak for *other*
     // members, but the client needs the *current* user's own roles to drive
@@ -111,13 +113,14 @@ async function renderIndex(
  * app, whose router shows its not-found page.
  */
 function renderNotFound(
+  sanitizeOwnProfile: SanitizeOwnProfile,
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
 ) {
   res.status(404).format({
     'text/html'() {
-      void renderIndex(req, res, next).catch(next);
+      void renderIndex(sanitizeOwnProfile, req, res, next).catch(next);
     },
     'application/json'() {
       res.json({

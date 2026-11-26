@@ -16,8 +16,5 @@
     "lint": "oxlint . && oxfmt --check .",
     "test:client": "node ../../scripts/test-module.cts client core",
     "test:server": "node ../../scripts/test-module.cts server core"
-  },
-  "dependencies": {
-    "@trustroots/users": "workspace:*"
   }
 }

@@ -17,9 +17,10 @@ import adminNewsletter from './../controllers/admin.newsletter.server.controller
 import adminPolicy from './../policies/admin.server.policy.mts';
 import {
   featureNote,
+  reviseFeaturedNote,
+  type FindPublicNip05Usernames,
   recordFeaturedNoteDeletion,
   removeFeaturedNote,
-  reviseFeaturedNote,
 } from '../../../core/server/controllers/featured-nostr-notes.server.controller.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mts';
 import adminUsernameChanges from './../controllers/admin.username-changes.server.controller.mts';
@@ -67,6 +68,7 @@ const privileged = [adminPolicy.isAllowed, requireAdminElevation];
 const registerRoutes = (
   app: RouteApp,
   accountCleanup: UserAccountCleanup,
+  findPublicNip05Usernames: FindPublicNip05Usernames,
 ): void => {
   app
     .route('/api/admin/nostr/service-profile')
@@ -75,12 +77,12 @@ const registerRoutes = (
   app
     .route('/api/admin/nostr/featured-notes')
     .all(adminPolicy.isAllowed)
-    .post(featureNote);
+    .post(featureNote.bind(null, findPublicNip05Usernames));
   app
     .route('/api/admin/nostr/featured-notes/:id')
     .all(adminPolicy.isAllowed)
     .delete(removeFeaturedNote)
-    .put(reviseFeaturedNote);
+    .put(reviseFeaturedNote.bind(null, findPublicNip05Usernames));
   app
     .route('/api/admin/nostr/featured-notes/:id/deletion')
     .all(adminPolicy.isAllowed)
