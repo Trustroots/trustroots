@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { nostrIdentity } from '../../../../layers/server/nostr-identity.mts';
 import express, {
   type NextFunction,
   type Request,
@@ -19,10 +20,18 @@ async function app(signedIn = false) {
     typeof import('../../server/routes/core.server.routes.mts')
   >(new URL('../../server/routes/core.server.routes.mts', import.meta.url), {
     './../controllers/core.server.controller.mts': {
-      renderIndex(req: TribeRequest, res: Response) {
+      renderIndex(
+        _buildBootstrapUser: unknown,
+        req: TribeRequest,
+        res: Response,
+      ) {
         res.send(`index:${req.tribe?.slug ?? ''}`);
       },
-      renderNotFound(_req: Request, res: Response) {
+      renderNotFound(
+        _buildBootstrapUser: unknown,
+        _req: Request,
+        res: Response,
+      ) {
         res.status(404).send('not-found');
       },
       receiveCSPViolationReport(_req: Request, res: Response) {
@@ -54,7 +63,7 @@ async function app(signedIn = false) {
     if (signedIn) Object.assign(req, { user: { _id: 'fictional-member' } });
     next();
   });
-  routes(server);
+  routes(server, { nostrIdentity, buildBootstrapUser: () => undefined });
   return server;
 }
 

@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import errorService from './../services/error.server.service.mts';
-import userProfile from './../../../users/server/controllers/users.profile.server.controller.mts';
 import textService from './../services/text.server.service.mts';
 import {
   getStartShell,
@@ -8,7 +7,6 @@ import {
 } from './../services/start-shell.server.service.mts';
 import log from '@trustroots/logger';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
-import type { UserServerDocument } from '../../../users/server/models/user.server.types.mts';
 const languagesObject: Record<string, string> = JSON.parse(
   readFileSync(
     new URL('../../../../config/languages/languages.json', import.meta.url),
@@ -24,14 +22,16 @@ const languagesArray: Array<{ value: string; label: string }> = JSON.parse(
     'utf8',
   ),
 );
-type BootstrapUser = {
+export type BootstrapUser = {
   roles?: readonly string[];
   username?: string;
   _id?: unknown;
 };
+export type BuildBootstrapUser = (user: unknown) => BootstrapUser | undefined;
+
 type IndexRequest = {
   path: string;
-  user?: UserServerDocument;
+  user?: unknown;
   tribe?: unknown;
 };
 type BootstrapVariables = {
@@ -64,6 +64,7 @@ const service = {
  * Render the main application page
  */
 async function renderIndex(
+  buildBootstrapUser: BuildBootstrapUser,
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
@@ -74,17 +75,7 @@ async function renderIndex(
 
   // Expose user
   if (req.user) {
-    renderVars.user = userProfile.sanitizeOwnProfile(req.user);
-
-    // `sanitizeProfile` strips `roles` so they never leak for *other*
-    // members, but the client needs the *current* user's own roles to drive
-    // role based route guards (e.g. keeping non-admins out of admin pages).
-    // Internal moderation flags are excluded from member-facing bootstrap data.
-    if (req.user.roles) {
-      renderVars.user!.roles = req.user.roles.filter(
-        role => role !== 'flagged',
-      );
-    }
+    renderVars.user = buildBootstrapUser(req.user);
   }
 
   // Expose tribe (when browsing `/tribes/tribe-name`)
@@ -111,13 +102,14 @@ async function renderIndex(
  * app, whose router shows its not-found page.
  */
 function renderNotFound(
+  buildBootstrapUser: BuildBootstrapUser,
   req: IndexRequest,
   res: CoreResponse,
   next: (error: unknown) => void,
 ) {
   res.status(404).format({
     'text/html'() {
-      void renderIndex(req, res, next).catch(next);
+      void renderIndex(buildBootstrapUser, req, res, next).catch(next);
     },
     'application/json'() {
       res.json({

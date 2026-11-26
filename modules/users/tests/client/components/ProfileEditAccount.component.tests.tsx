@@ -57,7 +57,7 @@ const user: UserProfile = {
   newsletter: false,
 };
 
-function renderUser(profile: UserProfile) {
+function renderUser(profile: UserProfile, saveLocale = vi.fn()) {
   return render(
     <AppProviders
       analyticsTracker={analytics.tracker}
@@ -69,7 +69,7 @@ function renderUser(profile: UserProfile) {
         user: profile,
       }}
     >
-      <ProfileEditAccount user={profile} />
+      <ProfileEditAccount user={profile} saveLocale={saveLocale} />
     </AppProviders>,
   );
 }
@@ -195,13 +195,14 @@ describe('ProfileEditAccount', () => {
   });
 
   it('lets a signed-in member change their interface language and saves it', async () => {
-    renderPage();
+    const saveLocale = vi.fn();
+    renderUser(user, saveLocale);
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
 
     await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith({ locale: 'cs' });
+      expect(saveLocale).toHaveBeenCalledWith('cs');
     });
   });
 

@@ -33,10 +33,10 @@ describe('Nostr identity service', () => {
       },
     };
     const { findPublicNip05Usernames } = await mockModule<
-      typeof import('../../../core/server/services/nostr-identity.server.service.mts')
+      typeof import('../../server/services/nostr-identity.server.service.mts')
     >(
       new URL(
-        '../../../core/server/services/nostr-identity.server.service.mts',
+        '../../server/services/nostr-identity.server.service.mts',
         import.meta.url,
       ),
       { mongoose },

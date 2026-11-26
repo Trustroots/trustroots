@@ -20,7 +20,6 @@ import {
   toAnalyticsLanguage,
   useAnalytics,
 } from '@trustroots/analytics/client';
-import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
 
 const languageChoiceClass =
@@ -31,18 +30,13 @@ const buttonLooks = {
   inverse: { variant: 'outline', intent: 'inverse' },
 } satisfies Record<string, ButtonStyleProps>;
 
-/**
- * LanguageSwitch component.
- * @param {String} buttonStyle - Button style: default, or inverse on the green header
- * @param {Boolean} [saveToAPI=false] - should we save selected language to API?
- */
 type LanguageSwitchProps = {
   buttonStyle?: keyof typeof buttonLooks;
-  saveToAPI?: boolean;
+  saveLocale?: (locale: string) => Promise<unknown>;
 };
 export default function LanguageSwitch({
   buttonStyle = 'default',
-  saveToAPI,
+  saveLocale,
 }: LanguageSwitchProps) {
   const { t } = useTranslation('core');
   const { track } = useAnalytics();
@@ -58,9 +52,9 @@ export default function LanguageSwitch({
     // Save the user's choice to API. The interface has switched either way,
     // so a failed save only means the next visit starts in the old language.
     let saved = false;
-    if (saveToAPI) {
+    if (saveLocale) {
       try {
-        await usersApi.update({ locale: code });
+        await saveLocale(code);
         saved = true;
       } catch {
         // Reported as a failed API request; nothing to show here.

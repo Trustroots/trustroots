@@ -7,7 +7,6 @@ import {
 } from '@testing-library/react';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
-import * as usersApi from '@/modules/users/client/api/users.api';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
@@ -16,9 +15,6 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-const updateUserMock = vi.mocked(usersApi.update);
-
-vi.mock('@/modules/users/client/api/users.api');
 afterEach(() => vi.clearAllMocks());
 
 beforeEach(() => i18n.changeLanguage('en'));
@@ -77,6 +73,7 @@ describe('default presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Suomi' }));
 
     await waitFor(() => expect(screen.getByTitle('Suomi')).toBeInTheDocument());
+    expect(document.cookie).toContain('i18n=fi');
     expect(analytics.track).toHaveBeenCalledWith('language_switched', {
       language: 'fi',
       saved: 'no',
@@ -86,31 +83,34 @@ describe('default presentation', () => {
     );
   });
 
-  it('can save the language to the API', async () => {
-    updateUserMock.mockResolvedValue({
-      _id: 'member-1',
-      username: 'member',
-      displayName: 'Member',
+  it('changes the locale and cookie while the account save is pending', async () => {
+    let finishSave!: () => void;
+    const pendingSave = new Promise<void>(resolve => {
+      finishSave = resolve;
     });
-
-    render(<LanguageSwitch saveToAPI={true} />);
+    const saveLocale = vi.fn(() => pendingSave);
+    render(<LanguageSwitch saveLocale={saveLocale} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
 
+    expect(screen.getByTitle('Čeština')).toBeInTheDocument();
+    await waitFor(() => expect(document.cookie).toContain('i18n=cs'));
+    expect(saveLocale).toHaveBeenCalledExactlyOnceWith('cs');
+    expect(analytics.track).not.toHaveBeenCalled();
+
+    finishSave();
     await waitFor(() =>
       expect(analytics.track).toHaveBeenCalledWith('language_switched', {
         language: 'cs',
         saved: 'yes',
       }),
     );
-    expect(updateUserMock).toHaveBeenCalledWith({ locale: 'cs' });
   });
 
   it('says the language was not saved when saving fails', async () => {
-    updateUserMock.mockRejectedValue(new Error('offline'));
-
-    render(<LanguageSwitch saveToAPI={true} />);
+    const saveLocale = vi.fn().mockRejectedValue(new Error('offline'));
+    render(<LanguageSwitch saveLocale={saveLocale} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
@@ -122,6 +122,7 @@ describe('default presentation', () => {
       }),
     );
     expect(screen.getByTitle('Čeština')).toBeInTheDocument();
+    expect(document.cookie).toContain('i18n=cs');
   });
 
   it('falls back to English when the current language is unknown', () => {
