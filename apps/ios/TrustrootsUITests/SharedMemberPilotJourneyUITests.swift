@@ -723,6 +723,19 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(scale.label.hasSuffix(" km") || scale.label.hasSuffix(" m"), scale.label)
 
+        let mapStatus = app.descendants(matching: .any)["compose-map-result-overlay"]
+        let legend = app.descendants(matching: .any)["compose-map-marker-legend"]
+        XCTAssertTrue(mapStatus.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["2 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(legend.waitForExistence(timeout: 5), app.debugDescription)
+        for label in ["Hosting", "Maybe", "Notes"] {
+            XCTAssertTrue(app.staticTexts[label].waitForExistence(timeout: 5), app.debugDescription)
+        }
+        let statusCapture = XCTAttachment(screenshot: mapStatus.screenshot())
+        statusCapture.name = "iOS Compose map status and legend"
+        statusCapture.lifetime = .keepAlways
+        add(statusCapture)
+
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "iOS map distance scale"
         capture.lifetime = .keepAlways
@@ -764,6 +777,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(other.waitForNonExistence(timeout: 15), app.debugDescription)
         mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["1 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(legend.exists, app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Hosting"].exists, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["Notes"].exists, app.debugDescription)
         resultsDisplay.tap()
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(other.exists)

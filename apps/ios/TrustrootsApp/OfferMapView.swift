@@ -1,6 +1,7 @@
 import MapKit
 import SwiftUI
 import TrustrootsShared
+import UIKit
 
 private enum SearchMode: String, Hashable {
     case map
@@ -15,6 +16,7 @@ struct OfferMapView: View {
     @State private var visibleRegion = MKCoordinateRegion.initialTrustrootsRegion
     @State private var offers: [MapOffer] = []
     @State private var isLoading = false
+    @State private var mapStatusHeight: CGFloat = 1
     @State private var errorMessage: String?
     @State private var selectedHost: (offer: HostOffer, mapType: String)?
     @State private var isLoadingHost = false
@@ -184,45 +186,22 @@ struct OfferMapView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            VStack(alignment: .trailing, spacing: 8) {
-                if isLoading || !offers.isEmpty {
-                    HStack(spacing: 6) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Circle()
-                                .fill(resultCountColor)
-                                .frame(width: 9, height: 9)
-                        }
-                        Text(isLoading ? "Searching this area…" : resultCountLabel)
-                            .font(.caption.weight(.semibold))
-                    }
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
-                }
-                if !isLoading && !offers.isEmpty {
-                    MapOfferLegend(
-                        showingHosts: showingHosts,
-                        showingMeet: showingMeet,
-                        showingCommunityNotes: showsNotes
-                    )
-                }
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.white)
-                        .padding(10)
-                        .background(.red.opacity(0.9))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
+            if isLoading || !offers.isEmpty || errorMessage != nil {
+                MapOfferStatusController(
+                    isLoading: isLoading,
+                    countLabel: offers.isEmpty ? nil : resultCountLabel,
+                    legend: mapLegend,
+                    error: errorMessage,
+                    height: $mapStatusHeight
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: mapStatusHeight)
+                .clipped()
+                .padding(.leading, 54)
+                .padding(.trailing, 12)
+                .padding(.top, 5)
+                .allowsHitTesting(false)
             }
-            .padding(.top, 5)
-            .padding(.trailing, 12)
         }
         .overlay(alignment: .topLeading) {
             VStack(spacing: 8) {
@@ -332,8 +311,16 @@ struct OfferMapView: View {
         "\(offers.count) offers in this area"
     }
 
-    private var resultCountColor: Color {
-        TrustrootsPalette.hostYes
+    private var mapLegend: [MapLegendSwatch] {
+        guard !isLoading, !offers.isEmpty else { return [] }
+        var legend: [MapLegendSwatch] = []
+        if showingHosts {
+            legend.append(MapLegendSwatch(label: "Hosting", colour: TrustrootsPalette.hostYes))
+            legend.append(MapLegendSwatch(label: "Maybe", colour: TrustrootsPalette.hostMaybe))
+        }
+        if showingMeet { legend.append(MapLegendSwatch(label: "Meet", colour: .orange)) }
+        if showsNotes { legend.append(MapLegendSwatch(label: "Notes", colour: TrustrootsPalette.communityNote)) }
+        return legend
     }
 
     private func loadCircles() async {
@@ -623,29 +610,69 @@ private struct HostMapDot: View {
     }
 }
 
-private struct MapOfferLegend: View {
-    let showingHosts: Bool
-    let showingMeet: Bool
-    let showingCommunityNotes: Bool
+private struct MapLegendSwatch {
+    let label: String
+    let colour: Color
+}
 
-    var body: some View {
-        HStack(spacing: 9) {
-            if showingHosts {
-                LegendItem(color: TrustrootsPalette.hostYes, label: "Hosting")
-                LegendItem(color: TrustrootsPalette.hostMaybe, label: "Maybe")
+@MainActor
+private struct MapOfferStatusController: UIViewControllerRepresentable {
+    let isLoading: Bool
+    let countLabel: String?
+    let legend: [MapLegendSwatch]
+    let error: String?
+    @Binding var height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    final class Coordinator {
+        let state = MapOfferStatusState()
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let state = context.coordinator.state
+        update(state)
+        let measuredHeight = $height
+        return MapOfferStatusViewControllerKt.MapOfferStatusViewController(
+            state: state,
+            onHeight: { points in
+                let next = max(1, CGFloat(points.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next {
+                        measuredHeight.wrappedValue = next
+                    }
+                }
             }
-            if showingMeet {
-                LegendItem(color: .orange, label: "Meet")
-            }
-            if showingCommunityNotes {
-                LegendItem(color: TrustrootsPalette.communityNote, label: "Notes")
-            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator.state)
+    }
+
+    private func update(_ state: MapOfferStatusState) {
+        state.update(content: MapOfferStatusContent(
+            isLoading: isLoading,
+            countLabel: countLabel,
+            countMarkerArgb: argb(TrustrootsPalette.hostYes),
+            legend: legend.map { MapOfferLegendMarker(label: $0.label, argb: argb($0.colour)) },
+            error: error
+        ))
+    }
+
+    private func argb(_ colour: Color) -> Int64 {
+        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        let resolved = UIColor(colour).resolvedColor(with: traits)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return 0xFF808080 }
+        return [alpha, red, green, blue].reduce(Int64(0)) { result, component in
+            let byte = Int64((min(1, max(0, component)) * 255).rounded())
+            return (result << 8) | byte
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(.regularMaterial)
-        .clipShape(Capsule())
-        .shadow(color: .black.opacity(0.1), radius: 3, y: 1)
     }
 }
 
@@ -712,22 +739,6 @@ private struct CommunityNoteCluster: Identifiable {
                 longitudeDelta: max(region.span.longitudeDelta / 2, 0.08)
             )
         )
-    }
-}
-
-private struct LegendItem: View {
-    let color: Color
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
