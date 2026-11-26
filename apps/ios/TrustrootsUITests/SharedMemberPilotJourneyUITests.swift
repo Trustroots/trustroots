@@ -828,7 +828,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
 
         app.buttons["Dismiss potential host"].tap()
-        app.buttons["Search filters"].tap()
+        mapFilters.tap()
         app.buttons["Reset"].tap()
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["2 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
