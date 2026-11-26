@@ -55,7 +55,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        browserSignInLinks.capture(intent)
+        if (browserSignInLinks.capture(intent)) return
         setIntent(intent)
         MessageAlerts.captureIntent(intent)
         NostranslationAlerts.captureIntent(intent)
