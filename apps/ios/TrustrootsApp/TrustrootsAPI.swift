@@ -390,7 +390,7 @@ struct ProfileCircleMembership: Decodable {
     let tribe: ProfileCircle
 }
 
-struct ProfileCircle: Decodable, Identifiable {
+struct ProfileCircle: Decodable, Identifiable, Hashable {
     let id: String
     let label: String
 

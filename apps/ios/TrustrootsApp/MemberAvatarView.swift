@@ -2,12 +2,17 @@ import SwiftUI
 import UIKit
 
 @MainActor
-func makeSharedMemberAvatarController(memberID: String?, name: String, serverURLString: String) -> UIViewController {
+func makeSharedMemberAvatarController(
+    memberID: String?,
+    name: String,
+    serverURLString: String,
+    size: CGFloat = 44
+) -> UIViewController {
     let controller = UIHostingController(rootView: MemberAvatarView(
         memberID: memberID,
         displayName: name,
         serverURLString: serverURLString,
-        size: 44
+        size: size
     ).accessibilityHidden(true))
     controller.view.backgroundColor = .clear
     controller.view.isUserInteractionEnabled = false

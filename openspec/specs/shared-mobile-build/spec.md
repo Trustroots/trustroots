@@ -476,3 +476,129 @@ The regular iOS Nostranslation signing sheet SHALL present its pending translati
 
 - **WHEN** the displayed review has been removed or replaced before the native decision is handled
 - **THEN** the stale action leaves the current review available for its own explicit decision
+
+### Requirement: Regular iOS profile uses shared biography and language sections
+
+The regular iOS profile SHALL use Compose to display a member's biography
+and language names when present. The existing iOS profile scroll view SHALL
+accommodate the full text at the current width and text size. The language
+section SHALL use the existing language catalogue and preserve when its title
+is shown.
+
+#### Scenario: Read a member's biography and languages
+
+- **GIVEN** a member opens a regular iOS profile with a biography and spoken languages
+- **WHEN** they scroll through the profile
+- **THEN** they can read the full plain-text biography and the resolved language names
+
+### Requirement: Regular iOS profile uses shared activity and location sections
+
+The regular iOS profile SHALL display last login, reply rate and any available
+reply time in Compose. It SHALL show actions for the member's current location
+and place of origin when available, using the existing iOS search map route.
+
+#### Scenario: Read activity and open a location
+
+- **GIVEN** a member opens a profile with reply statistics and a current location
+- **WHEN** they read the activity section and select the location
+- **THEN** they can see the reply statistics and the app opens the Search map for that location
+
+### Requirement: Regular iOS profile uses shared contact rows
+
+The regular iOS profile SHALL render its contact list with the shared Compose
+row and the existing iOS avatar. It SHALL initially show up to six contacts
+and allow the member to show more and collapse the list. A contact with a
+username SHALL open the native member profile.
+
+#### Scenario: Browse contacts from My profile
+
+- **GIVEN** a member has more than six contacts
+- **WHEN** they expand the list and then select one of their contacts
+- **THEN** the full list is available and the contact's profile opens
+- **AND** returning allows the member to collapse the list
+
+### Requirement: Regular iOS profile uses shared Experiences presentation
+
+The regular iOS profile SHALL render public Experience statistics, feedback
+and available responses using Compose. It SHALL show up to six cards by default,
+allow expansion and collapse, and use the existing profile route for authors
+and respondents with usernames.
+
+#### Scenario: Read a member's published experiences
+
+- **GIVEN** a regular iOS profile has public Experience feedback and a public response
+- **WHEN** a member visits the Experiences section
+- **THEN** they see the summary and both published texts
+- **AND** selecting an author opens their native profile
+
+### Requirement: Regular iOS profile uses shared member actions
+
+The regular iOS profile SHALL render applicable edit, hosting, message,
+report and block controls in Compose. The iOS host SHALL own navigation,
+confirmation and authenticated block requests. A blocked member SHALL
+remain unavailable for messaging until unblocked.
+
+#### Scenario: Block and unblock a member
+
+- **GIVEN** a signed-in member opens another member's profile
+- **WHEN** they confirm Block
+- **THEN** the profile offers Unblock and hides its message action
+- **AND** confirming Unblock restores the message action
+
+### Requirement: Regular iOS profile uses shared Circle links
+
+The regular iOS profile SHALL display the member's joined Circle links in
+Compose and use the current width to wrap them. Selecting a Circle SHALL
+open the existing Circle detail route.
+
+#### Scenario: Open a Circle from a member profile
+
+- **GIVEN** a regular iOS profile has a joined Circle
+- **WHEN** the viewer opens the Circle from the profile
+- **THEN** the Circle detail opens and Back returns to the member profile
+
+### Requirement: Regular iOS profile uses shared hosting summary
+
+The regular iOS profile SHALL present the member's hosting status, available
+description and guest capacity in Compose. Meeting availability SHALL be shown
+independently of hosting, while volunteering and capacity SHALL follow the
+active hosting offer.
+
+#### Scenario: Show meeting availability without active hosting
+
+- **GIVEN** a regular iOS profile has a meeting status and no active offer
+- **WHEN** the viewer reads the hosting summary
+- **THEN** they see both the meeting availability and inactive hosting status
+
+### Requirement: Regular iOS profile uses a shared identity header
+
+The regular iOS profile SHALL display the member's identity and tagline in
+Compose. It SHALL use the existing iOS avatar source and preserve the background
+artwork. When present, Back SHALL occupy a separate row above the avatar.
+
+#### Scenario: Read a member profile opened from Search
+
+- **GIVEN** a member opens a profile from a Search host card
+- **WHEN** the profile loads
+- **THEN** the avatar, identity and tagline are visible below Back
+- **AND** Back returns to the host card
+
+### Requirement: Regular iOS member reporting uses shared action presentation
+
+The regular iOS report sheet SHALL use shared Compose for the target, send
+action, and error and success presentation. It SHALL preserve the native
+report editor, keyboard Done action, authenticated report request and sheet
+dismissal. A blank report SHALL be ineligible to send.
+
+#### Scenario: Retry a member report
+
+- **GIVEN** a signed-in member has written a report about another member
+- **WHEN** the support request fails
+- **THEN** the sheet shows the error and preserves the report text
+- **AND** after a successful retry it confirms delivery and allows the reporter to close the sheet
+
+#### Scenario: Cancel a member report
+
+- **GIVEN** a member has opened the report sheet and a send is not in progress
+- **WHEN** they choose Cancel
+- **THEN** the app dismisses the sheet and returns to the member profile
