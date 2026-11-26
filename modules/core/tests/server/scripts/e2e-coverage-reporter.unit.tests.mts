@@ -21,6 +21,14 @@ import {
   featureCoverageIncomplete,
   summarizeReport,
 } from './../../../../../scripts/e2e/summarize-results.mts';
+import {
+  // @ts-expect-error CommonJS script exports are invisible to TypeScript
+  buildE2eMetrics,
+  // @ts-expect-error CommonJS script exports are invisible to TypeScript
+  resolveE2eLaneMessage,
+  // @ts-expect-error CommonJS script exports are invisible to TypeScript
+  resolveE2eLaneStatus,
+} from './../../../../../scripts/coverage/generate-report.cts';
 import istanbulCoverage from 'istanbul-lib-coverage';
 import { summarizeMap } from './../../../../../scripts/e2e/merge-js-coverage.mts';
 
@@ -575,6 +583,51 @@ describe('E2E coverage reporter unit tests', () => {
         }
       });
     }
+  });
+
+  describe('coverage report e2e lane status', () => {
+    it('does not keep a passed lane when feature coverage is incomplete', () => {
+      const metrics = buildE2eMetrics(
+        {
+          total: 174,
+          passed: 174,
+          failed: 0,
+          passRate: 100,
+          durationMs: 1000,
+          areaCoverage: 100,
+          areaPassCoverage: 100,
+          featureCoverage: 98.98,
+          featurePassCoverage: 98.98,
+          scenarioCoverage: 99.6,
+          definedAreaCount: 8,
+          exercisedAreaCount: 8,
+          greenAreaCount: 8,
+          activeFeatureCount: 98,
+          coveredFeatureCount: 97,
+          missingFeatureCount: 1,
+          requiredScenarioCount: 247,
+          coveredScenarioCount: 246,
+          missingScenarioCount: 1,
+        },
+        {
+          tests: 46,
+          passRate: 100,
+          areaCoverage: 0,
+          areaPassCoverage: 0,
+          featureCoverage: 100,
+          featurePassCoverage: 100,
+          scenarioCoverage: 100,
+        },
+      );
+
+      metrics.passed.should.equal(false);
+      resolveE2eLaneStatus('passed', metrics).should.equal('failed');
+      resolveE2eLaneMessage(
+        'passed',
+        metrics,
+        'Playwright passed.',
+      ).should.match(/feature coverage is below 100%/);
+    });
   });
 });
 

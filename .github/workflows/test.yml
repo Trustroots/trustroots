@@ -62,6 +62,18 @@ jobs:
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
+      - name: Inventory installed production dependencies
+        run: |
+          mkdir -p coverage/production
+          docker run --rm -i --network none --entrypoint node trustroots:pr \
+            --input-type=commonjs-typescript - --inventory-stdin < scripts/ci/production-dependencies.cts > coverage/production/dependencies.json
+          test -s coverage/production/dependencies.json
+      - name: Upload production dependency inventory
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: production-dependencies
+          path: coverage/production/dependencies.json
+          if-no-files-found: error
       - name: Check production startup on MongoDB 4.4
         env:
           TRUSTROOTS_CI_MONGO_VERSION: '4.4'
@@ -572,34 +584,139 @@ jobs:
 
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'
-    needs: [changes, client, server]
+    needs: [changes, client, server, e2e, build-production-image]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: read
       contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Fetch comparison history
+        run: python3 scripts/ci/fetch-comparison.py
       - name: Use Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.nvmrc'
           package-manager-cache: false
+      - name: Download production dependency inventory
+        if: needs.build-production-image.result != 'skipped'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        continue-on-error: true
+        with:
+          name: production-dependencies
+          path: coverage/production
       - name: Download client coverage
         if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        continue-on-error: true
         with:
           name: coverage-client
           path: coverage/client
       - name: Download server coverage
         if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        continue-on-error: true
         with:
           name: coverage-server
           path: coverage/server
+      - name: Download end-to-end status
+        if: needs.changes.outputs.run-code != 'false'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        continue-on-error: true
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+      - name: Download Playwright report
+        if: needs.changes.outputs.run-code != 'false'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Record skipped end-to-end status
+        if: needs.changes.outputs.run-code != 'false' && needs.e2e.result == 'skipped'
+        run: |
+          mkdir -p coverage/e2e
+          node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'pnpm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
+      - name: Collect CI timing snapshot
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings.cts');
+            const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
+            fs.mkdirSync('coverage', { recursive: true });
+            fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
+      - name: Generate coverage overview
+        if: needs.changes.outputs.run-code != 'false'
+        run: node scripts/coverage/generate-report.cts
+      - name: Generate pull request summary
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TRUSTROOTS_PR_INCLUDE_COVERAGE: ${{ needs.changes.outputs.run-code != 'false' }}
+        run: |
+          mkdir -p coverage-report
+          node scripts/coverage/generate-pr-summary.cts > coverage-report/pr-summary.md
+          cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage overview
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-report
+          path: coverage-report
+      - name: Update pull request coverage comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        # The comment is informational; the coverage gate is the step below.
+        # A GitHub API blip (e.g. 503) must not fail the run.
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          retries: 3
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- trustroots-coverage-report -->';
+            const body = fs.readFileSync('coverage-report/pr-summary.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: latest } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (latest.head.sha !== context.payload.pull_request.head.sha) {
+              core.info('Skipping a summary for an outdated PR head.');
+              return;
+            }
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
       - name: Require full client and server coverage
         if: needs.changes.outputs.run-code != 'false'
-        shell: bash
-        run: node scripts/coverage/check-coverage.cts --require-full | tee -a "$GITHUB_STEP_SUMMARY"
+        run: node scripts/coverage/check-coverage.cts --require-full
 
   pages:
     if: >

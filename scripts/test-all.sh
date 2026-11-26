@@ -44,3 +44,4 @@ if [ "$check_client_status" -ne 0 ] || [ "$check_server_status" -ne 0 ]; then
 fi
 
 pnpm run test:e2e
+pnpm run coverage:report
