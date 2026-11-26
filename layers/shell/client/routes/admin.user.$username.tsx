@@ -1,6 +1,7 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { requireRole } from '../route-options';
 import React from 'react';
+import Offers from '@/modules/offers/client/components/Offers.component';
 import { AdminUserRoute } from '@/modules/admin/client/route-views';
 
 export const Route = createFileRoute('/admin/user/$username')({
@@ -8,6 +9,6 @@ export const Route = createFileRoute('/admin/user/$username')({
   beforeLoad: requireRole('admin', 'support-team'),
   component: function UsernameRoute() {
     const { username } = useParams({ from: '/admin/user/$username' });
-    return <AdminUserRoute username={username} />;
+    return <AdminUserRoute ProfileOffers={Offers} username={username} />;
   },
 });

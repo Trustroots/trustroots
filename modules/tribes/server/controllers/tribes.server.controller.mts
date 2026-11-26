@@ -4,8 +4,16 @@ import { publicTribeFields } from '../../../core/server/services/public-tribe-pr
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import { subMonths } from 'date-fns';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
-import { findDiscoveryOfferLocations } from '../../../users/server/services/discovery-offers.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+
+export type ReadDiscoveryOfferLocations = (
+  ownerIDs: Types.ObjectId[],
+  sharedCircleOwnerIDs: Types.ObjectId[],
+  now: Date,
+  options?: { includeMeetings?: boolean },
+) => Promise<
+  Map<string, { type: 'host' | 'meet'; location: [number, number] }>
+>;
 
 interface TribeRecord {
   _id?: Types.ObjectId;
@@ -134,11 +142,13 @@ const service = {} as {
     next: Next,
   ): Promise<unknown>;
   listMembers(
+    readDiscoveryOfferLocations: ReadDiscoveryOfferLocations,
     req: MemberRequest,
     res: JsonResponse<MemberListResponse>,
     next: Next,
   ): Promise<unknown>;
   listConnections(
+    readDiscoveryOfferLocations: ReadDiscoveryOfferLocations,
     req: ConnectionRequest,
     res: JsonResponse<ConnectionsResponse>,
     next: Next,
@@ -411,7 +421,12 @@ async function listCircleRecommenders(
 }
 
 /** List a signed-in circle member's bounded, privacy-filtered discovery groups. */
-service.listMembers = async function (req, res, next) {
+service.listMembers = async function (
+  readDiscoveryOfferLocations,
+  req,
+  res,
+  next,
+) {
   try {
     const isMember = req.user.member?.some(member =>
       member.tribe.equals(req.tribe._id),
@@ -439,7 +454,7 @@ service.listMembers = async function (req, res, next) {
     const ownerIDs = [...contacts, ...recommenders, ...active].map(
       member => member._id,
     );
-    const locations = await findDiscoveryOfferLocations(
+    const locations = await readDiscoveryOfferLocations(
       ownerIDs,
       ownerIDs,
       now,
@@ -459,7 +474,12 @@ service.listMembers = async function (req, res, next) {
 };
 
 /** Find recent and available connections for the signed-in homepage. */
-service.listConnections = async function (req, res, next) {
+service.listConnections = async function (
+  readDiscoveryOfferLocations,
+  req,
+  res,
+  next,
+) {
   try {
     const selfId = req.user._id;
     const now = new Date();
@@ -504,7 +524,7 @@ service.listConnections = async function (req, res, next) {
     const viewerCircles = new Set(
       req.user.member?.map(({ tribe }) => tribe.toString()),
     );
-    const locations = await findDiscoveryOfferLocations(
+    const locations = await readDiscoveryOfferLocations(
       connections.map(({ _id }) => _id),
       connections
         .filter(({ member }) =>

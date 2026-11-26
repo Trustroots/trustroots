@@ -83,7 +83,6 @@
       "contacts",
       "core",
       "experiences",
-      "offers",
       "search",
       "stats",
       "tribes"
@@ -146,8 +145,7 @@
       "users"
     ],
     "users": [
-      "experiences",
-      "offers"
+      "experiences"
     ]
   }
 }

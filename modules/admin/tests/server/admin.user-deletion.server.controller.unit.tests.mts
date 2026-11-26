@@ -1,3 +1,4 @@
+import { userAccountServices } from '../../../../layers/server/user-account.mts';
 import * as controller from '../../server/controllers/admin.user-deletion.server.controller.mts';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
@@ -31,13 +32,14 @@ function response(): TestResponse {
 describe('Admin user deletion controller unit tests', () => {
   it('rejects unauthorised direct controller requests', async () => {
     const res = response();
-    await controller.deleteMember({}, res);
+    await controller.deleteMember(userAccountServices, {}, res);
     res.statusCode.should.equal(403);
   });
 
   it('rejects an administrator request without a body', async () => {
     const res = response();
     await controller.deleteMember(
+      userAccountServices,
       { user: { _id: 'admin-id', roles: ['admin'] } },
       res,
     );
@@ -78,7 +80,11 @@ describe('Admin user deletion controller with stored members', () => {
     user: { _id: string; roles: string[] } | null = admin,
   ) {
     const res = response();
-    await controller.deleteMember({ user, body } as never, res);
+    await controller.deleteMember(
+      userAccountServices,
+      { user, body } as never,
+      res,
+    );
     return { statusCode: res.statusCode, body: res.body };
   }
   function payload(overrides: Record<string, unknown> = {}) {
