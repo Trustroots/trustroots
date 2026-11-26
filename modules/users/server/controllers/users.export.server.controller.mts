@@ -1,6 +1,10 @@
 import log from '@trustroots/logger';
 import * as canonical from '../services/data-export-canonical.server.service.mts';
 import * as signing from '../services/data-export-signing.server.service.mts';
+import type {
+  UserMessaging,
+  WrittenMessage,
+} from '../services/user-messaging.server.contract.mts';
 import type { NextFunction, Response } from 'express';
 import mongoose, { type Types } from 'mongoose';
 import type {
@@ -16,14 +20,6 @@ type ExportId = string | Types.ObjectId;
 
 interface ExportRecord {
   [field: string]: unknown;
-}
-
-interface ExportMessageRecord extends ExportRecord {
-  _id?: unknown;
-  created?: unknown;
-  content?: unknown;
-  read?: unknown;
-  userTo?: unknown;
 }
 
 interface ExportExperienceRecord extends ExportRecord {
@@ -105,13 +101,17 @@ type ExportMiddleware<
 
 interface UserExportService {
   download(
+    messaging: Pick<UserMessaging, 'readReplyStats' | 'readWrittenMessages'>,
     req: ExportRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void>;
   buildExportFilename(username: unknown, exportedAt: Date): string;
   circlesFromProfile(profile: unknown): ExportRecord[];
-  writtenMessages(userId: ExportId): Promise<ExportRecord[]>;
+  writtenMessages(
+    readWrittenMessages: UserMessaging['readWrittenMessages'],
+    userId: ExportId,
+  ): Promise<ExportRecord[]>;
   writtenExperiences(userId: ExportId): Promise<ExportRecord[]>;
   memberOffers(userId: ExportId): Promise<ExportRecord[]>;
 }
@@ -184,7 +184,7 @@ function circlesFromProfile(profile: unknown): ExportRecord[] {
     });
 }
 
-function selectWrittenMessage(message: ExportMessageRecord): ExportRecord {
+function selectWrittenMessage(message: WrittenMessage): ExportRecord {
   return {
     _id: message._id,
     created: message.created,
@@ -247,12 +247,11 @@ function selectOwnedOffer(offer: ExportOfferRecord): ExportRecord {
   };
 }
 
-async function writtenMessages(userId: ExportId): Promise<ExportRecord[]> {
-  const Message = mongoose.model<ExportMessageRecord>('Message');
-  const messages = await Message.find({ userFrom: userId })
-    .sort({ created: 1 })
-    .populate('userTo', 'username displayName')
-    .lean();
+async function writtenMessages(
+  readWrittenMessages: UserMessaging['readWrittenMessages'],
+  userId: ExportId,
+): Promise<ExportRecord[]> {
+  const messages = await readWrittenMessages(userId);
   return messages.map(selectWrittenMessage);
 }
 
@@ -317,16 +316,21 @@ function invokeMiddleware<
 }
 
 service.download = async function (
+  messaging,
   req: ExportRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    await invokeMiddleware(profiles.userByUsername, req, req.user.username);
+    await invokeMiddleware(
+      profiles.userByUsername.bind(null, messaging.readReplyStats),
+      req,
+      req.user.username,
+    );
     await invokeMiddleware(contacts.contactListByUser, req, req.user._id);
     const profile = req.profile || {};
     const [messages, experiences, hostingOffers] = await Promise.all([
-      service.writtenMessages(req.user._id),
+      service.writtenMessages(messaging.readWrittenMessages, req.user._id),
       service.writtenExperiences(req.user._id),
       service.memberOffers(req.user._id),
     ]);

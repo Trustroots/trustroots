@@ -222,7 +222,10 @@ interface MessagesController {
   markRead(req: ControllerRequest, res: ControllerResponse): unknown;
   messagesCount(req: ControllerRequest, res: ControllerResponse): unknown;
   sync(req: ControllerRequest, res: ControllerResponse): unknown;
-  markAllMessagesToUserNotified(userId: string, callback: ErrorCallback): void;
+  markAllMessagesToUserNotified(
+    userId: string | Types.ObjectId,
+    callback: ErrorCallback,
+  ): void;
   preview(req: ControllerRequest, res: ControllerResponse): unknown;
   sanitizeMessages<Message extends { content: string }>(
     messages?: Message[] | null,

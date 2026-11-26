@@ -47,7 +47,7 @@ const userAvatar =
 const unifiedPush =
   require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
-module.exports = function (app, findOfferConnections) {
+module.exports = function (app, { findOfferConnections, readReplyStats }) {
   app.post(
     '/api/mobile/v0/nostranslation/alerts/challenge',
     mobileAuthentication.authenticate,
@@ -173,7 +173,7 @@ module.exports = function (app, findOfferConnections) {
     .all(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
-      mobileAuthentication.loadProfile,
+      mobileAuthentication.loadProfile.bind(null, readReplyStats),
       resourcePolicy(usersPolicy.isAllowed, '/api/blocked-users/:username'),
     )
     .put(userBlock.blockUser)
@@ -200,7 +200,7 @@ module.exports = function (app, findOfferConnections) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
-      mobileAuthentication.loadProfile,
+      mobileAuthentication.loadProfile.bind(null, readReplyStats),
       resourcePolicy(usersPolicy.isAllowed, '/api/users/:username'),
       mobileAuthentication.profile,
     );

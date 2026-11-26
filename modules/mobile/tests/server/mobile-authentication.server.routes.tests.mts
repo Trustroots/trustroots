@@ -14,6 +14,7 @@ const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
 const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 
 let app: Awaited<ReturnType<typeof express.init>>;
@@ -187,6 +188,24 @@ describe('Mobile authentication API', function () {
     member.languages = ['eng'];
     member.nostrNpub = 'npub1examplemobile';
     await member.save();
+    const senders = [1, 2, 3].map(index =>
+      utils.createTestUser({
+        username: `mobilesender${index}`,
+        email: `mobilesender${index}@example.org`,
+      }),
+    );
+    await User.collection.insertMany(senders.map(sender => sender.toObject()));
+    const replyTime = 2 * 60 * 60 * 1000;
+    const firstMessageCreated = new Date(Date.now() - 2 * replyTime);
+    await MessageStat.insertMany(
+      senders.map(sender => ({
+        firstMessageUserFrom: sender._id,
+        firstMessageUserTo: member._id,
+        firstMessageCreated,
+        firstReplyCreated: new Date(firstMessageCreated.getTime() + replyTime),
+        timeToFirstReply: replyTime,
+      })),
+    );
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
@@ -202,6 +221,8 @@ describe('Mobile authentication API', function () {
     response.body.profile.tagline.should.equal(member.tagline);
     response.body.profile.nostrNpub.should.equal(member.nostrNpub);
     response.body.profile.languages.should.deepEqual(['eng']);
+    response.body.profile.replyRate.should.equal('100%');
+    response.body.profile.replyTime.should.equal('2 hours');
     response.body.profile.member.should.deepEqual([]);
     should.not.exist(response.body.profile.password);
     should.not.exist(response.body.profile.roles);
