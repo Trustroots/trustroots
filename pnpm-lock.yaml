@@ -755,9 +755,6 @@ importers:
 
   modules/users:
     dependencies:
-      '@trustroots/admin':
-        specifier: workspace:*
-        version: link:../admin
       '@trustroots/contacts':
         specifier: workspace:*
         version: link:../contacts
