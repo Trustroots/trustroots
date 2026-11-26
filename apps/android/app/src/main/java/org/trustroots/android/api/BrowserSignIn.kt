@@ -27,8 +27,9 @@ internal class BrowserSignInCallback(val code: String, val state: String) {
             ) return null
             val parameters = uri.rawQuery?.split('&') ?: return null
             if (parameters.size != 2) return null
-            val code = parameters.singleOrNull { it.startsWith("code=") }?.substringAfter('=') ?: return null
-            val state = parameters.singleOrNull { it.startsWith("state=") }?.substringAfter('=') ?: return null
+            val values = parameters.associate { it.substringBefore('=') to it.substringAfter('=', "") }
+            val code = values["code"] ?: return null
+            val state = values["state"] ?: return null
             if (!handoffToken.matches(code) || !handoffToken.matches(state)) return null
             return BrowserSignInCallback(code, state)
         }

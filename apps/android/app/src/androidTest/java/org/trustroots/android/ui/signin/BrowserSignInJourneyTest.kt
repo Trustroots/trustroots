@@ -156,6 +156,27 @@ class BrowserSignInJourneyTest {
         assertFalse(launchSystemBrowser(missingBrowserContext, "https://www.trustroots.org/auth/mobile/start"))
     }
 
+    @Test fun onlyValidViewIntentsReplaceThePendingCallback() {
+        val links = BrowserSignInLinks()
+        val firstCode = "A".repeat(43)
+        val secondCode = "B".repeat(43)
+        val state = "C".repeat(43)
+        val first = Intent(Intent.ACTION_VIEW, Uri.parse(callbackURL(firstCode, state)))
+        links.capture(first)
+        val pendingFirst = requireNotNull(links.callback.value)
+        assertNull(first.data)
+        links.capture(Intent(Intent.ACTION_VIEW))
+        links.capture(Intent(Intent.ACTION_SEND, Uri.parse(callbackURL(secondCode, state))))
+        links.capture(Intent(Intent.ACTION_VIEW, Uri.parse("https://elsewhere.test/mobile-auth/complete")))
+        assertEquals(firstCode, links.callback.value?.code)
+        links.capture(Intent(Intent.ACTION_VIEW, Uri.parse(callbackURL(secondCode, state))))
+        val pendingSecond = requireNotNull(links.callback.value)
+        assertFalse(links.consume(pendingFirst))
+        assertEquals(secondCode, pendingSecond.code)
+        assertTrue(links.consume(pendingSecond))
+        assertNull(links.callback.value)
+    }
+
     private fun waitForText(text: String, substring: Boolean = false) {
         compose.waitUntil(10_000) { compose.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty() }
     }
