@@ -12,6 +12,8 @@ describe('<Screenshot />', () => {
       png2x: '/screenshot@2x.png',
       webp: '/screenshot.webp',
       webp2x: '/screenshot@2x.webp',
+      width: 600,
+      height: 451,
     };
     const { container } = render(<Screenshot {...props} />);
 
@@ -29,6 +31,8 @@ describe('<Screenshot />', () => {
       'src',
       '/screenshot.png',
     );
+    expect(container.querySelector('img')).toHaveAttribute('width', '600');
+    expect(container.querySelector('img')).toHaveAttribute('height', '451');
     expect(container.firstChild).toBeInTheDocument();
   });
 });

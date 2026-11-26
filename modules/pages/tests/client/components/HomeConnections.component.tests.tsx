@@ -1,11 +1,10 @@
 import React from 'react';
-import { act, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import '@/config/client/i18n';
 import HomeConnections from '@/modules/pages/client/components/HomeConnections.component';
-import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
+import type { ConnectionsDiscovery } from '@/modules/tribes/client/api/tribes.api';
 
-vi.mock('@/modules/tribes/client/api/tribes.api');
 vi.mock('@/modules/tribes/client/components/CircleLocationMap', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
   return {
@@ -30,39 +29,16 @@ vi.mock('@/modules/tribes/client/components/CircleLocationMap', async () => {
   };
 });
 
-const getConnections = vi.mocked(tribesApi.getConnections);
-
 describe('<HomeConnections />', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('keeps the section hidden when discovery fails', async () => {
-    getConnections.mockRejectedValueOnce(new Error('Offline'));
-    const { container } = render(<HomeConnections />);
-    await act(async () => {});
+  it('keeps the section hidden when there are no connections', () => {
+    const { container } = render(
+      <HomeConnections connections={{ recent: [], hosts: [] }} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
-  it.each(['resolve', 'reject'])(
-    'ignores a request that will %s after unmount',
-    async outcome => {
-      let finish!: () => void;
-      getConnections.mockImplementationOnce(
-        () =>
-          new Promise((resolve, reject) => {
-            finish = () =>
-              outcome === 'resolve'
-                ? resolve({ recent: [], hosts: [] })
-                : reject(new Error('Offline'));
-          }),
-      );
-      const { unmount } = render(<HomeConnections />);
-      unmount();
-      await act(async () => finish());
-    },
-  );
-
   it('shows recent members and maps every valid hosting or meeting connection', async () => {
-    getConnections.mockResolvedValueOnce({
+    const connections: ConnectionsDiscovery = {
       recent: [
         {
           _id: 'recent-1',
@@ -111,9 +87,9 @@ describe('<HomeConnections />', () => {
           location: [1, 1],
         },
       ],
-    });
+    };
 
-    render(<HomeConnections />);
+    render(<HomeConnections connections={connections} />);
 
     expect(
       await screen.findByRole('heading', {
@@ -149,7 +125,7 @@ describe('<HomeConnections />', () => {
   ] as const)(
     'only shows a legend entry when there are %s',
     async (type, label) => {
-      getConnections.mockResolvedValueOnce({
+      const connections: ConnectionsDiscovery = {
         recent: [],
         hosts: [],
         [type]: [
@@ -160,9 +136,9 @@ describe('<HomeConnections />', () => {
             location: [1, 1],
           },
         ],
-      });
+      };
 
-      render(<HomeConnections />);
+      render(<HomeConnections connections={connections} />);
       const map = await screen.findByTestId('hosting-map');
       expect(within(map).getAllByRole('listitem')).toHaveLength(1);
       expect(within(map).getByRole('listitem')).toHaveTextContent(label);

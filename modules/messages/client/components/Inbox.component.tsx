@@ -27,6 +27,7 @@ export default function Inbox({ user }: InboxProps) {
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [showInitialLoading, setShowInitialLoading] = useState(false);
   const [isLoadingForSearch, setIsLoadingForSearch] = useState(false);
   const [searchLoadFailed, setSearchLoadFailed] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -78,6 +79,16 @@ export default function Inbox({ user }: InboxProps) {
     updateUnreadMessageCount();
     fetchThreads();
   }, []);
+
+  useEffect(() => {
+    if (!isFetching || isFetchingNextPage) {
+      setShowInitialLoading(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setShowInitialLoading(true), 275);
+    return () => window.clearTimeout(timer);
+  }, [isFetching, isFetchingNextPage]);
 
   useEffect(() => {
     if (
@@ -179,19 +190,23 @@ export default function Inbox({ user }: InboxProps) {
           )}
         </div>
       </div>
-      {isFetching && !loadFailed && (
-        <div className="tw:page-container">
-          <ContentState
-            kind="loading"
-            heading={
-              isFetchingNextPage
-                ? t('Loading older conversations…')
-                : t('Loading conversations…')
-            }
-            description={t('Please wait while your conversations are loaded.')}
-          />
-        </div>
-      )}
+      {isFetching &&
+        !loadFailed &&
+        (isFetchingNextPage || showInitialLoading) && (
+          <div className="tw:page-container">
+            <ContentState
+              kind="loading"
+              heading={
+                isFetchingNextPage
+                  ? t('Loading older conversations…')
+                  : t('Loading conversations…')
+              }
+              description={t(
+                'Please wait while your conversations are loaded.',
+              )}
+            />
+          </div>
+        )}
       {loadFailed && (
         <div className="tw:page-container">
           <ContentState

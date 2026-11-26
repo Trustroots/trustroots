@@ -7,18 +7,22 @@ import type { PageTranslator } from '../types';
 
 export default function HomeFeaturedNostrNotes({
   memberView = false,
+  initialNotes,
 }: {
   memberView?: boolean;
+  initialNotes?: FeaturedNostrNote[];
 }) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
-  const [notes, setNotes] = useState<FeaturedNostrNote[]>([]);
+  const [fetchedNotes, setFetchedNotes] = useState<FeaturedNostrNote[]>([]);
+  const notes = initialNotes ?? fetchedNotes;
 
   useEffect(() => {
+    if (initialNotes !== undefined) return;
     const controller = new AbortController();
-    listFeaturedNostrNotes(controller.signal).then(setNotes, () => {});
+    listFeaturedNostrNotes(controller.signal).then(setFetchedNotes, () => {});
     return () => controller.abort();
-  }, []);
+  }, [initialNotes]);
 
   if (!notes.length) return null;
 

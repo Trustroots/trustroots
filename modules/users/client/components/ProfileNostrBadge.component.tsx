@@ -4,41 +4,30 @@ import { nostrService } from '@/modules/core/client/services/nostr.client.servic
 import { compactTimeAgo } from '@trustroots/relative-time/compact';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 
-interface CommunityNote {
-  id: string;
-  content: string;
-  created_at: number;
-}
-
 export default function ProfileNostrBadge({
   npubHex = null,
 }: {
   npubHex?: string | null;
 }) {
-  const [notes, setNotes] = useState<CommunityNote[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [notes, setNotes] = useState<
+    Awaited<ReturnType<typeof nostrService.fetchUserNotes>>
+  >([]);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!npubHex) return;
 
     let cancelled = false;
-    setLoading(true);
 
     nostrService
       .fetchUserNotes(npubHex)
       .then(fetchedNotes => {
         if (!cancelled) {
-          setNotes(fetchedNotes as CommunityNote[]);
+          setNotes(fetchedNotes);
         }
       })
       .catch(() => {
         // silently ignore fetch errors
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
       });
 
     return () => {
@@ -46,8 +35,7 @@ export default function ProfileNostrBadge({
     };
   }, [npubHex]);
 
-  if (!npubHex) return null;
-  if (!loading && notes.length === 0) return null;
+  if (notes.length === 0) return null;
 
   return (
     <div>
@@ -60,26 +48,24 @@ export default function ProfileNostrBadge({
         Nostroots
       </Badge>
 
-      {notes.length > 0 && (
-        <div className="profile-nostr-notes">
-          <h4 className="profile-nostr-notes-title">Recent community notes</h4>
-          {notes.map(note => (
-            <div key={note.id} className="profile-nostr-note">
-              <p className="profile-nostr-note-content">{note.content}</p>
-              <small className="profile-nostr-note-meta text-muted">
-                {compactTimeAgo(note.created_at)}
-              </small>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="profile-nostr-notes-more"
-            onClick={() => setModalOpen(true)}
-          >
-            See all notes on Nostroots &rarr;
-          </button>
-        </div>
-      )}
+      <div className="profile-nostr-notes">
+        <h4 className="profile-nostr-notes-title">Recent community notes</h4>
+        {notes.map(note => (
+          <div key={note.id} className="profile-nostr-note">
+            <p className="profile-nostr-note-content">{note.content}</p>
+            <small className="profile-nostr-note-meta text-muted">
+              {compactTimeAgo(note.created_at)}
+            </small>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="profile-nostr-notes-more"
+          onClick={() => setModalOpen(true)}
+        >
+          See all notes on Nostroots &rarr;
+        </button>
+      </div>
 
       <NostrootsActionModal
         isOpen={modalOpen}

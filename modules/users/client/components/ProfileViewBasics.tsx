@@ -347,11 +347,6 @@ export default function ProfileViewBasics({
       {/* seen online */}
       {renderSeenOnline(profile.seen)}
 
-      {/* nostroots badge */}
-      {profile.nostrNpub && (
-        <ProfileNostrBadge npubHex={npubToHex(profile.nostrNpub)} />
-      )}
-
       {/* location living */}
       {profile.locationLiving && renderLocationLiving(profile.locationLiving)}
 
@@ -372,6 +367,13 @@ export default function ProfileViewBasics({
         profile.extSitesHitchwiki ||
         profile.extSitesHitchwikiMaps) &&
         renderSocialNetworks(profile)}
+
+      {profile.nostrNpub && (
+        <ProfileNostrBadge
+          key={profile.nostrNpub}
+          npubHex={npubToHex(profile.nostrNpub)}
+        />
+      )}
     </div>
   );
 }
