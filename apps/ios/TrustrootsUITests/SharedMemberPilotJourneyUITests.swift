@@ -609,7 +609,11 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func signInToRegularApp(_ app: XCUIApplication) {
         signIn(app)
-        XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15), app.debugDescription)
+        let menu = app.buttons["Menu"]
+        if !menu.waitForExistence(timeout: 15), app.staticTexts["Signing in…"].exists {
+            _ = menu.waitForExistence(timeout: 15)
+        }
+        XCTAssertTrue(menu.exists, app.debugDescription)
         let passwordPrompt = app.sheets["Save Password?"]
         if passwordPrompt.waitForExistence(timeout: 5) {
             let dismiss = passwordPrompt.buttons["Not Now"]
@@ -788,36 +792,91 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(scale.label.hasSuffix(" km") || scale.label.hasSuffix(" m"), scale.label)
 
+        let mapStatus = app.descendants(matching: .any)["compose-map-result-overlay"]
+        let legend = app.descendants(matching: .any)["compose-map-marker-legend"]
+        XCTAssertTrue(mapStatus.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["2 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(legend.waitForExistence(timeout: 5), app.debugDescription)
+        for label in ["Hosting", "Maybe", "Notes"] {
+            XCTAssertTrue(app.staticTexts[label].waitForExistence(timeout: 5), app.debugDescription)
+        }
+        let statusCapture = XCTAttachment(screenshot: mapStatus.screenshot())
+        statusCapture.name = "iOS Compose map status and legend"
+        statusCapture.lifetime = .keepAlways
+        add(statusCapture)
+
+        let mapFilters = app.descendants(matching: .any)["map-action-filters"]
+        let currentLocation = app.descendants(matching: .any)["map-action-current-location"]
+        for action in [mapFilters, currentLocation] {
+            XCTAssertTrue(action.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(action.isHittable, app.debugDescription)
+            XCTAssertGreaterThanOrEqual(action.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
+            let actionCapture = XCTAttachment(screenshot: action.screenshot())
+            actionCapture.name = "iOS Compose \(action.identifier)"
+            actionCapture.lifetime = .keepAlways
+            add(actionCapture)
+        }
+        XCTAssertEqual(mapFilters.label, "Search filters")
+        XCTAssertEqual(currentLocation.label, "Use current location")
+        mapFilters.tap()
+        XCTAssertTrue(app.navigationBars["Search filters"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(mapFilters.waitForExistence(timeout: 10), app.debugDescription)
+
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "iOS map distance scale"
         capture.lifetime = .keepAlways
         add(capture)
 
-        let display = app.segmentedControls.firstMatch
-        display.buttons["Results"].tap()
+        let mapDisplay = app.descendants(matching: .any)["offer-search-display-map"]
+        let resultsDisplay = app.descendants(matching: .any)["offer-search-display-results"]
+        let membersDisplay = app.descendants(matching: .any)["offer-search-display-members"]
+        XCTAssertTrue(mapDisplay.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(mapDisplay.isSelected)
+        resultsDisplay.tap()
         let volunteer = app.buttons["search-result-offer-pilot-volunteer"]
         let other = app.buttons["search-result-offer-pilot-other"]
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
-        app.buttons["Search filters"].tap()
-        for label in ["Offers volunteering", "My connections only"] {
-            let filter = app.switches[label]
-            XCTAssertTrue(filter.waitForExistence(timeout: 5))
-            filter.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-            XCTAssertEqual(filter.value as? String, "1")
+        XCTAssertTrue(resultsDisplay.isSelected)
+        XCTAssertFalse(mapDisplay.isSelected)
+        let place = app.descendants(matching: .any)["offer-place-search-field"]
+        enterText("Example Harbour", into: place, in: app)
+        mapDisplay.tap()
+        XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        resultsDisplay.tap()
+        XCTAssertTrue(place.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(place.value as? String, "Example Harbour")
+        app.descendants(matching: .any)["offer-results-search-filters"].tap()
+        let filterScreen = app.descendants(matching: .any)["compose-offer-search-filters"]
+        XCTAssertTrue(filterScreen.waitForExistence(timeout: 10), app.debugDescription)
+        let filtersCapture = XCTAttachment(screenshot: filterScreen.screenshot())
+        filtersCapture.name = "iOS Compose offer search filters"
+        filtersCapture.lifetime = .keepAlways
+        add(filtersCapture)
+        for id in ["offer-filter-hosts", "offer-filter-volunteering", "offer-filter-connections-only"] {
+            let filter = app.descendants(matching: .any)[id]
+            XCTAssertTrue(filter.waitForExistence(timeout: 5), app.debugDescription)
+            reveal(filter, in: app)
+            filter.tap()
         }
         app.buttons["Done"].tap()
         XCTAssertTrue(other.waitForNonExistence(timeout: 15), app.debugDescription)
-        display.buttons["Map"].tap()
+        mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
-        display.buttons["Results"].tap()
+        XCTAssertTrue(app.staticTexts["1 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(legend.exists, app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Hosting"].exists, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["Notes"].exists, app.debugDescription)
+        resultsDisplay.tap()
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(other.exists)
         volunteer.tap()
         XCTAssertTrue(app.buttons["Dismiss potential host"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.staticTexts["Might meet"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["Offers volunteering"].firstMatch.exists)
-        display.buttons["Map"].tap()
+        mapDisplay.tap()
         let mapPin = app.buttons["View potential host"]
         XCTAssertTrue(mapPin.waitForExistence(timeout: 15), app.debugDescription)
         mapPin.tap()
@@ -833,7 +892,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
 
-        display.buttons["Members"].tap()
+        app.buttons["Dismiss potential host"].tap()
+        mapFilters.tap()
+        app.buttons["Reset"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["2 offers in this area"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Notes"].exists, app.debugDescription)
+        resultsDisplay.tap()
+        XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
+
+        membersDisplay.tap()
         app.buttons["Member filters"].tap()
         let connectedMembers = app.switches["My connections only"]
         XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5))
@@ -845,9 +913,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         query.tap()
         query.typeText("partner profile")
         app.buttons["Search members"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["member-search-result-pilot-partner"].waitForExistence(timeout: 10), app.debugDescription)
-        display.buttons["Map"].tap()
+        let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
+        XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        membersDisplay.tap()
+        XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(query.value as? String, "partner profile")
+        XCTAssertTrue(membersDisplay.isSelected)
+        XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {

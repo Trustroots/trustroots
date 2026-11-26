@@ -256,3 +256,90 @@ unchanged.
 - **WHEN** they edit the reason they are unavailable across multiple lines and save
 - **THEN** the existing offer contains the edited text and its original coordinates
 - **AND** the unchanged hosting description retains its saved rich text
+
+### Requirement: iOS offer search uses shared filter controls
+
+The regular iOS offer search SHALL render its offer type, activity, language and
+Circle filter controls in shared Compose. The iOS host SHALL continue to apply
+the filters to Map and Results and provide the existing language picker, Reset
+and Done actions.
+
+#### Scenario: Apply connected volunteering filters
+
+- **GIVEN** a member opens Search filters while viewing offers
+- **WHEN** they enable volunteering and connections-only and close the sheet
+- **THEN** hosting is enabled, Community Notes are suppressed and both Map and Results use the selected filters
+
+#### Scenario: Reset the offer filters
+
+- **GIVEN** a member changes the offer filters
+- **WHEN** they select Reset
+- **THEN** the defaults restore and the filter controls show those defaults
+
+### Requirement: iOS offer map uses shared status and legend
+
+The regular iOS app SHALL show its map loading indicator, offer result count,
+applicable legend and search errors in shared Compose. The marker legend SHALL
+use the same colours as the native annotations and reflow within the viewport.
+The overlay SHALL leave map gestures available.
+
+#### Scenario: Show the applicable markers
+
+- **GIVEN** the iOS map has loaded offers
+- **WHEN** a member restricts the map to their connections
+- **THEN** the shared overlay shows the updated count and omits the Community Notes marker
+
+### Requirement: iOS offer map uses shared map actions
+
+The regular iOS offer map SHALL display accessible Search filters and Use
+current location buttons in Compose with 44-point hit targets. Search filters
+SHALL open the existing filter sheet. Use current location SHALL call the
+native location manager so its permission and error handling apply. The
+separate button hosts SHALL leave the surrounding map available for gestures.
+
+#### Scenario: Open filters from the map actions
+
+- **GIVEN** a member is viewing the regular iOS offer map
+- **WHEN** they select Search filters
+- **THEN** the existing filter sheet appears and closing it returns to the same map
+
+### Requirement: iOS selected Community Notes use a shared card
+
+The regular iOS map SHALL show the selected Community Note in shared Compose
+with its original text, a preview of up to four lines, the native-formatted
+source attribution and an accessible Dismiss action. The iOS host SHALL handle
+note selection and size the card to its content.
+
+#### Scenario: Read a selected Community Note
+
+- **GIVEN** a member selects a Community Note marker
+- **WHEN** the note card appears
+- **THEN** the shared card shows the note and its publication date
+- **AND** selecting Dismiss clears the existing map selection
+
+### Requirement: Regular iOS Search uses a shared display selector
+
+The regular iOS Search screen SHALL use shared Compose to select Map, Results,
+or Members. It SHALL expose the selected choice to accessibility services
+and preserve the existing iOS map, filters, host card navigation and member
+search state.
+
+#### Scenario: Switch across Search displays
+
+- **GIVEN** a signed-in member opens Search
+- **WHEN** they choose Results and then Members
+- **THEN** the corresponding offer and member search controls are available
+- **AND** returning to Map and then Members preserves the member query and results
+
+### Requirement: Regular iOS offer results use shared place-search controls
+
+The iOS Results display SHALL render place entry, lookup failure and the
+existing filter action in Compose. A nonblank submission SHALL use the native
+place lookup and update the existing search region when found.
+
+#### Scenario: Return to offer results with a place entered
+
+- **GIVEN** a signed-in member has entered a place on the Results display
+- **WHEN** they switch to Map and then return to Results
+- **THEN** the entered place remains available for submission
+- **AND** the Search filters action continues to open the existing filter sheet

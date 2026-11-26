@@ -1,9 +1,12 @@
 package org.trustroots.android.ui
 
+import android.os.SystemClock
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -12,7 +15,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.net.ServerSocket
@@ -101,9 +108,10 @@ class CreateExperienceScreenTest {
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
         compose.onNodeWithText("We met in person").assertIsOn().performClick().assertIsOff().performClick().assertIsOn()
         foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
-        compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
-        compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")
+        val feedback = compose.onNodeWithText("Public experience (optional)")
+        feedback.performScrollTo().performTouchInput { click() }.assertIsFocused()
         keyboardTestSupport.awaitShown(compose)
+        feedback.performTextInput("A fictional account of a kind visit.")
         compose.onNodeWithText("Public experience (optional)").performScrollTo()
         assertAboveIme("Public experience (optional)")
         assertAboveIme("Save changes")
@@ -143,9 +151,27 @@ class CreateExperienceScreenTest {
     }
 
     private fun pressImeBack() {
-        InstrumentationRegistry.getInstrumentation().uiAutomation
-            .executeShellCommand("input keyevent KEYCODE_BACK").close()
-        compose.waitUntil(5_000) { keyboardTestSupport.imeBoundsOnScreen() == null }
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val downTime = SystemClock.uptimeMillis()
+        for (action in listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
+            assertTrue(
+                "The system must accept the Back key (action=$action)",
+                uiAutomation.injectInputEvent(
+                    KeyEvent(downTime, SystemClock.uptimeMillis(), action, KeyEvent.KEYCODE_BACK, 0),
+                    true,
+                ),
+            )
+        }
+        val decor = compose.activity.window.decorView
+        try {
+            compose.waitUntil(5_000) {
+                val imeInsets = ViewCompat.getRootWindowInsets(decor)
+                keyboardTestSupport.imeBoundsOnScreen() == null &&
+                    imeInsets?.isVisible(WindowInsetsCompat.Type.ime()) == false
+            }
+        } catch (error: ComposeTimeoutException) {
+            throw AssertionError("Back must dismiss the visible keyboard: ${keyboardTestSupport.windowDiagnostics}", error)
+        }
     }
 
     private fun android.view.View.locationOnScreenY(): Int = IntArray(2).let { getLocationOnScreen(it); it[1] }

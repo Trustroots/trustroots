@@ -28,6 +28,16 @@ import platform.UIKit.UITextContentTypeUsername
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 
+fun OfferSearchFiltersViewController(
+    state: OfferSearchFiltersState,
+    onToggle: (OfferSearchToggle) -> Unit,
+    onActivity: (OfferSearchActivity) -> Unit,
+    onLanguages: () -> Unit,
+    onCircle: (String) -> Unit,
+) = ComposeUIViewController {
+    OfferSearchFilters(state, onToggle, onActivity, onLanguages, onCircle)
+}
+
 fun MemberMenuViewController(
     buildInfo: String,
     onSelect: (MemberMenuAction) -> Unit,
@@ -171,6 +181,8 @@ private fun ConnectionsMap(pins: List<PilotMapPin>, createView: (List<PilotMapPi
         UIKitView(
             factory = { createView(pins) },
             modifier = Modifier.fillMaxWidth().height(280.dp),
+            // MapKit can finish accessibility updates after its Compose wrapper detaches.
+            onRelease = { map -> map.removeFromSuperview() },
         )
     }
 }
