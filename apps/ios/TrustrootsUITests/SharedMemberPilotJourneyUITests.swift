@@ -1434,12 +1434,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutOfNativeAccountIfNeeded(app)
         signInToRegularApp(app)
 
-        let search = app.buttons["Search"]
+        let search = app.buttons["ios-navigation-search"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["ios-navigation-home"].isSelected)
         search.tap()
 
         let scale = app.staticTexts["map-distance-scale"]
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(search.isSelected)
         XCTAssertTrue(scale.label.hasSuffix(" km") || scale.label.hasSuffix(" m"), scale.label)
 
         let mapStatus = app.descendants(matching: .any)["compose-map-result-overlay"]
@@ -1569,9 +1571,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
         query.tap()
         query.typeText("partner profile")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 10), app.debugDescription)
         app.buttons["Search members"].tap()
         let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.isSelected)
         mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
         membersDisplay.tap()
