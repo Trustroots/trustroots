@@ -805,6 +805,25 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         statusCapture.lifetime = .keepAlways
         add(statusCapture)
 
+        let mapFilters = app.descendants(matching: .any)["map-action-filters"]
+        let currentLocation = app.descendants(matching: .any)["map-action-current-location"]
+        for action in [mapFilters, currentLocation] {
+            XCTAssertTrue(action.waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(action.isHittable, app.debugDescription)
+            XCTAssertGreaterThanOrEqual(action.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
+            let actionCapture = XCTAttachment(screenshot: action.screenshot())
+            actionCapture.name = "iOS Compose \(action.identifier)"
+            actionCapture.lifetime = .keepAlways
+            add(actionCapture)
+        }
+        XCTAssertEqual(mapFilters.label, "Search filters")
+        XCTAssertEqual(currentLocation.label, "Use current location")
+        mapFilters.tap()
+        XCTAssertTrue(app.navigationBars["Search filters"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(mapFilters.waitForExistence(timeout: 10), app.debugDescription)
+
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "iOS map distance scale"
         capture.lifetime = .keepAlways
