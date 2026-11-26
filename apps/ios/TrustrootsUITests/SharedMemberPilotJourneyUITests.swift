@@ -1370,6 +1370,46 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     @MainActor
+    func testRegularAppShowsSavedDataNoticeUntilLiveInboxLoads() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", fixtureURL.absoluteString]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        addTeardownBlock { [self] in try await setDroppedProfileResponse(false, at: fixtureURL) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        let menu = app.buttons["ios-navigation-menu"]
+        let profile = app.descendants(matching: .any)["profile-menu-entry"]
+        let tagline = app.staticTexts["A test profile"]
+        let banner = app.descendants(matching: .any)["offline-saved-data"].firstMatch
+
+        func openProfile() {
+            menu.tap()
+            XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
+            profile.tap()
+            XCTAssertTrue(tagline.waitForExistence(timeout: 15), app.debugDescription)
+        }
+
+        openProfile()
+        XCTAssertFalse(banner.exists)
+        // Profile details load in parallel. Keep every member read offline until the inbox reload.
+        try await setDroppedProfileResponse(true, at: fixtureURL, dropMemberReads: true)
+        openProfile()
+        XCTAssertTrue(banner.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(banner.label.hasPrefix("Offline — saved "), banner.label)
+
+        try await setDroppedProfileResponse(false, at: fixtureURL)
+        app.buttons["ios-navigation-messages"].tap()
+        let thread = app.descendants(matching: .any)["message-thread-thread-pilot-1"]
+        XCTAssertTrue(thread.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(banner.waitForNonExistence(timeout: 10), app.debugDescription)
+    }
+
+    @MainActor
     func testShowsSavedProfileAndClearsOfflineBannerAfterLiveRequest() async throws {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
@@ -1434,12 +1474,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutOfNativeAccountIfNeeded(app)
         signInToRegularApp(app)
 
-        let search = app.buttons["Search"]
+        let search = app.buttons["ios-navigation-search"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["ios-navigation-home"].isSelected)
         search.tap()
 
         let scale = app.staticTexts["map-distance-scale"]
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(search.isSelected)
         XCTAssertTrue(scale.label.hasSuffix(" km") || scale.label.hasSuffix(" m"), scale.label)
 
         let mapStatus = app.descendants(matching: .any)["compose-map-result-overlay"]
@@ -1569,9 +1611,13 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
         query.tap()
         query.typeText("partner profile")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.waitForNonExistence(timeout: 10), app.debugDescription)
         app.buttons["Search members"].tap()
         let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(search.isSelected)
         mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
         membersDisplay.tap()
@@ -1581,11 +1627,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
     }
 
-    private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {
+    private func setDroppedProfileResponse(
+        _ drop: Bool,
+        at fixtureURL: URL,
+        dropMemberReads: Bool = false
+    ) async throws {
         var request = URLRequest(url: fixtureURL.appendingPathComponent("fixture/profile-connection"), timeoutInterval: 5)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(["drop": drop])
+        request.httpBody = try JSONEncoder().encode(["drop": drop, "dropMemberReads": dropMemberReads])
         let (_, response) = try await URLSession.shared.data(for: request)
         XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
     }
