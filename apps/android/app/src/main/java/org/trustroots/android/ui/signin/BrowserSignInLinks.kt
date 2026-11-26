@@ -12,12 +12,16 @@ import org.trustroots.android.api.BrowserSignInCallback
 internal class BrowserSignInLinks : ViewModel() {
     private val mutableCallback = MutableStateFlow<BrowserSignInCallback?>(null)
     val callback = mutableCallback.asStateFlow()
+    private var lastCallbackURL: String? = null
 
-    fun capture(intent: Intent) {
-        if (intent.action != Intent.ACTION_VIEW) return
-        val callback = intent.dataString?.let(BrowserSignInCallback::parse) ?: return
-        intent.data = null
+    fun capture(intent: Intent): Boolean {
+        if (intent.action != Intent.ACTION_VIEW) return false
+        val url = intent.dataString ?: return false
+        if (url == lastCallbackURL) return true
+        val callback = BrowserSignInCallback.parse(url) ?: return false
+        lastCallbackURL = url
         mutableCallback.value = callback
+        return true
     }
 
     fun consume(callback: BrowserSignInCallback): Boolean = mutableCallback.compareAndSet(callback, null)
