@@ -420,23 +420,13 @@ private struct MoreView: UIViewControllerRepresentable {
 
 struct OfflineSavedDataBanner: View {
     @ObservedObject var availability: OfflineAvailability
+    @State private var height: CGFloat = 28
 
     var body: some View {
         if availability.isUsingSavedData {
-            HStack(spacing: 7) {
-                Image(systemName: "wifi.slash")
-                Text(message)
-                    .lineLimit(1)
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Color(red: 0.36, green: 0.22, blue: 0.03))
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(red: 1.0, green: 0.90, blue: 0.68))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(message)
-            .accessibilityIdentifier("offline-saved-data")
+            OfflineSavedDataNoticeController(message: message, height: $height)
+                .id(message)
+                .frame(height: height)
         }
     }
 
@@ -446,4 +436,33 @@ struct OfflineSavedDataBanner: View {
         }
         return "Offline — saved \(savedAt.formatted(date: .abbreviated, time: .shortened))"
     }
+}
+
+@MainActor
+private struct OfflineSavedDataNoticeController: UIViewControllerRepresentable {
+    let message: String
+    @Binding var height: CGFloat
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let measuredHeight = $height
+        return OfflineSavedDataNoticeControllerKt.OfflineSavedDataNoticeViewController(
+            message: message,
+            makeIcon: {
+                let icon = UIImageView(image: UIImage(systemName: "wifi.slash"))
+                icon.tintColor = UIColor(red: 0.36, green: 0.22, blue: 0.03, alpha: 1)
+                icon.contentMode = .scaleAspectFit
+                icon.isAccessibilityElement = false
+                icon.isUserInteractionEnabled = false
+                return icon
+            },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {}
 }
