@@ -21,6 +21,11 @@ xcodebuild -project Trustroots.xcodeproj -scheme Trustroots -sdk iphonesimulator
 xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests -sdk iphonesimulator -only-testing:TrustrootsTests test
 ```
 
+CI enables code coverage on the simulator test job (`-enableCodeCoverage YES`) and
+publishes an application line-coverage summary. Locally you can mirror that with
+`-resultBundlePath` and `xcrun xccov view --report --json`, then
+`python3 scripts/coverage-summary.py`.
+
 The generated Xcode project builds the shared Compose framework through the
 Android Gradle wrapper. Use JDK 17 and Xcode 26.4.1 for the Kotlin 2.4.21
 toolchain documented in [the shared Kotlin and Compose UI assessment](../compose-assessment.md).
