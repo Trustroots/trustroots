@@ -1,4 +1,7 @@
-import { matchToken, setToken } from './action-token.server.service.mts';
+import {
+  matchToken,
+  setToken,
+} from '../../../core/server/services/action-token.server.service.mts';
 
 interface EmailConfirmationUser {
   $locals?: { actionTokens?: Record<string, string> };

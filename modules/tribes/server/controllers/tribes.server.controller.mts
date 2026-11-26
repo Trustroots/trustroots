@@ -4,7 +4,7 @@ import { publicTribeFields } from '../../../core/server/services/public-tribe-pr
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import { subMonths } from 'date-fns';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 
 export type ReadDiscoveryOfferLocations = (
   ownerIDs: Types.ObjectId[],

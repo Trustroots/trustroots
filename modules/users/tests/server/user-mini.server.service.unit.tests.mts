@@ -1,5 +1,5 @@
 import userMiniService from '../../server/services/user-mini.server.service.mts';
-import userRolesService from '../../server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import should from 'should';
 
 describe('Service: user mini', function () {
