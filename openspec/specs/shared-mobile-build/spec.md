@@ -545,4 +545,3 @@ The regular iOS member Account screen SHALL render its heading, Nostranslation s
 
 - **WHEN** a member selects Sign out
 - **THEN** iOS runs the existing session sign-out flow
-
