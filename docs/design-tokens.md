@@ -1,10 +1,10 @@
 # Web design tokens
 
-The web client exposes existing Less values as `--tr-*` CSS custom properties.
-`config/client/styles/design-tokens.less` is imported once by the stylesheet entry
-and included in both production LTR and RTL stylesheets. The values still come
-from `modules/core/client/less/global-variables.less` and its legacy imports;
-change values there rather than duplicating colour or dimension literals.
+The web client imports shared `--tr-*` CSS custom properties from
+`packages/ui/src/globals.css` through `config/client/styles/tailwind.css`. The
+Vite build includes them in both LTR and RTL stylesheets. Edit the web tokens
+in the UI package. The remaining Less styles still use compile-time variables
+from `modules/core/client/less/global-variables.less` and its imports.
 
 Global stylesheets and React style props can reference the same values:
 
@@ -26,28 +26,18 @@ for a non-CSS API must resolve them separately; CSS variables are not colour
 strings for canvas or other non-CSS APIs.
 
 The web Vite build also provides Tailwind utilities with the `tw:` prefix, for
-example `tw:bg-danger`. The Tailwind theme tokens live in
-`packages/ui/src/globals.css`, which `config/client/styles/tailwind.css` imports
-once; its colours, such as `brand-primary`, `danger` and `link`, refer to the
-shared CSS tokens. Components pick a colour through a shared intent (`primary`,
+example `tw:bg-danger`. Tailwind colours such as `brand-primary`, `danger` and
+`link` refer to the shared CSS tokens. Components pick a colour through a shared intent (`primary`,
 `neutral`, `success`, `warning`, `danger`, `info` or `inverse`; see
 `packages/ui/src/lib/intent.ts`), which reads the `--tr-*` tokens directly.
-Tailwind Preflight is not loaded while Bootstrap remains in use. Tailwind
-utilities are unlayered and load after Bootstrap and the global
-Less, so a utility class overrides element rules such as Bootstrap's
-`button { border-radius: 0 }` and wins ties with Bootstrap classes. Selectors
-with higher specificity (for example `.btn-primary:hover`) still win. Use
+Tailwind Preflight is disabled. Unlayered Tailwind utilities can override
+global defaults such as legacy button and form styles. Selectors with
+higher specificity still win. Use
 complete, static utility names in web components so Tailwind can discover them.
 Component-scoped stylesheets and CSS Modules are prohibited for new and migrated
 styles. React style props can supply values derived from runtime data.
 
-The initial vocabulary covers brand and text colours, surfaces, typography,
-component padding, radii and notification badge colours. Padding names describe
-the existing component sizes, not a new spacing scale. Existing styles continue
-to use Less and Bootstrap; the React notification dot is the first consumer.
-
-This is the first slice of issue #3248. Tailwind integration, owned primitives and
-screen migrations follow separately. The architecture proposal reserves
-`packages/ui` for the eventual shared owner; this bridge does not create a second
-UI module or move build tooling. Existing runtime layout properties such as
-`--tr-header-height` remain owned by their layout components.
+The tokens cover brand and text colours, surfaces, typography, component padding,
+radii and notification badge colours. Padding names describe existing component
+sizes. Existing runtime properties such as `--tr-header-height` remain owned by
+their layout components.
