@@ -432,6 +432,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let publicKey = localKey.label
         XCTAssertTrue(publicKey.hasPrefix("npub1"))
         XCTAssertTrue(app.staticTexts["No linked public key."].exists)
+
+        tapAccountButton(app.buttons["Nostranslation signing"], in: app)
+        let signing = app.navigationBars["Nostranslation signing"]
+        XCTAssertTrue(signing.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.buttons["Review connection"].exists, app.debugDescription)
+        XCTAssertFalse(app.staticTexts["Connected clients"].exists)
+        XCTAssertFalse(app.buttons.matching(identifier: "nostranslation-connected-client-revoke").firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["nostranslation-review-alerts"].exists)
+        XCTAssertFalse(app.buttons["Enable review alerts"].exists)
+        app.buttons["Done"].tap()
+
         let link = app.buttons["Link local key to profile"]
         tapAccountButton(link, in: app)
         let unlink = app.buttons["Unlink profile key"]
