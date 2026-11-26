@@ -62,16 +62,16 @@ internal fun SignInScreen(
     val buildDate = rememberBuildDate()
     val pendingSuccess = state.pendingSuccess
     val browserCallback by browserSignInLinks.callback.collectAsState()
+    val readyCallback = browserCallback.takeIf { state.canAuthenticate }
 
     LaunchedEffect(pendingSuccess?.id) {
         val success = pendingSuccess ?: return@LaunchedEffect
         viewModel.onEvent(SignInEvent.SuccessDelivered(success.id))
         onSignedIn(success.session)
     }
-    LaunchedEffect(browserCallback, state.canAuthenticate) {
-        val callback = browserCallback ?: return@LaunchedEffect
-        if (!state.canAuthenticate) return@LaunchedEffect
-        if (browserSignInLinks.consume(callback)) viewModel.completeBrowserSignIn(callback)
+    LaunchedEffect(readyCallback) {
+        val callback = readyCallback ?: return@LaunchedEffect
+        browserSignInLinks.consume(callback, viewModel::completeBrowserSignIn)
     }
 
     Box(

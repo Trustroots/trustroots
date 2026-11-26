@@ -20,7 +20,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.security.MessageDigest
 import java.util.Base64
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -31,10 +41,14 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.MainActivity
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.api.BrowserSignInCallback
+import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.BrowserSignInJourneyActivity
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.SignInJourneyActivity
+import org.trustroots.android.ui.common.UiFailureFallback
 
 @RunWith(AndroidJUnit4::class)
 class BrowserSignInJourneyTest {
@@ -57,12 +71,14 @@ class BrowserSignInJourneyTest {
 
     @Test fun browserCallbackThroughMainActivityRedeemsOnceAndSavesAnEncryptedSession() {
         val start = AtomicReference<Uri>()
+        val launchAttempts = AtomicInteger()
         val code = "C".repeat(43)
         val browserMonitor = object : Instrumentation.ActivityMonitor() {
             override fun onStartActivity(intent: Intent): Instrumentation.ActivityResult? {
                 val url = intent.data
                 if (intent.action != Intent.ACTION_VIEW || url?.path != "/auth/mobile/start") return null
                 assertTrue(intent.hasCategory(Intent.CATEGORY_BROWSABLE))
+                if (launchAttempts.getAndIncrement() == 0) throw ActivityNotFoundException()
                 start.set(url)
                 return Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null)
             }
@@ -107,6 +123,8 @@ class BrowserSignInJourneyTest {
                     compose.onNodeWithText("Sign in").performScrollTo().performClick()
                     waitForText("Continue in browser")
                     assertNull(store.load())
+                    compose.onNodeWithTag("signin-continue-browser").performScrollTo().performClick()
+                    waitForText("Browser sign-in is unavailable.", substring = true)
                     compose.onNodeWithTag("signin-continue-browser").performScrollTo().performClick()
                     compose.waitUntil(10_000) { start.get() != null }
                     val url = requireNotNull(start.get())
@@ -156,6 +174,22 @@ class BrowserSignInJourneyTest {
         assertFalse(launchSystemBrowser(missingBrowserContext, "https://www.trustroots.org/auth/mobile/start"))
     }
 
+    @Test fun regularLaunchAndWarmNonBrowserIntentStillUseMainActivity() {
+        val launch = Intent(context, MainActivity::class.java)
+        val marker = "org.trustroots.android.test.WARM_INTENT"
+        ActivityScenario.launch<MainActivity>(launch).use { scenario ->
+            waitForText("Username or email")
+            scenario.onActivity {
+                it.startActivity(Intent(launch).putExtra(marker, true).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            }
+            compose.waitUntil(10_000) {
+                var captured = false
+                scenario.onActivity { captured = it.intent.getBooleanExtra(marker, false) }
+                captured
+            }
+        }
+    }
+
     @Test fun onlyValidViewIntentsReplaceThePendingCallback() {
         val links = BrowserSignInLinks()
         val firstCode = "A".repeat(43)
@@ -172,11 +206,62 @@ class BrowserSignInJourneyTest {
         val second = Intent(Intent.ACTION_VIEW, Uri.parse(callbackURL(secondCode, state)))
         assertTrue(links.capture(second))
         val pendingSecond = requireNotNull(links.callback.value)
-        assertFalse(links.consume(pendingFirst))
+        val consumedCodes = mutableListOf<String>()
+        links.consume(pendingFirst) { consumedCodes.add(it.code) }
+        assertTrue(consumedCodes.isEmpty())
         assertEquals(secondCode, pendingSecond.code)
-        assertTrue(links.consume(pendingSecond))
+        links.consume(pendingSecond) { consumedCodes.add(it.code) }
+        assertEquals(listOf(secondCode), consumedCodes)
         assertTrue(links.capture(second))
         assertNull(links.callback.value)
+    }
+
+    @Test fun browserOpenAndExchangeCannotBeStartedAgainWhileAnExchangeIsRunning() = runBlocking {
+        val exchangeStarted = CountDownLatch(1)
+        val finishExchange = CountDownLatch(1)
+        val scope = CoroutineScope(Dispatchers.Unconfined + SupervisorJob())
+        LocalTransportFixture {
+            exchangeStarted.countDown()
+            assertTrue(finishExchange.await(12, TimeUnit.SECONDS))
+            LocalTransportFixture.Response("{}", status = 503)
+        }.use { api ->
+            try {
+                val model = SignInViewModel(
+                    api.baseURL, null,
+                    SignInAuthenticator { _, _ -> Result.failure(MobileApiException(403, code = "web_sign_in_required")) },
+                    scope, store,
+                )
+                var launches = 0
+                var state: String? = null
+                val openBrowser: (String) -> Boolean = {
+                    launches++
+                    state = Uri.parse(it).getQueryParameter("state")
+                    throw ActivityNotFoundException()
+                }
+                model.startBrowserSignIn(openBrowser)
+                assertEquals(0, launches)
+                model.onEvent(SignInEvent.UsernameChanged("fictional-owl"))
+                model.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+                model.onEvent(SignInEvent.Submit)
+                model.startBrowserSignIn(openBrowser)
+                assertEquals(1, launches)
+                assertEquals(UiFailureFallback.BROWSER_SIGN_IN_UNAVAILABLE, model.state.value.error?.fallback)
+                val callback = BrowserSignInCallback("C".repeat(43), requireNotNull(state))
+                model.completeBrowserSignIn(callback)
+                assertTrue(exchangeStarted.await(10, TimeUnit.SECONDS))
+                model.startBrowserSignIn(openBrowser)
+                model.completeBrowserSignIn(callback)
+                assertEquals(1, launches)
+                assertTrue(model.state.value.isLoading)
+                finishExchange.countDown()
+                val result = withTimeout(10_000) { model.state.first { !it.isLoading } }
+                assertEquals(UiFailureFallback.BROWSER_SIGN_IN_RETRY, result.error?.fallback)
+                assertEquals(1, api.requests.size)
+            } finally {
+                finishExchange.countDown()
+                scope.cancel()
+            }
+        }
     }
 
     private fun waitForText(text: String, substring: Boolean = false) {

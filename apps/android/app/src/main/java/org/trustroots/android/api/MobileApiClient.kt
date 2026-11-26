@@ -324,11 +324,13 @@ class MobileApiClient(
                     failureKind = ApiFailureKind.SIGN_IN_REJECTED,
                     allowRedirects = false,
                 )
-                val session = mobileSessionFrom(JSONObject(response.body))
-                if (session.accessToken.isNullOrBlank() || session.refreshToken.isNullOrBlank()) {
+                val payload = JSONObject(response.body)
+                if ((payload.opt("accessToken") as? String).isNullOrBlank() ||
+                    (payload.opt("refreshToken") as? String).isNullOrBlank()
+                ) {
                     throw MobileApiException(response.statusCode, failureKind = ApiFailureKind.MISSING_SESSION)
                 }
-                session.copy(localSessionId = UUID.randomUUID())
+                mobileSessionFrom(payload).copy(localSessionId = UUID.randomUUID())
             }
         }
 

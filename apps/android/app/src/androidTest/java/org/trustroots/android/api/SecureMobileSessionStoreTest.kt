@@ -98,6 +98,10 @@ class SecureMobileSessionStoreTest {
         store.saveBrowserSignIn(attempt)
         assertNull(store.takeBrowserSignIn(attempt.backendURL, attempt.state, nowMillis = attempt.expiresAtMillis))
         assertTrue(preferences.all.isEmpty())
+
+        store.saveBrowserSignIn(attempt)
+        preferences.edit().putString("browser-sign-in", "not-base64!").commit()
+        assertNull(store.takeBrowserSignIn(attempt.backendURL, attempt.state, nowMillis = 100L))
     }
 
     @Test
