@@ -22,6 +22,11 @@ struct AccountView: View {
     @State private var confirmation: String?
     @State private var errorMessage: String?
     @State private var showNostranslationSigning = false
+    @FocusState private var focusedPassword: PasswordField?
+
+    private enum PasswordField: Hashable {
+        case current, new, repeatNew
+    }
 
     private let api = TrustrootsAPI()
 
@@ -82,8 +87,17 @@ struct AccountView: View {
             Text("Password")
                 .font(.headline)
             SecureField("Current password", text: $currentPassword)
+                .focused($focusedPassword, equals: .current)
+                .submitLabel(.next)
+                .onSubmit { focusedPassword = .new }
             SecureField("New password", text: $newPassword)
+                .focused($focusedPassword, equals: .new)
+                .submitLabel(.next)
+                .onSubmit { focusedPassword = .repeatNew }
             SecureField("Repeat new password", text: $verifyPassword)
+                .focused($focusedPassword, equals: .repeatNew)
+                .submitLabel(.done)
+                .onSubmit { focusedPassword = nil }
 
             ComposePasswordActions(
                 height: $passwordActionsHeight,
@@ -193,6 +207,7 @@ struct AccountView: View {
 
     private func changePassword() async {
         guard hasPasswordInputs, !isChangingPassword else { return }
+        focusedPassword = nil
         isChangingPassword = true
         errorMessage = nil
         confirmation = nil

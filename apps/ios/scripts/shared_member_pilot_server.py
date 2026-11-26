@@ -204,7 +204,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 profile["tagline"] = f"A test profile after refresh {refresh_count}"
             self._json(200, {"profile": profile})
         elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
-            self._json(200, {"profile": {**PARTNER, "member": [{"tribe": CIRCLES[0]}]}})
+            self._json(200, {"profile": PARTNER})
         elif route == "/api/mobile/v0/members":
             params = parse_qs(urlsplit(self.path).query)
             matches = params.get("connectionsOnly") == ["true"] and params.get("search") == ["partner profile"]
