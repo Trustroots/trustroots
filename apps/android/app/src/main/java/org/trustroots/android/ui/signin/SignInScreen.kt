@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +52,8 @@ import org.trustroots.shared.ui.icons.TrustrootsLogo
 internal fun SignInScreen(
     analytics: UsageAnalytics,
     viewModel: SignInViewModel,
+    browserSignInLinks: BrowserSignInLinks,
+    onOpenBrowserSignIn: (String) -> Boolean,
     onSignedIn: (MemberSession) -> Unit,
     onSignUp: () -> Unit,
     onForgotPassword: () -> Unit,
@@ -58,11 +61,17 @@ internal fun SignInScreen(
     val state by viewModel.state.collectAsState()
     val buildDate = rememberBuildDate()
     val pendingSuccess = state.pendingSuccess
+    val browserCallback by browserSignInLinks.callback.collectAsState()
 
-    androidx.compose.runtime.LaunchedEffect(pendingSuccess?.id) {
+    LaunchedEffect(pendingSuccess?.id) {
         val success = pendingSuccess ?: return@LaunchedEffect
         viewModel.onEvent(SignInEvent.SuccessDelivered(success.id))
         onSignedIn(success.session)
+    }
+    LaunchedEffect(browserCallback, state.isLoading, pendingSuccess) {
+        val callback = browserCallback ?: return@LaunchedEffect
+        if (state.isLoading || pendingSuccess != null) return@LaunchedEffect
+        if (browserSignInLinks.consume(callback)) viewModel.completeBrowserSignIn(callback)
     }
 
     Box(
@@ -140,6 +149,13 @@ internal fun SignInScreen(
                 } else {
                     Text(stringResource(R.string.screen_sign_in))
                 }
+            }
+            if (state.browserSignInRequired) {
+                TextButton(
+                    onClick = { viewModel.startBrowserSignIn(onOpenBrowserSignIn) },
+                    enabled = !state.isLoading && state.pendingSuccess == null,
+                    modifier = Modifier.fillMaxWidth().testTag("signin-continue-browser"),
+                ) { Text(stringResource(R.string.screen_sign_in_browser)) }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
