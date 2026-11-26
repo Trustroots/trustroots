@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import sinon from 'sinon';
 import assert from 'node:assert/strict';
-import { findDiscoveryOfferLocations } from '../../../../users/server/services/discovery-offers.server.service.mts';
+import { findDiscoveryOfferLocations } from '../../../../offers/server/services/discovery-offers.server.service.mts';
 
 describe('Discovery hosting locations', () => {
   it('avoids a query when there are no eligible owners', async () => {

@@ -49,7 +49,6 @@ import ListExperiences, {
 import { readMine } from '@/modules/experiences/client/api/experiences.api';
 import PendingAuthoredExperiences from '@/modules/experiences/client/components/PendingAuthoredExperiences';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
-import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/core/client/components/ReportMember.component';
 import { Tooltip } from '@trustroots/ui/Tooltip';
@@ -59,6 +58,11 @@ import type {
   ContactRecord,
 } from '@/modules/contacts/client/types';
 import type { UserProfile } from '../types';
+
+export type ProfileOffersComponent = React.JSXElementConstructor<{
+  authUser: UserProfile;
+  profile: UserProfile;
+}>;
 
 interface ResolvedUserProfile extends UserProfile {
   $resolved?: boolean;
@@ -102,12 +106,14 @@ function normalizeContact(contact: ContactRecord | null): ContactState {
 }
 
 function ProfileAboutTab({
+  ProfileOffers,
   authUser,
   contacts,
   isSelf,
   profile,
   profileMinimumLength,
 }: {
+  ProfileOffers: ProfileOffersComponent;
   authUser: UserProfile;
   contacts: ContactListData;
   isSelf: boolean;
@@ -132,7 +138,7 @@ function ProfileAboutTab({
       </div>
       <div className="tw:md:grid-col-6">
         <div className="tw:max-sm:hidden">
-          <Offers authUser={authUser} profile={profile} />
+          <ProfileOffers authUser={authUser} profile={profile} />
         </div>
         {showContactsCommon && <ContactsCommon profileId={profile._id} />}
         {showCircles && (
@@ -265,10 +271,12 @@ function ProfileDesktopActions({
 }
 
 export default function ProfilePage({
+  ProfileOffers,
   embedded = false,
   profileUsername,
   user: authUser,
 }: {
+  ProfileOffers: ProfileOffersComponent;
   embedded?: boolean;
   profileUsername?: string;
   user: UserProfile;
@@ -506,7 +514,7 @@ export default function ProfilePage({
           </>
         );
       case 'accommodation':
-        return <Offers authUser={authUser} profile={profile} />;
+        return <ProfileOffers authUser={authUser} profile={profile} />;
       case 'contacts':
         return (
           <ContactList
@@ -547,6 +555,7 @@ export default function ProfilePage({
       default:
         return (
           <ProfileAboutTab
+            ProfileOffers={ProfileOffers}
             authUser={authUser}
             contacts={contacts}
             isSelf={isSelf}
@@ -556,6 +565,7 @@ export default function ProfilePage({
         );
     }
   }, [
+    ProfileOffers,
     authUser,
     contacts,
     experienceAction,

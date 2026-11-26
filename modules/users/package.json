@@ -17,7 +17,6 @@
     "@trustroots/contacts": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/experiences": "workspace:*",
-    "@trustroots/offers": "workspace:*",
     "@trustroots/search": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/tribes": "workspace:*"
