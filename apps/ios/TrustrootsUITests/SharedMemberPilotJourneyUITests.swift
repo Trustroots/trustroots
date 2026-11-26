@@ -49,6 +49,45 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(profile.waitForExistence(timeout: 10), app.debugDescription)
         profile.tap()
         XCTAssertTrue(app.buttons["Edit profile"].waitForExistence(timeout: 10), app.debugDescription)
+        let moreContacts = app.buttons["More contacts (1)"]
+        XCTAssertTrue(moreContacts.waitForExistence(timeout: 15), app.debugDescription)
+        let seventhContact = app.descendants(matching: .any)["profile-contact-contact-pilot-7"]
+        XCTAssertFalse(seventhContact.exists)
+        revealProfileElement(moreContacts, in: app)
+        moreContacts.tap()
+        XCTAssertTrue(seventhContact.waitForExistence(timeout: 10), app.debugDescription)
+
+        let profileContact = app.descendants(matching: .any)["profile-contact-contact-pilot-one"]
+        revealProfileElement(profileContact, in: app)
+        let contactScreenshot = XCTAttachment(screenshot: profileContact.screenshot())
+        contactScreenshot.name = "regular-ios-profile-contact"
+        contactScreenshot.lifetime = .keepAlways
+        add(contactScreenshot)
+        profileContact.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
+
+        let fewerContacts = app.buttons["Show fewer"]
+        XCTAssertTrue(fewerContacts.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(fewerContacts, in: app)
+        fewerContacts.tap()
+        XCTAssertTrue(moreContacts.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(seventhContact.exists)
+        let experienceSummary = element(labelled: "1 member shared an experience.", in: app)
+        XCTAssertTrue(experienceSummary.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(experienceSummary, in: app)
+        XCTAssertTrue(element(labelled: "We shared a good afternoon walk.", in: app).exists, app.debugDescription)
+        XCTAssertTrue(element(labelled: "Thanks for showing me the harbour.", in: app).exists, app.debugDescription)
+        let author = app.descendants(matching: .any)["profile-experience-author-fixture-public-experience"]
+        XCTAssertTrue(author.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(author, in: app)
+        let experienceScreenshot = XCTAttachment(screenshot: author.screenshot())
+        experienceScreenshot.name = "regular-ios-profile-experience-author"
+        experienceScreenshot.lifetime = .keepAlways
+        add(experienceScreenshot)
+        author.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        app.buttons["Back"].tap()
         app.buttons["Menu"].tap()
         let faq = app.descendants(matching: .any)["faq-menu-entry"]
         XCTAssertTrue(faq.waitForExistence(timeout: 10), app.debugDescription)
@@ -67,11 +106,167 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
         contact.tap()
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
+        let activity = app.descendants(matching: .any)["profile-activity-and-locations"]
+        XCTAssertTrue(activity.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(activity, in: app)
+        XCTAssertTrue(element(labelled: "87%", in: app).exists, app.debugDescription)
+        XCTAssertTrue(element(labelled: "Within 2 days", in: app).exists, app.debugDescription)
+        let activityScreenshot = XCTAttachment(screenshot: activity.screenshot())
+        activityScreenshot.name = "regular-ios-profile-activity"
+        activityScreenshot.lifetime = .keepAlways
+        add(activityScreenshot)
+
+        let biography = app.descendants(matching: .any)["profile-biography"]
+        XCTAssertTrue(biography.waitForExistence(timeout: 10), app.debugDescription)
+        let biographyText = "I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers."
+        let biographyLabel = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", biographyText)).firstMatch
+        XCTAssertTrue(biographyLabel.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(biographyLabel, in: app)
+        XCTAssertEqual(biographyLabel.label.trimmingCharacters(in: .whitespacesAndNewlines), biographyText)
+        XCTAssertLessThanOrEqual(biographyLabel.frame.maxY, biography.frame.maxY + 1)
+        let profileText = XCTAttachment(screenshot: biography.screenshot())
+        profileText.name = "regular-ios-profile-biography"
+        profileText.lifetime = .keepAlways
+        add(profileText)
+
+        let languages = app.descendants(matching: .any)["profile-languages"]
+        XCTAssertTrue(languages.waitForExistence(timeout: 10), app.debugDescription)
+        let languageText = element(labelled: "English · French", in: app)
+        XCTAssertTrue(languageText.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(languageText, in: app)
+
+        let profileCircle = app.descendants(matching: .any)["profile-circle-fixture-train-circle"]
+        XCTAssertTrue(profileCircle.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(profileCircle, in: app)
+        let circleScreenshot = XCTAttachment(screenshot: profileCircle.screenshot())
+        circleScreenshot.name = "regular-ios-profile-circle-link"
+        circleScreenshot.lifetime = .keepAlways
+        add(circleScreenshot)
+        profileCircle.tap()
+        XCTAssertTrue(app.staticTexts["A fictional circle for overnight train travellers."].waitForExistence(timeout: 15))
+        app.buttons["Back"].tap()
+        XCTAssertTrue(profileCircle.waitForExistence(timeout: 10), app.debugDescription)
+
+        let location = app.buttons["Lives in Example Harbour"]
+        XCTAssertTrue(location.exists, app.debugDescription)
+        revealProfileElement(location, in: app)
+        location.tap()
+        let mapOpened = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isSelected == true"),
+            object: app.buttons["Search"]
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [mapOpened], timeout: 10), .completed, app.debugDescription)
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["Home"].isSelected)
         XCTAssertFalse(app.buttons["Sign in"].exists)
+    }
+
+    func testRegularProfileBlockAndUnblockUpdatesMessageAction() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let contacts = app.descendants(matching: .any)["contacts-menu-entry"]
+        XCTAssertTrue(contacts.waitForExistence(timeout: 10), app.debugDescription)
+        contacts.tap()
+        let contact = app.descendants(matching: .any)["contact-contact-pilot-one"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 15), app.debugDescription)
+        contact.tap()
+
+        let message = app.descendants(matching: .any)["profile-message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 15), app.debugDescription)
+        let block = app.descendants(matching: .any)["profile-block"]
+        XCTAssertTrue(block.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(block, in: app)
+        let blockScreenshot = XCTAttachment(screenshot: block.screenshot())
+        blockScreenshot.name = "regular-ios-profile-block-action"
+        blockScreenshot.lifetime = .keepAlways
+        add(blockScreenshot)
+        block.tap()
+        app.buttons["Block member"].tap()
+
+        let blocked = element(labelled: "You have blocked Robin Example.", in: app)
+        XCTAssertTrue(blocked.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(message.exists)
+        revealProfileElement(block, in: app)
+        block.tap()
+        app.buttons["Unblock member"].tap()
+        XCTAssertTrue(message.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(blocked.exists)
+    }
+
+    func testRegularMemberReportKeepsDraftAndRetriesFromCompose() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["Menu"].tap()
+        let contacts = app.descendants(matching: .any)["contacts-menu-entry"]
+        XCTAssertTrue(contacts.waitForExistence(timeout: 10), app.debugDescription)
+        contacts.tap()
+        let contact = app.descendants(matching: .any)["contact-contact-pilot-one"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 15), app.debugDescription)
+        contact.tap()
+
+        let report = app.buttons["Report member to support"]
+        XCTAssertTrue(report.waitForExistence(timeout: 15), app.debugDescription)
+        revealProfileElement(report, in: app)
+        report.tap()
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(report.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(report, in: app)
+        report.tap()
+
+        XCTAssertTrue(element(labelled: "Robin Example (@pilot-partner)", in: app).waitForExistence(timeout: 10))
+        let submit = app.descendants(matching: .any)["report-member-send"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(submit.isEnabled)
+
+        let message = "A fictional report for the support team."
+        let editor = app.textViews["report-member-details"]
+        enterText(message, into: editor, in: app)
+        let done = app.buttons["Done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 10), app.debugDescription)
+        done.tap()
+        let keyboardClosed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.keyboards.firstMatch
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [keyboardClosed], timeout: 5), .completed, app.debugDescription)
+
+        reveal(submit, in: app)
+        submit.tap()
+        let failure = element(labelled: "Temporary fixture report delivery failure.", in: app)
+        XCTAssertTrue(failure.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(editor.value as? String, message)
+
+        let actions = app.descendants(matching: .any)["report-member-actions"]
+        XCTAssertTrue(actions.exists, app.debugDescription)
+        let screenshot = XCTAttachment(screenshot: actions.screenshot())
+        screenshot.name = "regular-ios-member-report-retry"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        reveal(submit, in: app)
+        submit.tap()
+        XCTAssertTrue(element(labelled: "Report sent", in: app).waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(editor.exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(report.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     func testRegularSupportOpensFAQAndKeepsMessageForRetry() {
@@ -205,9 +400,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(profile.waitForExistence(timeout: 10))
         profile.tap()
 
+        let hosting = app.descendants(matching: .any)["profile-hosting-summary"]
+        XCTAssertTrue(hosting.waitForExistence(timeout: 15), app.debugDescription)
+        revealProfileElement(hosting, in: app)
         XCTAssertTrue(element(labelled: "Maybe up for meeting", in: app).waitForExistence(timeout: 10))
         XCTAssertTrue(element(labelled: "Not hosting currently", in: app).exists)
         XCTAssertFalse(element(labelled: "Offers volunteering", in: app).exists)
+        let hostingScreenshot = XCTAttachment(screenshot: hosting.screenshot())
+        hostingScreenshot.name = "regular-ios-profile-hosting-status"
+        hostingScreenshot.lifetime = .keepAlways
+        add(hostingScreenshot)
     }
 
     @MainActor
@@ -1115,6 +1317,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
     }
 
+    private func revealProfileElement(_ element: XCUIElement, in app: XCUIApplication) {
+        let profile = app.scrollViews.firstMatch
+        XCTAssertTrue(profile.exists, app.debugDescription)
+        let origin = profile.coordinate(withNormalizedOffset: .zero)
+        for _ in 0..<5 {
+            if element.isHittable { return }
+            let frame = profile.frame
+            let belowCenter = element.frame.midY >= frame.midY
+            // Start in the native profile padding, outside the nested Compose scroll views.
+            let start = origin.withOffset(CGVector(dx: 12, dy: frame.height * (belowCenter ? 0.82 : 0.18)))
+            let end = origin.withOffset(CGVector(dx: 12, dy: frame.height * (belowCenter ? 0.18 : 0.82)))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(element.isHittable, app.debugDescription)
+    }
+
     private func reveal(_ field: XCUIElement, in app: XCUIApplication) {
         let form = app.scrollViews.containing(.any, identifier: field.identifier).firstMatch
         for _ in 0..<3 {
@@ -1315,14 +1533,21 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let openProfile = app.buttons["View Robin Example's profile"]
         XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
         openProfile.tap()
-        let profileBack = app.buttons["profile-header-back"]
+        let profileHeader = app.descendants(matching: .any)["profile-header-content"]
+        XCTAssertTrue(profileHeader.waitForExistence(timeout: 15), app.debugDescription)
         let profileIdentity = app.descendants(matching: .any)["profile-header-identity"]
-        XCTAssertTrue(profileIdentity.waitForExistence(timeout: 15), app.debugDescription)
+        let profileBack = app.buttons["profile-header-back"]
+        XCTAssertTrue(profileIdentity.exists, app.debugDescription)
         XCTAssertTrue(profileBack.exists, app.debugDescription)
-        // The profile uses an 84-point avatar centred vertically in its identity row.
-        XCTAssertLessThanOrEqual(profileBack.frame.maxY + 42, profileIdentity.frame.midY)
+        XCTAssertLessThanOrEqual(profileBack.frame.maxY, profileIdentity.frame.minY)
+        XCTAssertTrue(app.staticTexts["A partner profile"].exists, app.debugDescription)
+        let headerScreenshot = XCTAttachment(screenshot: profileHeader.screenshot())
+        headerScreenshot.name = "regular-ios-compose-profile-header"
+        headerScreenshot.lifetime = .keepAlways
+        add(headerScreenshot)
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
 
         app.buttons["Dismiss potential host"].tap()
         mapFilters.tap()

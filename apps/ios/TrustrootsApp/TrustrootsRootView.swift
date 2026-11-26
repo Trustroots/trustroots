@@ -27,11 +27,13 @@ struct TrustrootsRootView: View {
                     case .circles:
                         CirclesView(session: session)
                     case .profile:
-                        MemberProfileView(session: session, editProfile: {
-                            destination = .editProfile
-                        }, openCircles: {
-                            destination = .circles
-                        })
+                        NavigationStack {
+                            MemberProfileView(session: session, editProfile: {
+                                destination = .editProfile
+                            }, openCircles: {
+                                destination = .circles
+                            })
+                        }
                     case .editProfile:
                         EditProfileView(
                             session: session,

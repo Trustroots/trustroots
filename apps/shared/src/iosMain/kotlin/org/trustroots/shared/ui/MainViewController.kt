@@ -7,17 +7,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PlatformImeOptions
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -36,6 +46,169 @@ fun OfferSearchFiltersViewController(
     onCircle: (String) -> Unit,
 ) = ComposeUIViewController {
     OfferSearchFilters(state, onToggle, onActivity, onLanguages, onCircle)
+}
+
+fun MemberProfileTextViewController(
+    title: String?,
+    text: String,
+    accessibilityTag: String,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection(accessibilityTag, onHeight) { modifier ->
+    MemberProfileText(title, text, modifier)
+}
+
+fun MemberProfileDetailsViewController(
+    lastLogin: String,
+    replyRate: String,
+    replyTime: String?,
+    living: String?,
+    origin: String?,
+    onLocation: (String) -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-activity-and-locations", onHeight) { modifier ->
+    MemberProfileDetails(lastLogin, replyRate, replyTime, living, origin, onLocation, modifier)
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileContactsViewController(
+    contacts: List<MemberContact>,
+    expanded: Boolean,
+    onOpen: (String) -> Unit,
+    onToggle: () -> Unit,
+    onHeight: (Double) -> Unit,
+    createAvatar: (MemberContact) -> UIViewController,
+) = MeasuredProfileSection("profile-contacts", onHeight) { modifier ->
+    MemberProfileContacts(contacts, expanded, onOpen, onToggle, modifier) { contact ->
+        HostedMemberAvatar { createAvatar(contact) }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileExperiencesViewController(
+    experiences: List<MemberProfileExperience>,
+    expanded: Boolean,
+    onOpen: (String) -> Unit,
+    onToggle: () -> Unit,
+    onHeight: (Double) -> Unit,
+    createAvatar: (MemberProfileExperiencePerson) -> UIViewController,
+) = MeasuredProfileSection("profile-experiences", onHeight) { modifier ->
+    MemberProfileExperiences(experiences, expanded, onOpen, onToggle, modifier) { person ->
+        HostedMemberAvatar { createAvatar(person) }
+    }
+}
+
+fun MemberProfileActionsViewController(
+    canEdit: Boolean,
+    messageLabel: String?,
+    onEdit: () -> Unit,
+    onHosting: () -> Unit,
+    onMessage: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-actions", onHeight) { modifier ->
+    MemberProfileActions(canEdit, messageLabel, onEdit, onHosting, onMessage, modifier)
+}
+
+fun MemberProfileSafetyViewController(
+    blockedMessage: String?,
+    isUpdating: Boolean,
+    error: String?,
+    onReport: () -> Unit,
+    onToggleBlock: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-safety", onHeight) { modifier ->
+    MemberProfileSafety(blockedMessage, isUpdating, error, onReport, onToggleBlock, modifier)
+}
+
+fun MemberReportTargetViewController(
+    member: String,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-target", onHeight, opaque = false) { modifier ->
+    MemberProfileText("Reported member", member, modifier)
+}
+
+fun MemberReportActionsViewController(
+    canSubmit: Boolean,
+    isSending: Boolean,
+    error: String?,
+    onSend: () -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-actions", onHeight, opaque = false) { modifier ->
+    MemberReportActions(canSubmit, isSending, error, onSend, modifier)
+}
+
+fun MemberReportConfirmationViewController(
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("report-member-confirmation", onHeight, opaque = false) { modifier ->
+    MemberReportConfirmation(modifier)
+}
+
+fun MemberProfileCirclesViewController(
+    circles: List<MemberProfileCircle>,
+    onOpen: (String) -> Unit,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-circles", onHeight) { modifier ->
+    MemberProfileCircles(circles, onOpen, modifier)
+}
+
+fun MemberProfileHostingViewController(
+    status: String?,
+    meeting: String?,
+    description: String?,
+    volunteering: Boolean,
+    capacity: String?,
+    onHeight: (Double) -> Unit,
+) = MeasuredProfileSection("profile-hosting-summary", onHeight) { modifier ->
+    MemberProfileHosting(status, meeting, description, volunteering, capacity, modifier)
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun MemberProfileHeaderViewController(
+    name: String,
+    handle: String?,
+    tagline: String?,
+    onHeight: (Double) -> Unit,
+    createAvatar: () -> UIViewController,
+) = MeasuredProfileSection("profile-header-content", onHeight, opaque = false) { modifier ->
+    MemberProfileHeader(name, handle, tagline, modifier) {
+        HostedMemberAvatar(size = 84.dp, createView = createAvatar)
+    }
+}
+
+private val ProfileSectionOrigin = SemanticsPropertyKey<Offset>("ProfileSectionOrigin")
+
+class ProfileSectionHost internal constructor(
+    val viewController: UIViewController,
+    private val origin: MutableState<Offset>,
+) {
+    fun updateOrigin(x: Double, y: Double) {
+        origin.value = Offset(x.toFloat(), y.toFloat())
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun MeasuredProfileSection(
+    accessibilityTag: String,
+    onHeight: (Double) -> Unit,
+    opaque: Boolean = true,
+    content: @Composable (Modifier) -> Unit,
+): ProfileSectionHost {
+    val origin = mutableStateOf(Offset.Zero)
+    val controller = ComposeUIViewController(configure = { this.opaque = opaque }) {
+        val currentOrigin = origin.value
+        val density = LocalDensity.current
+        // The enclosing SwiftUI scroll view needs each section's natural height at its current width.
+        Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
+            content(
+                Modifier.fillMaxWidth()
+                    .testTag(accessibilityTag)
+                    // SwiftUI scrolling can move the host without changing Compose's own layout.
+                    // Synchronize the window-relative accessibility frames on that movement.
+                    .semantics { this[ProfileSectionOrigin] = currentOrigin }
+                    .onSizeChanged { onHeight(with(density) { it.height.toDp().value.toDouble() }) },
+            )
+        }
+    }
+    return ProfileSectionHost(controller, origin)
 }
 
 fun MemberMenuViewController(
@@ -203,11 +376,11 @@ fun SharedHomeViewController(
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
 @Composable
-private fun HostedMemberAvatar(createView: () -> UIViewController) {
+private fun HostedMemberAvatar(size: Dp = 46.dp, createView: () -> UIViewController) {
     // Keep UIKit avatar touches inside the Compose row's tap target.
     UIKitViewController(
         factory = createView,
-        modifier = Modifier.size(46.dp),
+        modifier = Modifier.size(size),
         properties = UIKitInteropProperties(interactionMode = null),
     )
 }

@@ -36,12 +36,25 @@ PASSWORD_UPDATE = {
     "newPassword": "fixture-password-2",
     "verifyPassword": "fixture-password-2",
 }
+PROFILE_CIRCLE = {
+    "_id": "fixture-train-circle",
+    "slug": "night-train-travellers",
+    "label": "Night Train Travellers",
+    "description": "A fictional circle for overnight train travellers.",
+}
 PARTNER = {
     "_id": "member-pilot-partner",
     "username": "pilot-partner",
     "displayName": "Robin Example",
     "tagline": "A partner profile",
+    "description": "<p>I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers.</p>",
+    "languages": ["eng", "fra"],
+    "replyRate": "87%",
+    "replyTime": "2 days",
+    "locationLiving": "Example Harbour",
+    "member": [{"tribe": PROFILE_CIRCLE}],
 }
+REPORT_MESSAGE = "A fictional report for the support team."
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
 CIRCLES = [
@@ -98,6 +111,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     conversation_experience = None
     experience_submissions = []
     support_attempts = 0
+    report_attempts = 0
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
@@ -106,6 +120,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     newsletter = False
     pending_email = None
     password_attempts = 0
+    partner_blocked = False
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         request = urlsplit(self.path)
@@ -196,14 +211,26 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "meetingStatus": "maybe",
                 "volunteering": True,
             }])
+        elif route == "/api/mobile/v0/blocked-users":
+            fixture = type(self)
+            with fixture.session_lock:
+                blocked = fixture.partner_blocked
+            self._json(200, [PARTNER] if blocked else [])
         elif route == f'/api/mobile/v0/contacts/{MEMBER["_id"]}':
-            self._json(200, [{
+            contacts = [{
                 "_id": "contact-pilot-one",
                 "confirmed": False,
                 "user": PARTNER,
-            }])
-        elif route == "/api/mobile/v0/experiences":
-            self._json(200, [])
+            }]
+            contacts.extend({
+                "_id": f"contact-pilot-{number}",
+                "confirmed": True,
+                "user": {
+                    "_id": f"member-pilot-contact-{number}",
+                    "displayName": f"Fixture Contact {number}",
+                },
+            } for number in range(2, 8))
+            self._json(200, contacts)
         elif route == "/api/mobile/v0/connections":
             self._json(200, {
                 "recent": [dict(PARTNER, activity="today")],
@@ -232,14 +259,23 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "user": PARTNER,
             })
         elif route == "/api/mobile/v0/circles":
-            self._json(200, CIRCLES)
+            self._json(200, [*CIRCLES, PROFILE_CIRCLE])
         elif route == "/api/mobile/v0/memberships":
             fixture = type(self)
             with fixture.session_lock:
                 memberships = [{"tribe": circle} for circle in CIRCLES if circle["_id"] in fixture.memberships]
             self._json(200, memberships)
         elif route == "/api/mobile/v0/experiences":
-            self._json(200, [])
+            user_to = parse_qs(urlsplit(self.path).query).get("userTo")
+            self._json(200, [{
+                "_id": "fixture-public-experience",
+                "feedbackPublic": "We shared a <b>good afternoon walk</b>.",
+                "recommend": "yes",
+                "interactions": {"met": True, "guest": True, "host": False},
+                "userFrom": PARTNER,
+                "userTo": MEMBER,
+                "response": {"feedbackPublic": "Thanks for showing me the harbour.", "recommend": "yes"},
+            }] if user_to == [MEMBER["_id"]] else [])
         elif route == f'/api/mobile/v0/experiences/with/{PARTNER["_id"]}':
             with type(self).session_lock:
                 experience = type(self).conversation_experience
@@ -317,6 +353,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.conversation_experience = None
                 fixture.experience_submissions = []
                 fixture.support_attempts = 0
+                fixture.report_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
@@ -324,6 +361,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.newsletter = False
                 fixture.pending_email = None
                 fixture.password_attempts = 0
+                fixture.partner_blocked = False
                 session = fixture._rotate_credentials()
             self._json(200, session)
             return
@@ -380,6 +418,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
             }
             type(self).nostr_challenge = (npub, event)
             self._json(200, {"event": event})
+        elif self.path == "/api/mobile/v0/support" and "reportMember" in body:
+            if body != {"message": REPORT_MESSAGE, "reportMember": PARTNER["username"]}:
+                self._json(422, {"message": "Expected the fixture member report."})
+                return
+            with fixture.session_lock:
+                fixture.report_attempts += 1
+                attempt = fixture.report_attempts
+            if attempt == 1:
+                self._json(503, {"message": "Temporary fixture report delivery failure."})
+            else:
+                self._json(201, {})
         elif self.path == "/api/mobile/v0/support":
             if body != {"message": "A fixture support request."}:
                 self._json(422, {"message": "Expected the fixture support message."})
@@ -480,6 +529,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "nostrNpub": linked_npub,
             })
             return
+        if self.path == f'/api/mobile/v0/blocked-users/{PARTNER["username"]}':
+            self._set_partner_blocked(True)
+            return
         if self.path == f'/api/mobile/v0/offers/{HOSTING_OFFER["_id"]}':
             update = self._body()
             fixture = type(self)
@@ -528,8 +580,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
             with fixture.session_lock:
                 fixture.memberships.discard(CIRCLES[0]["_id"])
             self._json(200, {})
+        elif self.path == f'/api/mobile/v0/blocked-users/{PARTNER["username"]}':
+            self._set_partner_blocked(False)
         else:
             self._json(404, {"message": "Fixture route not found."})
+
+    def _set_partner_blocked(self, blocked):
+        fixture = type(self)
+        with fixture.session_lock:
+            fixture.partner_blocked = blocked
+        self._json(200, {})
 
     def _authorised(self):
         fixture = type(self)
