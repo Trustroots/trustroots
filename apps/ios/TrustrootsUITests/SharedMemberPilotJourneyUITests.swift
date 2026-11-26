@@ -991,7 +991,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         add(headerScreenshot)
         profileBack.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(display.buttons["Members"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
 
         display.buttons["Members"].tap()
         app.buttons["Member filters"].tap()
