@@ -18,7 +18,7 @@
       **iOS coverage** job that republishes the summary
 - [x] 3.2 Mention iOS coverage visibility in `GITHUB.md` without changing the
       screenshots label gate
-- [ ] 3.3 Open a draft pull request referencing #3934 as related context
+- [x] 3.3 Open a draft pull request referencing #3934 as related context
 
 ## 4. Follow-up (out of this MVP)
 
