@@ -805,7 +805,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(resultsDisplay.isSelected)
         XCTAssertFalse(mapDisplay.isSelected)
-        app.buttons["Search filters"].tap()
+        let place = app.descendants(matching: .any)["offer-place-search-field"]
+        enterText("Example Harbour", into: place, in: app)
+        mapDisplay.tap()
+        XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        resultsDisplay.tap()
+        XCTAssertTrue(place.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(place.value as? String, "Example Harbour")
+        app.descendants(matching: .any)["offer-results-search-filters"].tap()
         let filterScreen = app.descendants(matching: .any)["compose-offer-search-filters"]
         XCTAssertTrue(filterScreen.waitForExistence(timeout: 10), app.debugDescription)
         let filtersCapture = XCTAttachment(screenshot: filterScreen.screenshot())
