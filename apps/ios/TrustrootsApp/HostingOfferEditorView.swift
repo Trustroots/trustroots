@@ -33,8 +33,8 @@ private struct HostingOfferForm: Equatable {
         meeting = offer?.meetingStatus.flatMap(MeetingAvailability.init(rawValue:)) ?? .notSet
         savedDescription = offer?.description ?? ""
         savedNoOfferDescription = offer?.noOfferDescription ?? ""
-        description = TrustrootsRichText.plainText(savedDescription)
-        noOfferDescription = TrustrootsRichText.plainText(savedNoOfferDescription)
+        description = Self.editableText(savedDescription)
+        noOfferDescription = Self.editableText(savedNoOfferDescription)
         maxGuests = offer?.maxGuests ?? 1
         volunteering = offer?.volunteering ?? false
         onlyMyCircles = offer?.showOnlyInMyCircles ?? false
@@ -80,7 +80,18 @@ private struct HostingOfferForm: Equatable {
     }
 
     private func preservedOrEdited(_ value: String, saved: String) -> String {
-        value == TrustrootsRichText.plainText(saved) ? saved : value.trimmingCharacters(in: .whitespacesAndNewlines)
+        value == Self.editableText(saved) ? saved : value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func editableText(_ saved: String) -> String {
+        // The rich-text decoder uses paragraph closings as separators. The
+        // final closing tag adds no separator to the editable document.
+        let markup = saved.replacingOccurrences(
+            of: "</p>(?=\\s*\\z)",
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        return TrustrootsRichText.plainText(markup)
     }
 }
 
