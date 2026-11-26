@@ -27,6 +27,7 @@ import path from 'path';
 import paginate from './../../modules/core/server/services/pagination.server.service.mts';
 import { randomUUID } from 'node:crypto';
 import qs from 'qs';
+import androidAssetLinks from '../../public/.well-known/assetlinks.json' with { type: 'json' };
 interface ExpressSetup {
   initLocalVariables(app: Express): void;
   initMiddleware(app: Express): void;
@@ -284,9 +285,7 @@ function initModulesClientRoutes(app: Express) {
   // Setting the app router and static folder
   app.use(denyAvatarStagingRequests);
   app.get('/.well-known/assetlinks.json', (_req, res) => {
-    res.sendFile(path.resolve('./public/.well-known/assetlinks.json'), {
-      dotfiles: 'allow',
-    });
+    res.json(androidAssetLinks);
   });
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
