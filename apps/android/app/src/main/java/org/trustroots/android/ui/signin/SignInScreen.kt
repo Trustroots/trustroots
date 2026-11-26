@@ -68,9 +68,9 @@ internal fun SignInScreen(
         viewModel.onEvent(SignInEvent.SuccessDelivered(success.id))
         onSignedIn(success.session)
     }
-    LaunchedEffect(browserCallback, state.isLoading, pendingSuccess) {
+    LaunchedEffect(browserCallback, state.canAuthenticate) {
         val callback = browserCallback ?: return@LaunchedEffect
-        if (state.isLoading || pendingSuccess != null) return@LaunchedEffect
+        if (!state.canAuthenticate) return@LaunchedEffect
         if (browserSignInLinks.consume(callback)) viewModel.completeBrowserSignIn(callback)
     }
 
@@ -136,7 +136,7 @@ internal fun SignInScreen(
             }
             Button(
                 onClick = { viewModel.onEvent(SignInEvent.Submit) },
-                enabled = !state.isLoading && state.pendingSuccess == null &&
+                enabled = state.canAuthenticate &&
                     state.username.isNotBlank() && state.password.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
             ) {
@@ -153,7 +153,7 @@ internal fun SignInScreen(
             if (state.browserSignInRequired) {
                 TextButton(
                     onClick = { viewModel.startBrowserSignIn(onOpenBrowserSignIn) },
-                    enabled = !state.isLoading && state.pendingSuccess == null,
+                    enabled = state.canAuthenticate,
                     modifier = Modifier.fillMaxWidth().testTag("signin-continue-browser"),
                 ) { Text(stringResource(R.string.screen_sign_in_browser)) }
             }
