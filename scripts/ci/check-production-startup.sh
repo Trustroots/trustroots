@@ -46,12 +46,17 @@ for attempt in {1..60}; do
 done
 [ "$ready" = true ]
 
+# Fixture values for the disposable deployment.
+mfa_key="$(printf '%032d' 0 | base64)"
 docker run -d --name "$web" --network "$network" \
   -e DB_1_PORT_27017_TCP_ADDR=mongodb -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+  -e MFA_ENCRYPTION_KEY="$mfa_key" -e TRUSTROOTS_PASSKEY_RP_ID=trustroots.test \
+  -e TRUSTROOTS_PASSKEY_ORIGINS=https://trustroots.test,https://www.trustroots.test \
   "$image" >/dev/null
 docker run -d --name "$worker" --network "$network" \
   -e NODE_ENV=production -e DB_1_PORT_27017_TCP_ADDR=mongodb \
-  -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true "$image" node worker.mjs >/dev/null
+  -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true -e MFA_ENCRYPTION_KEY="$mfa_key" \
+  "$image" node worker.mjs >/dev/null
 
 ready=false
 for attempt in {1..60}; do
@@ -65,6 +70,22 @@ for attempt in {1..60}; do
   sleep 2
 done
 [ "$ready" = true ]
+
+# A signed Android build needs a direct JSON response from the production server.
+docker exec "$web" curl --fail --silent --max-time 3 \
+  --write-out '\n%{http_code} %{content_type}' \
+  http://127.0.0.1/.well-known/assetlinks.json |
+  docker exec -i "$web" node -e '
+    const assert = require("assert");
+    const fs = require("fs");
+    const response = fs.readFileSync(0, "utf8");
+    const lastNewline = response.lastIndexOf("\n");
+    assert.match(response.slice(lastNewline + 1), /^200 application\/json(?:;|$)/);
+    assert.deepStrictEqual(
+      JSON.parse(response.slice(0, lastNewline)),
+      JSON.parse(fs.readFileSync("public/.well-known/assetlinks.json", "utf8")),
+    );
+  '
 
 # Confirm development tooling was removed while application dependencies remain
 # available in the runtime image.
@@ -87,7 +108,7 @@ docker run --rm --entrypoint node "$image" -e '
   console.log("Production dependencies present; representative build tools omitted.");
 '
 
-# Check the executable of the actual application/worker process, not PATH's node.
+# Check the executable and authentication environment of the actual processes.
 for container in "$web" "$worker"; do
   # /proc executable links require the target process UID in unprivileged Docker.
   process_user=root
@@ -97,6 +118,10 @@ for container in "$web" "$worker"; do
   docker exec --user "$process_user" "$container" node -e '
     const fs = require("fs");
     const cp = require("child_process");
+    const authVariables = ["MFA_ENCRYPTION_KEY"];
+    if (process.argv[1] === "app") {
+      authVariables.push("TRUSTROOTS_PASSKEY_RP_ID", "TRUSTROOTS_PASSKEY_ORIGINS");
+    }
     const matches = fs.readdirSync("/proc").filter(p => /^\d+$/.test(p)).filter(p => {
       if (+p === process.pid) return false;
       try {
@@ -110,9 +135,15 @@ for container in "$web" "$worker"; do
     for (const pid of matches) {
       const version = cp.execFileSync(`/proc/${pid}/exe`, ["--version"], {encoding: "utf8"}).trim();
       if (!/^v24\./.test(version)) throw new Error(`Unexpected runtime: ${version}`);
+      const environment = fs.readFileSync(`/proc/${pid}/environ`, "utf8").split("\0");
+      for (const variable of authVariables) {
+        if (!process.env[variable] || !environment.includes(`${variable}=${process.env[variable]}`)) {
+          throw new Error(`Application process did not receive ${variable}`);
+        }
+      }
       console.log(`Application PID ${pid}: ${version}`);
     }
-  '
+  ' "$process_user"
 done
 # Exercise the upload detector in the running production image as app.
 docker exec --user app "$web" node -e '
