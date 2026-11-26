@@ -1,13 +1,14 @@
 import MapKit
 import SwiftUI
+import TrustrootsShared
+
+private enum SearchMode: String, Hashable {
+    case map
+    case results
+    case members
+}
 
 struct OfferMapView: View {
-    private enum SearchMode: Hashable {
-        case map
-        case results
-        case members
-    }
-
     @ObservedObject var session: MemberSessionStore
     let searchLocation: String?
     @State private var position = MapCameraPosition.region(.initialTrustrootsRegion)
@@ -24,6 +25,7 @@ struct OfferMapView: View {
     @State private var connectionsOnly = false
     @State private var selectedLanguages: Set<String> = []
     @State private var searchMode = SearchMode.map
+    @State private var searchDisplayHeight: CGFloat = 50
     @State private var placeQuery = ""
     @State private var placeSearchFailed = false
     @State private var showingCommunityNotes = true
@@ -48,14 +50,10 @@ struct OfferMapView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Search display", selection: $searchMode) {
-                    Text("Map").tag(SearchMode.map)
-                    Text("Results").tag(SearchMode.results)
-                    Text("Members").tag(SearchMode.members)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                SearchDisplayController(selection: $searchMode, height: $searchDisplayHeight)
+                    .frame(height: searchDisplayHeight)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
 
                 ZStack {
                     switch searchMode {
@@ -389,6 +387,46 @@ struct OfferMapView: View {
             position = .region(cluster.zoomedRegion(from: visibleRegion))
         } else if let offer = cluster.offers.first {
             await loadHost(for: offer)
+        }
+    }
+}
+
+@MainActor
+private struct SearchDisplayController: UIViewControllerRepresentable {
+    @Binding var selection: SearchMode
+    @Binding var height: CGFloat
+
+    final class Coordinator {
+        let state = OfferSearchDisplayState()
+        var onSelect: ((String) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        let measuredHeight = $height
+        return OfferSearchDisplayControllerKt.OfferSearchDisplayViewController(
+            state: coordinator.state,
+            onSelect: { [weak coordinator] key in coordinator?.onSelect?(key) },
+            onHeight: { value in
+                let next = max(1, CGFloat(value.doubleValue))
+                Task { @MainActor in
+                    if measuredHeight.wrappedValue != next { measuredHeight.wrappedValue = next }
+                }
+            }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.state.update(selectedKey: selection.rawValue)
+        coordinator.onSelect = { key in
+            if let mode = SearchMode(rawValue: key) { selection = mode }
         }
     }
 }
