@@ -24,7 +24,9 @@ internal class BrowserSignInLinks : ViewModel() {
         return true
     }
 
-    fun consume(callback: BrowserSignInCallback): Boolean = mutableCallback.compareAndSet(callback, null)
+    fun consume(callback: BrowserSignInCallback, handle: (BrowserSignInCallback) -> Unit) {
+        if (mutableCallback.compareAndSet(callback, null)) handle(callback)
+    }
 }
 
 internal fun launchSystemBrowser(context: Context, url: String): Boolean {

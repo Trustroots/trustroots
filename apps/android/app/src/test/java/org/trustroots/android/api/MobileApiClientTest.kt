@@ -678,7 +678,9 @@ class MobileApiClientTest {
     @Test fun browserCodeExchangeRejectsIncompleteSessionsAndRedirects() {
         for (incomplete in listOf(
             """{"accessToken":"","refreshToken":"fictional-refresh","member":{"username":"fictional-owl"}}""",
+            """{"accessToken":null,"refreshToken":"fictional-refresh","member":{"username":"fictional-owl"}}""",
             """{"accessToken":"fictional-access","refreshToken":"","member":{"username":"fictional-owl"}}""",
+            """{"accessToken":"fictional-access","member":{"username":"fictional-owl"}}""",
         )) {
             val (result, _) = withApiResponse(200, incomplete) { baseURL ->
                 runBlocking { MobileApiClient(baseURL).exchangeBrowserSignInCode("fictional-code", "fictional-verifier") }
