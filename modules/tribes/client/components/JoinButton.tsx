@@ -30,7 +30,7 @@ interface PresentationalProps {
   isMember: boolean;
   isLoading?: boolean;
   memberLabel?: string;
-  tribe: TribeSummary;
+  tribe: Pick<TribeSummary, '_id' | 'label' | 'slug'>;
   isLoggedIn: boolean;
   onToggle?: () => void;
 }
@@ -39,7 +39,7 @@ interface JoinButtonProps extends Omit<
   PresentationalProps,
   'isMember' | 'isLoggedIn' | 'isLoading' | 'onToggle'
 > {
-  tribe: TribeSummary;
+  tribe: Pick<TribeSummary, '_id' | 'label' | 'slug'>;
   user?: UserProfile;
   onUpdated?: (data: MembershipUpdate) => void;
   /** Where the button is shown, for analytics; defaults to 'other'. */

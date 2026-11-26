@@ -13,7 +13,6 @@ import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
-import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import {
   publicMemberTribePopulateOptions,
   publicTribeFields,
@@ -23,7 +22,11 @@ import emailServiceModule from './../../../core/server/services/email.server.ser
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from '@trustroots/logger';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mts';
-import type { UserAccountCleanup } from '../services/user-account.server.contract.mts';
+import type {
+  CircleCountRecord,
+  UpdateCircleCount,
+  UserAccountCleanup,
+} from '../services/user-account.server.contract.mts';
 import config from './../../../../config/config.mts';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -38,6 +41,8 @@ import {
 import validator from 'validator';
 import type {
   ProfilePayload,
+  ProfileRequest,
+  ProfileResponse,
   SanitizedProfileRecord,
   SanitizedProfileRequest,
   UserProfileController,
@@ -87,15 +92,12 @@ const emailService = emailServiceModule as {
 const fileRemovalService = fileRemovalServiceModule as {
   removeLocalPath(path: string): Promise<void>;
 };
-type TribeCountResult = NonNullable<
-  Parameters<Parameters<typeof tribesHandler.updateCount>[3]>[1]
->;
-type PopulatedTribeDocument = TribeCountResult & {
+type PopulatedTribeDocument = CircleCountRecord & {
   _id: mongoose.Types.ObjectId;
 };
 
 function hasTribeId(
-  tribe: TribeCountResult | null | undefined,
+  tribe: CircleCountRecord | null | undefined,
 ): tribe is PopulatedTribeDocument {
   return Boolean(tribe && tribe._id);
 }
@@ -580,7 +582,11 @@ service.removeProfile = function (accountCleanup, req, res) {
 /** Shared cleanup for self-service removal and confirmed admin deletion. */
 export async function deleteUserAccount(
   user: UserServerDocument,
-  { clearMessageNotifications, removeOwnedOffers }: UserAccountCleanup,
+  {
+    clearMessageNotifications,
+    removeOwnedOffers,
+    updateCircleCount,
+  }: UserAccountCleanup,
   adminDeletion = false,
 ): Promise<{ cleanupIncomplete: boolean }> {
   const removeActivity = () =>
@@ -652,7 +658,7 @@ export async function deleteUserAccount(
         () =>
           new Promise<void>((resolve, reject) => {
             // Stryker disable next-line BooleanLiteral: the callback ignores the returned tribe, so asking for the updated one changes nothing
-            tribesHandler.updateCount(membership.tribe, -1, false, err =>
+            updateCircleCount(membership.tribe, -1, false, err =>
               err ? reject(err) : resolve(),
             );
           }),
@@ -1112,8 +1118,9 @@ function normaliseJoinReason(value: unknown): string | undefined | null {
 }
 
 function changeTribeMembership(
-  req: Parameters<UserProfileController['joinTribe']>[0],
-  res: Parameters<UserProfileController['joinTribe']>[1],
+  updateCircleCount: UpdateCircleCount,
+  req: ProfileRequest,
+  res: ProfileResponse,
   action: TribeMembershipAction,
 ) {
   const isJoining = action === 'join';
@@ -1144,18 +1151,13 @@ function changeTribeMembership(
     });
   }
   async function change(): Promise<void> {
-    const tribe = await new Promise<TribeCountResult | null | undefined>(
+    const tribe = await new Promise<CircleCountRecord | null | undefined>(
       resolve => {
-        tribesHandler.updateCount(
-          tribeId!,
-          isJoining ? 1 : -1,
-          true,
-          (_err, tribe) => {
-            // updateCount returns no tribe on failure; both a missing tribe and
-            // a failed lookup receive the existing bad-request response below.
-            resolve(tribe);
-          },
-        );
+        updateCircleCount(tribeId!, isJoining ? 1 : -1, true, (_err, tribe) => {
+          // updateCount returns no tribe on failure; both a missing tribe and
+          // a failed lookup receive the existing bad-request response below.
+          resolve(tribe);
+        });
       },
     );
     if (!hasTribeId(tribe)) {
@@ -1213,14 +1215,14 @@ function changeTribeMembership(
 }
 
 /** Join tribe. */
-service.joinTribe = function (req, res) {
-  return changeTribeMembership(req, res, 'join');
+service.joinTribe = function (updateCircleCount, req, res) {
+  return changeTribeMembership(updateCircleCount, req, res, 'join');
 };
 
 /** Leave tribe. */
-service.leaveTribe = function (req, res) {
+service.leaveTribe = function (updateCircleCount, req, res) {
   // Stryker disable next-line StringLiteral: only 'join' is compared, so any other action leaves
-  return changeTribeMembership(req, res, 'leave');
+  return changeTribeMembership(updateCircleCount, req, res, 'leave');
 };
 
 /**

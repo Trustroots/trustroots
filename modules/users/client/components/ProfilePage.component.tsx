@@ -58,6 +58,7 @@ import type {
   ContactRecord,
 } from '@/modules/contacts/client/types';
 import type { UserProfile } from '../types';
+import type { ProfileCircles } from '../member-circles';
 
 export type ProfileOffersComponent = React.JSXElementConstructor<{
   authUser: UserProfile;
@@ -108,6 +109,7 @@ function normalizeContact(contact: ContactRecord | null): ContactState {
 function ProfileAboutTab({
   ProfileOffers,
   authUser,
+  circles,
   contacts,
   isSelf,
   profile,
@@ -115,6 +117,7 @@ function ProfileAboutTab({
 }: {
   ProfileOffers: ProfileOffersComponent;
   authUser: UserProfile;
+  circles: ProfileCircles;
   contacts: ContactListData;
   isSelf: boolean;
   profile: ResolvedUserProfile;
@@ -131,6 +134,7 @@ function ProfileAboutTab({
     <div className="tw:grid-row">
       <div className="tw:md:grid-col-6">
         <AboutMe
+          readCircles={circles.read}
           isSelf={isSelf}
           profile={profile}
           profileMinimumLength={profileMinimumLength}
@@ -152,6 +156,7 @@ function ProfileAboutTab({
                 />
               )}
               <MembershipsList
+                getCircleBackgroundStyle={circles.getCircleBackgroundStyle}
                 isOwnProfile={isSelf}
                 memberships={profile.member}
               />
@@ -272,11 +277,13 @@ function ProfileDesktopActions({
 
 export default function ProfilePage({
   ProfileOffers,
+  circles,
   embedded = false,
   profileUsername,
   user: authUser,
 }: {
   ProfileOffers: ProfileOffersComponent;
+  circles: ProfileCircles;
   embedded?: boolean;
   profileUsername?: string;
   user: UserProfile;
@@ -528,6 +535,7 @@ export default function ProfilePage({
       case 'tribes':
         return (
           <ProfileTribesTab
+            circles={circles}
             memberships={
               /* istanbul ignore next -- public profile records always provide membership arrays. */
               profile.member || []
@@ -556,6 +564,7 @@ export default function ProfilePage({
         return (
           <ProfileAboutTab
             ProfileOffers={ProfileOffers}
+            circles={circles}
             authUser={authUser}
             contacts={contacts}
             isSelf={isSelf}
@@ -567,6 +576,7 @@ export default function ProfilePage({
   }, [
     ProfileOffers,
     authUser,
+    circles,
     contacts,
     experienceAction,
     isSelf,

@@ -253,24 +253,44 @@ describe('Mobile authentication API', function () {
   });
 
   it('uses bearer authentication for mobile circles and memberships', async function () {
+    const tribe = await mongoose
+      .model('Tribe')
+      .create({ label: 'Mobile Circle' });
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
       .expect(200);
+    const authenticated = {
+      Authorization: `Bearer ${signin.body.accessToken}`,
+      'X-Trustroots-Request': '1',
+    };
 
     const circles = await request(app)
       .get('/api/mobile/v0/circles?limit=1')
-      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .set(authenticated)
       .expect(200);
     circles.headers['cache-control'].should.equal('no-store');
     circles.body.should.be.an.Array();
 
     const memberships = await request(app)
       .get('/api/mobile/v0/memberships')
-      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .set(authenticated)
       .expect(200);
     memberships.headers['cache-control'].should.equal('no-store');
     memberships.body.should.deepEqual([]);
+
+    const membershipPath = `/api/mobile/v0/memberships/${tribe.id}`;
+    const joined = await request(app)
+      .post(membershipPath)
+      .set(authenticated)
+      .expect(200);
+    joined.body.tribe.count.should.equal(1);
+
+    const left = await request(app)
+      .delete(membershipPath)
+      .set(authenticated)
+      .expect(200);
+    left.body.tribe.count.should.equal(0);
   });
 
   it('does not allow cookie-free access to mobile offer resources', async function () {

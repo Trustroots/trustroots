@@ -1,3 +1,4 @@
+import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 
@@ -54,10 +55,16 @@ describe('ProfileTribesTab', () => {
       { ...memberships[0], joinReason: 'I want to meet other cyclists.' },
     ];
     const { rerender } = render(
-      <ProfileTribesTab memberships={withReason} user={user} />,
+      <ProfileTribesTab
+        circles={memberCircles}
+        memberships={withReason}
+        user={user}
+      />,
     );
     expect(screen.getByText('I want to meet other cyclists.')).toBeVisible();
-    rerender(<ProfileTribesTab memberships={withReason} />);
+    rerender(
+      <ProfileTribesTab circles={memberCircles} memberships={withReason} />,
+    );
     expect(
       screen.queryByText('I want to meet other cyclists.'),
     ).not.toBeInTheDocument();
@@ -66,6 +73,7 @@ describe('ProfileTribesTab', () => {
   it('renders tribe cards with member counts and join buttons', () => {
     render(
       <ProfileTribesTab
+        circles={memberCircles}
         memberships={memberships}
         onMembershipUpdated={vi.fn()}
         user={user}
@@ -86,7 +94,11 @@ describe('ProfileTribesTab', () => {
 
   it('renders no cards when membership data is empty', () => {
     const { container } = render(
-      <ProfileTribesTab onMembershipUpdated={vi.fn()} user={user} />,
+      <ProfileTribesTab
+        circles={memberCircles}
+        onMembershipUpdated={vi.fn()}
+        user={user}
+      />,
     );
 
     expect(container.querySelectorAll('.tribe')).toHaveLength(0);
@@ -95,6 +107,7 @@ describe('ProfileTribesTab', () => {
   it('marks circles with custom images', () => {
     render(
       <ProfileTribesTab
+        circles={memberCircles}
         memberships={[
           {
             tribe: {
