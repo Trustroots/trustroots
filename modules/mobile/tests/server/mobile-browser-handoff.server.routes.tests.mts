@@ -64,14 +64,15 @@ describe('Mobile browser sign-in handoff', () => {
   function transaction(platform = 'ios') {
     const codeVerifier = randomBytes(32).toString('base64url');
     const state = randomBytes(32).toString('base64url');
+    const codeChallenge = createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
     const query = {
       platform,
       state,
-      code_challenge: createHash('sha256')
-        .update(codeVerifier)
-        .digest('base64url'),
+      code_challenge: codeChallenge,
     };
-    return { query, codeVerifier, state };
+    return { query, codeVerifier, codeChallenge, state };
   }
 
   async function start(platform = 'ios') {
@@ -121,11 +122,10 @@ describe('Mobile browser sign-in handoff', () => {
       consent.text,
       /Only confirm if you started sign-in in the Trustroots app\./,
     );
-    assert.ok(
-      consent.text.includes(
-        `<form method="post" action="${flow.confirmation}">`,
-      ),
-    );
+    const form = consent.text.match(/<form\b[^>]*>/)?.[0];
+    assert.ok(form);
+    assert.ok(form.includes('method="post"'));
+    assert.ok(form.includes(`action="${flow.confirmation}"`));
     const csrf = consent.text.match(/name="csrf" value="([a-f0-9]{64})"/)?.[1];
     assert.ok(csrf);
     return { ...flow, browser, csrf };
@@ -340,7 +340,7 @@ describe('Mobile browser sign-in handoff', () => {
     };
     assert.ok(Number.isInteger(browserSigninAt));
     const changed = await Handoff.collection.updateOne(
-      { codeChallenge: flow.query.code_challenge },
+      { codeChallenge: flow.codeChallenge },
       { $set: { createdAt: new Date(browserSigninAt) } },
     );
     assert.equal(changed.matchedCount, 1);
@@ -406,6 +406,27 @@ describe('Mobile browser sign-in handoff', () => {
       await Handoff.countDocuments({ codeHash: { $exists: true } }),
       0,
     );
+  });
+
+  it('rejects a malformed session confirmation proof before accessing storage', async () => {
+    const pending = sinon.spy(Handoff, 'findOne');
+    for (const malformed of ['invalid', 123]) {
+      const response = {
+        send: sinon.spy(),
+        set: sinon.stub().returnsThis(),
+        status: sinon.stub().returnsThis(),
+      };
+      await handoffController.issue(
+        {
+          params: { requestId: 'a'.repeat(64) },
+          body: { csrf: 'b'.repeat(64) },
+          session: { mobileHandoffCsrf: malformed },
+        },
+        response,
+      );
+      sinon.assert.calledOnceWithExactly(response.status, 403);
+    }
+    sinon.assert.notCalled(pending);
   });
 
   it('rejects invalid inputs, expired requests and credential changes', async () => {

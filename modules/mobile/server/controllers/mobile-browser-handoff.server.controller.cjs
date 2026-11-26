@@ -1,5 +1,7 @@
 const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
 const mongoose = require('mongoose');
+const { createElement: h, Fragment } = require('react');
+const { renderToStaticMarkup } = require('react-dom/server');
 const config = require('../../../../config/config.mts').default;
 const mobileMember = require('../presenters/mobile-member.server.presenter.cjs');
 const mobileSession = require('../services/mobile-session.server.service.cjs');
@@ -31,10 +33,28 @@ function setPrivateHeaders(res) {
     .set('Referrer-Policy', 'no-referrer');
 }
 
-function page(res, status, title, content) {
-  return res.status(status).type('html').send(`<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title} · Trustroots</title></head>
-<body><main><h1>${title}</h1>${content}</main></body></html>`);
+function page(res, status, title, ...content) {
+  const html = renderToStaticMarkup(
+    h(
+      'html',
+      { lang: 'en' },
+      h(
+        'head',
+        null,
+        h('meta', { charSet: 'utf-8' }),
+        h('meta', {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1',
+        }),
+        h('title', null, title + ' · Trustroots'),
+      ),
+      h('body', null, h('main', null, h('h1', null, title), ...content)),
+    ),
+  );
+  return res
+    .status(status)
+    .type('html')
+    .send('<!DOCTYPE html>' + html);
 }
 
 function unavailable(res) {
@@ -42,7 +62,7 @@ function unavailable(res) {
     res,
     400,
     'Could not continue sign-in',
-    '<p>Start again from the Trustroots app.</p>',
+    h('p', null, 'Start again from the Trustroots app.'),
   );
 }
 
@@ -103,26 +123,40 @@ exports.confirmation = async function (req, res) {
   setPrivateHeaders(res);
   const { requestId } = req.params;
   if (!matches(requestId, requestPattern)) return unavailable(res);
-  const handoff = await Handoff.findOne(pendingRequest(requestId));
+  const id = String(requestId);
+  const handoff = await Handoff.findOne(pendingRequest(id));
   if (!handoff || !platformCallback(handoff.platform)) return unavailable(res);
   const user = latestBrowserUser(req, handoff);
-  if (!user) return res.redirect(303, signinPath(requestId));
-  const csrf = (req.session.mobileHandoffCsrf ||=
-    randomBytes(32).toString('hex'));
+  if (!user) return res.redirect(303, signinPath(id));
+  if (!matches(req.session.mobileHandoffCsrf, requestPattern)) {
+    req.session.mobileHandoffCsrf = randomBytes(32).toString('hex');
+  }
+  const csrf = req.session.mobileHandoffCsrf;
   const platformName = handoff.platform === 'ios' ? 'iOS' : 'Android';
   // Trustroots usernames are alphanumeric, but validate legacy records too.
   const identity = /^[a-z0-9]+$/i.test(user.username)
-    ? ` <strong>${user.username}</strong>`
-    : '';
+    ? h(Fragment, null, ' ', h('strong', null, user.username))
+    : null;
   // A same-origin POST needs its Origin header. The approval page has no code.
   res.set('Referrer-Policy', 'same-origin');
   return page(
     res,
     200,
     'Confirm app sign-in',
-    `<p>Continue with your signed-in Trustroots account${identity} on ${platformName}.</p>
-<p>Only confirm if you started sign-in in the Trustroots app.</p>
-<form method="post" action="${confirmationPath}${requestId}"><input type="hidden" name="csrf" value="${csrf}"><button type="submit">Confirm app sign-in</button></form>`,
+    h(
+      'p',
+      null,
+      'Continue with your signed-in Trustroots account',
+      identity,
+      ' on ' + platformName + '.',
+    ),
+    h('p', null, 'Only confirm if you started sign-in in the Trustroots app.'),
+    h(
+      'form',
+      { method: 'post', action: confirmationPath + id },
+      h('input', { type: 'hidden', name: 'csrf', value: csrf }),
+      h('button', { type: 'submit' }, 'Confirm app sign-in'),
+    ),
   );
 };
 
@@ -132,7 +166,11 @@ exports.androidFallback = function (_req, res) {
     res,
     200,
     'Open Trustroots on Android',
-    '<p>If the app did not open, allow Trustroots to open supported links in Android Settings, then start sign-in again from the app.</p>',
+    h(
+      'p',
+      null,
+      'If the app did not open, allow Trustroots to open supported links in Android Settings, then start sign-in again from the app.',
+    ),
   );
 };
 
@@ -143,7 +181,7 @@ exports.issue = async function (req, res) {
   const expected = req.session.mobileHandoffCsrf;
   if (
     !matches(csrf, requestPattern) ||
-    !expected ||
+    !matches(expected, requestPattern) ||
     !timingSafeEqual(Buffer.from(csrf), Buffer.from(expected))
   ) {
     return res
@@ -151,14 +189,15 @@ exports.issue = async function (req, res) {
       .send('App sign-in confirmation expired. Start again from the app.');
   }
   if (!matches(requestId, requestPattern)) return unavailable(res);
-  const handoff = await Handoff.findOne(pendingRequest(requestId));
+  const id = String(requestId);
+  const handoff = await Handoff.findOne(pendingRequest(id));
   if (!handoff) return unavailable(res);
   const callback = platformCallback(handoff.platform);
   const user = latestBrowserUser(req, handoff);
   if (!callback || !user) return unavailable(res);
 
   const code = randomBytes(32).toString('base64url');
-  const claimed = await Handoff.findOneAndUpdate(pendingRequest(requestId), {
+  const claimed = await Handoff.findOneAndUpdate(pendingRequest(id), {
     $set: {
       codeHash: digest(code, 'hex'),
       user: user._id,
@@ -168,12 +207,13 @@ exports.issue = async function (req, res) {
   });
   if (!claimed) return unavailable(res);
 
-  const params = new URLSearchParams({ code, state: handoff.state });
+  const destination = new URL(callback);
+  destination.search = new URLSearchParams({ code, state: handoff.state });
   return page(
     res,
     200,
     'Return to Trustroots',
-    `<p><a href="${callback}?${params.toString().replace('&', '&amp;')}">Open the Trustroots app</a></p>`,
+    h('p', null, h('a', { href: destination.href }, 'Open the Trustroots app')),
   );
 };
 
@@ -195,9 +235,9 @@ exports.exchange = async function (req, res, next) {
     return invalidExchange(res);
   }
   const handoff = await Handoff.findOneAndDelete({
-    platform,
-    codeHash: digest(code, 'hex'),
-    codeChallenge: digest(codeVerifier, 'base64url'),
+    platform: String(platform),
+    codeHash: digest(String(code), 'hex'),
+    codeChallenge: digest(String(codeVerifier), 'base64url'),
     expiresAt: { $gt: new Date() },
   });
   if (!handoff) return invalidExchange(res);
