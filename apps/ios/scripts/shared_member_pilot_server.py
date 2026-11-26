@@ -80,6 +80,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
     messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
     thread_read = False
     send_attempts = 0
+    conversation_experience = None
+    experience_submissions = []
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
@@ -103,6 +105,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 attempts = fixture.send_attempts
                 deliveries = sum(message["userFrom"] == MEMBER for message in fixture.messages)
             self._json(200, {"attempts": attempts, "deliveries": deliveries})
+            return
+        if route == "/fixture/experience-state":
+            fixture = type(self)
+            with fixture.session_lock:
+                submissions = list(fixture.experience_submissions)
+                experience = fixture.conversation_experience
+                deliveries = int(experience is not None and "response" in experience)
+            self._json(200, {"submissions": submissions, "deliveries": deliveries})
             return
         if route == "/api/nostr/featured-notes":
             self._json(200, [{
@@ -195,6 +205,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self._json(200, memberships)
         elif route == "/api/mobile/v0/experiences":
             self._json(200, [])
+        elif route == f'/api/mobile/v0/experiences/with/{PARTNER["_id"]}':
+            with type(self).session_lock:
+                experience = type(self).conversation_experience
+            if experience is None:
+                self._json(404, {"message": "No fixture experience found."})
+            else:
+                self._json(200, experience)
         elif route == "/api/mobile/v0/messages":
             fixture = type(self)
             with fixture.session_lock:
@@ -244,6 +261,16 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.hosting_offer = HOSTING_OFFER
             self._json(200, {"status": "ready"})
             return
+        if self.path == "/fixture/prepare-experience":
+            with fixture.session_lock:
+                fixture.conversation_experience = {
+                    "_id": "experience-pilot-partner",
+                    "userFrom": PARTNER["_id"],
+                    "recommend": "yes",
+                }
+                fixture.experience_submissions = []
+            self._json(200, {"status": "ready"})
+            return
         if self.path == "/api/mobile/v0/auth/signin":
             if body.get("username") != MEMBER["username"] or body.get("password") != "example-password":
                 self._json(401, {"message": "Check the fixture username and password."})
@@ -252,6 +279,8 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.messages = [INCOMING_MESSAGE, EARLIER_MESSAGE]
                 fixture.thread_read = False
                 fixture.send_attempts = 0
+                fixture.conversation_experience = None
+                fixture.experience_submissions = []
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
                 fixture.memberships = {CIRCLES[1]["_id"]}
@@ -309,6 +338,34 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 if INCOMING_MESSAGE["_id"] in message_ids:
                     fixture.thread_read = True
             self._json(200, {})
+        elif self.path == "/api/mobile/v0/experiences":
+            interactions = body.get("interactions")
+            if (
+                body.get("userTo") != PARTNER["_id"]
+                or not isinstance(interactions, dict)
+                or set(interactions) != {"met", "guest", "host"}
+                or not all(isinstance(selected, bool) for selected in interactions.values())
+                or not any(interactions.values())
+                or body.get("recommend") not in ("yes", "unknown", "no")
+                or not isinstance(body.get("feedbackPublic"), str)
+            ):
+                self._json(422, {"message": "The fixture expects a valid experience for the configured partner."})
+                return
+            with fixture.session_lock:
+                fixture.experience_submissions.append(body)
+                experience = fixture.conversation_experience
+                if experience is None or "response" in experience:
+                    status, result = 409, {"message": "No pending fixture experience found."}
+                elif len(fixture.experience_submissions) == 1:
+                    status, result = 503, {"message": "Temporary fixture experience failure."}
+                else:
+                    result = {**experience, "response": {
+                        "feedbackPublic": body["feedbackPublic"],
+                        "recommend": body["recommend"],
+                    }}
+                    fixture.conversation_experience = result
+                    status = 201
+            self._json(status, result)
         elif self.path == "/api/mobile/v0/messages":
             content = body.get("content")
             if body.get("userTo") != PARTNER["_id"] or not isinstance(content, str) or not content.strip():

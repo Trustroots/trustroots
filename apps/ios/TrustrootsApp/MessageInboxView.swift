@@ -311,12 +311,8 @@ struct ConversationView: View {
             await loadConversation(for: key)
         }
         .sheet(isPresented: $showingExperienceForm) {
-            if let memberID = otherMember.id {
-                CreateExperienceView(
-                    member: otherMember,
-                    memberID: memberID,
-                    session: session
-                ) { createdExperience in
+            if let key {
+                CreateExperienceView(member: otherMember, key: key, isCurrent: { self.draftKey == key }) { createdExperience in
                     conversationExperience = createdExperience
                     showingExperienceForm = false
                 }
@@ -475,16 +471,11 @@ private struct ComposeConversation: UIViewControllerRepresentable {
 
 private struct CreateExperienceView: View {
     let member: MiniMember
-    let memberID: String
-    @ObservedObject var session: MemberSessionStore
+    let key: PilotMessageDraftStore.Key
+    let isCurrent: () -> Bool
     let onCreated: (ConversationExperience) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var met = true
-    @State private var hosted = false
-    @State private var wasGuest = false
-    @State private var recommendation = "yes"
-    @State private var feedback = ""
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -492,42 +483,8 @@ private struct CreateExperienceView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Toggle("We met in person", isOn: $met)
-                    Toggle("I hosted them", isOn: $hosted)
-                    Toggle("I was their guest", isOn: $wasGuest)
-                } header: {
-                    Text("What happened?")
-                } footer: {
-                    Text("Select at least one interaction.")
-                }
-                .tint(TrustrootsPalette.green)
-
-                Section("Would you recommend them?") {
-                    Picker("Recommendation", selection: $recommendation) {
-                        Text("Yes").tag("yes")
-                        Text("Not sure").tag("unknown")
-                        Text("No").tag("no")
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                Section("Public experience") {
-                    TextEditor(text: $feedback)
-                        .frame(minHeight: 150)
-                    Text("Optional. This becomes public when the other member also shares an experience.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
-                }
+            ComposeExperienceForm(isSaving: isSaving, error: errorMessage) { draft in
+                Task { await createExperience(draft) }
             }
             .navigationTitle("Experience with \(member.displayName ?? member.username ?? "member")")
             .navigationBarTitleDisplayMode(.inline)
@@ -535,35 +492,65 @@ private struct CreateExperienceView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(isSaving ? "Sharing…" : "Share") {
-                        Task { await createExperience() }
-                    }
-                    .disabled(isSaving || (!met && !hosted && !wasGuest))
-                }
             }
         }
     }
 
-    private func createExperience() async {
-        guard !isSaving, met || hosted || wasGuest else { return }
+    private func createExperience(_ draft: MemberExperienceDraft) async {
+        guard isCurrent(), !isSaving, draft.hasInteraction else { return }
         isSaving = true
         errorMessage = nil
         defer { isSaving = false }
         do {
             let created = try await api.createExperience(
-                serverURLString: session.serverURLString,
-                memberID: memberID,
-                met: met,
-                hosted: hosted,
-                wasGuest: wasGuest,
-                recommendation: recommendation,
-                feedback: feedback.trimmingCharacters(in: .whitespacesAndNewlines)
+                serverURLString: key.server,
+                memberID: key.recipientID,
+                met: draft.met,
+                hosted: draft.hosted,
+                wasGuest: draft.wasGuest,
+                recommendation: draft.recommendation.wireValue,
+                feedback: draft.feedback.trimmingCharacters(in: .whitespacesAndNewlines)
             )
+            guard isCurrent() else { return }
             onCreated(created)
         } catch {
+            guard isCurrent() else { return }
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+@MainActor
+private struct ComposeExperienceForm: UIViewControllerRepresentable {
+    let isSaving: Bool
+    let error: String?
+    let onSubmit: (MemberExperienceDraft) -> Void
+
+    final class Coordinator {
+        let state = MemberExperienceFormState()
+        var onSubmit: ((MemberExperienceDraft) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MemberExperienceFormControllerKt.MemberExperienceFormViewController(
+            state: coordinator.state,
+            onSubmit: { [weak coordinator] in coordinator?.onSubmit?($0) }
+        )
+    }
+
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.onSubmit = onSubmit
+        coordinator.state.updateSubmission(isSaving: isSaving, error: error)
     }
 }
 
