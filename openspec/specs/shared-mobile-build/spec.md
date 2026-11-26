@@ -545,6 +545,7 @@ The regular iOS member Account screen SHALL render its heading, Nostranslation s
 
 - **WHEN** a member selects Sign out
 - **THEN** iOS runs the existing session sign-out flow
+
 ### Requirement: Regular iOS profile uses shared biography and language sections
 
 The regular iOS profile SHALL use Compose to display a member's biography
@@ -698,4 +699,3 @@ saved timestamp and to clear the notice when live data becomes available.
 - **WHEN** they open the profile while its server connection is unavailable
 - **THEN** the app displays the saved profile and announces its saved timestamp
 - **AND** a successful live inbox request clears the notice
-
