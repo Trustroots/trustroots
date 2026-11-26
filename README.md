@@ -24,15 +24,13 @@ See the [Android distribution overview](apps/android/README.md#android-preview-d
 
 ## Current development
 
-[![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
-
 Trustroots is actively developed again. After a period focused mainly on
 maintenance from 2022 to June 2026, we welcome contributions and improvements.
 
 Current areas of work include:
 
-- Android
 - Hardening
+- Android, iOS
 - Developing the Nostr/Nostroots integration
 - Simplifying older code and reducing duplication
 - Improving the development setup and updating dependencies
