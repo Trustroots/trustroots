@@ -380,7 +380,10 @@ describe('Targeted request limit middleware', function () {
       undefined,
     );
     assert.equal(
-      getRequestIdentity({ params: { token: 'Token-Value' } }, 'unknown'),
+      getRequestIdentity(
+        { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+        'unknown',
+      ),
       undefined,
     );
   });
@@ -478,6 +481,34 @@ describe('Targeted request limit middleware', function () {
         name: 'member',
         value: 'fictional-member-id',
         limit: 2,
+      },
+    ]);
+  });
+
+  it('limits MFA settings changes by signed-in member', async function () {
+    const calls: ConsumeOptions[] = [];
+    const middleware = loadMiddleware(async options => {
+      calls.push(options);
+      return { allowed: true };
+    });
+    await middleware.mfaManage(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(calls, [
+      {
+        operation: 'mfaManage',
+        windowMs: 60_000,
+        dimensions: [
+          { name: 'ip', value: '198.51.100.20', limit: 10 },
+          {
+            name: 'ip-and-identity',
+            value: JSON.stringify(['198.51.100.20', 'fictional-member']),
+            limit: 2,
+          },
+          { name: 'member', value: 'fictional-member', limit: 2 },
+        ],
       },
     ]);
   });
