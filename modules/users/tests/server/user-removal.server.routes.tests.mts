@@ -1,6 +1,6 @@
 import { promisify } from 'node:util';
 import fs from 'fs';
-import * as actionTokenService from '../../server/services/action-token.server.service.mts';
+import * as actionTokenService from '../../../core/server/services/action-token.server.service.mts';
 import should from 'should';
 import sinon from 'sinon';
 import request from 'supertest';

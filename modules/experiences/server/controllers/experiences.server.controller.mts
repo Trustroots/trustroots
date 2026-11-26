@@ -6,7 +6,7 @@ import errorService from '../../../core/server/services/error.server.service.mts
 import emailService from '../../../core/server/services/email.server.service.mts';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mts';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mts';
-import userRolesService from '../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import {
   prepareNewExperience,
   prepareSendingToClient,

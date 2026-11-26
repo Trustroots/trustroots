@@ -4,7 +4,7 @@ import { Readable } from 'stream';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
 import config from './../../../../config/config.mts';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
 import controller from './../../server/controllers/admin.newsletter.server.controller.mts';
 import type { Readable as ReadableStream } from 'node:stream';

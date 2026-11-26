@@ -1,3 +1,4 @@
+import { notificationEmail } from '../../../core/server/services/notification-email-envelope.server.service.mts';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import mongoose from 'mongoose';
@@ -6,7 +7,6 @@ import config from '../../../../config/config.mts';
 import {
   confirmUnsubscribe,
   canDeliverNotificationEmail,
-  notificationEmail,
 } from '../../server/services/notification-email.server.service.mts';
 
 type UserRecord =

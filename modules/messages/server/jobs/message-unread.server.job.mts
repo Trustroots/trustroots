@@ -2,7 +2,7 @@ import emailService from './../../../core/server/services/email.server.service.m
 import log from '@trustroots/logger';
 import config from './../../../../config/config.mts';
 import { milliseconds, sub, type Duration } from 'date-fns';
-import userRolesService from './../../../users/server/services/user-roles.server.service.mts';
+import userRolesService from '../../../core/server/services/user-roles.server.service.mts';
 import mongoose, { type Types } from 'mongoose';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
@@ -25,7 +25,7 @@ interface Notification {
   dontSend?: boolean;
 }
 type MessageEmailFrequency =
-  import('../../../users/shared/email-preferences.ts').MessageEmailFrequency;
+  import('../../../core/shared/email-preferences.mts').MessageEmailFrequency;
 interface ReminderUser {
   messageEmailFrequency?: MessageEmailFrequency;
   _id: Types.ObjectId;

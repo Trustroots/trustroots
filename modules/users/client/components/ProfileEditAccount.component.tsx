@@ -1,5 +1,5 @@
 import { Input } from '@trustroots/ui/Input';
-import { messageEmailFrequencies } from '../../shared/email-preferences';
+import { messageEmailFrequencies } from '../../../core/shared/email-preferences.mts';
 import type { UpdateProfileRequest } from '../../shared/profile';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';

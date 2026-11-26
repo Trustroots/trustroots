@@ -1,8 +1,6 @@
 import type { Request, Response } from 'express';
-import {
-  confirmUnsubscribe,
-  tokenPattern,
-} from '../services/notification-email.server.service.mts';
+import { tokenPattern } from '../../../core/server/services/notification-email-envelope.server.service.mts';
+import { confirmUnsubscribe } from '../services/notification-email.server.service.mts';
 
 type UnsubscribeRequest = Request<{ token: string }>;
 
