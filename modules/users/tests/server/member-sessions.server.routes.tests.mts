@@ -44,6 +44,7 @@ describe('Member session controls', function () {
     requestUserId?: mongoose.Types.ObjectId;
     createdAt?: number;
     legacySession?: boolean;
+    passport?: MemberBrowserRequest['session']['passport'];
     authVersion?: number;
     destroyed?: boolean;
     destroyError?: Error;
@@ -96,6 +97,7 @@ describe('Member session controls', function () {
         memberSessionCreatedAt: options.legacySession
           ? undefined
           : options.createdAt || now,
+        passport: options.passport,
         destroy(callback) {
           options.destroyed = true;
           callback(options.destroyError);
@@ -158,22 +160,25 @@ describe('Member session controls', function () {
     return result;
   }
 
-  it('initialises the lifetime of a legacy session on its first request', async function () {
-    const now = Date.now();
-    sinon.stub(Date, 'now').returns(now);
-    const result = await runMiddleware(activeSessionRecord(), {
-      legacySession: true,
+  for (const passport of [undefined, {}]) {
+    it(`initialises the lifetime of a legacy session ${passport ? 'with no stored Passport user' : 'with no Passport metadata'}`, async function () {
+      const now = Date.now();
+      sinon.stub(Date, 'now').returns(now);
+      const result = await runMiddleware(activeSessionRecord(), {
+        legacySession: true,
+        passport,
+      });
+      assert.equal(result.req.session.memberSessionCreatedAt, now);
+      assert.equal(result.nextCalled, true);
+      assert.equal(result.nextError, undefined);
+      const { $setOnInsert: inserted } = result.sessionUpserter.firstCall
+        .args[1] as {
+        $setOnInsert: { createdAt: Date; lastSeenAt: Date };
+      };
+      assert.equal(inserted.createdAt.getTime(), now);
+      assert.equal(inserted.lastSeenAt.getTime(), now);
     });
-    assert.equal(result.req.session.memberSessionCreatedAt, now);
-    assert.equal(result.nextCalled, true);
-    assert.equal(result.nextError, undefined);
-    const { $setOnInsert: inserted } = result.sessionUpserter.firstCall
-      .args[1] as {
-      $setOnInsert: { createdAt: Date; lastSeenAt: Date };
-    };
-    assert.equal(inserted.createdAt.getTime(), now);
-    assert.equal(inserted.lastSeenAt.getTime(), now);
-  });
+  }
 
   it('uses deterministic opaque identifiers and equal member lifetimes', function () {
     const expectedId = crypto

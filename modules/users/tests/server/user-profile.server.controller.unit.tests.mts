@@ -368,6 +368,12 @@ describe('Profile controller unit tests', () => {
           await import('../../server/controllers/users.profile.server.controller.mts');
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
         await User.updateOne({ _id: saved._id }, { roles });
+        const AccountActivity = mongoose.model('AccountActivity');
+        const activity = await AccountActivity.create({
+          _id: 'administrator-deletion-activity',
+          user: saved._id,
+          eventType: 'password_changed',
+        });
         const removal = deleteUserAccount(
           (await findUser(saved._id)) as unknown as Parameters<
             typeof deleteUserAccount
@@ -381,6 +387,9 @@ describe('Profile controller unit tests', () => {
             'Account changed or was already deleted. Refresh the member report.',
           );
         Boolean(await User.exists({ _id: saved._id })).should.equal(!suspended);
+        Boolean(
+          await AccountActivity.exists({ _id: activity._id }),
+        ).should.equal(!suspended);
       });
     }
   });
