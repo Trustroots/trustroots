@@ -25,10 +25,7 @@ describe('Admin Gravatar usage', () => {
     await utils.saveUsersWithCachedPasswords(users);
     admin = request.agent(app);
     member = request.agent(app);
-    await admin
-      .post('/api/auth/signin')
-      .send({ username: users[0].username, password: users[0].password })
-      .expect(200);
+    await utils.signInPrivileged(users[0], admin);
     await member
       .post('/api/auth/signin')
       .send({ username: users[1].username, password: users[1].password })

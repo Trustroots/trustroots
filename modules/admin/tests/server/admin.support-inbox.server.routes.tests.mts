@@ -211,7 +211,7 @@ describe('Shared support inbox', () => {
     second.body.items.length.should.equal(2);
     second.body.hasMore.should.equal(false);
     const another = request.agent(app);
-    await utils.signIn(raw[1], another);
+    await utils.signInPrivileged(raw[1], another);
     (
       await another.get(`${endpoint(report._id)}/conversation`).expect(200)
     ).body.items[1].authorName.should.equal('Fictional Support');

@@ -89,7 +89,7 @@ describe('SparkPost admin diagnostics', () => {
     user.roles = ['user', 'admin'];
     await utils.saveUsers([user]);
     const agent = request.agent(app);
-    await agent.post('/api/auth/signin').send(user).expect(200);
+    await utils.signInPrivileged(user, agent);
     const response = await agent
       .get('/api/admin/sparkpost/overview?days=7')
       .expect(200);

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import express from './../../../../config/lib/express.mts';
@@ -8,6 +9,34 @@ import type {
 } from '../../../../testutils/server/model-contracts.mts';
 
 import 'should';
+
+function currentTotp(secret: string) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0;
+  let value = 0;
+  const bytes = [];
+  for (const character of secret) {
+    value = (value << 5) | alphabet.indexOf(character);
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto
+    .createHmac('sha1', Buffer.from(bytes))
+    .update(counterBuffer)
+    .digest();
+  const offset = digest[digest.length - 1] & 15;
+  return String((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(
+    6,
+    '0',
+  );
+}
 
 describe('Admin access route tests', () => {
   let app: TestExpressApp;
@@ -165,7 +194,7 @@ describe('Admin access route tests', () => {
     targetUserId = users[2]._id.toString();
   });
   afterEach(utils.clearDatabase);
-  it('allows welcome-team acquisition access only, and honours revocation', async () => {
+  it('allows welcome-team acquisition access without MFA, and honours revocation', async () => {
     const User = mongoose.model('User');
     await User.updateOne(
       {
@@ -188,7 +217,10 @@ describe('Admin access route tests', () => {
           : endpoint.path === '/api/admin/location-corrections/send'
             ? 400
             : 403;
-      const pendingRequest = sendAdminRequest(agent, endpoint);
+      let pendingRequest = sendAdminRequest(agent, endpoint);
+      if (endpoint.method !== 'get') {
+        pendingRequest = pendingRequest.set('X-Trustroots-Request', '1');
+      }
       await pendingRequest.send(endpoint.body || {}).expect(expected);
     }
     await User.updateOne(
@@ -202,6 +234,46 @@ describe('Admin access route tests', () => {
       },
     );
     await expectAdminRequestsForbidden(agent);
+  });
+  it('requires administrators to enrol MFA before account access', async () => {
+    const User = mongoose.model('User');
+    const credentials = {
+      username: 'mfaadmintest',
+      password: 'ExamplePassword123!',
+    };
+    await new User({
+      ...credentials,
+      firstName: 'Example',
+      lastName: 'Member',
+      email: 'mfa-admin@example.test',
+      provider: 'local',
+      roles: ['user', 'admin'],
+    }).save();
+    const agent = request.agent(app);
+    // Avoid elevateAdminAccess until MFA is enrolled.
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const blocked = await agent.get('/api/admin/dashboard').expect(403);
+    blocked.body.mfaRequired.should.be.true();
+    const enrolment = await agent
+      .post('/api/users/mfa/enrol')
+      .set('X-Trustroots-Request', '1')
+      .send({ currentPassword: credentials.password })
+      .expect(200);
+    const secret = new URL(enrolment.body.provisioningUri).searchParams.get(
+      'secret',
+    );
+    if (!secret) {
+      throw new Error('Expected the enrolment URI to include a secret');
+    }
+    const activation = await agent
+      .post('/api/users/mfa/enrol/verify')
+      .set('X-Trustroots-Request', '1')
+      .send({ code: currentTotp(secret) })
+      .expect(200);
+    activation.body.recoveryCodes.should.have.length(10);
+    activation.body.user.should.not.have.property('mfaSecretEncrypted');
+    await utils.elevateAdminAccess(agent, credentials.password);
+    await agent.get('/api/admin/dashboard').expect(200);
   });
   it('does not allow guests to use admin endpoints', async () => {
     await expectAdminRequestsForbidden(request.agent(app));

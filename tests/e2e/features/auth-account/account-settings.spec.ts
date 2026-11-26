@@ -1,4 +1,5 @@
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import { enrolAuthenticator } from '../../support/mfa.mts';
 
 import {
   DEFAULT_PASSWORD,
@@ -17,6 +18,76 @@ import {
 } from '../../support/db.mts';
 
 test.describe.serial('account settings feature coverage', () => {
+  test('administrators can enrol an authenticator and use it at sign-in', async ({
+    page,
+    request,
+  }, testInfo) => {
+    test.setTimeout(120_000);
+    annotateFeature(testInfo, 'account.mfa', [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await updateUserByUsername(user.username, {
+      $addToSet: { roles: 'admin' },
+    });
+    await page.goto('/profile/edit/account');
+    await enrolAuthenticator(page, user.password);
+    await expect(
+      page.getByRole('list', { name: 'Recovery codes' }).locator('li'),
+    ).toHaveCount(10);
+    const recoveryCode = await page
+      .getByRole('list', { name: 'Recovery codes' })
+      .locator('li code')
+      .first()
+      .textContent();
+    if (!recoveryCode) {
+      throw new Error('The recovery code was not displayed.');
+    }
+    await page
+      .getByRole('button', { name: 'I have saved these codes' })
+      .click();
+
+    const profileResponse = await page.request.get(
+      `/api/users/${user.username}`,
+    );
+    const profile = await profileResponse.json();
+    expect(profile).not.toHaveProperty('mfaSecretEncrypted');
+    expect(profile).not.toHaveProperty('mfaRecoveryCodeHashes');
+    expect(profile).not.toHaveProperty('mfaPendingSecretEncrypted');
+
+    await signOut(page);
+    await page.goto('/signin');
+    await page.getByLabel('Email or username').fill(user.username);
+    await page.getByLabel('Password', { exact: true }).fill(user.password);
+    await page.getByRole('button', { name: 'Login', exact: true }).click();
+    await expect(
+      page.getByLabel('Authenticator or recovery code'),
+    ).toBeVisible();
+    await page.getByLabel('Authenticator or recovery code').fill(recoveryCode);
+    await page.getByRole('button', { name: 'Verify and sign in' }).click();
+    await expect(page).not.toHaveURL(/\/signin/);
+    const session = await page.request.get('/api/auth/session');
+    expect((await session.json()).userId).toBeTruthy();
+
+    await signOut(page);
+    await page.goto('/signin');
+    await page.getByLabel('Email or username').fill(user.username);
+    await page.getByLabel('Password', { exact: true }).fill(user.password);
+    await page.getByRole('button', { name: 'Login', exact: true }).click();
+    await page.getByLabel('Authenticator or recovery code').fill(recoveryCode);
+    await page.getByRole('button', { name: 'Verify and sign in' }).click();
+    await expect(page.getByRole('alert')).toContainText('invalid');
+    expect(
+      (await (await page.request.get('/api/auth/session')).json()).userId,
+    ).toBeNull();
+  });
+
   test('FAQ removal links focus the account section and return to the answer', async ({
     page,
     request,

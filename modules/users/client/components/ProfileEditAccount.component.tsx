@@ -27,6 +27,7 @@ import {
 } from '../config/username.client.constants';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import { Alert } from '@trustroots/ui/Alert';
+import MfaSettings from './MfaSettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -425,6 +426,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           </form>
         </div>
       </div>
+
+      <MfaSettings />
 
       <div className="panel panel-default">
         <div className="panel-heading">{t('Interface language')}</div>

@@ -28,16 +28,18 @@ interface PasswordRequest {
   body?: PasswordBody;
   params?: { token?: string };
   query?: { utm_source?: string; utm_medium?: string; utm_campaign?: string };
-  user?: { id: string };
+  user?: { id: string; $locals?: { mfaVerified?: boolean } };
   mobileSession?: { id: string };
   login?: (
     user: PasswordUserDocument,
     callback: (error?: Error | null) => void,
   ) => void;
+  logout?: (callback: (error?: Error | null) => void) => void;
 }
 interface PasswordResponseBody {
   message?: string;
   username?: string;
+  mfaRequired?: boolean;
 }
 interface DeferredResponse {
   statusCode: number;
@@ -533,6 +535,109 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.username!.should.equal(userDoc.username);
     });
+
+    it('does not log an MFA account in after password recovery', async () => {
+      const controller = (
+        await mockModule<{ default: PasswordController }>(
+          new URL(controllerPath, import.meta.url),
+          {
+            [emailServicePath]: {
+              sendResetPassword: (
+                user: PasswordUserDocument,
+                cb: (error?: Error) => void,
+              ) => cb(),
+              sendResetPasswordConfirm: (
+                user: PasswordUserDocument,
+                cb: (error?: Error) => void,
+              ) => cb(new Error('email temporarily unavailable')),
+            },
+          },
+        )
+      ).default;
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = new Date(Date.now() + 3600000);
+      userDoc.mfaEnabled = true;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      let loggedOut = false;
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {
+            throw new Error('MFA account must not be logged in');
+          },
+          logout: callback => {
+            loggedOut = true;
+            callback(null);
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      loggedOut.should.be.true();
+      res.body.should.deepEqual({ mfaRequired: true });
+    });
+
+    it('completes the MFA recovery response when confirmation email succeeds', async () => {
+      const controller = await loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = new Date(Date.now() + 3600000);
+      userDoc.mfaEnabled = true;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(null),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.body.should.deepEqual({ mfaRequired: true });
+    });
+
+    it('returns a controlled error when logout fails for an MFA recovery', async () => {
+      const controller = await loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = new Date(Date.now() + 3600000);
+      userDoc.mfaEnabled = true;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(new Error('logout failed')),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message!.should.equal('Password reset failed.');
+    });
   });
 
   describe('changePassword', () => {
@@ -675,6 +780,65 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message!.should.equal('Password changed successfully!');
+    });
+
+    it('preserves an MFA-verified session when changing an MFA account password', async () => {
+      const controller = await loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.password = 'oldpassword1';
+      userDoc.mfaEnabled = true;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString(), $locals: { mfaVerified: true } },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            authenticatedUser.$locals.mfaVerified.should.equal(true);
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
+    it('does not grant MFA verification when the current session lacks it', async () => {
+      const controller = await loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.password = 'oldpassword1';
+      userDoc.mfaEnabled = true;
+      userDoc.$locals.mfaVerified = true;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            authenticatedUser.$locals.mfaVerified.should.equal(false);
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
     });
 
     it('does not create a browser session for a mobile password change', async () => {

@@ -24,6 +24,10 @@ vi.mock('@/config/client/i18n', () => ({
     dir: () => 'ltr',
   },
 }));
+vi.mock('@/modules/users/client/components/MfaSettings.component', () => ({
+  __esModule: true,
+  default: () => <section>Authenticator settings</section>,
+}));
 const updateUser = vi.mocked(usersApi.update);
 const changePassword = vi.mocked(usersApi.changePassword);
 const resendConfirmation = vi.mocked(usersApi.resendEmailConfirmation);
@@ -151,6 +155,14 @@ describe('ProfileEditAccount', () => {
       expect(
         screen.getByRole('button', { name: 'Cancel email change' }),
       ).toBeEnabled();
+    },
+  );
+
+  it.each([{ roles: ['user'] }, { roles: ['user', 'admin'] }])(
+    'shows security settings for $roles',
+    ({ roles }) => {
+      renderPage({ roles });
+      expect(screen.getByText('Authenticator settings')).toBeInTheDocument();
     },
   );
 

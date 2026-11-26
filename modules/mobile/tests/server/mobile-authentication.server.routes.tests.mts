@@ -122,6 +122,39 @@ describe('Mobile authentication API', function () {
     response.body.code.should.equal('authentication_required');
   });
 
+  it('requires web sign-in for an account with two-factor authentication', async function () {
+    await User.updateOne({ _id: member._id }, { $set: { mfaEnabled: true } });
+    const response = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(403);
+
+    response.body.code.should.equal('web_sign_in_required');
+    should.not.exist(response.body.accessToken);
+    should.not.exist(response.body.refreshToken);
+    (await MobileSession.countDocuments({ user: member._id })).should.equal(0);
+  });
+
+  it('rejects existing native tokens for an account with two-factor authentication', async function () {
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const session = await MobileSession.findOne({ user: member._id });
+    await User.updateOne({ _id: member._id }, { $set: { mfaEnabled: true } });
+
+    await request(app)
+      .get('/api/mobile/v0/me')
+      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .expect(401);
+    await request(app)
+      .post('/api/mobile/v0/auth/refresh')
+      .send({ refreshToken: signin.body.refreshToken })
+      .expect(401);
+    const stored = await MobileSession.findById(session._id);
+    stored.refreshTokenHash.should.equal(session.refreshTokenHash);
+  });
+
   it('rate limits repeated rejected sign-in attempts', async function () {
     for (let attempt = 0; attempt < 10; attempt += 1) {
       await request(app)

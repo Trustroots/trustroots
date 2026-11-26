@@ -36,7 +36,10 @@ export default function ResetPasswordSuccessPage() {
           <br />
           <h3>Password successfully reset</h3>
           <p>
-            <a href="/">Continue</a>
+            Sign in with your new password and authenticator code to continue.
+          </p>
+          <p>
+            <a href="/signin">Sign in</a>
           </p>
         </div>
       </div>
