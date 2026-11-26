@@ -394,6 +394,24 @@ describe('Support team access and investigation', () => {
         shadowHidden: index === 0,
       })),
       { userFrom, userTo: recipients[0], content, created: windowEnd },
+      ...[...recipients, users[0]._id].map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Four recipients',
+        created: windowStart,
+      })),
+      ...recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Recent repeat',
+        created: windowEnd,
+      })),
+      ...recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Earlier repeat',
+        created: windowStart,
+      })),
       ...[
         ['Different Case', 'different case', 'different case'],
         ['Punctuation!', 'Punctuation.', 'Punctuation.'],
@@ -459,11 +477,32 @@ describe('Support team access and investigation', () => {
       hasMore: false,
       items: [
         {
+          content: 'Four recipients',
+          recipientCount: 4,
+          sendCount: 4,
+          firstSent: windowStart.toISOString(),
+          lastSent: windowStart.toISOString(),
+        },
+        {
           content,
           recipientCount: 3,
           sendCount: 4,
           firstSent: windowStart.toISOString(),
           lastSent: windowEnd.toISOString(),
+        },
+        {
+          content: 'Recent repeat',
+          recipientCount: 3,
+          sendCount: 3,
+          firstSent: windowEnd.toISOString(),
+          lastSent: windowEnd.toISOString(),
+        },
+        {
+          content: 'Earlier repeat',
+          recipientCount: 3,
+          sendCount: 3,
+          firstSent: windowStart.toISOString(),
+          lastSent: windowStart.toISOString(),
         },
       ],
     });

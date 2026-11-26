@@ -13,7 +13,6 @@
     "test:server": "node ../../scripts/test-module.cts server support"
   },
   "dependencies": {
-    "@trustroots/admin": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/users": "workspace:*"
