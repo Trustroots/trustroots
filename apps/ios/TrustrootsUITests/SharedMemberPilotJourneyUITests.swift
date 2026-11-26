@@ -865,13 +865,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             tapAccountButton(app.buttons["Remove local key"], in: app)
             app.alerts.buttons["Remove"].tap()
         }
+        let localStatus = app.descendants(matching: .any)["nostr-local-key-status"]
+        let profileStatus = app.descendants(matching: .any)["nostr-profile-key-status"]
+        let noLocalKey = app.staticTexts["No local key for this account."]
+        let noLinkedKey = app.staticTexts["No linked public key."]
+        XCTAssertTrue(localStatus.exists, app.debugDescription)
+        XCTAssertTrue(profileStatus.exists, app.debugDescription)
+        XCTAssertTrue(noLocalKey.waitForExistence(timeout: 10), app.debugDescription)
+
         let generate = app.buttons["Generate new key"]
         tapAccountButton(generate, in: app)
         let localKey = app.staticTexts["nostr-local-public-key"]
         XCTAssertTrue(localKey.waitForExistence(timeout: 10))
         let publicKey = localKey.label
         XCTAssertTrue(publicKey.hasPrefix("npub1"))
-        XCTAssertTrue(app.staticTexts["No linked public key."].exists)
+        XCTAssertFalse(noLocalKey.exists)
+        XCTAssertTrue(noLinkedKey.exists)
 
         tapAccountButton(app.buttons["Nostranslation signing"], in: app)
         let signing = app.navigationBars["Nostranslation signing"]
@@ -889,6 +898,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         tapAccountButton(link, in: app)
         let unlink = app.buttons["Unlink profile key"]
         XCTAssertTrue(unlink.waitForExistence(timeout: 10))
+        XCTAssertFalse(noLinkedKey.exists)
         attachNostrSection(app, name: "Local Nostr key and linked profile key")
 
         let signOut = app.buttons["Sign out"]
@@ -910,12 +920,20 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.alerts.buttons["Remove"].tap()
         XCTAssertTrue(generate.waitForExistence(timeout: 10))
         XCTAssertFalse(localKey.exists)
+        XCTAssertTrue(noLocalKey.exists)
+        XCTAssertFalse(noLinkedKey.exists)
         XCTAssertTrue(unlink.exists)
         attachNostrSection(app, name: "Local key removed without changing profile")
         tapAccountButton(unlink, in: app)
         XCTAssertTrue(app.alerts["Unlink profile key?"].waitForExistence(timeout: 5))
         app.alerts.buttons["Unlink"].tap()
-        XCTAssertTrue(app.staticTexts["No linked public key."].waitForExistence(timeout: 10))
+        XCTAssertTrue(noLinkedKey.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !profileStatus.isHittable { app.swipeDown() }
+        XCTAssertTrue(profileStatus.isHittable, app.debugDescription)
+        let statusScreenshot = XCTAttachment(screenshot: profileStatus.screenshot())
+        statusScreenshot.name = "regular-ios-nostr-profile-key-status"
+        statusScreenshot.lifetime = .keepAlways
+        add(statusScreenshot)
         tapAccountButton(signOut, in: app)
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }
