@@ -301,13 +301,13 @@ module.exports = function (
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
-      userProfile.joinTribe,
+      (req, res) => userProfile.joinTribe(tribes.updateCount, req, res),
     )
     .delete(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
       resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
-      userProfile.leaveTribe,
+      (req, res) => userProfile.leaveTribe(tribes.updateCount, req, res),
     );
 
   app.route('/api/mobile/v0/contacts/:memberId').get(

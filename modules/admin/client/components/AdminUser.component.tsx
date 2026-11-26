@@ -43,6 +43,7 @@ import { Tooltip } from '@trustroots/ui/Tooltip';
 import ProfilePage, {
   type ProfileOffersComponent,
 } from '@/modules/users/client/components/ProfilePage.component';
+import { memberCircles } from '@/modules/tribes/client/member-circles';
 import type { AuthUser } from '@trustroots/core/auth';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
@@ -1517,6 +1518,7 @@ export function AdminUserContent({
             </h4>
             <ProfilePage
               ProfileOffers={ProfileOffers}
+              circles={memberCircles}
               embedded
               profileUsername={user.profile.username}
               user={viewer as UserProfile}

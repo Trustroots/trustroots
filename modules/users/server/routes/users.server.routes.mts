@@ -92,8 +92,8 @@ export default function (app: RouteApplication, services: UserAccountServices) {
   app
     .route('/api/users/memberships/:tribeId')
     .all(usersPolicy.isAllowed)
-    .post(userProfile.joinTribe)
-    .delete(userProfile.leaveTribe);
+    .post(userProfile.joinTribe.bind(null, services.updateCircleCount))
+    .delete(userProfile.leaveTribe.bind(null, services.updateCircleCount));
   app
     .route('/api/users/push/registrations')
     .all(usersPolicy.isAllowed)

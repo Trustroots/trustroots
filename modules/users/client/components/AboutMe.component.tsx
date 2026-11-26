@@ -10,19 +10,21 @@ import {
   plainTextLength,
 } from '@/modules/core/client/utils/filters';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
-import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
+import type { ProfileCircles } from '../member-circles';
 import type { UserProfile } from '../types';
 
 interface AboutMeProps {
   profile: Pick<UserProfile, 'description'>;
   isSelf: boolean;
   profileMinimumLength: number;
+  readCircles: ProfileCircles['read'];
 }
 
 export default function AboutMe({
   profile,
   isSelf,
   profileMinimumLength,
+  readCircles,
 }: AboutMeProps) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -52,7 +54,7 @@ export default function AboutMe({
     return () => {
       cancelled = true;
     };
-  }, [hasHashtags]);
+  }, [hasHashtags, readCircles]);
   const descriptionLength = plainTextLength(profile.description);
 
   return (
