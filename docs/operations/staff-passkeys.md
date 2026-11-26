@@ -19,6 +19,8 @@ can use `localhost` and `http://localhost:4300`. Production origins use HTTPS.
 Use a stable RP ID: changing it requires members to register credentials again.
 These values are explicit deployment configuration and are never inferred from
 request headers. Missing configuration leaves passkey operations unavailable.
+For hosts using their own Compose file, pass both variables in the `webapp`
+service environment.
 
 Run the normal `npm run ensure-indexes` deployment step. `MemberPasskey`
 credentials have unique identifiers and an owner index. `PasskeyCeremony`
