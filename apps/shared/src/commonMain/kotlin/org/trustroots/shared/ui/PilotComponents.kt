@@ -131,6 +131,8 @@ internal fun PilotInput(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    maxLines: Int = if (singleLine) 1 else 4,
+    modifier: Modifier = Modifier,
     onChange: (String) -> Unit,
 ) {
     val palette = pilotPalette
@@ -140,7 +142,7 @@ internal fun PilotInput(
         BasicTextField(
             value,
             onValueChange = onChange,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .testTag(tag)
                 .semantics { contentDescription = label },
@@ -149,7 +151,7 @@ internal fun PilotInput(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             singleLine = singleLine,
-            maxLines = if (singleLine) 1 else 4,
+            maxLines = maxLines,
             visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Password) {
                 PasswordVisualTransformation()
             } else {

@@ -20,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
@@ -194,21 +193,7 @@ internal fun Conversation(
                         reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(messages, key = { it.id }) { message ->
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = if (message.outgoing) Alignment.End else Alignment.Start,
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .background(pilotPalette.surface, RoundedCornerShape(12.dp))
-                                        .padding(12.dp),
-                                ) {
-                                    PilotText(if (message.outgoing) "You" else message.author, strong = true)
-                                    PilotText(message.content)
-                                }
-                            }
-                        }
+                        items(messages, key = { it.id }) { ConversationBubble(it) }
                     }
                 }
             }

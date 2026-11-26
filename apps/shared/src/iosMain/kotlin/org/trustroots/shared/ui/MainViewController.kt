@@ -131,6 +131,17 @@ fun MemberInboxViewController(
 }
 
 @OptIn(ExperimentalForeignApi::class)
+fun MemberConversationViewController(
+    state: MemberConversationState,
+    onDraft: (String) -> Unit,
+    onSend: () -> Unit,
+    onRetry: () -> Unit,
+    onShareExperience: () -> Unit,
+) = ComposeUIViewController {
+    MemberConversation(state, onDraft, onSend, onRetry, onShareExperience)
+}
+
+@OptIn(ExperimentalForeignApi::class)
 fun MainViewController(
     gateway: PilotGateway,
     username: String?,
