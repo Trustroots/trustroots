@@ -69,10 +69,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 15), app.debugDescription)
         let biography = app.descendants(matching: .any)["profile-biography"]
         XCTAssertTrue(biography.waitForExistence(timeout: 10), app.debugDescription)
-        reveal(biography, in: app)
         let biographyText = "I enjoy exploring on foot, finding local cafés and swapping book recommendations with fellow travellers."
         let biographyLabel = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", biographyText)).firstMatch
-        XCTAssertTrue(biographyLabel.isHittable, app.debugDescription)
+        XCTAssertTrue(biographyLabel.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(biographyLabel, in: app)
         XCTAssertEqual(biographyLabel.label.trimmingCharacters(in: .whitespacesAndNewlines), biographyText)
         XCTAssertLessThanOrEqual(biographyLabel.frame.maxY, biography.frame.maxY + 1)
         let profileText = XCTAttachment(screenshot: biography.screenshot())
@@ -82,8 +82,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         let languages = app.descendants(matching: .any)["profile-languages"]
         XCTAssertTrue(languages.waitForExistence(timeout: 10), app.debugDescription)
-        reveal(languages, in: app)
-        XCTAssertTrue(element(labelled: "English · French", in: app).isHittable, app.debugDescription)
+        let languageText = element(labelled: "English · French", in: app)
+        XCTAssertTrue(languageText.waitForExistence(timeout: 10), app.debugDescription)
+        revealProfileElement(languageText, in: app)
         app.terminate()
         app.launch()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 15))
@@ -995,6 +996,22 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
             .completed,
             "The input should receive its complete value before continuing.\n\(field.debugDescription)"
         )
+    }
+
+    private func revealProfileElement(_ element: XCUIElement, in app: XCUIApplication) {
+        let profile = app.scrollViews.firstMatch
+        XCTAssertTrue(profile.exists, app.debugDescription)
+        let origin = profile.coordinate(withNormalizedOffset: .zero)
+        for _ in 0..<5 {
+            if element.isHittable { return }
+            let frame = profile.frame
+            let belowCenter = element.frame.midY >= frame.midY
+            // Start in the native profile padding, outside the nested Compose scroll views.
+            let start = origin.withOffset(CGVector(dx: 12, dy: frame.height * (belowCenter ? 0.82 : 0.18)))
+            let end = origin.withOffset(CGVector(dx: 12, dy: frame.height * (belowCenter ? 0.18 : 0.82)))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(element.isHittable, app.debugDescription)
     }
 
     private func reveal(_ field: XCUIElement, in app: XCUIApplication) {
