@@ -391,6 +391,9 @@ describe('Offer CRUD tests', function () {
               offerGetRes.body.user.member[0].tribe.label.should.equal(
                 tribe2.label,
               );
+              offerGetRes.body.user.member[0].tribe.should.not.have.property(
+                'modified',
+              );
 
               // Call the assertion callback
               return done();

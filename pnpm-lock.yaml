@@ -555,9 +555,6 @@ importers:
 
   modules/core:
     dependencies:
-      '@trustroots/tribes':
-        specifier: workspace:*
-        version: link:../tribes
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -630,9 +627,6 @@ importers:
       '@trustroots/search':
         specifier: workspace:*
         version: link:../search
-      '@trustroots/tribes':
-        specifier: workspace:*
-        version: link:../tribes
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users

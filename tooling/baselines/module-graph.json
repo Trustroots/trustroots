@@ -13,7 +13,6 @@
       "users"
     ],
     "core": [
-      "tribes",
       "users"
     ],
     "experiences": [
@@ -42,7 +41,6 @@
       "core",
       "experiences",
       "search",
-      "tribes",
       "users"
     ],
     "pages": [

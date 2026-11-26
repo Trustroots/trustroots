@@ -3,7 +3,7 @@ import userProfile from '../../../users/server/controllers/users.profile.server.
 import { readFileSync } from 'node:fs';
 import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mts';
-import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
+import { publicMemberTribePopulateOptions } from '../../../core/server/services/public-tribe-projection.mts';
 import textService from './../../../core/server/services/text.server.service.mts';
 import log from '@trustroots/logger';
 import sanitizeHtml from 'sanitize-html';
@@ -800,7 +800,7 @@ function getOffer(req: OfferRequest, res: OfferResponse) {
     if (offerUser.member && offerUser.member.length > 0) {
       offer!.user = await User.populate(
         offer!.user,
-        tribes.tribePopulateOptions(),
+        publicMemberTribePopulateOptions(),
       );
     }
   }

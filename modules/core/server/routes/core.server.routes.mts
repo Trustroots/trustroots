@@ -2,7 +2,6 @@ import type { DecodedResult } from 'nostr-tools/nip19';
 import type { Application } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import core from './../controllers/core.server.controller.mts';
-import tribes from './../../../tribes/server/controllers/tribes.server.controller.mts';
 import authenticationService from './../../../users/server/services/authentication.server.service.mts';
 import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
@@ -170,8 +169,8 @@ export default function (app: Application) {
     return next();
   });
 
-  // Define a tribes route to ensure we'll pass tribe object to index
-  // Object is passed to layout at `core.renderIndex()`
+  // The Tribes routes register the app-wide parameter lookup used by the
+  // circle page head and the legacy redirect.
   app.route('/circles/:tribe').get(core.renderIndex);
   const nip05 = app.route('/.well-known/nostr.json');
   nip05.get((_req, res, next) => {
@@ -231,7 +230,4 @@ export default function (app: Application) {
 
   // Define application route
   app.route('/{*splat}').get(core.renderIndex);
-
-  // Finish by binding the tribes middleware
-  app.param('tribe', tribes.tribeBySlug);
 }
