@@ -343,3 +343,136 @@ place lookup and update the existing search region when found.
 - **WHEN** they switch to Map and then return to Results
 - **THEN** the entered place remains available for submission
 - **AND** the Search filters action continues to open the existing filter sheet
+
+### Requirement: Regular iOS conversations use shared Compose
+
+The regular iOS app SHALL display conversation history and multiline replies in Compose.
+It SHALL use the existing iOS session, message cache, read tracking and profile
+and Experience routes. It SHALL keep unsent drafts in protected storage scoped
+to the server, account and recipient. A failed send SHALL leave the draft
+available for explicit retry. A successful send SHALL clear that draft and
+show the new reply.
+
+#### Scenario: Retry a failed reply after relaunch
+
+- **GIVEN** a member opens a regular iOS conversation
+- **WHEN** they write a reply, delivery fails and they relaunch the app
+- **THEN** the conversation restores the unsent reply and its cached history when available
+- **AND** a successful manual retry displays the reply and clears the draft
+
+### Requirement: Regular iOS conversations use a shared Experience form
+
+The regular iOS conversation SHALL present Experience interaction choices,
+recommendation and optional public feedback in Compose. Sharing SHALL require at
+least one interaction. The native iOS host SHALL present and dismiss the sheet
+and submit through the existing authenticated Experience API. A failed request
+SHALL keep the entered choices and feedback available for manual retry.
+
+#### Scenario: Retry sharing an Experience in a conversation
+
+- **GIVEN** a signed-in member can share an Experience from a regular iOS conversation
+- **WHEN** they choose an interaction and recommendation and the request fails
+- **THEN** the form displays the error and preserves the form values
+- **AND** a successful manual retry dismisses the sheet and updates the conversation action
+
+### Requirement: Regular iOS Circle details use Compose
+
+The regular iOS Circle detail SHALL show the Circle summary and member
+discovery in Compose using the existing iOS artwork and member cache. It SHALL
+show loading, empty and unavailable states, offer retry when a request fails,
+and use the existing member profile and Wiki routes.
+
+#### Scenario: Discover members and return to Circles
+
+- **GIVEN** a signed-in member opens a Circle with discoverable members
+- **WHEN** they select a member profile and return to the detail
+- **THEN** the Circle details and discovered members are available again
+- **AND** returning to Circles preserves their existing list filter
+
+### Requirement: Regular iOS support uses the shared form
+
+The regular iOS support destination SHALL use shared Compose for its message
+form, delivery feedback and FAQ action. It SHALL use the existing authenticated
+iOS support client and bounded FAQ browser route.
+
+#### Scenario: Retry a support message after a failed send
+
+- **GIVEN** a signed-in member has written a support message
+- **WHEN** delivery fails
+- **THEN** the form displays the error and keeps the message available for retry
+- **AND** after a successful retry it clears the draft and confirms delivery
+
+#### Scenario: Open the FAQ from support
+
+- **GIVEN** a member is using the support form
+- **WHEN** they choose to browse frequently asked questions
+- **THEN** the app opens the existing FAQ browser route
+
+### Requirement: Regular iOS profile editing uses the shared form
+
+The regular iOS profile editor SHALL use shared Compose for the name, tagline,
+locations, language selector, biography and save action. It SHALL use the
+existing authenticated iOS profile update, require a nonblank name and preserve
+the existing trimming and biography loading rules. Language selection SHALL
+use the existing iOS picker.
+
+#### Scenario: Edit and save profile text from Compose
+
+- **GIVEN** a signed-in member opens the profile editor
+- **WHEN** they update their tagline or biography and save
+- **THEN** the app submits the new text with the other loaded preferences through the existing iOS profile update
+- **AND** the app returns to the profile after a successful save
+
+### Requirement: Regular iOS Nostranslation review alert controls use Compose
+
+The regular iOS signing sheet SHALL use shared Compose for the review alert
+action and status when the active account has a connected Nostranslation
+client. The iOS host SHALL handle notification permission, registration and
+account scoping through the existing alert manager.
+
+#### Scenario: Open the signing sheet without connected clients
+
+- **GIVEN** an active account has a local Nostr key and no connected clients
+- **WHEN** the member opens the Nostranslation signing sheet
+- **THEN** the review alert controls are unavailable until a client is connected
+
+### Requirement: Shared iOS Nostranslation connected client rows
+
+The regular iOS Nostranslation signing sheet SHALL use shared Compose to render each connected client's label and revoke control. Swift SHALL supply only the displayed public-key prefix and handle each callback using the existing account-scoped signer.
+
+#### Scenario: Viewing connected clients
+
+- **WHEN** the member has paired Nostranslation clients for their active account and key
+- **THEN** iOS shows the connected-client section with each client's public-key prefix and a corresponding accessible revoke control
+
+#### Scenario: Revoking a connected client
+
+- **WHEN** a member revokes a displayed client
+- **THEN** the iOS signer applies its existing account-scoped revocation operation to that client
+- **AND** the connected-client section reflects the resulting native client list
+
+#### Scenario: Opening signing with no connected clients
+
+- **WHEN** the member opens the signing sheet without any connected clients for their active account and key
+- **THEN** the connected-client section and its revoke controls are hidden
+
+### Requirement: Shared iOS Nostranslation pending review presentation
+
+The regular iOS Nostranslation signing sheet SHALL present its pending translation review's destination, expiry feedback and decision controls with shared Compose. The iOS host SHALL bind the controls to the displayed native review and use the existing signer to resolve it.
+
+#### Scenario: Approving a displayed review
+
+- **WHEN** a pending review appears in the iOS signing sheet
+- **THEN** Compose displays the destination and explicit approval and denial controls
+- **AND** selecting approval passes the displayed review to the existing native signer for authorisation
+
+#### Scenario: Viewing an expired review
+
+- **WHEN** the iOS timeline marks the displayed review expired
+- **THEN** Compose shows the expiry warning, disables approval and offers dismissal
+- **AND** the native signer continues to check the current time when resolving an approval
+
+#### Scenario: Acting on a replaced review
+
+- **WHEN** the displayed review has been removed or replaced before the native decision is handled
+- **THEN** the stale action leaves the current review available for its own explicit decision

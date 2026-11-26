@@ -1,14 +1,13 @@
 import SwiftUI
+import TrustrootsShared
 
 struct EditProfileView: View {
     @ObservedObject var session: MemberSessionStore
     let onSaved: () -> Void
     let onCancel: () -> Void
-    @State private var displayName = ""
-    @State private var tagline = ""
-    @State private var description = ""
-    @State private var locationLiving = ""
-    @State private var locationFrom = ""
+    @State private var draft = MemberProfileDraft(
+        displayName: "", tagline: "", locationLiving: "", locationFrom: "", biography: ""
+    )
     @State private var selectedLanguageCodes: Set<String> = []
     @State private var showingLanguagePicker = false
     @State private var isLoading = false
@@ -18,59 +17,36 @@ struct EditProfileView: View {
     private let api = TrustrootsAPI()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    Button(action: onCancel) {
-                        Image(systemName: "chevron.left")
-                            .font(.headline.weight(.semibold))
-                            .frame(width: 40, height: 40)
-                    }
-                    .accessibilityLabel("Back to profile")
-                    Spacer()
-                    Button("Cancel", action: onCancel)
-                        .font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Button(action: onCancel) {
+                    Image(systemName: "chevron.left")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 40, height: 40)
                 }
-
-                Text("Edit profile")
-                    .font(.largeTitle.bold())
-
-                if isLoading {
-                    ProgressView("Loading profile…")
-                        .frame(maxWidth: .infinity, minHeight: 240)
-                } else {
-                    field("Name", text: $displayName)
-                    field("Tagline", text: $tagline)
-                    field("Lives in", text: $locationLiving)
-                    field("From", text: $locationFrom)
-                    languagePicker
-
-                    Text("About me")
-                        .font(.headline)
-                    TextEditor(text: $description)
-                        .frame(minHeight: 360)
-                        .padding(10)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.secondary.opacity(0.28))
-                        }
-
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
-
-                    Button(isSaving ? "Saving…" : "Save profile") {
-                        Task { await save() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(TrustrootsPalette.green)
-                    .disabled(isSaving || displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
+                .accessibilityLabel("Back to profile")
+                Spacer()
+                Button("Cancel", action: onCancel)
+                    .font(.subheadline.weight(.semibold))
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+
+            if isLoading {
+                ProgressView("Loading profile…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ComposeProfileEditor(
+                    draft: $draft,
+                    languages: selectedLanguageCodes.isEmpty ? nil : selectedLanguageCodes.sorted()
+                        .map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: ", "),
+                    isSaving: isSaving,
+                    error: errorMessage,
+                    onChooseLanguages: { showingLanguagePicker = true },
+                    onSave: { Task { await save() } }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .task { await load() }
         .sheet(isPresented: $showingLanguagePicker) {
@@ -100,41 +76,6 @@ struct EditProfileView: View {
         }
     }
 
-    private func field(_ title: String, text: Binding<String>, prompt: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(.headline)
-            TextField(prompt ?? title, text: text)
-                .padding(12)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-    }
-
-    private var languagePicker: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text("Languages").font(.headline)
-            Button {
-                showingLanguagePicker = true
-            } label: {
-                HStack {
-                    Text(
-                        selectedLanguageCodes.isEmpty
-                            ? "Choose languages"
-                            : selectedLanguageCodes.sorted().map { TrustrootsLanguage.displayName(for: $0) }.joined(separator: ", ")
-                    )
-                    .multilineTextAlignment(.leading)
-                    .foregroundStyle(selectedLanguageCodes.isEmpty ? .secondary : .primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.secondary)
-                }
-                .padding(12)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-        }
-    }
-
     private var availableLanguageCodes: [String] {
         Array(Set(TrustrootsLanguage.availableCodes).union(selectedLanguageCodes))
             .sorted { TrustrootsLanguage.displayName(for: $0) < TrustrootsLanguage.displayName(for: $1) }
@@ -146,11 +87,13 @@ struct EditProfileView: View {
         defer { isLoading = false }
         do {
             let profile = try await api.profile(serverURLString: session.serverURLString, username: username)
-            displayName = profile.displayName
-            tagline = profile.tagline ?? ""
-            description = profile.description?.plainText ?? ""
-            locationLiving = profile.locationLiving ?? ""
-            locationFrom = profile.locationFrom ?? ""
+            draft = MemberProfileDraft(
+                displayName: profile.displayName,
+                tagline: profile.tagline ?? "",
+                locationLiving: profile.locationLiving ?? "",
+                locationFrom: profile.locationFrom ?? "",
+                biography: profile.description?.plainText ?? ""
+            )
             selectedLanguageCodes = Set(profile.languages ?? [])
         } catch {
             errorMessage = error.localizedDescription
@@ -158,24 +101,67 @@ struct EditProfileView: View {
     }
 
     private func save() async {
-        guard !isSaving else { return }
+        let displayName = draft.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !isSaving, !displayName.isEmpty else { return }
         isSaving = true
         errorMessage = nil
         defer { isSaving = false }
         do {
             _ = try await api.updateProfile(
                 serverURLString: session.serverURLString,
-                displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
-                tagline: tagline.trimmingCharacters(in: .whitespacesAndNewlines),
-                description: description.trimmingCharacters(in: .whitespacesAndNewlines),
-                locationLiving: locationLiving.trimmingCharacters(in: .whitespacesAndNewlines),
-                locationFrom: locationFrom.trimmingCharacters(in: .whitespacesAndNewlines),
+                displayName: displayName,
+                tagline: draft.tagline.trimmingCharacters(in: .whitespacesAndNewlines),
+                description: draft.biography.trimmingCharacters(in: .whitespacesAndNewlines),
+                locationLiving: draft.locationLiving.trimmingCharacters(in: .whitespacesAndNewlines),
+                locationFrom: draft.locationFrom.trimmingCharacters(in: .whitespacesAndNewlines),
                 languages: selectedLanguageCodes.sorted()
             )
             onSaved()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+@MainActor
+private struct ComposeProfileEditor: UIViewControllerRepresentable {
+    @Binding var draft: MemberProfileDraft
+    let languages: String?
+    let isSaving: Bool
+    let error: String?
+    let onChooseLanguages: () -> Void
+    let onSave: () -> Void
+
+    final class Coordinator {
+        let state = MemberProfileEditorState()
+        var onEdit: ((MemberProfileDraft) -> Void)?
+        var onChooseLanguages: (() -> Void)?
+        var onSave: (() -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MemberProfileEditorViewControllerKt.MemberProfileEditorViewController(
+            state: coordinator.state,
+            onEdit: { [weak coordinator] in coordinator?.onEdit?($0) },
+            onChooseLanguages: { [weak coordinator] in coordinator?.onChooseLanguages?() },
+            onSave: { [weak coordinator] in coordinator?.onSave?() }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        let binding = $draft
+        coordinator.onEdit = { binding.wrappedValue = $0 }
+        coordinator.onChooseLanguages = onChooseLanguages
+        coordinator.onSave = onSave
+        coordinator.state.update(draft: draft, languages: languages, isSaving: isSaving, error: error)
     }
 }
 

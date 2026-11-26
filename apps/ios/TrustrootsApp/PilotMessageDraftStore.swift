@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 
 struct PilotMessageDraftStore {
-    struct Key {
+    struct Key: Equatable {
         let server: String
         let username: String
         let recipientID: String

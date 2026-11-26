@@ -100,11 +100,17 @@ internal fun PilotButton(
     enabled: Boolean = true,
     primary: Boolean = false,
     modifier: Modifier = Modifier,
+    destructive: Boolean = false,
     onClick: () -> Unit,
 ) {
     val palette = pilotPalette
     val shape = RoundedCornerShape(12.dp)
     val emphasis = if (enabled) 1f else 0.5f
+    val labelColour = when {
+        primary -> palette.onAccent
+        destructive -> palette.error.copy(alpha = emphasis)
+        else -> palette.ink.copy(alpha = emphasis)
+    }
     Box(
         modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
@@ -116,7 +122,7 @@ internal fun PilotButton(
     ) {
         PilotText(
             label,
-            colour = if (primary) palette.onAccent else palette.ink.copy(alpha = emphasis),
+            colour = labelColour,
             strong = true,
         )
     }
@@ -131,6 +137,9 @@ internal fun PilotInput(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else maxOf(minLines, 4),
+    modifier: Modifier = Modifier,
     onChange: (String) -> Unit,
 ) {
     val palette = pilotPalette
@@ -140,7 +149,7 @@ internal fun PilotInput(
         BasicTextField(
             value,
             onValueChange = onChange,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .testTag(tag)
                 .semantics { contentDescription = label },
@@ -149,7 +158,8 @@ internal fun PilotInput(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             singleLine = singleLine,
-            maxLines = if (singleLine) 1 else 4,
+            minLines = minLines,
+            maxLines = maxLines,
             visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Password) {
                 PasswordVisualTransformation()
             } else {
