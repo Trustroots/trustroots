@@ -588,9 +588,6 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
-      '@trustroots/support':
-        specifier: workspace:*
-        version: link:../support
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -782,9 +779,6 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
-      '@trustroots/support':
-        specifier: workspace:*
-        version: link:../support
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes

@@ -21,7 +21,6 @@
     "@trustroots/offers": "workspace:*",
     "@trustroots/search": "workspace:*",
     "@trustroots/stats": "workspace:*",
-    "@trustroots/support": "workspace:*",
     "@trustroots/tribes": "workspace:*"
   }
 }

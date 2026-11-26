@@ -10,27 +10,24 @@ type BlockMemberProps = React.ComponentProps<typeof BlockMember>;
 const mockReportMemberCalls: ReportMemberProps[] = [];
 const mockBlockMemberCalls: BlockMemberProps[] = [];
 
-vi.mock(
-  '@/modules/support/client/components/ReportMember.component',
-  async () => {
-    const React = await vi.importActual<typeof import('react')>('react');
+vi.mock('@/modules/core/client/components/ReportMember.component', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
-    function MockReportMember(props: ReportMemberProps) {
-      mockReportMemberCalls.push(props);
+  function MockReportMember(props: ReportMemberProps) {
+    mockReportMemberCalls.push(props);
 
-      return React.createElement(
-        'a',
-        {
-          'data-testid': 'report-member-link',
-          'data-username': props.username,
-        },
-        'Report',
-      );
-    }
+    return React.createElement(
+      'a',
+      {
+        'data-testid': 'report-member-link',
+        'data-username': props.username,
+      },
+      'Report',
+    );
+  }
 
-    return { default: MockReportMember };
-  },
-);
+  return { default: MockReportMember };
+});
 
 vi.mock('@/modules/users/client/components/BlockMember.component', async () => {
   const React = await vi.importActual<typeof import('react')>('react');

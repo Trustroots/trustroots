@@ -13,7 +13,7 @@ import {
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
-import ReportMember from '@/modules/support/client/components/ReportMember.component';
+import ReportMember from '@/modules/core/client/components/ReportMember.component';
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
 import BlockedMemberBanner from '@/modules/users/client/components/BlockedMemberBanner.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
