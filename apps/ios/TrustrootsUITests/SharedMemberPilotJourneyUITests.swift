@@ -404,6 +404,29 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         )
     }
 
+    func testRegularAccountOpensNativeSigningAndSignsOutFromCompose() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)"]
+        app.launch()
+        addTeardownBlock { [self] in signOutOfNativeAccountIfNeeded(app) }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+        openNostrAccount(app)
+
+        let account = app.scrollViews["account-scroll-view"]
+        XCTAssertTrue(account.staticTexts["Account"].waitForExistence(timeout: 10), app.debugDescription)
+        tapAccountButton(app.buttons["Nostranslation signing"], in: app)
+        let signing = app.navigationBars["Nostranslation signing"]
+        XCTAssertTrue(signing.waitForExistence(timeout: 10), app.debugDescription)
+        signing.buttons["Done"].tap()
+        XCTAssertTrue(account.waitForExistence(timeout: 10), app.debugDescription)
+
+        tapAccountButton(app.buttons["Sign out"], in: app)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10), app.debugDescription)
+    }
+
     func testRegularAccountSavesComposeEmailAndNewsletterPreferences() {
         continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
