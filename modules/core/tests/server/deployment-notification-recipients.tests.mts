@@ -142,7 +142,15 @@ test('a duplicate-key race on progress insert rereads the saved snapshot', async
     public: true,
     roles: ['welcome-team'],
   });
-  const events = db.collection('deploymentNotifications');
+  const events = db.collection<{
+    _id: string;
+    origin: string;
+    action: string;
+    buildCommit: string;
+    readinessSucceededAt: string;
+    addresses: string[];
+    queuedCount: number;
+  }>('deploymentNotifications');
   // Another concurrent writer already inserted the progress document.
   await events.insertOne({
     _id: receipt.eventId,
@@ -153,6 +161,15 @@ test('a duplicate-key race on progress insert rereads the saved snapshot', async
     addresses: ['race@example.test'],
     queuedCount: 0,
   });
+  // queueDeploymentNotifications calls db.collection() again; reuse this
+  // instance so the spies below actually intercept the race path.
+  const originalCollection = db.collection.bind(db);
+  const collection = vi
+    .spyOn(db, 'collection')
+    .mockImplementation(((name: string, options?: object) =>
+      name === 'deploymentNotifications'
+        ? events
+        : originalCollection(name as never, options as never)) as never);
   const findOne = vi.spyOn(events, 'findOne').mockResolvedValueOnce(null);
   const findOneAndUpdate = vi
     .spyOn(events, 'findOneAndUpdate')
@@ -166,6 +183,7 @@ test('a duplicate-key race on progress insert rereads the saved snapshot', async
   } finally {
     findOne.mockRestore();
     findOneAndUpdate.mockRestore();
+    collection.mockRestore();
   }
   assert.equal(
     await db.collection('agendaJobs').countDocuments({
@@ -183,7 +201,14 @@ test('progress insert failures other than duplicate keys still reject', async ()
     public: true,
     roles: ['admin'],
   });
-  const events = db.collection('deploymentNotifications');
+  const events = db.collection<{ _id: string }>('deploymentNotifications');
+  const originalCollection = db.collection.bind(db);
+  const collection = vi
+    .spyOn(db, 'collection')
+    .mockImplementation(((name: string, options?: object) =>
+      name === 'deploymentNotifications'
+        ? events
+        : originalCollection(name as never, options as never)) as never);
   const findOne = vi.spyOn(events, 'findOne').mockResolvedValueOnce(null);
   const findOneAndUpdate = vi
     .spyOn(events, 'findOneAndUpdate')
@@ -196,6 +221,7 @@ test('progress insert failures other than duplicate keys still reject', async ()
   } finally {
     findOne.mockRestore();
     findOneAndUpdate.mockRestore();
+    collection.mockRestore();
   }
 });
 

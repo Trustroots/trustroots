@@ -9,8 +9,6 @@ export const Route = createFileRoute('/admin/user/$username')({
   beforeLoad: requireRole('admin', 'support-team'),
   component: function UsernameRoute() {
     const { username } = useParams({ from: '/admin/user/$username' });
-    return (
-      <AdminUserRoute MemberProfile={MemberProfile} username={username} />
-    );
+    return <AdminUserRoute MemberProfile={MemberProfile} username={username} />;
   },
 });
