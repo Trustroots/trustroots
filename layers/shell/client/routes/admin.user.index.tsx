@@ -2,12 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import { useAuth } from '@trustroots/core/auth';
-import Offers from '@/modules/offers/client/components/Offers.component';
+import MemberProfile from '../member-profile';
 import { requireRole } from '../route-options';
 
 function AdminUserSearchRoute() {
   const { user } = useAuth();
-  return <AdminUser ProfileOffers={Offers} viewer={user} />;
+  return <AdminUser MemberProfile={MemberProfile} viewer={user} />;
 }
 
 export const Route = createFileRoute('/admin/user/')({
