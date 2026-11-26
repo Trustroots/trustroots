@@ -1279,19 +1279,17 @@ describe('Profile controller unit tests', () => {
         { tribe: new mongoose.Types.ObjectId(), since: new Date() },
       ];
       await userDoc.save();
-      const controller = await stubControllerDependencies(controllerPath, {
-        './../../../tribes/server/controllers/tribes.server.controller.mts': {
-          updateCount: (
-            _id: unknown,
-            _change: number,
-            _returnUpdated: boolean,
-            cb: (err: Error) => void,
-          ) => cb(new Error('Counter unavailable')),
-        },
-      });
       const { res } = await runHandler(res =>
-        controller.removeProfile(
-          userAccountServices,
+        profileController.removeProfile(
+          {
+            ...userAccountServices,
+            updateCircleCount: (
+              _id: unknown,
+              _change: number,
+              _returnUpdated: boolean,
+              callback: (error: Error) => void,
+            ) => callback(new Error('Counter unavailable')),
+          },
           { user: userDoc, params: { token: 'sample-remove-token' } },
           res,
         ),
@@ -1840,7 +1838,11 @@ describe('Profile controller unit tests', () => {
     for (const action of ['joinTribe', 'leaveTribe'] as const) {
       it(`${action} responds with 403 without a user`, async () => {
         const { res } = await runHandler(res =>
-          profileController[action]({ params: { tribeId: 'x' } }, res),
+          profileController[action](
+            userAccountServices.updateCircleCount,
+            { params: { tribeId: 'x' } },
+            res,
+          ),
         );
         res.statusCode.should.equal(403);
       });
@@ -1849,6 +1851,7 @@ describe('Profile controller unit tests', () => {
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
         const { res } = await runHandler(res =>
           profileController[action](
+            userAccountServices.updateCircleCount,
             {
               user: { _id: saved._id, member: [] },
               params: { tribeId: 'bad' },
@@ -1869,6 +1872,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -1889,6 +1893,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -1904,6 +1909,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: { _id: saved._id, member: [] },
             params: { tribeId: tribe._id.toString() },
@@ -1929,6 +1935,7 @@ describe('Profile controller unit tests', () => {
         const user = await findUser(saved._id);
         const { res } = await runHandler(res =>
           profileController[action](
+            userAccountServices.updateCircleCount,
             { user, params: { tribeId: changed._id.toString() } },
             res,
           ),
@@ -1952,6 +1959,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             // A legacy account without a membership list is not a member.
             user: { _id: saved._id },
@@ -1973,6 +1981,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2003,6 +2012,7 @@ describe('Profile controller unit tests', () => {
 
         const { res } = await runHandler(res =>
           profileController.joinTribe(
+            userAccountServices.updateCircleCount,
             {
               user: userDoc,
               params: { tribeId: tribe._id.toString() },
@@ -2030,6 +2040,7 @@ describe('Profile controller unit tests', () => {
       const userDoc = await findUser(saved._id);
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: String(tribe._id) },
@@ -2058,6 +2069,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2092,6 +2104,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.joinTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
@@ -2123,6 +2136,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
+          userAccountServices.updateCircleCount,
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },

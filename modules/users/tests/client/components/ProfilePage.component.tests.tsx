@@ -1,3 +1,4 @@
+import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
 import { readOutreachSource } from '@trustroots/analytics/client';
 import {
@@ -262,6 +263,7 @@ function renderPage(
       }}
     >
       <ProfilePage
+        circles={memberCircles}
         embedded={options.embedded}
         profileUsername={options.profileUsername}
         user={user}
@@ -725,7 +727,7 @@ describe('ProfilePage', () => {
           user: authUser,
         }}
       >
-        <ProfilePage user={authUser} />
+        <ProfilePage circles={memberCircles} user={authUser} />
       </AppProviders>,
     );
     expect(await screen.findByText('Experiences list')).toBeVisible();
@@ -742,7 +744,7 @@ describe('ProfilePage', () => {
           user: authUser,
         }}
       >
-        <ProfilePage user={authUser} />
+        <ProfilePage circles={memberCircles} user={authUser} />
       </AppProviders>,
     );
     expect(await screen.findByText('New experience form')).toBeVisible();

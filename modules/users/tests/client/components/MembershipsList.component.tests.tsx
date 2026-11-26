@@ -1,3 +1,4 @@
+import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
@@ -27,13 +28,24 @@ const memberships = [
 
 describe('MembershipsList', () => {
   it('uses an empty membership list by default', () => {
-    const { container } = render(<MembershipsList isOwnProfile={false} />);
+    const { container } = render(
+      <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
+        isOwnProfile={false}
+      />,
+    );
 
     expect(container.firstChild).toBeEmptyDOMElement();
   });
 
   it('renders circle badges sorted by member count', () => {
-    render(<MembershipsList isOwnProfile={false} memberships={memberships} />);
+    render(
+      <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
+        isOwnProfile={false}
+        memberships={memberships}
+      />,
+    );
 
     expect(screen.getByRole('link', { name: 'Cyclists' })).toHaveAttribute(
       'href',
@@ -44,7 +56,13 @@ describe('MembershipsList', () => {
   });
 
   it('expands the list when show more is clicked', () => {
-    render(<MembershipsList isOwnProfile={false} memberships={memberships} />);
+    render(
+      <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
+        isOwnProfile={false}
+        memberships={memberships}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Show more...' }));
 
@@ -52,7 +70,13 @@ describe('MembershipsList', () => {
   });
 
   it('shows an empty-state prompt on own profile without circles', () => {
-    render(<MembershipsList isOwnProfile memberships={[]} />);
+    render(
+      <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
+        isOwnProfile
+        memberships={[]}
+      />,
+    );
 
     expect(
       screen.getByText(
@@ -67,7 +91,11 @@ describe('MembershipsList', () => {
 
   it('shows join more circles link on own profile with memberships', () => {
     render(
-      <MembershipsList isOwnProfile memberships={memberships.slice(0, 2)} />,
+      <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
+        isOwnProfile
+        memberships={memberships.slice(0, 2)}
+      />,
     );
 
     expect(
@@ -78,6 +106,7 @@ describe('MembershipsList', () => {
   it('renders image-backed circles and missing counts', () => {
     render(
       <MembershipsList
+        getCircleBackgroundStyle={getCircleBackgroundStyle}
         isOwnProfile={false}
         memberships={[
           membership('tribe-image', 'image', 'Image circle', 0, '/image.jpg'),

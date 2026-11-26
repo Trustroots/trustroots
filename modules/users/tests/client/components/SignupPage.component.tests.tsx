@@ -1,3 +1,4 @@
+import { memberCircles } from '@/modules/tribes/client/member-circles';
 import React from 'react';
 import {
   act,
@@ -107,7 +108,7 @@ describe('SignupPage', () => {
           user,
         }}
       >
-        <SignupPage />
+        <SignupPage circles={memberCircles} />
         <CaptureSignedInUser />
       </AppProviders>,
     );

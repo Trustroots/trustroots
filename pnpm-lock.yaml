@@ -776,9 +776,6 @@ importers:
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
-      '@trustroots/tribes':
-        specifier: workspace:*
-        version: link:../tribes
 
   packages/analytics:
     dependencies:

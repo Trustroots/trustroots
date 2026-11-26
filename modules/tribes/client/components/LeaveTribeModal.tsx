@@ -16,7 +16,7 @@ export default function LeaveTribeModal({
   onConfirm,
   onCancel,
 }: {
-  tribe: TribeSummary;
+  tribe: Pick<TribeSummary, 'label'>;
   show: boolean;
   onConfirm: () => void;
   onCancel: () => void;
