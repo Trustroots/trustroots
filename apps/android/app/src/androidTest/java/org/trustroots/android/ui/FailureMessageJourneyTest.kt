@@ -62,6 +62,8 @@ class FailureMessageJourneyTest {
         val expectedResources = mapOf(
             UiFailureFallback.REACH_TRUSTROOTS to R.string.screen_could_not_reach_trustroots,
             UiFailureFallback.SESSION_EXPIRED to R.string.screen_sign_in_session_expired,
+            UiFailureFallback.BROWSER_SIGN_IN_UNAVAILABLE to R.string.screen_sign_in_browser_unavailable,
+            UiFailureFallback.BROWSER_SIGN_IN_RETRY to R.string.screen_sign_in_browser_retry,
             UiFailureFallback.CIRCLES_LOAD to R.string.screen_circles_load_error,
             UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD to R.string.screen_circle_memberships_load_error,
             UiFailureFallback.CIRCLE_MEMBERS_LOAD to R.string.screen_circle_members_load_error,
