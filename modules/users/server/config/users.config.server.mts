@@ -41,6 +41,7 @@ export default async function (app: UsersApplication): Promise<void> {
     done(null, {
       id: user.id,
       authVersion: user.authVersion || 0,
+      authenticatedAt: Date.now(),
       mfaVerified:
         user.$locals?.mfaVerified === true && user.mfaEnabled === true,
     });

@@ -295,7 +295,13 @@ class MobileApiClient(
                 } else {
                     initial
                 }
-                val bearerSession = JSONObject(response.body)
+                val bearerSession = if (response.statusCode == 202) null else JSONObject(response.body)
+                if (bearerSession == null || bearerSession.optBoolean("mfaRequired", false)) {
+                    throw MobileApiException(
+                        statusCode = 202,
+                        serverMessage = "Sign-in is incomplete. Start again to continue in your browser.",
+                    )
+                }
                 val accessToken = bearerSession.optString("accessToken").takeIf(String::isNotBlank)
                 if (accessToken != null) {
                     return@runCatching mobileSessionFrom(bearerSession).copy(localSessionId = UUID.randomUUID())
@@ -305,7 +311,7 @@ class MobileApiClient(
                         statusCode = HttpURLConnection.HTTP_OK,
                         failureKind = ApiFailureKind.MISSING_SESSION,
                     ),
-                    member = mobileMemberFrom(JSONObject(response.body)),
+                    member = mobileMemberFrom(bearerSession),
                 )
             }
         }

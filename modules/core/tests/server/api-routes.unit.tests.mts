@@ -573,7 +573,7 @@ describe('API route registrations', () => {
         '../policies/users.server.policy': policy,
       },
     );
-    assert.strictEqual(routes.length, 24);
+    assert.strictEqual(routes.length, 25);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
     assert.deepStrictEqual(unsubscribeRoute.all, []);
@@ -581,7 +581,11 @@ describe('API route registrations', () => {
     assert.deepStrictEqual(unsubscribeRoute.post, [unsubscribe]);
     for (const route of routes) {
       if (route === unsubscribeRoute) continue;
-      if (route.path.startsWith('/api/users/mfa/')) {
+      if (route.path === '/api/users/activity') {
+        assert.equal(route.all.length, 2);
+        assert.equal(route.all[0].name, 'setActivityResponseHeaders');
+        assert.equal(route.all[1], policy.isAllowed);
+      } else if (route.path.startsWith('/api/users/mfa/')) {
         assertHandlers(
           route.all,
           [policy.isAllowed, limits.mfaManage],

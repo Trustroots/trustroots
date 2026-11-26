@@ -60,6 +60,7 @@ function tokenFromRemovalEmail(text: string): string {
   return match[1];
 }
 const User = mongoose.model<UserRecord, UserModel>('User');
+const AccountActivity = mongoose.model('AccountActivity');
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
@@ -584,6 +585,52 @@ describe('User removal CRUD tests', function () {
         .save()
         .then(() => done())
         .catch(done);
+    });
+    it('deletes only the removed member’s account activity', async function () {
+      await AccountActivity.create([
+        {
+          _id: 'removed-account-activity',
+          user: userA._id,
+          eventType: 'password_changed',
+        },
+        {
+          _id: 'other-account-activity',
+          user: userB._id,
+          eventType: 'password_changed',
+        },
+      ]);
+      const removeActivity = sinon.spy(AccountActivity, 'deleteMany');
+
+      await agent
+        .delete('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
+        .expect(200);
+      sinon.assert.calledOnce(removeActivity);
+      removeActivity.firstCall.args.should.deepEqual([{ user: userA._id }]);
+      (await AccountActivity.countDocuments({ user: userA._id })).should.equal(
+        0,
+      );
+      should.exist(await AccountActivity.findById('other-account-activity'));
+    });
+    it('preserves the account when deleting its activity fails', async function () {
+      const activity = await AccountActivity.create({
+        _id: 'retained-account-activity',
+        user: userA._id,
+        eventType: 'password_changed',
+      });
+      const removeActivity = sinon
+        .stub(AccountActivity, 'deleteMany')
+        .rejects(new Error('Activity storage unavailable'));
+
+      const response = await agent
+        .delete('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
+        .expect(400)
+        .then(result => result)
+        .finally(() => removeActivity.restore());
+      response.body.message.should.equal('Removing your profile failed.');
+      should.exist(await User.findById(userA._id).exec());
+      should.exist(await AccountActivity.findById(activity._id).exec());
     });
     it('should remove profile images', function (done: DoneCallback) {
       // Each user has their own folder for avatars
