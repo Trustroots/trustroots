@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import assert from 'node:assert/strict';
 import 'should';
 import '../../../users/server/models/user.server.model.mts';
-import '../../server/models/audit-log.server.model.mts';
+import '../../../core/server/models/audit-log.server.model.mts';
 import networkConnections from '../../server/controllers/admin.network-connections.server.controller.mts';
 
 const User = mongoose.model('User');

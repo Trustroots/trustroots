@@ -738,9 +738,6 @@ importers:
 
   modules/support:
     dependencies:
-      '@trustroots/admin':
-        specifier: workspace:*
-        version: link:../admin
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
