@@ -758,9 +758,6 @@ importers:
       '@trustroots/experiences':
         specifier: workspace:*
         version: link:../experiences
-      '@trustroots/offers':
-        specifier: workspace:*
-        version: link:../offers
       '@trustroots/search':
         specifier: workspace:*
         version: link:../search

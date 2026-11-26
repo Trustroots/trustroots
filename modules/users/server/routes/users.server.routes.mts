@@ -13,7 +13,7 @@ import userExport from './../controllers/users.export.server.controller.mts';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mts';
 import { challenge } from '../controllers/users.nostr.server.controller.mts';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
-import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
+import type { UserAccountServices } from '../services/user-account.server.contract.mts';
 import userMfa from './../controllers/users.mfa.server.controller.mjs';
 import userActivity from './../controllers/users.activity.server.controller.mts';
 
@@ -44,7 +44,7 @@ interface RouteApplication {
   param(name: string, handler: RouteHandler): void;
 }
 
-export default function (app: RouteApplication, messaging: UserMessaging) {
+export default function (app: RouteApplication, services: UserAccountServices) {
   app
     .route(unsubscribePath + '/:token')
     .get(showUnsubscribe)
@@ -78,15 +78,13 @@ export default function (app: RouteApplication, messaging: UserMessaging) {
   app
     .route('/api/users/remove/:token')
     .all(usersPolicy.isAllowed)
-    .delete(
-      userProfile.removeProfile.bind(null, messaging.clearMessageNotifications),
-    );
+    .delete(userProfile.removeProfile.bind(null, services));
   app
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
     .get(
       targetedRequestLimit.dataExport,
-      userExport.download.bind(null, messaging),
+      userExport.download.bind(null, services),
     );
   app
     .route('/api/users/activity')
@@ -170,7 +168,7 @@ export default function (app: RouteApplication, messaging: UserMessaging) {
   app.param('userId', userProfile.userMiniByID);
   app.param(
     'username',
-    userProfile.userByUsername.bind(null, messaging.readReplyStats),
+    userProfile.userByUsername.bind(null, services.readReplyStats),
   );
   app.param('avatarUserId', userAvatar.userForAvatarByUserId);
 }

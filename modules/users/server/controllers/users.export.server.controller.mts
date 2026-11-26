@@ -5,6 +5,7 @@ import type {
   UserMessaging,
   WrittenMessage,
 } from '../services/user-messaging.server.contract.mts';
+import type { UserAccountServices } from '../services/user-account.server.contract.mts';
 import type { NextFunction, Response } from 'express';
 import mongoose, { type Types } from 'mongoose';
 import type {
@@ -31,21 +32,6 @@ interface ExportExperienceRecord extends ExportRecord {
   feedbackPublic?: unknown;
   removedAt?: unknown;
   userTo?: unknown;
-}
-
-interface ExportOfferRecord extends ExportRecord {
-  _id: unknown;
-  type: unknown;
-  user: unknown;
-  location: unknown;
-  status?: unknown;
-  description?: unknown;
-  noOfferDescription?: unknown;
-  maxGuests?: unknown;
-  updated?: unknown;
-  validUntil?: unknown;
-  showOnlyInMyCircles?: unknown;
-  createdAt?: unknown;
 }
 
 type ExportRequest = ProfileRequest &
@@ -101,7 +87,10 @@ type ExportMiddleware<
 
 interface UserExportService {
   download(
-    messaging: Pick<UserMessaging, 'readReplyStats' | 'readWrittenMessages'>,
+    services: Pick<
+      UserAccountServices,
+      'readReplyStats' | 'readWrittenMessages' | 'readOwnedOffers'
+    >,
     req: ExportRequest,
     res: Response,
     next: NextFunction,
@@ -113,7 +102,6 @@ interface UserExportService {
     userId: ExportId,
   ): Promise<ExportRecord[]>;
   writtenExperiences(userId: ExportId): Promise<ExportRecord[]>;
-  memberOffers(userId: ExportId): Promise<ExportRecord[]>;
 }
 
 const service = {} as UserExportService;
@@ -224,29 +212,6 @@ function selectWrittenExperience(
   };
 }
 
-function selectOwnedOffer(offer: ExportOfferRecord): ExportRecord {
-  return {
-    _id: offer._id,
-    type: offer.type,
-    user: offer.user,
-    location: offer.location,
-    ...(offer.status === undefined ? {} : { status: offer.status }),
-    ...(offer.description === undefined
-      ? {}
-      : { description: offer.description }),
-    ...(offer.noOfferDescription === undefined
-      ? {}
-      : { noOfferDescription: offer.noOfferDescription }),
-    ...(offer.maxGuests === undefined ? {} : { maxGuests: offer.maxGuests }),
-    ...(offer.updated === undefined ? {} : { updated: offer.updated }),
-    ...(offer.validUntil === undefined ? {} : { validUntil: offer.validUntil }),
-    ...(offer.showOnlyInMyCircles === undefined
-      ? {}
-      : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
-    ...(offer.createdAt === undefined ? {} : { createdAt: offer.createdAt }),
-  };
-}
-
 async function writtenMessages(
   readWrittenMessages: UserMessaging['readWrittenMessages'],
   userId: ExportId,
@@ -262,14 +227,6 @@ async function writtenExperiences(userId: ExportId): Promise<ExportRecord[]> {
     .populate('userTo', 'username displayName')
     .lean();
   return experiences.map(selectWrittenExperience);
-}
-
-async function memberOffers(userId: ExportId): Promise<ExportRecord[]> {
-  const Offer = mongoose.model<ExportOfferRecord>('Offer');
-  const offers = await Offer.find({ user: userId })
-    .sort({ createdAt: 1 })
-    .lean<ExportOfferRecord[]>();
-  return offers.map(selectOwnedOffer);
 }
 
 function invokeMiddleware<
@@ -316,23 +273,23 @@ function invokeMiddleware<
 }
 
 service.download = async function (
-  messaging,
+  services,
   req: ExportRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
     await invokeMiddleware(
-      profiles.userByUsername.bind(null, messaging.readReplyStats),
+      profiles.userByUsername.bind(null, services.readReplyStats),
       req,
       req.user.username,
     );
     await invokeMiddleware(contacts.contactListByUser, req, req.user._id);
     const profile = req.profile || {};
     const [messages, experiences, hostingOffers] = await Promise.all([
-      service.writtenMessages(messaging.readWrittenMessages, req.user._id),
+      service.writtenMessages(services.readWrittenMessages, req.user._id),
       service.writtenExperiences(req.user._id),
-      service.memberOffers(req.user._id),
+      services.readOwnedOffers(req.user._id),
     ]);
     const exportedAt = new Date();
     const body = canonical.buildSignedPayload({
@@ -377,7 +334,6 @@ service.buildExportFilename = buildExportFilename;
 service.circlesFromProfile = circlesFromProfile;
 service.writtenMessages = writtenMessages;
 service.writtenExperiences = writtenExperiences;
-service.memberOffers = memberOffers;
 export default service;
 /** @esmNamed */
 export {
@@ -385,7 +341,6 @@ export {
   circlesFromProfile,
   writtenMessages,
   writtenExperiences,
-  memberOffers,
 };
 /** @esmNamed */
 export const download = service.download;

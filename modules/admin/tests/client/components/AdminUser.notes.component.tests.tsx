@@ -7,11 +7,18 @@ import {
   within,
 } from '@testing-library/react';
 
-import AdminUser from '@/modules/admin/client/components/AdminUser.component';
+import MemberAdmin from '@/modules/admin/client/components/AdminUser.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
+function AdminUser(
+  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'ProfileOffers'>,
+) {
+  return <MemberAdmin {...props} ProfileOffers={() => null} />;
+}
+
 vi.mock('@trustroots/core/auth', async () =>
+
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

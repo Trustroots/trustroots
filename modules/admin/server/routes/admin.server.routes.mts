@@ -24,6 +24,7 @@ import {
 import adminThreads from './../controllers/admin.threads.server.controller.mts';
 import adminUsernameChanges from './../controllers/admin.username-changes.server.controller.mts';
 import adminUsers from './../controllers/admin.users.server.controller.mts';
+import type { UserAccountCleanup } from '../../../users/server/services/user-account.server.contract.mts';
 import { deleteMember } from '../controllers/admin.user-deletion.server.controller.mts';
 import * as signupReviewRules from '../controllers/admin.signup-review-rules.server.controller.mts';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
@@ -63,7 +64,10 @@ interface RouteApp {
 
 const privileged = [adminPolicy.isAllowed, requireAdminElevation];
 
-const registerRoutes = (app: RouteApp): void => {
+const registerRoutes = (
+  app: RouteApp,
+  accountCleanup: UserAccountCleanup,
+): void => {
   app
     .route('/api/admin/nostr/service-profile')
     .all(adminPolicy.isAllowed)
@@ -302,7 +306,7 @@ const registerRoutes = (app: RouteApp): void => {
   app
     .route('/api/admin/user/delete')
     .all(adminPolicy.isAllowed)
-    .post(deleteMember);
+    .post(deleteMember.bind(null, accountCleanup));
   app
     .route('/api/admin/user/change-role')
     .all(...privileged)

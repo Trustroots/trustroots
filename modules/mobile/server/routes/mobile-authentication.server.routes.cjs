@@ -48,7 +48,10 @@ const userAvatar =
 const unifiedPush =
   require('../../../users/server/controllers/users.unified-push.server.controller.mts').default;
 
-module.exports = function (app, { findOfferConnections, readReplyStats }) {
+module.exports = function (
+  app,
+  { findOfferConnections, readReplyStats, readDiscoveryOfferLocations },
+) {
   app.post(
     '/api/mobile/v0/nostranslation/alerts/challenge',
     mobileAuthentication.authenticate,
@@ -259,7 +262,7 @@ module.exports = function (app, { findOfferConnections, readReplyStats }) {
       res.set('Cache-Control', 'private, no-store');
       return next();
     },
-    tribes.listConnections,
+    tribes.listConnections.bind(null, readDiscoveryOfferLocations),
   );
   app
     .route('/api/mobile/v0/circles')
@@ -298,7 +301,7 @@ module.exports = function (app, { findOfferConnections, readReplyStats }) {
     function (req, res, next) {
       return tribes.tribeBySlug(req, res, next, req.params.tribe);
     },
-    tribes.listMembers,
+    tribes.listMembers.bind(null, readDiscoveryOfferLocations),
   );
   app
     .route('/api/mobile/v0/memberships')

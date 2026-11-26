@@ -1,3 +1,4 @@
+import { userAccountServices } from '../../../../layers/server/user-account.mts';
 import { userMessaging } from '../../../../layers/server/user-messaging.mts';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -273,7 +274,7 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.removeProfile(
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           { user: { _id: saved._id }, params: { token: 'valid-remove-token' } },
           res,
         ),
@@ -299,10 +300,6 @@ describe('Profile controller unit tests', () => {
         await mockModule<{ default: typeof profileController }>(
           new URL(controllerPath, import.meta.url),
           {
-            './../../../offers/server/controllers/offers.server.controller.mts':
-              {
-                removeAllByUserId: done('offers'),
-              },
             './../../../contacts/server/controllers/contacts.server.controller.mts':
               { removeAllByUserId: done('contacts') },
             [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
@@ -310,7 +307,15 @@ describe('Profile controller unit tests', () => {
           },
         )
       ).default;
-      return { controller, logs, error };
+      return {
+        controller,
+        logs,
+        error,
+        accountCleanup: {
+          ...userAccountServices,
+          removeOwnedOffers: done('offers'),
+        },
+      };
     }
 
     for (const failing of [undefined, ...cleanupSteps]) {
@@ -324,11 +329,12 @@ describe('Profile controller unit tests', () => {
           },
         );
         await createPushRegistration(other._id);
-        const { controller, logs, error } = await loadRemoval(failing);
+        const { controller, logs, error, accountCleanup } =
+          await loadRemoval(failing);
 
         const { res } = await runHandler(res =>
           controller.removeProfile(
-            userMessaging.clearMessageNotifications,
+            accountCleanup,
             { user: { _id: saved._id }, params: { token: 'remove-token' } },
             res,
           ),
@@ -381,7 +387,7 @@ describe('Profile controller unit tests', () => {
           (await findUser(saved._id)) as unknown as Parameters<
             typeof deleteUserAccount
           >[0],
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           true,
         );
         if (suspended)
@@ -1137,11 +1143,7 @@ describe('Profile controller unit tests', () => {
   describe('removeProfile', () => {
     it('responds with 403 without a user', async () => {
       const { res } = await runHandler(res =>
-        profileController.removeProfile(
-          userMessaging.clearMessageNotifications,
-          {},
-          res,
-        ),
+        profileController.removeProfile(userAccountServices, {}, res),
       );
       res.statusCode.should.equal(403);
     });
@@ -1171,7 +1173,7 @@ describe('Profile controller unit tests', () => {
         const stats = await recordStats();
         const { res } = await runHandler(res =>
           profileController.removeProfile(
-            userMessaging.clearMessageNotifications,
+            userAccountServices,
             { user: { _id: saved._id }, params: { token } },
             res,
           ),
@@ -1198,7 +1200,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           {
             user: { _id: saved._id },
             params: { token: 'valid-remove-token' },
@@ -1226,10 +1228,12 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
       await userDoc.save();
 
+      const clearMessageNotifications = sinon
+        .stub()
+        .callsArgWith(1, new Error('messages failed'));
       const { res } = await runHandler(res =>
         profileController.removeProfile(
-          (_userId: unknown, callback: (error: Error) => void) =>
-            callback(new Error('messages failed')),
+          { ...userAccountServices, clearMessageNotifications },
           {
             user: { _id: saved._id },
             params: { token: 'valid-remove-token' },
@@ -1238,6 +1242,7 @@ describe('Profile controller unit tests', () => {
         ),
       );
 
+      sinon.assert.calledOnce(clearMessageNotifications);
       res.statusCode.should.equal(400);
       responseString(res, 'message').should.equal(
         'Removing your profile failed.',
@@ -1259,7 +1264,7 @@ describe('Profile controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         controller.removeProfile(
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           {
             user: { _id: saved._id },
             params: { token: 'fictional-remove-token' },
@@ -1295,7 +1300,7 @@ describe('Profile controller unit tests', () => {
       });
       const { res } = await runHandler(res =>
         controller.removeProfile(
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           { user: userDoc, params: { token: 'sample-remove-token' } },
           res,
         ),
@@ -1307,7 +1312,7 @@ describe('Profile controller unit tests', () => {
       sinon.stub(User, 'findOne').rejects(new Error('Lookup unavailable'));
       const { res } = await runHandler(res =>
         profileController.removeProfile(
-          userMessaging.clearMessageNotifications,
+          userAccountServices,
           {
             user: { _id: new mongoose.Types.ObjectId() },
             params: { token: 'sample-token' },

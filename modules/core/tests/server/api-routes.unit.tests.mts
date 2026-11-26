@@ -1,4 +1,5 @@
-import { userMessaging } from '../../../../layers/server/user-messaging.mts';
+import { findDiscoveryOfferLocations } from '../../../offers/server/services/discovery-offers.server.service.mts';
+import { userAccountServices } from '../../../../layers/server/user-account.mts';
 import assert from 'assert';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
@@ -405,7 +406,13 @@ describe('API route registrations', () => {
   it('registers tribes and support routes', async () => {
     const tribesPolicy = { isAllowed: handler('tribesPolicy.isAllowed') };
     const tribes = controller(
-      ['getTribe', 'listTribes', 'tribeBySlug'],
+      [
+        'getTribe',
+        'listTribes',
+        'listMembers',
+        'listConnections',
+        'tribeBySlug',
+      ],
       'tribes',
     );
     const support = controller(['supportRequest'], 'support');
@@ -417,6 +424,7 @@ describe('API route registrations', () => {
         '../controllers/tribes.server.controller': tribes,
         '../policies/tribes.server.policy': tribesPolicy,
       },
+      findDiscoveryOfferLocations,
     );
     const { trustrootsNostrServiceName, trustrootsNostrServiceIdentifier } =
       await import('../../server/services/nostr-service-signer.server.mts');
@@ -581,7 +589,7 @@ describe('API route registrations', () => {
           limits,
         '../policies/users.server.policy': policy,
       },
-      userMessaging,
+      userAccountServices,
     );
     assert.strictEqual(routes.length, 25);
 
@@ -789,6 +797,7 @@ describe('API route registrations', () => {
         '../policies/admin.server.policy': policy,
         '../services/admin-elevation.server.service': elevation,
       },
+      userAccountServices,
     );
 
     assertHandlers(routeByPath(routes, '/api/admin/gravatar').get, [

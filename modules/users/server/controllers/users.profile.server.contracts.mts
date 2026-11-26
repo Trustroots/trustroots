@@ -5,6 +5,7 @@ import type {
   PublicProviderIdentities,
 } from '../../shared/profile.js';
 import type { UserServerDocument } from '../models/user.server.types.mts';
+import type { UserAccountCleanup } from '../services/user-account.server.contract.mts';
 import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
 import type {
   ProfileResponseDto,
@@ -129,7 +130,7 @@ export interface UserProfileController {
   cancelProfileRemoval(req: ProfileRequest, res: ProfileResponse): unknown;
   initializeRemoveProfile(req: ProfileRequest, res: ProfileResponse): unknown;
   removeProfile(
-    clearMessageNotifications: UserMessaging['clearMessageNotifications'],
+    accountCleanup: UserAccountCleanup,
     req: ProfileRequest,
     res: ProfileResponse,
   ): unknown;

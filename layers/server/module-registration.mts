@@ -16,6 +16,7 @@ import sparkpost from '../../modules/sparkpost/server/index.mts';
 import statistics from '../../modules/statistics/server/index.mts';
 import support from '../../modules/support/server/index.mts';
 import tribes from '../../modules/tribes/server/index.mts';
+import type { ReadDiscoveryOfferLocations } from '../../modules/tribes/server/controllers/tribes.server.controller.mts';
 import users from '../../modules/users/server/index.mts';
 
 interface ServerModule {
@@ -79,7 +80,21 @@ export async function initModulesConfiguration(app: Express, db?: Connection) {
   }
 }
 
+async function loadDiscoveryOfferLocations(): Promise<ReadDiscoveryOfferLocations> {
+  const { findDiscoveryOfferLocations } =
+    await import('../../modules/offers/server/services/discovery-offers.server.service.mts');
+  return findDiscoveryOfferLocations;
+}
+
 export async function initModulesServerRoutes(app: Express) {
+  const adminRouteFile = resolve(
+    admin.directory,
+    'routes/admin.server.routes.mts',
+  );
+  const tribesRouteFile = resolve(
+    tribes.directory,
+    'routes/tribes.server.routes.mts',
+  );
   const offersRouteFile = resolve(
     offers.directory,
     'routes/offers.server.routes.mts',
@@ -92,6 +107,8 @@ export async function initModulesServerRoutes(app: Express) {
     users.directory,
     'routes/users.server.routes.mts',
   );
+  const userAccountAdapter = new URL('./user-account.mts', import.meta.url)
+    .href;
   const userMessagingAdapter = new URL('./user-messaging.mts', import.meta.url)
     .href;
 
@@ -105,13 +122,16 @@ export async function initModulesServerRoutes(app: Express) {
         register(app, {
           findOfferConnections: findSearchConnectionIds,
           readReplyStats: userMessaging.readReplyStats,
+          readDiscoveryOfferLocations: await loadDiscoveryOfferLocations(),
         });
       } else {
         register(app, findSearchConnectionIds);
       }
-    } else if (file === usersRouteFile) {
-      const { userMessaging } = await import(userMessagingAdapter);
-      register(app, userMessaging);
+    } else if (file === usersRouteFile || file === adminRouteFile) {
+      const { userAccountServices } = await import(userAccountAdapter);
+      register(app, userAccountServices);
+    } else if (file === tribesRouteFile) {
+      register(app, await loadDiscoveryOfferLocations());
     } else {
       register(app);
     }
