@@ -227,3 +227,32 @@ with a username SHALL open the existing iOS profile.
 - **GIVEN** a signed-in member opens Contacts
 - **WHEN** they select a contact with a username
 - **THEN** the existing iOS profile opens for that contact
+
+### Requirement: Regular iOS hosting availability uses Compose
+
+The regular iOS hosting editor SHALL use shared Compose for hosting and
+meeting availability, maximum guests when hosting is possible, and visibility
+within the member's circles. It SHALL use the existing form validation,
+location capture and offer save flow.
+
+#### Scenario: Save availability from the iOS hosting editor
+
+- **GIVEN** a signed-in member opens an existing hosting offer
+- **WHEN** they change meeting availability or circle visibility and save
+- **THEN** the editor submits those changes on the existing offer with its saved coordinates
+- **AND** maximum guests remains between zero and 99 and is editable when hosting is available or tentative
+
+### Requirement: Regular iOS hosting details use Compose
+
+The regular iOS hosting editor SHALL use shared Compose for the hosting
+description, the explanation shown when unavailable and the volunteering
+setting. It SHALL save with the existing offer validation and location data.
+Existing rich text SHALL be retained for descriptions that the member leaves
+unchanged.
+
+#### Scenario: Edit a multiline host offer description
+
+- **GIVEN** a signed-in member opens an existing offer with saved descriptions and coordinates
+- **WHEN** they edit the reason they are unavailable across multiple lines and save
+- **THEN** the existing offer contains the edited text and its original coordinates
+- **AND** the unchanged hosting description retains its saved rich text
