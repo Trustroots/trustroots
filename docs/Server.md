@@ -68,5 +68,7 @@ format and that both services receive the same value without displaying it.
 Authenticator MFA and passkeys are optional for administrators. Once enrolled,
 administrators must complete a second factor at sign-in. The existing password
 step-up continues to protect privileged actions.
-Administrators who enable MFA must use the web client until native challenge
-support ships.
+Android and iOS open the system browser to complete this step with an
+authenticator, recovery code or passkey. After confirmation, the app exchanges
+a single-use code for its own session. See
+[staff passkey deployment and verification](operations/staff-passkeys.md).
