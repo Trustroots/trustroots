@@ -25,9 +25,44 @@ import org.junit.Test
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.BrowserSignInCallback
+import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
 
 class SignInViewModelTest {
+    @Test fun onlyTheExplicitBrowserRequirementOffersHandoffAndClearsThePassword() {
+        val scope = testScope()
+        try {
+            for ((status, code, requiresBrowser) in listOf(
+                Triple(403, "web_sign_in_required", true),
+                Triple(403, "forbidden", false),
+                Triple(401, "web_sign_in_required", false),
+            )) {
+                val model = SignInViewModel(
+                    apiBaseUrl = "https://api.example.test",
+                    initialMessage = null,
+                    authenticator = SignInAuthenticator { _, _ ->
+                        Result.failure(MobileApiException(status, code = code))
+                    },
+                    scope = scope,
+                )
+                model.onEvent(SignInEvent.UsernameChanged("fictional-owl"))
+                model.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+                model.onEvent(SignInEvent.Submit)
+
+                assertEquals(requiresBrowser, model.state.value.browserSignInRequired)
+                assertEquals(if (requiresBrowser) "" else "fictional-password", model.state.value.password)
+                assertNull(model.state.value.pendingSuccess)
+                val beforeCallbacks = model.state.value
+                model.startBrowserSignIn { error("No browser store was configured") }
+                model.completeBrowserSignIn(BrowserSignInCallback("C".repeat(43), "S".repeat(43)))
+                assertEquals(beforeCallbacks, model.state.value)
+            }
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test
     fun defaultAuthenticatorSubmitsThroughTheConfiguredApiClient() = runBlocking {
         val scope = testScope()

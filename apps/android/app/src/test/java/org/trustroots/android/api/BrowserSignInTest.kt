@@ -37,6 +37,7 @@ class BrowserSignInTest {
             "$path?code=$code&state=$state&redirect=https://elsewhere.test",
             "$path?code=$code&state=$state#",
             "$path?code=A&state=$state",
+            "$path?code&state=$state",
             "$path?code=$code&state=+",
             "$path?code=$code&state=${state.dropLast(1)}%42",
         )) {

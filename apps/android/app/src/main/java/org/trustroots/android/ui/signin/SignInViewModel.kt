@@ -38,7 +38,9 @@ internal data class SignInUiState(
     val error: UiFailure? = null,
     val pendingSuccess: SignInSuccess? = null,
     val browserSignInRequired: Boolean = false,
-)
+) {
+    val canAuthenticate: Boolean get() = !isLoading && pendingSuccess == null
+}
 
 internal data class SignInSuccess(
     val id: Long,
@@ -85,7 +87,7 @@ internal class SignInViewModel(
     private fun submit() {
         val current = mutableState.value
         if (
-            current.isLoading || current.pendingSuccess != null ||
+            !current.canAuthenticate ||
             current.username.isBlank() || current.password.isBlank()
         ) return
 
@@ -98,7 +100,7 @@ internal class SignInViewModel(
     fun startBrowserSignIn(openBrowser: (String) -> Boolean) {
         val store = sessionStore ?: return
         val current = mutableState.value
-        if (!current.browserSignInRequired || current.isLoading || current.pendingSuccess != null) return
+        if (!current.browserSignInRequired || !current.canAuthenticate) return
         val opened = runCatching {
             val attempt = BrowserSignInAttempt.create(browserApi.backendURL)
             store.saveBrowserSignIn(attempt)
@@ -112,7 +114,7 @@ internal class SignInViewModel(
     fun completeBrowserSignIn(callback: BrowserSignInCallback) {
         val store = sessionStore ?: return
         val current = mutableState.value
-        if (current.isLoading || current.pendingSuccess != null) return
+        if (!current.canAuthenticate) return
         authenticate(UiFailureFallback.BROWSER_SIGN_IN_RETRY) {
             val attempt = withContext(Dispatchers.IO) {
                 store.takeBrowserSignIn(browserApi.backendURL, callback.state)
