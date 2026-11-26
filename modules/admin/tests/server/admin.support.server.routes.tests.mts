@@ -394,6 +394,24 @@ describe('Support team access and investigation', () => {
         shadowHidden: index === 0,
       })),
       { userFrom, userTo: recipients[0], content, created: windowEnd },
+      ...[...recipients, users[0]._id].map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Four recipients',
+        created: windowStart,
+      })),
+      ...recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Recent repeat',
+        created: windowEnd,
+      })),
+      ...recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: 'Earlier repeat',
+        created: windowStart,
+      })),
       ...[
         ['Different Case', 'different case', 'different case'],
         ['Punctuation!', 'Punctuation.', 'Punctuation.'],
@@ -429,6 +447,17 @@ describe('Support team access and investigation', () => {
         created: windowEnd,
       })),
     ]);
+    await Message.collection.insertMany(
+      recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: '',
+        created: windowEnd,
+      })),
+    );
+
+    const collation = sinon.spy(mongoose.Aggregate.prototype, 'collation');
+    const option = sinon.spy(mongoose.Aggregate.prototype, 'option');
     const path = `${endpoint(report._id)}/repeated-messages`;
     await request(app).get(path).expect(403);
     const result = await agent
@@ -440,6 +469,8 @@ describe('Support team access and investigation', () => {
       })
       .expect(200)
       .expect('Cache-Control', 'no-store');
+    sinon.assert.calledWithExactly(collation, { locale: 'simple' });
+    sinon.assert.calledWithExactly(option, { maxTimeMS: 5_000 });
     result.body.should.eql({
       windowStart: windowStart.toISOString(),
       windowEnd: windowEnd.toISOString(),
@@ -447,11 +478,32 @@ describe('Support team access and investigation', () => {
       hasMore: false,
       items: [
         {
+          content: 'Four recipients',
+          recipientCount: 4,
+          sendCount: 4,
+          firstSent: windowStart.toISOString(),
+          lastSent: windowStart.toISOString(),
+        },
+        {
           content,
           recipientCount: 3,
           sendCount: 4,
           firstSent: windowStart.toISOString(),
           lastSent: windowEnd.toISOString(),
+        },
+        {
+          content: 'Recent repeat',
+          recipientCount: 3,
+          sendCount: 3,
+          firstSent: windowEnd.toISOString(),
+          lastSent: windowEnd.toISOString(),
+        },
+        {
+          content: 'Earlier repeat',
+          recipientCount: 3,
+          sendCount: 3,
+          firstSent: windowStart.toISOString(),
+          lastSent: windowStart.toISOString(),
         },
       ],
     });
@@ -470,7 +522,9 @@ describe('Support team access and investigation', () => {
       { _id: report._id },
       { $unset: { sent: 1 } },
     );
-    await agent.get(path).expect(400);
+    await agent.get(path).expect(400, {
+      message: 'This report has no valid submission time.',
+    });
     await SupportRequest.updateOne(
       { _id: report._id },
       { $unset: { reportedUser: 1 } },
@@ -575,6 +629,14 @@ describe('Support team access and investigation', () => {
       },
     ]);
     second.body.hasMore.should.equal(false);
+
+    await Message.deleteMany({
+      userFrom: sender,
+      content: 'Fictional repeat 50',
+    });
+    const exactPage = await agent.get(path).expect(200);
+    exactPage.body.items.length.should.equal(50);
+    exactPage.body.hasMore.should.equal(false);
   });
   it('triages requests, records access and keeps resolved investigations available', async () => {
     await Message.create([

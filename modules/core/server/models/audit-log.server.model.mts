@@ -15,7 +15,7 @@ const { Schema } = mongoose;
 /**
  * Audit log Schema
  *
- * Administrator audit logging collection
+ * Audit records written by administrative and support workflows.
  */
 const AuditLogSchema = new Schema<AuditLogRecord>({
   body: {
@@ -43,5 +43,3 @@ const AuditLogSchema = new Schema<AuditLogRecord>({
   },
 });
 mongoose.model<AuditLogRecord>('AuditLog', AuditLogSchema);
-const api = {};
-export default api;
