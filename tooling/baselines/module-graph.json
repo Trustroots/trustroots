@@ -83,8 +83,7 @@
       "admin",
       "core",
       "search",
-      "stats",
-      "support"
+      "stats"
     ]
   },
   "models": {
