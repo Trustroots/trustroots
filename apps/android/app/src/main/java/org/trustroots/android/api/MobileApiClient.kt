@@ -209,6 +209,7 @@ class MobileApiException(
     val statusCode: Int,
     serverMessage: String? = null,
     val failureKind: ApiFailureKind? = null,
+    val code: String? = null,
 ) : Exception(serverMessage?.takeIf(String::isNotBlank)) {
     val serverMessage: String? get() = message
 
@@ -306,6 +307,28 @@ class MobileApiClient(
                     ),
                     member = mobileMemberFrom(JSONObject(response.body)),
                 )
+            }
+        }
+
+    internal suspend fun exchangeBrowserSignInCode(code: String, codeVerifier: String): Result<MemberSession> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val request = JSONObject()
+                    .put("code", code)
+                    .put("codeVerifier", codeVerifier)
+                    .put("platform", "android")
+                val response = jsonRequest(
+                    path = "/api/mobile/v0/auth/browser/exchange",
+                    method = "POST",
+                    body = request.toString(),
+                    failureKind = ApiFailureKind.SIGN_IN_REJECTED,
+                    allowRedirects = false,
+                )
+                val session = mobileSessionFrom(JSONObject(response.body))
+                if (session.accessToken.isNullOrBlank() || session.refreshToken.isNullOrBlank()) {
+                    throw MobileApiException(response.statusCode, failureKind = ApiFailureKind.MISSING_SESSION)
+                }
+                session.copy(localSessionId = UUID.randomUUID())
             }
         }
 
@@ -916,13 +939,14 @@ class MobileApiClient(
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
         allowResponseCache: Boolean = true,
         acceptedStatusCode: Int? = null,
+        allowRedirects: Boolean = true,
     ): JsonResponse {
         val current = if (session?.refreshToken != null && sessionStore != null) {
             sessionStore.currentBearerSession(session)
         } else session
         fun send(credentials: MemberSession?) = sendJsonRequest(
             path, method, body, credentials?.cookieHeader, credentials?.accessToken,
-            requestHeaders, failureKind, allowResponseCache, acceptedStatusCode,
+            requestHeaders, failureKind, allowResponseCache, acceptedStatusCode, allowRedirects,
         )
         return try {
             send(current)
@@ -943,6 +967,7 @@ class MobileApiClient(
         failureKind: ApiFailureKind,
         allowResponseCache: Boolean,
         acceptedStatusCode: Int?,
+        allowRedirects: Boolean,
     ): JsonResponse {
         val requestPath = if (accessToken != null) mobileApiPath(path, method, body) else path
         val endpoint = URL("$baseURL$requestPath")
@@ -951,6 +976,7 @@ class MobileApiClient(
         val mutationCacheScope = authenticatedCacheScope?.takeIf { method != "GET" }
         val connection = endpoint.openConnection() as HttpURLConnection
         try {
+            connection.instanceFollowRedirects = allowRedirects
             connection.requestMethod = method
             connection.connectTimeout = 10_000
             connection.readTimeout = 15_000
@@ -979,13 +1005,12 @@ class MobileApiClient(
             }
             var responseBody = responseStream?.use { it.reader().readText() }.orEmpty()
             if (!successful && responseCode != acceptedStatusCode) {
-                val message = runCatching { JSONObject(responseBody).optString("message") }
-                    .getOrNull()
-                    .orEmpty()
+                val error = runCatching { JSONObject(responseBody) }.getOrNull()
                 throw MobileApiException(
                     statusCode = responseCode,
-                    serverMessage = message,
+                    serverMessage = error?.optString("message"),
                     failureKind = failureKind,
+                    code = error?.optString("code")?.takeIf(String::isNotBlank),
                 )
             }
             if (accessToken != null && path.startsWith("/api/users/") && !path.startsWith("/api/users/mini/")) {

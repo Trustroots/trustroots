@@ -28,6 +28,7 @@ import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.ui.common.UsageScreenTracking
 
@@ -52,6 +53,9 @@ internal fun SignInNavigation(
     storeHolder: SignInDestinationStoreHolder,
     apiBaseUrl: String,
     initialMessage: org.trustroots.android.ui.common.UiFailure?,
+    sessionStore: SecureMobileSessionStore,
+    browserSignInLinks: BrowserSignInLinks,
+    onOpenBrowserSignIn: (String) -> Boolean,
     onSignedIn: (MemberSession) -> Unit,
     onSignedUp: (MemberSession) -> Unit,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
@@ -82,10 +86,12 @@ internal fun SignInNavigation(
             entryDecorators = decorators,
             entryProvider = entryProvider {
                 entry<SignInVisit> {
-                    val viewModel = rememberSignInViewModel(apiBaseUrl, initialMessage)
+                    val viewModel = rememberSignInViewModel(apiBaseUrl, initialMessage, sessionStore)
                     SignInScreen(
                         analytics = analytics,
                         viewModel = viewModel,
+                        browserSignInLinks = browserSignInLinks,
+                        onOpenBrowserSignIn = onOpenBrowserSignIn,
                         onSignedIn = onSignedIn,
                         onSignUp = { backStack.add(SignUpVisit(nextVisitID++)) },
                         onForgotPassword = {
