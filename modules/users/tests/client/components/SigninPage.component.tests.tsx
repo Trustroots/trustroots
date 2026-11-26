@@ -38,7 +38,7 @@ const verifyMfa = vi.mocked(authApi.verifyMfa);
 const getSession = vi.mocked(authApi.getSession);
 const analytics = fakeAnalytics();
 
-function renderPage() {
+function renderPage(user: { _id: string; username: string } | null = null) {
   return render(
     <AppProviders
       analyticsTracker={analytics.tracker}
@@ -47,7 +47,7 @@ function renderPage() {
         isNativeMobileApp: false,
         settings: {},
         title: 'Trustroots',
-        user: null,
+        user,
       }}
     >
       <SigninPage />
@@ -203,6 +203,35 @@ describe('SigninPage', () => {
         '/messages?filter=unread',
       );
     });
+  });
+
+  it('requires a new browser sign-in for a mobile handoff even with a current account', async () => {
+    const destination = `/auth/mobile/confirm/${'a'.repeat(64)}`;
+    window.history.pushState(
+      {},
+      '',
+      `/signin?continue=true&returnTo=${encodeURIComponent(destination)}`,
+    );
+    signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
+    renderPage({ _id: 'already-signed-in', username: 'previous-member' });
+    expect(redirectAfterSignin).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'member-one' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sign in to continue' }),
+    );
+    await waitFor(() =>
+      expect(redirectAfterSignin).toHaveBeenCalledWith(
+        expect.any(Function),
+        true,
+        destination,
+      ),
+    );
+    expect(redirectAfterSignin).toHaveBeenCalledTimes(1);
   });
 
   it('shows an error message when sign-in fails', async () => {

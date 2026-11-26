@@ -52,10 +52,18 @@ export default function SigninPage() {
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
     returnTo,
+    requiresFreshSignin:
+      Boolean(continueSignin) &&
+      typeof returnTo === 'string' &&
+      /^\/auth\/mobile\/confirm\/[a-f0-9]{64}$/.test(returnTo),
   });
 
   useEffect(() => {
-    if (user && !hasRedirected.current) {
+    if (
+      user &&
+      !hasRedirected.current &&
+      !signinDestination.current.requiresFreshSignin
+    ) {
       hasRedirected.current = true;
       redirectAfterSignin(
         navigate,
@@ -112,6 +120,11 @@ export default function SigninPage() {
       }
 
       setUser(signedInUser);
+
+      if (signinDestination.current.requiresFreshSignin) {
+        hasRedirected.current = true;
+        redirectAfterSignin(navigate, true, signinDestination.current.returnTo);
+      }
 
       track('signin_succeeded');
     } catch (error: unknown) {

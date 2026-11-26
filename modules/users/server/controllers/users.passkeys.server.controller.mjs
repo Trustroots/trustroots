@@ -1,4 +1,5 @@
 import passkeys from '../services/passkey.server.service.mjs';
+import mfaService from '../services/mfa.server.service.mjs';
 import profile from './users.profile.server.controller.mts';
 
 export function handler(operation, login = false) {
@@ -13,6 +14,7 @@ export function handler(operation, login = false) {
             return res
               .status(503)
               .json({ message: 'Could not complete sign-in.' });
+          mfaService.recordBrowserSignin(req);
           return res.json(profile.sanitizeOwnProfile(result));
         });
       }
