@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,12 +43,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.MainActivity
+import org.trustroots.android.R
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.BrowserSignInCallback
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.BrowserSignInJourneyActivity
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.SignInJourneyActivity
+import org.trustroots.android.ui.captureUsabilityScreenshot
 import org.trustroots.android.ui.common.UiFailureFallback
 
 @RunWith(AndroidJUnit4::class)
@@ -124,7 +127,7 @@ class BrowserSignInJourneyTest {
                     waitForText("Continue in browser")
                     assertNull(store.load())
                     compose.onNodeWithTag("signin-continue-browser").performScrollTo().performClick()
-                    waitForText("Browser sign-in is unavailable.", substring = true)
+                    captureBrowserSignInError(R.string.screen_sign_in_browser_unavailable, "android_browser_sign_in_unavailable")
                     compose.onNodeWithTag("signin-continue-browser").performScrollTo().performClick()
                     compose.waitUntil(10_000) { start.get() != null }
                     val url = requireNotNull(start.get())
@@ -138,7 +141,7 @@ class BrowserSignInJourneyTest {
                                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
                         )
                     }
-                    waitForText("Could not finish browser sign-in.", substring = true)
+                    captureBrowserSignInError(R.string.screen_sign_in_browser_retry, "android_browser_sign_in_retry")
                     assertFalse(fixture.requests.any { it.path.endsWith("/browser/exchange") })
                     assertNull(store.load())
                 }
@@ -259,6 +262,13 @@ class BrowserSignInJourneyTest {
                 scope.cancel()
             }
         }
+    }
+
+    private fun captureBrowserSignInError(resource: Int, name: String) {
+        val text = context.getString(resource)
+        waitForText(text)
+        compose.onNodeWithText(text).performScrollTo().assertIsDisplayed()
+        captureUsabilityScreenshot(compose, name)
     }
 
     private fun waitForText(text: String, substring: Boolean = false) {

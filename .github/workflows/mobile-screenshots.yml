@@ -152,6 +152,8 @@ jobs:
             adb exec-out screencap -p > tmp/mobile-screenshots/android_sign_in.png
             test -s tmp/mobile-screenshots/android_sign_in.png
             adb pull /sdcard/Android/data/org.trustroots.android.debug/files/usability-screenshots/. tmp/mobile-screenshots/
+            test -s tmp/mobile-screenshots/android_browser_sign_in_unavailable.png
+            test -s tmp/mobile-screenshots/android_browser_sign_in_retry.png
             test -s tmp/mobile-screenshots/android_host_map.png
             test -s tmp/mobile-screenshots/android_circles.png
             test -s tmp/mobile-screenshots/android_profile.png
@@ -203,6 +205,8 @@ jobs:
           test -s "$screenshots/ios_sign_in.png"
           test -s "$screenshots/ios_host_map.png"
           test -s "$screenshots/android_sign_in.png"
+          test -s "$screenshots/android_browser_sign_in_unavailable.png"
+          test -s "$screenshots/android_browser_sign_in_retry.png"
           test -s "$screenshots/android_host_map.png"
           test -s "$screenshots/android_circles.png"
           test -s "$screenshots/android_profile.png"
