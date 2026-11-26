@@ -1,7 +1,7 @@
 import { type AnyRouter, redirect } from '@tanstack/react-router';
 import React from 'react';
 
-import { type AuthUser, useAuth } from '@/modules/core/client/react-app/auth';
+import { type AuthUser, useAuth } from '@trustroots/core/auth';
 
 export type RouteChrome = {
   title: string;

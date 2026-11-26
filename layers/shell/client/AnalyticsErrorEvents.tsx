@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAnalytics } from '@trustroots/analytics/client';
 
-import { onRequestFailure } from '@/modules/core/client/api/http-client';
+import { onRequestFailure } from '@trustroots/core/http-client';
 
 /**
  * Report failed API requests and uncaught browser errors as coarse product

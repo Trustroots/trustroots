@@ -4,7 +4,7 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 // Internal dependencies
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
 

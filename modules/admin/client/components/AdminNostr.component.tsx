@@ -11,7 +11,7 @@ import {
 } from '@trustroots/ui/Modal';
 import type { Event } from 'nostr-tools';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
-import http, { getErrorMessage } from '@/modules/core/client/api/http-client';
+import http, { getErrorMessage } from '@trustroots/core/http-client';
 import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedNostrNote.component';
 import {
   FEATURED_NOTE_PUBLISH_RELAYS,

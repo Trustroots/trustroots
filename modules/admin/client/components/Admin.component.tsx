@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../../core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import {
   getAdminDashboard,
   type AdminDashboard,

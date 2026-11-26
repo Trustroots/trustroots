@@ -212,6 +212,9 @@ importers:
       '@trustroots/analytics':
         specifier: workspace:*
         version: link:packages/analytics
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:modules/core
       '@trustroots/emails':
         specifier: workspace:*
         version: link:packages/emails

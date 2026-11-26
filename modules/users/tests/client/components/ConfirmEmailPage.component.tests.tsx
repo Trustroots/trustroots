@@ -11,7 +11,7 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ConfirmEmailPage from '@/modules/users/client/components/ConfirmEmailPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 const analytics = fakeAnalytics();

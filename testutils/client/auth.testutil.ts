@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 
 let viewer: AuthUser | null = null;
 
@@ -14,13 +14,13 @@ export function setViewer(user: AuthUser | null): void {
  * A vi.mock factory for the auth module, so components render without an
  * AuthProvider:
  *
- *   vi.mock('@/modules/core/client/react-app/auth', async () =>
+ *   vi.mock('@trustroots/core/auth', async () =>
  *     (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
  *   );
  */
 export async function mockAuthModule() {
   return {
-    ...(await vi.importActual('@/modules/core/client/react-app/auth')),
+    ...(await vi.importActual('@trustroots/core/auth')),
     useAuth: () => ({
       user: viewer,
       isAuthenticated: Boolean(viewer),

@@ -39,13 +39,24 @@ function targetTier(
   groupDirs: string[],
 ): RuntimeTier | undefined {
   if (!result) return undefined;
+  const { target } = result;
   if (
-    result.target &&
-    groupDirs.some(groupDir => inside(groupDir, result.target!.dir))
+    target &&
+    !result.resolved &&
+    groupDirs.some(groupDir => inside(groupDir, target.dir))
   ) {
-    const suffix = specifier
-      .slice(result.target.name.length)
-      .replace(/^\//, '');
+    const suffix = specifier.slice(target.name.length).replace(/^\//, '');
+    const exports = target.manifest.exports;
+    const exportPath =
+      typeof exports === 'object' && exports !== null
+        ? Reflect.get(exports, suffix ? `./${suffix}` : '.')
+        : suffix
+          ? undefined
+          : exports;
+    if (typeof exportPath === 'string' && exportPath.startsWith('./')) {
+      return tierAtPath(target.dir, path.resolve(target.dir, exportPath));
+    }
+
     const first = suffix.split('/')[0];
     if (TIERS.includes(first as RuntimeTier)) return first as RuntimeTier;
   }

@@ -6,7 +6,7 @@ import {
 } from 'nostr-tools';
 import { decode, npubEncode } from 'nostr-tools/nip19';
 import { SimplePool } from 'nostr-tools/pool';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import {
   FEATURED_NOTE_PUBLISH_RELAYS,
   FEATURED_NOTE_RELAYS,

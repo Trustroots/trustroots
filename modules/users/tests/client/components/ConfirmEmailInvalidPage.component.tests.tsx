@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { AuthUser } from '@trustroots/core/auth';
 
 function renderPage(user: AuthUser | null) {
   return render(

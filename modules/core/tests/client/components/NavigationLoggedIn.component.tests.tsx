@@ -22,7 +22,7 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 

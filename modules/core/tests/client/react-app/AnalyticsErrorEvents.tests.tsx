@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import type { AxiosAdapter } from 'axios';
 
 import { AnalyticsErrorEvents } from '@/layers/shell/client/AnalyticsErrorEvents';
-import httpClient from '@/modules/core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const failingAdapter: AxiosAdapter = async config => {

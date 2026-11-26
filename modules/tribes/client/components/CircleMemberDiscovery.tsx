@@ -3,7 +3,7 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 import ContentState from '@/modules/core/client/components/ContentState';
-import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { getErrorResponse } from '@trustroots/core/http-client';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import type { UserProfile } from '@/modules/users/client/types';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';

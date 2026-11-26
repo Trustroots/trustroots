@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { update } from '../api/users.api';
 import type { UserProfile } from '../types';
 import { readApiError } from './api-error';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import '@/config/client/i18n';
-import http from '@/modules/core/client/api/http-client';
+import http from '@trustroots/core/http-client';
 import HomeFeaturedNostrNotes from '@/modules/pages/client/components/HomeFeaturedNostrNotes.component';
 
 afterEach(() => vi.restoreAllMocks());

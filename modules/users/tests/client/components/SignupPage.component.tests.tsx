@@ -12,7 +12,7 @@ import SignupPage from '@/modules/users/client/components/SignupPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
-import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@trustroots/core/auth';
 import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';

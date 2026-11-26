@@ -9,7 +9,7 @@ import {
 } from '@/modules/messages/client/services/visibility.client.service';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@/modules/messages/client/api/messages.api');

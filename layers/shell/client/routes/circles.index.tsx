@@ -3,7 +3,7 @@ import React from 'react';
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import { circlesQuery } from '@/modules/tribes/client/api/circle-queries';
 import useMembershipUpdated from '@/modules/tribes/client/hooks/useMembershipUpdated';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 
 function TribesPageRoute() {
   const { user } = useAuth();

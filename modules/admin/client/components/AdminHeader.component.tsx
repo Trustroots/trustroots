@@ -2,7 +2,7 @@
 import { cn } from '@trustroots/ui/cn';
 import { useLocation } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
-import { useAuth } from '../../../core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import { registerAdminElevationInterceptor } from '../api/admin-elevation';
 import AdminElevationPrompt from './AdminElevationPrompt.component';
 

@@ -8,8 +8,8 @@ import {
 import {
   AppBootstrapContext,
   type BootstrapData,
-} from '@/modules/core/client/react-app/app-context';
-import { AuthProvider } from '@/modules/core/client/react-app/auth';
+} from '@trustroots/core/app-context';
+import { AuthProvider } from '@trustroots/core/auth';
 import { AnalyticsErrorEvents } from './AnalyticsErrorEvents';
 import { getBootstrapData } from './bootstrap';
 

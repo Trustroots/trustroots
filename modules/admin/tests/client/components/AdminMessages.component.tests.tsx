@@ -5,7 +5,7 @@ import AdminMessages from '@/modules/admin/client/components/AdminMessages.compo
 import * as messagesApi from '@/modules/admin/client/api/messages.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

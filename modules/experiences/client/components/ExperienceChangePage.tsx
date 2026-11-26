@@ -6,7 +6,7 @@ import { Button } from '@trustroots/ui/Button';
 
 import * as api from '../api/experience-changes.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { getErrorResponse } from '@trustroots/core/http-client';
 import type {
   ExperienceChangeAccess,
   ExperienceChangeRequestSummary,

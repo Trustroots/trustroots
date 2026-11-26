@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 
 function StatisticsRoute() {
   const { isAuthenticated } = useAuth();

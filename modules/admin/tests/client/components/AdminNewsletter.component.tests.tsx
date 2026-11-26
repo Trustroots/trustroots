@@ -12,7 +12,7 @@ import * as newsletterApi from '@/modules/admin/client/api/newsletter.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
-vi.mock('@/modules/core/client/react-app/auth', async () =>
+vi.mock('@trustroots/core/auth', async () =>
   (await import('@/testutils/client/auth.testutil')).mockAuthModule(),
 );
 vi.mock('@tanstack/react-router', async () =>

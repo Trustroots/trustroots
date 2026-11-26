@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./app-context": "./client/react-app/app-context.ts",
+    "./auth": "./client/react-app/auth.tsx",
+    "./browser-navigation": "./client/services/browser-navigation.ts",
+    "./http-client": "./client/api/http-client.ts",
+    "./navigation-links": "./shared/navigation-links.mts",
     "./client/*": "./client/*",
     "./shared/*": "./shared/*"
   },
