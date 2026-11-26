@@ -612,11 +612,24 @@ describe('Support team access and investigation', () => {
         created: new Date(+windowEnd + 1),
       })),
     ]);
+    // Empty content cannot pass Message validation; insert raw rows so the
+    // repeated-message grouping still proves it ignores blank bodies.
+    await Message.collection.insertMany(
+      recipients.map(userTo => ({
+        userFrom: sender,
+        userTo,
+        content: '',
+        created: windowStart,
+      })),
+    );
     const path = `${reviewEndpoint(review._id)}/repeated-messages`;
     await request(app).get(path).expect(403);
     const first = await agent.get(path).expect(200);
     first.body.items.length.should.equal(50);
     first.body.hasMore.should.equal(true);
+    first.body.items
+      .some((item: { content: string }) => item.content === '')
+      .should.equal(false);
     const second = await agent.get(path).query({ page: 2 }).expect(200);
     second.body.items.should.eql([
       {
@@ -652,11 +665,8 @@ describe('Support team access and investigation', () => {
       (
         [
           ['Four recipients', [support, first, second, third], windowStart],
-          [
-            'Five deliveries',
-            [first, first, first, second, third],
-            windowStart,
-          ],
+          ['Five deliveries', [first, first, second, third], windowStart],
+          ['Five deliveries', [first], windowEnd],
           ['Most recent', [first, second, third], windowEnd],
           ['Least recent', [first, second, third], windowStart],
         ] as const
@@ -680,6 +690,13 @@ describe('Support team access and investigation', () => {
         'Most recent',
         'Least recent',
       ]);
+    body.items[1].should.eql({
+      content: 'Five deliveries',
+      recipientCount: 3,
+      sendCount: 5,
+      firstSent: windowStart.toISOString(),
+      lastSent: windowEnd.toISOString(),
+    });
   });
 
   it('triages requests, records access and keeps resolved investigations available', async () => {
