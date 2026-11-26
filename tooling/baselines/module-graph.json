@@ -94,6 +94,7 @@
   "models": {
     "admin": [
       "contacts",
+      "core",
       "experiences",
       "messages",
       "offers",
@@ -139,7 +140,7 @@
       "users"
     ],
     "support": [
-      "admin",
+      "core",
       "users"
     ],
     "tribes": [
