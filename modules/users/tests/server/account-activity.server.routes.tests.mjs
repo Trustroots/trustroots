@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const mongoose = require('mongoose');
 const request = require('supertest');
 const sinon = require('sinon');
+const winston = require('winston');
 const express = require('../../../../config/lib/express.mts').default;
 const utils = require('../../../../testutils/server/data.server.testutil.mts');
 
@@ -262,6 +263,7 @@ describe('Member account activity', function () {
   });
 
   it('retries storage once immediately with the same event identifier and creates retention indexes', async function () {
+    const log = sinon.stub(winston, 'log');
     let attempts = 0;
     const identifiers = [];
     sinon.stub(AccountActivity, 'updateOne').callsFake(async filter => {
@@ -278,6 +280,7 @@ describe('Member account activity', function () {
     assert.equal(recorded, true);
     assert.equal(attempts, 2);
     assert.deepEqual(identifiers, ['stable-retry-event', 'stable-retry-event']);
+    sinon.assert.notCalled(log);
 
     const indexes = AccountActivity.schema.indexes();
     assert.ok(
@@ -294,31 +297,35 @@ describe('Member account activity', function () {
     );
   });
 
-  it('stops after the final failed storage retry', async function () {
-    sinon.stub(AccountActivity, 'updateOne').callsFake(async () => {
-      const error = new Error('temporary storage failure');
-      error.code = 1234;
-      throw error;
-    });
+  for (const [failure, errorCategory] of [
+    [
+      Object.assign(new Error('temporary storage failure'), { code: 1234 }),
+      'database-1234',
+    ],
+    [null, 'storage-error'],
+  ]) {
+    it(`logs a redacted ${errorCategory} once after exhausting both writes`, async function () {
+      const log = sinon.stub(winston, 'log');
+      const write = sinon
+        .stub(AccountActivity, 'updateOne')
+        .callsFake(async () => {
+          throw failure;
+        });
+      const recorded = await recordActivity({
+        userId: new mongoose.Types.ObjectId(),
+        eventType: 'password_changed',
+        eventId: 'failed-retry-event',
+      });
 
-    const recorded = await recordActivity({
-      userId: new mongoose.Types.ObjectId(),
-      eventType: 'password_changed',
-      eventId: 'failed-retry-event',
+      assert.equal(recorded, false);
+      sinon.assert.calledTwice(write);
+      sinon.assert.calledOnceWithExactly(
+        log,
+        'error',
+        'Account activity recording failed.',
+        { eventType: 'password_changed', errorCategory },
+      );
+      assert.ok(write.secondCall.calledBefore(log.firstCall));
     });
-    assert.equal(recorded, false);
-  });
-
-  it('handles storage failures without a numeric database code', async function () {
-    sinon.stub(AccountActivity, 'updateOne').callsFake(async () => {
-      throw new Error('temporary storage failure');
-    });
-
-    const recorded = await recordActivity({
-      userId: new mongoose.Types.ObjectId(),
-      eventType: 'password_changed',
-      eventId: 'unclassified-retry-event',
-    });
-    assert.equal(recorded, false);
-  });
+  }
 });
