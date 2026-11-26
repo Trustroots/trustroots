@@ -14,6 +14,7 @@ struct AccountView: View {
     @State private var isSavingAccount = false
     @State private var isChangingPassword = false
     @State private var emailSectionHeight: CGFloat = 1
+    @State private var emailSectionPosition = AccountSectionPosition()
     @State private var accountConfirmation: String?
     @State private var accountError: String?
     @State private var confirmation: String?
@@ -58,6 +59,7 @@ struct AccountView: View {
             email: $email,
             newsletter: $newsletter,
             height: $emailSectionHeight,
+            position: emailSectionPosition,
             pendingEmail: profile?.emailTemporary,
             isSaving: isSavingAccount,
             confirmation: accountConfirmation,
@@ -67,6 +69,7 @@ struct AccountView: View {
         .frame(maxWidth: .infinity)
         .frame(height: emailSectionHeight)
         .clipped()
+        .trackAccountSectionPosition(emailSectionPosition)
     }
 
     private var passwordSection: some View {
@@ -235,6 +238,7 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
     @Binding var email: String
     @Binding var newsletter: Bool
     @Binding var height: CGFloat
+    let position: AccountSectionPosition
     let pendingEmail: String?
     let isSaving: Bool
     let confirmation: String?
@@ -256,6 +260,7 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
         let measuredHeight = $height
         return MemberAccountPreferencesViewControllerKt.MemberAccountPreferencesViewController(
             state: coordinator.state,
+            position: position,
             onEmail: { [weak coordinator] in coordinator?.onEmail?($0) },
             onNewsletter: { [weak coordinator] in coordinator?.onNewsletter?($0.boolValue) },
             onSave: { [weak coordinator] in coordinator?.onSave?() },
@@ -288,5 +293,13 @@ private struct ComposeAccountPreferences: UIViewControllerRepresentable {
             confirmation: confirmation,
             error: error
         )
+    }
+}
+
+extension View {
+    func trackAccountSectionPosition(_ position: AccountSectionPosition) -> some View {
+        onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { origin in
+            position.updateOrigin(x: Double(origin.x), y: Double(origin.y))
+        }
     }
 }
