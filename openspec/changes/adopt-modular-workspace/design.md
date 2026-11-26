@@ -73,7 +73,7 @@ Turbo reads the `workspace:*` graph and runs `lint`, `typecheck` and `test` for 
 
 Coverage stays one uncached root task. Turbo's per-package `test` serves the contributor loop and the pull request fast path; it never decides the coverage gate, and CI on `main` continues to run the full suite.
 
-Until the module cycle shrinks, "affected" from `core` or `users` is nearly everything. The benefit starts with leaf modules (`support`, `stats`, `sparkpost`, `references-thread`) and grows as the cycle is untangled.
+Changes to `core` still affect `users` and other modules that depend on it. A change confined to `users` no longer selects `core` through a dependency cycle.
 
 Alternative considered: moon. Rejected for now: it brings a second toolchain manager and configuration language, and Turborepo is enough for a pnpm workspace.
 
@@ -96,15 +96,15 @@ Alternative considered: moon. Rejected for now: it brings a second toolchain man
 
 Keep environment selection, local deployment overrides and mail-safety policy in the application configuration. The root `config/config.mts` combines those concerns at startup. Extract individual pure types, defaults or validators only when multiple consumers need the same contract. The application can pass feature-specific settings through module entry points when it composes them.
 
-The supported locale catalogue in `packages/locales/locales.json` is provided by the private, source-only `@trustroots/locales` package. The web language selector and member settings validation share this catalogue. Keep the old catalogue path as a symlink for deployed Nostranslation readers using the GitHub Contents API. Keep i18next initialization, the language cookie, and DOM and RTL stylesheet updates in the web app. Its locale backend loads `public/locales` over HTTP, so preserve that URL and the extraction pipeline. Any shared formatter needs to depend on shared code, including the relative-time formatter currently owned by core.
+The supported locale catalogue in `packages/locales/locales.json` is provided by the private, source-only `@trustroots/locales` package. The web language selector and member settings validation share this catalogue. The legacy catalogue path remains a symlink because deployed Nostranslation code reads it through the GitHub Contents API. The shared relative-time formatter lives in `@trustroots/relative-time` (#3954). Keep deployment configuration, i18next initialisation, the language cookie, and DOM and RTL stylesheet updates in their existing application locations. The browser locale backend loads `public/locales` over HTTP, so preserve that URL and the extraction pipeline.
 
 ### Deployment and caching assessment
 
-Keep the web application entry points at the root until there is a deployment reason to move them. The production image copies the server, worker, Vite config and public assets from the root, and the runtime and deployment scripts use those paths. Evaluate a move with a production-image build, startup smoke tests on each supported MongoDB version and a worker boot check.
+Defer moving the web application entry points into `apps/web`. The production image copies the server, worker, Vite config and public assets from the root, and the runtime and deployment scripts use those paths. Revisit a move only with a production-image build, startup smoke tests on each supported MongoDB version and a worker boot check.
 
-Keep third-party dependencies at the root while the feature modules run in the same application and build. Move a dependency to its owning package when that package needs to be consumed independently or when the move measurably improves the install or deployment. Compare the resolved lockfile and production dependency inventory before and after the change.
+Defer per-package third-party dependency ownership while feature modules run in the same application and build. Revisit moving a dependency when its package needs independent consumption or when the move measurably improves installation or deployment. Compare the resolved lockfile and production dependency inventory before and after the move.
 
-Turbo currently caches affected lint tasks, while client and server tests have caching disabled in `turbo.json`. Measure affected lint wall time and the share of repeated task hashes before setting up remote caching. The global coverage gate continues to run with fresh reports.
+Defer remote caching. Turbo currently caches affected lint tasks, while client and server tests have caching disabled in `turbo.json`. Revisit remote caching after measuring affected lint wall time and the share of repeated task hashes. The global coverage gate continues to run with fresh reports.
 
 ## Where the current code fights the layout
 
@@ -131,8 +131,8 @@ Each item is its own pull request with a plain-sentence title and unchanged cove
 7. `layers/server`: per-module `server/index.mjs` and one ordered list replacing the globs and the job list.
 8. Model-ownership guard.
 9. `layers/shell`: router, layout and providers out of `core/client`; each module exports its routes.
-10. `apps/web`: entry points, build config, `public/`, Dockerfile and pm2 files move in. Needs a production-image check from the maintainer who runs deploys.
-11. Untangling, one pull request at a time: break `core` ↔ `users` edges, rewrite `@/modules/x` to `@trustroots/x` per module, drop shims, move third-party dependencies per package through `catalog:`, and consider a Turbo remote cache only if measurements justify it.
+10. Deferred: move entry points, build config, `public/`, Dockerfile and pm2 files into `apps/web` only when deployment paths can be checked with the maintainer who runs deploys.
+11. Remove the `core` → `users` dependency. The account page supplies locale persistence and `layers/server` composes the member services used by Core. Continue the per-module import and shim review, retaining compatibility paths with deployed consumers.
 
 Steps 3 to 6 do not conflict with module code. Steps 7 and 9 are the riskiest and should wait for a quiet period in the pull requests that touch server start-up and the router.
 
@@ -141,7 +141,7 @@ Steps 3 to 6 do not conflict with module code. Steps 7 and 9 are the riskiest an
 - Tooling choices are the maintainers' call. Step 3 is the first step with a visible cost and is the natural point to stop if the direction is not wanted.
 - `apps/web` changes deploy paths; mitigated by doing it last and checking the production image start-up (`scripts/ci/check-production-startup.sh`) before merge.
 - Re-export shims leave two ways to import `config`, `logger` and `i18n` for a while. The guard warns on the old paths for new code, and step 11 removes the shims.
-- The cycle stays until step 11, so the guards freeze the problem rather than fixing it. That is still the main gain.
+- The module-graph baseline records the removal of both the import and model-lookup edges from `core` to `users`.
 - Native dependencies (`canvas`, `sharp`) and the Docker images must be re-verified under the workspace layout in step 3.
 - No independent deploys result from this change.
 

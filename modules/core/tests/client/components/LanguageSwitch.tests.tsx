@@ -7,7 +7,6 @@ import {
 } from '@testing-library/react';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
-import * as usersApi from '@/modules/users/client/api/users.api';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 const analytics = fakeAnalytics();
@@ -16,9 +15,6 @@ const render = (
   options?: Parameters<typeof rtlRender>[1],
 ) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
-const updateUserMock = vi.mocked(usersApi.update);
-
-vi.mock('@/modules/users/client/api/users.api');
 afterEach(() => vi.clearAllMocks());
 
 beforeEach(() => i18n.changeLanguage('en'));
@@ -87,13 +83,9 @@ describe('default presentation', () => {
   });
 
   it('can save the language to the API', async () => {
-    updateUserMock.mockResolvedValue({
-      _id: 'member-1',
-      username: 'member',
-      displayName: 'Member',
-    });
+    const persistLanguage = vi.fn().mockResolvedValue(undefined);
 
-    render(<LanguageSwitch saveToAPI={true} />);
+    render(<LanguageSwitch onLanguageChange={persistLanguage} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
@@ -104,13 +96,13 @@ describe('default presentation', () => {
         saved: 'yes',
       }),
     );
-    expect(updateUserMock).toHaveBeenCalledWith({ locale: 'cs' });
+    expect(persistLanguage).toHaveBeenCalledWith('cs');
   });
 
   it('says the language was not saved when saving fails', async () => {
-    updateUserMock.mockRejectedValue(new Error('offline'));
+    const persistLanguage = vi.fn().mockRejectedValue(new Error('offline'));
 
-    render(<LanguageSwitch saveToAPI={true} />);
+    render(<LanguageSwitch onLanguageChange={persistLanguage} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
