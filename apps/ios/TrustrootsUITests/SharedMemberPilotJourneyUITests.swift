@@ -728,12 +728,18 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         capture.lifetime = .keepAlways
         add(capture)
 
-        let display = app.segmentedControls.firstMatch
-        display.buttons["Results"].tap()
+        let mapDisplay = app.descendants(matching: .any)["offer-search-display-map"]
+        let resultsDisplay = app.descendants(matching: .any)["offer-search-display-results"]
+        let membersDisplay = app.descendants(matching: .any)["offer-search-display-members"]
+        XCTAssertTrue(mapDisplay.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(mapDisplay.isSelected)
+        resultsDisplay.tap()
         let volunteer = app.buttons["search-result-offer-pilot-volunteer"]
         let other = app.buttons["search-result-offer-pilot-other"]
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(resultsDisplay.isSelected)
+        XCTAssertFalse(mapDisplay.isSelected)
         app.buttons["Search filters"].tap()
         let filterScreen = app.descendants(matching: .any)["compose-offer-search-filters"]
         XCTAssertTrue(filterScreen.waitForExistence(timeout: 10), app.debugDescription)
@@ -749,9 +755,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         }
         app.buttons["Done"].tap()
         XCTAssertTrue(other.waitForNonExistence(timeout: 15), app.debugDescription)
-        display.buttons["Map"].tap()
+        mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 15), app.debugDescription)
-        display.buttons["Results"].tap()
+        resultsDisplay.tap()
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(other.exists)
         volunteer.tap()
@@ -780,7 +786,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
 
-        display.buttons["Members"].tap()
+        membersDisplay.tap()
         app.buttons["Member filters"].tap()
         let connectedMembers = app.switches["My connections only"]
         XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5))
@@ -792,9 +798,15 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         query.tap()
         query.typeText("partner profile")
         app.buttons["Search members"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["member-search-result-pilot-partner"].waitForExistence(timeout: 10), app.debugDescription)
-        display.buttons["Map"].tap()
+        let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
+        XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        mapDisplay.tap()
         XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        membersDisplay.tap()
+        XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(query.value as? String, "partner profile")
+        XCTAssertTrue(membersDisplay.isSelected)
+        XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func setDroppedProfileResponse(_ drop: Bool, at fixtureURL: URL) async throws {
