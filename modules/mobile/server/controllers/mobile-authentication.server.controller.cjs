@@ -192,9 +192,15 @@ exports.me = function (req, res) {
   });
 };
 
-exports.loadProfile = function (req, res, next) {
+exports.loadProfile = function (readReplyStats, req, res, next) {
   req.user = req.mobileUser;
-  return userProfile.userByUsername(req, res, next, req.params.profileUsername);
+  return userProfile.userByUsername(
+    readReplyStats,
+    req,
+    res,
+    next,
+    req.params.profileUsername,
+  );
 };
 
 exports.profile = function (req, res) {

@@ -1,3 +1,4 @@
+import { userMessaging } from '../../../../layers/server/user-messaging.mts';
 import assert from 'assert';
 import sinon from 'sinon';
 import proxyquire from './../../../../testutils/server/mock-module.mts';
@@ -571,6 +572,7 @@ describe('API route registrations', () => {
         '../controllers/users.avatar.server.controller': avatar,
         '../policies/users.server.policy': policy,
       },
+      userMessaging,
     );
     assert.strictEqual(routes.length, 19);
 

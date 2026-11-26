@@ -5,6 +5,7 @@ import type {
   PublicProviderIdentities,
 } from '../../shared/profile.js';
 import type { UserServerDocument } from '../models/user.server.types.mts';
+import type { UserMessaging } from '../services/user-messaging.server.contract.mts';
 import type {
   ProfileResponseDto,
   ServerProfileMembership,
@@ -127,7 +128,11 @@ export interface UserProfileController {
   getProfileRemovalStatus(req: ProfileRequest, res: ProfileResponse): unknown;
   cancelProfileRemoval(req: ProfileRequest, res: ProfileResponse): unknown;
   initializeRemoveProfile(req: ProfileRequest, res: ProfileResponse): unknown;
-  removeProfile(req: ProfileRequest, res: ProfileResponse): unknown;
+  removeProfile(
+    clearMessageNotifications: UserMessaging['clearMessageNotifications'],
+    req: ProfileRequest,
+    res: ProfileResponse,
+  ): unknown;
   getUser(req: SanitizedProfileRequest, res: ProfileResponse): unknown;
   getMiniUser(req: MiniProfileRequest, res: ProfileResponse): unknown;
   userMiniByID(
@@ -137,6 +142,7 @@ export interface UserProfileController {
     userId: string,
   ): unknown;
   userByUsername(
+    readReplyStats: UserMessaging['readReplyStats'],
     req: ProfileRequest,
     res: ProfileResponse,
     next: ProfileNext,
