@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,6 +83,7 @@ internal fun MemberAccountPreferences(
             tag = "account-email",
             enabled = true,
             keyboardOptions = emailKeyboard,
+            keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
         ) { email ->
             state.editEmail(email)
             onEmail(email)
