@@ -429,6 +429,16 @@ describe('Support team access and investigation', () => {
         created: windowEnd,
       })),
     ]);
+    await Message.collection.insertMany(
+      recipients.map(userTo => ({
+        userFrom,
+        userTo,
+        content: '',
+        created: windowEnd,
+      })),
+    );
+    const collation = sinon.spy(mongoose.Aggregate.prototype, 'collation');
+    const option = sinon.spy(mongoose.Aggregate.prototype, 'option');
     const path = `${endpoint(report._id)}/repeated-messages`;
     await request(app).get(path).expect(403);
     const result = await agent
@@ -440,6 +450,8 @@ describe('Support team access and investigation', () => {
       })
       .expect(200)
       .expect('Cache-Control', 'no-store');
+    sinon.assert.calledWithExactly(collation, { locale: 'simple' });
+    sinon.assert.calledWithExactly(option, { maxTimeMS: 5_000 });
     result.body.should.eql({
       windowStart: windowStart.toISOString(),
       windowEnd: windowEnd.toISOString(),
@@ -470,7 +482,9 @@ describe('Support team access and investigation', () => {
       { _id: report._id },
       { $unset: { sent: 1 } },
     );
-    await agent.get(path).expect(400);
+    await agent.get(path).expect(400, {
+      message: 'This report has no valid submission time.',
+    });
     await SupportRequest.updateOne(
       { _id: report._id },
       { $unset: { reportedUser: 1 } },
@@ -575,7 +589,60 @@ describe('Support team access and investigation', () => {
       },
     ]);
     second.body.hasMore.should.equal(false);
+
+    await Message.deleteMany({
+      userFrom: sender,
+      content: 'Fictional repeat 50',
+    });
+    const exactlyOnePage = await agent.get(path).expect(200);
+    exactlyOnePage.body.items.length.should.equal(50);
+    exactlyOnePage.body.hasMore.should.equal(false);
   });
+
+  it('orders repeated messages by distinct recipients, deliveries and recency', async () => {
+    const sender = users[1]._id;
+    const windowStart = new Date('2026-01-01T12:00:00.000Z');
+    const windowEnd = new Date('2026-01-01T13:00:00.000Z');
+    const review = await MessageThrottleReview.create({
+      sender,
+      windowStart,
+      windowEnd,
+    });
+    const [support, , first, second, third] = users.map(user => user._id);
+    await Message.insertMany(
+      (
+        [
+          ['Four recipients', [support, first, second, third], windowStart],
+          [
+            'Five deliveries',
+            [first, first, first, second, third],
+            windowStart,
+          ],
+          ['Most recent', [first, second, third], windowEnd],
+          ['Least recent', [first, second, third], windowStart],
+        ] as const
+      ).flatMap(([content, recipients, created]) =>
+        recipients.map(userTo => ({
+          userFrom: sender,
+          userTo,
+          content,
+          created,
+        })),
+      ),
+    );
+    const { body } = await agent
+      .get(`${reviewEndpoint(review._id)}/repeated-messages`)
+      .expect(200);
+    body.items
+      .map((item: { content: string }) => item.content)
+      .should.eql([
+        'Four recipients',
+        'Five deliveries',
+        'Most recent',
+        'Least recent',
+      ]);
+  });
+
   it('triages requests, records access and keeps resolved investigations available', async () => {
     await Message.create([
       {

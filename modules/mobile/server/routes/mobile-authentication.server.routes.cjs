@@ -1,4 +1,5 @@
 const mobileAuthentication = require('../controllers/mobile-authentication.server.controller.cjs');
+const browserHandoff = require('../controllers/mobile-browser-handoff.server.controller.cjs');
 const mobileAuthenticationThrottle = require('../middleware/mobile-authentication-throttle.server.middleware.cjs');
 const signinChallenge =
   require('../../../users/server/services/signin-challenge.server.service.mts').default;
@@ -179,6 +180,21 @@ module.exports = function (app) {
     .put(userBlock.blockUser)
     .delete(userBlock.unblockUser);
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
+  app.get(
+    '/auth/mobile/start',
+    mobileAuthenticationThrottle.browserHandoff,
+    browserHandoff.start,
+  );
+  app
+    .route('/auth/mobile/confirm/:requestId')
+    .get(browserHandoff.confirmation)
+    .post(browserHandoff.issue);
+  app.post(
+    '/api/mobile/v0/auth/browser/exchange',
+    mobileAuthenticationThrottle.browserHandoff,
+    browserHandoff.exchange,
+  );
+  app.get('/mobile-auth/complete', browserHandoff.androidFallback);
   app
     .route('/api/mobile/v0/auth/signin')
     .post(

@@ -1,3 +1,4 @@
+import requireMfaForAccountAccess from '../../server/middleware/mfa-session.server.middleware.mjs';
 import should from 'should';
 import sinon from 'sinon';
 import mongoose from 'mongoose';
@@ -10,6 +11,8 @@ import { checkMemberSession } from '../../server/services/member-session.server.
 interface SessionUser {
   id: string;
   authVersion?: number;
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
 }
 type SerializeHandler = (
   user: SessionUser,
@@ -62,19 +65,51 @@ describe('Users Passport session configuration', () => {
     sinon.stub(User, 'findOne').callsFake(findOne);
     const { serialize, restore } = await installSessionHandlers();
 
-    serialize({ id: 'member-id', authVersion: 3 }, (error, session) => {
-      should.not.exist(error);
-      should(session).deepEqual({ id: 'member-id', authVersion: 3 });
-    });
-    serialize({ id: 'member-id' }, (error, session) =>
-      should(session).deepEqual({ id: 'member-id', authVersion: 0 }),
+    serialize(
+      {
+        id: 'member-id',
+        authVersion: 3,
+        mfaEnabled: true,
+        $locals: { mfaVerified: true },
+      },
+      (error, session) => {
+        should.not.exist(error);
+        should(session).deepEqual({
+          id: 'member-id',
+          authVersion: 3,
+          mfaVerified: true,
+        });
+      },
     );
+    serialize({ id: 'member-id' }, (error, session) =>
+      should(session).deepEqual({
+        id: 'member-id',
+        authVersion: 0,
+        mfaVerified: false,
+      }),
+    );
+    for (const [mfaEnabled, mfaVerified] of [
+      [true, false],
+      [false, true],
+    ] as const) {
+      serialize(
+        { id: 'member-id', mfaEnabled, $locals: { mfaVerified } },
+        (error, session) => {
+          should.not.exist(error);
+          should(session).have.property('mfaVerified', false);
+        },
+      );
+    }
     for (const session of [
       null,
       undefined,
       'member-id',
       // Not an object, even though it carries both fields.
-      Object.assign(() => {}, { id: 'member-id', authVersion: 0 }),
+      Object.assign(() => {}, {
+        id: 'member-id',
+        authVersion: 0,
+        mfaVerified: false,
+      }),
       { id: 'member-id' },
       { authVersion: 0 },
       { id: 'member-id', authVersion: 1.5 },
@@ -85,7 +120,11 @@ describe('Users Passport session configuration', () => {
   });
 
   it('rejects stale versions and deleted accounts while accepting the current version', async () => {
-    const currentUser = { id: 'member-id', authVersion: 4 };
+    const currentUser = {
+      id: 'member-id',
+      authVersion: 4,
+      mfaEnabled: true,
+    };
     const findOne = sinon
       .stub()
       .callsFake(async (query: { _id: string }) =>
@@ -95,9 +134,19 @@ describe('Users Passport session configuration', () => {
     const { restore } = await installSessionHandlers();
 
     should(await restore({ id: 'member-id', authVersion: 3 })).equal(false);
-    should(await restore({ id: 'member-id', authVersion: 4 })).equal(
-      currentUser,
-    );
+    const restored = await restore({
+      id: 'member-id',
+      authVersion: 4,
+      mfaVerified: true,
+    });
+    should(restored).equal(currentUser);
+    if (!restored) throw new Error('Expected the current session user');
+    should(restored.$locals?.mfaVerified).equal(true);
+    await restore({ id: 'member-id', authVersion: 4 });
+    should(restored.$locals?.mfaVerified).equal(false);
+    currentUser.mfaEnabled = false;
+    await restore({ id: 'member-id', authVersion: 4, mfaVerified: true });
+    should(restored.$locals?.mfaVerified).equal(false);
     should(await restore({ id: 'deleted-id', authVersion: 0 })).equal(null);
     findOne
       .alwaysCalledWithMatch(sinon.match.object, '-salt -password')
@@ -131,12 +180,13 @@ describe('Users Passport session configuration', () => {
     strategies.args
       .map(([strategy]) => (strategy as { name: string }).name)
       .should.deepEqual(['local']);
-    app.use.args.should.have.length(4);
+    app.use.args.should.have.length(5);
     should(app.use.args[0]).deepEqual(['initialize']);
     should(app.use.args[2]).deepEqual([
       usersSuspended.invalidateSuspendedSessions,
     ]);
     should(app.use.args[3]).deepEqual([checkMemberSession]);
+    should(app.use.args[4]).deepEqual([requireMfaForAccountAccess]);
     const browserSessionOnly: Middleware = app.use.args[1][0];
     for (const [path, mobile] of [
       ['/api/mobile/v0', true],

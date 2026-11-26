@@ -65,6 +65,9 @@ export default function (app: RouteApplication) {
       signinChallenge,
       userAuthentication.signin,
     );
+  app
+    .route('/api/auth/mfa/verify')
+    .post(targetedRequestLimit.mfaVerify, userAuthentication.verifyMfa);
   app.route('/api/auth/session').get(userAuthentication.session);
   app
     .route('/api/auth/signout')

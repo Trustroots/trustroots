@@ -1062,6 +1062,27 @@ class AccountSettingsViewModelTest {
         }
     }
 
+    @Test fun retainsInitialLoadWhenTheBearerSessionHasNotChanged() {
+        val pending = CompletableDeferred<Result<AccountDetails>>()
+        val repository = FakeRepository().apply { detailsHandler = { pending.await() } }
+        val platform = FakePlatform()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val api = MobileApiClient("https://api.example.test")
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        try {
+            val viewModel = AccountSettingsViewModel("quiet-fox", repository, platform, scope, api, session)
+            viewModel.updateEnvironment(api, session, platform)
+            assertTrue(viewModel.state.value.isLoading)
+            pending.complete(repository.detailsResult)
+
+            assertEquals(1, repository.detailCalls)
+            assertEquals("member@example.test", viewModel.state.value.details?.email)
+            assertNull(viewModel.state.value.failure)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     private fun model(
         repository: FakeRepository = FakeRepository(),
         platform: FakePlatform = FakePlatform(),

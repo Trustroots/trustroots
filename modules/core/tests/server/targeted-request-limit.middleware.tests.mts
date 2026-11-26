@@ -16,6 +16,7 @@ type Request = {
   user?: { id?: string };
   body?: { email?: unknown; username?: unknown };
   params?: { token?: unknown };
+  session?: { mfaChallenge?: { userId?: unknown } };
   get?: (name: string) => string | undefined;
 };
 type Dimension = { name: string; value: string; limit: number };
@@ -75,6 +76,8 @@ function loadMiddleware(
         ipLimit: 0,
         identityLimit: 24,
       },
+      mfaVerify: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaManage: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
   (
@@ -368,8 +371,23 @@ describe('Targeted request limit middleware', function () {
       getRequestIdentity({ params: { token: 123 } }, 'token'),
       undefined,
     );
+    assert.equal(getRequestIdentity({}, 'mfaChallenge'), undefined);
     assert.equal(
-      getRequestIdentity({ params: { token: 'Token-Value' } }, 'unknown'),
+      getRequestIdentity({ session: {} }, 'mfaChallenge'),
+      undefined,
+    );
+    assert.equal(
+      getRequestIdentity(
+        { session: { mfaChallenge: { userId: 123 } } },
+        'mfaChallenge',
+      ),
+      undefined,
+    );
+    assert.equal(
+      getRequestIdentity(
+        { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+        'unknown',
+      ),
       undefined,
     );
   });
@@ -436,6 +454,68 @@ describe('Targeted request limit middleware', function () {
       });
     });
   }
+  it('limits MFA attempts by account across different IP addresses', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => '198.51.100.30',
+    );
+    await middleware.mfaVerify(
+      { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+      response(),
+      () => {},
+    );
+
+    if (!options) throw new Error('Expected request limit options');
+    options.dimensions.should.deepEqual([
+      {
+        name: 'ip',
+        value: '198.51.100.30',
+        limit: 10,
+      },
+      {
+        name: 'ip-and-identity',
+        value: JSON.stringify(['198.51.100.30', 'fictional-member-id']),
+        limit: 2,
+      },
+      {
+        name: 'member',
+        value: 'fictional-member-id',
+        limit: 2,
+      },
+    ]);
+  });
+
+  it('limits MFA settings changes by signed-in member', async function () {
+    const calls: ConsumeOptions[] = [];
+    const middleware = loadMiddleware(async options => {
+      calls.push(options);
+      return { allowed: true };
+    });
+    await middleware.mfaManage(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(calls, [
+      {
+        operation: 'mfaManage',
+        windowMs: 60_000,
+        dimensions: [
+          { name: 'ip', value: '198.51.100.20', limit: 10 },
+          {
+            name: 'ip-and-identity',
+            value: JSON.stringify(['198.51.100.20', 'fictional-member']),
+            limit: 2,
+          },
+          { name: 'member', value: 'fictional-member', limit: 2 },
+        ],
+      },
+    ]);
+  });
 
   it('skips storage when no configured dimension has an identity', async function () {
     const middleware = loadMiddleware(

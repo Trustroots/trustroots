@@ -645,6 +645,59 @@ class MobileApiClientTest {
         assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", request.line)
     }
 
+    @Test fun preservesTheStructuredBrowserSignInRequirement() {
+        val (result, request) = withApiResponse(
+            403,
+            """{"code":"web_sign_in_required","message":"Complete authentication on the web."}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).signIn("fictional-owl", "fictional-password") } }
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", request.line)
+        assertEquals(403, error.statusCode)
+        assertEquals("web_sign_in_required", error.code)
+        assertEquals("Complete authentication on the web.", error.serverMessage)
+    }
+
+    @Test fun exchangesTheBrowserCodeForAScopedBearerSession() {
+        val (result, request) = withApiResponse(
+            200,
+            """{"accessToken":"fictional-access","refreshToken":"fictional-refresh","member":{"username":"fictional-owl"}}""",
+            responseHeaders = listOf("Set-Cookie: connect.sid=unneeded; Path=/"),
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).exchangeBrowserSignInCode("fictional-code", "fictional-verifier") } }
+        val session = result.getOrThrow()
+        assertEquals("POST /api/mobile/v0/auth/browser/exchange HTTP/1.1", request.line)
+        val body = JSONObject(request.body)
+        assertEquals("fictional-code", body.getString("code"))
+        assertEquals("fictional-verifier", body.getString("codeVerifier"))
+        assertEquals("android", body.getString("platform"))
+        assertEquals("fictional-access", session.accessToken)
+        assertEquals("fictional-refresh", session.refreshToken)
+        assertEquals("", session.cookieHeader)
+        assertNotNull(session.localSessionId)
+    }
+
+    @Test fun browserCodeExchangeRejectsIncompleteSessionsAndRedirects() {
+        for (incomplete in listOf(
+            """{"accessToken":"","refreshToken":"fictional-refresh","member":{"username":"fictional-owl"}}""",
+            """{"accessToken":null,"refreshToken":"fictional-refresh","member":{"username":"fictional-owl"}}""",
+            """{"accessToken":"fictional-access","refreshToken":"","member":{"username":"fictional-owl"}}""",
+            """{"accessToken":"fictional-access","member":{"username":"fictional-owl"}}""",
+        )) {
+            val (result, _) = withApiResponse(200, incomplete) { baseURL ->
+                runBlocking { MobileApiClient(baseURL).exchangeBrowserSignInCode("fictional-code", "fictional-verifier") }
+            }
+            assertEquals(ApiFailureKind.MISSING_SESSION, (result.exceptionOrNull() as MobileApiException).failureKind)
+        }
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 307, headers = okhttp3.Headers.headersOf("Location", "/other")))
+            server.start()
+            val result = runBlocking {
+                MobileApiClient(server.url("/").toString()).exchangeBrowserSignInCode("fictional-code", "fictional-verifier")
+            }
+            assertEquals(307, (result.exceptionOrNull() as MobileApiException).statusCode)
+            assertEquals(1, server.requestCount)
+        }
+    }
+
     @Test
     fun solvesTheSignInChallengeAndRetriesTheBearerEndpointOnce() {
         MockWebServer().use { server ->

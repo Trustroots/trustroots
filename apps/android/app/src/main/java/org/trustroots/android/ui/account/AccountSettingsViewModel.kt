@@ -202,7 +202,7 @@ internal class AccountSettingsViewModel(
     private var username = username
     private var platform = platform
     private var backendURL: String? = initialApi?.backendURL
-    private var cookieHeader: String? = initialSession?.cookieHeader
+    private var credentialKey: String? = initialSession?.credentialKey
     private val mutableState = MutableStateFlow(
         AccountSettingsUiState(
             messageAlertsEnabled = platform.messageAlertsEnabled(username),
@@ -231,7 +231,7 @@ internal class AccountSettingsViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession, platform: AccountPlatformSettings) {
         val backendChanged = backendURL != api.backendURL
         val accountChanged = username != session.member.username
-        val credentialsChanged = cookieHeader != session.credentialKey
+        val credentialsChanged = credentialKey != session.credentialKey
         val environmentChanged = backendChanged || accountChanged || credentialsChanged
         if (environmentChanged) cancelEnvironmentJobs()
         repository.updateApi(api)
@@ -250,7 +250,7 @@ internal class AccountSettingsViewModel(
 
         backendURL = api.backendURL
         username = session.member.username
-        cookieHeader = session.credentialKey
+        credentialKey = session.credentialKey
         sessionInvalidated = false
 
         if (backendChanged || accountChanged) {

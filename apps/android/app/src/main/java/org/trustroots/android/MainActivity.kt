@@ -7,22 +7,29 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.NostranslationAlerts
 import org.trustroots.android.ui.TrustrootsApp
+import org.trustroots.android.ui.signin.BrowserSignInLinks
 import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.updates.ApkUpdateAlerts
 
-class MainActivity : ComponentActivity() {
+open class MainActivity : ComponentActivity() {
+    protected open val apiBaseUrl: String get() = BuildConfig.API_BASE_URL
+    private val browserSignInLinks by viewModels<BrowserSignInLinks>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        browserSignInLinks.capture(intent)
         MessageAlerts.captureIntent(intent)
         NostranslationAlerts.captureIntent(intent)
         ApkUpdateAlerts.reconcile(this)
         applyAppearance()
+        val backend = apiBaseUrl
         setContent {
             TrustrootsTheme {
-                TrustrootsApp()
+                TrustrootsApp(apiBaseUrl = backend)
             }
         }
     }
@@ -48,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (browserSignInLinks.capture(intent)) return
         setIntent(intent)
         MessageAlerts.captureIntent(intent)
         NostranslationAlerts.captureIntent(intent)

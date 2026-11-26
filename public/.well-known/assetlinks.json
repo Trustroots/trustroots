@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.trustroots.android",
+      "sha256_cert_fingerprints": [
+        "09:17:29:95:E8:AB:E0:C2:E0:99:8C:08:D8:79:5E:09:3F:41:6B:72:81:85:C1:6B:16:B2:5E:BE:79:68:FF:46"
+      ]
+    }
+  }
+]

@@ -13,7 +13,9 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 export default function ConfirmEmailPage() {
   const { user, setUser } = useAuth() as {
     user: { email?: string } | null;
-    setUser: (user: { _id: string; username: string; email?: string }) => void;
+    setUser: (
+      user: { _id: string; username: string; email?: string } | null,
+    ) => void;
   };
   const { token } = useParams({ strict: false });
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function ConfirmEmailPage() {
   const [details, setDetails] =
     useState<authApi.EmailConfirmationDetails | null>(null);
   const [success, setSuccess] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -32,6 +35,7 @@ export default function ConfirmEmailPage() {
     setDetails(null);
     setError(false);
     setSuccess(false);
+    setMfaRequired(false);
     setCancelledEmail(null);
     setCancelError(false);
     if (!token) {
@@ -57,10 +61,17 @@ export default function ConfirmEmailPage() {
     setIsLoading(true);
     try {
       const response = await authApi.confirmEmail(token);
-      setUser(response.user);
       track('email_confirmed', {
         kind: response.profileMadePublic ? 'signup' : 'change',
       });
+      if (response.mfaRequired) {
+        setUser(null);
+        setMfaRequired(true);
+        setSuccess(true);
+        return;
+      }
+
+      setUser(response.user);
       if (response.profileMadePublic) {
         void navigate({ to: '/welcome' });
         return;
@@ -151,6 +162,14 @@ export default function ConfirmEmailPage() {
               </p>
             )}
           </Alert>
+        ) : mfaRequired ? (
+          <div role="status">
+            <p>Your email is now confirmed.</p>
+            <p>
+              Sign in with your password and authenticator code to continue.
+            </p>
+            <a href="/signin">Sign in</a>
+          </div>
         ) : success ? (
           <div role="status">
             <p className="email-confirmation-intro">

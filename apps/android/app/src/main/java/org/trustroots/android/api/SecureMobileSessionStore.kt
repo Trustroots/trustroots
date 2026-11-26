@@ -1,6 +1,7 @@
 package org.trustroots.android.api
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -37,33 +38,28 @@ class SecureMobileSessionStore(context: Context) {
             .put("localSessionId", session.localSessionId?.toString())
             .put("username", session.member.username)
             .put("displayName", session.member.displayName)
-            .toString()
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey())
-        val encrypted = cipher.doFinal(payload.toByteArray(StandardCharsets.UTF_8))
-        val editor = preferences.edit()
-            .putString(PAYLOAD_KEY, Base64.encodeToString(encrypted, Base64.NO_WRAP))
-            .putString(IV_KEY, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+        val editor = encrypt(payload, PAYLOAD_KEY, IV_KEY).removeBrowserAttempt()
         if (durable) {
-            if (!editor.commit()) throw IOException("Could not persist the renewed session")
+            editor.commitOrThrow("Could not persist the renewed session")
         } else {
             editor.apply()
+        }
+    }
+
+    private fun encrypt(payload: JSONObject, payloadKey: String, ivKey: String): SharedPreferences.Editor {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey())
+        val encrypted = cipher.doFinal(payload.toString().toByteArray(StandardCharsets.UTF_8))
+        return preferences.edit().apply {
+            putString(payloadKey, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+            putString(ivKey, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
         }
     }
 
     fun load(): MemberSession? = synchronized(storageLock) { readSession() }
 
     private fun readSession(): MemberSession? = runCatching {
-        val payload = preferences.getString(PAYLOAD_KEY, null) ?: return null
-        val iv = preferences.getString(IV_KEY, null) ?: return null
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(
-            Cipher.DECRYPT_MODE,
-            secretKey(),
-            GCMParameterSpec(128, Base64.decode(iv, Base64.NO_WRAP)),
-        )
-        val decoded = cipher.doFinal(Base64.decode(payload, Base64.NO_WRAP))
-        val session = JSONObject(String(decoded, StandardCharsets.UTF_8))
+        val session = decrypt(PAYLOAD_KEY, IV_KEY) ?: return null
         MemberSession(
             cookieHeader = session.getString("cookieHeader"),
             accessToken = session.optString("accessToken").takeIf(String::isNotBlank),
@@ -75,6 +71,46 @@ class SecureMobileSessionStore(context: Context) {
             ),
         )
     }.getOrNull()
+
+    private fun decrypt(payloadKey: String, ivKey: String): JSONObject? {
+        val payload = preferences.getString(payloadKey, null) ?: return null
+        val iv = preferences.getString(ivKey, null) ?: return null
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            secretKey(),
+            GCMParameterSpec(128, Base64.decode(iv, Base64.NO_WRAP)),
+        )
+        val decoded = cipher.doFinal(Base64.decode(payload, Base64.NO_WRAP))
+        return JSONObject(String(decoded, StandardCharsets.UTF_8))
+    }
+
+    internal fun saveBrowserSignIn(attempt: BrowserSignInAttempt) = synchronized(storageLock) {
+        encrypt(attempt.toJSON(), BROWSER_ATTEMPT_KEY, BROWSER_ATTEMPT_IV_KEY)
+            .commitOrThrow("Could not persist pending browser sign-in")
+    }
+
+    internal fun takeBrowserSignIn(
+        backendURL: String,
+        correspondingState: String,
+        nowMillis: Long = System.currentTimeMillis(),
+    ): BrowserSignInAttempt? = synchronized(storageLock) {
+        val attempt = runCatching {
+            decrypt(BROWSER_ATTEMPT_KEY, BROWSER_ATTEMPT_IV_KEY)?.let(BrowserSignInAttempt::fromJSON)
+        }.getOrNull() ?: return null
+        if (attempt.state != correspondingState || attempt.backendURL != backendURL) return null
+        preferences.edit().removeBrowserAttempt().commitOrThrow("Could not consume pending browser sign-in")
+        attempt.takeIf { it.expiresAtMillis > nowMillis }
+    }
+
+    private fun SharedPreferences.Editor.removeBrowserAttempt() = apply {
+        remove(BROWSER_ATTEMPT_KEY)
+        remove(BROWSER_ATTEMPT_IV_KEY)
+    }
+
+    private fun SharedPreferences.Editor.commitOrThrow(message: String) {
+        if (!commit()) throw IOException(message)
+    }
 
     fun clear() = synchronized(storageLock) {
         preferences.edit().clear().apply()
@@ -140,6 +176,8 @@ class SecureMobileSessionStore(context: Context) {
         const val PREFERENCES_NAME = "mobile-session"
         const val PAYLOAD_KEY = "payload"
         const val IV_KEY = "iv"
+        const val BROWSER_ATTEMPT_KEY = "browser-sign-in"
+        const val BROWSER_ATTEMPT_IV_KEY = "browser-sign-in-iv"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
     }
 }

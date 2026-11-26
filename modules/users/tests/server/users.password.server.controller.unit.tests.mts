@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import * as utils from '../../../../testutils/server/data.server.testutil.mts';
 import * as testutils from '../../../../testutils/server/server.testutil.mts';
 import errorService from '../../../core/server/services/error.server.service.mts';
-import 'should';
+import should from 'should';
 import type { UserStatics } from '../../../../testutils/server/model-contracts.mts';
 import importedDependency0 from 'crypto';
 
@@ -799,7 +799,8 @@ describe('Password controller direct unit tests', () => {
   interface PasswordRequest {
     body?: PasswordBody;
     params?: { token: string };
-    user?: { id: string };
+    user?: { id: string; $locals?: { mfaVerified?: boolean } };
+    logout?: (callback: Callback) => void;
     login?: (user: TestUser, callback: Callback) => void;
   }
   interface PasswordUpdate {
@@ -814,6 +815,7 @@ describe('Password controller direct unit tests', () => {
     password: string;
     salt?: string;
     authVersion?: number;
+    $locals?: { mfaVerified?: boolean };
     lastPasswordUpdate?: {
       query: Record<string, unknown>;
       update: PasswordUpdate;
@@ -1092,6 +1094,46 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('reset', () => {
+    for (const [emailFails, logoutFails] of [
+      [false, false],
+      [true, false],
+      [false, true],
+    ]) {
+      it(`requires a fresh MFA sign-in after password recovery (email failure: ${emailFails}, logout failure: ${logoutFails})`, async () => {
+        const user = fakeUser({ mfaEnabled: true });
+        const controller = await loadController({
+          user,
+          confirmEmailError: emailFails
+            ? new Error('email unavailable')
+            : undefined,
+        });
+        const res = await run(controller, 'reset', {
+          ...resetRequest(),
+          login: () => {
+            throw new Error('Recovery must not authenticate an MFA account');
+          },
+          logout: callback =>
+            callback(logoutFails ? new Error('logout failed') : null),
+        });
+        res.statusCode.should.equal(logoutFails ? 400 : 200);
+        res.body!.should.deepEqual(
+          logoutFails
+            ? { message: 'Password reset failed.' }
+            : { mfaRequired: true },
+        );
+        calls.confirmations.should.deepEqual(
+          logoutFails
+            ? []
+            : [{ displayName: user.displayName, email: user.email }],
+        );
+        calls.logs.should.deepEqual(
+          emailFails
+            ? [['error', 'Password reset confirmation email delivery failed.']]
+            : [],
+        );
+      });
+    }
+
     it('rejects a matching but invalid password without updating', async () => {
       const user = fakeUser();
       const res = await run(await loadController({ user }), 'reset', {
@@ -1194,6 +1236,25 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('changePassword', () => {
+    for (const verified of [true, false, undefined]) {
+      it(`carries only the current MFA verification state across a password change (${verified})`, async () => {
+        const controller = await loadController({
+          user: fakeUser({ mfaEnabled: true, $locals: { mfaVerified: true } }),
+        });
+        const req = changeRequest();
+        if (verified !== undefined)
+          req.user!.$locals = { mfaVerified: verified };
+        const res = await run(controller, 'changePassword', {
+          ...req,
+          login(user, callback) {
+            should(user.$locals?.mfaVerified).equal(verified === true);
+            callback();
+          },
+        });
+        res.statusCode.should.equal(200);
+      });
+    }
+
     it('forbids an anonymous request', async () => {
       const res = await run(await loadController(), 'changePassword', {
         body: {},

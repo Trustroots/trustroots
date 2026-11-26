@@ -1,3 +1,4 @@
+import createExpress from 'express';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import * as utils from './../../../../testutils/server/data.server.testutil.mts';
@@ -24,11 +25,34 @@ let credentials: {
   password: string;
 };
 describe('Configuration Tests:', function () {
+  it('serves the signed Android App Links association as public JSON', async function () {
+    const staticApp = createExpress();
+    express.initModulesClientRoutes(staticApp);
+    const response = await request(staticApp)
+      .get('/.well-known/assetlinks.json')
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+
+    should(response.body).deepEqual([
+      {
+        relation: ['delegate_permission/common.handle_all_urls'],
+        target: {
+          namespace: 'android_app',
+          package_name: 'org.trustroots.android',
+          sha256_cert_fingerprints: [
+            '09:17:29:95:E8:AB:E0:C2:E0:99:8C:08:D8:79:5E:09:3F:41:6B:72:81:85:C1:6B:16:B2:5E:BE:79:68:FF:46',
+          ],
+        },
+      },
+    ]);
+  });
+
   describe('avatar staging static-file guard', function () {
     it('denies staging paths before public static middleware', function () {
       const middleware: unknown[][] = [];
       express.initModulesClientRoutes({
         use: (...args: unknown[]) => middleware.push(args),
+        get: () => {},
       } as never);
       should(middleware[0]?.[0]).equal(express.denyAvatarStagingRequests);
       const res: {

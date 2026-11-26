@@ -470,6 +470,38 @@ const UserSchema = new Schema<
     type: Number,
     default: 0,
   },
+  // MFA credentials are excluded from ordinary queries and profile payloads.
+  mfaEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  mfaSecretEncrypted: {
+    type: String,
+    select: false,
+  },
+  mfaPendingSecretEncrypted: {
+    type: String,
+    select: false,
+  },
+  mfaPendingSecretExpires: {
+    type: Date,
+    select: false,
+  },
+  mfaPendingLastTotpCounter: {
+    type: Number,
+    default: -1,
+    select: false,
+  },
+  mfaLastTotpCounter: {
+    type: Number,
+    default: -1,
+    select: false,
+  },
+  mfaRecoveryCodeHashes: {
+    type: [String],
+    default: [],
+    select: false,
+  },
   /* For email confirmations */
   emailToken: {
     type: String,
@@ -753,4 +785,13 @@ UserSchema.index(
   },
   { name: 'circle_discovery_member_seen' },
 );
+UserSchema.post('findOneAndDelete', async function (user) {
+  if (user) {
+    await Promise.all([
+      mongoose.model('MemberPasskey').deleteMany({ user: user._id }),
+      mongoose.model('PasskeyCeremony').deleteMany({ user: user._id }),
+    ]);
+  }
+});
+
 mongoose.model<UserServerRecord, UserServerModel>('User', UserSchema);
