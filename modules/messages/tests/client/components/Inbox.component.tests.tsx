@@ -49,7 +49,7 @@ beforeEach(() => {
 const analytics = fakeAnalytics();
 
 describe('<Inbox>', () => {
-it('announces an inbox failure and retries the request', async () => {
+  it('announces an inbox failure and retries the request', async () => {
     api.fetchThreads
       .mockRejectedValueOnce(new Error('Unavailable'))
       .mockResolvedValueOnce({ threads });

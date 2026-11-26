@@ -13,7 +13,7 @@ import {
 } from '../utils/connection';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
-import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
+import { getProfileExperiencesPath } from '@trustroots/core/navigation-links';
 import { DAYS_TO_REPLY } from '@/modules/experiences/client/utils/constants';
 import RemoveContact from './RemoveContact';
 
