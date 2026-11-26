@@ -131,7 +131,8 @@ internal fun PilotInput(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     singleLine: Boolean = true,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
-    maxLines: Int = if (singleLine) 1 else 4,
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else maxOf(minLines, 4),
     modifier: Modifier = Modifier,
     onChange: (String) -> Unit,
 ) {
@@ -151,6 +152,7 @@ internal fun PilotInput(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             singleLine = singleLine,
+            minLines = minLines,
             maxLines = maxLines,
             visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Password) {
                 PasswordVisualTransformation()
