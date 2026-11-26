@@ -3,6 +3,7 @@ import {
   unsubscribe,
 } from '../controllers/users.notification-email.server.controller.mts';
 import { unsubscribePath } from '../services/notification-email.server.service.mts';
+import type { Response } from 'express';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mts';
 import userAvatar from './../controllers/users.avatar.server.controller.mts';
@@ -12,6 +13,18 @@ import userExport from './../controllers/users.export.server.controller.mts';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mts';
 import { challenge } from '../controllers/users.nostr.server.controller.mts';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mts';
+import userMfa from './../controllers/users.mfa.server.controller.mjs';
+import userActivity from './../controllers/users.activity.server.controller.mts';
+
+function setActivityResponseHeaders(
+  _req: unknown,
+  res: Pick<Response, 'set' | 'vary'>,
+  next: () => void,
+) {
+  res.set('Cache-Control', 'no-store');
+  res.vary('Cookie');
+  return next();
+}
 
 /**
  * Module dependencies.
@@ -70,6 +83,10 @@ export default function (app: RouteApplication) {
     .all(usersPolicy.isAllowed)
     .get(targetedRequestLimit.dataExport, userExport.download);
   app
+    .route('/api/users/activity')
+    .all(setActivityResponseHeaders, usersPolicy.isAllowed)
+    .get(userActivity.list);
+  app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
     .post(
@@ -121,6 +138,23 @@ export default function (app: RouteApplication) {
     .route('/api/users/password')
     .all(usersPolicy.isAllowed)
     .post(targetedRequestLimit.passwordChange, userPassword.changePassword);
+  app.route('/api/users/mfa').all(usersPolicy.isAllowed).get(userMfa.settings);
+  app
+    .route('/api/users/mfa/enrol')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.beginEnrollment);
+  app
+    .route('/api/users/mfa/enrol/verify')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.verifyEnrollment);
+  app
+    .route('/api/users/mfa/recovery-codes')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.regenerateRecoveryCodes);
+  app
+    .route('/api/users/mfa/disable')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.disable);
   app
     .route('/api/users/:username')
     .all(usersPolicy.isAllowed)

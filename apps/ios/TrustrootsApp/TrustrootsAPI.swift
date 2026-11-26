@@ -55,6 +55,79 @@ struct TrustrootsAPIConfiguration: Equatable {
     }
 }
 
+struct MobileBrowserSignIn {
+    static let callbackScheme = "org.trustroots.mobile"
+
+    let server: TrustrootsAPIConfiguration
+    let startURL: URL
+    let codeVerifier: String
+    private let state: String
+
+    init(serverURLString: String) throws {
+        guard let server = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        let verifier = try Self.randomToken()
+        let state = try Self.randomToken()
+        let challenge = Self.base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
+        var start = URLComponents(url: server.baseURL.appendingPathComponent("auth/mobile/start"), resolvingAgainstBaseURL: false)
+        start?.queryItems = [
+            URLQueryItem(name: "platform", value: "ios"),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "state", value: state),
+        ]
+        guard let url = start?.url else { throw TrustrootsAPIError.invalidServerURL }
+        self.server = server
+        self.startURL = url
+        self.codeVerifier = verifier
+        self.state = state
+    }
+
+    func code(from callback: URL) throws -> String {
+        guard let parts = URLComponents(url: callback, resolvingAgainstBaseURL: false),
+              parts.scheme == Self.callbackScheme, parts.percentEncodedHost == "auth",
+              parts.percentEncodedPath == "/complete", parts.port == nil,
+              parts.user == nil, parts.password == nil, parts.fragment == nil,
+              let items = parts.queryItems, items.count == 2,
+              items.first(where: { $0.name == "state" })?.value == state,
+              let code = items.first(where: { $0.name == "code" })?.value,
+              code.utf8.count == 43,
+              code.utf8.allSatisfy({
+                  (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 || $0 == 95
+              }) else {
+            throw TrustrootsAPIError.serverMessage("The browser sign-in response was invalid. Please try again.")
+        }
+        return code
+    }
+
+    private static func randomToken() throws -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        guard SecRandomCopyBytes(kSecRandomDefault, 32, &bytes) == errSecSuccess else {
+            throw TrustrootsAPIError.serverMessage("Could not start secure browser sign-in. Please try again.")
+        }
+        return base64URL(Data(bytes))
+    }
+
+    private static func base64URL(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+}
+
+private final class BrowserSignInExchangeDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping @Sendable (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
+    }
+}
+
 enum TrustrootsBuildInfo {
     static var date: Date {
         let executablePath = Bundle.main.executableURL?.path ?? Bundle.main.bundlePath
@@ -643,6 +716,7 @@ enum TrustrootsAPIError: LocalizedError, Equatable {
     case authenticationRequired
     case requestFailed(String)
     case serverMessage(String)
+    case webSignInRequired(String)
 
     var errorDescription: String? {
         switch self {
@@ -654,7 +728,7 @@ enum TrustrootsAPIError: LocalizedError, Equatable {
             return "Your session is no longer valid. Please sign in again."
         case .requestFailed(let description):
             return "Could not reach Trustroots: \(description)"
-        case .serverMessage(let message):
+        case .serverMessage(let message), .webSignInRequired(let message):
             return message
         }
     }
@@ -869,6 +943,14 @@ final class TrustrootsAPI {
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw decodedError(from: data, statusCode: httpResponse.statusCode, isSignIn: true)
             }
+            let responseObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let requiresMFA = httpResponse.statusCode == 202 ||
+                responseObject?["mfaRequired"] as? Bool == true
+            if requiresMFA {
+                throw TrustrootsAPIError.serverMessage(
+                    "Sign-in is incomplete. Start again to continue in your browser."
+                )
+            }
             do {
                 return try decoder.decode(MobileSessionResponse.self, from: data)
             } catch {
@@ -879,6 +961,32 @@ final class TrustrootsAPI {
         } catch {
             throw TrustrootsAPIError.requestFailed(error.localizedDescription)
         }
+    }
+
+    func exchangeBrowserSignIn(attempt: MobileBrowserSignIn, callbackURL: URL) async throws -> MobileSessionResponse {
+        let code = try attempt.code(from: callbackURL)
+        let endpoint = attempt.server.baseURL.appendingPathComponent("api/mobile/v0/auth/browser/exchange")
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try encoder.encode([
+            "code": code,
+            "codeVerifier": attempt.codeVerifier,
+            "platform": "ios",
+        ])
+        let (data, response) = try await session.data(for: request, delegate: BrowserSignInExchangeDelegate())
+        guard let http = response as? HTTPURLResponse, http.url == endpoint else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw decodedError(from: data, statusCode: http.statusCode, isSignIn: true)
+        }
+        guard let mobileSession = try? decoder.decode(MobileSessionResponse.self, from: data),
+              !mobileSession.accessToken.isEmpty, !mobileSession.refreshToken.isEmpty else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        return mobileSession
     }
 
     private struct SigninChallenge: Decodable {
@@ -1793,10 +1901,14 @@ final class TrustrootsAPI {
             return .authenticationRequired
         }
         struct ErrorResponse: Decodable {
+            let code: String?
             let message: String?
         }
-        let message = (try? decoder.decode(ErrorResponse.self, from: data))?.message
-        return .serverMessage(message ?? "Sign-in was not accepted.")
+        let error = try? decoder.decode(ErrorResponse.self, from: data)
+        if isSignIn && statusCode == 403 && error?.code == "web_sign_in_required" {
+            return .webSignInRequired(error?.message ?? "Continue on the Trustroots website to sign in.")
+        }
+        return .serverMessage(error?.message ?? "Sign-in was not accepted.")
     }
 
     private func authorise(_ request: inout URLRequest) {

@@ -88,8 +88,10 @@ import org.trustroots.android.ui.hostmap.HostMapResultsCacheStore
 import org.trustroots.android.ui.menu.MenuNavigationDisplay
 import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
+import org.trustroots.android.ui.signin.BrowserSignInLinks
 import org.trustroots.android.ui.signin.SignInNavigation
 import org.trustroots.android.ui.signin.SignUpOnboarding
+import org.trustroots.android.ui.signin.openBrowserSignIn
 import org.trustroots.android.ui.startup.StartupTransition
 
 internal const val SHARED_HOME_EXTRA = "org.trustroots.android.debug.SHARED_HOME"
@@ -104,6 +106,9 @@ internal fun TrustrootsApp(
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
         context.requireActivity(ComponentActivity::class.java, "TrustrootsApp must run in a ComponentActivity.")
+    }
+    val signInLinks = remember(activity) {
+        ViewModelProvider(activity).get(BrowserSignInLinks::class.java)
     }
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
@@ -166,6 +171,9 @@ internal fun TrustrootsApp(
                     storeHolder = signInStoreHolder,
                     apiBaseUrl = apiBaseUrl,
                     initialMessage = sessionState.signedOutMessage,
+                    sessionStore = sessionStore,
+                    browserSignInLinks = signInLinks,
+                    onOpenBrowserSignIn = { openBrowserSignIn(activity, it) },
                     browserContent = browserContent,
                     onSignedUp = {
                         initialMemberDestination = defaultDestination

@@ -146,9 +146,12 @@ function apiRoute(
 const specPaths: Record<string, string> = {
   'admin-circles.spec.js': 'features/admin-moderation/admin-circles.spec.ts',
   'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.ts',
+  'integrated-account-access.spec.js':
+    'features/auth-account/integrated-account-access.spec.ts',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'staff-passkeys.spec.js': 'features/auth-account/staff-passkeys.spec.js',
   'experience-changes.spec.js':
     'features/experiences-references/experience-changes.spec.js',
   'admin-acquisition.spec.js':
@@ -956,6 +959,8 @@ const features = [
     requiredScenarios: [
       'Sign in page links to signup.',
       'Username sign in succeeds.',
+      'Combined proof and second-factor responses do not establish an intermediate session.',
+      'Password recovery keeps second-factor verification required.',
       'Elevated account activity requires a proof before sign-in succeeds.',
       'Email sign in succeeds.',
       'Continue query redirects to the original protected destination.',
@@ -966,6 +971,14 @@ const features = [
         'sign in and sign up pages link to each other',
       ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with username'),
+      spec(
+        'integrated-account-access.spec.js',
+        'combined account checks establish one session and sign out everywhere',
+      ),
+      spec(
+        'integrated-account-access.spec.js',
+        'password recovery leaves an MFA member signed out until a fresh second factor',
+      ),
       spec(
         'signin-challenge.spec.js',
         'a member signs in through the browser after an account-wide challenge',
@@ -1268,6 +1281,104 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'account.staff-passkeys',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Administrators can register and manage optional passkeys for second-factor sign-in.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/users/passkeys',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'DELETE',
+          '/api/users/passkeys/:id',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'A staff member can use a registered passkey after password sign-in.',
+    ],
+    relatedSpecs: [
+      spec(
+        'staff-passkeys.spec.js',
+        'staff register, use and remove an optional device passkey',
+      ),
+    ],
+  },
+  {
+    id: 'account.mfa',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Administrators can enrol authenticator MFA, protect sign-in, and recover with single-use codes.',
+    roles: ['member', 'visitor'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+        clientRoute('signin', '/signin', source.usersClient),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/users/mfa', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol/verify', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/recovery-codes', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/disable', source.usersServer),
+        apiRoute('POST', '/api/auth/mfa/verify', source.usersAuthServer),
+      ],
+    },
+    requiredScenarios: [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'administrators can enrol an authenticator and use it at sign-in',
+      ),
+    ],
+  },
+  {
     id: 'account.details-update',
     area: AREA.authAccount,
     status: STATUS.active,
@@ -1370,6 +1481,34 @@ const features = [
       spec(
         'account-settings.spec.js',
         'members can revoke another active session from account settings',
+      ),
+    ],
+  },
+  {
+    id: 'account.activity',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can review a private, recent history of sign-ins and account changes.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/activity', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Members can see a credential change in account activity.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can review credential activity from account settings',
       ),
     ],
   },

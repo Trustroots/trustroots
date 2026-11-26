@@ -1576,6 +1576,131 @@ final class TrustrootsTests: XCTestCase {
         }
     }
 
+    func testMobileBrowserSignInRequiresTheExpectedCallbackAndState() throws {
+        let attempt = try MobileBrowserSignIn(serverURLString: "https://api.example.test:8443")
+        let start = try XCTUnwrap(URLComponents(url: attempt.startURL, resolvingAgainstBaseURL: false))
+        let query = try XCTUnwrap(start.queryItems)
+        XCTAssertEqual(start.scheme, "https")
+        XCTAssertEqual(start.host, "api.example.test")
+        XCTAssertEqual(start.port, 8443)
+        XCTAssertEqual(start.path, "/auth/mobile/start")
+        XCTAssertEqual(query.count, 3)
+        XCTAssertEqual(query.first(where: { $0.name == "platform" })?.value, "ios")
+        let expectedChallenge = Data(SHA256.hash(data: Data(attempt.codeVerifier.utf8))).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        XCTAssertEqual(attempt.codeVerifier.count, 43)
+        XCTAssertEqual(query.first(where: { $0.name == "code_challenge" })?.value, expectedChallenge)
+        let callback = try Self.browserCallback(from: attempt.startURL)
+        XCTAssertEqual(try attempt.code(from: callback), String(repeating: "a", count: 43))
+
+        let valid = callback.absoluteString
+        for invalid in [
+            valid.replacingOccurrences(of: "org.trustroots.mobile:", with: "https:"),
+            valid.replacingOccurrences(of: "//auth/", with: "//other/"),
+            valid.replacingOccurrences(of: "//auth/", with: "//auth:443/"),
+            valid.replacingOccurrences(of: "//auth/", with: "//user@auth/"),
+            valid.replacingOccurrences(of: "/complete", with: "/%63omplete"),
+            valid.replacingOccurrences(of: "state=", with: "state=other-"),
+            valid.replacingOccurrences(of: "code=", with: "code=+"),
+            valid.replacingOccurrences(of: String(repeating: "a", count: 43), with: "short"),
+            valid + "&state=duplicate",
+            valid + "&accessToken=unexpected",
+            valid + "#unexpected",
+        ] {
+            XCTAssertThrowsError(try attempt.code(from: XCTUnwrap(URL(string: invalid))), invalid)
+        }
+    }
+
+    @MainActor
+    func testBrowserSignInKeepsCredentialsOutOfStorageUntilExchangeCompletes() async throws {
+        let defaults = UserDefaults.standard
+        let persistedKeys = ["trustroots.signedInMember", "trustroots.apiServerURL", OfflineResponseCache.scopeDefaultsKey]
+        let savedDefaults = persistedKeys.map { defaults.object(forKey: $0) }
+        defer {
+            for (key, value) in zip(persistedKeys, savedDefaults) { defaults.set(value, forKey: key) }
+            MobileAPIURLProtocol.handler = nil
+        }
+        let credentials = InMemoryMobileCredentialStore()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration), credentialStore: credentials)
+        let identity = NostrIdentityManager(keyStore: InMemoryNostrKeyStorage(), clearPermissions: {})
+        let session = MemberSessionStore(
+            api: api,
+            serverURLString: "https://api.example.test:8443",
+            credentialStore: credentials,
+            nostrIdentity: identity
+        )
+        var exchangeCount = 0
+        MobileAPIURLProtocol.handler = { request in
+            let url = try XCTUnwrap(request.url)
+            XCTAssertEqual(url.host, "api.example.test")
+            XCTAssertEqual(url.port, 8443)
+            XCTAssertEqual(request.httpMethod, "POST")
+            if url.path == "/api/mobile/v0/auth/signin" {
+                let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: nil))
+                return (response, Data(#"{"code":"web_sign_in_required","message":"Complete sign-in on the website.","mfaRequired":true}"#.utf8))
+            }
+            XCTAssertEqual(url.path, "/api/mobile/v0/auth/browser/exchange")
+            let body = try XCTUnwrap(Self.body(of: request))
+            let fields = try JSONDecoder().decode([String: String].self, from: body)
+            XCTAssertEqual(fields.count, 3)
+            XCTAssertEqual(fields["code"], String(repeating: "a", count: 43))
+            XCTAssertEqual(fields["codeVerifier"]?.count, 43)
+            XCTAssertEqual(fields["platform"], "ios")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            exchangeCount += 1
+            let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+            let data = exchangeCount == 1
+                ? Data(#"{"accessToken":"incomplete"}"#.utf8)
+                : Data(#"{"accessToken":"browser-access","refreshToken":"browser-refresh","accessTokenExpiresAt":"2026-11-27T12:00:00Z","member":{"username":"mira","displayName":"Mira Example","public":true}}"#.utf8)
+            return (response, data)
+        }
+
+        await session.signIn(usernameOrEmail: "mira", password: "example-password")
+        XCTAssertTrue(session.requiresBrowserSignIn)
+        XCTAssertEqual(session.errorMessage, "Complete sign-in on the website.")
+        XCTAssertNil(credentials.load())
+        await session.signInUsingBrowser { _ in throw CancellationError() }
+        XCTAssertTrue(session.requiresBrowserSignIn)
+        XCTAssertNil(session.browserSignInError)
+        XCTAssertFalse(session.isSigningIn)
+        XCTAssertNil(credentials.load())
+        XCTAssertEqual(exchangeCount, 0)
+
+        await session.signInUsingBrowser { start in
+            session.serverURLString = "https://other.example.test"
+            return try Self.browserCallback(from: start)
+        }
+        XCTAssertFalse(session.requiresBrowserSignIn)
+        XCTAssertNil(credentials.load())
+        XCTAssertEqual(exchangeCount, 0)
+
+        session.serverURLString = "https://api.example.test:8443"
+        await session.signIn(usernameOrEmail: "mira", password: "example-password")
+        await session.signInUsingBrowser { try Self.browserCallback(from: $0) }
+        XCTAssertTrue(session.requiresBrowserSignIn)
+        XCTAssertNotNil(session.browserSignInError)
+        XCTAssertNil(session.member)
+        XCTAssertNil(credentials.load())
+
+        await session.signInUsingBrowser { try Self.browserCallback(from: $0) }
+        XCTAssertFalse(session.requiresBrowserSignIn)
+        XCTAssertNil(session.browserSignInError)
+        XCTAssertEqual(session.member?.username, "mira")
+        XCTAssertEqual(credentials.load(), MobileCredentials(accessToken: "browser-access", refreshToken: "browser-refresh"))
+        XCTAssertEqual(exchangeCount, 2)
+    }
+
+    private static func browserCallback(from start: URL) throws -> URL {
+        let components = try XCTUnwrap(URLComponents(url: start, resolvingAgainstBaseURL: false))
+        let state = try XCTUnwrap(components.queryItems?.first(where: { $0.name == "state" })?.value)
+        let code = String(repeating: "a", count: 43)
+        return try XCTUnwrap(URL(string: "org.trustroots.mobile://auth/complete?code=\(code)&state=\(state)"))
+    }
+
     func testConcurrentMobileRefreshesShareOneRotation() async throws {
         let coordinator = MobileRefreshCoordinator()
         let counter = RefreshOperationCounter()
@@ -1633,6 +1758,92 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(digest[0], 0)
         XCTAssertEqual(digest[1] & 0xfc, 0)
         XCTAssertEqual(result.credentials, MobileCredentials(accessToken: "test-access", refreshToken: "test-refresh"))
+    }
+
+    func testSignInDoesNotReturnPreAuthSessionWhenProofRetryNeedsMFA() async throws {
+        var requestBodies: [[String: Any]] = []
+        MobileAPIURLProtocol.handler = { request in
+            requestBodies.append(
+                (try? JSONSerialization.jsonObject(with: Self.body(of: request) ?? Data()) as? [String: Any]) ?? [:]
+            )
+            let isProofRetry = requestBodies.count == 2
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: isProofRetry ? 202 : 429,
+                httpVersion: nil,
+                headerFields: isProofRetry
+                    ? ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+                    : nil
+            )!
+            let body = isProofRetry
+                ? Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+                : Data(#"{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"#.utf8)
+            return (response, body)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        var returnedSession = false
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            returnedSession = true
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "Sign-in is incomplete. Start again to continue in your browser."
+                )
+            )
+        } catch {
+            XCTFail("Unexpected sign-in error: \(error)")
+        }
+
+        XCTAssertFalse(returnedSession, "MFA proof retry must not return a SessionResponse")
+        XCTAssertEqual(requestBodies.count, 2)
+        XCTAssertNotNil(requestBodies.last?["signinProof"])
+    }
+
+    func testSignInRejectsMFARequiredMarkerOnSuccessfulHTTPStatus() async throws {
+        MobileAPIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+            )!
+            return (
+                response,
+                Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+            )
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            XCTFail("An MFA marker must not produce a SessionResponse")
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "Sign-in is incomplete. Start again to continue in your browser."
+                )
+            )
+        }
     }
 
     func testOfflineResponseCacheIsScopedAndRetainsTimestamp() async throws {

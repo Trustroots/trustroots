@@ -16,6 +16,8 @@ internal data class UiFailure(
 internal enum class UiFailureFallback {
     REACH_TRUSTROOTS,
     SESSION_EXPIRED,
+    BROWSER_SIGN_IN_UNAVAILABLE,
+    BROWSER_SIGN_IN_RETRY,
     CIRCLES_LOAD,
     CIRCLE_MEMBERSHIPS_LOAD,
     CIRCLE_MEMBERS_LOAD,
@@ -63,6 +65,8 @@ private val UiFailureFallback.resource: Int
     get() = when (this) {
         UiFailureFallback.REACH_TRUSTROOTS -> R.string.screen_could_not_reach_trustroots
         UiFailureFallback.SESSION_EXPIRED -> R.string.screen_sign_in_session_expired
+        UiFailureFallback.BROWSER_SIGN_IN_UNAVAILABLE -> R.string.screen_sign_in_browser_unavailable
+        UiFailureFallback.BROWSER_SIGN_IN_RETRY -> R.string.screen_sign_in_browser_retry
         UiFailureFallback.CIRCLES_LOAD -> R.string.screen_circles_load_error
         UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD -> R.string.screen_circle_memberships_load_error
         UiFailureFallback.CIRCLE_MEMBERS_LOAD -> R.string.screen_circle_members_load_error

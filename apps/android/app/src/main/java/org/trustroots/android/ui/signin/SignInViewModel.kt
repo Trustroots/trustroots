@@ -10,16 +10,22 @@ import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.BrowserSignInAttempt
+import org.trustroots.android.api.BrowserSignInCallback
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.toUiFailure
@@ -31,7 +37,10 @@ internal data class SignInUiState(
     val isLoading: Boolean = false,
     val error: UiFailure? = null,
     val pendingSuccess: SignInSuccess? = null,
-)
+    val browserSignInRequired: Boolean = false,
+) {
+    val canAuthenticate: Boolean get() = !isLoading && pendingSuccess == null
+}
 
 internal data class SignInSuccess(
     val id: Long,
@@ -54,6 +63,7 @@ internal class SignInViewModel(
     initialMessage: UiFailure?,
     private val authenticator: SignInAuthenticator = SignInAuthenticator(MobileApiClient(apiBaseUrl)::signIn),
     scope: CoroutineScope?,
+    private val sessionStore: SecureMobileSessionStore? = null,
 ) : ViewModel() {
     private val parentScope = scope ?: viewModelScope
     private val requestJob = SupervisorJob(parentScope.coroutineContext[Job])
@@ -61,6 +71,7 @@ internal class SignInViewModel(
     private val mutableState = MutableStateFlow(SignInUiState(error = initialMessage))
     val state = mutableState.asStateFlow()
     private var nextSuccessID = 0L
+    private val browserApi = MobileApiClient(apiBaseUrl)
 
     fun onEvent(event: SignInEvent) {
         when (event) {
@@ -76,16 +87,54 @@ internal class SignInViewModel(
     private fun submit() {
         val current = mutableState.value
         if (
-            current.isLoading || current.pendingSuccess != null ||
+            !current.canAuthenticate ||
             current.username.isBlank() || current.password.isBlank()
         ) return
 
         val username = current.username.trim()
         val password = current.password
+        mutableState.update { it.copy(browserSignInRequired = false) }
+        authenticate { authenticator.signIn(username, password) }
+    }
+
+    fun startBrowserSignIn(openBrowser: (String) -> Boolean) {
+        val store = sessionStore ?: return
+        val current = mutableState.value
+        if (!current.browserSignInRequired || !current.canAuthenticate) return
+        val opened = runCatching {
+            val attempt = BrowserSignInAttempt.create(browserApi.backendURL)
+            store.saveBrowserSignIn(attempt)
+            openBrowser(attempt.startURL())
+        }.getOrDefault(false)
+        if (!opened) {
+            mutableState.update { it.copy(error = UiFailure(fallback = UiFailureFallback.BROWSER_SIGN_IN_UNAVAILABLE)) }
+        }
+    }
+
+    fun completeBrowserSignIn(callback: BrowserSignInCallback) {
+        val store = sessionStore ?: return
+        val current = mutableState.value
+        if (!current.canAuthenticate) return
+        authenticate(UiFailureFallback.BROWSER_SIGN_IN_RETRY) {
+            val attempt = withContext(Dispatchers.IO) {
+                store.takeBrowserSignIn(browserApi.backendURL, callback.state)
+            }
+            if (attempt == null) {
+                Result.failure(IllegalStateException("No matching pending browser sign-in"))
+            } else {
+                browserApi.exchangeBrowserSignInCode(callback.code, attempt.codeVerifier)
+            }
+        }
+    }
+
+    private fun authenticate(
+        fallback: UiFailureFallback = UiFailureFallback.REACH_TRUSTROOTS,
+        request: suspend () -> Result<MemberSession>,
+    ) {
         mutableState.update { it.copy(isLoading = true, error = null, pendingSuccess = null) }
         requestScope.launch {
             val result = try {
-                authenticator.signIn(username, password)
+                request()
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
@@ -100,8 +149,19 @@ internal class SignInViewModel(
                     }
                 },
                 onFailure = { error ->
+                    val webSignInRequired = fallback == UiFailureFallback.REACH_TRUSTROOTS && error is MobileApiException &&
+                        error.statusCode == 403 && error.code == "web_sign_in_required"
                     mutableState.update {
-                        it.copy(isLoading = false, error = error.toUiFailure(UiFailureFallback.REACH_TRUSTROOTS))
+                        it.copy(
+                            isLoading = false,
+                            error = if (fallback == UiFailureFallback.BROWSER_SIGN_IN_RETRY) {
+                                UiFailure(fallback = fallback)
+                            } else {
+                                error.toUiFailure(fallback)
+                            },
+                            browserSignInRequired = it.browserSignInRequired || webSignInRequired,
+                            password = if (webSignInRequired) "" else it.password,
+                        )
                     }
                 },
             )
@@ -142,12 +202,16 @@ internal class SignInDestinationStoreHolder : ViewModel(), ViewModelStoreOwner {
 }
 
 @Composable
-internal fun rememberSignInViewModel(apiBaseUrl: String, initialMessage: UiFailure?): SignInViewModel {
+internal fun rememberSignInViewModel(
+    apiBaseUrl: String,
+    initialMessage: UiFailure?,
+    sessionStore: SecureMobileSessionStore,
+): SignInViewModel {
     val owner = requireNavigationViewModelStoreOwner("Sign-in screens must be hosted by their Navigation 3 entry.")
     return rememberEntryViewModel(
         owner,
         SignInViewModel::class.java,
-        SignInViewModelFactory(apiBaseUrl, initialMessage),
+        SignInViewModelFactory(apiBaseUrl, initialMessage, sessionStore = sessionStore),
     )
 }
 
@@ -156,10 +220,11 @@ internal class SignInViewModelFactory(
     private val initialMessage: UiFailure?,
     private val authenticator: SignInAuthenticator = SignInAuthenticator(MobileApiClient(apiBaseUrl)::signIn),
     private val scope: CoroutineScope? = null,
+    private val sessionStore: SecureMobileSessionStore? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(SignInViewModel::class.java))
-        return SignInViewModel(apiBaseUrl, initialMessage, authenticator, scope) as T
+        return SignInViewModel(apiBaseUrl, initialMessage, authenticator, scope, sessionStore) as T
     }
 }

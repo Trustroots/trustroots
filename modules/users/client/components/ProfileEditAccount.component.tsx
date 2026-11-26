@@ -27,6 +27,9 @@ import {
 } from '../config/username.client.constants';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import { Alert } from '@trustroots/ui/Alert';
+import MfaSettings from './MfaSettings.component';
+import PasskeySettings from './PasskeySettings.component';
+import AccountActivity from './AccountActivity.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -426,6 +429,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
 
+      {user.roles?.includes('admin') && (
+        <>
+          <MfaSettings />
+          <PasskeySettings />
+        </>
+      )}
+
       <div className="panel panel-default">
         <div className="panel-heading">{t('Interface language')}</div>
         <div className="panel-body">
@@ -642,6 +652,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
       <MemberSessions />
+      <AccountActivity />
     </ProfileEditPage>
   );
 }

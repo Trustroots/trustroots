@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +52,8 @@ import org.trustroots.shared.ui.icons.TrustrootsLogo
 internal fun SignInScreen(
     analytics: UsageAnalytics,
     viewModel: SignInViewModel,
+    browserSignInLinks: BrowserSignInLinks,
+    onOpenBrowserSignIn: (String) -> Boolean,
     onSignedIn: (MemberSession) -> Unit,
     onSignUp: () -> Unit,
     onForgotPassword: () -> Unit,
@@ -58,11 +61,17 @@ internal fun SignInScreen(
     val state by viewModel.state.collectAsState()
     val buildDate = rememberBuildDate()
     val pendingSuccess = state.pendingSuccess
+    val browserCallback by browserSignInLinks.callback.collectAsState()
+    val readyCallback = browserCallback.takeIf { state.canAuthenticate }
 
-    androidx.compose.runtime.LaunchedEffect(pendingSuccess?.id) {
+    LaunchedEffect(pendingSuccess?.id) {
         val success = pendingSuccess ?: return@LaunchedEffect
         viewModel.onEvent(SignInEvent.SuccessDelivered(success.id))
         onSignedIn(success.session)
+    }
+    LaunchedEffect(readyCallback) {
+        val callback = readyCallback ?: return@LaunchedEffect
+        browserSignInLinks.consume(callback, viewModel::completeBrowserSignIn)
     }
 
     Box(
@@ -127,7 +136,7 @@ internal fun SignInScreen(
             }
             Button(
                 onClick = { viewModel.onEvent(SignInEvent.Submit) },
-                enabled = !state.isLoading && state.pendingSuccess == null &&
+                enabled = state.canAuthenticate &&
                     state.username.isNotBlank() && state.password.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
             ) {
@@ -140,6 +149,13 @@ internal fun SignInScreen(
                 } else {
                     Text(stringResource(R.string.screen_sign_in))
                 }
+            }
+            if (state.browserSignInRequired) {
+                TextButton(
+                    onClick = { viewModel.startBrowserSignIn(onOpenBrowserSignIn) },
+                    enabled = state.canAuthenticate,
+                    modifier = Modifier.fillMaxWidth().testTag("signin-continue-browser"),
+                ) { Text(stringResource(R.string.screen_sign_in_browser)) }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

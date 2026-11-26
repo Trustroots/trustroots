@@ -43,3 +43,46 @@ Untouched anonymous requests no longer create stored sessions, and unchanged
 authenticated requests refresh expiry through the session store's touch method.
 SameSite is an additional defence; the separate CSRF middleware also protects
 cookie-backed mutations.
+
+## Authenticator MFA encryption key
+
+Set `MFA_ENCRYPTION_KEY` on every application instance to the same dedicated
+base64-encoded 32-byte random key. Generate it with
+`openssl rand -base64 32`; do not reuse `SESSION_SECRET`, database credentials,
+or password-hashing material. The application uses this key for AES-256-GCM
+encryption of authenticator secrets and for HMAC digests of recovery codes.
+Keep it in the deployment secret store and include it in the protected
+configuration backup needed to restore MFA after disaster recovery. Losing the
+key makes enrolled authenticator secrets and recovery digests unusable and
+requires account recovery. Rotating the key requires decrypting and
+re-encrypting every active and pending secret and re-hashing outstanding
+recovery codes before switching all instances; do not replace the value without
+that migration. Test environments use a fixed test-only key.
+
+The production Compose configuration passes the key to both app services.
+For a separate production Compose file, add the variable to both `webapp` and
+`worker` before deploying the MFA image. Run the deployment preflight described
+in [PRODUCTION.md](../deploy/docker/PRODUCTION.md); it checks the desired key
+format and that both services receive the same value without displaying it.
+
+Authenticator MFA and passkeys are optional for administrators. Once enrolled,
+administrators must complete a second factor at sign-in. The existing password
+step-up continues to protect privileged actions.
+Android and iOS open the system browser to complete this step with an
+authenticator, recovery code or passkey. After confirmation, the app exchanges
+a single-use code for its own session. See
+[staff passkey deployment and verification](operations/staff-passkeys.md).
+
+## Member account activity indexes
+
+Before deploying member account activity, create its TTL and pagination
+indexes with `npm run ensure-indexes -- AccountActivity`. See
+[the account activity deployment guide](operations/account-activity.md) for
+the 90-day retention behaviour and stored fields.
+
+Authenticator MFA is optional for members. Admin, moderator, and welcome-team
+permissions require a session that has completed MFA. Existing privileged
+members should enrol an authenticator before relying on those permissions.
+An incomplete `202` or `mfaRequired` response does not create a mobile
+session. The mobile sign-in API requests browser continuation with the
+`web_sign_in_required` response.

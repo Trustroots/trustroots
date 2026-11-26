@@ -203,7 +203,7 @@ describe('API route registrations', () => {
       {
         '../controllers/contacts.server.controller': contacts,
         '../policies/contacts.server.policy': policy,
-        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+        '../../../core/server/middleware/targeted-request-limit.server.middleware.mts':
           limits,
       },
     );
@@ -417,7 +417,7 @@ describe('API route registrations', () => {
       './../../../support/server/routes/support.server.routes.mts',
       {
         '../controllers/support.server.controller': support,
-        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+        '../../../core/server/middleware/targeted-request-limit.server.middleware.mts':
           supportLimit,
       },
     );
@@ -457,6 +457,7 @@ describe('API route registrations', () => {
         'signup',
         'signupValidation',
         'validateEmailToken',
+        'verifyMfa',
       ],
       'userAuthentication',
     );
@@ -468,6 +469,7 @@ describe('API route registrations', () => {
       [
         'resendConfirmation',
         'forgotPassword',
+        'mfaVerify',
         'resetPassword',
         'signin',
         'signup',
@@ -481,7 +483,7 @@ describe('API route registrations', () => {
         '../services/signin-challenge.server.service': signinChallenge,
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
-        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+        '../../../core/server/middleware/targeted-request-limit.server.middleware.mts':
           targetedRequestLimit,
       },
     );
@@ -527,6 +529,10 @@ describe('API route registrations', () => {
       signinChallenge,
       authentication.signin,
     ]);
+    assertHandlers(routeByPath(routes, '/api/auth/mfa/verify').post, [
+      targetedRequestLimit.mfaVerify,
+      authentication.verifyMfa,
+    ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
     let getSignoutStatus: number | undefined;
     signoutRoute.get[0](
@@ -547,6 +553,7 @@ describe('API route registrations', () => {
 
   it('registers users routes behind the users policy', async () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const limits = controller(['mfaManage', 'passwordChange'], 'limits');
     const avatar = controller(
       [
         'avatarUploadField',
@@ -561,18 +568,33 @@ describe('API route registrations', () => {
       './../../../users/server/routes/users.server.routes.mts',
       {
         '../controllers/users.avatar.server.controller': avatar,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware.mts':
+          limits,
         '../policies/users.server.policy': policy,
       },
     );
-    assert.strictEqual(routes.length, 19);
+    assert.strictEqual(routes.length, 25);
 
     const unsubscribeRoute = routeByPath(routes, '/email/unsubscribe/:token');
     assert.deepStrictEqual(unsubscribeRoute.all, []);
     assert.deepStrictEqual(unsubscribeRoute.get, [showUnsubscribe]);
     assert.deepStrictEqual(unsubscribeRoute.post, [unsubscribe]);
-    routes
-      .filter(route => route !== unsubscribeRoute)
-      .forEach(route => assertPolicy(route, policy));
+    for (const route of routes) {
+      if (route === unsubscribeRoute) continue;
+      if (route.path === '/api/users/activity') {
+        assert.equal(route.all.length, 2);
+        assert.equal(route.all[0].name, 'setActivityResponseHeaders');
+        assert.equal(route.all[1], policy.isAllowed);
+      } else if (route.path.startsWith('/api/users/mfa/')) {
+        assertHandlers(
+          route.all,
+          [policy.isAllowed, limits.mfaManage],
+          route.path,
+        );
+      } else {
+        assertPolicy(route, policy);
+      }
+    }
     assert.deepStrictEqual(
       routeByPath(routes, '/api/users/nostr/challenge').post,
       [challenge],

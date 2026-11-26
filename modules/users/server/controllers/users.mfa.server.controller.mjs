@@ -1,0 +1,250 @@
+import mongoose from 'mongoose';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import profileHandler from './users.profile.server.controller.mts';
+import mfaService, {
+  assertMfaConfigured,
+  MfaConfigurationError,
+  mfaConfigurationMessage,
+} from '../services/mfa.server.service.mjs';
+import { recordActivity } from '../services/account-activity.server.service.mts';
+
+const User = mongoose.model('User');
+
+function sendUnavailable(res, error) {
+  return res.status(503).send({
+    message:
+      error instanceof MfaConfigurationError
+        ? mfaConfigurationMessage
+        : 'Authenticator MFA is temporarily unavailable. Try again shortly.',
+  });
+}
+
+function sendInvalidCredentials(res) {
+  return res.status(400).send({ message: 'Password confirmation failed.' });
+}
+
+async function findUserWithPassword(userId) {
+  return User.findById(userId).exec();
+}
+
+async function confirmPassword(user, password) {
+  if (typeof password !== 'string' || !password) return false;
+  const valid = await user.authenticate(password);
+  return valid === true;
+}
+
+function currentMember(req, res) {
+  if (req.user) return req.user;
+  res.status(403).send({
+    message: errorService.getErrorMessageByKey('forbidden'),
+  });
+  return null;
+}
+
+function forbidUnlessAdmin(user, res) {
+  if (mfaService.isPrivileged(user)) return true;
+  res.status(403).send({
+    message: errorService.getErrorMessageByKey('forbidden'),
+  });
+  return false;
+}
+
+async function validatePasswordConfirmation(req, res) {
+  const member = currentMember(req, res);
+  if (!member) return null;
+  const user = await findUserWithPassword(member._id);
+  if (!user || !(await confirmPassword(user, req.body.currentPassword))) {
+    sendInvalidCredentials(res);
+    return null;
+  }
+  return user;
+}
+
+async function beginEnrollment(req, res) {
+  try {
+    const user = await validatePasswordConfirmation(req, res);
+    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (user.mfaEnabled) {
+      return res
+        .status(409)
+        .send({ message: 'Authenticator MFA is already enabled.' });
+    }
+    const setup = await mfaService.stageEnrollment(user._id, user.username);
+    return res.json(setup);
+  } catch (error) {
+    return sendUnavailable(res, error);
+  }
+}
+
+async function verifyEnrollment(req, res) {
+  if (!currentMember(req, res) || !forbidUnlessAdmin(req.user, res)) return;
+  try {
+    const result = await mfaService.activateEnrollment(
+      req.user._id,
+      req.body.code,
+    );
+    if (!result) {
+      return res
+        .status(400)
+        .send({ message: 'Authenticator code is invalid or has expired.' });
+    }
+    await recordActivity({
+      userId: result.user._id,
+      eventType: 'mfa_enabled',
+    });
+    result.user.$locals.mfaVerified = true;
+    return req.login(result.user, error => {
+      if (error) {
+        return res
+          .status(503)
+          .send({ message: 'Could not update the sign-in session.' });
+      }
+      return res.json({
+        enabled: true,
+        recoveryCodes: result.codes,
+        user: profileHandler.sanitizeOwnProfile(result.user),
+      });
+    });
+  } catch (error) {
+    return sendUnavailable(res, error);
+  }
+}
+
+async function settings(req, res) {
+  if (!currentMember(req, res) || !forbidUnlessAdmin(req.user, res)) return;
+  try {
+    assertMfaConfigured();
+    const user = await User.findById(req.user._id)
+      .select('+mfaRecoveryCodeHashes')
+      .exec();
+    if (!user) return res.sendStatus(404);
+    return res.json({
+      enabled: user.mfaEnabled === true,
+      recoveryCodesRemaining: user.mfaRecoveryCodeHashes?.length || 0,
+    });
+  } catch (error) {
+    return sendUnavailable(res, error);
+  }
+}
+
+async function regenerateRecoveryCodes(req, res) {
+  try {
+    const user = await validatePasswordConfirmation(req, res);
+    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (!user.mfaEnabled) {
+      return res
+        .status(409)
+        .send({ message: 'Authenticator MFA is not enabled.' });
+    }
+    const verification = await mfaService.verifyAndConsume(
+      user._id,
+      req.body.code,
+    );
+    if (!verification) {
+      return res
+        .status(400)
+        .send({ message: 'Authenticator or recovery code is invalid.' });
+    }
+    if (verification.recovery) {
+      await recordActivity({
+        userId: user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
+    const codes = mfaService.createRecoveryCodes();
+    const hashes = codes.map(code =>
+      // Stored hashes use the same one-way transformation as verification.
+      mfaService.hashRecoveryCode(code),
+    );
+    const updated = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        mfaEnabled: true,
+        mfaSecretEncrypted: String(verification.secret),
+      },
+      { $set: { mfaRecoveryCodeHashes: hashes } },
+      { new: true },
+    ).exec();
+    if (!updated)
+      return res
+        .status(409)
+        .send({ message: 'Authenticator MFA changed. Try again.' });
+    await recordActivity({
+      userId: updated._id,
+      eventType: 'recovery_codes_replaced',
+    });
+    updated.$locals.mfaVerified = true;
+    return req.login(updated, error => {
+      if (error)
+        return res
+          .status(503)
+          .send({ message: 'Could not update the sign-in session.' });
+      return res.json({ recoveryCodes: codes });
+    });
+  } catch (error) {
+    return sendUnavailable(res, error);
+  }
+}
+
+async function disable(req, res) {
+  try {
+    const user = await validatePasswordConfirmation(req, res);
+    if (!user || !forbidUnlessAdmin(user, res)) return;
+    if (!user.mfaEnabled) {
+      return res
+        .status(409)
+        .send({ message: 'Authenticator MFA is not enabled.' });
+    }
+    const verification = await mfaService.verifyAndConsume(
+      user._id,
+      req.body.code,
+    );
+    if (!verification) {
+      return res
+        .status(400)
+        .send({ message: 'Authenticator or recovery code is invalid.' });
+    }
+    if (verification.recovery) {
+      await recordActivity({
+        userId: user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
+    const removed = await mfaService.removeMfa(user._id, verification.secret);
+    if (!removed) {
+      return res
+        .status(409)
+        .send({ message: 'Authenticator MFA changed. Try again.' });
+    }
+    await recordActivity({
+      userId: removed._id,
+      eventType: 'mfa_disabled',
+    });
+    return req.logout(error => {
+      if (error)
+        return res
+          .status(503)
+          .send({ message: 'Could not end the current session.' });
+      return res.json({ enabled: false });
+    });
+  } catch (error) {
+    return sendUnavailable(res, error);
+  }
+}
+
+const service = {
+  beginEnrollment,
+  disable,
+  regenerateRecoveryCodes,
+  settings,
+  verifyEnrollment,
+};
+
+export default service;
+export {
+  beginEnrollment,
+  disable,
+  regenerateRecoveryCodes,
+  settings,
+  verifyEnrollment,
+};

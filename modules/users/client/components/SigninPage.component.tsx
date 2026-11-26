@@ -15,6 +15,7 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
+import { signinWithPasskey } from '../api/passkeys.api';
 
 const BoardWithPhotoList = Board as unknown as React.ComponentType<{
   names: string | string[];
@@ -42,15 +43,27 @@ export default function SigninPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
   const hasRedirected = useRef(false);
   const usernameInput = useDesktopAutofocus<HTMLInputElement>();
+  const mfaInput = useDesktopAutofocus<HTMLInputElement>(mfaRequired);
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
     returnTo,
+    requiresFreshSignin:
+      Boolean(continueSignin) &&
+      typeof returnTo === 'string' &&
+      /^\/auth\/mobile\/confirm\/[a-f0-9]{64}$/.test(returnTo),
   });
 
   useEffect(() => {
-    if (user && !hasRedirected.current) {
+    if (
+      user &&
+      !hasRedirected.current &&
+      !signinDestination.current.requiresFreshSignin
+    ) {
       hasRedirected.current = true;
       redirectAfterSignin(
         navigate,
@@ -67,14 +80,25 @@ export default function SigninPage() {
     }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function authenticate(usePasskey = false) {
     setIsLoading(true);
     setAuthError(false);
     setErrorMessage('');
 
     try {
-      const signedInUser = await authApi.signin(credentials);
+      const authentication = usePasskey
+        ? await signinWithPasskey()
+        : mfaRequired
+          ? await authApi.verifyMfa(mfaCode)
+          : await authApi.signin(credentials);
+
+      if ('mfaRequired' in authentication) {
+        setMfaRequired(true);
+        setPasskeyAvailable(authentication.passkeyAvailable === true);
+        setIsLoading(false);
+        return;
+      }
+      const signedInUser = authentication;
 
       let session;
       try {
@@ -97,6 +121,11 @@ export default function SigninPage() {
 
       setUser(signedInUser);
 
+      if (signinDestination.current.requiresFreshSignin) {
+        hasRedirected.current = true;
+        redirectAfterSignin(navigate, true, signinDestination.current.returnTo);
+      }
+
       track('signin_succeeded');
     } catch (error: unknown) {
       setIsLoading(false);
@@ -104,6 +133,11 @@ export default function SigninPage() {
       setErrorMessage(readApiError(error).message || 'Something went wrong.');
       track('signin_failed', { reason: signinFailureReason(error) });
     }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void authenticate();
   }
 
   const forgotHref = credentials.username
@@ -130,69 +164,111 @@ export default function SigninPage() {
                 onSubmit={handleSubmit}
               >
                 <fieldset>
-                  <div className="form-group">
-                    <label htmlFor="username" className="lead tw:mb-[5px]">
-                      Email or username
-                    </label>
-                    <Input
-                      ref={usernameInput}
-                      type="text"
-                      autoCapitalize="off"
-                      required
-                      id="username"
-                      name="username"
-                      fieldSize="lg"
-                      placeholder="Email or username"
-                      value={credentials.username}
+                  {!mfaRequired && (
+                    <>
+                      <div className="form-group">
+                        <label htmlFor="username" className="lead tw:mb-[5px]">
+                          Email or username
+                        </label>
+                        <Input
+                          ref={usernameInput}
+                          type="text"
+                          autoCapitalize="off"
+                          required
+                          id="username"
+                          name="username"
+                          fieldSize="lg"
+                          placeholder="Email or username"
+                          value={credentials.username}
+                          disabled={isLoading}
+                          onChange={event =>
+                            updateCredential('username', event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="password" className="lead tw:mb-[5px]">
+                          Password
+                        </label>
+                        <AuthPasswordInput
+                          required
+                          visible={showPassword}
+                          onToggleVisibility={() =>
+                            setShowPassword(current => !current)
+                          }
+                          id="password"
+                          name="password"
+                          placeholder="Password"
+                          autoCapitalize="off"
+                          disabled={isLoading}
+                          value={credentials.password}
+                          onChange={event =>
+                            updateCredential('password', event.target.value)
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                  {mfaRequired && (
+                    <div className="form-group">
+                      <label htmlFor="mfa-code" className="lead">
+                        Authenticator or recovery code
+                      </label>
+                      <Input
+                        required
+                        id="mfa-code"
+                        name="mfaCode"
+                        fieldSize="lg"
+                        autoComplete="one-time-code"
+                        autoCapitalize="off"
+                        ref={mfaInput}
+                        disabled={isLoading}
+                        value={mfaCode}
+                        onChange={event => setMfaCode(event.target.value)}
+                      />
+                      <p className="help-block">
+                        Enter the current code from your authenticator app or
+                        one of your recovery codes.
+                      </p>
+                    </div>
+                  )}
+                  {mfaRequired && passkeyAvailable && (
+                    <Button
+                      type="button"
                       disabled={isLoading}
-                      onChange={event =>
-                        updateCredential('username', event.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="password" className="lead tw:mb-[5px]">
-                      Password
-                    </label>
-                    <AuthPasswordInput
-                      required
-                      visible={showPassword}
-                      onToggleVisibility={() =>
-                        setShowPassword(current => !current)
-                      }
-                      id="password"
-                      name="password"
-                      placeholder="Password"
-                      autoCapitalize="off"
-                      disabled={isLoading}
-                      value={credentials.password}
-                      onChange={event =>
-                        updateCredential('password', event.target.value)
-                      }
-                    />
-                  </div>
+                      onClick={() => void authenticate(true)}
+                    >
+                      Use a registered passkey
+                    </Button>
+                  )}
                   <div className="form-group">
                     <Button size="lg" type="submit" disabled={isLoading}>
                       {isLoading
                         ? 'Wait...'
-                        : continueSignin
-                          ? 'Sign in to continue'
-                          : 'Login'}
+                        : mfaRequired
+                          ? 'Verify and sign in'
+                          : continueSignin
+                            ? 'Sign in to continue'
+                            : 'Login'}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      render={<span />}
-                      className="space-h"
-                    />
-                    <a href={forgotHref}>
-                      Forgot?
-                      {authError && (
-                        <span className="tw:max-sm:hidden">
-                          {' '}
-                          Recover your password
-                        </span>
-                      )}
-                    </a>
+                    {!mfaRequired && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          render={<span />}
+                          className="space-h"
+                        />
+                        <a href={forgotHref}>
+                          Forgot?
+                          {authError && (
+                            <span className="tw:max-sm:hidden">
+                              {' '}
+                              Recover your password
+                            </span>
+                          )}
+                        </a>
+                      </>
+                    )}
                   </div>
                 </fieldset>
               </form>

@@ -35,11 +35,12 @@ function serialiseTokens(tokens) {
   };
 }
 
-exports.create = function (user, callback) {
+function createSession(user, mfaVerified, callback) {
   const tokens = tokenPair();
   const session = new MobileSession({
     user: user._id,
     authVersion: user.authVersion ?? 0,
+    mfaVerified,
     accessTokenHash: tokenHash(tokens.accessToken),
     accessExpiresAt: tokens.accessExpiresAt,
     refreshTokenHash: tokenHash(tokens.refreshToken),
@@ -50,6 +51,14 @@ exports.create = function (user, callback) {
     () => callback(null, serialiseTokens(tokens)),
     error => callback(error, null),
   );
+}
+
+exports.create = function (user, callback) {
+  return createSession(user, false, callback);
+};
+
+exports.createBrowserVerified = function (user, mfaVerified, callback) {
+  return createSession(user, mfaVerified, callback);
 };
 
 exports.findByAccessToken = function (accessToken, callback) {
@@ -84,6 +93,7 @@ exports.rotateRefreshToken = function (refreshToken, callback) {
         }
         if (
           !isActiveMember(session.user) ||
+          (session.user.mfaEnabled === true && session.mfaVerified !== true) ||
           (session.authVersion ?? 0) !== (session.user.authVersion ?? 0)
         ) {
           return callback(null, null, null);

@@ -9,6 +9,11 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name="org.trustroots.android.ui.BrowserSignInJourneyActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name="org.trustroots.android.browser.BrowserHistoryJourneyActivity"
             android:exported="false" />
     </application>

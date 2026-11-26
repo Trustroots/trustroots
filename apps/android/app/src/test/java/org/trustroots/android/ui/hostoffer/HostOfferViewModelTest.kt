@@ -171,6 +171,22 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun retainsInitialLoadWhenTheBearerSessionHasNotChanged() = withScope { scope ->
+        val pending = CompletableDeferred<Result<HostOfferForm>>()
+        val repository = FakeHostOfferRepository().apply { loadHandler = { pending.await() } }
+        val api = MobileApiClient("https://api.example.test")
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access")
+        val viewModel = HostOfferViewModel(repository, scope, api, session)
+        viewModel.updateEnvironment(api, session)
+        assertTrue(viewModel.state.value.isLoading)
+        pending.complete(Result.success(HostOfferForm(id = "loaded-offer")))
+
+        assertEquals(1, repository.loadCalls)
+        assertEquals("loaded-offer", viewModel.state.value.form.id)
+        assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
     fun credentialRefreshKeepsAnExistingDraftWithoutReloadingTheOffer() = withScope { scope ->
         val repository = FakeHostOfferRepository(loadResult = Result.success(HostOfferForm(id = "offer-one")))
         val api = MobileApiClient("https://api.example.test")

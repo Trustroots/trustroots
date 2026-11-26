@@ -72,6 +72,43 @@ unchanged sessions, and SHALL refresh their expiry through the session store.
 - **WHEN** a person makes a request without changing an existing session
 - **THEN** the system refreshes the session expiry without rewriting the session
 
+### Requirement: Private account activity history
+
+The system SHALL record successful session and credential lifecycle changes in
+a bounded, owner-only history. It SHALL retain event type, owner, timestamp and
+only the context needed to identify a session event. It SHALL not record
+credentials, action tokens, session-store identifiers, precise location,
+browser fingerprints or private content. The history SHALL support opaque
+cursor pagination of at most 50 events, SHALL avoid shared caching, SHALL
+return only events from the last 90 days, SHALL expire events after 90 days,
+and SHALL remove them when the account is deleted.
+Activity write failures SHALL not reverse a completed account operation, and
+transient failures SHALL be retried with the same event identifier.
+
+#### Scenario: Member reviews recent account changes
+
+- **WHEN** a signed-in member opens account activity
+- **THEN** the system returns only their session and credential events
+- **AND** each page has at most 50 events and identifies new session events
+- **AND** the interface shows event descriptions and local dates
+
+#### Scenario: Activity history is unavailable
+
+- **WHEN** the activity service cannot load the member’s history
+- **THEN** the interface reports that history could not be loaded
+- **AND** it does not present the failure as an empty history
+
+#### Scenario: Activity storage fails after a credential change
+
+- **WHEN** a member’s credential change succeeds but activity storage is temporarily unavailable
+- **THEN** the credential change remains committed
+- **AND** event delivery is retried without recording credential values
+
+#### Scenario: Account is removed
+
+- **WHEN** a member completes account removal
+- **THEN** their account activity rows are deleted
+
 ### Requirement: Account registration
 
 The system SHALL allow a person to create an account with valid, unique
@@ -759,6 +796,89 @@ SHALL remain removable independently of profile images.
 - **WHEN** a member disconnects stored Facebook provider data
 - **THEN** the connection is removed without enabling Facebook profile images
 
+### Requirement: Authenticator MFA
+
+Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys, and SHALL store recovery codes as HMAC digests bound to that key. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+
+#### Scenario: A member enrols an authenticator
+
+- **WHEN** a member confirms their current password and requests enrolment
+- **THEN** the system returns a one-time authenticator provisioning URI and a pending secret
+- **AND** it does not mark MFA active until a valid, unused TOTP is verified
+- **AND** the pending secret expires after a short period
+
+#### Scenario: An active member verifies MFA
+
+- **WHEN** a member signs in with a valid password and has MFA enabled
+- **THEN** the password check creates only a short-lived pre-authentication challenge
+- **AND** the system establishes an authenticated session only after a valid TOTP or recovery code
+- **AND** concurrent requests cannot consume the same TOTP time step or recovery code more than once
+
+#### Scenario: A member manages MFA
+
+- **WHEN** a member views or changes MFA settings
+- **THEN** the system never returns the active secret or recovery-code hashes
+- **AND** enrolment, replacement recovery codes, and disablement require a recent password confirmation
+- **AND** replacement recovery codes are shown only once and previous codes stop working atomically
+
+#### Scenario: Administrator has not enrolled MFA
+
+- **WHEN** an administrator who has not enrolled signs in
+- **THEN** the system permits ordinary account access
+- **AND** privileged actions continue to require the existing password step-up
+
+#### Scenario: An enrolled account has not verified MFA
+
+- **WHEN** an enrolled administrator has not verified the current session
+- **THEN** the system denies authenticated access until a valid second factor is verified
+
+#### Scenario: Account recovery does not bypass MFA
+
+- **WHEN** a member resets or changes their password, confirms an email address, or uses another direct login path
+- **THEN** the operation cannot establish an MFA-verified session without a successful second factor
+- **AND** credential changes invalidate older sessions
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
+- **THEN** the system applies bounded IP and account or challenge limits and returns a retry response
+
+### Requirement: Staff passkey registration
+
+The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle. Passkeys remain optional: the authenticator and recovery codes stay available, and removing the last passkey is allowed while TOTP enrolment remains. Disabling authenticator MFA SHALL remove the member's passkeys and outstanding passkey ceremonies.
+
+#### Scenario: Verified staff member registers a passkey
+
+- **WHEN** a staff member completes a valid registration ceremony with required user verification
+- **THEN** the system stores a uniquely owned credential with a member-selected label
+- **AND** no authenticator private key is received or stored
+
+#### Scenario: Staff member removes their last passkey
+
+- **WHEN** a staff member removes their only registered passkey while authenticator MFA remains enabled
+- **THEN** the removal succeeds
+- **AND** authenticator codes and recovery codes remain available for sign-in
+
+#### Scenario: Authenticator MFA is disabled
+
+- **WHEN** an administrator disables authenticator MFA
+- **THEN** stored passkeys and outstanding passkey ceremonies for that account are deleted
+
+### Requirement: Verified passkey second factor
+
+The system SHALL accept a passkey as a second factor only after server verification of origin, relying-party ID, ceremony challenge, ownership, signature and user verification. Challenges SHALL expire within five minutes and be atomically single-use. After password sign-in, the client SHALL be told a passkey is available only when the account has a registered passkey, not merely because the account is privileged.
+
+#### Scenario: Password-first sign-in uses a passkey
+
+- **WHEN** a member completes the current password-first passkey challenge
+- **THEN** the resulting session satisfies the same second-factor policy as an accepted authenticator code
+- **AND** the pre-authentication challenge is cleared
+
+#### Scenario: Ceremony does not match its account or deployment
+
+- **WHEN** a response is expired, replayed, unverified or bound to another member, origin or relying party
+- **THEN** it does not establish a verified session
+
 ### Requirement: Bounded signup requests
 
 Signup SHALL accept only supported registration fields. The server SHALL apply
@@ -993,3 +1113,35 @@ The signup form SHALL ask separately about experience hosting people and staying
 
 - **WHEN** a signup request supplies an unsupported experience answer for either question
 - **THEN** the API rejects the request with HTTP 400 before creating an account
+
+### Requirement: Mobile sign-in with two-factor authentication
+
+Android and iOS MUST let a member with two-factor authentication complete the website sign-in in the system browser using an authenticator code, recovery code or registered passkey. The service MUST issue mobile credentials only after the browser session satisfies the account's current sign-in requirements and the app redeems an expiring code bound to its pending sign-in.
+
+#### Scenario: Return after confirming a second factor
+
+- **WHEN** the member successfully completes browser sign-in and confirms that the app may continue
+- **THEN** the service returns a single-use code to the app and accepts it only with the verifier held by the initiating app
+- **AND** the app can use and refresh the resulting mobile session
+
+#### Scenario: Reject an incomplete or stale sign-in
+
+- **WHEN** the browser has not completed the required second factor, the account credentials change, or the code is expired, unbound or already used
+- **THEN** the service does not issue mobile credentials for that handoff
+
+### Requirement: Combined account access regression coverage
+
+The account-access test suite SHALL exercise recovery, session revocation,
+sign-in challenges and MFA together, including concurrent use of single-use
+credentials and native-client handling of incomplete authentication responses.
+These scenarios SHALL use anonymous fixtures and retain the established
+coverage thresholds.
+
+#### Scenario: Combined account-access flows are exercised
+
+- **WHEN** account-access integration tests run
+- **THEN** they cover password recovery and confirmation on MFA-enabled
+  accounts, session invalidation, sign-in challenge completion and concurrent
+  credential use
+- **AND** a native client that cannot complete a required step does not retain
+  an authenticated session
