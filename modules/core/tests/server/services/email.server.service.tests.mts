@@ -269,6 +269,22 @@ describe('Service: email', function () {
     });
   });
 
+  it('omits a delivery deadline when the reset token has no expiry', function (done) {
+    emailService.sendResetPassword(
+      {
+        displayName: 'test user',
+        email: 'test@test.com',
+        resetPasswordToken: 'SOMETOKEN',
+      },
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        should(job(0).data.deliveryDeadline).be.undefined();
+        done();
+      },
+    );
+  });
+
   it('can send password reset confirm email', function (done) {
     const user = {
       displayName: 'test user',

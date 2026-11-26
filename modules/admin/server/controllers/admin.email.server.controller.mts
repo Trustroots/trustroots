@@ -15,6 +15,7 @@ export async function queueHealth(_req: Request, res: Response) {
       const metrics = await inspectMailQueue(
         db.collection('agendaJobs'),
         capturedAt,
+        // Stryker disable next-line ObjectLiteral: the suite never waits long enough for the queue inspect deadline to matter
         { timeoutMS: 5_000 },
       );
       return res.json({

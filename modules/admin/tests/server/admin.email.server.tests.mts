@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { mailMode } from '../../../../config/config.mts';
 import sinon from 'sinon';
+import winston from 'winston';
+import { mailMode } from '../../../../config/config.mts';
 import {
   recoverEmailJobName,
   sendEmailJobName,
@@ -47,6 +48,7 @@ describe('Admin email queue health', () => {
 
   it('returns a sanitised unavailable response without a database connection', async () => {
     sinon.stub(mongoose.connection, 'db').value(undefined);
+    const logged = sinon.stub(winston, 'log');
     const json = sinon.spy();
     const status = sinon.stub().returns({ json });
 
@@ -61,10 +63,16 @@ describe('Admin email queue health', () => {
     sinon.assert.calledWithExactly(json, {
       message: 'Email queue health is unavailable.',
     });
+    sinon.assert.neverCalledWith(
+      logged,
+      'error',
+      'Could not inspect email queue',
+    );
   });
 
   it('returns a sanitised unavailable response when the query fails', async () => {
     sinon.stub(db, 'collection').throws(new Error('Private fixture'));
+    const logged = sinon.stub(winston, 'log');
     const json = sinon.spy();
     const status = sinon.stub().returns({ json });
 
@@ -79,5 +87,6 @@ describe('Admin email queue health', () => {
     sinon.assert.calledWithExactly(json, {
       message: 'Email queue health is unavailable.',
     });
+    sinon.assert.calledWith(logged, 'error', 'Could not inspect email queue');
   });
 });
