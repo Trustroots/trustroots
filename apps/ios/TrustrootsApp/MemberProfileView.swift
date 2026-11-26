@@ -166,6 +166,7 @@ struct MemberProfileView: View {
                         }
                         .padding(20)
                     }
+                    .accessibilityIdentifier("member-profile-scroll-view")
                 } else {
                     ContentUnavailableView(
                         "Profile unavailable",

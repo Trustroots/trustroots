@@ -1076,8 +1076,17 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(submit.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertFalse(submit.isEnabled)
         enterText("example-password", into: app.secureTextFields["Current password"], in: app, secure: true)
-        enterText("fixture-password-2", into: app.secureTextFields["New password"], in: app, secure: true)
-        enterText("fixture-password-2", into: app.secureTextFields["Repeat new password"], in: app, secure: true)
+        for label in ["New password", "Repeat new password"] {
+            app.typeText(XCUIKeyboardKey.return.rawValue)
+            let field = app.secureTextFields[label]
+            let focused = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "hasKeyboardFocus == true"),
+                object: field
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed, "\(label) should receive keyboard focus.")
+            field.typeText("fixture-password-2")
+        }
+        app.typeText(XCUIKeyboardKey.return.rawValue)
 
         tapAccountButton(submit, in: app)
         let failure = element(labelled: "Temporary fixture password update failure.", in: app)
@@ -1348,7 +1357,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
     }
 
     private func revealProfileElement(_ element: XCUIElement, in app: XCUIApplication) {
-        let profile = app.scrollViews.firstMatch
+        let profile = app.scrollViews["member-profile-scroll-view"].firstMatch
         XCTAssertTrue(profile.exists, app.debugDescription)
         let origin = profile.coordinate(withNormalizedOffset: .zero)
         for _ in 0..<5 {
