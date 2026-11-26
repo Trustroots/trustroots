@@ -12,9 +12,9 @@ import * as usersApi from '@/modules/admin/client/api/users.api';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
 function AdminUser(
-  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'ProfileOffers'>,
+  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'MemberProfile'>,
 ) {
-  return <MemberAdmin {...props} ProfileOffers={() => null} />;
+  return <MemberAdmin {...props} MemberProfile={() => null} />;
 }
 
 vi.mock('@trustroots/core/auth', async () =>

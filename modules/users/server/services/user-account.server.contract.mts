@@ -19,9 +19,24 @@ export interface UserAccountServices extends UserMessaging {
     userId: Types.ObjectId,
     callback: (error: Error | null) => void,
   ): void;
+  findSearchConnectionIds(viewerId: Types.ObjectId): Promise<Types.ObjectId[]>;
+  readWrittenExperiences(
+    userId: Types.ObjectId | string,
+  ): Promise<WrittenExperience[]>;
   readOwnedOffers(
     userId: Types.ObjectId | string,
   ): Promise<Record<string, unknown>[]>;
+}
+
+export interface WrittenExperience {
+  _id?: unknown;
+  created?: unknown;
+  public?: unknown;
+  interactions?: unknown;
+  recommend?: unknown;
+  feedbackPublic?: unknown;
+  removedAt?: unknown;
+  userTo?: unknown;
 }
 
 export type UserAccountCleanup = Pick<

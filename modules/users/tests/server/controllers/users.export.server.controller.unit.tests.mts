@@ -620,7 +620,10 @@ describe('Member data export controller', () => {
       userAccountServices.readWrittenMessages,
       user._id,
     );
-    const experiences = await controller.writtenExperiences(user._id);
+    const experiences = await controller.writtenExperiences(
+      userAccountServices.readWrittenExperiences,
+      user._id,
+    );
 
     assert.deepEqual(findMessages.getCall(0).args.at(0), {
       userFrom: user._id,

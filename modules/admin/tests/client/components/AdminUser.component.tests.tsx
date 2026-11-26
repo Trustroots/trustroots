@@ -21,9 +21,9 @@ import * as usersApi from '@/modules/admin/client/api/users.api';
 
 vi.mock('@/modules/admin/client/api/support.api');
 function AdminUser(
-  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'ProfileOffers'>,
+  props: Omit<React.ComponentProps<typeof MemberAdmin>, 'MemberProfile'>,
 ) {
-  return <MemberAdmin {...props} ProfileOffers={() => null} />;
+  return <MemberAdmin {...props} MemberProfile={MockProfilePage} />;
 }
 
 vi.mock('@trustroots/core/auth', async () =>
@@ -86,28 +86,23 @@ vi.mock('@tanstack/react-router', async () =>
   ).mockRouterModule(),
 );
 vi.mock('@/modules/admin/client/api/users.api');
-vi.mock('@/modules/users/client/components/ProfilePage.component', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
+function MockProfilePage({
+  embedded,
+  profileUsername,
+  user,
+}: {
+  embedded?: boolean;
+  profileUsername?: string;
+  user: { _id: string; displayName?: string; username?: string };
+}) {
+  return React.createElement('div', {
+    'data-testid': 'embedded-profile',
+    'data-embedded': String(embedded),
+    'data-profile-username': profileUsername,
+    'data-viewer-id': user._id,
+  });
+}
 
-  function MockProfilePage({
-    embedded,
-    profileUsername,
-    user,
-  }: {
-    embedded?: boolean;
-    profileUsername?: string;
-    user: { _id: string; displayName?: string; username?: string };
-  }) {
-    return React.createElement('div', {
-      'data-testid': 'embedded-profile',
-      'data-embedded': String(embedded),
-      'data-profile-username': profileUsername,
-      'data-viewer-id': user._id,
-    });
-  }
-
-  return { __esModule: true, default: MockProfilePage };
-});
 vi.mock('@/modules/admin/client/components/AdminNotes', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 

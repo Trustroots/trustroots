@@ -119,10 +119,12 @@ export async function initModulesServerRoutes(app: Express) {
         await import('../../modules/experiences/server/services/search-connections.server.service.mts');
       if (file === mobileRouteFile) {
         const { userMessaging } = await import(userMessagingAdapter);
+        const { userAccountServices } = await import(userAccountAdapter);
         register(app, {
           findOfferConnections: findSearchConnectionIds,
           readReplyStats: userMessaging.readReplyStats,
           readDiscoveryOfferLocations: await loadDiscoveryOfferLocations(),
+          findSearchConnectionIds: userAccountServices.findSearchConnectionIds,
         });
       } else {
         register(app, findSearchConnectionIds);

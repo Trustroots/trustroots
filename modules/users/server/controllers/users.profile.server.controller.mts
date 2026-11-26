@@ -8,7 +8,6 @@ import { setEmailConfirmationToken } from '../services/email-confirmation.server
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mts';
-import { findSearchConnectionIds } from '../../../experiences/server/services/search-connections.server.service.mts';
 import { pick } from '../lib/pick.server.mts';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mts';
@@ -1397,7 +1396,7 @@ function getMemberSearchOfferStages(
  * This middleware sends response with an array of found users
  * We assume that req.query.search exists
  */
-service.search = async function (req, res, next) {
+service.search = async function (findSearchConnectionIds, req, res, next) {
   // check that the search string is provided
   if (!Object.hasOwn(req.query!, 'search')) {
     return next();

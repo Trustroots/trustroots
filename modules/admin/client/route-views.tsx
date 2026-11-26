@@ -4,19 +4,21 @@ import { SupportMemberPage } from './components/Support.component';
 import { useAuth } from '@trustroots/core/auth';
 import AdminHeader from './components/AdminHeader.component';
 import { NetworkConnectionSearchPage } from './components/NetworkConnections.component';
-import type { ProfileOffersComponent } from '@/modules/users/client/components/ProfilePage.component';
+import type { ProfilePageProps } from '@/modules/users/client/components/ProfilePage.component';
+
+type MemberProfileComponent = React.ComponentType<ProfilePageProps>;
 
 export function AdminUserRoute({
   username,
-  ProfileOffers,
+  MemberProfile,
 }: {
   username: string;
-  ProfileOffers: ProfileOffersComponent;
+  MemberProfile: MemberProfileComponent;
 }) {
   const { hasRole, user } = useAuth();
   return hasRole('admin') ? (
     <AdminUser
-      ProfileOffers={ProfileOffers}
+      MemberProfile={MemberProfile}
       username={username}
       viewer={user}
     />
@@ -26,12 +28,12 @@ export function AdminUserRoute({
 }
 
 export function AdminUserSearchRoute({
-  ProfileOffers,
+  MemberProfile,
 }: {
-  ProfileOffers: ProfileOffersComponent;
+  MemberProfile: MemberProfileComponent;
 }) {
   const { user } = useAuth();
-  return <AdminUser ProfileOffers={ProfileOffers} viewer={user} />;
+  return <AdminUser MemberProfile={MemberProfile} viewer={user} />;
 }
 
 export function NetworkConnectionsRoute() {
