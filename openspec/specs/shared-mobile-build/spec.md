@@ -276,6 +276,19 @@ and Done actions.
 - **WHEN** they select Reset
 - **THEN** the defaults restore and the filter controls show those defaults
 
+### Requirement: iOS offer map uses shared status and legend
+
+The regular iOS app SHALL show its map loading indicator, offer result count,
+applicable legend and search errors in shared Compose. The marker legend SHALL
+use the same colours as the native annotations and reflow within the viewport.
+The overlay SHALL leave map gestures available.
+
+#### Scenario: Show the applicable markers
+
+- **GIVEN** the iOS map has loaded offers
+- **WHEN** a member restricts the map to their connections
+- **THEN** the shared overlay shows the updated count and omits the Community Notes marker
+
 ### Requirement: Regular iOS Search uses a shared display selector
 
 The regular iOS Search screen SHALL use shared Compose to select Map, Results,
