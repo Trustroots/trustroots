@@ -513,6 +513,7 @@ service.signin = function (req, res, next) {
       statsObject.tags.status = 'success';
       // Statistics delivery must not hold up authentication during an outage.
       statService.stat(statsObject, function () {});
+      mfaService.recordBrowserSignin(req);
       res.json(userProfile.sanitizeOwnProfile(user));
     });
   })(req, res, next);
@@ -555,6 +556,7 @@ service.verifyMfa = async function (req, res) {
       if (error) {
         return res.status(503).send({ message: 'Could not complete sign-in.' });
       }
+      mfaService.recordBrowserSignin(req);
       return res.json(userProfile.sanitizeOwnProfile(result.user));
     });
   } catch (error) {

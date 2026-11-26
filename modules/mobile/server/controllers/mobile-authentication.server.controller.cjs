@@ -66,7 +66,7 @@ exports.authenticate = function (req, res, next) {
     if (
       !session ||
       !isActiveMember(session.user) ||
-      session.user.mfaEnabled === true ||
+      (session.user.mfaEnabled === true && session.mfaVerified !== true) ||
       (session.authVersion ?? 0) !== (session.user.authVersion ?? 0)
     ) {
       return unauthorised(res);

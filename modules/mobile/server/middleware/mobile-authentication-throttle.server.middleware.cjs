@@ -45,7 +45,12 @@ function attemptKey(req, scope, identity) {
     .digest('hex');
 }
 
-function throttle(scope, identityFromRequest, limit = attemptLimit) {
+function throttle(
+  scope,
+  identityFromRequest,
+  limit = attemptLimit,
+  resetOnSuccess = true,
+) {
   return function (req, res, next) {
     const now = new Date();
     const key = attemptKey(req, scope, identityFromRequest(req));
@@ -90,11 +95,13 @@ function throttle(scope, identityFromRequest, limit = attemptLimit) {
             });
         }
 
-        res.once('finish', function () {
-          if (res.statusCode < 400) {
-            MobileAuthenticationAttempt.deleteOne({ key }).exec();
-          }
-        });
+        if (resetOnSuccess) {
+          res.once('finish', function () {
+            if (res.statusCode < 400) {
+              MobileAuthenticationAttempt.deleteOne({ key }).exec();
+            }
+          });
+        }
         return next();
       }
 
@@ -122,6 +129,13 @@ exports.signin = function (req, res, next) {
     return signinByAccount(req, res, next);
   });
 };
+
+exports.browserHandoff = throttle(
+  'browser-handoff-ip',
+  () => '',
+  ipAttemptLimit,
+  false,
+);
 
 const refreshByToken = throttle('refresh-token', function (req) {
   return String(req.body.refreshToken || '');
