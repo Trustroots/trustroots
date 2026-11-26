@@ -755,9 +755,6 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
-      '@trustroots/support':
-        specifier: workspace:*
-        version: link:../support
 
 
   packages/analytics:

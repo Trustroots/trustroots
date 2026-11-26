@@ -16,7 +16,6 @@
     "@trustroots/admin": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/search": "workspace:*",
-    "@trustroots/stats": "workspace:*",
-    "@trustroots/support": "workspace:*"
+    "@trustroots/stats": "workspace:*"
   }
 }
