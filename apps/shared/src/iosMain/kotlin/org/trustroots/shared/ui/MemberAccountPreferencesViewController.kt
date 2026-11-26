@@ -59,12 +59,14 @@ fun MemberAccountPreferencesViewController(
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun AccountSectionViewController(
     accessibilityTag: String,
     position: AccountSectionPosition,
     onHeight: (Double) -> Unit,
+    opaque: Boolean = true,
     content: @Composable (Modifier) -> Unit,
-) = ComposeUIViewController {
+) = ComposeUIViewController(configure = { this.opaque = opaque }) {
     val density = LocalDensity.current
     Box(Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.Top, unbounded = true)) {
         content(
