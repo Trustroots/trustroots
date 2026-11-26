@@ -1,19 +1,25 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import JoinButton from '@/modules/tribes/client/components/JoinButton';
+import type { ProfileCircles } from '../member-circles';
 import type { TribeMembership, UserProfile } from '../types';
-import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
+import type { ProfileTribe } from '../../shared/profile';
+
+type CircleDisplay = Pick<
+  ProfileCircles,
+  'getCircleBackgroundStyle' | 'JoinButton'
+>;
 
 type Membership = TribeMembership;
 type MembershipUpdated = (data: { user?: UserProfile } | null) => void;
 
 function TribeCard({
+  circles: { getCircleBackgroundStyle, JoinButton },
   membership,
   user,
   onMembershipUpdated,
 }: {
+  circles: CircleDisplay;
   membership: Membership;
   user?: UserProfile;
   onMembershipUpdated?: MembershipUpdated;
@@ -21,7 +27,7 @@ function TribeCard({
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const tribe: TribeSummary = {
+  const tribe: ProfileTribe = {
     _id: membership.tribe._id,
     slug: membership.tribe.slug,
     label: membership.tribe.label,
@@ -64,10 +70,12 @@ function TribeCard({
 }
 
 export default function ProfileTribesTab({
+  circles,
   memberships = [],
   user,
   onMembershipUpdated,
 }: {
+  circles: CircleDisplay;
   memberships?: Membership[];
   user?: UserProfile;
   onMembershipUpdated?: MembershipUpdated;
@@ -79,6 +87,7 @@ export default function ProfileTribesTab({
           {memberships.map(membership => (
             <TribeCard
               key={membership.tribe._id}
+              circles={circles}
               membership={membership}
               onMembershipUpdated={onMembershipUpdated}
               user={user}

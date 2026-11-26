@@ -18,12 +18,17 @@ const describedProfile: AboutMeProfile = {
     '<p>I host travelers, share meals, and like showing people around.</p>',
 };
 
-describe('<AboutMe />', () => {
+describe('<AboutMe readCircles={readCirclesMock} />', () => {
   afterEach(() => readCirclesMock.mockReset());
 
   it('renders the profile description without the completion prompt', () => {
     render(
-      <AboutMe isSelf profile={describedProfile} profileMinimumLength={20} />,
+      <AboutMe
+        readCircles={readCirclesMock}
+        isSelf
+        profile={describedProfile}
+        profileMinimumLength={20}
+      />,
     );
 
     expect(
@@ -46,6 +51,7 @@ describe('<AboutMe />', () => {
     );
     render(
       <AboutMe
+        readCircles={readCirclesMock}
         isSelf={false}
         profile={{
           description:
@@ -87,6 +93,7 @@ describe('<AboutMe />', () => {
     );
     render(
       <AboutMe
+        readCircles={readCirclesMock}
         isSelf={false}
         profile={{
           description: `<p>#hackers ${'a'.repeat(1982)} #hackerspace</p>`,
@@ -109,6 +116,7 @@ describe('<AboutMe />', () => {
     await act(async () => {
       render(
         <AboutMe
+          readCircles={readCirclesMock}
           isSelf={false}
           profile={{ description: '<p>Welcome, #hackers.</p>' }}
           profileMinimumLength={20}
@@ -130,6 +138,7 @@ describe('<AboutMe />', () => {
     );
     const { rerender } = render(
       <AboutMe
+        readCircles={readCirclesMock}
         isSelf={false}
         profile={{ description: '<p>#hackers</p>' }}
         profileMinimumLength={20}
@@ -137,6 +146,7 @@ describe('<AboutMe />', () => {
     );
     rerender(
       <AboutMe
+        readCircles={readCirclesMock}
         isSelf={false}
         profile={describedProfile}
         profileMinimumLength={20}
@@ -151,7 +161,14 @@ describe('<AboutMe />', () => {
   });
 
   it('shows the empty description placeholder', () => {
-    render(<AboutMe isSelf profile={{}} profileMinimumLength={20} />);
+    render(
+      <AboutMe
+        readCircles={readCirclesMock}
+        isSelf
+        profile={{}}
+        profileMinimumLength={20}
+      />,
+    );
 
     expect(
       screen.getByLabelText(
@@ -163,6 +180,7 @@ describe('<AboutMe />', () => {
   it('reminds the current member that a short description limits messaging', () => {
     render(
       <AboutMe
+        readCircles={readCirclesMock}
         isSelf
         profile={{ description: 'I like trains.' }}
         profileMinimumLength={20}
@@ -181,7 +199,12 @@ describe('<AboutMe />', () => {
   it("does not prompt visitors to fill someone else's profile", () => {
     const profile: AboutMeProfile = {};
     render(
-      <AboutMe isSelf={false} profile={profile} profileMinimumLength={20} />,
+      <AboutMe
+        readCircles={readCirclesMock}
+        isSelf={false}
+        profile={profile}
+        profileMinimumLength={20}
+      />,
     );
 
     expect(
