@@ -2,7 +2,7 @@ import {
   showUnsubscribe,
   unsubscribe,
 } from '../controllers/users.notification-email.server.controller.mts';
-import { unsubscribePath } from '../services/notification-email.server.service.mts';
+import { unsubscribePath } from '../../../core/server/services/notification-email-envelope.server.service.mts';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mts';
 import userAvatar from './../controllers/users.avatar.server.controller.mts';

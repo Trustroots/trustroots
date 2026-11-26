@@ -1,9 +1,9 @@
-import { messageEmailFrequencies } from '../../shared/email-preferences.ts';
+import { messageEmailFrequencies } from '../../../core/shared/email-preferences.mts';
 import { validLanguageLevels } from '../../shared/language-levels.ts';
 import {
   hashToken,
   matchToken,
-} from '../services/action-token.server.service.mts';
+} from '../../../core/server/services/action-token.server.service.mts';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';

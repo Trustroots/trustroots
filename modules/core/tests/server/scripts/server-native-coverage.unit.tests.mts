@@ -15,7 +15,7 @@ describe('Native server coverage', () => {
         path.join(os.tmpdir(), 'server-coverage-'),
       );
       const sources = [
-        'modules/users/server/services/user-roles.server.service.mts',
+        'modules/core/server/services/user-roles.server.service.mts',
         'modules/admin/server/controllers/admin.circles.server.controller.mts',
       ];
       try {
@@ -45,7 +45,7 @@ describe('Native server coverage', () => {
               NODE_OPTIONS: '',
               SERVER_TEST_SKIP_DATABASE: 'true',
               SERVER_TEST_FILES: [
-                'modules/users/tests/server/services/user-roles.server.service.tests.mts',
+                'modules/core/tests/server/services/user-roles.server.service.tests.mts',
                 'modules/admin/tests/server/admin.circles.server.controller.unit.tests.mts',
               ].join(','),
               SERVER_TEST_BLOB_OUTPUT: '',

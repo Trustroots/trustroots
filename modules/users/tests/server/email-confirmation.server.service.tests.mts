@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { hashToken } from '../../server/services/action-token.server.service.mts';
+import { hashToken } from '../../../core/server/services/action-token.server.service.mts';
 import {
   EMAIL_CONFIRMATION_LEGACY_DEADLINE,
   EMAIL_CONFIRMATION_LIFETIME_MS,

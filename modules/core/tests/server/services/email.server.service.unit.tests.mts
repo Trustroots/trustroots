@@ -6,7 +6,7 @@ import agenda from './../../../../../config/lib/agenda.mts';
 import emailService, {
   sendMessageDigest,
 } from './../../../server/services/email.server.service.mts';
-import { notificationEmail } from './../../../../users/server/services/notification-email.server.service.mts';
+import { notificationEmail } from '../../../server/services/notification-email-envelope.server.service.mts';
 /**
  * What each transactional email sends: sender, subject, SparkPost campaign
  * and the exact tracked links in its HTML body.

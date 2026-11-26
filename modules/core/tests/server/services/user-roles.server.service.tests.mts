@@ -1,4 +1,4 @@
-import userRoles from './../../../server/services/user-roles.server.service.mts';
+import userRoles from '../../../server/services/user-roles.server.service.mts';
 import 'should';
 
 describe('Service: user-roles', function () {

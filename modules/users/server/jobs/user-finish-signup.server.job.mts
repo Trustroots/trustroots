@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { setToken } from '../services/action-token.server.service.mts';
+import { setToken } from '../../../core/server/services/action-token.server.service.mts';
 import emailService from './../../../core/server/services/email.server.service.mts';
 import config from './../../../../config/config.mts';
 import log from '@trustroots/logger';
