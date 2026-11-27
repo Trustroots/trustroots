@@ -37,8 +37,8 @@ import {
   rememberOutreachSource,
   useAnalytics,
 } from '@trustroots/analytics/client';
-import { useAuth } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/app-context';
+import { useAuth } from '@trustroots/core/auth';
+import { useSettings } from '@trustroots/core/app-context';
 import type {
   ExperienceAction,
   ProfileExperiences,

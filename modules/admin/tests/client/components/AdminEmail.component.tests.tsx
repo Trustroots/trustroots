@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import AdminEmail from '@/modules/admin/client/components/AdminEmail.component';
-import httpClient from '@/modules/core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import type { EmailQueueSnapshot } from '@/modules/admin/shared/email-queue.mts';
 
-vi.mock('@/modules/core/client/api/http-client', () => ({
+vi.mock('@trustroots/core/http-client', () => ({
   default: { get: vi.fn() },
 }));
 vi.mock('@/modules/admin/client/components/AdminHeader.component', () => ({

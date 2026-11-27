@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth } from '@trustroots/core/auth';
 import * as mfaApi from '../api/mfa.api';
 import { readApiError } from '../utils/api-error';
 

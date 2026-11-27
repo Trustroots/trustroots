@@ -1,4 +1,4 @@
-import axios from '../../../core/client/api/http-client.js';
+import axios from '@trustroots/core/http-client';
 
 export interface MfaStatus {
   enabled: boolean;
