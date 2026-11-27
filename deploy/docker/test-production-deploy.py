@@ -48,6 +48,25 @@ class DeploymentTests(unittest.TestCase):
                 self.assertEqual(docker.call_count, 1)
                 self.assertIn('config', docker.call_args.args[0])
 
+    def test_production_mail_probe_failure_stays_outside_rollback(self):
+        args = SimpleNamespace(url='https://www.trustroots.org',
+                               compose=Path('/example/compose.yml'), mail_canary=True)
+        failure = subprocess.CalledProcessError(1, ['fictional command'], stderr='fictional credential')
+        with patch.object(deploy, 'run', side_effect=[failure, '']) as docker, \
+                patch('sys.stdout', new_callable=io.StringIO) as output:
+            deploy.check_deployed_mail(args)
+        self.assertEqual([call.args[0][-4:] for call in docker.call_args_list],
+                         [['worker', 'node', 'bin/check-production-mail.mts', 'verify'],
+                          ['worker', 'node', 'bin/check-production-mail.mts', 'canary']])
+        self.assertIn('Production mail verify check failed', output.getvalue())
+        self.assertNotIn('fictional credential', output.getvalue())
+
+    def test_staging_does_not_run_production_mail_probes(self):
+        args = SimpleNamespace(url='https://staging.example.test')
+        with patch.object(deploy, 'run') as docker:
+            deploy.check_deployed_mail(args)
+        docker.assert_not_called()
+
     def test_local_logging_requires_explicit_positive_rotation_limits(self):
         for size in ['1k', '10m', '2G']:
             deploy.validate_logging('webapp', 'local', {'max-size': size, 'max-file': '3'})

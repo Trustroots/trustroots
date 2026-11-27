@@ -12,7 +12,7 @@ reach their conversation. Issue #715 requests email replies.
   mail, and apply normal member eligibility and message delivery rules.
 - Deduplicate mailbox deliveries and preserve retryability after failures.
 - Keep existing notification behaviour when the feature is disabled.
-- Add a read-only `/admin/email-replies` page for inspecting mailbox health,
+- Add a read-only `/admin/email/replies` page for inspecting mailbox health,
   parsing and conversation matching during testing, and delivery outcomes after
   activation. Existing replies without tokens must remain visibly distinct from
   verified matches.

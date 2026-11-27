@@ -36,7 +36,7 @@ import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAcquisitionStoriesRouteImport } from './routes/admin.acquisition-stories'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
-import { Route as AdminEmailRepliesRouteImport } from './routes/admin.email-replies'
+import { Route as AdminEmailRouteImport } from './routes/admin.email'
 import { Route as AdminExperienceChangesRouteImport } from './routes/admin.experience-changes'
 import { Route as AdminGravatarRouteImport } from './routes/admin.gravatar'
 import { Route as AdminHackerspacesRouteImport } from './routes/admin.hackerspaces'
@@ -77,6 +77,9 @@ import { Route as TeamIndexRouteImport } from './routes/team.index'
 import { Route as TeamGreetersRouteImport } from './routes/team.greeters'
 import { Route as AdminCirclesIndexRouteImport } from './routes/admin.circles.index'
 import { Route as AdminCirclesCircleRouteImport } from './routes/admin.circles.$circle'
+import { Route as AdminEmailRepliesIndexRouteImport } from './routes/admin.email-replies.index'
+import { Route as AdminEmailRepliesRouteImport } from './routes/admin.email_.replies'
+import { Route as AdminEmailSparkpostRouteImport } from './routes/admin.email_.sparkpost'
 import { Route as AdminSupportIndexRouteImport } from './routes/admin.support.index'
 import { Route as AdminSupportFlaggedRouteImport } from './routes/admin.support.flagged'
 import { Route as AdminSupportMembersRouteImport } from './routes/admin.support.members'
@@ -240,9 +243,9 @@ const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
   path: '/admin/audit-log',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEmailRepliesRoute = AdminEmailRepliesRouteImport.update({
-  id: '/admin/email-replies',
-  path: '/admin/email-replies',
+const AdminEmailRoute = AdminEmailRouteImport.update({
+  id: '/admin/email',
+  path: '/admin/email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminExperienceChangesRoute = AdminExperienceChangesRouteImport.update({
@@ -446,6 +449,21 @@ const AdminCirclesCircleRoute = AdminCirclesCircleRouteImport.update({
   path: '/admin/circles/$circle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminEmailRepliesIndexRoute = AdminEmailRepliesIndexRouteImport.update({
+  id: '/admin/email-replies/',
+  path: '/admin/email-replies/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEmailRepliesRoute = AdminEmailRepliesRouteImport.update({
+  id: '/admin/email_/replies',
+  path: '/admin/email/replies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEmailSparkpostRoute = AdminEmailSparkpostRouteImport.update({
+  id: '/admin/email_/sparkpost',
+  path: '/admin/email/sparkpost',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSupportIndexRoute = AdminSupportIndexRouteImport.update({
   id: '/admin/support/',
   path: '/admin/support/',
@@ -615,7 +633,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
-  '/admin/email-replies': typeof AdminEmailRepliesRoute
+  '/admin/email': typeof AdminEmailRoute
   '/admin/experience-changes': typeof AdminExperienceChangesRoute
   '/admin/gravatar': typeof AdminGravatarRoute
   '/admin/hackerspaces': typeof AdminHackerspacesRoute
@@ -656,6 +674,8 @@ export interface FileRoutesByFullPath {
   '/search/': typeof SearchIndexRoute
   '/team/': typeof TeamIndexRoute
   '/admin/circles/$circle': typeof AdminCirclesCircleRoute
+  '/admin/email/replies': typeof AdminEmailRepliesRoute
+  '/admin/email/sparkpost': typeof AdminEmailSparkpostRoute
   '/admin/support/flagged': typeof AdminSupportFlaggedRoute
   '/admin/support/members': typeof AdminSupportMembersRoute
   '/admin/user/$username': typeof AdminUserUsernameRoute
@@ -675,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/profile/edit/networks': typeof ProfileEditNetworksRoute
   '/profile/edit/photo': typeof ProfileEditPhotoRoute
   '/admin/circles/': typeof AdminCirclesIndexRoute
+  '/admin/email-replies/': typeof AdminEmailRepliesIndexRoute
   '/admin/support/': typeof AdminSupportIndexRoute
   '/admin/user/': typeof AdminUserIndexRoute
   '/offer/meet/': typeof OfferMeetIndexRoute
@@ -711,7 +732,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
-  '/admin/email-replies': typeof AdminEmailRepliesRoute
+  '/admin/email': typeof AdminEmailRoute
   '/admin/experience-changes': typeof AdminExperienceChangesRoute
   '/admin/gravatar': typeof AdminGravatarRoute
   '/admin/hackerspaces': typeof AdminHackerspacesRoute
@@ -752,6 +773,8 @@ export interface FileRoutesByTo {
   '/search': typeof SearchIndexRoute
   '/team': typeof TeamIndexRoute
   '/admin/circles/$circle': typeof AdminCirclesCircleRoute
+  '/admin/email/replies': typeof AdminEmailRepliesRoute
+  '/admin/email/sparkpost': typeof AdminEmailSparkpostRoute
   '/admin/support/flagged': typeof AdminSupportFlaggedRoute
   '/admin/support/members': typeof AdminSupportMembersRoute
   '/admin/user/$username': typeof AdminUserUsernameRoute
@@ -771,6 +794,7 @@ export interface FileRoutesByTo {
   '/profile/edit/networks': typeof ProfileEditNetworksRoute
   '/profile/edit/photo': typeof ProfileEditPhotoRoute
   '/admin/circles': typeof AdminCirclesIndexRoute
+  '/admin/email-replies': typeof AdminEmailRepliesIndexRoute
   '/admin/support': typeof AdminSupportIndexRoute
   '/admin/user': typeof AdminUserIndexRoute
   '/offer/meet': typeof OfferMeetIndexRoute
@@ -809,7 +833,7 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/admin/acquisition-stories': typeof AdminAcquisitionStoriesRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
-  '/admin/email-replies': typeof AdminEmailRepliesRoute
+  '/admin/email': typeof AdminEmailRoute
   '/admin/experience-changes': typeof AdminExperienceChangesRoute
   '/admin/gravatar': typeof AdminGravatarRoute
   '/admin/hackerspaces': typeof AdminHackerspacesRoute
@@ -850,6 +874,8 @@ export interface FileRoutesById {
   '/search/': typeof SearchIndexRoute
   '/team/': typeof TeamIndexRoute
   '/admin/circles/$circle': typeof AdminCirclesCircleRoute
+  '/admin/email_/replies': typeof AdminEmailRepliesRoute
+  '/admin/email_/sparkpost': typeof AdminEmailSparkpostRoute
   '/admin/support/flagged': typeof AdminSupportFlaggedRoute
   '/admin/support/members': typeof AdminSupportMembersRoute
   '/admin/user/$username': typeof AdminUserUsernameRoute
@@ -869,6 +895,7 @@ export interface FileRoutesById {
   '/profile/edit/networks': typeof ProfileEditNetworksRoute
   '/profile/edit/photo': typeof ProfileEditPhotoRoute
   '/admin/circles/': typeof AdminCirclesIndexRoute
+  '/admin/email-replies/': typeof AdminEmailRepliesIndexRoute
   '/admin/support/': typeof AdminSupportIndexRoute
   '/admin/user/': typeof AdminUserIndexRoute
   '/offer/meet/': typeof OfferMeetIndexRoute
@@ -908,7 +935,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/acquisition-stories'
     | '/admin/audit-log'
-    | '/admin/email-replies'
+    | '/admin/email'
     | '/admin/experience-changes'
     | '/admin/gravatar'
     | '/admin/hackerspaces'
@@ -949,6 +976,8 @@ export interface FileRouteTypes {
     | '/search/'
     | '/team/'
     | '/admin/circles/$circle'
+    | '/admin/email/replies'
+    | '/admin/email/sparkpost'
     | '/admin/support/flagged'
     | '/admin/support/members'
     | '/admin/user/$username'
@@ -968,6 +997,7 @@ export interface FileRouteTypes {
     | '/profile/edit/networks'
     | '/profile/edit/photo'
     | '/admin/circles/'
+    | '/admin/email-replies/'
     | '/admin/support/'
     | '/admin/user/'
     | '/offer/meet/'
@@ -1004,7 +1034,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/acquisition-stories'
     | '/admin/audit-log'
-    | '/admin/email-replies'
+    | '/admin/email'
     | '/admin/experience-changes'
     | '/admin/gravatar'
     | '/admin/hackerspaces'
@@ -1045,6 +1075,8 @@ export interface FileRouteTypes {
     | '/search'
     | '/team'
     | '/admin/circles/$circle'
+    | '/admin/email/replies'
+    | '/admin/email/sparkpost'
     | '/admin/support/flagged'
     | '/admin/support/members'
     | '/admin/user/$username'
@@ -1064,6 +1096,7 @@ export interface FileRouteTypes {
     | '/profile/edit/networks'
     | '/profile/edit/photo'
     | '/admin/circles'
+    | '/admin/email-replies'
     | '/admin/support'
     | '/admin/user'
     | '/offer/meet'
@@ -1101,7 +1134,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/admin/acquisition-stories'
     | '/admin/audit-log'
-    | '/admin/email-replies'
+    | '/admin/email'
     | '/admin/experience-changes'
     | '/admin/gravatar'
     | '/admin/hackerspaces'
@@ -1142,6 +1175,8 @@ export interface FileRouteTypes {
     | '/search/'
     | '/team/'
     | '/admin/circles/$circle'
+    | '/admin/email_/replies'
+    | '/admin/email_/sparkpost'
     | '/admin/support/flagged'
     | '/admin/support/members'
     | '/admin/user/$username'
@@ -1161,6 +1196,7 @@ export interface FileRouteTypes {
     | '/profile/edit/networks'
     | '/profile/edit/photo'
     | '/admin/circles/'
+    | '/admin/email-replies/'
     | '/admin/support/'
     | '/admin/user/'
     | '/offer/meet/'
@@ -1199,7 +1235,7 @@ export interface RootRouteChildren {
   WelcomeRoute: typeof WelcomeRoute
   AdminAcquisitionStoriesRoute: typeof AdminAcquisitionStoriesRoute
   AdminAuditLogRoute: typeof AdminAuditLogRoute
-  AdminEmailRepliesRoute: typeof AdminEmailRepliesRoute
+  AdminEmailRoute: typeof AdminEmailRoute
   AdminExperienceChangesRoute: typeof AdminExperienceChangesRoute
   AdminGravatarRoute: typeof AdminGravatarRoute
   AdminHackerspacesRoute: typeof AdminHackerspacesRoute
@@ -1238,6 +1274,8 @@ export interface RootRouteChildren {
   SearchIndexRoute: typeof SearchIndexRoute
   TeamIndexRoute: typeof TeamIndexRoute
   AdminCirclesCircleRoute: typeof AdminCirclesCircleRoute
+  AdminEmailRepliesRoute: typeof AdminEmailRepliesRoute
+  AdminEmailSparkpostRoute: typeof AdminEmailSparkpostRoute
   AdminSupportFlaggedRoute: typeof AdminSupportFlaggedRoute
   AdminSupportMembersRoute: typeof AdminSupportMembersRoute
   AdminUserUsernameRoute: typeof AdminUserUsernameRoute
@@ -1250,6 +1288,7 @@ export interface RootRouteChildren {
   ProfileEditNetworksRoute: typeof ProfileEditNetworksRoute
   ProfileEditPhotoRoute: typeof ProfileEditPhotoRoute
   AdminCirclesIndexRoute: typeof AdminCirclesIndexRoute
+  AdminEmailRepliesIndexRoute: typeof AdminEmailRepliesIndexRoute
   AdminSupportIndexRoute: typeof AdminSupportIndexRoute
   AdminUserIndexRoute: typeof AdminUserIndexRoute
   ProfileEditIndexRoute: typeof ProfileEditIndexRoute
@@ -1449,11 +1488,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditLogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/email-replies': {
-      id: '/admin/email-replies'
-      path: '/admin/email-replies'
-      fullPath: '/admin/email-replies'
-      preLoaderRoute: typeof AdminEmailRepliesRouteImport
+    '/admin/email': {
+      id: '/admin/email'
+      path: '/admin/email'
+      fullPath: '/admin/email'
+      preLoaderRoute: typeof AdminEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/experience-changes': {
@@ -1736,6 +1775,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCirclesCircleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/email-replies/': {
+      id: '/admin/email-replies/'
+      path: '/admin/email-replies'
+      fullPath: '/admin/email-replies/'
+      preLoaderRoute: typeof AdminEmailRepliesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/email_/replies': {
+      id: '/admin/email_/replies'
+      path: '/admin/email/replies'
+      fullPath: '/admin/email/replies'
+      preLoaderRoute: typeof AdminEmailRepliesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/email_/sparkpost': {
+      id: '/admin/email_/sparkpost'
+      path: '/admin/email/sparkpost'
+      fullPath: '/admin/email/sparkpost'
+      preLoaderRoute: typeof AdminEmailSparkpostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/support/': {
       id: '/admin/support/'
       path: '/admin/support'
@@ -1997,7 +2057,7 @@ const rootRouteChildren: RootRouteChildren = {
   WelcomeRoute: WelcomeRoute,
   AdminAcquisitionStoriesRoute: AdminAcquisitionStoriesRoute,
   AdminAuditLogRoute: AdminAuditLogRoute,
-  AdminEmailRepliesRoute: AdminEmailRepliesRoute,
+  AdminEmailRoute: AdminEmailRoute,
   AdminExperienceChangesRoute: AdminExperienceChangesRoute,
   AdminGravatarRoute: AdminGravatarRoute,
   AdminHackerspacesRoute: AdminHackerspacesRoute,
@@ -2036,6 +2096,8 @@ const rootRouteChildren: RootRouteChildren = {
   SearchIndexRoute: SearchIndexRoute,
   TeamIndexRoute: TeamIndexRoute,
   AdminCirclesCircleRoute: AdminCirclesCircleRoute,
+  AdminEmailRepliesRoute: AdminEmailRepliesRoute,
+  AdminEmailSparkpostRoute: AdminEmailSparkpostRoute,
   AdminSupportFlaggedRoute: AdminSupportFlaggedRoute,
   AdminSupportMembersRoute: AdminSupportMembersRoute,
   AdminUserUsernameRoute: AdminUserUsernameRoute,
@@ -2048,6 +2110,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileEditNetworksRoute: ProfileEditNetworksRoute,
   ProfileEditPhotoRoute: ProfileEditPhotoRoute,
   AdminCirclesIndexRoute: AdminCirclesIndexRoute,
+  AdminEmailRepliesIndexRoute: AdminEmailRepliesIndexRoute,
   AdminSupportIndexRoute: AdminSupportIndexRoute,
   AdminUserIndexRoute: AdminUserIndexRoute,
   ProfileEditIndexRoute: ProfileEditIndexRoute,

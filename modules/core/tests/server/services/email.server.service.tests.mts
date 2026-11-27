@@ -19,6 +19,7 @@ interface EmailAddress {
   address: string;
 }
 interface EmailPayload {
+  deliveryDeadline?: Date | string;
   to: EmailAddress;
   from?: string;
   subject: string;
@@ -243,16 +244,19 @@ describe('Service: email', function () {
   });
 
   it('can send password reset email', function (done) {
+    const expires = new Date(Date.now() + 3600_000);
     const user = {
       displayName: 'test user',
       email: 'test@test.com',
       resetPasswordToken: 'SOMETOKEN',
+      resetPasswordExpires: expires,
     };
     emailService.sendResetPassword(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       job(0).type.should.equal('send email');
       job(0).data.subject.should.equal('Password Reset');
+      job(0).data.deliveryDeadline!.should.equal(expires.toISOString());
       (['html', 'text'] as const).forEach(function (format) {
         job(0).data[format]!.should.containEql(user.resetPasswordToken);
         job(0).data[format]!.should.containEql(
@@ -263,6 +267,22 @@ describe('Service: email', function () {
       job(0).data.to.address.should.equal(user.email);
       done();
     });
+  });
+
+  it('omits a delivery deadline when the reset token has no expiry', function (done) {
+    emailService.sendResetPassword(
+      {
+        displayName: 'test user',
+        email: 'test@test.com',
+        resetPasswordToken: 'SOMETOKEN',
+      },
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        should(job(0).data.deliveryDeadline).be.undefined();
+        done();
+      },
+    );
   });
 
   it('can send password reset confirm email', function (done) {

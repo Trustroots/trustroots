@@ -646,6 +646,18 @@ describe('React route ownership', () => {
     ).toBeInTheDocument();
   });
 
+  it('protects the email administration routes and redirects old bookmarks', () => {
+    for (const path of [
+      '/admin/email',
+      '/admin/email/sparkpost',
+      '/admin/email/replies',
+    ]) {
+      expect(allowedRoles(path)).toEqual(['admin']);
+    }
+    expect(access('/admin/sparkpost', null)).toBe('/admin/email/sparkpost');
+    expect(access('/admin/email-replies', null)).toBe('/admin/email/replies');
+  });
+
   it('protects and renders the selected circle editor route', () => {
     const route = findRoute('/admin/circles/walkers')!;
     expect(route).toMatchObject({
@@ -761,7 +773,14 @@ describe('React route ownership', () => {
   it('renders every React-owned route that does not redirect', () => {
     routes
       .filter(
-        route => !['/about', '/offer', '/volunteers'].includes(route.path),
+        route =>
+          ![
+            '/about',
+            '/admin/email-replies',
+            '/admin/sparkpost',
+            '/offer',
+            '/volunteers',
+          ].includes(route.path),
       )
       .forEach(route => {
         const { container, unmount } = renderRoute(route);

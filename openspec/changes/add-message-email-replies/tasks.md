@@ -15,7 +15,7 @@
 - [ ] Add an admin-only read API for mailbox configuration and connection/poll
       health plus paginated, filterable receipt outcomes; enforce the server
       admin policy for every request and redact secrets and legacy headers.
-- [ ] Add `/admin/email-replies` with delivered, rejected, failed and duplicate
+- [ ] Add `/admin/email/replies` with delivered, rejected, failed and duplicate
       processing outcomes, separate verified, candidate, ambiguous and
       unmatched matching states, and escaped receipt details separating the
       extracted reply from quoted content and showing sanitised sender,

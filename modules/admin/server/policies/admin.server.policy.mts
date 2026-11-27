@@ -71,6 +71,7 @@ export const isAllowed = createRouteAuthorisation({
   '/api/admin/users': admin('post'),
   '/api/admin/users/by-role': admin('post'),
   '/api/admin/users/by-last-ip-hash': admin('post'),
+  '/api/admin/email/queue-health': admin('get'),
   '/api/admin/email-replies': admin('get'),
   '/api/admin/reference-threads': admin('get'),
   '/api/admin/sparkpost/recovery': admin('get', 'post'),

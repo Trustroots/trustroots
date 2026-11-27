@@ -425,7 +425,7 @@ Both processes report `[Mail] mode=live`, `mode=allowlist`, or
 `mode=capture; outgoing delivery disabled` at configuration startup. Check both
 with `docker compose logs webapp worker`. These lines describe local transport
 selection; they do not verify SMTP credentials, provider acceptance, or inbox
-receipt. After deployment request a fresh confirmation and verify receipt.
+receipt. Use the SMTP and inbox probes below after deployment.
 
 For intentional maintenance capture, explicitly set
 `TRUSTROOTS_MAIL_MODE=capture` on both services and recreate them. This remains
@@ -481,3 +481,99 @@ cannot be retried from this UI. Investigate the queue/provider outcome before an
 manual correction. Normal account resend remains available to members. Email
 bodies are generated from current application state, never replayed from provider
 records. Previewing or opening a list does not send mail.
+
+### Queued email reliability
+
+Run the worker checks from the directory containing the production Compose
+project.
+
+```bash
+docker compose exec -T worker node bin/check-production-mail.mts verify
+docker compose exec -T worker node bin/check-production-mail.mts queue
+```
+
+The deployment helper runs `verify` after application readiness on successful
+production deployments and explicit rollbacks. A failed SMTP probe is printed
+as a warning after the deployment receipt and leaves the webapp running and
+the queue intact. Nodemailer checks SMTP connectivity, negotiation of configured
+TLS and authentication when configured. Message acceptance and inbox receipt
+are separate checks.
+
+Configure the production monitoring runner to execute `queue` every minute and
+send failures to the **production on-call** destination. Run the check from
+outside the worker process so a stopped container also alerts. Use a 30-second
+command timeout and alert if no result arrives for three minutes. Record the
+JSON result, including pending mail count, retrying job count, oldest due age,
+and the maximum completed attempt duration across the last 15 minutes.
+
+| Alert | Trigger |
+| --- | --- |
+| Worker stalled | The worker's recovery job failed or last completed more than three minutes ago |
+| Processing stalled | A send started over three minutes ago and has yet to finish or be rescheduled |
+| Queue overdue | The oldest due email is at least two minutes late |
+| Retry exhausted | At least one email exhausted retries in the last 15 minutes |
+| SMTP authentication or configuration | At least one classified failure in the last 15 minutes |
+| Unexpected capture | The production worker reports a mail mode other than `live` |
+
+The command exits 1 for alert conditions. Deduplicate repeated alerts by
+production service and alert name. During scheduled maintenance, route expected
+capture alerts through the monitoring system's maintenance window.
+
+#### Inbox canary
+
+Create a dedicated, access-controlled mailbox with IMAPS on port 993. Do not
+use a member account, the support inbox, an alias to a member, or an address
+that automatically forwards to members. Set these variables in the worker's
+deployment environment. Store the password in the deployment's secret store.
+
+- `TRUSTROOTS_MAIL_CANARY_ADDRESS`
+- `TRUSTROOTS_MAIL_CANARY_IMAP_HOST`
+- `TRUSTROOTS_MAIL_CANARY_IMAP_USER`
+- `TRUSTROOTS_MAIL_CANARY_IMAP_PASSWORD`
+
+Have the production monitoring runner execute the following every 15 minutes
+with a six-minute command timeout. Route command failures and missing scheduled
+executions to the same production on-call destination.
+
+```bash
+docker compose exec -T worker node bin/check-production-mail.mts canary
+```
+
+Pass `--mail-canary` to `production-deploy.py deploy` or `rollback` for the
+post-deployment check. Both triggers enqueue through the usual `send email` job.
+The probe polls the dedicated `INBOX` for the unique subject and requires
+receipt within five minutes. A shared MongoDB rate limit allows one enqueue
+per ten minutes. If a scheduled check just ran, the deployment reports
+`canary_rate_limited`; run another check after the limit expires if a
+post-deployment receipt is needed. Purge old canaries with the mailbox's
+retention policy.
+
+#### Outage and recovery
+
+1. Check the effective mail mode and queue status. Run the SMTP probe from the
+   worker and compare the sanitised failure category and numeric SMTP reply
+   with the provider's logs. Check the controlled inbox before declaring
+   delivery restored.
+2. Temporary SMTP replies and transient network failures get up to ten
+   completed attempts. After the first failure, the next attempt is due in
+   5–10 seconds. The delay range doubles after each failure up to 7.5–15
+   minutes. Agenda persists the retry date with its failure count. Permanent
+   recipient errors and permanent authentication or configuration failures
+   stay terminal for inspection.
+3. Leave scheduled retries in place after resolving the provider or worker
+   outage. The worker reclaims an interrupted send when its ten-minute lock
+   window has passed and the periodic recovery job runs. An interrupted
+   attempt may already have been accepted by SMTP. The next send keeps the
+   same Message-ID for correlation, and the provider or recipient may still
+   receive a duplicate.
+4. For a terminal failure, inspect the specific job's outcome and use the
+   normal application flow for any replacement account-action email. Request
+   a fresh signup confirmation, email change, password reset, or removal
+   request. Newly queued account-action emails with known expiry and canaries
+   are skipped after their deadlines. Older jobs may lack an expiry field.
+   Avoid bulk replay of completed, captured, exhausted or legacy jobs.
+
+The job log includes attempt number, job ID, mail mode, elapsed send time
+on success, and a stable Message-ID for provider correlation. The log also
+includes a provider-assigned Message-ID when Nodemailer reports one. The
+canary reports inbox receipt using its own identifier.

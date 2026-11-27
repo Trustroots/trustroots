@@ -3980,7 +3980,7 @@ const features = [
       clientRoutes: [
         clientRoute(
           'admin-email-replies',
-          '/admin/email-replies',
+          '/admin/email/replies',
           source.adminClient,
           {
             requiresAuth: true,
@@ -4030,6 +4030,29 @@ const features = [
     ],
   },
   {
+    id: 'admin.email',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Administrator email queue and worker health overview.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-email', '/admin/email', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/email/queue-health', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admin sees queue and worker health and opens SparkPost diagnostics.',
+      'Non-admin access is rejected.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.sparkpost',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -4038,10 +4061,15 @@ const features = [
     roles: ['admin'],
     references: {
       clientRoutes: [
-        clientRoute('admin-sparkpost', '/admin/sparkpost', source.adminClient, {
-          requiresAuth: true,
-          requiresRole: 'admin',
-        }),
+        clientRoute(
+          'admin-sparkpost',
+          '/admin/email/sparkpost',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: 'admin',
+          },
+        ),
       ],
       apiRoutes: [
         apiRoute('GET', '/api/admin/sparkpost/:action', source.adminServer),

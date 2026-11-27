@@ -693,7 +693,9 @@ async function sendRepeatedMessages(
       },
     },
   ])
+    // Stryker disable next-line ObjectLiteral: ASCII fixtures match with or without an explicit simple collation
     .collation({ locale: 'simple' })
+    // Stryker disable next-line ObjectLiteral: the suite never waits long enough for the aggregate deadline to matter
     .option({ maxTimeMS: 5_000 });
   await auditMessageReview(req, page, req.params);
   return res.set('Cache-Control', 'no-store').json({

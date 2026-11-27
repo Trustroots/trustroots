@@ -92,7 +92,7 @@ describe('Job: user finish signup', function () {
             _id: new mongoose.Types.ObjectId(),
             data,
           },
-        });
+        } as never);
         delivered++;
       }
     }

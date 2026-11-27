@@ -52,7 +52,7 @@ retryable. Neither message bodies nor reply credentials should enter logs.
 
 ## Administration preview
 
-Open `/admin/email-replies` as an administrator and select **Check mailbox**.
+Open `/admin/email/replies` as an administrator and select **Check mailbox**.
 The preview reads up to 20 unprocessed messages. Message links on the configured
 Trustroots origin provide candidate usernames for inspection. They do not verify
 the sender or conversation.

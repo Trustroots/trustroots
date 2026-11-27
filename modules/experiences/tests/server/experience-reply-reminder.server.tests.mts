@@ -18,7 +18,9 @@ import {
   sendExperienceReplyReminderJob,
 } from '../../server/jobs/experience-reply-reminder.server.job.mts';
 
-const sendMail = vi.fn((_email: RenderedEmail, done: () => void) => done());
+const sendMail = vi.fn(async (email: RenderedEmail) => ({
+  accepted: [email.to.address],
+}));
 
 const now = new Date('2026-11-20T12:00:00.000Z');
 const day = 24 * 60 * 60 * 1000;

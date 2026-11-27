@@ -165,7 +165,7 @@ describe('Worker tests', function () {
     });
 
   it('defines right number of repeating jobs', function () {
-    scheduledJobs.length.should.equal(12);
+    scheduledJobs.length.should.equal(13);
     scheduledJobs.should.containEql({
       name: 'capture agenda storage',
       repeat: '0 3 * * *',
@@ -230,6 +230,7 @@ describe('Worker tests', function () {
         'send email',
         'send deployment notification email',
         'deliver signup reminder',
+        'recover interrupted email delivery',
         'send Android message notification',
         'send Android test notification',
         'queue unread message digests',

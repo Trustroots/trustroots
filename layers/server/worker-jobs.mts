@@ -6,6 +6,11 @@ import {
   deploymentNotificationHandler,
   deploymentNotificationJob,
 } from '../../config/lib/deployment-notifications.mts';
+import {
+  recoverEmailJobName,
+  recoverInterruptedEmailJobs,
+  sendEmailJobName,
+} from '../../config/lib/mail-queue.mts';
 import mongoose from 'mongoose';
 import admin from '../../modules/admin/server/worker-entry.mts';
 import core from '../../modules/core/server/worker-entry.mts';
@@ -118,7 +123,7 @@ export async function registerWorkerJobs(agenda: Agenda) {
     { concurrency: 1 },
   );
 
-  defineJob(agenda, 'send email', sendEmailJob, {
+  defineJob(agenda, sendEmailJobName, sendEmailJob, {
     priority: 'high',
     concurrency: 10,
   });
@@ -134,6 +139,16 @@ export async function registerWorkerJobs(agenda: Agenda) {
     concurrency: 10,
     removeOnComplete: true,
   });
+
+  agenda.define(
+    recoverEmailJobName,
+    async () => {
+      await recoverInterruptedEmailJobs(
+        mongoose.connection.db!.collection('agendaJobs'),
+      );
+    },
+    { concurrency: 1 },
+  );
 
   agenda.define<Parameters<typeof deliverMessagePush>[0]>(
     messagePushJobName,
@@ -213,6 +228,7 @@ export async function registerWorkerJobs(agenda: Agenda) {
   });
   return () =>
     Promise.all([
+      agenda.every('1 minute', recoverEmailJobName),
       agenda.every('5 minutes', 'check unread messages'),
       agenda.every('5 minutes', 'queue unread message digests'),
       agenda.every('24 hours', 'daily statistics'),

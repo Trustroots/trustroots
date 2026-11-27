@@ -28,7 +28,7 @@ enabling polling in production. Do not retain mailbox credentials,
 reply-address tokens, or raw authentication-bearing headers in the record or
 logs.
 
-Expose the operational view at `/admin/email-replies` with a read-only API
+Expose the operational view at `/admin/email/replies` with a read-only API
 guarded by the server-side admin policy on every request. Show mailbox
 configuration state and the last connection and polling health, then a
 paginated, filterable receipt table with processing outcomes of delivered,

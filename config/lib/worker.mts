@@ -1,7 +1,12 @@
 import type { Job, Agenda } from 'agenda';
 import { registerWorkerJobs } from '../../layers/server/worker-jobs.mts';
 import { agendaLockLifetime } from './agenda-lock.mts';
-import config from '../config.mts';
+import {
+  MailDeliveryError,
+  mailRetriesExhausted,
+} from './mail-delivery-error.mts';
+import { isMailDeliveryJob } from './mail-queue.mts';
+import config, { mailMode } from '../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
@@ -64,7 +69,10 @@ async function start(options: WorkerOptions, callback?: Done) {
       // Send job failure to stats servers
       statService.stat(statsObject, function () {
         // Log also to console
-        if (process.env.NODE_ENV !== 'test') {
+        if (
+          process.env.NODE_ENV !== 'test' &&
+          !isMailDeliveryJob(job.attrs.name)
+        ) {
           console.log(
             '[Worker] Agenda job [%s] %s finished.',
             job.attrs.name,
@@ -79,7 +87,12 @@ async function start(options: WorkerOptions, callback?: Done) {
   agenda.on('fail', function (err: Error, job: Job) {
     let extraMessage = '';
     const nextRunAt = scheduleRetry(err, job, options);
-    if (shouldRetry(err) && job.attrs.failCount! >= options.maxAttempts) {
+    if (isMailDeliveryJob(job.attrs.name)) {
+      logEmailFailure(err, job, nextRunAt);
+    } else if (
+      shouldRetry(err) &&
+      job.attrs.failCount! >= options.maxAttempts
+    ) {
       extraMessage = format('too many failures, giving up');
     } else if (nextRunAt) {
       extraMessage = format(
@@ -104,7 +117,10 @@ async function start(options: WorkerOptions, callback?: Done) {
     statService.stat(statsObject, function () {
       // Log also to console
 
-      if (process.env.NODE_ENV !== 'test') {
+      if (
+        process.env.NODE_ENV !== 'test' &&
+        !isMailDeliveryJob(job.attrs.name)
+      ) {
         console.error(
           '[Worker] Agenda job [%s] %s failed with [%s] %s failCount:%s',
           job.attrs.name,
@@ -248,13 +264,41 @@ function scheduleRetry(
   job: Job,
   options: WorkerOptions,
 ): Date | undefined {
-  if (job.attrs.failCount! >= options.maxAttempts || !shouldRetry(err)) {
-    return undefined;
+  const failures = job.attrs.failCount ?? 1;
+  if (isMailDeliveryJob(job.attrs.name)) {
+    if (!(err instanceof MailDeliveryError) || !err.retryable) return undefined;
+    if (failures >= options.maxAttempts) {
+      job.attrs.failReason = mailRetriesExhausted + ': ' + err.message;
+      return undefined;
+    }
+    const ceiling = Math.min(
+      options.retryDelaySeconds * 2 ** (failures - 1),
+      900,
+    );
+    const delay = ceiling * (0.5 + Math.random() / 2);
+    const nextRunAt = secondsFromNowDate(delay);
+    job.schedule(nextRunAt);
+    return nextRunAt;
   }
+  if (failures >= options.maxAttempts || !shouldRetry(err)) return undefined;
 
   const nextRunAt = secondsFromNowDate(options.retryDelaySeconds);
   job.schedule(nextRunAt);
   return nextRunAt;
+}
+
+function logEmailFailure(err: Error, job: Job, nextRunAt?: Date) {
+  if (process.env.NODE_ENV === 'test') return;
+  const failure =
+    err instanceof MailDeliveryError ? err : new MailDeliveryError(err);
+  console.error('[Mail] Queue attempt failed', {
+    jobId: job.attrs._id?.toString(),
+    attempt: job.attrs.failCount,
+    mailMode,
+    outcome: job.attrs.failReason,
+    responseCode: failure.responseCode,
+    nextRunAt: nextRunAt?.toISOString(),
+  });
 }
 
 function secondsFromNowDate(seconds: number) {
