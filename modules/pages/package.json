@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./route-views": "./client/route-views.tsx",
     "./client/*": "./client/*"
   },
   "scripts": {
