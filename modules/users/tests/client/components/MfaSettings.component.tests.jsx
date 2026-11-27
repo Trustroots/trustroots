@@ -163,7 +163,7 @@ describe('MfaSettings', () => {
     });
     render(<MfaSettings />);
 
-    await screen.findByText(/Authenticator MFA is enabled/);
+    await screen.findByText('Recovery codes:');
     fireEvent.change(screen.getByLabelText('Current password'), {
       target: { value: 'password' },
     });
@@ -193,7 +193,7 @@ describe('MfaSettings', () => {
     });
     render(<MfaSettings />);
 
-    await screen.findByText(/Authenticator MFA is enabled/);
+    await screen.findByText('Recovery codes:');
     fireEvent.change(screen.getByLabelText('Current password'), {
       target: { value: 'wrong' },
     });
@@ -225,7 +225,7 @@ describe('MfaSettings', () => {
     mfaApi.disableMfa.mockResolvedValue({ enabled: false });
     render(<MfaSettings />);
 
-    await screen.findByText(/Authenticator MFA is enabled/);
+    await screen.findByText('Recovery codes:');
     fireEvent.change(screen.getByLabelText('Confirm your password'), {
       target: { value: 'password' },
     });
@@ -256,7 +256,7 @@ describe('MfaSettings', () => {
     });
     render(<MfaSettings />);
 
-    await screen.findByText(/Authenticator MFA is enabled/);
+    await screen.findByText('Recovery codes:');
     fireEvent.change(screen.getByLabelText('Confirm your password'), {
       target: { value: 'password' },
     });

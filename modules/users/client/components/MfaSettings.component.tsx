@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as mfaApi from '../api/mfa.api';
 import { readApiError } from '../utils/api-error';
@@ -142,22 +144,27 @@ export default function MfaSettings({
         )}
         {message && <p role="status">{message}</p>}
         {recoveryCodes.length > 0 && (
-          <div className="alert alert-warning">
+          <div className="tw:mb-5 tw:grid tw:max-w-lg tw:gap-3 tw:rounded-md tw:border tw:border-solid tw:border-neutral-300 tw:p-4">
             <p>These recovery codes are shown once. Store them safely.</p>
-            <ul aria-label="Recovery codes">
+            <ul
+              aria-label="Recovery codes"
+              className="tw:grid tw:list-none tw:gap-2 tw:pl-0 tw:sm:grid-cols-2"
+            >
               {recoveryCodes.map(recoveryCode => (
                 <li key={recoveryCode}>
                   <code>{recoveryCode}</code>
                 </li>
               ))}
             </ul>
-            <button
+            <Button
               type="button"
-              className="btn btn-default"
+              variant="outline"
+              intent="neutral"
+              className="tw:self-start"
               onClick={() => setRecoveryCodes([])}
             >
               I have saved these codes
-            </button>
+            </Button>
           </div>
         )}
         {!status ? (
@@ -165,120 +172,151 @@ export default function MfaSettings({
         ) : status.enabled ? (
           <>
             <p>
-              Authenticator MFA is enabled. {status.recoveryCodesRemaining}{' '}
-              recovery codes remain.
+              Recovery codes: <strong>{status.recoveryCodesRemaining}</strong>
             </p>
-            <form onSubmit={handleRecoveryCodes} autoComplete="off">
-              <div className="form-group">
+            <form
+              className="tw:flex tw:w-full tw:max-w-lg tw:flex-col tw:gap-4"
+              onSubmit={handleRecoveryCodes}
+              autoComplete="off"
+            >
+              <div className="tw:flex tw:flex-col tw:gap-1">
                 <label htmlFor="mfa-current-password">Current password</label>
-                <input
+                <Input
                   id="mfa-current-password"
-                  className="form-control"
                   type="password"
                   required
                   value={currentPassword}
                   onChange={event => setCurrentPassword(event.target.value)}
                 />
               </div>
-              <div className="form-group">
+              <div className="tw:flex tw:flex-col tw:gap-1">
                 <label htmlFor="mfa-manage-code">
                   Authenticator or recovery code
                 </label>
-                <input
+                <Input
                   id="mfa-manage-code"
-                  className="form-control"
                   required
                   autoComplete="one-time-code"
                   value={code}
                   onChange={event => setCode(event.target.value)}
                 />
               </div>
-              <button type="submit" className="btn btn-default" disabled={busy}>
+              <Button
+                type="submit"
+                variant="outline"
+                intent="neutral"
+                className="tw:self-start"
+                disabled={busy}
+              >
                 Replace recovery codes
-              </button>
+              </Button>
             </form>
             <hr />
-            <form onSubmit={handleDisable} autoComplete="off">
-              <div className="form-group">
+            <form
+              className="tw:flex tw:w-full tw:max-w-lg tw:flex-col tw:gap-4"
+              onSubmit={handleDisable}
+              autoComplete="off"
+            >
+              <div className="tw:flex tw:flex-col tw:gap-1">
                 <label htmlFor="mfa-disable-password">
                   Confirm your password
                 </label>
-                <input
+                <Input
                   id="mfa-disable-password"
-                  className="form-control"
                   type="password"
                   required
                   value={currentPassword}
                   onChange={event => setCurrentPassword(event.target.value)}
                 />
               </div>
-              <div className="form-group">
+              <div className="tw:flex tw:flex-col tw:gap-1">
                 <label htmlFor="mfa-disable-code">
                   Authenticator or recovery code
                 </label>
-                <input
+                <Input
                   id="mfa-disable-code"
-                  className="form-control"
                   required
                   autoComplete="one-time-code"
                   value={code}
                   onChange={event => setCode(event.target.value)}
                 />
               </div>
-              <button type="submit" className="btn btn-danger" disabled={busy}>
+              <Button
+                type="submit"
+                variant="outline"
+                intent="danger"
+                className="tw:self-start"
+                disabled={busy}
+              >
                 Disable authenticator MFA
-              </button>
+              </Button>
             </form>
           </>
         ) : setup ? (
           <>
             <p>Enter this setup link in your authenticator app:</p>
             <p>
-              <code className="text-break">{setup.provisioningUri}</code>
+              <code className="tw:wrap-anywhere">{setup.provisioningUri}</code>
             </p>
             <p>
               This setup expires at{' '}
               {new Date(setup.expires).toLocaleTimeString()}.
             </p>
-            <form onSubmit={handleVerifyEnrollment} autoComplete="off">
-              <div className="form-group">
+            <form
+              className="tw:flex tw:w-full tw:max-w-lg tw:flex-col tw:gap-4"
+              onSubmit={handleVerifyEnrollment}
+              autoComplete="off"
+            >
+              <div className="tw:flex tw:flex-col tw:gap-1">
                 <label htmlFor="mfa-enrol-code">
                   Current authenticator code
                 </label>
-                <input
+                <Input
                   id="mfa-enrol-code"
-                  className="form-control"
                   required
                   autoComplete="one-time-code"
                   value={code}
                   onChange={event => setCode(event.target.value)}
                 />
               </div>
-              <button type="submit" className="btn btn-primary" disabled={busy}>
+              <Button
+                type="submit"
+                intent="primary"
+                className="tw:self-start"
+                disabled={busy}
+              >
                 Enable authenticator MFA
-              </button>
+              </Button>
             </form>
           </>
         ) : (
-          <form onSubmit={handleBegin} autoComplete="off">
+          <form
+            className="tw:flex tw:w-full tw:max-w-lg tw:flex-col tw:gap-4"
+            onSubmit={handleBegin}
+            autoComplete="off"
+          >
             <p>
               Add an authenticator app to protect sign-in and privileged account
               access.
             </p>
-            <div className="form-group">
+            <div className="tw:flex tw:flex-col tw:gap-1">
               <label htmlFor="mfa-enrol-password">Confirm your password</label>
-              <input
+              <Input
                 id="mfa-enrol-password"
-                className="form-control"
                 type="password"
                 required
                 value={currentPassword}
                 onChange={event => setCurrentPassword(event.target.value)}
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={busy}>
+            <Button
+              type="submit"
+              intent="primary"
+              className="tw:self-start"
+              disabled={busy}
+            >
               Set up authenticator
-            </button>
+            </Button>
           </form>
         )}
       </div>
