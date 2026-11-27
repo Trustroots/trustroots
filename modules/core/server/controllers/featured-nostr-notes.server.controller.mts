@@ -22,13 +22,12 @@ function articleId(address: string) {
 
 function validNote(event: Event) {
   return (
+    verifyEvent(event) &&
     Number.isInteger(event.created_at) &&
     event.created_at >= 0 &&
     event.created_at <= 253402300799 &&
-    typeof event.content === 'string' &&
     !!event.content.trim() &&
-    Buffer.byteLength(event.content) <= 32768 &&
-    verifyEvent(event)
+    Buffer.byteLength(event.content) <= 32768
   );
 }
 
