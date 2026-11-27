@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { requireRole } from '../route-options';
-import { NetworkConnectionsRoute } from '@/modules/admin/client/route-views';
+import { NetworkConnectionsRoute } from '@trustroots/admin/route-views';
 
 export const Route = createFileRoute('/admin/network-connections')({
   staticData: {

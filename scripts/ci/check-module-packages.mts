@@ -60,6 +60,9 @@ export function expectedManifest(name: string, root = ROOT): Manifest {
     exports['./http-client'] = './client/api/http-client.ts';
     exports['./navigation-links'] = './shared/navigation-links.mts';
   }
+  if (fs.existsSync(path.join(root, ...dir, 'client/route-views.tsx'))) {
+    exports['./route-views'] = './client/route-views.tsx';
+  }
   ['client', 'shared'].forEach(folder => {
     if (hasDir(root, ...dir, folder)) {
       exports[`./${folder}/*`] = `./${folder}/*`;

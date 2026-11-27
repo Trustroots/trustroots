@@ -2,7 +2,7 @@ import { createFileRoute, redirect, useParams } from '@tanstack/react-router';
 import { circleQuery } from '@/modules/tribes/client/api/circle-queries';
 import { requireAuth } from '../route-options';
 import React from 'react';
-import { TribeDetailPageRoute } from '@/modules/tribes/client/route-views';
+import { TribeDetailPageRoute } from '@trustroots/tribes/route-views';
 
 export const Route = createFileRoute('/circles/$circle')({
   staticData: { title: 'Circle', footerVariant: 'circle' },

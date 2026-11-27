@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 import { requireRole } from '../route-options';
 import MemberProfile from '../member-profile';
-import { AdminUserSearchRoute } from '@/modules/admin/client/route-views';
+import { AdminUserSearchRoute } from '@trustroots/admin/route-views';
 
 export const Route = createFileRoute('/admin/user/')({
   staticData: { title: 'Admin - User', footerVariant: 'admin' },

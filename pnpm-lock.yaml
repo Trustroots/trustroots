@@ -240,6 +240,9 @@ importers:
       '@tanstack/react-start':
         specifier: 1.169.7
         version: 1.169.7(esbuild@0.28.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rolldown@1.2.19)(supports-color@5.5.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(yaml@2.9.1))
+      '@trustroots/admin':
+        specifier: workspace:*
+        version: link:modules/admin
       '@trustroots/analytics':
         specifier: workspace:*
         version: link:packages/analytics
@@ -255,9 +258,24 @@ importers:
       '@trustroots/logger':
         specifier: workspace:*
         version: link:packages/logger
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:modules/messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:modules/offers
+      '@trustroots/pages':
+        specifier: workspace:*
+        version: link:modules/pages
       '@trustroots/relative-time':
         specifier: workspace:*
         version: link:packages/relative-time
+      '@trustroots/statistics':
+        specifier: workspace:*
+        version: link:modules/statistics
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:modules/tribes
       '@trustroots/ui':
         specifier: workspace:*
         version: link:packages/ui
