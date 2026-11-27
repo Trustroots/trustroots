@@ -59,7 +59,11 @@ The 19 existing nested `package.json` files that contain only `{"type": "commonj
 
 ### Module-to-module dependencies
 
-Allowed only as declared `workspace:*` dependencies through the other module's `exports`, and frozen by the baseline. The long-term rule is that a module uses another module's `shared/` contracts only. Because of the existing cycle, the honest rule today is "frozen, then shrinking".
+Allowed only as declared `workspace:*` dependencies through the other module's `exports`, and frozen by the baseline. The long-term preference is that a module uses another module's `shared/` contracts. The 27 November 2026 audit found no remaining module import cycles after #3944, #3948 and #3954. Remaining declared links are permitted and recorded; further reductions are improvements, not a blanket prerequisite for closing this migration.
+
+The six existing `client/route-views.tsx` files are exposed directly as `@trustroots/<module>/route-views` and adopted by shell routes in merged PR #3967. The manifest generator exposes this interface only for modules that own the file. Root application dependencies declare the modules consumed through these exports. Existing wildcard exports remain available while their other consumers migrate, without adding re-export files. The shell continues to own URL parameters, guards and loaders.
+
+The final interface audit found seven production consumers bypassing named Core workspace exports: four HTTP client imports, two auth-hook imports and one app-context import. Those callers now use the named exports. Other Core deep imports are direct feature, component, shared-contract or server dependencies through declared module edges. Keep their wildcard exports while those concrete imports need them; they are not compatibility shims or a requirement for wholesale path migration.
 
 ### Third-party dependencies stay at the root first
 

@@ -385,6 +385,8 @@ Feature modules SHALL be private source-only pnpm workspace packages. Their work
 
 The client route table SHALL live outside `modules/*`. Composing a feature page into that table SHALL NOT add a module-graph link from `core` to that feature. Repository callers SHALL import route helpers directly from the shell owner; the obsolete core route-table re-export SHALL be removed once its callers have been migrated.
 
+Feature modules that own a stateful `client/route-views.tsx` file SHALL expose it through the named `@trustroots/<module>/route-views` workspace export. The shell SHALL compose those feature-owned views while retaining ownership of URL parameters, guards and loaders. The manifest generator SHALL declare the route-view export only for modules that contain the file; no intermediate re-export file is required.
+
 #### Scenario: Feature page is added to the route table
 
 - **WHEN** the shell route table imports a page from a feature module
@@ -395,6 +397,13 @@ The client route table SHALL live outside `modules/*`. Composing a feature page 
 - **WHEN** an existing repository caller of the previous core route-helper path is migrated
 - **THEN** they reference `layers/shell/client/routes` directly
 - **AND** no production module needs to import that composition layer
+
+#### Scenario: Shell composes a feature route view
+
+- **WHEN** a shell file route renders a stateful view owned by a feature module
+- **THEN** it imports the module's named `route-views` workspace export
+- **AND** the module manifest exposes that export only when the module owns the route-view file
+- **AND** route parameters, guards and loaders remain composed by the shell
 
 ### Requirement: Shared package source boundaries
 

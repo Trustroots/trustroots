@@ -24,6 +24,7 @@
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
 - [x] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below.
   - [x] Give feature modules ownership of stateful route views. The shell's file routes compose those views with URL parameters, guards and loaders.
+  - [x] Expose the six extracted route-view files through named workspace exports and adopt them in shell routes (#3967).
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.
   - [x] Move the router entry, page layout, footer wrapper and navigation helpers into `layers/shell`, preserving old-path exports, route behaviour and coverage.
@@ -31,15 +32,20 @@
   - [x] Give feature-facing context/hooks and browser navigation core-owned implementations; update all repository consumers and remove obsolete core-to-shell re-exports.
   - [x] Adopt generated file-based routing in the shell (#3716) and colocate route policy with its route (#3756).
 - [x] Defer moving entry points into `apps/web`, per-package third-party dependency ownership and remote caching. Record the conditions for revisiting them in `design.md`.
-- [ ] Untangling and shim removal, one module at a time. The server import extension migration (#3714) and later entry cleanup (#3837) removed obsolete shims.
+- [x] Resolve the module-cycle and compatibility-path cleanup scope with bounded criteria. The server import extension migration (#3714) and later entry cleanup (#3837) removed obsolete shims.
   - [x] Remove the Core → Users imports and model lookups. The account page supplies language persistence, and the server layer supplies profile sanitisation, username validation and Nostr member lookups. Users still consumes Core.
+  - [x] Remove remaining module import cycles through server and shell capability composition (#3944, #3948, #3954). The graph audit on 27 November 2026 found no import cycles; legitimate declared module dependencies remain.
+  - [x] Move feature-facing settings, bootstrap-context hooks and browser navigation to Core-owned interfaces; shell routes adopt feature-owned route views while retaining parameters, guards and loaders (#3944, #3967).
+  - [x] Retain the locale catalogue symlink required by the deployed Nostranslation Contents API consumer; remove compatibility exports only after their concrete repository consumers migrate.
+  - [x] Audit the remaining Core interface consumers. Seven production call sites bypassed named Core workspace exports (four HTTP clients, two auth hooks and one app-context hook); they now use the named exports (#3970). Remaining Core deep imports are direct feature, component, shared-contract or server dependencies through declared module edges, so a wholesale path rewrite is not required.
 
-Progress and follow-up PRs are tracked in [#3358](https://github.com/Trustroots/trustroots/issues/3358). The overall proposal remains open until the agreed migration is complete.
+Progress is tracked in [#3358](https://github.com/Trustroots/trustroots/issues/3358), with the bounded interface adoption and final verification in [#3966](https://github.com/Trustroots/trustroots/issues/3966). The overall proposal remains open until required CI verification is complete.
 
 ## Verification
 
-- [ ] Each step leaves lint, typecheck, client and server tests, and e2e green.
-- [ ] Global client and server coverage stays at 100% and the e2e baseline does not shrink.
-- [ ] The production image still builds and starts.
-- [ ] The module-graph baseline never grows.
+- [x] Merged modular-workspace steps #3944 and #3954 pass lint/module-graph checks, client checks, server suites on MongoDB 4.4 and 7.0, and all E2E groups on both versions. Merged PR #3967 passed all 31 checks and the named route-view export implementation passed local `pnpm check`, graph/manifest checks and a production Vite build.
+- [x] PR #3954 coverage-summary reported client and server statements, branches, functions and lines at 100.00%; both MongoDB E2E coverage jobs passed. PRs #3944, #3954 and #3967 remove no end-to-end tests; #3954 retains existing journeys and expands data-export assertions.
+- [x] PR #3954 production image builds and starts on MongoDB 4.4 and 7.0; smoke checks confirm the Express endpoint, Passenger app process, Agenda worker startup, Node 24 runtime and required production dependencies.
+- [x] Module-graph and manifest checks pass; the graph has no import cycles and retains only declared dependency edges.
+- [ ] Re-run the Users mutation shards after the added regression assertions in #3971 and verify each shard meets its score floor. The final aggregate failure in run 45908481408 reflected two Users shard score failures; CI re-verification is outstanding.
 - [ ] Archive this change and update the `developer-tooling` spec when the layout is in place.
