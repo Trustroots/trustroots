@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
+import { Input } from '@trustroots/ui/Input';
 import * as api from '../api/passkeys.api';
 import { readApiError } from '../utils/api-error';
 
@@ -75,51 +77,63 @@ export default function PasskeySettings() {
           </p>
         )}
         {message && <p role="status">{message}</p>}
-        <form onSubmit={add}>
-          <div className="form-group">
+        <form
+          className="tw:flex tw:max-w-lg tw:flex-col tw:gap-4"
+          onSubmit={add}
+        >
+          <div className="tw:flex tw:flex-col tw:gap-1">
             <label htmlFor="passkey-password">Current password</label>
-            <input
+            <Input
               id="passkey-password"
               type="password"
               autoComplete="current-password"
-              className="form-control"
               required
               value={password}
               onChange={event => setPassword(event.target.value)}
             />
           </div>
-          <div className="form-group">
+          <div className="tw:flex tw:flex-col tw:gap-1">
             <label htmlFor="passkey-code">Authenticator or recovery code</label>
-            <input
+            <Input
               id="passkey-code"
               autoComplete="one-time-code"
-              className="form-control"
               required
               value={code}
               onChange={event => setCode(event.target.value)}
             />
           </div>
-          <div className="form-group">
+          <div className="tw:flex tw:flex-col tw:gap-1">
             <label htmlFor="passkey-label">Passkey name</label>
-            <input
+            <Input
               id="passkey-label"
-              className="form-control"
               maxLength={64}
               required
               value={label}
               onChange={event => setLabel(event.target.value)}
             />
           </div>
-          <button className="btn btn-default" type="submit" disabled={busy}>
+          <Button
+            className="tw:self-start"
+            intent="primary"
+            type="submit"
+            disabled={busy}
+          >
             Add passkey
-          </button>
+          </Button>
         </form>
-        <ul aria-label="Registered passkeys">
+        <ul
+          aria-label="Registered passkeys"
+          className="tw:mt-4 tw:grid tw:max-w-lg tw:list-none tw:gap-2 tw:p-0 tw:empty:hidden"
+        >
           {keys.map(key => (
-            <li key={key.id}>
-              {key.label}{' '}
-              <button
-                className="btn btn-link"
+            <li
+              className="tw:flex tw:items-center tw:justify-between tw:gap-3"
+              key={key.id}
+            >
+              <span className="tw:min-w-0 tw:wrap-anywhere">{key.label}</span>
+              <Button
+                variant="link"
+                size="sm"
                 type="button"
                 disabled={busy || !password || !code}
                 onClick={() =>
@@ -131,7 +145,7 @@ export default function PasskeySettings() {
                 aria-label={'Remove passkey ' + key.label}
               >
                 Remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
