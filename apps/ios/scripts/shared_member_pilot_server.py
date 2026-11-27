@@ -116,6 +116,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
+    fail_next_offer_search = False
     memberships = {CIRCLES[1]["_id"]}
     profile_changes = {}
     newsletter = False
@@ -245,6 +246,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "meetings": [],
             })
         elif route == "/api/mobile/v0/offers":
+            fixture = type(self)
+            with fixture.session_lock:
+                fail = fixture.fail_next_offer_search
+                fixture.fail_next_offer_search = False
+            if fail:
+                self._json(503, {"message": "Offers are temporarily unavailable."})
+                return
             filters = json.loads(parse_qs(urlsplit(self.path).query).get("filters", ["{}"])[0])
             ids = []
             if "host" in filters.get("types", ["host"]):
@@ -339,6 +347,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.hosting_offer = HOSTING_OFFER
             self._json(200, {"status": "ready"})
             return
+        if self.path == "/fixture/fail-next-offer-search":
+            with fixture.session_lock:
+                fixture.fail_next_offer_search = True
+            self._json(200, {"status": "ready"})
+            return
         if self.path == "/fixture/prepare-experience":
             with fixture.session_lock:
                 fixture.conversation_experience = {
@@ -369,6 +382,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.report_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
+                fixture.fail_next_offer_search = False
                 fixture.memberships = {CIRCLES[1]["_id"]}
                 fixture.profile_changes = {}
                 fixture.newsletter = False

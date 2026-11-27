@@ -391,7 +391,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         let save = app.descendants(matching: .any)["profile-editor-save"]
         XCTAssertTrue(save.waitForExistence(timeout: 10), app.debugDescription)
-        reveal(save, in: app)
+        reveal(save, in: app, tapHeight: 0.5)
         save.tap()
         XCTAssertTrue(edit.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(app.staticTexts["A test profile updated"].waitForExistence(timeout: 10), app.debugDescription)
@@ -399,14 +399,14 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
     private func appendProfileText(_ text: String, to field: XCUIElement, in app: XCUIApplication, expected: String) {
         XCTAssertTrue(field.waitForExistence(timeout: 10), app.debugDescription)
-        reveal(field, in: app)
+        let tapHeight: CGFloat = 0.75
+        reveal(field, in: app, tapHeight: tapHeight)
         // Place the insertion point after the existing text. For multiline Compose
         // fields, tap below the first line so focus leaves any previous input.
-        let insertion = field.coordinate(withNormalizedOffset: CGVector(dx: 0.86, dy: 0.75))
+        let insertion = field.coordinate(withNormalizedOffset: CGVector(dx: 0.86, dy: tapHeight))
         insertion.tap()
-        let keyboard = app.keyboards.firstMatch
-        if !keyboard.waitForExistence(timeout: 2) { insertion.tap() }
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), app.debugDescription)
+        let focused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasKeyboardFocus == true"), object: field)
+        XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed, app.debugDescription)
         app.typeText(text)
         let edited = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", expected), object: field)
         XCTAssertEqual(XCTWaiter.wait(for: [edited], timeout: 10), .completed, app.debugDescription)
@@ -1376,26 +1376,29 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(element.isHittable, app.debugDescription)
     }
 
-    private func reveal(_ field: XCUIElement, in app: XCUIApplication) {
+    private func reveal(_ field: XCUIElement, in app: XCUIApplication, tapHeight: CGFloat? = nil) {
         let form = app.scrollViews.containing(.any, identifier: field.identifier).firstMatch
         for _ in 0..<3 {
-            if field.isHittable { return }
+            if tapHeight == nil && field.isHittable { return }
             let frame = (form.exists ? form.frame : app.frame).intersection(app.frame)
             let keyboard = app.keyboards.firstMatch
             let bottom = keyboard.exists ? min(frame.maxY, keyboard.frame.minY) : frame.maxY
             let visibleHeight = bottom - frame.minY
             guard visibleHeight > 40 else { return }
+            let tapY = tapHeight.map { field.frame.minY + field.frame.height * $0 }
+            if let tapY, field.isHittable && tapY >= frame.minY && tapY < bottom { return }
             // Compose's form scrolls inside the keyboard-reduced viewport. Keep
             // the gesture above the keyboard so it scrolls the form, not the keys.
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let x = frame.midX - app.frame.minX
+            let scrollUp = tapY.map { $0 < frame.minY } ?? false
             let start = origin.withOffset(CGVector(
                 dx: x,
-                dy: frame.minY - app.frame.minY + visibleHeight * 0.85
+                dy: frame.minY - app.frame.minY + visibleHeight * (scrollUp ? 0.25 : 0.85)
             ))
             let end = origin.withOffset(CGVector(
                 dx: x,
-                dy: frame.minY - app.frame.minY + visibleHeight * 0.25
+                dy: frame.minY - app.frame.minY + visibleHeight * (scrollUp ? 0.85 : 0.25)
             ))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
@@ -1566,7 +1569,6 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
 
         let mapDisplay = app.descendants(matching: .any)["offer-search-display-map"]
         let resultsDisplay = app.descendants(matching: .any)["offer-search-display-results"]
-        let membersDisplay = app.descendants(matching: .any)["offer-search-display-members"]
         XCTAssertTrue(mapDisplay.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(mapDisplay.isSelected)
         resultsDisplay.tap()
@@ -1574,6 +1576,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let other = app.buttons["search-result-offer-pilot-other"]
         XCTAssertTrue(volunteer.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(volunteer.label.contains("Robin Example"), volunteer.label)
+        XCTAssertTrue(volunteer.label.contains("Offers volunteering"), volunteer.label)
         XCTAssertTrue(resultsDisplay.isSelected)
         XCTAssertFalse(mapDisplay.isSelected)
         let place = app.descendants(matching: .any)["offer-place-search-field"]
@@ -1614,6 +1618,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         mapDisplay.tap()
         let mapPin = app.buttons["View potential host"]
         XCTAssertTrue(mapPin.waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.buttons["Dismiss potential host"].exists, app.debugDescription)
         mapPin.tap()
         let openProfile = app.buttons["View Robin Example's profile"]
         XCTAssertTrue(openProfile.waitForExistence(timeout: 10), app.debugDescription)
@@ -1643,31 +1648,108 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         resultsDisplay.tap()
         XCTAssertTrue(other.waitForExistence(timeout: 15), app.debugDescription)
 
-        membersDisplay.tap()
-        app.buttons["Member filters"].tap()
-        let connectedMembers = app.switches["My connections only"]
-        XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5))
-        connectedMembers.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        XCTAssertEqual(connectedMembers.value as? String, "1")
-        app.buttons["Done"].tap()
+    }
+
+    @MainActor
+    func testRegularMemberSearchPreservesQueryResultsAndProfileNavigation() {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", "http://127.0.0.1:\(port)", "-AppleLocale", "en_US"]
+        app.launch()
+        addTeardownBlock { [self] in
+            app.terminate()
+            app.launch()
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["ios-navigation-menu"].tap()
+        let memberSearchMenu = app.descendants(matching: .any)["member-search-menu-entry"]
+        XCTAssertTrue(memberSearchMenu.waitForExistence(timeout: 10), app.debugDescription)
+        memberSearchMenu.tap()
+
         let query = app.textFields["member-search-field"]
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(query.label, "Name, username, location or tagline")
+        XCTAssertTrue(app.staticTexts["Find members"].exists, app.debugDescription)
+        XCTAssertFalse(app.buttons["Search members"].isEnabled)
         query.tap()
         query.typeText("partner profile")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(search.waitForNonExistence(timeout: 10), app.debugDescription)
-        app.buttons["Search members"].tap()
+        app.keyboards.buttons["Search"].tap()
+        XCTAssertTrue(app.staticTexts["No members found"].waitForExistence(timeout: 10), app.debugDescription)
+
+        app.buttons["Member filters"].tap()
+        let connectedMembers = app.switches["My connections only"]
+        XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5), app.debugDescription)
+        connectedMembers.tap()
+        app.buttons["Done"].tap()
         let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(search.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(search.isSelected)
-        mapDisplay.tap()
-        XCTAssertTrue(scale.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(partner.label.contains("Open profile for"), partner.label)
+
+        partner.tap()
+        XCTAssertTrue(app.staticTexts["A partner profile"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["profile-header-back"].tap()
+        XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(query.value as? String, "partner profile")
+
+        let offerSearch = app.buttons["ios-navigation-search"]
+        offerSearch.tap()
+        let membersDisplay = app.descendants(matching: .any)["offer-search-display-members"]
+        XCTAssertTrue(membersDisplay.waitForExistence(timeout: 10), app.debugDescription)
         membersDisplay.tap()
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(query.value as? String, "partner profile")
-        XCTAssertTrue(membersDisplay.isSelected)
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["Clear member search"].tap()
+        XCTAssertTrue(partner.waitForNonExistence(timeout: 5), app.debugDescription)
+    }
+
+    @MainActor
+    func testRegularNearbyOfferResultsRetryAndEmptyState() async throws {
+        continueAfterFailure = false
+        let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
+        let fixtureURL = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)"))
+        let app = XCUIApplication()
+        app.launchArguments = ["-trustroots.apiServerURL", fixtureURL.absoluteString]
+        app.launch()
+        addTeardownBlock { [self] in
+            app.terminate()
+            app.launch()
+            signOutOfNativeAccountIfNeeded(app)
+        }
+        signOutOfNativeAccountIfNeeded(app)
+        signInToRegularApp(app)
+
+        app.buttons["ios-navigation-search"].tap()
+        let mapCount = app.staticTexts["2 offers in this area"]
+        XCTAssertTrue(mapCount.waitForExistence(timeout: 15), app.debugDescription)
+        app.descendants(matching: .any)["offer-search-display-results"].tap()
+        let offer = app.buttons["search-result-offer-pilot-volunteer"]
+        XCTAssertTrue(offer.waitForExistence(timeout: 15), app.debugDescription)
+
+        var failNextSearch = URLRequest(url: fixtureURL.appendingPathComponent("fixture/fail-next-offer-search"))
+        failNextSearch.httpMethod = "POST"
+        let (_, response) = try await URLSession.shared.data(for: failNextSearch)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let filters = app.descendants(matching: .any)["offer-results-search-filters"]
+        filters.tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Nearby offers unavailable"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(offer.exists)
+        app.buttons["Try again"].tap()
+        XCTAssertTrue(offer.waitForExistence(timeout: 15), app.debugDescription)
+
+        filters.tap()
+        let hosts = app.descendants(matching: .any)["offer-filter-hosts"]
+        XCTAssertTrue(hosts.waitForExistence(timeout: 5), app.debugDescription)
+        hosts.tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["No offers found"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertFalse(offer.exists)
     }
 
     private func setDroppedProfileResponse(

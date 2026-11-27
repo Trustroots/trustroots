@@ -9,15 +9,23 @@ private enum SearchMode: String, Hashable {
     case members
 }
 
+private enum OfferResultDetails {
+    case loading(UUID)
+    case loaded(HostOffer)
+    case failed
+}
+
 struct OfferMapView: View {
     @ObservedObject var session: MemberSessionStore
     let searchLocation: String?
+    let memberSearchState: MemberSearchState
     @State private var position = MapCameraPosition.region(.initialTrustrootsRegion)
     @State private var visibleRegion = MKCoordinateRegion.initialTrustrootsRegion
     @State private var offers: [MapOffer] = []
-    @State private var isLoading = false
+    @State private var isLoading = true
     @State private var mapStatusHeight: CGFloat = 1
     @State private var errorMessage: String?
+    @State private var resultDetails: [String: OfferResultDetails] = [:]
     @State private var selectedHost: (offer: HostOffer, mapType: String)?
     @State private var isLoadingHost = false
     @State private var showingFilters = false
@@ -27,6 +35,7 @@ struct OfferMapView: View {
     @State private var connectionsOnly = false
     @State private var selectedLanguages: Set<String> = []
     @State private var searchMode = SearchMode.map
+    @State private var profilePath: [String] = []
     @State private var searchDisplayHeight: CGFloat = 50
     @State private var placeSearch = OfferPlaceSearchState()
     @State private var placeSearchHeight: CGFloat = 124
@@ -47,10 +56,9 @@ struct OfferMapView: View {
     }
 
     private var showsNotes: Bool { showingCommunityNotes && !connectionsOnly }
-    private var showingResults: Bool { searchMode == .results }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $profilePath) {
             VStack(spacing: 0) {
                 SearchDisplayController(selection: $searchMode, height: $searchDisplayHeight)
                     .frame(height: searchDisplayHeight)
@@ -61,20 +69,25 @@ struct OfferMapView: View {
                     switch searchMode {
                     case .map: mapView
                     case .results: resultsView
-                    case .members: Color.clear
+                    case .members:
+                        MemberSearchView(
+                            session: session,
+                            state: memberSearchState,
+                            showsNavigationBar: false,
+                            onProfile: { profilePath.append($0) }
+                        )
                     }
-                    MemberSearchView(session: session, showsNavigationBar: false, isActive: searchMode == .members)
-                        .opacity(searchMode == .members ? 1 : 0)
-                        .allowsHitTesting(searchMode == .members)
-                        .accessibilityHidden(searchMode != .members)
                 }
             }
+            .navigationDestination(for: String.self) { username in
+                MemberProfileView(session: session, username: username)
+            }
             .safeAreaInset(edge: .bottom) {
-                if let selectedHost {
+                if searchMode != .members, let selectedHost {
                     HostOfferCard(host: selectedHost.offer, mapType: selectedHost.mapType, session: session) {
                         self.selectedHost = nil
                     }
-                } else if let selectedCommunityNote {
+                } else if searchMode != .members, let selectedCommunityNote {
                     CommunityNoteCard(note: selectedCommunityNote) {
                         self.selectedCommunityNote = nil
                     }
@@ -115,14 +128,13 @@ struct OfferMapView: View {
                     span: MKCoordinateSpan(latitudeDelta: 1.2, longitudeDelta: 1.2)
                 )
                 position = .region(region)
-                if showingResults {
+                if searchMode != .map {
                     visibleRegion = region
                     Task { await loadOffers(in: region) }
                 }
             }
             .onChange(of: searchMode) { previous, _ in
                 if previous == .map { position = .region(visibleRegion) }
-                selectedHost = nil
                 selectedCommunityNote = nil
             }
             .onChange(of: showsNotes) { _, enabled in
@@ -221,36 +233,83 @@ struct OfferMapView: View {
     }
 
     private var resultsView: some View {
-        List {
-            Section {
-                OfferPlaceSearchController(
-                    state: placeSearch,
-                    onSearch: { query in Task { await focus(on: query) } },
-                    onFilters: { showingFilters = true },
-                    height: $placeSearchHeight
-                )
-                .frame(height: placeSearchHeight)
-            }
-            Section("Offers in this area") {
-                if isLoading {
-                    ProgressView("Searching this area…")
-                }
-                if let errorMessage {
-                    Text(errorMessage).foregroundStyle(.red)
-                    Button("Try again") { Task { await loadOffers(in: visibleRegion) } }
-                }
-                if !isLoading && offers.isEmpty && errorMessage == nil {
-                    Text("No matching offers in this area.")
-                }
-                ForEach(offers) { offer in
-                    OfferSearchResultRow(offer: offer, session: session, api: api) { host in
-                        selectedCommunityNote = nil
-                        selectedHost = (host, offer.type)
-                    }
-                }
-            }
+        VStack(spacing: 0) {
+            OfferPlaceSearchController(
+                state: placeSearch,
+                onSearch: { query in Task { await focus(on: query) } },
+                onFilters: { showingFilters = true },
+                height: $placeSearchHeight
+            )
+            .frame(height: placeSearchHeight)
+            .padding(.horizontal, 16)
+
+            NearbyOfferResultsController(
+                rows: offers.map(resultRow),
+                loading: isLoading,
+                error: errorMessage,
+                serverURLString: session.serverURLString,
+                retry: { Task { await loadOffers(in: visibleRegion) } },
+                loadOffer: { id in Task { await loadResultDetails(for: id) } },
+                openOffer: openResult
+            )
         }
-        .listStyle(.plain)
+    }
+
+    private func resultRow(_ offer: MapOffer) -> PilotNearbyOfferRow {
+        guard case let .loaded(host) = resultDetails[offer.id] else {
+            let failed = if case .failed = resultDetails[offer.id] { true } else { false }
+            return PilotNearbyOfferRow(
+                id: offer.id, title: nil, username: nil, memberId: nil, badges: [], summary: nil, failed: failed
+            )
+        }
+
+        var badges: [String] = []
+        if offer.type == "host" {
+            badges.append(offer.properties.status == "maybe" ? "Maybe hosting" : "Hosting")
+        }
+        if let meeting = host.meetingLabel {
+            badges.append(meeting)
+        } else if offer.type == "meet" {
+            badges.append("Available to meet")
+        }
+        if host.volunteering == true { badges.append("Offers volunteering") }
+
+        return PilotNearbyOfferRow(
+            id: offer.id,
+            title: host.user.displayName ?? host.user.username ?? "Trustroots member",
+            username: host.user.username,
+            memberId: host.user.id,
+            badges: badges,
+            summary: host.description?.plainText,
+            failed: false
+        )
+    }
+
+    private func loadResultDetails(for id: String) async {
+        guard offers.contains(where: { $0.id == id }) else { return }
+        switch resultDetails[id] {
+        case .loading, .loaded: return
+        case .failed, nil: break
+        }
+        let request = UUID()
+        resultDetails[id] = .loading(request)
+        let details: OfferResultDetails
+        do {
+            details = .loaded(try await api.offer(serverURLString: session.serverURLString, offerID: id))
+        } catch {
+            details = .failed
+        }
+        guard case let .loading(pending) = resultDetails[id], pending == request else { return }
+        resultDetails[id] = details
+    }
+
+    private func openResult(_ id: String) {
+        guard !isLoading, errorMessage == nil,
+              let offer = offers.first(where: { $0.id == id }),
+              case let .loaded(host) = resultDetails[id]
+        else { return }
+        selectedCommunityNote = nil
+        selectedHost = (host, offer.type)
     }
 
     private func loadOffers(in region: MKCoordinateRegion) async {
@@ -259,6 +318,7 @@ struct OfferMapView: View {
         let generation = searchGeneration
         guard !types.isEmpty else {
             offers = []
+            resultDetails = [:]
             selectedHost = nil
             isLoading = false
             errorMessage = nil
@@ -285,6 +345,8 @@ struct OfferMapView: View {
             )
             guard generation == searchGeneration else { return }
             offers = fetchedOffers
+            let visibleIDs = Set(fetchedOffers.map(\.id))
+            resultDetails = resultDetails.filter { visibleIDs.contains($0.key) }
         } catch {
             guard generation == searchGeneration else { return }
             errorMessage = error.localizedDescription
@@ -318,7 +380,7 @@ struct OfferMapView: View {
         let placemark = try? await CLGeocoder().geocodeAddressString(location).first
         guard !Task.isCancelled, generation == placeSearchGeneration else { return }
         guard let coordinate = placemark?.location?.coordinate else {
-            placeSearch.updateFailure(failed: showingResults)
+            placeSearch.updateFailure(failed: searchMode != .map)
             return
         }
         selectedHost = nil
@@ -328,7 +390,7 @@ struct OfferMapView: View {
             span: MKCoordinateSpan(latitudeDelta: 1.4, longitudeDelta: 1.4)
         )
         position = .region(region)
-        if showingResults {
+        if searchMode != .map {
             visibleRegion = region
             await loadOffers(in: region)
         }
@@ -438,58 +500,54 @@ private struct OfferPlaceSearchController: UIViewControllerRepresentable {
     }
 }
 
-private struct OfferSearchResultRow: View {
-    let offer: MapOffer
-    @ObservedObject var session: MemberSessionStore
-    let api: TrustrootsAPI
-    let open: (HostOffer) -> Void
-    @State private var details: HostOffer?
-    @State private var failed = false
-    @State private var attempt = 0
+private struct NearbyOfferResultsController: UIViewControllerRepresentable {
+    let rows: [PilotNearbyOfferRow]
+    let loading: Bool
+    let error: String?
+    let serverURLString: String
+    let retry: () -> Void
+    let loadOffer: (String) -> Void
+    let openOffer: (String) -> Void
 
-    var body: some View {
-        Group {
-            if let details {
-                Button { open(details) } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        MemberIdentityView(member: details.user, serverURLString: session.serverURLString)
-                        if offer.type == "host" {
-                            Text(offer.properties.status == "maybe" ? "Maybe hosting" : "Hosting")
-                                .font(.caption.weight(.semibold))
-                        }
-                        if let meeting = details.meetingLabel {
-                            Text(meeting).font(.caption.weight(.semibold))
-                        } else if offer.type == "meet" {
-                            Text("Available to meet").font(.caption.weight(.semibold))
-                        }
-                        if details.volunteering == true {
-                            Text("Offers volunteering").font(.caption.weight(.semibold))
-                        }
-                        if let description = details.description?.plainText, !description.isEmpty {
-                            Text(description).font(.subheadline).lineLimit(3)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("search-result-\(offer.id)")
-            } else if failed {
-                Button("Retry loading offer") { attempt += 1 }
-            } else {
-                ProgressView("Loading offer…")
+    final class Coordinator {
+        let state = NearbyOfferResultsState()
+        var serverURLString = ""
+        var retry: (() -> Void)?
+        var loadOffer: ((String) -> Void)?
+        var openOffer: ((String) -> Void)?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        let coordinator = context.coordinator
+        update(coordinator)
+        return MainViewControllerKt.NearbyOfferResultsViewController(
+            state: coordinator.state,
+            retry: { [weak coordinator] in coordinator?.retry?() },
+            loadOffer: { [weak coordinator] id in coordinator?.loadOffer?(id) },
+            openOffer: { [weak coordinator] id in coordinator?.openOffer?(id) },
+            createAvatar: { [weak coordinator] row in
+                guard let coordinator, let title = row.title else { return UIViewController() }
+                return makeSharedMemberAvatarController(
+                    memberID: row.memberId,
+                    name: title,
+                    serverURLString: coordinator.serverURLString
+                )
             }
-        }
-        .task(id: attempt) {
-            if details != nil { return }
-            failed = false
-            do {
-                let loaded = try await api.offer(serverURLString: session.serverURLString, offerID: offer.id)
-                if !Task.isCancelled { details = loaded }
-            } catch {
-                if !Task.isCancelled { failed = true }
-            }
-        }
+        )
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        update(context.coordinator)
+    }
+
+    private func update(_ coordinator: Coordinator) {
+        coordinator.serverURLString = serverURLString
+        coordinator.retry = retry
+        coordinator.loadOffer = loadOffer
+        coordinator.openOffer = openOffer
+        coordinator.state.update(loading: loading, error: error, rows: rows)
     }
 }
 

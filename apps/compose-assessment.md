@@ -342,12 +342,28 @@ history after relaunch, restored draft text and one delivery after explicit
 retry. The inbox journey verifies that opening a thread updates its read
 state while keeping the filter on return.
 
-Profile editing and member actions, search filters and offer editing, Circle
-details and account screens remain candidates for incremental sharing. Before
-retiring the corresponding native UI, verify the regular app on physical
-devices with VoiceOver and larger text, check keyboard and gesture handling,
-and compare startup and package size. A release-signed device build is needed
-to verify push registration and notification routing.
+The combined shell also shares profile editing and member actions, search and
+map controls, the hosting editor, Circle details and Account screens. MapKit
+continues to own the map view.
+
+### Combined shell on a physical iPhone
+
+On 27 November 2026, an iPhone 15 Pro Max running iOS 27.2.1 had Trustroots
+2026.11.26 build 12 installed. The build had been installed in place over Wi-Fi
+the previous day. Menu showed the build timestamp `2026-11-26 19:50`. The exact
+source revision was unavailable from the installed build.
+
+The first launch showed Menu. A separate cold launch terminated the existing
+app process and reopened it. Trustroots restored the saved session and showed
+the signed-in Home feed without asking for credentials.
+
+Device checks still to run include a fresh sign-in, profile and messaging
+navigation, VoiceOver order, larger text, keyboard dismissal and back gestures,
+offline cache and draft recovery, and MapKit and location interactions. The
+local development app bundle matching build 12 occupied about 69 MiB. The
+startup and package-size comparison needs measurements from the previous build
+and timing on the same device. Push registration and notification routing need a
+release-signed build. [Physical-device acceptance issue](https://github.com/Trustroots/trustroots/issues/3961)
 
 ## Nostr signing lifecycle extraction (#3633)
 

@@ -48,6 +48,19 @@ fun OfferSearchFiltersViewController(
     OfferSearchFilters(state, onToggle, onActivity, onLanguages, onCircle)
 }
 
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalForeignApi::class)
+fun NearbyOfferResultsViewController(
+    state: NearbyOfferResultsState,
+    retry: () -> Unit,
+    loadOffer: (String) -> Unit,
+    openOffer: (String) -> Unit,
+    createAvatar: (PilotNearbyOfferRow) -> UIViewController,
+) = ComposeUIViewController {
+    NearbyOfferResults(state, retry, loadOffer, openOffer) { row ->
+        HostedMemberAvatar(size = 44.dp) { createAvatar(row) }
+    }
+}
+
 fun MemberProfileTextViewController(
     title: String?,
     text: String,
