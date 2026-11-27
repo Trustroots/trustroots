@@ -67,6 +67,40 @@ test('Core exposes named client entry points', () => {
   assert.equal(exports['./http-client'], './client/api/http-client.ts');
 });
 
+test('route-view interfaces resolve directly to their owning workspace source', () => {
+  for (const name of [
+    'admin',
+    'messages',
+    'offers',
+    'pages',
+    'statistics',
+    'tribes',
+  ]) {
+    const specifier = `@trustroots/${name}/route-views`;
+    assert.equal(
+      import.meta.resolve(specifier),
+      new URL(`../../modules/${name}/client/route-views.tsx`, import.meta.url)
+        .href,
+    );
+    assert.equal(
+      expectedManifest(name).exports['./route-views'],
+      './client/route-views.tsx',
+    );
+  }
+});
+
+test('only modules that own route views expose the named interface', () => {
+  const root = makeRepo({
+    ...FIXTURE,
+    'modules/a/client/route-views.tsx': 'export function RouteView() {}',
+  });
+  assert.equal(
+    expectedManifest('a', root).exports['./route-views'],
+    './client/route-views.tsx',
+  );
+  assert.equal('./route-views' in expectedManifest('b', root).exports, false);
+});
+
 test('main fails on a missing or drifted manifest and passes after --update', () => {
   const root = makeRepo(FIXTURE);
   assert.equal(main([], root), 1);

@@ -24,6 +24,22 @@ vi.mock('@/modules/core/client/components/Board', async () => {
 describe('<Safety />', () => {
   it('renders practical safety guidance and key support links', () => {
     render(<Safety />);
+    expect(
+      screen.getByRole('heading', {
+        name: 'Protect Your Identity and Payment Details',
+        level: 3,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'An ID request alone does not break our community rules.',
+      ),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole('heading', { name: 'Safety Tips for Trustroots' }),

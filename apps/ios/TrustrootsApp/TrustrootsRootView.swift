@@ -8,6 +8,7 @@ struct TrustrootsRootView: View {
     @State private var browserRoute: TrustrootsBrowserRoute?
     @State private var messagesNavigationID = UUID()
     @State private var searchLocation: String?
+    @State private var memberSearchState = MemberSearchState()
     @State private var isKeyboardVisible = false
     @StateObject private var offlineAvailability = OfflineAvailability.shared
 
@@ -43,7 +44,7 @@ struct TrustrootsRootView: View {
                     case .contacts:
                         ContactsView(session: session)
                     case .memberSearch:
-                        MemberSearchView(session: session)
+                        MemberSearchView(session: session, state: memberSearchState)
                     case .support:
                         ContactSupportView(session: session) {
                             browserRoute = .website(path: "/faq", title: "Frequently asked questions")
@@ -54,7 +55,7 @@ struct TrustrootsRootView: View {
                             openPasswordRecovery: { browserRoute = .passwordRecovery }
                         )
                     case .search:
-                        OfferMapView(session: session, searchLocation: searchLocation)
+                        OfferMapView(session: session, searchLocation: searchLocation, memberSearchState: memberSearchState)
                     case .messages:
                         MessageInboxView(session: session)
                             .id(messagesNavigationID)

@@ -73,6 +73,7 @@ PARTNER = {
 REPORT_MESSAGE = "A fictional report for the support team."
 VOLUNTEER_OFFER_ID = "offer-pilot-volunteer"
 OTHER_OFFER_ID = "offer-pilot-other"
+OFFER_COORDINATES = [-9.14, 38.72]
 CIRCLE_ROUTE = "/api/mobile/v0/memberships/"
 INCOMING_MESSAGE = {
     "_id": "message-pilot-incoming",
@@ -116,6 +117,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
     linked_npub = None
     nostr_challenge = None
     hosting_offer = None
+    fail_next_offer_search = False
     memberships = {CIRCLES[1]["_id"]}
     profile_changes = {}
     newsletter = False
@@ -245,15 +247,28 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "meetings": [],
             })
         elif route == "/api/mobile/v0/offers":
-            filters = json.loads(parse_qs(urlsplit(self.path).query).get("filters", ["{}"])[0])
+            fixture = type(self)
+            with fixture.session_lock:
+                fail = fixture.fail_next_offer_search
+                fixture.fail_next_offer_search = False
+            if fail:
+                self._json(503, {"message": "Offers are temporarily unavailable."})
+                return
+            query = parse_qs(request.query)
+            filters = json.loads(query.get("filters", ["{}"])[0])
+            longitude, latitude = OFFER_COORDINATES
+            in_area = (
+                float(query.get("southWestLat", ["-90"])[0]) <= latitude <= float(query.get("northEastLat", ["90"])[0])
+                and float(query.get("southWestLng", ["-180"])[0]) <= longitude <= float(query.get("northEastLng", ["180"])[0])
+            )
             ids = []
-            if "host" in filters.get("types", ["host"]):
+            if in_area and "host" in filters.get("types", ["host"]):
                 ids.append(VOLUNTEER_OFFER_ID)
                 if not filters.get("volunteering") and not filters.get("connectionsOnly"):
                     ids.append(OTHER_OFFER_ID)
             self._json(200, {"features": [{
                 "properties": {"id": offer_id, "type": "host", "status": "yes"},
-                "geometry": {"coordinates": [-9.14, 38.72]},
+                "geometry": {"coordinates": OFFER_COORDINATES},
             } for offer_id in ids]})
         elif route in (f"/api/mobile/v0/offers/{VOLUNTEER_OFFER_ID}", f"/api/mobile/v0/offers/{OTHER_OFFER_ID}"):
             self._json(200, {
@@ -339,6 +354,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.hosting_offer = HOSTING_OFFER
             self._json(200, {"status": "ready"})
             return
+        if self.path == "/fixture/fail-next-offer-search":
+            with fixture.session_lock:
+                fixture.fail_next_offer_search = True
+            self._json(200, {"status": "ready"})
+            return
         if self.path == "/fixture/prepare-experience":
             with fixture.session_lock:
                 fixture.conversation_experience = {
@@ -369,6 +389,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 fixture.report_attempts = 0
                 fixture.refresh_count = 0
                 fixture.hosting_offer = None
+                fixture.fail_next_offer_search = False
                 fixture.memberships = {CIRCLES[1]["_id"]}
                 fixture.profile_changes = {}
                 fixture.newsletter = False

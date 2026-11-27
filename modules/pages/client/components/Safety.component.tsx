@@ -79,6 +79,15 @@ export default function Safety() {
             </nav>
 
             <h2 id="before-you-meet">{t('Before You Meet')}</h2>
+            <h3>{t('Protect Your Identity and Payment Details')}</h3>
+            <p>
+              {t(
+                'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
+              )}
+            </p>
+            <p>
+              {t('An ID request alone does not break our community rules.')}
+            </p>
             <h3>{t('Read Profiles Carefully')}</h3>
             <p>
               {t(

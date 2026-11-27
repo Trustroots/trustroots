@@ -41,6 +41,9 @@ export default function ThreadMessages({
         <strong>{t('Safety note:')}</strong>{' '}
         {t(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        )}{' '}
+        {t(
+          'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
         )}
       </Alert>
       {isExtraSmall && otherUser.username && (

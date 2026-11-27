@@ -416,6 +416,10 @@ describe('Service: email', function () {
         job(0).data.html!.should.containEql(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
         );
+        const guidance =
+          'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.';
+        job(0).data.text.should.containEql(guidance);
+        job(0).data.html!.should.containEql(guidance);
         job(0).data.text.should.containEql('/messages/' + userFrom.username);
         job(0).data.text.should.containEql('/profile/' + userFrom.username);
         job(0).data.html!.should.containEql('/messages/' + userFrom.username);

@@ -39,7 +39,11 @@ export default function MessagesUnread(p: MessagesUnreadProps) {
       ))}
       <P>
         <strong>Safety note:</strong> Trustroots will never ask you for your ID,
-        credit card details, or payment of any kind.
+        credit card details, or payment of any kind. Asking for payment breaks
+        our community rules. Never share credit card details with other members.
+        We discourage hosts and guests from requesting ID or passports. If you
+        agree to a check, do it in person and avoid making or keeping digital
+        copies.
       </P>
       <Button href={p.urlReply} label={`Reply to ${p.userFromName}`} />
       {p.unsubscribeUrl && (
