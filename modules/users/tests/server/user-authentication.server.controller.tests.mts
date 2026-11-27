@@ -1515,6 +1515,32 @@ describe('Authentication controller OAuth unit tests', () => {
       return member;
     }
 
+    it('does not record an email change when only address case differs', async () => {
+      const member = await pendingChange();
+      member.email = 'same@example.org';
+      member.emailTemporary = 'SAME@EXAMPLE.ORG';
+      member.emailToken = 'same-address-token';
+      await member.save();
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'same-address-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        await AccountActivity.countDocuments({
+          user: member._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(0);
+    });
+
     for (const useToken of [true, false]) {
       it(`cancels the matching pending change atomically (token: ${useToken})`, async () => {
         const member = await pendingChange();

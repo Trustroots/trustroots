@@ -130,6 +130,7 @@ describe('Member account activity', function () {
       },
     ]);
 
+    const activityFind = sinon.spy(AccountActivity, 'find');
     const response = await agentA.get('/api/users/activity').expect(200);
     assert.equal(response.headers['cache-control'], 'no-store');
     assert.match(response.headers.vary, /Cookie/);
@@ -142,6 +143,11 @@ describe('Member account activity', function () {
       'eventType',
     ]);
     assert.equal(JSON.stringify(response.body).includes('activity-a'), false);
+    assert.deepEqual(activityFind.returnValues[0].projection(), {
+      _id: 1,
+      eventType: 1,
+      createdAt: 1,
+    });
     assert.equal(
       response.body.events.some(
         event =>
@@ -220,6 +226,11 @@ describe('Member account activity', function () {
       ).size,
       3,
     );
+    const exactlyFullPage = await agent
+      .get('/api/users/activity?limit=3')
+      .expect(200);
+    assert.equal(exactlyFullPage.body.events.length, 3);
+    assert.equal(exactlyFullPage.body.nextCursor, null);
     const oneItemPage = await agent
       .get('/api/users/activity?limit=1')
       .expect(200);
@@ -282,6 +293,29 @@ describe('Member account activity', function () {
       .get('/api/users/activity')
       .query({ cursor: exactLimitCursor })
       .expect(200);
+    const paddedOversizedCursor = Buffer.from(
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        id: 'boundary',
+      }).padEnd(387, ' '),
+    ).toString('base64url');
+    assert.equal(paddedOversizedCursor.length, 516);
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: paddedOversizedCursor })
+      .expect(400);
+    const numericCursorBytes = [
+      ...Buffer.from(
+        JSON.stringify({
+          createdAt: new Date().toISOString(),
+          id: 'page-id',
+        }),
+      ),
+    ];
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: numericCursorBytes })
+      .expect(400);
     await agent.get('/api/users/activity?limit=abc').expect(400);
   });
 
