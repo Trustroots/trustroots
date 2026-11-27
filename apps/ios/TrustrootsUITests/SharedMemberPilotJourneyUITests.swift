@@ -1670,7 +1670,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(memberSearchMenu.waitForExistence(timeout: 10), app.debugDescription)
         memberSearchMenu.tap()
 
-        let query = app.textFields["member-search-field"]
+        let query = app.descendants(matching: .any)["member-search-field"]
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(query.label, "Name, username, location or tagline")
         XCTAssertTrue(app.staticTexts["Find members"].exists, app.debugDescription)
@@ -1678,14 +1678,16 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         query.tap()
         query.typeText("partner profile")
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
-        app.keyboards.buttons["Search"].tap()
-        XCTAssertTrue(app.staticTexts["No members found"].waitForExistence(timeout: 10), app.debugDescription)
+        let submit = app.keyboards.buttons.matching(NSPredicate(format: "identifier == %@", "Search")).firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5), app.debugDescription)
+        submit.tap()
+        XCTAssertTrue(element(labelled: "No members found", in: app).waitForExistence(timeout: 10), app.debugDescription)
 
         app.buttons["Member filters"].tap()
-        let connectedMembers = app.switches["My connections only"]
+        let connectedMembers = app.descendants(matching: .any)["member-search-filter-my-connections-only"]
         XCTAssertTrue(connectedMembers.waitForExistence(timeout: 5), app.debugDescription)
         connectedMembers.tap()
-        app.buttons["Done"].tap()
+        app.buttons["member-search-filters-done"].tap()
         let partner = app.descendants(matching: .any)["member-search-result-pilot-partner"]
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(partner.label.contains("Open profile for"), partner.label)
@@ -1704,7 +1706,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(query.waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(query.value as? String, "partner profile")
         XCTAssertTrue(partner.waitForExistence(timeout: 10), app.debugDescription)
-        app.buttons["Clear member search"].tap()
+        let clear = app.buttons["member-search-clear"]
+        XCTAssertTrue(clear.label.contains("Clear member search"), clear.label)
+        clear.tap()
         XCTAssertTrue(partner.waitForNonExistence(timeout: 5), app.debugDescription)
     }
 
@@ -1738,17 +1742,19 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let filters = app.descendants(matching: .any)["offer-results-search-filters"]
         filters.tap()
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["Nearby offers unavailable"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(element(labelled: "Nearby offers unavailable", in: app).waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(offer.exists)
         app.buttons["Try again"].tap()
         XCTAssertTrue(offer.waitForExistence(timeout: 15), app.debugDescription)
 
-        filters.tap()
-        let hosts = app.descendants(matching: .any)["offer-filter-hosts"]
-        XCTAssertTrue(hosts.waitForExistence(timeout: 5), app.debugDescription)
-        hosts.tap()
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["No offers found"].waitForExistence(timeout: 15), app.debugDescription)
+        app.descendants(matching: .any)["offer-search-display-map"].tap()
+        XCTAssertTrue(mapCount.waitForExistence(timeout: 15), app.debugDescription)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.87, dy: 0.44))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.13, dy: 0.44))
+        start.press(forDuration: 0.05, thenDragTo: end)
+        XCTAssertTrue(mapCount.waitForNonExistence(timeout: 15), app.debugDescription)
+        app.descendants(matching: .any)["offer-search-display-results"].tap()
+        XCTAssertTrue(element(labelled: "No offers found", in: app).waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(offer.exists)
     }
 

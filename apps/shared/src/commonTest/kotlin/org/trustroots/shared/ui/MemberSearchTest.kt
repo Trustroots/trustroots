@@ -87,7 +87,7 @@ class MemberSearchTest {
         val state = MemberSearchState()
         state.updateQuery("ab")
         var called = false
-        state.search { _, _, _ -> called = true }
+        state.search(request = { _, _, _ -> called = true })
         assertFalse(called)
         assertFalse(state.isLoading)
     }

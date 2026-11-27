@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -215,35 +218,40 @@ fun MemberSearchScreen(
             showFilters = false
             state.refreshIfFiltersChanged(request)
         }) {
-            Column(Modifier.fillMaxWidth().background(pilotPalette.background).verticalScroll(rememberScrollState()).padding(18.dp)) {
+            Column(
+                Modifier.fillMaxWidth().imePadding().heightIn(max = 560.dp).background(pilotPalette.background).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 PilotTitle("Member filters")
-                FilterToggle("Hosts", state.filters.hosts) { state.updateFilters(state.filters.copy(hosts = it)) }
-                FilterToggle("Meetings", state.filters.meetings) { state.updateFilters(state.filters.copy(meetings = it)) }
-                FilterToggle("Offers volunteering", state.filters.volunteering) { state.updateFilters(state.filters.copy(volunteering = it)) }
-                FilterToggle("My connections only", state.filters.connectionsOnly) { state.updateFilters(state.filters.copy(connectionsOnly = it)) }
-                FilterToggle("Online in the past 6 months", state.filters.onlineRecently) { state.updateFilters(state.filters.copy(onlineRecently = it)) }
-                PilotText("Circles", strong = true)
-                state.circles.forEach { circle -> FilterToggle(circle.label, circle.id in state.filters.circleIDs) { enabled ->
-                    val ids = state.filters.circleIDs.toMutableSet().apply { if (enabled) add(circle.id) else remove(circle.id) }
-                    state.updateFilters(state.filters.copy(circleIDs = ids.sorted()))
-                } }
-                PilotText("Spoken languages", strong = true)
-                PilotInput("Search languages", languageQuery, "member-search-languages", true, onChange = { languageQuery = it })
-                val selectedLanguages = state.languages.filter { it.code in state.filters.languages }
-                val languageChoices = if (languageQuery.isBlank()) {
-                    (selectedLanguages + state.languages.filter { it.code in COMMON_SEARCH_LANGUAGES })
-                        .distinctBy { it.code }
-                } else {
-                    state.languages.filter {
-                        it.code.contains(languageQuery, ignoreCase = true) ||
-                            it.label.contains(languageQuery, ignoreCase = true)
-                    }.take(30)
-                }
-                languageChoices.forEach { language ->
-                    FilterToggle(language.label, language.code in state.filters.languages) { enabled ->
-                        val selected = state.filters.languages.toMutableSet()
-                            .apply { if (enabled) add(language.code) else remove(language.code) }
-                        state.updateFilters(state.filters.copy(languages = selected.sorted()))
+                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    FilterToggle("Hosts", state.filters.hosts) { state.updateFilters(state.filters.copy(hosts = it)) }
+                    FilterToggle("Meetings", state.filters.meetings) { state.updateFilters(state.filters.copy(meetings = it)) }
+                    FilterToggle("Offers volunteering", state.filters.volunteering) { state.updateFilters(state.filters.copy(volunteering = it)) }
+                    FilterToggle("My connections only", state.filters.connectionsOnly) { state.updateFilters(state.filters.copy(connectionsOnly = it)) }
+                    FilterToggle("Online in the past 6 months", state.filters.onlineRecently) { state.updateFilters(state.filters.copy(onlineRecently = it)) }
+                    PilotText("Circles", strong = true)
+                    state.circles.forEach { circle -> FilterToggle(circle.label, circle.id in state.filters.circleIDs) { enabled ->
+                        val ids = state.filters.circleIDs.toMutableSet().apply { if (enabled) add(circle.id) else remove(circle.id) }
+                        state.updateFilters(state.filters.copy(circleIDs = ids.sorted()))
+                    } }
+                    PilotText("Spoken languages", strong = true)
+                    PilotInput("Search languages", languageQuery, "member-search-languages", true, onChange = { languageQuery = it })
+                    val selectedLanguages = state.languages.filter { it.code in state.filters.languages }
+                    val languageChoices = if (languageQuery.isBlank()) {
+                        (selectedLanguages + state.languages.filter { it.code in COMMON_SEARCH_LANGUAGES })
+                            .distinctBy { it.code }
+                    } else {
+                        state.languages.filter {
+                            it.code.contains(languageQuery, ignoreCase = true) ||
+                                it.label.contains(languageQuery, ignoreCase = true)
+                        }.take(30)
+                    }
+                    languageChoices.forEach { language ->
+                        FilterToggle(language.label, language.code in state.filters.languages) { enabled ->
+                            val selected = state.filters.languages.toMutableSet()
+                                .apply { if (enabled) add(language.code) else remove(language.code) }
+                            state.updateFilters(state.filters.copy(languages = selected.sorted()))
+                        }
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -264,7 +272,7 @@ private val COMMON_SEARCH_LANGUAGES = setOf("eng", "por", "spa", "fre", "ger", "
 private fun FilterToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().testTag("member-search-filter-${label.lowercase().replace(' ', '-')}")
-            .clickable(role = Role.Switch) { onChange(!checked) }
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .semantics { contentDescription = label },
         verticalAlignment = Alignment.CenterVertically,
     ) {
