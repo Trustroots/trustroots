@@ -43,6 +43,9 @@ test.describe('seeded message flows', () => {
     await expect(page.locator('#tr-react-root')).toBeVisible();
 
     await page.goto(`/messages/${SEEDED_MEMBERS[1].username}`);
+    await expect(page.getByRole('note')).toContainText(
+      'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
+    );
     await expect(page.locator('#tr-react-root')).toBeVisible();
     await expect(
       page.getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply),
