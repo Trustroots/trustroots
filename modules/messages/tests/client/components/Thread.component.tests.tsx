@@ -441,11 +441,13 @@ describe('<Thread>', () => {
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
-    expect(
-      await screen.findByText(
-        'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
-      ),
-    ).toBeInTheDocument();
+    const warning = await screen.findByRole('note');
+    expect(warning).toHaveTextContent(
+      'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+    );
+    expect(warning).toHaveTextContent(
+      'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
+    );
     expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
       'href',
       '/safety',

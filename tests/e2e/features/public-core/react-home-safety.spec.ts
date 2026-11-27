@@ -98,6 +98,19 @@ test('about redirects to the homepage and the information page uses React', asyn
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await page.goto('/safety');
+  await expect(
+    page.getByRole('heading', {
+      name: 'Protect Your Identity and Payment Details',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      'Asking for payment breaks our community rules. Never share credit card details with other members. We discourage hosts and guests from requesting ID or passports. If you agree to a check, do it in person and avoid making or keeping digital copies.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText('An ID request alone does not break our community rules.'),
+  ).toBeVisible();
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Safety Tips for Trustroots' }),
