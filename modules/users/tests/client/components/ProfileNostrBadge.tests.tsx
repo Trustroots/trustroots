@@ -1,8 +1,15 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { nostrService } from '@/modules/core/client/services/nostr.client.service';
 import type NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
+import { deferred } from '@/testutils/client/deferred.testutil';
 
 type NostrEvent = Awaited<
   ReturnType<typeof nostrService.fetchUserNotes>
@@ -67,11 +74,26 @@ describe('ProfileNostrBadge', () => {
     fetchUserNotesMock.mockResolvedValue(recentNotes);
   });
 
-  it('renders badge with "Nostroots" text when user has notes', async () => {
+  it('shows the Nostroots badge only after notes arrive', async () => {
+    const pending = deferred<NostrEvent[]>();
+    fetchUserNotesMock.mockReturnValueOnce(pending.promise);
+
     render(<ProfileNostrBadge npubHex="abc123def456" />);
-    await waitFor(() => {
-      expect(screen.getByText('Nostroots')).toBeInTheDocument();
-    });
+    expect(screen.queryByText('Nostroots')).not.toBeInTheDocument();
+
+    pending.resolve(recentNotes);
+    expect(await screen.findByText('Nostroots')).toBeInTheDocument();
+  });
+
+  it('stays empty before and after a request that returns no notes', async () => {
+    const pending = deferred<NostrEvent[]>();
+    fetchUserNotesMock.mockReturnValueOnce(pending.promise);
+
+    const { container } = render(<ProfileNostrBadge npubHex="abc123def456" />);
+    expect(container).toBeEmptyDOMElement();
+
+    await act(async () => pending.resolve([]));
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('renders recent notes content', async () => {
@@ -111,11 +133,13 @@ describe('ProfileNostrBadge', () => {
   });
 
   it('renders nothing when note fetching fails', async () => {
-    fetchUserNotesMock.mockRejectedValueOnce(new Error('relay unavailable'));
+    const pending = deferred<NostrEvent[]>();
+    fetchUserNotesMock.mockReturnValueOnce(pending.promise);
 
     const { container } = render(<ProfileNostrBadge npubHex="abc123def456" />);
 
-    await waitFor(() => expect(container).toBeEmptyDOMElement());
+    await act(async () => pending.reject(new Error('relay unavailable')));
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('ignores note results that arrive after unmount', async () => {

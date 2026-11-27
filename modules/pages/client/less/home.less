@@ -22,6 +22,26 @@
     display: none;
   }
 }
+.home-member-feed[aria-busy='true'] {
+  min-height: 320px;
+}
+.home-member-feed-placeholder {
+  display: grid;
+  align-content: start;
+  gap: clamp(16px, 3vw, 28px);
+
+  span {
+    min-height: 120px;
+    border: 1px solid fade(@brand-primary, 14%);
+    border-radius: 14px;
+    background: linear-gradient(
+      100deg,
+      fade(@brand-primary, 4%) 25%,
+      fade(@brand-primary, 9%) 40%,
+      fade(@brand-primary, 4%) 65%
+    );
+  }
+}
 .home-member-panel {
   min-width: 0;
   border: 1px solid fade(@brand-primary, 24%);
@@ -69,6 +89,10 @@
 }
 .home-hosting-map {
   min-width: 0;
+  min-height: calc(clamp(300px, 42vh, 440px) + 128px);
+  @media (max-width: @screen-sm-min) {
+    min-height: calc(max(300px, 48vh) + 128px);
+  }
 }
 .home-connections-map-legend {
   display: flex;
@@ -188,6 +212,7 @@
   .tribes-xs {
     text-align: center;
     margin: 0 -10px 30px 0;
+    min-height: 100px;
   }
   .tribe-xs {
     display: inline-block;
@@ -214,13 +239,7 @@
     margin-bottom: 20px;
     width: 100%;
     @media (min-width: @screen-sm-min) {
-      .square(150px);
-    }
-    @media (min-width: @screen-md-min) {
-      .square(220px);
-    }
-    @media (min-width: @screen-lg-min) {
-      .square(260px);
+      .square(var(--home-circle-size));
     }
   }
   .tribe-intro {
@@ -279,14 +298,30 @@
   }
 }
 
-// Keep the introduction between the second and third circles without moving
-// columns over one another when the API returns fewer than three circles.
 @media (min-width: @screen-sm-min) {
+  .home-how .home-circles-row {
+    --home-circle-size: 150px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: calc(var(--home-circle-size) + 20px);
+
+    @media (min-width: @screen-md-min) {
+      --home-circle-size: 220px;
+    }
+    @media (min-width: @screen-lg-min) {
+      --home-circle-size: 260px;
+    }
+  }
+
+  .home-circle-card,
   .home-circles-intro {
-    order: 1;
+    grid-row: 1;
+  }
+  .home-circles-intro {
+    grid-column: 3;
   }
   .home-circle-last {
-    order: 2;
+    grid-column: 4;
   }
 }
 

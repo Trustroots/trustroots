@@ -27,6 +27,9 @@ import screenshotSearchPng from '../img/screenshot-search.png';
 import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
 import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
+import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
+import type { FeaturedNostrNote } from '@/modules/core/shared/featured-nostr-notes.mts';
+import type { ConnectionsDiscovery } from '@/modules/tribes/client/api/tribes.api';
 
 /**
  * List of photos to randomly pick as cover photo for homepage
@@ -99,6 +102,49 @@ interface HomeProps {
   user?: PageUser | null;
 }
 
+function HomeMemberFeed() {
+  const [feed, setFeed] = useState<{
+    notes: FeaturedNostrNote[];
+    connections: ConnectionsDiscovery;
+  } | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.allSettled([
+      listFeaturedNostrNotes(controller.signal),
+      circlesAPI.getConnections(),
+    ]).then(([notes, connections]) => {
+      if (controller.signal.aborted) return;
+      setFeed({
+        notes: notes.status === 'fulfilled' ? notes.value : [],
+        connections:
+          connections.status === 'fulfilled'
+            ? connections.value
+            : { recent: [], hosts: [] },
+      });
+    });
+    return () => controller.abort();
+  }, []);
+
+  return (
+    <div className="tw:page-container">
+      <div className="home-member-feed" aria-busy={!feed}>
+        {feed ? (
+          <>
+            <HomeFeaturedNostrNotes memberView initialNotes={feed.notes} />
+            <HomeConnections connections={feed.connections} />
+          </>
+        ) : (
+          <div className="home-member-feed-placeholder" aria-hidden="true">
+            <span />
+            <span />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home({ user, photoCredits, build }: HomeProps) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
@@ -160,14 +206,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
   return (
     <>
-      {user && (
-        <div className="tw:page-container">
-          <div className="home-member-feed">
-            <HomeFeaturedNostrNotes memberView />
-            <HomeConnections key={user._id || user.username} />
-          </div>
-        </div>
-      )}
+      {user && <HomeMemberFeed key={user._id || user.username} />}
       {!user && (
         // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
         <Board
@@ -288,6 +327,8 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 png2x={screenshotSearchPng2x}
                 webp={screenshotSearchWebp}
                 webp2x={screenshotSearchWebp2x}
+                width={600}
+                height={451}
               />
             </div>
           </div>
@@ -307,6 +348,8 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 png2x={screenshotProfilePng2x}
                 webp={screenshotProfileWebp}
                 webp2x={screenshotProfileWebp2x}
+                width={600}
+                height={443}
               />
             </div>
             <div className="tw:grid-col-12 tw:sm:grid-offset-2 tw:sm:grid-col-8 tw:md:grid-offset-0 tw:md:grid-col-5 text-center lead">
@@ -327,60 +370,55 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
         </div>
       </section>
 
-      {circles.length > 0 && (
-        <section className="home-how">
-          <div className="tw:page-container">
-            <div className="tw:grid-row home-circles-row">
-              <div className="tw:grid-col-12 tw:sm:grid-col-3 home-circles-intro">
-                <div className="text-center tribe-intro">
-                  <h2 className="font-brand-light">{t('Circles')}</h2>
-                  <p className="font-brand-light">
-                    {t(`Joining circles helps you find likeminded Trustroots members and
-                  tells others what you're interested in.`)}
-                    <br />
-                    <br />
-                    <Button size="lg" render={<a href="/circles" />}>
-                      {t('More circles')}
-                    </Button>
-                  </p>
-                </div>
+      <section className="home-how">
+        <div className="tw:page-container">
+          <div className="tw:grid-row home-circles-row">
+            <div className="home-circles-intro">
+              <div className="text-center tribe-intro">
+                <h2 className="font-brand-light">{t('Circles')}</h2>
+                <p className="font-brand-light">
+                  {t(`Joining circles helps you find likeminded Trustroots members and
+                tells others what you're interested in.`)}
+                  <br />
+                  <br />
+                  <Button size="lg" render={<a href="/circles" />}>
+                    {t('More circles')}
+                  </Button>
+                </p>
               </div>
-              <div className="tw:grid-col-12 tw:sm:hidden tribes-xs">
-                {circles.slice(0, 3).map(circle => (
-                  <a
-                    key={circle._id}
-                    href={`/circles/${circle.slug}`}
-                    className="tribe-xs tribe-image tw:rounded-[50%]"
-                    style={getCircleBackgroundStyle(circle, '742x496')}
-                  >
-                    {!circle.image && <span>{circle.label.charAt(0)}</span>}
-                  </a>
-                ))}
-              </div>
-              {circles.slice(0, 3).map((circle, index) => (
-                <div
+            </div>
+            <div className="tw:grid-col-12 tw:sm:hidden tribes-xs">
+              {circles.slice(0, 3).map(circle => (
+                <a
                   key={circle._id}
-                  className={cn(
-                    'tw:sm:grid-col-3 tw:max-sm:hidden home-circle-card',
-                    {
-                      'home-circle-last': index === 2,
-                    },
-                  )}
+                  href={`/circles/${circle.slug}`}
+                  className="tribe-xs tribe-image tw:rounded-[50%]"
+                  style={getCircleBackgroundStyle(circle, '742x496')}
                 >
-                  <div
-                    className="tribe tribe-image tw:rounded-[50%]"
-                    style={getCircleBackgroundStyle(circle, '742x496')}
-                  >
-                    <a href={`/circles/${circle.slug}`} className="tribe-link">
-                      <h3 className="tribe-label">{circle.label}</h3>
-                    </a>
-                  </div>
-                </div>
+                  {!circle.image && <span>{circle.label.charAt(0)}</span>}
+                </a>
               ))}
             </div>
+            {circles.slice(0, 3).map((circle, index) => (
+              <div
+                key={circle._id}
+                className={cn('tw:max-sm:hidden home-circle-card', {
+                  'home-circle-last': index === 2,
+                })}
+              >
+                <div
+                  className="tribe tribe-image tw:rounded-[50%]"
+                  style={getCircleBackgroundStyle(circle, '742x496')}
+                >
+                  <a href={`/circles/${circle.slug}`} className="tribe-link">
+                    <h3 className="tribe-label">{circle.label}</h3>
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Manifesto */}
       <Board

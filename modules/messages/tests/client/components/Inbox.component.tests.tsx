@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react';
+import { deferred } from '@/testutils/client/deferred.testutil';
 
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
@@ -20,6 +21,7 @@ vi.mock('@/modules/core/client/services/client-runtime');
 const api = { fetchThreads: vi.mocked(messagesApi.fetchThreads) };
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
   window.history.replaceState(null, '', '/messages');
 });
@@ -89,14 +91,46 @@ describe('<Inbox>', () => {
     expect(api.fetchThreads).not.toHaveBeenCalled();
   });
 
-  it('shows a nice message if there are no conversations', async () => {
-    api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole, getByRole } = render(<Inbox user={me} />, {
+  it('does not show loading for a fast empty inbox response', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<{ threads: typeof threads }>();
+    api.fetchThreads.mockReturnValueOnce(pending.promise);
+    const { getByRole, queryByRole } = render(<Inbox user={me} />, {
       wrapper: analytics.wrapper,
     });
+    expect(queryByRole('status')).not.toBeInTheDocument();
+    expect(queryByRole('heading')).not.toBeInTheDocument();
+
+    await act(async () => pending.resolve({ threads: [] }));
+    expect(
+      getByRole('heading', { name: 'No conversations yet.' }),
+    ).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(300));
+    expect(
+      queryByRole('heading', { name: 'Loading conversations…' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows loading while the initial inbox request is slow', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<{ threads: typeof threads }>();
+    api.fetchThreads.mockReturnValueOnce(pending.promise);
+    const { getAllByRole, getByRole, queryByRole } = render(
+      <Inbox user={me} />,
+      {
+        wrapper: analytics.wrapper,
+      },
+    );
+
+    act(() => vi.advanceTimersByTime(200));
+    expect(queryByRole('status')).not.toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(100));
     expect(getByRole('status')).toHaveTextContent('Loading conversations…');
-    await findByRole('heading', { name: 'No conversations yet.' });
-    expect(api.fetchThreads).toHaveBeenCalled();
+
+    await act(async () => pending.resolve({ threads }));
+    expect(queryByRole('status')).not.toBeInTheDocument();
+    expect(getAllByRole('listitem')).toHaveLength(threads.length);
   });
 
   it('loads only unread conversations when the unread view is selected', async () => {

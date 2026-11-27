@@ -1,11 +1,13 @@
 import type { MockedFunction } from 'vitest';
 import React, { type PropsWithChildren } from 'react';
-import { render as rtlRender, screen } from '@testing-library/react';
+import { act, render as rtlRender, screen } from '@testing-library/react';
+import { deferred } from '@/testutils/client/deferred.testutil';
 
 import '@/config/client/i18n';
 import Home, {
   getSignupUrl,
 } from '@/modules/pages/client/components/Home.component';
+import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
@@ -22,11 +24,9 @@ vi.mock('@tanstack/react-router', async () =>
   ).mockRouterModule(),
 );
 vi.mock('@/modules/tribes/client/api/tribes.api');
-vi.mock(
-  '@/modules/pages/client/components/HomeFeaturedNostrNotes.component',
-  () => ({ default: () => null }),
-);
+vi.mock('@/modules/core/client/api/featured-nostr-notes.api');
 
+const mockListFeaturedNotes = vi.mocked(listFeaturedNostrNotes);
 const mockReadCircles = vi.mocked(circlesAPI.read);
 const mockGetConnections = vi.mocked(circlesAPI.getConnections);
 // The null response intentionally exercises the unresolved-route-circle case.
@@ -73,6 +73,7 @@ vi.mock('@/modules/core/client/components/BoardCredits', async () => {
 
 beforeEach(() => {
   mockGetConnections.mockResolvedValue({ recent: [], hosts: [] });
+  mockListFeaturedNotes.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -158,11 +159,8 @@ describe('<Home />', () => {
   );
 
   it('renders fetched circles', async () => {
-    mockReadCircles.mockResolvedValueOnce([
-      circle('circle-1', 'hitchhikers', 'Hitchhikers'),
-      circle('circle-2', 'cyclists', 'Cyclists'),
-      circle('circle-3', 'musicians', 'Musicians'),
-    ]);
+    const pending = deferred<TribeSummary[]>();
+    mockReadCircles.mockReturnValueOnce(pending.promise);
     window.history.pushState({}, '', '/');
 
     render(
@@ -175,7 +173,19 @@ describe('<Home />', () => {
       />,
     );
 
-    expect(await screen.findByText('Hitchhikers')).toBeInTheDocument();
+    const intro = screen.getByRole('heading', { name: 'Circles' });
+    expect(screen.getByRole('link', { name: 'More circles' })).toBeVisible();
+    expect(screen.queryByText('Hitchhikers')).not.toBeInTheDocument();
+
+    await act(async () =>
+      pending.resolve([
+        circle('circle-1', 'hitchhikers', 'Hitchhikers'),
+        circle('circle-2', 'cyclists', 'Cyclists'),
+        circle('circle-3', 'musicians', 'Musicians'),
+      ]),
+    );
+    expect(screen.getByText('Hitchhikers')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Circles' })).toBe(intro);
     expect(mockReadCircles).toHaveBeenCalledWith({ limit: 3 });
   });
 
@@ -232,6 +242,94 @@ describe('<Home />', () => {
     render(<Home user={{ username: 'sample' }} />);
     expect(await screen.findByText('How does it work?')).toBeVisible();
     expect(mockGetConnections).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the signed-in feed together until both initial requests finish', async () => {
+    mockReadCircles.mockResolvedValueOnce([]);
+    const notes =
+      deferred<Awaited<ReturnType<typeof listFeaturedNostrNotes>>>();
+    const connections =
+      deferred<Awaited<ReturnType<typeof circlesAPI.getConnections>>>();
+    mockListFeaturedNotes.mockReturnValueOnce(notes.promise);
+    mockGetConnections.mockReturnValueOnce(connections.promise);
+
+    const { container } = render(<Home user={{ username: 'sample' }} />);
+    const feed = container.querySelector('.home-member-feed');
+    expect(feed).toHaveAttribute('aria-busy', 'true');
+    expect(
+      feed?.querySelectorAll('.home-member-feed-placeholder span'),
+    ).toHaveLength(2);
+
+    await act(async () =>
+      notes.resolve([
+        {
+          id: 'ab'.repeat(32),
+          content: 'A fictional community update.',
+          npub: 'npub1fictional',
+          publishedAt: '2026-11-01T12:00:00.000Z',
+        },
+      ]),
+    );
+    expect(feed).toHaveAttribute('aria-busy', 'true');
+    expect(
+      screen.queryByRole('heading', { name: 'Trustroots updates' }),
+    ).not.toBeInTheDocument();
+
+    await act(async () =>
+      connections.resolve({
+        recent: [
+          {
+            _id: 'sample-member',
+            username: 'sample-member',
+            displayName: 'Example Member',
+            activity: 'today',
+          },
+        ],
+        hosts: [],
+      }),
+    );
+    expect(feed).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByText('A fictional community update.')).toBeVisible();
+    expect(screen.getByRole('link', { name: /Example Member/ })).toBeVisible();
+  });
+
+  it('finishes loading the signed-in feed if both requests fail', async () => {
+    mockReadCircles.mockResolvedValueOnce([]);
+    mockListFeaturedNotes.mockRejectedValueOnce(new Error('Offline'));
+    mockGetConnections.mockRejectedValueOnce(new Error('Offline'));
+
+    const { container } = render(<Home user={{ username: 'sample' }} />);
+    await act(async () => {});
+    const feed = container.querySelector('.home-member-feed');
+    expect(feed).toHaveAttribute('aria-busy', 'false');
+    expect(feed).toBeEmptyDOMElement();
+  });
+
+  it('ignores a feed request from the previous signed-in account', async () => {
+    mockReadCircles.mockResolvedValueOnce([]);
+    const connections =
+      deferred<Awaited<ReturnType<typeof circlesAPI.getConnections>>>();
+    mockGetConnections.mockReturnValueOnce(connections.promise);
+    const { rerender } = render(<Home user={{ username: 'previous' }} />);
+
+    rerender(<Home user={{ username: 'current' }} />);
+    await act(async () =>
+      connections.resolve({
+        recent: [
+          {
+            _id: 'previous-connection',
+            username: 'previous-connection',
+            displayName: 'Previous Connection',
+            activity: 'today',
+          },
+        ],
+        hosts: [],
+      }),
+    );
+    expect(mockListFeaturedNotes.mock.calls[0][0]?.aborted).toBe(true);
+    expect(
+      screen.queryByRole('link', { name: /Previous Connection/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('does not show the top join link for logged-in users', async () => {
