@@ -4,7 +4,7 @@ import {
   type PublicKeyCredentialCreationOptionsJSON,
   type PublicKeyCredentialRequestOptionsJSON,
 } from '@simplewebauthn/browser';
-import axios from '../../../core/client/api/http-client.js';
+import axios from '@trustroots/core/http-client';
 import type { AuthenticatedUser } from './auth.api';
 
 export interface MemberPasskey {

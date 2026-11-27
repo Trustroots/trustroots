@@ -3,11 +3,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 import AccountActivity from '@/modules/users/client/components/AccountActivity.component';
-import axios from '@/modules/core/client/api/http-client';
+import axios from '@trustroots/core/http-client';
 
 const mockedAxios = vi.mocked(axios);
 
-vi.mock('@/modules/core/client/api/http-client');
+vi.mock('@trustroots/core/http-client');
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

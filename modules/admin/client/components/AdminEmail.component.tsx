@@ -1,7 +1,7 @@
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import React, { useEffect, useState } from 'react';
-import httpClient from '../../../core/client/api/http-client';
+import httpClient from '@trustroots/core/http-client';
 import type { EmailQueueSnapshot } from '../../shared/email-queue.mts';
 import AdminHeader from './AdminHeader.component';
 import AdminEmailNavigation from './AdminEmailNavigation.component';

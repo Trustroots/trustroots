@@ -13,7 +13,7 @@ import * as mfaApi from '@/modules/users/client/api/mfa.api';
 const mockSetUser = vi.fn();
 
 vi.mock('@/modules/users/client/api/mfa.api');
-vi.mock('@/modules/core/client/react-app/auth', () => ({
+vi.mock('@trustroots/core/auth', () => ({
   useAuth: () => ({ setUser: mockSetUser }),
 }));
 
