@@ -853,6 +853,7 @@ describe('Password controller direct unit tests', () => {
     stats: StatPayload[];
     lookups: unknown[][];
     confirmations: unknown[];
+    activities: unknown[];
     statRecorded: Promise<void>;
   }
 
@@ -900,6 +901,7 @@ describe('Password controller direct unit tests', () => {
       stats: [],
       lookups: [],
       confirmations: [],
+      activities: [],
       statRecorded: new Promise<void>(resolve => {
         markStat = resolve;
       }),
@@ -951,6 +953,11 @@ describe('Password controller direct unit tests', () => {
               local.stats.push(payload);
               markStat();
               cb();
+            },
+          },
+          '../services/account-activity.server.service.mts': {
+            recordActivity: async (payload: unknown) => {
+              local.activities.push(payload);
             },
           },
           '@trustroots/logger': (...args: unknown[]) => {
@@ -1331,7 +1338,7 @@ describe('Password controller direct unit tests', () => {
     ];
     for (const [overrides, filter, confirmEmailError] of compareAndSet) {
       it(`guards the update with ${JSON.stringify(overrides)}${confirmEmailError ? ' and logs a failed confirmation' : ''}`, async () => {
-        const user = fakeUser(overrides);
+        const user = fakeUser({ _id: 'fictional-user-id', ...overrides });
         const res = await run(
           await loadController({ user, confirmEmailError }),
           'changePassword',
@@ -1339,9 +1346,12 @@ describe('Password controller direct unit tests', () => {
         );
         res.statusCode.should.equal(200);
         res.body!.message!.should.equal('Password changed successfully!');
+        calls.activities.should.deepEqual([
+          { userId: 'fictional-user-id', eventType: 'password_changed' },
+        ]);
         const { query, update, options } = user.lastPasswordUpdate!;
         query.should.deepEqual({
-          _id: undefined,
+          _id: 'fictional-user-id',
           password: 'oldpassword1',
           ...filter,
         });
@@ -1356,5 +1366,19 @@ describe('Password controller direct unit tests', () => {
         );
       });
     }
+
+    it('returns the password reset failure message when an MFA logout fails', async () => {
+      const controller = await loadController({
+        user: fakeUser({ mfaEnabled: true }),
+      });
+      const res = await run(controller, 'reset', {
+        ...resetRequest(),
+        logout: callback => callback(new Error('logout failed')),
+      });
+
+      res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({ message: 'Password reset failed.' });
+      calls.confirmations.should.deepEqual([]);
+    });
   });
 });

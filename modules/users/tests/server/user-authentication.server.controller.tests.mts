@@ -443,6 +443,9 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
 
       responseRedirect(res).should.equal('/');
+      (
+        await AccountActivity.countDocuments({ eventType: 'session_revoked' })
+      ).should.equal(0);
     });
 
     it('forwards Passport logout errors', () => {
@@ -456,6 +459,29 @@ describe('Authentication controller OAuth unit tests', () => {
       );
 
       next.calledOnceWithExactly(error).should.be.true();
+    });
+
+    it('records a revoked session only after an authenticated logout', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const user = await findUser(saved._id);
+      const res = deferredResponse();
+
+      authController.signout(
+        {
+          user,
+          logout: (callback: AuthCallback) => callback(),
+        },
+        res,
+        () => {},
+      );
+      await res.waitForResponse();
+
+      (
+        await AccountActivity.countDocuments({
+          user: user._id,
+          eventType: 'session_revoked',
+        })
+      ).should.equal(1);
     });
   });
 
@@ -1403,6 +1429,44 @@ describe('Authentication controller OAuth unit tests', () => {
       should(session).have.property('browserSigninAt', 59000);
     });
 
+    it('records use of a recovery code after successful verification', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        { $set: { mfaEnabled: true, authVersion: 2 } },
+      );
+      const user = await findUser(saved._id);
+      sinon.stub(mfaService, 'verifyAndConsume').resolves({
+        user,
+        recovery: true,
+        secret: 'fictional-secret',
+      });
+      const res = deferredResponse();
+      const session: MfaSession = {
+        mfaChallenge: mfaService.createChallenge(user),
+        regenerate: callback => callback(),
+        save: callback => callback(),
+      };
+
+      await authController.verifyMfa(
+        {
+          session,
+          body: { code: 'fictional-recovery-code' },
+          login: (_authenticatedUser: unknown, callback: AuthCallback) =>
+            callback(),
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      (
+        await AccountActivity.countDocuments({
+          user: user._id,
+          eventType: 'recovery_code_used',
+        })
+      ).should.equal(1);
+    });
+
     it('explains when the site cannot verify authenticator codes', async () => {
       const { challenge, code } = await createMfaChallenge();
       sinon.stub(config, 'mfaEncryptionKey').value('');
@@ -1450,6 +1514,32 @@ describe('Authentication controller OAuth unit tests', () => {
       await member.save();
       return member;
     }
+
+    it('does not record an email change when only address case differs', async () => {
+      const member = await pendingChange();
+      member.email = 'same@example.org';
+      member.emailTemporary = 'SAME@EXAMPLE.ORG';
+      member.emailToken = 'same-address-token';
+      await member.save();
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'same-address-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        await AccountActivity.countDocuments({
+          user: member._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(0);
+    });
 
     for (const useToken of [true, false]) {
       it(`cancels the matching pending change atomically (token: ${useToken})`, async () => {
@@ -1751,6 +1841,12 @@ describe('Authentication controller OAuth unit tests', () => {
       userField(reloaded, 'emailHash').should.equal(
         crypto.createHash('md5').update('pending@example.org').digest('hex'),
       );
+      (
+        await AccountActivity.countDocuments({
+          user: saved._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(0);
     });
 
     it('reports login failures after confirming the email token', async () => {
@@ -2280,6 +2376,12 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       const reloaded = await findUser(member._id);
       reloaded.email.should.equal('pending@example.org');
+      (
+        await AccountActivity.countDocuments({
+          user: member._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(0);
     });
 
     it('returns 400 when updating the confirmed user fails', async () => {

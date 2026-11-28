@@ -117,6 +117,12 @@ describe('Member account activity', function () {
         createdAt: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000),
       },
       {
+        _id: 'activity-retained',
+        user: memberA.user._id,
+        eventType: 'password_reset',
+        createdAt: new Date(Date.now() - 89 * 24 * 60 * 60 * 1000),
+      },
+      {
         _id: 'activity-b',
         user: memberB.user._id,
         eventType: 'email_changed',
@@ -124,20 +130,30 @@ describe('Member account activity', function () {
       },
     ]);
 
+    const activityFind = sinon.spy(AccountActivity, 'find');
     const response = await agentA.get('/api/users/activity').expect(200);
     assert.equal(response.headers['cache-control'], 'no-store');
     assert.match(response.headers.vary, /Cookie/);
     assert.deepEqual(
       response.body.events.map(event => event.eventType),
-      ['password_changed'],
+      ['password_changed', 'password_reset'],
     );
     assert.deepEqual(Object.keys(response.body.events[0]).sort(), [
       'createdAt',
       'eventType',
     ]);
     assert.equal(JSON.stringify(response.body).includes('activity-a'), false);
+    assert.deepEqual(activityFind.returnValues[0].projection(), {
+      _id: 1,
+      eventType: 1,
+      createdAt: 1,
+    });
     assert.equal(
-      response.body.events.some(event => event.eventType === 'password_reset'),
+      response.body.events.some(
+        event =>
+          new Date(event.createdAt).getTime() <
+          Date.now() - 90 * 24 * 60 * 60 * 1000,
+      ),
       false,
     );
     assert.equal(
@@ -192,6 +208,10 @@ describe('Member account activity', function () {
     assert.equal(firstPage.body.events.length, 2);
     assert.equal(typeof firstPage.body.nextCursor, 'string');
     assert.equal(firstPage.body.nextCursor.includes('page-'), false);
+    assert.deepEqual(
+      firstPage.body.events.map(event => new Date(event.createdAt).getTime()),
+      [createdAt + 3000, createdAt + 2000],
+    );
     const secondPage = await agent
       .get('/api/users/activity')
       .query({ limit: 2, cursor: firstPage.body.nextCursor })
@@ -206,6 +226,16 @@ describe('Member account activity', function () {
       ).size,
       3,
     );
+    const exactlyFullPage = await agent
+      .get('/api/users/activity?limit=3')
+      .expect(200);
+    assert.equal(exactlyFullPage.body.events.length, 3);
+    assert.equal(exactlyFullPage.body.nextCursor, null);
+    const oneItemPage = await agent
+      .get('/api/users/activity?limit=1')
+      .expect(200);
+    assert.equal(oneItemPage.body.events.length, 1);
+    assert.equal(typeof oneItemPage.body.nextCursor, 'string');
     const boundedPage = await agent
       .get('/api/users/activity?limit=50')
       .expect(200);
@@ -230,6 +260,16 @@ describe('Member account activity', function () {
       .get('/api/users/activity')
       .query({ cursor: oversizedIdentifier })
       .expect(400);
+    const boundaryIdentifier = Buffer.from(
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        id: 'x'.repeat(128),
+      }),
+    ).toString('base64url');
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: boundaryIdentifier })
+      .expect(200);
     for (const id of ['', 42]) {
       const invalidIdentifierType = Buffer.from(
         JSON.stringify({ createdAt: new Date().toISOString(), id }),
@@ -241,6 +281,40 @@ describe('Member account activity', function () {
     }
     await agent
       .get(`/api/users/activity?cursor=${'x'.repeat(513)}`)
+      .expect(400);
+    const exactLimitCursor = Buffer.from(
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        id: 'boundary',
+      }).padEnd(384, ' '),
+    ).toString('base64url');
+    assert.equal(exactLimitCursor.length, 512);
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: exactLimitCursor })
+      .expect(200);
+    const paddedOversizedCursor = Buffer.from(
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        id: 'boundary',
+      }).padEnd(387, ' '),
+    ).toString('base64url');
+    assert.equal(paddedOversizedCursor.length, 516);
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: paddedOversizedCursor })
+      .expect(400);
+    const numericCursorBytes = [
+      ...Buffer.from(
+        JSON.stringify({
+          createdAt: new Date().toISOString(),
+          id: 'page-id',
+        }),
+      ),
+    ];
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: numericCursorBytes })
       .expect(400);
     await agent.get('/api/users/activity?limit=abc').expect(400);
   });
@@ -260,6 +334,27 @@ describe('Member account activity', function () {
     sinon.stub(AccountActivity, 'find').returns(query);
 
     await agent.get('/api/users/activity').expect(500);
+
+    const controllerError = new Error('controller storage failure');
+    const failingQuery = {
+      sort: () => failingQuery,
+      limit: () => failingQuery,
+      select: () => failingQuery,
+      lean: () => failingQuery,
+      exec: async () => {
+        throw controllerError;
+      },
+    };
+    sinon.restore();
+    sinon.stub(AccountActivity, 'find').returns(failingQuery);
+    const response = responseStub();
+    const next = sinon.spy();
+    await listActivity(
+      { user: { _id: new mongoose.Types.ObjectId() }, query: {} },
+      response,
+      next,
+    );
+    sinon.assert.calledOnceWithExactly(next, controllerError);
   });
 
   it('retries storage once immediately with the same event identifier and creates retention indexes', async function () {
